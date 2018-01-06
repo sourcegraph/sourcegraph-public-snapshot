@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 
 	"github.com/gorilla/mux"
@@ -155,6 +157,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			return nil, errors.New("error caused by Always500Test repo URI")
 		}
 		common.Rev = mux.Vars(r)["Rev"]
+		// Update gitserver contents for a repo whenever it is visited.
+		go gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), common.Repo.URI)
 	}
 	return common, nil
 }

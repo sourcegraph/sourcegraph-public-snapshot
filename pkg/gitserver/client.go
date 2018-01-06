@@ -266,6 +266,17 @@ func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, er
 	return list, err
 }
 
+func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo string) error {
+	req := &protocol.RepoUpdateRequest{
+		Repo: repo,
+	}
+	_, err := c.httpPost(ctx, c.Addrs[0], "enqueue-repo-update", req)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // IsRepoCloneable returns true if the repository is cloneable.
 func (c *Client) IsRepoCloneable(ctx context.Context, repo string) (bool, error) {
 	req := &protocol.IsRepoCloneableRequest{

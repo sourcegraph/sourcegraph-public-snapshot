@@ -128,6 +128,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
 	mux.HandleFunc("/repo-from-remote-url", s.handleRepoFromRemoteURL)
+	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/upload-pack", s.handleUploadPack)
 	return mux
 }
@@ -187,6 +188,23 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
+func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	dir := path.Join(s.ReposDir, req.Repo)
+	if !repoCloned(dir) && !skipCloneForTests {
+		err := s.cloneRepo(r.Context(), req.Repo, dir)
+		if err != nil {
+			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
+		}
+	} else {
+		s.updateRepo <- updateRepoRequest{req.Repo}
 	}
 }
 
@@ -269,50 +287,17 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !repoCloned(dir) {
-		if origin := OriginMap(req.Repo); origin != "" && s.isCloneable(ctx, req.Repo) {
-			// Mark this repo as currently being cloned. We have to check again if someone else isn't already
-			// cloning since we released the lock. We released the lock since isCloneable is a potentially
-			// slow operation.
-			s.cloningMu.Lock()
-			_, cloneInProgress := s.cloning[dir]
-			if !cloneInProgress {
-				s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
-			}
-			s.cloningMu.Unlock()
-
-			if skipCloneForTests {
-				s.releaseCloneLock(dir)
-			} else if !cloneInProgress {
-				go func() {
-					s.cloneLimiter.Acquire()
-					defer s.cloneLimiter.Release()
-
-					// Create a new context because this is in a background goroutine.
-					ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
-					defer func() {
-						cancel()
-						s.releaseCloneLock(dir)
-					}()
-
-					log15.Debug("cloning repo", "repo", req.Repo)
-					cmd := cloneCmd(ctx, origin, dir)
-					if output, err := s.runWithRemoteOpts(cmd, req.Repo); err != nil {
-						log15.Error("clone failed", "error", err, "output", string(output))
-						return
-					}
-					log15.Debug("repo cloned", "repo", req.Repo)
-				}()
-			}
-
-			status = "clone-in-progress"
+		err := s.cloneRepo(ctx, req.Repo, dir)
+		if err != nil {
+			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
+			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
+			json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
 			return
 		}
-
-		status = "repo-not-found"
+		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
+		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
 		return
 	}
 
@@ -362,10 +347,56 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Exec-Error", errStr)
 	w.Header().Set("X-Exec-Exit-Status", status)
 	w.Header().Set("X-Exec-Stderr", string(stderr))
+}
 
-	if !skipCloneForTests {
-		s.updateRepo <- updateRepoRequest{req.Repo}
+// cloneRepo issues a non-blocking git clone command for the given repo to the given directory.
+func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
+	origin := OriginMap(repoPath)
+	if origin == "" {
+		return fmt.Errorf("error cloning repo: no origin map entry found for %s", repoPath)
 	}
+	if !s.isCloneable(ctx, repoPath) {
+		return fmt.Errorf("error cloning repo: repo %s not cloneable", repoPath)
+	}
+
+	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
+	// cloning since we released the lock. We released the lock since isCloneable is a potentially
+	// slow operation.
+	s.cloningMu.Lock()
+	_, cloneInProgress := s.cloning[dir]
+	if cloneInProgress {
+		s.cloningMu.Unlock()
+		return nil
+	}
+	s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
+	s.cloningMu.Unlock()
+
+	if skipCloneForTests {
+		s.releaseCloneLock(dir)
+		return nil
+	}
+
+	go func() {
+		s.cloneLimiter.Acquire()
+		defer s.cloneLimiter.Release()
+
+		// Create a new context because this is in a background goroutine.
+		ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+		defer func() {
+			cancel()
+			s.releaseCloneLock(dir)
+		}()
+
+		log15.Debug("cloning repo", "repo", repoPath)
+		cmd := cloneCmd(ctx, origin, dir)
+		if output, err := s.runWithRemoteOpts(cmd, repoPath); err != nil {
+			log15.Error("clone failed", "error", err, "output", string(output))
+			return
+		}
+		log15.Debug("repo cloned", "repo", repoPath)
+	}()
+
+	return nil
 }
 
 // testRepoExists is a test fixture that overrides the return value

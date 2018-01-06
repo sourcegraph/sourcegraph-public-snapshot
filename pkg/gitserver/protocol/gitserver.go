@@ -10,6 +10,11 @@ type ExecRequest struct {
 	Opt            *vcs.RemoteOpts `json:"opt"`
 }
 
+// RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
+type RepoUpdateRequest struct {
+	Repo string `json:"repo"`
+}
+
 type NotFoundPayload struct {
 	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
 }

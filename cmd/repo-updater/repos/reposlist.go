@@ -58,9 +58,7 @@ func updateRepo(ctx context.Context, repoConf schema.Repository) error {
 	}
 	if !conf.Get().DisableAutoGitUpdates || !cloned {
 		log15.Debug("fetching repos.list repo", "repo", uri, "cloned", cloned)
-		cmd := gitserver.DefaultClient.Command("git", "fetch")
-		cmd.Repo = repo
-		err := cmd.Run(ctx)
+		err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.URI)
 		if err != nil {
 			return errors.Wrap(err, "error cloning repo")
 		}

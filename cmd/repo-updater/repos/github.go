@@ -161,11 +161,9 @@ func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*gith
 		}
 		if !conf.Get().DisableAutoGitUpdates || !cloned {
 			log15.Debug("fetching GitHub repo", "repo", repo.URI, "cloned", cloned)
-			cmd := gitserver.DefaultClient.Command("git", "fetch")
-			cmd.Repo = repo
-			err := cmd.Run(ctx)
+			err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.URI)
 			if err != nil {
-				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+				log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
 				continue
 			}
 		}

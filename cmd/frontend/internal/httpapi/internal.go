@@ -88,9 +88,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		}
 		if !conf.Get().DisableAutoGitUpdates || !cloned {
 			log15.Debug("fetching Gitolite repo", "repo", uri, "cloned", cloned)
-			cmd := gitserver.DefaultClient.Command("git", "fetch")
-			cmd.Repo = repo
-			err = cmd.Run(r.Context())
+			err := gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), repo.URI)
 			if err != nil {
 				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 				continue
