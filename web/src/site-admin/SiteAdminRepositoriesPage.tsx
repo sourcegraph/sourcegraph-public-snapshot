@@ -5,6 +5,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
+import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { REPO_DELETE_CONFIRMATION_MESSAGE } from '../repo/settings'
@@ -30,8 +31,8 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
         return (
             <li key={this.props.node.id} className="site-admin-detail-list__item site-admin-repositories-page__repo">
                 <div className="site-admin-detail-list__header site-admin-repositories-page__repo-header">
-                    <Link to={`/${this.props.node.uri}`} className="site-admin-detail-list__name">
-                        {this.props.node.uri}
+                    <Link to={`/${this.props.node.uri}`}>
+                        <RepoBreadcrumb repoPath={this.props.node.uri} disableLinks={true} />
                     </Link>
                     <ul className="site-admin-detail-list__info site-admin-repositories-page__repo-info">
                         {this.props.node.latest &&
