@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { RouteComponentProps, RouteProps } from 'react-router'
+import { APIExplorer } from './api/APIExplorer'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
@@ -112,6 +113,11 @@ export const routes: LayoutRouteProps[] = [
         component: canListAllRepositories ? RepoBrowser : ErrorNotSupportedPage,
         exact: true,
         forceNarrowWidth: true,
+    },
+    {
+        path: '/api/explorer',
+        component: APIExplorer,
+        exact: true,
     },
     {
         path: '/:repoRev+/-/blob/:filePath+',

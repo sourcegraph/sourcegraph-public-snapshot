@@ -297,6 +297,12 @@ body {
         color: #f2f4f8;
     }
 
+    &-notice {
+        border: 1px solid #f8e7ba;
+        background: rgba(250, 245, 228, 0.5);
+        color: $color-text-2;
+    }
+
     &-danger {
         border: 1px solid #f03e3e;
         background: rgba(201, 42, 42, 0.5);
@@ -346,6 +352,11 @@ body {
             background: rgba(230, 119, 0, 0.75);
             color: #f2f4f8;
         }
+
+        &-notice {
+            background: rgba(250, 245, 228, 0.75);
+            color: $color-light-text-1;
+        }
     }
 }
 
@@ -357,6 +368,7 @@ hr {
     border: none;
 }
 
+@import './api/APIExplorer';
 @import './search/QueryButton';
 @import './search/SavedQueries';
 @import './search/SearchNavbarItem';

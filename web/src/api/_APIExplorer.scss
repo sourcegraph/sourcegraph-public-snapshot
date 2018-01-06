@@ -1,0 +1,26 @@
+.api-explorer {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    margin: 1rem;
+
+    &__iframe {
+        width: 100%;
+        height: 100%;
+        border: 1px solid #f2f4f8;
+    }
+
+    &__alert {
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+        border-bottom: none;
+    }
+}
+
+.theme-light {
+    .api-explorer {
+        &__iframe {
+            border-color: $color-light-border;
+        }
+    }
+}
