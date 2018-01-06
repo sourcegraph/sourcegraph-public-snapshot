@@ -121,6 +121,7 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
                             uri
                             enabled
                             createdAt
+                            viewerCanAdminister
                             latest {
                                 cloneInProgress
                             }

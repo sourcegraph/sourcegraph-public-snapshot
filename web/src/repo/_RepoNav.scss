@@ -17,6 +17,7 @@
         overflow: hidden;
         min-width: 0;
         padding-right: 1rem;
+        padding-left: 0.25rem;
     }
 
     &__action {
@@ -31,6 +32,8 @@
         &:not(:first-of-type) {
             margin-left: 1rem;
         }
+
+        user-select: none;
 
         &-text {
             margin-left: 0.5rem;

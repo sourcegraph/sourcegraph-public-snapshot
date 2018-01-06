@@ -11,6 +11,7 @@ import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
 import { RepoBrowser } from './repo/RepoBrowser'
 import { RepositoryResolver } from './repo/RepositoryResolver'
+import { RepoSettingsArea } from './repo/settings/RepoSettingsArea'
 import { parseSearchURLQuery } from './search'
 import { SavedQueries } from './search/SavedQueries'
 import { SearchPage } from './search/SearchPage'
@@ -118,6 +119,10 @@ export const routes: LayoutRouteProps[] = [
         path: '/api/explorer',
         component: APIExplorer,
         exact: true,
+    },
+    {
+        path: '/:repo+/-/settings',
+        component: RepoSettingsArea,
     },
     {
         path: '/:repoRev+/-/blob/:filePath+',

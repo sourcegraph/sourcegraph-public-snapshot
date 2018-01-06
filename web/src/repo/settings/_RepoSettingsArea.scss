@@ -1,0 +1,11 @@
+@import '../../components/Area';
+@import './RepoSettingsOptionsPage';
+@import './RepoSettingsSidebar';
+
+.repo-settings-area {
+    &__header {
+        &-btn {
+            display: inline-flex;
+        }
+    }
+}

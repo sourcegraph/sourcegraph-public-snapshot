@@ -1,6 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
-import { Redirect, Route, RouteComponentProps, RouteProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
@@ -9,6 +9,7 @@ import { currentUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { OrgSettingsConfigurationPage } from '../org/OrgSettingsConfigurationPage'
 import { OrgSettingsProfilePage } from '../org/OrgSettingsProfilePage'
+import { RouteWithProps } from '../util/RouteWithProps'
 import { fetchOrg } from './backend'
 import { OrgSidebar } from './OrgSidebar'
 import { OrgSettingsMembersPage } from './settings/OrgSettingsMembersPage'
@@ -18,27 +19,6 @@ const NotFoundPage = () => (
         icon={DirectionalSignIcon}
         title="404: Not Found"
         subtitle="Sorry, the requested organization page was not found."
-    />
-)
-
-// Transfer the user and org prop to the routes' components.
-const RouteWithProps = (props: RouteProps & { user: GQL.IUser; org: GQL.IOrg }): React.ReactElement<Route> => (
-    <Route
-        {...props}
-        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-        component={undefined}
-        // tslint:disable-next-line:jsx-no-lambda
-        render={props2 => {
-            const finalProps = { ...props2, user: props.user, org: props.org }
-            if (props.component) {
-                const C = props.component
-                return <C {...finalProps} />
-            }
-            if (props.render) {
-                return props.render(finalProps)
-            }
-            return null
-        }}
     />
 )
 
@@ -109,7 +89,7 @@ export class OrgArea extends React.Component<Props> {
             return <NotFoundPage />
         }
 
-        const transferProps = { user: this.state.user, org: this.state.org }
+        const transferProps: { user: GQL.IUser; org: GQL.IOrg } = { user: this.state.user, org: this.state.org }
 
         return (
             <div className="org-area area">
@@ -120,19 +100,19 @@ export class OrgArea extends React.Component<Props> {
                             path={`${this.props.match.url}/settings/profile`}
                             component={OrgSettingsProfilePage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/settings/members`}
                             component={OrgSettingsMembersPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/settings/configuration`}
                             component={OrgSettingsConfigurationPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <Route component={NotFoundPage} />
                     </Switch>

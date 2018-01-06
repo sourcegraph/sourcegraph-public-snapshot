@@ -13,5 +13,9 @@
         flex: 1 1 auto;
         padding: 0 2rem;
         max-width: 48rem;
+        &-header {
+            margin-bottom: 1rem;
+            display: inline-flex !important;
+        }
     }
 }

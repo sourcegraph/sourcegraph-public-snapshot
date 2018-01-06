@@ -47,7 +47,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 actions.push(
                     <button
                         key="demote"
-                        className="btn btn-sm"
+                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
                         onClick={this.demoteFromSiteAdmin}
                         disabled={this.state.loading}
                     >
@@ -58,7 +58,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 actions.push(
                     <button
                         key="promote"
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
                         onClick={this.promoteToSiteAdmin}
                         disabled={this.state.loading}
                     >
@@ -69,7 +69,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             actions.push(
                 <button
                     key="randomizePassword"
-                    className="btn btn-link btn-sm"
+                    className="btn btn-secondary btn-sm site-admin-detail-list__action"
                     onClick={this.randomizePassword}
                     disabled={this.state.loading || !!this.state.resetPasswordURL}
                 >
@@ -79,7 +79,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             actions.push(
                 <button
                     key="deleteUser"
-                    className="btn btn-link btn-sm"
+                    className="btn btn-secondary btn-sm site-admin-detail-list__action"
                     onClick={this.deleteUser}
                     disabled={this.state.loading}
                 >

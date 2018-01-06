@@ -39,7 +39,10 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	}
 
 	if !repo.Enabled {
-		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is disabled", repo.URI)
+		// TODO(sqs): handle when user is site admin but CheckCurrentUserIsSiteAdmin has error
+		if err := CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is disabled", repo.URI)
+		}
 	}
 
 	return repo, nil
@@ -59,7 +62,10 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 	}
 
 	if !repo.Enabled {
-		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is disabled", repo.URI)
+		// TODO(sqs): handle when user is site admin but CheckCurrentUserIsSiteAdmin has error
+		if err := CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is disabled", repo.URI)
+		}
 	}
 
 	return repo, nil

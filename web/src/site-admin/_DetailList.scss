@@ -43,10 +43,16 @@
         display: flex;
         flex-direction: column;
         align-items: flex-end;
+        margin: -0.25rem;
+    }
+
+    &__action {
+        margin: 0.25rem;
     }
 
     &__error {
         color: $color-error;
+        width: 100%;
     }
 }
 

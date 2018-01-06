@@ -1,5 +1,6 @@
 import ComputerIcon from '@sourcegraph/icons/lib/Computer'
 import CopyIcon from '@sourcegraph/icons/lib/Copy'
+import GearIcon from '@sourcegraph/icons/lib/Gear'
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
 import UnwrapIcon from '@sourcegraph/icons/lib/Unwrap'
@@ -9,6 +10,7 @@ import WrapIcon from '@sourcegraph/icons/lib/Wrap'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { fromEvent } from 'rxjs/observable/fromEvent'
 import { filter } from 'rxjs/operators/filter'
 import { Subscription } from 'rxjs/Subscription'
@@ -43,6 +45,7 @@ interface RepoSubnavProps {
     history: H.History
     onWrapCodeChange: (wrapCode: boolean) => void
     showWrapCode?: boolean
+    viewerCanAdminister?: boolean
 }
 
 interface RepoSubnavState {
@@ -94,15 +97,25 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
         const githubHosts = window.context.githubEnterpriseURLs || {}
         return (
             <div className="repo-nav">
+                <span className="repo-nav__path">
+                    <RepoBreadcrumb {...this.props} disableLinks={this.props.breadcrumbDisabled} />
+                </span>
                 <RevSwitcher
                     history={this.props.history}
                     rev={this.props.rev}
                     repoPath={this.props.repoPath}
                     disabled={this.props.revSwitcherDisabled}
                 />
-                <span className="repo-nav__path">
-                    <RepoBreadcrumb {...this.props} disableLinks={this.props.breadcrumbDisabled} />
-                </span>
+                {this.props.viewerCanAdminister && (
+                    <Link
+                        to={`/${this.props.repoPath}/-/settings`}
+                        className="repo-nav__action"
+                        title="Repository Settings"
+                    >
+                        <GearIcon className="icon-inline" />
+                        <span className="repo-nav__action-text">Settings</span>
+                    </Link>
+                )}
                 {!this.props.hideCopyLink && (
                     <a href="" className="repo-nav__action" onClick={this.onShareButtonClick} title="Copy link">
                         <CopyIcon className="icon-inline" />

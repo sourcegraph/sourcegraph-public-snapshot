@@ -1,8 +1,9 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
-import { Route, RouteComponentProps, RouteProps, Switch } from 'react-router'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
+import { RouteWithProps } from '../util/RouteWithProps'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
@@ -25,27 +26,6 @@ const NotFoundPage = () => (
 
 const NotSiteAdminPage = () => (
     <HeroPage icon={DirectionalSignIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
-)
-
-// Transfer the user prop to the routes' components.
-const RouteWithProps = (props: RouteProps & { user: GQL.IUser | null }): React.ReactElement<Route> => (
-    <Route
-        {...props}
-        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-        component={undefined}
-        // tslint:disable-next-line:jsx-no-lambda
-        render={props2 => {
-            const finalProps: Props = { ...props2, user: props.user }
-            if (props.component) {
-                const C = props.component
-                return <C {...finalProps} />
-            }
-            if (props.render) {
-                return props.render(finalProps)
-            }
-            return null
-        }}
-    />
 )
 
 interface Props extends RouteComponentProps<{}> {
@@ -83,61 +63,61 @@ export class SiteAdminArea extends React.Component<Props> {
                             path={this.props.match.url}
                             component={SiteAdminOverviewPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
                             component={SiteAdminConfigurationPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/repositories`}
                             component={SiteAdminRepositoriesPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/organizations`}
                             component={SiteAdminOrgsPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/users`}
                             component={SiteAdminAllUsersPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/invite-user`}
                             component={SiteAdminInviteUserPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/threads`}
                             component={SiteAdminThreadsPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/analytics`}
                             component={SiteAdminAnalyticsPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/updates`}
                             component={SiteAdminUpdatesPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/telemetry`}
                             component={SiteAdminTelemetryPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <Route component={NotFoundPage} />
                     </Switch>

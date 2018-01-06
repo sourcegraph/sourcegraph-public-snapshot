@@ -1,0 +1,54 @@
+.repo-settings-options-page {
+    &__form {
+        margin-bottom: 3rem;
+        &-control {
+            min-width: 28rem;
+            margin-right: 0.5rem;
+        }
+        &-notice {
+            margin-top: -0.5rem;
+        }
+    }
+
+    &__action {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        display: flex;
+        align-items: top;
+        justify-content: space-between;
+
+        border: 1px solid #2b3750;
+        border-radius: 0.125rem;
+
+        &-title {
+            margin-bottom: 0;
+        }
+
+        &-btn-container {
+            margin-left: 1.5rem;
+            flex: 0 0 auto;
+            align-self: flex-start;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+
+    &__updated {
+        opacity: 0;
+        transition: opacity 500ms ease-out;
+
+        &--visible {
+            opacity: 1;
+        }
+    }
+}
+
+.theme-light {
+    .repo-settings-options-page {
+        &__action {
+            border-color: $color-light-border;
+        }
+    }
+}

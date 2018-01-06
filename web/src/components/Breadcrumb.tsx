@@ -14,7 +14,9 @@ export class Breadcrumb extends React.Component<Props, {}> {
         const spans: JSX.Element[] = []
         for (const [i, part] of parts.entries()) {
             const link = this.props.partToUrl(i)
-            const className = `part ${this.props.partToClassName ? this.props.partToClassName(i) : ''}`
+            const className = `part ${this.props.partToClassName ? this.props.partToClassName(i) : ''} ${
+                i === parts.length - 1 ? 'part-last' : ''
+            }`
             if (link) {
                 spans.push(
                     <Link key={i} className={className} to={link} title={part}>

@@ -1,6 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
-import { Route, RouteComponentProps, RouteProps, Switch } from 'react-router'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/AcceptInvitePage'
@@ -9,6 +9,7 @@ import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPag
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
 import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
 import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
+import { RouteWithProps } from '../util/RouteWithProps'
 import { SettingsSidebar } from './SettingsSidebar'
 
 const SettingsNotFoundPage = () => (
@@ -16,27 +17,6 @@ const SettingsNotFoundPage = () => (
         icon={DirectionalSignIcon}
         title="404: Not Found"
         subtitle="Sorry, the requested settings page was not found."
-    />
-)
-
-// Transfer the user prop to the routes' components.
-const RouteWithProps = (props: RouteProps & { user: GQL.IUser | null }): React.ReactElement<Route> => (
-    <Route
-        {...props}
-        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-        component={undefined}
-        // tslint:disable-next-line:jsx-no-lambda
-        render={props2 => {
-            const finalProps: Props = { ...props2, user: props.user }
-            if (props.component) {
-                const C = props.component
-                return <C {...finalProps} />
-            }
-            if (props.render) {
-                return props.render(finalProps)
-            }
-            return null
-        }}
     />
 )
 
@@ -75,37 +55,37 @@ export class SettingsArea extends React.Component<Props> {
                             path={`${this.props.match.url}/profile`}
                             component={UserSettingsProfilePage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
                             component={UserSettingsConfigurationPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/account`}
                             component={UserSettingsAccountPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/emails`}
                             component={UserSettingsEmailsPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/accept-invite`}
                             component={AcceptInvitePage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/editor-auth`}
                             component={EditorAuthPage}
                             exact={true}
-                            {...transferProps}
+                            other={transferProps}
                         />
                         <Route component={SettingsNotFoundPage} />
                     </Switch>
