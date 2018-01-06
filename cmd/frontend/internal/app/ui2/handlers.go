@@ -149,10 +149,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			}
 			return nil, err
 		}
-		if common.Repo.Private {
-			serveError(w, r, errors.New("accessing private repositories is forbidden"), http.StatusNotFound)
-			return nil, nil
-		}
 		if common.Repo.URI == "github.com/sourcegraphtest/Always500Test" {
 			return nil, errors.New("error caused by Always500Test repo URI")
 		}
