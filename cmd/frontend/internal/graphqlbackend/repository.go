@@ -77,6 +77,13 @@ func (r *repositoryResolver) RedirectURL() *string {
 	return r.redirectURL
 }
 
+func (r *repositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
 	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,

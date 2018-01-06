@@ -3,6 +3,7 @@ import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
 import isEqual from 'lodash/isEqual'
 import * as React from 'react'
+import { Observable } from 'rxjs/Observable'
 import { fromEvent } from 'rxjs/observable/fromEvent'
 import { merge } from 'rxjs/observable/merge'
 import { catchError } from 'rxjs/operators/catchError'
@@ -13,6 +14,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Position } from 'vscode-languageserver-types'
+import { gql, queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
 import { Markdown } from '../components/Markdown'
 import { PageTitle } from '../components/PageTitle'
@@ -80,6 +82,7 @@ interface State {
     viewerType?: 'plain' | 'rich'
     richHTML?: string
     wrapCode: boolean
+    viewerCanAdminister?: boolean
 }
 
 export class Repository extends React.PureComponent<Props, State> {
@@ -190,6 +193,12 @@ export class Repository extends React.PureComponent<Props, State> {
                 err => console.error(err)
             )
         )
+
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(map(({ repoPath }) => repoPath), distinctUntilChanged(), switchMap(fetchRepository))
+                .subscribe(repo => this.setState({ viewerCanAdminister: repo.viewerCanAdminister }))
+        )
     }
 
     public componentDidMount(): void {
@@ -233,6 +242,7 @@ export class Repository extends React.PureComponent<Props, State> {
                     viewButtonType={this.getViewButtonType()}
                     onViewButtonClick={this.onViewButtonClick}
                     onWrapCodeChange={this.onWrapCodeChange}
+                    viewerCanAdminister={this.state.viewerCanAdminister}
                 />
                 {IS_CHROME && <ChromeExtensionToast />}
                 {IS_FIREFOX && <FirefoxExtensionToast />}
@@ -354,4 +364,25 @@ export class Repository extends React.PureComponent<Props, State> {
     private onWrapCodeChange = (wrapCode: boolean) => {
         this.setState(state => ({ wrapCode }))
     }
+}
+
+function fetchRepository(uri: string): Observable<GQL.IRepository> {
+    return queryGraphQL(
+        gql`
+            query Repository($uri: String!) {
+                repository(uri: $uri) {
+                    uri
+                    viewerCanAdminister
+                }
+            }
+        `,
+        { uri }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.repository) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.repository
+        })
+    )
 }

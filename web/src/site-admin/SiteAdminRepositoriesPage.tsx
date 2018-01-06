@@ -1,11 +1,13 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import Loader from '@sourcegraph/icons/lib/Loader'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { REPO_DELETE_CONFIRMATION_MESSAGE } from '../repo/settings'
 import { eventLogger } from '../tracking/eventLogger'
 import { deleteRepository, fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled } from './backend'
 
@@ -55,18 +57,33 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                     </ul>
                 </div>
                 <div className="site-admin-detail-list__actions site-admin-repositories-page__actions">
+                    <Link
+                        className="btn btn-primary btn-sm site-admin-detail-list__action"
+                        to={`/${this.props.node.uri}/-/settings`}
+                        title="Repository settings"
+                    >
+                        <GearIcon className="icon-inline" /> Settings
+                    </Link>
+                    <Link
+                        to={`/${this.props.node.uri}`}
+                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
+                        title="Explore files in repository"
+                    >
+                        <RepoIcon className="icon-inline" />
+                        View
+                    </Link>
                     {this.props.node.enabled ? (
                         <button
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-secondary btn-sm site-admin-detail-list__action"
                             onClick={this.disableRepository}
                             disabled={this.state.loading}
-                            title="Disable access to the repository. It will not appear in search results or in the repositories list for non-site-admin users."
+                            title="Disable access to the repository. It will not appear in search results or in the repositories list."
                         >
                             Disable access
                         </button>
                     ) : (
                         <button
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-secondary btn-sm site-admin-detail-list__action"
                             onClick={this.enableRepository}
                             disabled={this.state.loading}
                         >
@@ -111,7 +128,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
     }
 
     private deleteRepository = () => {
-        if (!window.confirm('Really delete this repository? This is irreversible.')) {
+        if (!window.confirm(REPO_DELETE_CONFIRMATION_MESSAGE)) {
             return
         }
 

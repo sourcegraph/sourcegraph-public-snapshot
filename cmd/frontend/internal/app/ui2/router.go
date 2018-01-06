@@ -31,6 +31,7 @@ const (
 	routeComment       = "comment"
 	routeOpen          = "open"
 	routeRepo          = "repo"
+	routeRepoSettings  = "repo-settings"
 	routeThreads       = "threads"
 	routeTree          = "tree"
 	routeBlob          = "blob"
@@ -120,6 +121,8 @@ func newRouter() *mux.Router {
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
 
+	repoRev.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
+
 	// blob
 	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
 
@@ -149,6 +152,7 @@ func initRouter() {
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))
 	router.Get(routeBrowseRepos).Handler(handler(serveBasicPageString("Browse repositories - Sourcegraph")))
 	router.Get(routeAPIExplorer).Handler(handler(serveBasicPageString("API explorer - Sourcegraph")))
+	router.Get(routeRepoSettings).Handler(handler(serveBasicPageString("Repository settings - Sourcegraph")))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {

@@ -29,6 +29,15 @@ export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: rep
         </div>
         <div className="repo-browser__item-spacer" />
         <div className="repo-browser__item-actions">
+            {repo.viewerCanAdminister && (
+                <Link
+                    to={`/${repo.uri}/-/settings`}
+                    className="btn btn-secondary btn-sm repo-browser__item-action"
+                    title="Repository settings"
+                >
+                    <GearIcon className="icon-inline" />
+                </Link>
+            )}
             <Link
                 to={`/${repo.uri}`}
                 className="btn btn-secondary btn-sm repo-browser__item-action"

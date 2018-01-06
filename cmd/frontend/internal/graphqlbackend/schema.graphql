@@ -557,6 +557,8 @@ type Repository implements Node {
 	gitCmdRaw(params: [String!]!): String!
 	# Link to another sourcegraph instance location where this repository is located.
 	redirectURL: String
+	# Whether the viewer has admin privileges on this repository.
+	viewerCanAdminister: Boolean!
 }
 
 # A Git object ID (SHA-1 hash, 40 hexadecimal characters).
