@@ -1,3 +1,4 @@
+import Loader from '@sourcegraph/icons/lib/Loader'
 import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
 import * as React from 'react'
@@ -299,6 +300,7 @@ export class QueryInput extends React.Component<Props, State> {
                         })}
                     </ul>
                 )}
+                {this.state.loading && <Loader className="icon-inline query-input2__loading-notifier" />}
             </div>
         )
     }
