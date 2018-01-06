@@ -97,15 +97,15 @@ export class RepoNav extends React.PureComponent<RepoSubnavProps, RepoSubnavStat
         const githubHosts = window.context.githubEnterpriseURLs || {}
         return (
             <div className="repo-nav">
+                <span className="repo-nav__path">
+                    <RepoBreadcrumb {...this.props} disableLinks={this.props.breadcrumbDisabled} />
+                </span>
                 <RevSwitcher
                     history={this.props.history}
                     rev={this.props.rev}
                     repoPath={this.props.repoPath}
                     disabled={this.props.revSwitcherDisabled}
                 />
-                <span className="repo-nav__path">
-                    <RepoBreadcrumb {...this.props} disableLinks={this.props.breadcrumbDisabled} />
-                </span>
                 {this.props.viewerCanAdminister && (
                     <Link
                         to={`/${this.props.repoPath}/-/settings`}
