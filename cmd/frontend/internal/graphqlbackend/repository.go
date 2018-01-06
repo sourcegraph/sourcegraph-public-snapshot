@@ -38,7 +38,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
 		return nil, err
 	}
-	go gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.URI)
+	go gitserver.DefaultClient.EnqueueRepoUpdate(context.Background(), repo.URI)
 	return &repositoryResolver{repo: repo}, nil
 }
 
@@ -50,7 +50,7 @@ func repositoryByIDInt32(ctx context.Context, id int32) (*repositoryResolver, er
 	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
 		return nil, err
 	}
-	go gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.URI)
+	go gitserver.DefaultClient.EnqueueRepoUpdate(context.Background(), repo.URI)
 	return &repositoryResolver{repo: repo}, nil
 }
 
