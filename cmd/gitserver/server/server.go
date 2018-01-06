@@ -271,7 +271,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				ev.Send()
 			}
 			if duration > 2500*time.Millisecond {
-				log15.Warn("Long git exec request", "repo", req.Repo, "args", req.Args, "duration", duration)
+				log15.Warn("Long exec request", "repo", req.Repo, "args", req.Args, "duration", duration)
 			}
 		}()
 	}
