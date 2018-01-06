@@ -388,7 +388,7 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResults, error) {
 }
 
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResults, err error) {
-	tr := trace.New("graphql.searchResults", fmt.Sprintf("%s %s", r.args.Query, r.args.ScopeQuery))
+	tr := trace.New("graphql.searchResults", fmt.Sprintf("%s", r.args.Query))
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)
@@ -500,7 +500,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// Run all search funcs.
 	results := &searchResults{
 		queryForFileMatches: queryForFileMatches,
-		combinedQuery:       r.args.ScopeQuery + " " + r.args.Query,
+		combinedQuery:       r.args.Query,
 	}
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)

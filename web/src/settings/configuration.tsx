@@ -16,7 +16,6 @@ export interface SearchScopeConfiguration {
 export interface SavedQueryConfiguration {
     description: string
     query?: string
-    scopeQuery?: string
     showOnHomepage?: boolean
 }
 

@@ -180,7 +180,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				mu.Unlock()
 			} else {
 				if err == context.DeadlineExceeded || err == context.Canceled {
-					log15.Warn("search suggestions exceeded deadline (skipping)", "query", r.args.Query, "scopeQuery", r.args.ScopeQuery)
+					log15.Warn("search suggestions exceeded deadline (skipping)", "query", r.args.Query)
 				} else if !isBadRequest(err) {
 					// We exclude bad user input. Note that this means that we
 					// may have some tokens in the input that are valid, but

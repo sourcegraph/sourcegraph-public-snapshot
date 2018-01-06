@@ -228,8 +228,7 @@ outer:
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
 			query: searchQuery{
-				query:      syntax.ExprString(newExpr),
-				scopeQuery: r.scopeQuery.Syntax.Input,
+				query: syntax.ExprString(newExpr),
 			},
 		})
 	}
@@ -249,8 +248,7 @@ outer:
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
 				query: searchQuery{
-					query:      syntax.ExprString(newExpr),
-					scopeQuery: r.scopeQuery.Syntax.Input,
+					query: syntax.ExprString(newExpr),
 				},
 			})
 		}
@@ -278,8 +276,7 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*repositoryRe
 
 func omitQueryFields(r *searchResolver, field string) searchQuery {
 	return searchQuery{
-		query:      syntax.ExprString(omitQueryExprWithField(&r.query, field)),
-		scopeQuery: syntax.ExprString(omitQueryExprWithField(&r.scopeQuery, field)),
+		query: syntax.ExprString(omitQueryExprWithField(&r.query, field)),
 	}
 }
 

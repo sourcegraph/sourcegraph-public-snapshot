@@ -35,7 +35,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         super(props)
 
         // Fill text input from URL info
-        this.state = this.getStateFromProps(props) || { userQuery: '', scopeQuery: undefined }
+        this.state = this.getStateFromProps(props) || { userQuery: '' }
 
         /** Emits whenever the route changes */
         const routeChanges = this.componentUpdates.pipe(

@@ -212,20 +212,9 @@ type ConfigurationMutation {
 	# type instead if possible.
 	updateConfiguration(input: UpdateConfigurationInput!): UpdateConfigurationPayload
 	# Create a saved query.
-	createSavedQuery(
-		description: String!
-		query: String!
-		scopeQuery: String!
-		showOnHomepage: Boolean = false
-	): SavedQuery!
+	createSavedQuery(description: String!, query: String!, showOnHomepage: Boolean = false): SavedQuery!
 	# Update the saved query with the given ID in the configuration.
-	updateSavedQuery(
-		id: ID!
-		description: String
-		query: String
-		scopeQuery: String
-		showOnHomepage: Boolean = false
-	): SavedQuery!
+	updateSavedQuery(id: ID!, description: String, query: String, showOnHomepage: Boolean = false): SavedQuery!
 	# Delete the saved query with the given ID in the configuration.
 	deleteSavedQuery(id: ID!): EmptyResponse
 }
@@ -269,7 +258,7 @@ type Query {
 	currentUser: User
 	isUsernameAvailable(username: String!): Boolean!
 	configuration: ConfigurationCascade!
-	search(query: String = "", scopeQuery: String = ""): Search
+	search(query: String = ""): Search
 	searchScopes: [SearchScope!]!
 	# All saved queries configured for the current user, merged from all configurations.
 	savedQueries: [SavedQuery!]!
@@ -367,7 +356,6 @@ type SearchQueryDescription {
 
 type SearchQuery {
 	query: String!
-	scopeQuery: String!
 }
 
 # A group of repositories.

@@ -1,12 +1,10 @@
 package graphqlbackend
 
 type searchQuery struct {
-	query      string
-	scopeQuery string
+	query string
 }
 
-func (q searchQuery) Query() string      { return q.query }
-func (q searchQuery) ScopeQuery() string { return q.scopeQuery }
+func (q searchQuery) Query() string { return q.query }
 
 type searchQueryDescription struct {
 	description string

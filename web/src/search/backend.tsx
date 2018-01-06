@@ -11,8 +11,8 @@ import { SearchOptions } from './index'
 export function searchText(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(
         gql`
-            query Search($query: String!, $scopeQuery: String!) {
-                search(query: $query, scopeQuery: $scopeQuery) {
+            query Search($query: String!) {
+                search(query: $query) {
                     results {
                         limitHit
                         missing
@@ -86,7 +86,6 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                                 description
                                 query {
                                     query
-                                    scopeQuery
                                 }
                             }
                         }
@@ -94,7 +93,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                 }
             }
         `,
-        { query: options.query, scopeQuery: '' }
+        { query: options.query }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results) {
@@ -108,8 +107,8 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
 export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(
         gql`
-            query SearchResultsCount($query: String!, $scopeQuery: String!) {
-                search(query: $query, scopeQuery: $scopeQuery) {
+            query SearchResultsCount($query: String!) {
+                search(query: $query) {
                     results {
                         limitHit
                         missing
@@ -121,7 +120,7 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
                 }
             }
         `,
-        { query: options.query, scopeQuery: '' }
+        { query: options.query }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results) {
@@ -135,8 +134,8 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
 export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchSuggestion> {
     return queryGraphQL(
         gql`
-            query Search($query: String!, $scopeQuery: String!) {
-                search(query: $query, scopeQuery: $scopeQuery) {
+            query Search($query: String!) {
+                search(query: $query) {
                     suggestions {
                         ... on Repository {
                             __typename
@@ -154,7 +153,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                 }
             }
         `,
-        { query: options.query, scopeQuery: '' }
+        { query: options.query }
     ).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.search || !data.search.suggestions) {
@@ -217,7 +216,6 @@ const savedQueryFragment = gql`
         showOnHomepage
         query {
             query
-            scopeQuery
         }
     }
 `
@@ -269,23 +267,17 @@ export function createSavedQuery(
                 $lastID: Int
                 $description: String!
                 $query: String!
-                $scopeQuery: String!
                 $showOnHomepage: Boolean
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
-                    createSavedQuery(
-                        description: $description
-                        query: $query
-                        scopeQuery: $scopeQuery
-                        showOnHomepage: $showOnHomepage
-                    ) {
+                    createSavedQuery(description: $description, query: $query, showOnHomepage: $showOnHomepage) {
                         ...SavedQueryFields
                     }
                 }
             }
             ${savedQueryFragment}
         `,
-        { description, query, scopeQuery: '', showOnHomepage }
+        { description, query, showOnHomepage }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
@@ -312,7 +304,6 @@ export function updateSavedQuery(
                 $id: ID!
                 $description: String
                 $query: String
-                $scopeQuery: String
                 $showOnHomepage: Boolean
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
@@ -320,7 +311,6 @@ export function updateSavedQuery(
                         id: $id
                         description: $description
                         query: $query
-                        scopeQuery: $scopeQuery
                         showOnHomepage: $showOnHomepage
                     ) {
                         ...SavedQueryFields
@@ -329,7 +319,7 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, scopeQuery: '', showOnHomepage }
+        { id, description, query, showOnHomepage }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {

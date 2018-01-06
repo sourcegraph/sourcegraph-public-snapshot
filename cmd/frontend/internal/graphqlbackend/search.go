@@ -52,16 +52,11 @@ func (r *schemaResolver) Search(args *searchArgs) (*searchResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	scopeQuery, err := searchquery.ParseAndCheck(args.ScopeQuery)
-	if err != nil {
-		return nil, err
-	}
 	return &searchResolver{
 		root:          r,
 		args:          *args,
 		combinedQuery: *combinedQuery,
 		query:         *query,
-		scopeQuery:    *scopeQuery,
 	}, nil
 }
 
@@ -82,7 +77,6 @@ type searchResolver struct {
 
 	combinedQuery searchquery.Query // the scope and user query combined (most callers should use this)
 	query         searchquery.Query // the user query only
-	scopeQuery    searchquery.Query // the scope query only
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex

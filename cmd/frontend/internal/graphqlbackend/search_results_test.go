@@ -13,8 +13,8 @@ import (
 func TestSearchResults(t *testing.T) {
 	listOpts := sourcegraph.ListOptions{PerPage: int32(maxReposToSearch + 1)}
 
-	createSearchResolver := func(t *testing.T, query, scopeQuery string) *searchResolver {
-		args := &searchArgs{Query: query, ScopeQuery: scopeQuery}
+	createSearchResolver := func(t *testing.T, query string) *searchResolver {
+		args := &searchArgs{Query: query}
 		r, err := (&schemaResolver{}).Search(args)
 		if err != nil {
 			t.Fatal("Search:", err)
@@ -22,7 +22,7 @@ func TestSearchResults(t *testing.T) {
 		return r
 	}
 	getResults := func(t *testing.T, query string) []string {
-		r := createSearchResolver(t, query, "")
+		r := createSearchResolver(t, query)
 		results, err := r.Results(context.Background())
 		if err != nil {
 			t.Fatal("Results:", err)

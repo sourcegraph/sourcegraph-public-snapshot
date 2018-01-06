@@ -102,7 +102,7 @@ func toSavedQueryResolver(index int, subject *configurationSubject, entry config
 		key:            entry.Key,
 		index:          index,
 		description:    entry.Description,
-		query:          searchQuery{query: entry.Query, scopeQuery: entry.ScopeQuery},
+		query:          searchQuery{query: entry.Query},
 		showOnHomepage: entry.ShowOnHomepage,
 	}
 }
@@ -113,7 +113,7 @@ type configSavedQuery struct {
 	Key            string `json:"key,omitempty"`
 	Description    string `json:"description"`
 	Query          string `json:"query"`
-	ScopeQuery     string `json:"scopeQuery"`
+	ScopeQuery     string `json:",omitempty"`
 	ShowOnHomepage bool   `json:"showOnHomepage"`
 }
 
@@ -136,8 +136,8 @@ func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolve
 			return nil, err
 		}
 
-		// TEMPORARY: perform migration to add unique key to saved queries
-		if err := r.migrateSavedQueriesAddKeys(ctx, subject, config.SavedQueries); err != nil {
+		// TEMPORARY: perform migration to add unique key to saved queries and remove scope query by adding field to query field.
+		if err := r.migrateSavedQueries(ctx, subject, config.SavedQueries); err != nil {
 			return nil, err
 		}
 
@@ -149,15 +149,19 @@ func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolve
 	return savedQueries, nil
 }
 
-func (r *schemaResolver) migrateSavedQueriesAddKeys(ctx context.Context, subject *configurationSubject, savedQueries []configSavedQuery) error {
+func (r *schemaResolver) migrateSavedQueries(ctx context.Context, subject *configurationSubject, savedQueries []configSavedQuery) error {
 	// Return if all entries have keys.
 	needsKey := false
+	hasScopeField := false
 	for _, e := range savedQueries {
 		if e.Key == "" {
 			needsKey = true
 		}
+		if e.ScopeQuery != "" {
+			hasScopeField = true
+		}
 	}
-	if !needsKey {
+	if !needsKey && !hasScopeField {
 		return nil
 	}
 
@@ -179,9 +183,11 @@ func (r *schemaResolver) migrateSavedQueriesAddKeys(ctx context.Context, subject
 	}
 	_, err = mutation.doUpdateConfiguration(ctx, func(oldConfig string) (allEdits []jsonx.Edit, err error) {
 		for i := range savedQueries {
-			if savedQueries[i].Key != "" {
+			if savedQueries[i].Key != "" && savedQueries[i].ScopeQuery == "" {
 				continue
 			}
+			savedQueries[i].Query = savedQueries[i].Query + " " + savedQueries[i].ScopeQuery
+			savedQueries[i].ScopeQuery = ""
 			savedQueries[i].Key = generateUniqueSavedQueryKey(savedQueries)
 			edits, _, err := jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", i), savedQueries[i], nil, formatOptions)
 			if err != nil {
@@ -197,7 +203,6 @@ func (r *schemaResolver) migrateSavedQueriesAddKeys(ctx context.Context, subject
 func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, args *struct {
 	Description    string
 	Query          string
-	ScopeQuery     string
 	ShowOnHomepage bool
 }) (*savedQueryResolver, error) {
 	var index int
@@ -215,7 +220,6 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 			Key:            key,
 			Description:    args.Description,
 			Query:          args.Query,
-			ScopeQuery:     args.ScopeQuery,
 			ShowOnHomepage: args.ShowOnHomepage,
 		}
 		edits, _, err = jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", -1), value, nil, formatOptions)
@@ -229,7 +233,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 		key:            key,
 		index:          index,
 		description:    args.Description,
-		query:          searchQuery{query: args.Query, scopeQuery: args.ScopeQuery},
+		query:          searchQuery{query: args.Query},
 		showOnHomepage: args.ShowOnHomepage,
 	}, nil
 }
@@ -253,7 +257,6 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	ID             graphql.ID
 	Description    *string
 	Query          *string
-	ScopeQuery     *string
 	ShowOnHomepage bool
 }) (*savedQueryResolver, error) {
 	spec, err := unmarshalSavedQueryID(args.ID)
@@ -278,11 +281,9 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	if args.Description != nil {
 		fieldUpdates["description"] = *args.Description
 	}
+
 	if args.Query != nil {
 		fieldUpdates["query"] = *args.Query
-	}
-	if args.ScopeQuery != nil {
-		fieldUpdates["scopeQuery"] = *args.ScopeQuery
 	}
 
 	fieldUpdates["showOnHomepage"] = args.ShowOnHomepage

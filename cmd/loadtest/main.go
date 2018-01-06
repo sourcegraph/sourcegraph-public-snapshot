@@ -21,8 +21,7 @@ var (
 )
 
 type GQLSearchVars struct {
-	Query      string `json:"query"`
-	ScopeQuery string `json:"scopeQuery"`
+	Query string `json:"query"`
 }
 
 func main() {
@@ -58,7 +57,7 @@ func run() error {
 			go func(v GQLSearchVars) (err error) {
 				defer func() {
 					if err != nil {
-						log15.Error("Error issuing search query", "query", v.Query, "scopeQuery", v.ScopeQuery, "error", err)
+						log15.Error("Error issuing search query", "query", v.Query, "error", err)
 					}
 				}()
 
@@ -75,7 +74,7 @@ func run() error {
 				if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 					return fmt.Errorf("could not decode response body: %s", err)
 				}
-				log15.Info("Search results", "query", v.Query, "scopeQuery", v.ScopeQuery, "resultCount", len(res.Data.Search.Results.Results))
+				log15.Info("Search results", "query", v.Query, "resultCount", len(res.Data.Search.Results.Results))
 				return nil
 			}(v)
 		}
@@ -99,9 +98,8 @@ type GraphQLQuery struct {
 
 const gqlSearch = `query Search(
 	$query: String!,
-	$scopeQuery: String!,
 ) {
-	search(query: $query, scopeQuery: $scopeQuery) {
+	search(query: $query) {
 		results {
 			limitHit
 			missing
@@ -171,7 +169,6 @@ const gqlSearch = `query Search(
 					description
 					query {
 						query
-						scopeQuery
 					}
 				}
 			}
