@@ -59,29 +59,21 @@ export class SiteAdminArea extends React.Component<Props> {
                 <div className="area__content">
                     <Switch>
                         {/* Render empty page if no page selected. */}
-                        <RouteWithProps
-                            path={this.props.match.url}
-                            component={SiteAdminOverviewPage}
-                            exact={true}
-                            other={transferProps}
-                        />
-                        <RouteWithProps
+                        <Route path={this.props.match.url} component={SiteAdminOverviewPage} exact={true} />
+                        <Route
                             path={`${this.props.match.url}/configuration`}
                             component={SiteAdminConfigurationPage}
                             exact={true}
-                            other={transferProps}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/repositories`}
                             component={SiteAdminRepositoriesPage}
                             exact={true}
-                            other={transferProps}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/organizations`}
                             component={SiteAdminOrgsPage}
                             exact={true}
-                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/users`}
@@ -89,35 +81,22 @@ export class SiteAdminArea extends React.Component<Props> {
                             exact={true}
                             other={transferProps}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/invite-user`}
                             component={SiteAdminInviteUserPage}
                             exact={true}
-                            other={transferProps}
                         />
-                        <RouteWithProps
-                            path={`${this.props.match.url}/threads`}
-                            component={SiteAdminThreadsPage}
-                            exact={true}
-                            other={transferProps}
-                        />
-                        <RouteWithProps
+                        <Route path={`${this.props.match.url}/threads`} component={SiteAdminThreadsPage} exact={true} />
+                        <Route
                             path={`${this.props.match.url}/analytics`}
                             component={SiteAdminAnalyticsPage}
                             exact={true}
-                            other={transferProps}
                         />
-                        <RouteWithProps
-                            path={`${this.props.match.url}/updates`}
-                            component={SiteAdminUpdatesPage}
-                            exact={true}
-                            other={transferProps}
-                        />
-                        <RouteWithProps
+                        <Route path={`${this.props.match.url}/updates`} component={SiteAdminUpdatesPage} exact={true} />
+                        <Route
                             path={`${this.props.match.url}/telemetry`}
                             component={SiteAdminTelemetryPage}
                             exact={true}
-                            other={transferProps}
                         />
                         <Route component={NotFoundPage} />
                     </Switch>

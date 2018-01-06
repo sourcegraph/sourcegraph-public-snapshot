@@ -1,9 +1,10 @@
 import copy from 'copy-to-clipboard'
 import * as React from 'react'
+import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 
-interface Props {}
+interface Props extends RouteComponentProps<any> {}
 interface State {
     copiedLink: boolean
 }

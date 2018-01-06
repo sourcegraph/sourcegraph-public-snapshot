@@ -1,8 +1,9 @@
 import * as React from 'react'
 import { Route, RouteComponentProps, RouteProps } from 'react-router'
 
-interface Props<O> extends RouteProps {
-    other: O
+interface Props<O, M> extends RouteProps {
+    component: React.ComponentType<ComponentProps<O, M>> // React.ComponentType<ComponentProps<O, M>>
+    other?: O
 }
 
 type ComponentProps<O, M> = O & RouteComponentProps<M>
@@ -14,7 +15,9 @@ type ComponentProps<O, M> = O & RouteComponentProps<M>
  * @template O is the type of the other additional props to transfer
  * @template M is the type of the route match data
  */
-export const RouteWithProps = <O extends object, M>(props: Props<O>): React.ReactElement<Route<Props<O>>> => (
+export const RouteWithProps = <O extends object, M = any>(
+    props: Props<O, M>
+): React.ReactElement<Route<Props<O, M>>> => (
     <Route
         {...props}
         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

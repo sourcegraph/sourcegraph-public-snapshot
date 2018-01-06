@@ -1,8 +1,7 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
-import * as H from 'history'
 import { Base64 } from 'js-base64'
 import * as React from 'react'
-import { Redirect } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 import reactive from 'rx-component'
 import { Observable } from 'rxjs/Observable'
 import { merge } from 'rxjs/observable/merge'
@@ -23,9 +22,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { acceptUserInvite } from './backend'
 
-export interface Props {
-    location: H.Location
-}
+export interface Props extends RouteComponentProps<any> {}
 
 interface State {
     email: string

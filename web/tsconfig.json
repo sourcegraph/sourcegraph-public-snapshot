@@ -12,6 +12,7 @@
     "downlevelIteration": true,
     "skipLibCheck": true,
     "strictFunctionTypes": false,
+    "noErrorTruncation": true,
     "plugins": [
       {
         "name": "tslint-language-service"

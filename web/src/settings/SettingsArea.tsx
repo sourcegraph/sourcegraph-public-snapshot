@@ -51,11 +51,10 @@ export class SettingsArea extends React.Component<Props> {
                 <div className="area__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/profile`}
                             component={UserSettingsProfilePage}
                             exact={true}
-                            other={transferProps}
                         />
                         <RouteWithProps
                             path={`${this.props.match.url}/configuration`}
@@ -75,18 +74,12 @@ export class SettingsArea extends React.Component<Props> {
                             exact={true}
                             other={transferProps}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/accept-invite`}
                             component={AcceptInvitePage}
                             exact={true}
-                            other={transferProps}
                         />
-                        <RouteWithProps
-                            path={`${this.props.match.url}/editor-auth`}
-                            component={EditorAuthPage}
-                            exact={true}
-                            other={transferProps}
-                        />
+                        <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
                         <Route component={SettingsNotFoundPage} />
                     </Switch>
                 </div>
