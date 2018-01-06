@@ -315,7 +315,6 @@ export class SearchResults extends React.Component<Props, State> {
     private renderResult(key: number, result: GQL.SearchResult, expanded: boolean): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
-                console.log(result)
                 return (
                     <FileMatch
                         key={key}

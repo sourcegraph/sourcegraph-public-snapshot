@@ -90,7 +90,6 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
             .subscribe(
                 () => {
                     this.setState({ commitError: undefined })
-                    console.log('XX')
                     this.orgChanges.next(undefined)
                 },
                 err => {
