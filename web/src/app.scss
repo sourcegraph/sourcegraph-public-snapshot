@@ -368,6 +368,7 @@ hr {
     border: none;
 }
 
+@import './api/APIExplorer';
 @import './search/QueryButton';
 @import './search/SavedQueries';
 @import './search/SearchNavbarItem';

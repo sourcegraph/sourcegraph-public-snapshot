@@ -1,5 +1,6 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
+import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
@@ -196,6 +197,18 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         >
                             Download Editor
                         </a>
+                    </div>
+                )}
+                {this.props.user && (
+                    <div className="sidebar__item sidebar__action">
+                        <NavLink
+                            to="/api/explorer"
+                            className="sidebar__action-button btn"
+                            activeClassName="sidebar__item--active"
+                        >
+                            <GlobeIcon className="icon-inline sidebar__action-icon" />
+                            GraphQL API explorer
+                        </NavLink>
                     </div>
                 )}
                 {this.props.user &&
