@@ -40,18 +40,17 @@ export class Sparkline extends React.Component<Props, State> {
     }
 
     private drawSparkline(): void {
-        const { data, height } = this.props
+        const { data, width, height } = this.props
         if (!data.length) {
             return
         }
-        const width = this.props.width - 5
         const x = scaleLinear()
-            .domain([0, data.length])
+            .domain([-data.length, data.length])
             .range([0, width])
 
         const y = scaleLinear()
-            .domain([Math.min(...data), Math.max(...data)])
-            .range([height * 0.9, 0])
+            .domain([-Math.max(...data), Math.max(...data)])
+            .range([height, 0])
         const chartLine = line()
             .x((d, i) => x(i))
             .y((d, i) => y(Number(d)))
@@ -72,19 +71,19 @@ export class Sparkline extends React.Component<Props, State> {
             .attr('stroke-width', 2)
             .attr('d', chartLine(data as any) as any)
             .attr('width', width)
-            .attr('height', height * 0.8)
+            .attr('height', height)
             .attr('overflow', 'visible')
         svg
             .append('circle')
             .attr('fill', strokeColor)
             .attr('cx', x(data.length - 1))
             .attr('cy', y(data[data.length - 1]))
-            .attr('r', 4)
+            .attr('r', 2)
     }
 
     public render(): JSX.Element | null {
         const { width, height } = this.props
 
-        return <svg width={width} height={height} ref={ref => (this.svgRef = ref)} />
+        return <svg viewBox={`0 0 ${width} ${height/2}`} width={width} height={height} ref={ref => (this.svgRef = ref)} />
     }
 }

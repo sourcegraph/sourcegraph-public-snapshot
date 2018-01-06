@@ -186,11 +186,13 @@ export class SavedQuery extends React.PureComponent<Props, State> {
 
     private duplicate = (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation()
+        e.preventDefault()
         this.duplicateRequested.next()
     }
 
     private confirmDelete = (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation()
+        e.preventDefault()
         if (window.confirm('Really delete this saved query?')) {
             eventLogger.log('SavedQueryDeleted')
             this.deleteRequested.next()
