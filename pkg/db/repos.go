@@ -11,6 +11,8 @@ import (
 
 	"context"
 
+	"golang.org/x/net/trace"
+
 	"github.com/coocood/freecache"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -18,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 var autoRepoAdd = conf.Get().AutoRepoAdd
@@ -311,7 +314,17 @@ type ReposListOptions struct {
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
-func (s *repos) List(ctx context.Context, opt *ReposListOptions) ([]*sourcegraph.Repo, error) {
+func (s *repos) List(ctx context.Context, opt *ReposListOptions) (results []*sourcegraph.Repo, err error) {
+	traceName, ctx := traceutil.TraceName(ctx, "repos.List")
+	tr := trace.New(traceName, "")
+	defer func() {
+		if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		}
+		tr.Finish()
+	}()
+
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
@@ -325,10 +338,12 @@ func (s *repos) List(ctx context.Context, opt *ReposListOptions) ([]*sourcegraph
 	}
 
 	// fetch matching repos
-	rawRepos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
+	fetchSQL := sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
 		sqlf.Join(conds, "AND"),
 		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
-	))
+	)
+	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
+	rawRepos, err := s.getBySQL(ctx, fetchSQL)
 	if err != nil {
 		return nil, err
 	}
