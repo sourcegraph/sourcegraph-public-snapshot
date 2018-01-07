@@ -26,6 +26,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -388,7 +389,8 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResults, error) {
 }
 
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResults, err error) {
-	tr := trace.New("graphql.searchResults", fmt.Sprintf("%s", r.args.Query))
+	traceName, ctx := traceutil.TraceName(ctx, "graphql.SearchResults")
+	tr := trace.New(traceName, fmt.Sprintf("%s", r.args.Query))
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)

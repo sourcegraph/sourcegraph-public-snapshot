@@ -26,6 +26,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/zoekt"
 )
@@ -137,7 +138,8 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
 
-	tr := trace.New("searcher.client", fmt.Sprintf("%s@%s", repo, commit))
+	traceName, ctx := traceutil.TraceName(ctx, "searcher.client")
+	tr := trace.New(traceName, fmt.Sprintf("%s@%s", repo, commit))
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)
@@ -525,7 +527,8 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) (res []*searchResult
 		return mockSearchRepos(args)
 	}
 
-	tr := trace.New("searchRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	traceName, ctx := traceutil.TraceName(ctx, "searchRepos")
+	tr := trace.New(traceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)
