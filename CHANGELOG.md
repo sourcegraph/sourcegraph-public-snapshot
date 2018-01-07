@@ -23,6 +23,7 @@ Before cutting a new release, please:
 * Global alerts for configuration-needed and cloning-in-progress
 * Better list interfaces for repositories, users, organizations, and threads
 * Users can change their own password in settings
+* Repository groups can now be specified in settings by site admins, organizations, and users. Then `repogroup:foo` in a search query will search over only those repositories specified for the `foo` repository group.
 
 ### Changed
 
