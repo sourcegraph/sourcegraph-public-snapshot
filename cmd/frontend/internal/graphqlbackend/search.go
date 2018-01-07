@@ -9,6 +9,9 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/trace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+
 	"github.com/felixfbecker/stringscore"
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -152,10 +155,22 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevisions, repoResults []*searchResultResolver, overLimit bool, err error) {
+	traceName, ctx := traceutil.TraceName(ctx, "graphql.resolveRepositories")
+	tr := trace.New(traceName, fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
+	defer func() {
+		if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		} else {
+			tr.LazyPrintf("numRepoRevs: %d, numMissingRepoRevs: %d, numRepoResults: %d, overLimit: %v", len(repoRevs), len(missingRepoRevs), len(repoResults), overLimit)
+		}
+		tr.Finish()
+	}()
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
 		if r.repoRevs != nil || r.missingRepoRevs != nil || r.repoResults != nil || r.repoErr != nil {
+			tr.LazyPrintf("cached")
 			return r.repoRevs, r.missingRepoRevs, r.repoResults, r.repoOverLimit, r.repoErr
 		}
 	}
@@ -166,7 +181,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 	repoGroupFilters, _ := r.combinedQuery.StringValues(searchquery.FieldRepoGroup)
 
+	tr.LazyPrintf("resolveRepositories - start")
 	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, repoFilters, minusRepoFilters, repoGroupFilters)
+	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.repoRevs = repoRevs
 		r.missingRepoRevs = missingRepoRevs
@@ -178,6 +195,16 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 }
 
 func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchResultResolver, overLimit bool, err error) {
+	traceName, ctx := traceutil.TraceName(ctx, "resolveRepositories")
+	tr := trace.New(traceName, fmt.Sprintf("repoFilters: %v, minusRepoFilters: %v, repoGroupFilters: %v", repoFilters, minusRepoFilters, repoGroupFilters))
+	defer func() {
+		if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		}
+		tr.Finish()
+	}()
+
 	includePatterns := repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
@@ -248,12 +275,14 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		return nil
 	}
 
+	tr.LazyPrintf("Repos.List - start")
 	repos, err := backend.Repos.List(ctx, &db.ReposListOptions{
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		ListOptions: sourcegraph.ListOptions{PerPage: int32(maxRepoListSize + 1)},
 	})
+	tr.LazyPrintf("Repos.List - done")
 	if err != nil {
 		return nil, nil, nil, false, err
 	}
