@@ -470,6 +470,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
 	queryForFileMatches := false
+	tr.LazyPrintf("resultTypes: %v", resultTypes)
 	for _, resultType := range resultTypes {
 		if _, seen := seenResultTypes[resultType]; seen {
 			continue
