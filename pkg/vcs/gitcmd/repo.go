@@ -545,7 +545,7 @@ func (r *Repository) GitCmdRaw(ctx context.Context, params []string) (string, er
 	cmd := r.command("git", params...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return "", fmt.Errorf("exec `git cmd from vscode extension` failed: %s. Command was:\n\n%s Output was:\n\n%s", err, strings.Join(params, ""), out)
+		return "", fmt.Errorf("exec git failed: %s. Command was:\n\n%s Output was:\n\n%s", err, strings.Join(params, ""), out)
 	}
 
 	return string(out), nil
