@@ -520,10 +520,19 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
 // searchRepos searches a set of repos for a pattern.
-func searchRepos(ctx context.Context, args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
+func searchRepos(ctx context.Context, args *repoSearchArgs) (res []*searchResult, resCommon *searchResultsCommon, err error) {
 	if mockSearchRepos != nil {
 		return mockSearchRepos(args)
 	}
+
+	tr := trace.New("searchRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	defer func() {
+		if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		}
+		tr.Finish()
+	}()
 
 	if err := args.query.validate(); err != nil {
 		return nil, nil, &badRequestError{err}

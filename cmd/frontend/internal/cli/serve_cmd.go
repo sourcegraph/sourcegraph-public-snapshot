@@ -68,6 +68,14 @@ var (
 	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
 )
 
+func init() {
+	if profBindAddr == "" {
+		if frontendProfBindAddr, exists := os.LookupEnv("FRONTEND_PROF_HTTP"); exists {
+			profBindAddr = frontendProfBindAddr
+		}
+	}
+}
+
 func configureAppURL() (*url.URL, error) {
 	var hostPort string
 	if strings.HasPrefix(httpAddr, ":") {
