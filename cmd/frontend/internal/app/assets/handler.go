@@ -1,12 +1,14 @@
 package assets
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
 
 	"github.com/sqs/httpgzip"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 // Mount mounts the static asset handler.
@@ -49,8 +51,14 @@ func Mount(mux *http.ServeMux) {
 	})))
 }
 
+var assetsRoot = env.Get("ASSETS_ROOT", "/.assets", "URL to web assets")
+
 func init() {
-	baseURL = &url.URL{Path: "/.assets"}
+	var err error
+	baseURL, err = url.Parse(assetsRoot)
+	if err != nil {
+		log.Fatalln("Parsing ASSETS_ROOT failed:", err)
+	}
 }
 
 func isPhabricatorAsset(path string) bool {
