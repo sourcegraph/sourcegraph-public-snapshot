@@ -153,7 +153,6 @@ type SiteConfiguration struct {
 	HtmlBodyTop                    string                     `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom                 string                     `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop                    string                     `json:"htmlHeadTop,omitempty"`
-	InactiveRepos                  string                     `json:"inactiveRepos,omitempty"`
 	LicenseKey                     string                     `json:"licenseKey,omitempty"`
 	LightstepAccessToken           string                     `json:"lightstepAccessToken,omitempty"`
 	LightstepProject               string                     `json:"lightstepProject,omitempty"`

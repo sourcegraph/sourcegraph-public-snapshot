@@ -96,15 +96,6 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 		return mockResolveRepoGroups()
 	}
 
-	var active, inactive []*sourcegraph.Repo
-	if len(inactiveReposMap) != 0 {
-		var err error
-		active, inactive, err = listActiveAndInactive(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	var sample []*sourcegraph.Repo
 	if envvar.SourcegraphDotComMode() {
 		var err error
@@ -115,9 +106,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 	}
 
 	return map[string][]*sourcegraph.Repo{
-		"active":   active,
-		"inactive": inactive,
-		"sample":   sample,
+		"sample": sample,
 	}, nil
 }
 

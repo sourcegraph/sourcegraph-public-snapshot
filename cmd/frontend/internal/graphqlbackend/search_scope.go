@@ -31,20 +31,11 @@ func init() {
 func defaultSearchScopes() []*searchScope {
 	var prependScope string
 	var defaultSearchScopes []*searchScope
-	useActiveInactiveRepos := !envvar.SourcegraphDotComMode() && inactiveRepos != ""
-	if useActiveInactiveRepos {
-		prependScope = "repogroup:active "
-		defaultSearchScopes = append(defaultSearchScopes,
-			&searchScope{JName: "All active repos", JValue: "repogroup:active"},
-		)
-	} else {
-		if envvar.SourcegraphDotComMode() {
-			prependScope = "repogroup:sample "
-			defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "Sample repositories", JValue: "repogroup:sample"})
-		}
-
-		defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "All repositories", JValue: ""})
+	if envvar.SourcegraphDotComMode() {
+		prependScope = "repogroup:sample "
+		defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "Sample repositories", JValue: "repogroup:sample"})
 	}
+	defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "All repositories", JValue: ""})
 
 	scopes := []*searchScope{
 		{JName: "Test code", JValue: "file:(test|spec)"},
@@ -60,10 +51,6 @@ func defaultSearchScopes() []*searchScope {
 		}
 	}
 	defaultSearchScopes = append(defaultSearchScopes, scopes...)
-
-	if useActiveInactiveRepos {
-		defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "Inactive repos", JValue: "repogroup:inactive"})
-	}
 
 	return defaultSearchScopes
 }
