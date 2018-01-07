@@ -66,7 +66,11 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if len(blacklist) != 0 {
-		log15.Info("blacklisted gitolite repos", "blacklist", strings.Join(blacklist, ", "))
+		if len(blacklist) > 5 {
+			log15.Info("blacklisted gitolite repos", "size", len(blacklist))
+		} else {
+			log15.Info("blacklisted gitolite repos", "blacklist", strings.Join(blacklist, ", "))
+		}
 	}
 
 	for _, uri := range whitelist {
