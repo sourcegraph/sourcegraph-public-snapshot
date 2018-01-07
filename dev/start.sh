@@ -37,7 +37,8 @@ export SRC_SYNTECT_SERVER=http://localhost:3700
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
 export FRONTEND_PROF_HTTP=:6060
-export GITSERVER_PROF_HTTP=:6060
+export GITSERVER_PROF_HTTP=:6061
+export SEARCHER_PROF_HTTP=:6062
 export NPM_CONFIG_LOGLEVEL=silent
 
 export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE-"/tmp/sourcegraph-dev-config-$(date +"%s").json"}

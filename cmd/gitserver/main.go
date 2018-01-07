@@ -31,7 +31,7 @@ var (
 func init() {
 	// In dev environment, use distinctive env var name
 	if profBindAddr == "" {
-		if frontendProfBindAddr, exists := os.LookupEnv("FRONTEND_PROF_HTTP"); exists {
+		if frontendProfBindAddr, exists := os.LookupEnv("GITSERVER_PROF_HTTP"); exists {
 			profBindAddr = frontendProfBindAddr
 		}
 	}
