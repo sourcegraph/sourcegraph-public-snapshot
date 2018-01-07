@@ -521,6 +521,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                             filePath: node.filePath,
                                         })}
                                         className="tree__row-label"
+                                        draggable={false}
                                     >
                                         {node.filePath.split('/').pop()}
                                     </Link>
@@ -558,6 +559,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                         filePath: node.filePath,
                                     })}
                                     data-tree-path={node.filePath}
+                                    draggable={false}
                                 >
                                     {node.filePath.split('/').pop()}
                                 </Link>
