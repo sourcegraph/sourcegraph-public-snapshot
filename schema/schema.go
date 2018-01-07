@@ -116,8 +116,9 @@ type SearchScope struct {
 
 // Settings Configuration settings for users and organizations on Sourcegraph Server.
 type Settings struct {
-	SearchSavedQueries []SearchSavedQueries `json:"search.savedQueries,omitempty"`
-	SearchScopes       []SearchScope        `json:"search.scopes,omitempty"`
+	SearchRepositoryGroups map[string][]string  `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries     []SearchSavedQueries `json:"search.savedQueries,omitempty"`
+	SearchScopes           []SearchScope        `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration Configuration for a Sourcegraph Server site.

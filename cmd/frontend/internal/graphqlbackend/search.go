@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -24,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -96,18 +98,34 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 		return mockResolveRepoGroups()
 	}
 
-	var sample []*sourcegraph.Repo
+	groups := map[string][]*sourcegraph.Repo{}
+
+	// Repo groups can be defined in the search.repoGroups settings field.
+	merged, err := (&configurationCascadeResolver{}).Merged(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var settings schema.Settings
+	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
+		return nil, err
+	}
+	for name, repoPaths := range settings.SearchRepositoryGroups {
+		repos := make([]*sourcegraph.Repo, len(repoPaths))
+		for i, repoPath := range repoPaths {
+			repos[i] = &sourcegraph.Repo{URI: repoPath}
+		}
+		groups[name] = repos
+	}
+
 	if envvar.SourcegraphDotComMode() {
-		var err error
-		sample, err = getSampleRepos(ctx)
+		sampleRepos, err := getSampleRepos(ctx)
 		if err != nil {
 			return nil, err
 		}
+		groups["sample"] = sampleRepos
 	}
 
-	return map[string][]*sourcegraph.Repo{
-		"sample": sample,
-	}, nil
+	return groups, nil
 }
 
 var (

@@ -255,6 +255,7 @@ type Query {
 	searchScopes: [SearchScope!]!
 	# All saved queries configured for the current user, merged from all configurations.
 	savedQueries: [SavedQuery!]!
+	# All repository groups for the current user, merged from all configurations.
 	repoGroups: [RepoGroup!]!
 	org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
 	sharedItem(ulid: String!): SharedItem

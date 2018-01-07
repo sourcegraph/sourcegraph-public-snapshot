@@ -43,6 +43,15 @@ const SettingsSchemaJSON = `{
       "items": {
         "$ref": "#/definitions/SearchScope"
       }
+    },
+    "search.repositoryGroups": {
+      "description":
+        "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
     }
   },
   "definitions": {
