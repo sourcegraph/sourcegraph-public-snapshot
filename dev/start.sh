@@ -38,8 +38,9 @@ export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
 export NPM_CONFIG_LOGLEVEL=silent
 
-export USE_WEBPACK_DEV_SERVER=1
-if [ -n "$USE_WEBPACK_DEV_SERVER" ]; then
+# To use webpack-dev-server for auto-reloading, use:
+#   export USE_WEBPACK_DEV_SERVER=1
+if [ -n "${USE_WEBPACK_DEV_SERVER-}" ]; then
 	export ASSETS_ROOT=http://localhost:3088
 fi
 
