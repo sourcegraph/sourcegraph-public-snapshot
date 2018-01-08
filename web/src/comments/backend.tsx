@@ -54,6 +54,10 @@ const sharedItemThreadFragment = gql`
         repo {
             id
             remoteUri
+            repository {
+                uri
+                viewerCanAdminister
+            }
         }
     }
 `
@@ -64,6 +68,10 @@ const threadFragment = gql`
         repo {
             id
             canonicalRemoteID
+            repository {
+                uri
+                viewerCanAdminister
+            }
         }
     }
 `
