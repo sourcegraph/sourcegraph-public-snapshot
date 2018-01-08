@@ -241,6 +241,7 @@ export class RevSwitcher extends React.PureComponent<Props, State> {
                         value={this.state.query}
                         title={this.state.query}
                         disabled={this.props.disabled}
+                        spellCheck={false}
                         ref={ref => (this.inputElement = ref || undefined)}
                     />
                     {!this.props.disabled && <CaretDownIcon className="icon-inline rev-switcher__dropdown-icon" />}
