@@ -527,13 +527,13 @@ describe('e2e test suite', () => {
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19'
                 )
-                await chrome.wait('.repo-nav__action[title="View on GitHub"]')
+                await chrome.wait('.composite-container__header-action[title="View on GitHub"]')
                 await retry(async () =>
                     assert.equal(
                         await chrome.evaluate(
                             () =>
                                 (document.querySelector(
-                                    '.repo-nav__action[title="View on GitHub"]'
+                                    '.composite-container__header-action[title="View on GitHub"]'
                                 ) as HTMLAnchorElement).href
                         ),
                         'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'

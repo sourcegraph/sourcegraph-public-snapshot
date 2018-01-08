@@ -1,0 +1,19 @@
+@import '../components/Breadcrumb';
+
+.repo-header {
+    // Breadcrumb
+    &__path {
+        font-size: 15px;
+        flex: 0 1 auto;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        min-width: 0;
+        padding-right: 0.75rem;
+        padding-left: 0.25rem;
+    }
+
+    &__spacer {
+        flex: 1 1 0;
+    }
+}

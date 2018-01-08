@@ -5,7 +5,7 @@ import { memoizeObservable } from '../util/memoize'
 import { makeRepoURI } from './index'
 
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
-class CloneInProgressError extends Error {
+export class CloneInProgressError extends Error {
     public readonly code = ECLONEINPROGESS
     constructor(repoPath: string) {
         super(`${repoPath} is clone in progress`)
@@ -13,7 +13,7 @@ class CloneInProgressError extends Error {
 }
 
 export const EREPONOTFOUND = 'EREPONOTFOUND'
-class RepoNotFoundError extends Error {
+export class RepoNotFoundError extends Error {
     public readonly code = EREPONOTFOUND
     constructor(repoPath: string) {
         super(`repo ${repoPath} not found`)
@@ -21,7 +21,7 @@ class RepoNotFoundError extends Error {
 }
 
 export const EREVNOTFOUND = 'EREVNOTFOUND'
-class RevNotFoundError extends Error {
+export class RevNotFoundError extends Error {
     public readonly code = EREVNOTFOUND
     constructor(rev?: string) {
         super(`rev ${rev} not found`)

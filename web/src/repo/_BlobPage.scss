@@ -1,9 +1,13 @@
-.blob {
-    flex: 1 1 50%;
-    min-height: 0;
+@import './RenderedFile';
 
-    display: flex;
-    position: relative;
+.blob {
+    &--resizable {
+        flex: 1 1 50%;
+        min-height: 0;
+    }
+
+    // display: flex;
+    // position: relative;
     overflow: auto;
     padding: 1rem 0;
     tab-size: 4;
@@ -99,6 +103,22 @@
 
         .sg-highlighted {
             background-color: $color-light-bg-4 !important;
+        }
+    }
+}
+
+.blob-page {
+    display: flex;
+    flex-direction: column;
+
+    &__placeholder {
+        flex: 1 1 50%;
+    }
+
+    &__panel {
+        &--resizable {
+            min-height: 10rem;
+            max-height: 80%;
         }
     }
 }

@@ -19,12 +19,29 @@ import { zip } from 'rxjs/operators/zip'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Position, Range } from 'vscode-languageserver-types'
+import { gql, queryGraphQL } from '../backend/graphql'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../backend/lsp'
 import { triggerBlame } from '../blame'
+import { PageTitle } from '../components/PageTitle'
+import { Resizable } from '../components/Resizable'
+import { ReferencesWidget } from '../references/ReferencesWidget'
 import { eventLogger } from '../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../util'
+import { memoizeObservable } from '../util/memoize'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
-import { AbsoluteRepoFile, AbsoluteRepoFilePosition, AbsoluteRepoFileRange, getCodeCell, getCodeCells } from './index'
+import { OpenInEditorAction } from './actions/OpenInEditorAction'
+import { ToggleLineWrap } from './actions/ToggleLineWrap'
+import { FileRenderMode, ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
+import {
+    AbsoluteRepoFile,
+    AbsoluteRepoFilePosition,
+    AbsoluteRepoFileRange,
+    getCodeCell,
+    getCodeCells,
+    makeRepoURI,
+} from './index'
+import { RenderedFile } from './RenderedFile'
+import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import {
     convertNode,
     createTooltips,
@@ -104,9 +121,9 @@ function scrollToCell(cell: HTMLElement): void {
 }
 
 interface Props extends AbsoluteRepoFile {
-    html: string
     location: H.Location
     history: H.History
+    html: string
     wrapCode: boolean
 }
 
@@ -114,7 +131,7 @@ interface State {
     fixedTooltip?: TooltipData
 }
 
-export class Blob extends React.Component<Props, State> {
+class Blob extends React.Component<Props, State> {
     public state: State = {}
     private blobElement: HTMLElement | null = null
     private fixedTooltip = new Subject<Props>()
@@ -627,4 +644,243 @@ export class Blob extends React.Component<Props, State> {
         references: this.handleFindReferences,
         dismiss: this.handleDismiss,
     })
+}
+
+const fetchBlob = memoizeObservable(
+    (args: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.IFile> =>
+        queryGraphQL(
+            gql`
+                query Blob($repoPath: String!, $commitID: String!, $filePath: String!) {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
+                            commit {
+                                file(path: $filePath) {
+                                    richHTML
+                                    highlight(disableTimeout: false, isLightTheme: true) {
+                                        # TODO!(sqs): deal with aborted highlights
+                                        aborted
+                                        html
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            `,
+            args
+        ).pipe(
+            map(({ data, errors }) => {
+                if (
+                    !data ||
+                    !data.repository ||
+                    !data.repository.commit ||
+                    !data.repository.commit.commit ||
+                    !data.repository.commit.commit.file ||
+                    !data.repository.commit.commit.file.highlight
+                ) {
+                    throw Object.assign(
+                        'Could not fetch blob content: ' + new Error((errors || []).map(e => e.message).join('\n')),
+                        { errors }
+                    )
+                }
+                return data.repository.commit.commit.file
+            })
+        ),
+    makeRepoURI
+)
+
+interface BlobPageProps {
+    location: H.Location
+    history: H.History
+    repoPath: string
+    rev: string | undefined
+    commitID: string
+    filePath: string
+}
+
+interface BlobPageState {
+    loading: boolean
+    error?: string
+    wrapCode: boolean
+
+    /**
+     * Whether to show the references panel.
+     */
+    showRefs: boolean
+
+    /**
+     * The blob data.
+     */
+    blob?: GQL.IFile
+}
+
+export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> {
+    private specChanges = new Subject<{
+        repo: string
+        commitID: string
+        filePath: string
+        renderMode?: FileRenderMode
+    }>()
+    private subscriptions = new Subscription()
+
+    constructor(props: BlobPageProps) {
+        super(props)
+
+        this.state = {
+            loading: true,
+            wrapCode: ToggleLineWrap.getValue(),
+            showRefs: parseHash(props.location.hash).modal === 'references',
+        }
+    }
+
+    private logViewEvent(referencesShown: boolean): void {
+        eventLogger.logViewEvent('Blob', { fileShown: true, referencesShown })
+    }
+
+    public componentDidMount(): void {
+        this.logViewEvent(this.state.showRefs)
+
+        // Fetch repository revision.
+        this.subscriptions.add(
+            this.specChanges
+                .pipe(
+                    tap(() => this.setState({ blob: undefined })),
+                    switchMap(({ repo, commitID, filePath }) => fetchBlob({ repoPath: repo, commitID, filePath }))
+                )
+                .subscribe(blob => this.setState({ blob }), err => this.setState({ error: err.message }))
+        )
+
+        this.specChanges.next({
+            repo: this.props.repoPath,
+            commitID: this.props.commitID,
+            filePath: this.props.filePath,
+            renderMode: ToggleRenderedFileMode.getModeFromURL(this.props.location),
+        })
+    }
+
+    public componentWillReceiveProps(props: BlobPageProps): void {
+        const renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
+        if (
+            props.repoPath !== this.props.repoPath ||
+            props.commitID !== this.props.commitID ||
+            props.filePath !== this.props.filePath ||
+            renderMode !== ToggleRenderedFileMode.getModeFromURL(this.props.location)
+        ) {
+            this.logViewEvent(this.state.showRefs)
+            this.specChanges.next({
+                repo: props.repoPath,
+                commitID: props.commitID,
+                filePath: props.filePath,
+                renderMode,
+            })
+        }
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
+    public render(): React.ReactNode {
+        if (!this.state.blob) {
+            // Render placeholder for layout before content is fetched.
+            return <div className="blob-page__placeholder" />
+        }
+
+        const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
+
+        const actions: JSX.Element[] = [
+            <RepoHeaderActionPortal
+                position="right"
+                key="open-in-editor"
+                component={
+                    <OpenInEditorAction
+                        key="open-in-editor"
+                        repoPath={this.props.repoPath}
+                        commitID={this.props.commitID}
+                        filePath={this.props.filePath}
+                        location={this.props.location}
+                    />
+                }
+            />,
+            <RepoHeaderActionPortal
+                position="right"
+                key="toggle-line-wrap"
+                component={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
+            />,
+        ]
+
+        if (this.state.blob && this.state.blob.richHTML) {
+            actions.push(
+                <RepoHeaderActionPortal
+                    key="toggle-rendered-file-mode"
+                    position="right"
+                    component={
+                        <ToggleRenderedFileMode
+                            key="toggle-rendered-file-mode"
+                            mode={renderMode}
+                            location={this.props.location}
+                        />
+                    }
+                />
+            )
+        }
+
+        if (this.state.blob.richHTML && renderMode === 'rendered') {
+            return [...actions, <RenderedFile key="rendered-file" dangerousInnerHTML={this.state.blob.richHTML} />]
+        }
+
+        const hash = parseHash(this.props.location.hash)
+        const position = hash.line ? { line: hash.line, character: hash.character || 0 } : undefined
+
+        return [
+            ...actions,
+            <PageTitle key="page-title" title={this.getPageTitle()} />,
+            <Blob
+                key="blob"
+                repoPath={this.props.repoPath}
+                commitID={this.props.commitID}
+                filePath={this.props.filePath}
+                html={this.state.blob.highlight.html}
+                rev={this.props.rev}
+                wrapCode={this.state.wrapCode}
+                location={this.props.location}
+                history={this.props.history}
+            />,
+            hash.modal === 'references' &&
+                position && (
+                    <Resizable
+                        key="blob-page-references"
+                        className="blob-page__panel--resizable"
+                        handlePosition="top"
+                        defaultSize={350}
+                        storageKey="blob-page-references"
+                        component={
+                            <ReferencesWidget
+                                key="refs"
+                                repoPath={this.props.repoPath}
+                                commitID={this.props.commitID}
+                                rev={this.props.rev}
+                                referencesMode={hash.modalMode}
+                                filePath={this.props.filePath}
+                                position={position}
+                                location={this.props.location}
+                                history={this.props.history}
+                            />
+                        }
+                    />
+                ),
+        ]
+    }
+
+    private onDidUpdateLineWrap = (value: boolean) => this.setState({ wrapCode: value })
+
+    private getPageTitle(): string {
+        const repoPathSplit = this.props.repoPath.split('/')
+        const repoStr = repoPathSplit.length > 2 ? repoPathSplit.slice(1).join('/') : this.props.repoPath
+        if (this.props.filePath) {
+            const fileOrDir = this.props.filePath.split('/').pop()
+            return `${fileOrDir} - ${repoStr}`
+        }
+        return `${repoStr}`
+    }
 }
