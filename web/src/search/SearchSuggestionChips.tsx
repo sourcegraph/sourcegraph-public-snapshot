@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { routes } from '../routes'
 import { currentConfiguration } from '../settings/configuration'
+import { eventLogger } from '../tracking/eventLogger'
 import { fetchSearchScopes } from './backend'
 
 interface Props {
@@ -144,6 +145,7 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
     }
 
     private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
+        eventLogger.log('SearchSuggestionClicked')
         event.preventDefault()
         this.props.onSuggestionChosen(event.currentTarget.value)
 

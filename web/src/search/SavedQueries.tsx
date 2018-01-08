@@ -120,6 +120,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                 </button>
 
                                 <a
+                                    onClick={this.onDidClickQueryHelp}
                                     className="saved-queries__help"
                                     href="https://about.sourcegraph.com/docs/search/#saved-queries"
                                     target="_blank"
@@ -181,5 +182,9 @@ export class SavedQueries extends React.Component<Props, State> {
 
     private onDidDuplicateSavedQuery = () => {
         eventLogger.log('SavedQueryDuplicated')
+    }
+
+    private onDidClickQueryHelp = () => {
+        eventLogger.log('SavedQueriesHelpButtonClicked')
     }
 }

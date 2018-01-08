@@ -1,8 +1,18 @@
 import HelpIcon from '@sourcegraph/icons/lib/Help'
 import * as React from 'react'
+import { eventLogger } from '../tracking/eventLogger'
+
+const onDidClickSearchHelp = (): void => {
+    eventLogger.log('SearchHelpButtonClicked')
+}
 
 export const SearchHelp: React.SFC = () => (
-    <a className="search-help" href="https://about.sourcegraph.com/docs/search" target="_blank">
+    <a
+        onClick={onDidClickSearchHelp}
+        className="search-help"
+        href="https://about.sourcegraph.com/docs/search"
+        target="_blank"
+    >
         <small>
             <HelpIcon className="icon-inline" />
             <span className="search-help__text">Help</span>

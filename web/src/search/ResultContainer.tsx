@@ -2,6 +2,7 @@ import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import ChevronUpIcon from '@sourcegraph/icons/lib/ChevronUp'
 import * as React from 'react'
+import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
     /**
@@ -105,6 +106,9 @@ export class ResultContainer extends React.PureComponent<Props, State> {
     }
 
     private toggle = () => {
+        if (!this.state.expanded) {
+            eventLogger.log('SearchResultsExpanded')
+        }
         this.setState({ expanded: !this.state.expanded })
     }
 }

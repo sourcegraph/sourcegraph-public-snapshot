@@ -96,6 +96,9 @@ export class QueryInput extends React.Component<Props, State> {
     /** Only used for scroll state management */
     private selectedSuggestionElement?: HTMLElement
 
+    /** Only used to keep track if the user has typed a single character into the input field so we can log an event once. */
+    private hasLoggedFirstInput = false
+
     constructor(props: Props) {
         super(props)
 
@@ -334,6 +337,10 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        if (!this.hasLoggedFirstInput) {
+            eventLogger.log('SearchInitiated')
+            this.hasLoggedFirstInput = true
+        }
         this.inputValues.next(event.currentTarget.value)
     }
 

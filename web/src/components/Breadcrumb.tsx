@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { eventLogger } from '../tracking/eventLogger'
 import { toBlobURL, toPrettyRepoURL, toTreeURL } from '../util/url'
 
 export interface Props {
@@ -19,7 +20,7 @@ export class Breadcrumb extends React.Component<Props, {}> {
             }`
             if (link) {
                 spans.push(
-                    <Link key={i} className={className} to={link} title={part}>
+                    <Link onClick={this.logBreadcrumbClicked} key={i} className={className} to={link} title={part}>
                         {part}
                     </Link>
                 )
@@ -43,6 +44,8 @@ export class Breadcrumb extends React.Component<Props, {}> {
             <span className="breadcrumb">{spans}</span>
         )
     }
+
+    private logBreadcrumbClicked = () => eventLogger.log('SearchResultsBreadcrumbClicked')
 }
 
 export interface RepoBreadcrumbProps {
