@@ -8,7 +8,8 @@
         margin-left: 0.25rem;
     }
 
-    @media (max-width: $media-sm) {
+    @media (max-width: $media-lg) {
+        padding: 0 0.5rem;
         &__label {
             display: none;
         }
