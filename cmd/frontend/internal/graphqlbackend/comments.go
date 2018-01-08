@@ -296,6 +296,8 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 
 	// Send tx emails asynchronously.
 	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
 		for _, email := range emails {
 			var branch string
 			if thread.Branch != nil {

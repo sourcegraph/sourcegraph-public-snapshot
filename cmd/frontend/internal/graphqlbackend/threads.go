@@ -609,6 +609,8 @@ func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sour
 
 	// Send tx emails asynchronously.
 	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
 		repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
 		for _, email := range emails {
 			var branch string
