@@ -19,7 +19,7 @@
     &__row-column {
         display: flex;
         align-items: center;
-        width: calc(100% - 16.25rem);
+        width: calc(100% - 17rem);
     }
 
     &__description,
@@ -42,11 +42,9 @@
 
     &__results-container {
         display: flex;
-        flex: 0 0 auto;
         margin-bottom: 0;
         color: #cad2e2;
         min-width: 4rem;
-        margin-left: 0.5rem;
         justify-content: center;
 
         .icon {
@@ -55,8 +53,11 @@
         }
     }
 
-    &__actions {
-        margin-left: 0.75rem;
+    &__results-items {
+        width: 3.125rem;
+        justify-content: center;
+        display: flex;
+        vertical-align: middle;
     }
 
     &__query {
@@ -93,9 +94,11 @@
 
     .action {
         opacity: 0;
+        display: none;
     }
 
     &:hover .action {
+        display: block;
         opacity: 0.5;
     }
 
@@ -106,10 +109,6 @@
         .action {
             align-items: center;
             padding: 0.25rem 0.325rem;
-
-            &:first-child {
-                margin-left: -0.325rem;
-            }
 
             &:hover {
                 opacity: 1;
@@ -135,6 +134,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    &__actions:hover {
+        display: flex;
     }
 }
 
