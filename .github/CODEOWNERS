@@ -3,8 +3,10 @@
 # https://help.github.com/articles/about-codeowners/
 
 cmd/frontend/internal/graphqlbackend @nicksnyder
+git @keegancsmith
+migrations/ @keegancsmith
 migrations/ @nicksnyder
 monolith/ @keegancsmith
-searcher/ @keegancsmith
+search @keegancsmith
 web/ @felixfbecker
 xlang/ @keegancsmith
