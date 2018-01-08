@@ -20,7 +20,12 @@ import (
 // TrackUser handles user data logging during auth flows
 //
 // Specifically, updating user data properties in HubSpot
-func TrackUser(avatarURL *string, uid, email, event string) {
+func TrackUser(avatarURL, externalID *string, email, event string) {
+	var uid string
+	if externalID != nil {
+		uid = *externalID
+	}
+
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.TrackUser: %s", err)

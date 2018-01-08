@@ -63,7 +63,7 @@ class EventLogger {
                   email: string | null
               }
     ): void {
-        this.setUserIds(user.sourcegraphID, user.externalID, user.username)
+        this.setUserIds(user.sourcegraphID, user.externalID || '', user.username)
         if (user.email) {
             this.setUserEmail(user.email)
         }

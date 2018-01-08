@@ -43,11 +43,23 @@ func unmarshalUserID(id graphql.ID) (userID int32, err error) {
 	return
 }
 
-func (r *userResolver) ExternalID() string { return r.user.ExternalID }
+func (r *userResolver) ExternalID() *string { return r.user.ExternalID }
 
-func (r *userResolver) AuthID() string { return r.ExternalID() }
+func (r *userResolver) AuthID() string {
+	id := r.ExternalID()
+	if id == nil {
+		return ""
+	}
+	return *id
+}
 
-func (r *userResolver) Auth0ID() string { return r.ExternalID() }
+func (r *userResolver) Auth0ID() string {
+	id := r.ExternalID()
+	if id == nil {
+		return ""
+	}
+	return *id
+}
 
 func (r *userResolver) SourcegraphID() int32 { return r.user.ID }
 

@@ -194,7 +194,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 
 	return &sourcegraph.User{
 		ID:               id,
-		ExternalID:       info.ExternalID,
+		ExternalID:       &info.ExternalID,
 		Username:         info.Username,
 		DisplayName:      info.DisplayName,
 		ExternalProvider: info.ExternalProvider,
@@ -459,7 +459,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 			return nil, err
 		}
 		if dbExternalID.Valid {
-			u.ExternalID = dbExternalID.String
+			u.ExternalID = &dbExternalID.String
 		}
 		if dbExternalProvider.Valid {
 			u.ExternalProvider = dbExternalProvider.String

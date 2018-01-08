@@ -45,7 +45,7 @@ func init() {
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
 	UID        int32
-	ExternalID string `json:"externalID,omitempty"`
+	ExternalID *string `json:"externalID,omitempty"`
 }
 
 // JSContext is made available to JavaScript code via the

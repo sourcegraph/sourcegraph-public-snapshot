@@ -52,7 +52,7 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			}
 			db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*sourcegraph.User, error) {
 				calledCreate = true
-				return &sourcegraph.User{ID: 1, ExternalID: info.ExternalID, Username: info.Username}, nil
+				return &sourcegraph.User{ID: 1, ExternalID: &info.ExternalID, Username: info.Username}, nil
 			}
 			defer func() { db.Mocks = db.MockStores{} }()
 			handler.ServeHTTP(rr, req)
@@ -85,7 +85,8 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			var calledGetByUsername bool
 			db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*sourcegraph.User, error) {
 				calledGetByUsername = true
-				return &sourcegraph.User{ID: 1, ExternalID: "http-header:" + username, Username: username}, nil
+				extID := "http-header:" + username
+				return &sourcegraph.User{ID: 1, ExternalID: &extID, Username: username}, nil
 			}
 			defer func() { db.Mocks = db.MockStores{} }()
 			handler.ServeHTTP(rr, req)

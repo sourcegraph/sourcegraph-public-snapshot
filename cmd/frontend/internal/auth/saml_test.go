@@ -156,7 +156,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	const mockedUserID = 123
 	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*sourcegraph.User, error) {
 		if provider == mockedProvider && id == mockedExternalID {
-			return &sourcegraph.User{ID: mockedUserID, ExternalID: id, Username: id}, nil
+			return &sourcegraph.User{ID: mockedUserID, ExternalID: &id, Username: id}, nil
 		}
 		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
 	}

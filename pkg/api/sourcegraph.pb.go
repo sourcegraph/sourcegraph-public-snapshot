@@ -253,7 +253,7 @@ const (
 // User represents a registered user.
 type User struct {
 	ID               int32     `json:"ID,omitempty"`
-	ExternalID       string    `json:"externalID,omitempty"`
+	ExternalID       *string   `json:"externalID,omitempty"`
 	Username         string    `json:"username,omitempty"`
 	ExternalProvider string    `json:"externalProvider,omitempty"`
 	DisplayName      string    `json:"displayName,omitempty"`

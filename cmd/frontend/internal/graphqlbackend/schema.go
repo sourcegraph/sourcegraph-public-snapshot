@@ -802,7 +802,7 @@ type User implements Node, ConfigurationSubject {
 	id: ID!
 	authID: String! @deprecated(reason: "renamed to externalID - use that instead")
 	auth0ID: String! @deprecated(reason: "use externalID instead")
-	externalID: String!
+	externalID: String
 	sourcegraphID: Int!
 	email: String! @deprecated(reason: "use emails instead")
 	displayName: String
