@@ -66,6 +66,8 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
         // Always start with the scope suggestion that the user last clicked, if any.
         if (savedState.lastScopeValue) {
             this.props.onSuggestionChosen(savedState.lastScopeValue)
+        } else if (window.context.sourcegraphDotComMode) {
+            this.props.onSuggestionChosen('repogroup:sample ')
         }
 
         this.subscriptions.add(

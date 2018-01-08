@@ -87,15 +87,15 @@ export class SavedQueries extends React.Component<Props, State> {
             return <Loader />
         }
 
+        const isHomepage = this.props.location.pathname === '/search'
+
         // If not logged in, redirect to sign in
-        if (!this.state.user) {
+        if (!this.state.user && !isHomepage) {
             const newUrl = new URL(window.location.href)
             // Return to the current page after sign up/in.
             newUrl.searchParams.set('returnTo', window.location.href)
             return <Redirect to={'/sign-up' + newUrl.search} />
         }
-
-        const isHomepage = this.props.location.pathname === '/search'
 
         const savedQueries = this.state.savedQueries.filter(savedQuery => {
             if (isHomepage) {
