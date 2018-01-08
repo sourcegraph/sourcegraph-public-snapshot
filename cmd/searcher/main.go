@@ -32,15 +32,6 @@ var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind addres
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "0", "maximum size of the on disk cache in megabytes")
 
-func init() {
-	// In dev environment, use distinctive env var name
-	if profBindAddr == "" {
-		if frontendProfBindAddr, exists := os.LookupEnv("SEARCHER_PROF_HTTP"); exists {
-			profBindAddr = frontendProfBindAddr
-		}
-	}
-}
-
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()

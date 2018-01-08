@@ -1,7 +1,7 @@
 gitserver: env SRC_PROF_HTTP=:6068 .bin/gitserver
 indexer: .bin/indexer
 repo-updater: .bin/repo-updater
-searcher: $EXEC_SEARCHER .bin/searcher
+searcher: env SRC_PROF_HTTP=:6069 $EXEC_SEARCHER .bin/searcher
 github-proxy: .bin/github-proxy
 lsp-proxy: .bin/lsp-proxy -prof-http=:6061
 xlang-go: .bin/xlang-go -mode=tcp -addr=:4389 -prof-http=:6062

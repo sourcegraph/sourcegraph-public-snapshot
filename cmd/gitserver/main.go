@@ -28,15 +28,6 @@ var (
 	runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
 )
 
-func init() {
-	// In dev environment, use distinctive env var name
-	if profBindAddr == "" {
-		if frontendProfBindAddr, exists := os.LookupEnv("GITSERVER_PROF_HTTP"); exists {
-			profBindAddr = frontendProfBindAddr
-		}
-	}
-}
-
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
