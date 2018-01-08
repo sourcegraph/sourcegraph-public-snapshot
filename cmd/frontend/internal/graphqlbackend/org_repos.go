@@ -5,6 +5,7 @@ import (
 	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type orgRepoResolver struct {
@@ -47,4 +48,15 @@ func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
 	Limit  *int32
 }) *threadConnectionResolver {
 	return &threadConnectionResolver{o.org, []*sourcegraph.OrgRepo{o.repo}, []string{o.repo.CanonicalRemoteID}, args.File, args.Branch, args.Limit}
+}
+
+func (o *orgRepoResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
+	// See if a repository exists whose URI matches the canonical remote ID.
+	repo, err := db.Repos.GetByURI(ctx, o.repo.CanonicalRemoteID)
+	if err == db.ErrRepoNotFound {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	return &repositoryResolver{repo: repo}, nil
 }
