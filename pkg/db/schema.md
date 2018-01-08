@@ -199,7 +199,7 @@ Foreign-key constraints:
  name                    | citext                   | 
  description             | text                     | 
  language                | text                     | 
- enabled                 | boolean                  | not null default true
+ blocked                 | boolean                  | 
  fork                    | boolean                  | 
  private                 | boolean                  | 
  created_at              | timestamp with time zone | 
@@ -210,6 +210,7 @@ Foreign-key constraints:
  origin_repo_id          | text                     | 
  origin_service          | integer                  | 
  origin_api_base_url     | text                     | 
+ enabled                 | boolean                  | not null default true
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_uri_unique" UNIQUE, btree (uri)
