@@ -336,6 +336,8 @@ func (u *users) GetByUsername(ctx context.Context, username string) (*sourcegrap
 	return u.getOneBySQL(ctx, "WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 
+var ErrNoCurrentUser = errors.New("no current user")
+
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
 	if Mocks.Users.GetByCurrentAuthUser != nil {
 		return Mocks.Users.GetByCurrentAuthUser(ctx)
@@ -343,7 +345,7 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, er
 
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
-		return nil, errors.New("no current user")
+		return nil, ErrNoCurrentUser
 	}
 
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)

@@ -475,6 +475,8 @@ type SharedItemThread {
 type SharedItemOrgRepo {
 	id: Int!
 	remoteUri: String!
+	# See OrgRepo.repository.
+	repository: Repository
 }
 
 # Like the Comment type, except with fields that should not be accessible with a
@@ -884,6 +886,10 @@ type OrgRepo {
 	createdAt: String!
 	updatedAt: String!
 	threads(file: String, branch: String, limit: Int): ThreadConnection!
+	# The repository that this refers to, if the repository is available on the server. This is null
+	# for repositories that only exist for users locally (that they use with the editor) but that
+	# are not on the server.
+	repository: Repository
 }
 
 # A list of threads.
