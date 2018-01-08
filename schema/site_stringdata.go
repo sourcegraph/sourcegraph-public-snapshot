@@ -169,6 +169,10 @@ const SiteSchemaJSON = `{
       "description": "The project id on LightStep, only used for creating links to traces.",
       "type": "string"
     },
+    "useJaeger": {
+      "description": "Use local Jaeger instance for tracing.",
+      "type": "boolean"
+    },
     "noGoGetDomains": {
       "description": "List of domains to NOT perform go get on. Separated by ','.",
       "type": "string"

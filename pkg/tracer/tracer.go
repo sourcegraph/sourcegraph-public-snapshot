@@ -32,7 +32,7 @@ var lightstepAccessToken = conf.Get().LightstepAccessToken
 var lightstepProject = conf.Get().LightstepProject
 var lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span tags and logs to LightStep"))
 
-var useJaeger, _ = strconv.ParseBool(env.Get("USE_JAEGER", "", "send traces to Jaeger instead of LightStep"))
+var useJaeger = conf.Get().UseJaeger
 
 func Init(serviceName string) {
 	if useJaeger {
