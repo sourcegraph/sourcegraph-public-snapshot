@@ -338,6 +338,7 @@ export class RevSwitcher extends React.PureComponent<Props, State> {
 
         // Replace the revision in the current URL with the new one and push to history.
         this.props.history.push(replaceRevisionInURL(window.location.href, rev))
+        this.setState({ showSwitcher: false })
     }
 
     /**
