@@ -137,24 +137,7 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 		Err  error
 	})
 	go func() {
-		// We can't directly use WithTimeout, since we only want to start the
-		// timeout from the moment we acquire fetchSem below. However, if we
-		// use WithTimeout there then we will cancel before the the Reader
-		// returned by s.fetch has been read.
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		f, err := s.cache.Open(ctx, key, func(ctx context.Context) (io.ReadCloser, error) {
-			// s.fetch will fetch from gitserver. We limit concurrency here to
-			// ensure we don't overload gitserver.
-			s.fetchSem <- 1
-			defer func() { <-s.fetchSem }()
-
-			// We can now speak to gitserver, so start the context timeout
-			// from this point. See above comment for why we don't just use
-			// WithTimeout.
-			afterFunc(ctx, 2*time.Minute, cancel)
-
+		f, err := s.cache.Open(context.Background(), key, func(ctx context.Context) (io.ReadCloser, error) {
 			return s.fetch(ctx, repo, commit)
 		})
 		resC <- struct {
@@ -205,16 +188,38 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 // not populate the in-memory cache. You should probably be calling
 // openReader.
 func (s *Store) fetch(ctx context.Context, repo, commit string) (rc io.ReadCloser, err error) {
+	fetchQueueSize.Inc()
+	s.fetchSem <- 1 // Acquire concurrent fetches semaphore
+	fetchQueueSize.Dec()
+
+	// We expect git archive, even for large repos, to finish relatively
+	// quickly.
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+
+	fetching.Inc()
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Fetch")
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)
-	defer func() {
+
+	// Done is called when the returned reader is closed, or if this function
+	// returns an error.
+	done := func(err error) {
+		<-s.fetchSem // Release concurrent fetches semaphore
+		cancel()     // Release context resources
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
+			fetchFailed.Inc()
+			log.Printf("failed to fetch %s@%s: %s", repo, commit, err)
 		}
+		fetching.Dec()
 		span.Finish()
+	}
+	defer func() {
+		if rc == nil {
+			done(err)
+		}
 	}()
 
 	r, err := s.FetchTar(ctx, repo, commit)
@@ -234,10 +239,7 @@ func (s *Store) fetch(ctx context.Context, repo, commit string) (rc io.ReadClose
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
-		if err != nil {
-			fetchFailed.Inc()
-			log.Printf("failed to fetch %s@%s: %s", repo, commit, err)
-		}
+		done(err)
 		pw.CloseWithError(err)
 	}()
 
@@ -351,6 +353,18 @@ var (
 		Subsystem: "store",
 		Name:      "evictions",
 		Help:      "The total number of items evicted from the cache.",
+	})
+	fetching = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "searcher",
+		Subsystem: "store",
+		Name:      "fetching",
+		Help:      "The number of fetches currently running.",
+	})
+	fetchQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "searcher",
+		Subsystem: "store",
+		Name:      "fetch_queue_size",
+		Help:      "The number of fetch jobs enqueued.",
 	})
 	fetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "searcher",
