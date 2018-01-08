@@ -116,8 +116,9 @@ type SearchScope struct {
 
 // Settings Configuration settings for users and organizations on Sourcegraph Server.
 type Settings struct {
-	SearchSavedQueries []SearchSavedQueries `json:"search.savedQueries,omitempty"`
-	SearchScopes       []SearchScope        `json:"search.scopes,omitempty"`
+	SearchRepositoryGroups map[string][]string  `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries     []SearchSavedQueries `json:"search.savedQueries,omitempty"`
+	SearchScopes           []SearchScope        `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration Configuration for a Sourcegraph Server site.
@@ -153,7 +154,6 @@ type SiteConfiguration struct {
 	HtmlBodyTop                    string                     `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom                 string                     `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop                    string                     `json:"htmlHeadTop,omitempty"`
-	InactiveRepos                  string                     `json:"inactiveRepos,omitempty"`
 	LicenseKey                     string                     `json:"licenseKey,omitempty"`
 	LightstepAccessToken           string                     `json:"lightstepAccessToken,omitempty"`
 	LightstepProject               string                     `json:"lightstepProject,omitempty"`

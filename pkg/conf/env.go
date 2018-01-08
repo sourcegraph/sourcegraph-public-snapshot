@@ -34,7 +34,6 @@ var legacyEnvToFieldName = map[string]string{
 	"HtmlBodyTop":                    "HTML_BODY_TOP",
 	"HtmlHeadBottom":                 "HTML_HEAD_BOTTOM",
 	"HtmlHeadTop":                    "HTML_HEAD_TOP",
-	"InactiveRepos":                  "INACTIVE_REPOS",
 	"LicenseKey":                     "LICENSE_KEY",
 	"LightstepAccessToken":           "LIGHTSTEP_ACCESS_TOKEN",
 	"LightstepProject":               "LIGHTSTEP_PROJECT",

@@ -161,10 +161,6 @@ const SiteSchemaJSON = `{
         "$ref": "#/definitions/Repository"
       }
     },
-    "inactiveRepos": {
-      "description": "Comma-separated list of repos to consider 'inactive' (e.g. while searching).",
-      "type": "string"
-    },
     "lightstepAccessToken": {
       "description": "Access token for sending traces to LightStep.",
       "type": "string"

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -24,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -96,29 +98,34 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 		return mockResolveRepoGroups()
 	}
 
-	var active, inactive []*sourcegraph.Repo
-	if len(inactiveReposMap) != 0 {
-		var err error
-		active, inactive, err = listActiveAndInactive(ctx)
-		if err != nil {
-			return nil, err
+	groups := map[string][]*sourcegraph.Repo{}
+
+	// Repo groups can be defined in the search.repoGroups settings field.
+	merged, err := (&configurationCascadeResolver{}).Merged(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var settings schema.Settings
+	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
+		return nil, err
+	}
+	for name, repoPaths := range settings.SearchRepositoryGroups {
+		repos := make([]*sourcegraph.Repo, len(repoPaths))
+		for i, repoPath := range repoPaths {
+			repos[i] = &sourcegraph.Repo{URI: repoPath}
 		}
+		groups[name] = repos
 	}
 
-	var sample []*sourcegraph.Repo
 	if envvar.SourcegraphDotComMode() {
-		var err error
-		sample, err = getSampleRepos(ctx)
+		sampleRepos, err := getSampleRepos(ctx)
 		if err != nil {
 			return nil, err
 		}
+		groups["sample"] = sampleRepos
 	}
 
-	return map[string][]*sourcegraph.Repo{
-		"active":   active,
-		"inactive": inactive,
-		"sample":   sample,
-	}, nil
+	return groups, nil
 }
 
 var (
@@ -238,7 +245,8 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 
 	// Treat an include pattern with a suffix of "@rev" as meaning that all
 	// matched repos should be resolved to "rev".
-	includePatternRevs := make([][]revspecOrRefGlob, len(includePatterns))
+	includePatternRevs := make([][]revspecOrRefGlob, 0, len(includePatterns))
+	includePatternHasRev := make([]bool, len(includePatterns))
 	for i, includePattern := range includePatterns {
 		repoPattern, revs := parseRepositoryRevisions(includePattern)
 		// Validate pattern now so the error message is more recognizable to the
@@ -253,18 +261,28 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
 		includePatterns[i] = repoPattern
-		includePatternRevs[i] = revs
+		includePatternHasRev[i] = len(revs) > 0
+		if len(revs) > 0 {
+			includePatternRevs = append(includePatternRevs, revs)
+		}
 	}
 
 	// Support determining which include pattern with a rev (if any) matched
-	// a repo in the result set.
-	compiledIncludePatterns := make([]*regexp.Regexp, len(includePatterns))
+	// a repo in the result set. We only need to do this for include patterns with a rev.
+	//
+	// The element at index `i` in includePatternRevs corresponds to the element at index `i`
+	// in compiledIncludePatterns. (Include patterns with no revs are omitted in both of these
+	// slices.)
+	compiledIncludePatterns := make([]*regexp.Regexp, 0, len(includePatternRevs))
 	for i, includePattern := range includePatterns {
+		if !includePatternHasRev[i] {
+			continue // has no rev
+		}
 		p, err := regexp.Compile("(?i:" + includePattern + ")")
 		if err != nil {
 			return nil, nil, nil, false, &badRequestError{err}
 		}
-		compiledIncludePatterns[i] = p
+		compiledIncludePatterns = append(compiledIncludePatterns, p)
 	}
 	getRevsForMatchedRepo := func(repo string) []revspecOrRefGlob {
 		for i, pat := range compiledIncludePatterns {
@@ -290,6 +308,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 
 	repoRevisions = make([]*repositoryRevisions, 0, len(repos.Repos))
 	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
+	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos.Repos {
 		repoRev := &repositoryRevisions{
 			repo: repo,
@@ -321,6 +340,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		))
 		repoRevisions = append(repoRevisions, repoRev)
 	}
+	tr.LazyPrintf("Associate/validate revs - done")
 
 	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
 }
