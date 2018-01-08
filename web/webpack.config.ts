@@ -42,7 +42,7 @@ if (process.env.NODE_ENV === 'production') {
 
 plugins.push(
     new ExtractTextPlugin({
-        filename: 'ui/assets/dist/[name].bundle.css',
+        filename: 'styles/[name].bundle.css',
         allChunks: true,
     })
 )
@@ -66,11 +66,17 @@ const config: webpack.Configuration = {
         style: path.join(__dirname, 'src/app.scss'),
     },
     output: {
-        path: path.join(__dirname, '../ui/assets/scripts'),
-        filename: '[name].bundle.js',
-        chunkFilename: '[id].chunk.js',
+        path: path.join(__dirname, '../ui/assets'),
+        filename: 'scripts/[name].bundle.js',
+        chunkFilename: 'scripts/[id].chunk.js',
     },
     devtool,
+    devServer: {
+        contentBase: '../ui/assets',
+        noInfo: true,
+        port: 3088,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+    },
     plugins,
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
