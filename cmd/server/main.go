@@ -27,6 +27,7 @@ var defaultEnv = map[string]string{
 	"SRC_SYNTECT_SERVER":      "http://localhost:3700",
 	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
+	"GITHUB_BASE_URL":         "http://127.0.0.1:3180", // points to github-proxy
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher to ensure this value isn't larger than the volume for
