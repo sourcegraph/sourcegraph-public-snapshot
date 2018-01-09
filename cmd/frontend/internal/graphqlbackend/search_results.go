@@ -371,10 +371,37 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 	// Calculate value from scratch.
 	searchResultsStatsCounter.WithLabelValues("miss").Inc()
-	v, err := r.doResults(ctx, "")
-	if err != nil {
-		return nil, err // do not cache errors.
+	attempts := 0
+	var v *searchResults
+	for {
+		// Query search results.
+		var err error
+		v, err = r.doResults(ctx, "")
+		if err != nil {
+			return nil, err // do not cache errors.
+		}
+		if v.ResultCount() > 0 {
+			break
+		}
+
+		cloning := len(v.Cloning())
+		timedout := len(v.Timedout())
+		if cloning == 0 && timedout == 0 {
+			break // zero results, but no cloning or timed out repos. No point in retrying.
+		}
+
+		if attempts > 5 {
+			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", len(v.Cloning()), "timedout", len(v.Timedout()))
+			return nil, fmt.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", len(v.Cloning()), len(v.Timedout()))
+		}
+
+		// We didn't find any search results. Some repos are cloning or timed
+		// out, so try again in a few seconds.
+		attempts++
+		log15.Warn("sparkline generation found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", len(v.Cloning()), "timedout", len(v.Timedout()))
+		time.Sleep(5 * time.Second)
 	}
+
 	sparkline, err := v.Sparkline(ctx)
 	if err != nil {
 		return nil, err // sparkline generation failed, so don't cache.
@@ -384,12 +411,16 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		JSparkline:              sparkline,
 	}
 
-	// Store value in the cache.
-	jsonRes, err = json.Marshal(stats)
-	if err != nil {
-		return nil, err
+	// Store in the cache if we got non-zero results. If we got zero results,
+	// it should be quick and caching is not desired because e.g. it could be
+	// a query for a repo that has not been added by the user yet.
+	if v.ResultCount() > 0 {
+		jsonRes, err = json.Marshal(stats)
+		if err != nil {
+			return nil, err
+		}
+		searchResultsStatsCache.Set(cacheKey, jsonRes)
 	}
-	searchResultsStatsCache.Set(cacheKey, jsonRes)
 	return stats, nil
 
 }
