@@ -42,10 +42,11 @@ type DeploymentOverrides struct {
 
 // GitHubConnection
 type GitHubConnection struct {
-	Certificate string   `json:"certificate,omitempty"`
-	Repos       []string `json:"repos,omitempty"`
-	Token       string   `json:"token"`
-	Url         string   `json:"url,omitempty"`
+	Certificate       string   `json:"certificate,omitempty"`
+	PreemptivelyClone bool     `json:"preemptivelyClone,omitempty"`
+	Repos             []string `json:"repos,omitempty"`
+	Token             string   `json:"token"`
+	Url               string   `json:"url,omitempty"`
 }
 
 // OpenIDConnectAuthProvider Configures the OpenID Connect authentication provider for SSO.

@@ -358,9 +358,14 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "repos": {
-          "description": "Optional list of additional repositories to clone (in \"owner/repo\" format).",
+          "description": "Optional list of additional repositories to add (in \"owner/repo\" format).",
           "type": "array",
           "items": { "type": "string" }
+        },
+        "preemptivelyClone": {
+          "description":
+            "Preemptively clone GitHub repositories added (instead of cloning on-demand when the repository is searched or viewed)",
+          "type": "boolean"
         }
       }
     },
