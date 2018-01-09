@@ -17,6 +17,8 @@ parts will be automated.
 1. Prepare a branch / ensure documentation is in sync with everything
    mentioned in the [CHANGELOG](../../CHANGELOG.md). This is done in
    [sourcegraph/website](https://github.com/sourcegraph/website).
+1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseBuild` to the
+   timestamp and semver version string of the new version.
 1. `git push origin -f origin/master:docker-images/server`
 1. Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
 1. `gcloud docker -- pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
