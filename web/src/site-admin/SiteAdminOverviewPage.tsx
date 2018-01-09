@@ -31,6 +31,8 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
 
     private subscriptions = new Subscription()
 
+    private logEnableCodeIntelligenceClicked = () => eventLogger.log('EnableCodeIntelligenceClicked')
+
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminOverview')
 
@@ -146,6 +148,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                             href="https://about.sourcegraph.com/docs/code-intelligence?utm_source=server"
                                             target="_blank"
                                             className="btn btn-primary btn-sm site-admin-overview-page__item-action"
+                                            onClick={this.logEnableCodeIntelligenceClicked}
                                         >
                                             <CheckmarkIcon className="icon-inline" /> Enable code intelligence
                                         </a>
