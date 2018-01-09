@@ -110,6 +110,11 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	onelineCmd := r.command("git", onelineArgs...)
 	data, complete, err := readUntilTimeout(ctx, onelineCmd)
 	if err != nil {
+		// Don't fail if the repository is empty.
+		if strings.Contains(err.Error(), "does not have any commits yet") {
+			return nil, true, nil
+		}
+
 		return nil, complete, err
 	}
 	onelineCommits, err := parseCommitsFromOnelineLog(data)
