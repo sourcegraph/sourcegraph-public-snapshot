@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -140,6 +141,18 @@ func updateForClient(ctx context.Context, client *github.Client) error {
 // It adds each repository with a URI of the form
 // "${GITHUB_CLIENT_HOSTNAME}/${GITHUB_REPO_FULL_NAME}".
 func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*github.Repository) error {
+	// Sort repos by most recently pushed, so we prioritize cloning repos first that are more likely
+	// to be important.
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].GetPushedAt().Time.After(repos[j].GetPushedAt().Time)
+	})
+
+	// Only preemptively clone the first N recently pushed repositories. The other repositories will
+	// be cloned on-demand (when searched or viewed).
+	//
+	// TODO(sqs): make this logic more sophisticated and configurable
+	const cloneMostRecentlyPushed = 7
+
 	for i, ghRepo := range repos {
 		hostPart := client.BaseURL.Host
 		if hostPart == "api.github.com" {
@@ -153,26 +166,24 @@ func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*gith
 			continue
 		}
 
-		// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
-		cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, repo.URI)
-		if err != nil {
-			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
-			continue
-		}
-		if !conf.Get().DisableAutoGitUpdates || !cloned {
-			log15.Debug("fetching GitHub repo", "repo", repo.URI, "cloned", cloned)
-			err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.URI)
+		shouldClone := i < cloneMostRecentlyPushed // don't auto-clone the rest
+		if shouldClone {
+			// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
+			isCloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, repo.URI)
 			if err != nil {
-				log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
+				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 				continue
+			}
+			if !conf.Get().DisableAutoGitUpdates || !isCloned {
+				log15.Debug("fetching GitHub repo", "repo", repo.URI, "cloned", isCloned)
+				err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.URI)
+				if err != nil {
+					log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
+					continue
+				}
 			}
 		}
 
-		// Every 100 repos we clone, wait a bit to prevent overloading gitserver.
-		if i > 0 && i%100 == 0 {
-			log15.Info(fmt.Sprintf("%d out of %d repositories updated. Waiting for a moment.", i, len(repos)))
-			time.Sleep(1 * time.Minute)
-		}
 	}
 
 	return nil
