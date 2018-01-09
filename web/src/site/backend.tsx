@@ -25,6 +25,7 @@ export function refreshSiteFlags(): Observable<never> {
                     totalCount
                 }
                 needsRepositoryConfiguration
+                hasCodeIntelligence
             }
         }
     `).pipe(

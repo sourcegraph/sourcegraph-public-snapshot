@@ -972,6 +972,10 @@ type Site implements ConfigurationSubject {
 	telemetrySamples: [String!]!
 	# Whether the site needs to be configured to add repositories.
 	needsRepositoryConfiguration: Boolean!
+	# Whether the site has code intelligence. This field will be expanded in the future to describe
+	# more about the code intelligence available (languages supported, etc.). It is subject to
+	# change without notice.
+	hasCodeIntelligence: Boolean!
 }
 
 # The configuration for a site.
