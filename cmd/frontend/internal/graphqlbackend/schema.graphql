@@ -952,9 +952,12 @@ type Site implements ConfigurationSubject {
 		# Returns the first n threads from the list.
 		first: Int
 	): ThreadConnection!
-	# The version string of the Sourcegraph Server version that is running
-	# on this site.
-	version: String!
+	# The build version of the Sourcegraph Server software that is running on this site (of the form
+	# NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
+	buildVersion: String!
+	# The product version of the Sourcegraph Server software that is running on this site (in semver
+	# form, like 1.2.3).
+	productVersion: String!
 	# Information about software updates for version of Sourcegraph Server that
 	# this site is running.
 	updateCheck: UpdateCheck!

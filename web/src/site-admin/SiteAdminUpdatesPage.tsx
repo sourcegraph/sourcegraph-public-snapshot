@@ -19,7 +19,8 @@ interface Props extends RouteComponentProps<any> {}
 export interface State {
     channel?: string | null
     telemetryEnabled?: boolean
-    version?: string
+    buildVersion?: string
+    productVersion?: string
     updateCheck?: GQL.IUpdateCheck
     error?: string
 }
@@ -39,11 +40,12 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
             fetchSite({ telemetrySamples: false })
                 .pipe(withLatestFrom(fetchSiteUpdateCheck()))
                 .subscribe(
-                    ([site, { version, updateCheck }]) =>
+                    ([site, { buildVersion, productVersion, updateCheck }]) =>
                         this.setState({
                             channel: getUpdateChannel(site.configuration.effectiveContents),
                             telemetryEnabled: getTelemetryEnabled(site.configuration.effectiveContents),
-                            version,
+                            buildVersion,
+                            productVersion,
                             updateCheck,
                             error: undefined,
                         }),
@@ -98,7 +100,9 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                 {this.state.updateCheck && (
                     <p className="site-admin-updates_page__info">
                         <small>
-                            <strong>Current version:</strong> {this.state.version}
+                            <strong>Current product version:</strong> {this.state.productVersion} ({
+                                this.state.buildVersion
+                            })
                         </small>
                         <br />
                         <small>

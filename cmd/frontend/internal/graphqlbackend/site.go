@@ -10,6 +10,7 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -89,7 +90,9 @@ func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
 	return canReloadSite && err == nil
 }
 
-func (r *siteResolver) Version() string { return env.Version }
+func (r *siteResolver) BuildVersion() string { return env.Version }
+
+func (r *siteResolver) ProductVersion() string { return updatecheck.ProductVersion }
 
 func (r *siteResolver) TelemetrySamples(ctx context.Context) ([]string, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {

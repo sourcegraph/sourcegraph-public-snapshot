@@ -456,12 +456,17 @@ export function fetchAllThreads(args: { first?: number }): Observable<GQL.IThrea
     )
 }
 
-export function fetchSiteUpdateCheck(): Observable<{ version: string; updateCheck: GQL.IUpdateCheck }> {
+export function fetchSiteUpdateCheck(): Observable<{
+    buildVersion: string
+    productVersion: string
+    updateCheck: GQL.IUpdateCheck
+}> {
     return queryGraphQL(
         gql`
             query SiteUpdateCheck() {
                 site {
-                    version
+                    buildVersion
+                    productVersion
                     updateCheck {
                         pending
                         checkedAt
@@ -475,7 +480,11 @@ export function fetchSiteUpdateCheck(): Observable<{ version: string; updateChec
             if (!data || !data.site || !data.site.updateCheck) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return { version: data.site.version, updateCheck: data.site.updateCheck }
+            return {
+                buildVersion: data.site.buildVersion,
+                productVersion: data.site.productVersion,
+                updateCheck: data.site.updateCheck,
+            }
         })
     )
 }
