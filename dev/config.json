@@ -44,5 +44,33 @@
     "password": "Gk9_YjhgJMvKu4OW9SK2aw"
   },
   "update.channel": "release",
+  "settings": {
+    "search.scopes": [
+      {
+        "name": "Test code",
+        "value": "file:(test|spec)"
+      },
+      {
+        "name": "Non-test files",
+        "value": "-file:(test|spec)"
+      },
+      {
+        "name": "JSON files",
+        "value": "file:\\.json$"
+      },
+      {
+        "name": "Text documents",
+        "value": "file:\\.(txt|md)$"
+      },
+      {
+        "name": "Non-vendor code",
+        "value": "-file:vendor/ -file:node_modules/"
+      },
+      {
+        "name": "Vendored code",
+        "value": "file:(vendor|node_modules)/"
+      }
+    ]
+  },
   "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK"
 }

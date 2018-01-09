@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { SaveToolbar } from '../components/SaveToolbar'
-import { editorSearchActions } from '../site-admin/configHelpers'
+import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 import { addEditorAction } from '../util/monaco'
 import { isStandaloneCodeEditor, MonacoSettingsEditor } from './MonacoSettingsEditor'
@@ -134,7 +134,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
                         <div className="site-admin-configuration-page__actions">
-                            {editorSearchActions.map(({ id, label }) => (
+                            {settingsActions.map(({ id, label }) => (
                                 <button
                                     key={id}
                                     className="btn btn-primary btn-sm site-admin-configuration-page__action"
@@ -180,7 +180,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 disposableToFn(
                     this.monaco.editor.onDidCreateModel(model => {
                         if (this.editor && isStandaloneCodeEditor(this.editor)) {
-                            for (const { id, label, run } of editorSearchActions) {
+                            for (const { id, label, run } of settingsActions) {
                                 addEditorAction(this.editor, model, label, id, run)
                             }
                         }

@@ -229,7 +229,7 @@ const SiteSchemaJSON = `{
     },
     "searchScopes": {
       "description":
-        "JSON array of custom search scopes (e.g., [{\"name\":\"Text Files\",\"value\":\"file:\\.txt$\"}])",
+        "JSON array of custom search scopes (e.g., [{\"name\":\"Text Files\",\"value\":\"file:\\.txt$\"}]).\n\nDEPRECATED: Values should be moved to the \"settings\" field's \"search.scopes\" property.",
       "type": "array",
       "items": {
         "$ref": "settings.schema.json#/definitions/SearchScope"

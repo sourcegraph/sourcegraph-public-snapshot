@@ -15,7 +15,7 @@ import { isStandaloneCodeEditor, MonacoSettingsEditor } from '../settings/Monaco
 import { eventLogger } from '../tracking/eventLogger'
 import { addEditorAction } from '../util/monaco'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { editorActions } from './configHelpers'
+import { siteConfigActions } from './configHelpers'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -244,7 +244,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                         Quick configure:
                                     </div>
                                     <div className="site-admin-configuration-page__actions">
-                                        {editorActions.map(({ id, label }) => (
+                                        {siteConfigActions.map(({ id, label }) => (
                                             <button
                                                 key={id}
                                                 className="btn btn-primary btn-sm site-admin-configuration-page__action"
@@ -330,7 +330,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 disposableToFn(
                     this.monaco.editor.onDidCreateModel(model => {
                         if (this.editor && isStandaloneCodeEditor(this.editor)) {
-                            for (const { id, label, run } of editorActions) {
+                            for (const { id, label, run } of siteConfigActions) {
                                 addEditorAction(this.editor, model, label, id, run)
                             }
                         }

@@ -1,7 +1,6 @@
 package graphqlbackend
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -18,41 +17,10 @@ var (
 )
 
 func init() {
-	if conf.Get().SearchScopes == nil {
-		searchScopesList = defaultSearchScopes()
-	} else {
-		searchScopesList = make([]*searchScope, len(conf.Get().SearchScopes))
-		for i, s := range conf.Get().SearchScopes {
-			searchScopesList[i] = &searchScope{JName: s.Name, JValue: s.Value}
-		}
+	searchScopesList = make([]*searchScope, len(conf.Get().SearchScopes))
+	for i, s := range conf.Get().SearchScopes {
+		searchScopesList[i] = &searchScope{JName: s.Name, JValue: s.Value}
 	}
-}
-
-func defaultSearchScopes() []*searchScope {
-	var prependScope string
-	var defaultSearchScopes []*searchScope
-	if envvar.SourcegraphDotComMode() {
-		prependScope = "repogroup:sample "
-		defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "Sample repositories", JValue: "repogroup:sample"})
-	}
-	defaultSearchScopes = append(defaultSearchScopes, &searchScope{JName: "All repositories", JValue: ""})
-
-	scopes := []*searchScope{
-		{JName: "Test code", JValue: "file:(test|spec)"},
-		{JName: "Non-test files", JValue: "-file:(test|spec)"},
-		{JName: "JSON files", JValue: `file:\.json$`},
-		{JName: "Text documents", JValue: `file:\.(txt|md)$`},
-		{JName: "Non-vendor code", JValue: "-file:vendor/ -file:node_modules/"},
-		{JName: "Vendored code", JValue: "file:(vendor|node_modules)/"},
-	}
-	if prependScope != "" {
-		for _, scope := range scopes {
-			scope.JValue = prependScope + scope.JValue
-		}
-	}
-	defaultSearchScopes = append(defaultSearchScopes, scopes...)
-
-	return defaultSearchScopes
 }
 
 func (r *schemaResolver) SearchScopes() []*searchScope {
