@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -16,7 +15,6 @@ import (
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/prometheus/client_golang/prometheus"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -24,7 +22,6 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -239,70 +236,7 @@ func (sr *searchResults) blameFileMatch(ctx context.Context, fm *fileMatch, cach
 	return hunks[0].Author.Date, nil
 }
 
-var (
-	sparklineFileCache        = rcache.NewWithTTL("sparkline_file", 3600) // 1h
-	sparklineFileCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "graphql",
-		Name:      "sparkline_file_cache_hit",
-		Help:      "Counts cache hits and misses for SearchResults.Sparkline file calculations.",
-	}, []string{"type"})
-
-	sparklineGenericCache        = rcache.NewWithTTL("sparkline_generic", 5*60) // 5m
-	sparklineGenericCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "graphql",
-		Name:      "sparkline_generic_cache_hit",
-		Help:      "Counts cache hits and misses for SearchResults.Sparkline generic calculations.",
-	}, []string{"type"})
-)
-
-func init() {
-	prometheus.MustRegister(sparklineFileCacheCounter)
-	prometheus.MustRegister(sparklineGenericCacheCounter)
-}
-
 func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err error) {
-	if sr.combinedQuery == "" {
-		panic("internal search error (expected combined query to be present)")
-	}
-	cache := sparklineGenericCache
-	counter := sparklineGenericCacheCounter
-	if sr.queryForFileMatches {
-		// The query is for file matches. These are slower for calculating the
-		// sparkline information (requires blame), so we use a different cache
-		// with higher TTL.
-		cache = sparklineFileCache
-		counter = sparklineFileCacheCounter
-	}
-
-	// Check if value is in the cache.
-	jsonRes, ok := cache.Get(sr.combinedQuery)
-	if ok {
-		counter.WithLabelValues("hit").Inc()
-		if err := json.Unmarshal(jsonRes, &sparkline); err != nil {
-			return nil, err
-		}
-		return sparkline, nil
-	}
-
-	// Calculate value from scratch.
-	counter.WithLabelValues("miss").Inc()
-	sparkline, err = sr.doCalculateSparkline(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Store value in the cache.
-	jsonRes, err = json.Marshal(sparkline)
-	if err != nil {
-		return nil, err
-	}
-	cache.Set(sr.combinedQuery, jsonRes)
-	return sparkline, nil
-}
-
-func (sr *searchResults) doCalculateSparkline(ctx context.Context) (sparkline []int32, err error) {
 	var (
 		days     = 30                 // number of days the sparkline represents
 		maxBlame = 100                // maximum number of file results to blame for date/time information.
