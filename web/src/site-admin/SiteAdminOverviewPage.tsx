@@ -1,6 +1,8 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
+import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import CityIcon from '@sourcegraph/icons/lib/City'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
+import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import UserIcon from '@sourcegraph/icons/lib/User'
@@ -131,6 +133,26 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             </div>
                         </li>
                     )}
+                    {this.state.info &&
+                        this.state.info.repositories > 0 && (
+                            <li className="site-admin-overview-page__item site-admin-overview-page__item">
+                                <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
+                                    <GlobeIcon className="icon-inline site-admin-overview-page__item-header-icon" />
+                                    Code intelligence is {this.state.info.hasCodeIntelligence ? 'on' : 'off'}
+                                </div>
+                                <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
+                                    {!this.state.info.hasCodeIntelligence && (
+                                        <a
+                                            href="https://about.sourcegraph.com/docs/code-intelligence?utm_source=server"
+                                            target="_blank"
+                                            className="btn btn-primary btn-sm site-admin-overview-page__item-action"
+                                        >
+                                            <CheckmarkIcon className="icon-inline" /> Enable code intelligence
+                                        </a>
+                                    )}
+                                </div>
+                            </li>
+                        )}
                 </ul>
             </div>
         )
@@ -141,6 +163,7 @@ interface OverviewInfo {
     repositories: number
     users: number
     orgs: number
+    hasCodeIntelligence: boolean
 }
 
 function fetchOverview(): Observable<OverviewInfo> {
@@ -156,6 +179,7 @@ function fetchOverview(): Observable<OverviewInfo> {
                 orgs {
                     totalCount
                 }
+                hasCodeIntelligence
             }
         }
     `).pipe(
@@ -167,6 +191,7 @@ function fetchOverview(): Observable<OverviewInfo> {
                 repositories: data.site.repositories.totalCount,
                 users: data.site.users.totalCount,
                 orgs: data.site.orgs.totalCount,
+                hasCodeIntelligence: data.site.hasCodeIntelligence,
             }
         })
     )
