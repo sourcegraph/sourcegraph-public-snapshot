@@ -17,6 +17,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { currentUser } from '../auth'
 import { ServerBanner } from '../marketing/ServerBanner'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
@@ -47,6 +48,7 @@ interface State {
     timedout: string[]
     showModal?: boolean
     didSave?: boolean
+    user?: GQL.IUser | null
 }
 
 export class SearchResults extends React.Component<Props, State> {
@@ -163,6 +165,7 @@ export class SearchResults extends React.Component<Props, State> {
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
+        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
     }
 
     public componentWillReceiveProps(newProps: Props): void {
@@ -266,11 +269,12 @@ export class SearchResults extends React.Component<Props, State> {
                                     {this.state.searchDuration! / 1000} seconds
                                 </span>
                             )}
-                            {!this.state.didSave && (
-                                <button onClick={this.showSaveQueryModal} className="btn btn-link">
-                                    <SaveIcon className="icon-inline" /> Save this search query
-                                </button>
-                            )}
+                            {!this.state.didSave &&
+                                this.state.user && (
+                                    <button onClick={this.showSaveQueryModal} className="btn btn-link">
+                                        <SaveIcon className="icon-inline" /> Save this search query
+                                    </button>
+                                )}
                             {this.state.didSave && (
                                 <span>
                                     <CheckmarkIcon className="icon-inline" /> Query saved
