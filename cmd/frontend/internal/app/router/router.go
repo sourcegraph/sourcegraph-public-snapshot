@@ -15,7 +15,8 @@ const (
 
 	OpenSearch = "opensearch"
 
-	RepoBadge = "repo.badge"
+	RepoBadge          = "repo.badge"
+	RepoExternalCommit = "repo.external.commit"
 
 	Logout = "logout"
 
@@ -83,6 +84,9 @@ func New() *Router {
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
+
+	repoExternal := repo.PathPrefix("/external/").Subrouter()
+	repoExternal.Path("/commit/{commit}").Methods("GET").Name(RepoExternalCommit)
 
 	// Must come last
 	base.PathPrefix("/").Methods("GET").Name(UI)

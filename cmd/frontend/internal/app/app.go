@@ -33,6 +33,7 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.OpenSearch).Handler(traceutil.TraceRoute(http.HandlerFunc(openSearch)))
 
 	r.Get(router.RepoBadge).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoBadge)))
+	r.Get(router.RepoExternalCommit).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoExternalCommit)))
 
 	// Redirects
 	r.Get(router.OldToolsRedirect).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

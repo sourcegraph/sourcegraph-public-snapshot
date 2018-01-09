@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"sync"
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -24,45 +23,35 @@ func main() {
 
 	waitForFrontend(ctx)
 
-	var wg sync.WaitGroup
-
 	// Repos List syncing thread
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		if err := repos.RunRepositorySyncWorker(ctx); err != nil {
 			log.Fatalf("Fatal error RunRepositorySyncWorker: %s", err)
 		}
 	}()
 
 	// GitHub Repository syncing thread
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		if err := repos.RunGitHubRepositorySyncWorker(ctx); err != nil {
 			log.Fatalf("Fatal error RunGitHubRepositorySyncWorker: %s", err)
 		}
 	}()
 
 	// Phabricator Repository syncing thread
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		if err := repos.RunPhabricatorRepositorySyncWorker(ctx); err != nil {
 			log.Fatalf("Fatal error RunPhabricatorRepositorySyncworker: %s", err)
 		}
 	}()
 
 	// Gitolite syncing thread
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		if err := repos.RunGitoliteRepositorySyncWorker(ctx); err != nil {
 			log.Fatalf("Fatal error RunGitoliteRepositorySyncWorker: %s", err)
 		}
 	}()
 
-	wg.Wait()
+	select {}
 }
 
 func waitForFrontend(ctx context.Context) {

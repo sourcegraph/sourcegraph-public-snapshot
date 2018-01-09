@@ -58,7 +58,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
             commit_search_result: { ...telemetryData, target: 'text' },
         })
 
-    const commitURL = `https://${props.result.commit.repository.uri}/commit/${props.result.commit.oid}`
+    const commitURL = `/${props.result.commit.repository.uri}/-/external/commit/${props.result.commit.oid}`
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoBreadcrumb repoPath={props.result.commit.repository.uri} rev={props.result.commit.oid} filePath={''} />
