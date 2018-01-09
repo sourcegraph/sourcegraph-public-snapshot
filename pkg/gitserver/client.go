@@ -193,11 +193,16 @@ type cmdReader struct {
 func (c *cmdReader) Read(p []byte) (int, error) {
 	n, err := c.rc.Read(p)
 	if err == io.EOF {
+		stderr := c.trailer.Get("X-Exec-Stderr")
+		if len(stderr) > 100 {
+			stderr = stderr[:100] + "... (truncated)"
+		}
+
 		if errorMsg := c.trailer.Get("X-Exec-Error"); errorMsg != "" {
-			return 0, errors.New(errorMsg)
+			return 0, fmt.Errorf("%s (stderr: %q)", errorMsg, stderr)
 		}
 		if exitStatus := c.trailer.Get("X-Exec-Exit-Status"); exitStatus != "0" {
-			return 0, fmt.Errorf("non-zero exit status: %s", exitStatus)
+			return 0, fmt.Errorf("non-zero exit status: %s (stderr: %q)", exitStatus, stderr)
 		}
 	}
 	return n, err
