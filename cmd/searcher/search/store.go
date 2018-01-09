@@ -203,8 +203,14 @@ func (s *Store) fetch(ctx context.Context, repo, commit string) (rc io.ReadClose
 	span.SetTag("commit", commit)
 
 	// Done is called when the returned reader is closed, or if this function
-	// returns an error.
+	// returns an error. It should always be called once.
+	doneCalled := false
 	done := func(err error) {
+		if doneCalled {
+			panic("Store.fetch.done called twice")
+		}
+		doneCalled = true
+
 		<-s.fetchSem // Release concurrent fetches semaphore
 		cancel()     // Release context resources
 		if err != nil {
@@ -228,6 +234,10 @@ func (s *Store) fetch(ctx context.Context, repo, commit string) (rc io.ReadClose
 	}
 
 	pr, pw := io.Pipe()
+
+	// After this point we are not allowed to return an error. Instead we can
+	// return an error via the reader we return. If you do want to update this
+	// code please ensure we still always call done once.
 
 	// Write tr to zw. Return the first error encountered, but clean up if
 	// we encounter an error.
