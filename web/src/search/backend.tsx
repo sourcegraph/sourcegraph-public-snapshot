@@ -104,12 +104,12 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
     )
 }
 
-export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.ISearchResults> {
+export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.ISearchResultsStats> {
     return queryGraphQL(
         gql`
             query SearchResultsStats($query: String!) {
                 search(query: $query) {
-                    results {
+                    stats {
                         approximateResultCount
                         sparkline
                     }
@@ -119,10 +119,10 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
         { query: options.query }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.results) {
+            if (!data || !data.search || !data.search.stats) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            return data.search.results
+            return data.search.stats
         })
     )
 }
