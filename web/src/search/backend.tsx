@@ -107,7 +107,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
 export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(
         gql`
-            query SearchResultsCount($query: String!) {
+            query SearchResultsStats($query: String!) {
                 search(query: $query) {
                     results {
                         limitHit
