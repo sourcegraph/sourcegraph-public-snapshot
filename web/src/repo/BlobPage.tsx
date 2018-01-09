@@ -25,6 +25,7 @@ import { triggerBlame } from '../blame'
 import { PageTitle } from '../components/PageTitle'
 import { Resizable } from '../components/Resizable'
 import { ReferencesWidget } from '../references/ReferencesWidget'
+import { colorTheme, getColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../util'
 import { memoizeObservable } from '../util/memoize'
@@ -39,6 +40,7 @@ import {
     getCodeCell,
     getCodeCells,
     makeRepoURI,
+    ParsedRepoURI,
 } from './index'
 import { RenderedFile } from './RenderedFile'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
@@ -646,17 +648,21 @@ class Blob extends React.Component<Props, State> {
     })
 }
 
+export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean }): string {
+    return makeRepoURI(parsed) + parsed.isLightTheme
+}
+
 const fetchBlob = memoizeObservable(
-    (args: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.IFile> =>
+    (args: { repoPath: string; commitID: string; filePath: string; isLightTheme: boolean }): Observable<GQL.IFile> =>
         queryGraphQL(
             gql`
-                query Blob($repoPath: String!, $commitID: String!, $filePath: String!) {
+                query Blob($repoPath: String!, $commitID: String!, $filePath: String!, $isLightTheme: Boolean) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
                             commit {
                                 file(path: $filePath) {
                                     richHTML
-                                    highlight(disableTimeout: false, isLightTheme: true) {
+                                    highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
                                         # TODO!(sqs): deal with aborted highlights
                                         aborted
                                         html
@@ -686,7 +692,7 @@ const fetchBlob = memoizeObservable(
                 return data.repository.commit.commit.file
             })
         ),
-    makeRepoURI
+    fetchBlobCacheKey
 )
 
 interface BlobPageProps {
@@ -742,10 +748,25 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
 
         // Fetch repository revision.
         this.subscriptions.add(
-            this.specChanges
+            merge(
+                this.specChanges.pipe(
+                    map(specChanges => ({ ...specChanges, isLightTheme: getColorTheme() === 'light' }))
+                ),
+                colorTheme.pipe(
+                    map(colorTheme => ({
+                        repo: this.props.repoPath,
+                        commitID: this.props.commitID,
+                        filePath: this.props.filePath,
+                        renderMode: ToggleRenderedFileMode.getModeFromURL(this.props.location),
+                        isLightTheme: getColorTheme() === 'light',
+                    }))
+                )
+            )
                 .pipe(
                     tap(() => this.setState({ blob: undefined })),
-                    switchMap(({ repo, commitID, filePath }) => fetchBlob({ repoPath: repo, commitID, filePath }))
+                    switchMap(({ repo, commitID, filePath, isLightTheme }) =>
+                        fetchBlob({ repoPath: repo, commitID, filePath, isLightTheme })
+                    )
                 )
                 .subscribe(blob => this.setState({ blob }), err => this.setState({ error: err.message }))
         )

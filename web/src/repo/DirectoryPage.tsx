@@ -107,7 +107,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
 
         return (
             <div className="dir-page">
-                <PageTitle key="page-title" title={this.getPageTitle()} />,
+                <PageTitle key="page-title" title={this.getPageTitle()} />
                 <h2 className="dir-page__head">
                     <FolderIcon className="dir-page__icon-top" />
                     <span>{this.getLastPathPart()}</span>
