@@ -17,7 +17,6 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -38,7 +37,6 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
 		return nil, err
 	}
-	go gitserver.DefaultClient.EnqueueRepoUpdate(context.Background(), repo.URI)
 	return &repositoryResolver{repo: repo}, nil
 }
 
@@ -50,7 +48,6 @@ func repositoryByIDInt32(ctx context.Context, id int32) (*repositoryResolver, er
 	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
 		return nil, err
 	}
-	go gitserver.DefaultClient.EnqueueRepoUpdate(context.Background(), repo.URI)
 	return &repositoryResolver{repo: repo}, nil
 }
 
