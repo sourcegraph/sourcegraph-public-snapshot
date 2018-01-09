@@ -16,8 +16,12 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
+
+// productVersion is a semver version string that corresponds to this product's version number,
+// without any build or tag information. This is compared against the remote handler's
+// build.Assets.ProductVersion field.
+var productVersion = latestReleaseBuild.Assets[0].ProductVersion
 
 // Status of the check for software updates for Sourcegraph Server.
 type Status struct {
@@ -61,7 +65,7 @@ var baseURL = &url.URL{
 
 func updateURL() string {
 	q := url.Values{}
-	q.Set("version", env.Version)
+	q.Set("version", productVersion)
 	q.Set("site", siteid.Get())
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
