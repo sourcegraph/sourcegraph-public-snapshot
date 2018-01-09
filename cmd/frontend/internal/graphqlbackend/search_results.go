@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -15,6 +16,7 @@ import (
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/prometheus/client_golang/prometheus"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -22,6 +24,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -88,7 +91,6 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 
 type searchResults struct {
 	queryForFileMatches bool
-	combinedQuery       string
 	results             []*searchResult
 	searchResultsCommon
 	alert *searchAlert
@@ -322,6 +324,65 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResults, error) {
 	return r.doResults(ctx, "")
 }
 
+type searchResultsStats struct {
+	JApproximateResultCount string
+	JSparkline              []int32
+}
+
+func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }
+func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSparkline }
+
+var (
+	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
+	searchResultsStatsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "graphql",
+		Name:      "search_results_stats_cache_hit",
+		Help:      "Counts cache hits and misses for search results stats (e.g. sparklines).",
+	}, []string{"type"})
+)
+
+func init() {
+	prometheus.MustRegister(searchResultsStatsCounter)
+}
+
+func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, err error) {
+	cacheKey := r.args.Query + r.args.ScopeQuery
+	// Check if value is in the cache.
+	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
+	if ok {
+		searchResultsStatsCounter.WithLabelValues("hit").Inc()
+		if err := json.Unmarshal(jsonRes, &stats); err != nil {
+			return nil, err
+		}
+		return stats, nil
+	}
+
+	// Calculate value from scratch.
+	searchResultsStatsCounter.WithLabelValues("miss").Inc()
+	v, err := r.doResults(ctx, "")
+	if err != nil {
+		return nil, err // do not cache errors.
+	}
+	sparkline, err := v.Sparkline(ctx)
+	if err != nil {
+		return nil, err // sparkline generation failed, so don't cache.
+	}
+	stats = &searchResultsStats{
+		JApproximateResultCount: v.ApproximateResultCount(),
+		JSparkline:              sparkline,
+	}
+
+	// Store value in the cache.
+	jsonRes, err = json.Marshal(stats)
+	if err != nil {
+		return nil, err
+	}
+	searchResultsStatsCache.Set(cacheKey, jsonRes)
+	return stats, nil
+
+}
+
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResults, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "graphql.SearchResults")
 	tr := trace.New(traceName, fmt.Sprintf("%s", r.args.Query))
@@ -437,7 +498,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// Run all search funcs.
 	results := &searchResults{
 		queryForFileMatches: queryForFileMatches,
-		combinedQuery:       r.args.Query,
 	}
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)
