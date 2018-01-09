@@ -6,6 +6,8 @@ import (
 	"net/http/httputil"
 
 	"github.com/gorilla/mux"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -29,10 +31,16 @@ func init() {
 				req.URL.Scheme, req.URL.Host = "https", "example.com" // needed for DumpRequestOut
 				telemetry.Sample(req)
 
-				req.URL.Scheme = "https"
-				req.URL.Host = "sourcegraph-logging.telligentdata.com"
-				req.Host = "sourcegraph-logging.telligentdata.com"
-				req.URL.Path = "/" + mux.Vars(req)["TelemetryPath"]
+				if useBILogger(siteid.Get()) {
+					req.URL.Scheme = "http"
+					req.URL.Host = req.Host
+					req.URL.Path = "/.bi-logger"
+				} else {
+					req.URL.Scheme = "https"
+					req.URL.Host = "sourcegraph-logging.telligentdata.com"
+					req.Host = "sourcegraph-logging.telligentdata.com"
+					req.URL.Path = "/" + mux.Vars(req)["TelemetryPath"]
+				}
 			},
 		}
 	}
@@ -59,4 +67,10 @@ func stripTelemetryRequest(req *http.Request) {
 			req.Header.Del(name)
 		}
 	}
+}
+
+// useBILogger indicates if the given siteID represents a deployment that uses a bi-logger
+// service for on-prem telemetry logging
+func useBILogger(siteID string) bool {
+	return siteID == "Uber" || siteID == "UmamiWeb"
 }

@@ -43,7 +43,7 @@ class TelligentWrapper {
         // for on-prem usage, we only want to collect high level event context
         // note user identification information is still captured through persistent `user_info`
         // metadata stored in a cookie
-        if (!window.context.sourcegraphDotComMode && window.context.siteID !== 'UmamiWeb') {
+        if (!window.context.sourcegraphDotComMode) {
             const limitedEventProps = {
                 event_action: eventProps.eventAction,
                 event_category: eventProps.eventCategory,
@@ -81,13 +81,9 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
-        let telligentUrl = window.context.sourcegraphDotComMode
+        const telligentUrl = window.context.sourcegraphDotComMode
             ? 'sourcegraph-logging.telligentdata.com'
             : `${window.location.host}/.api/telemetry`
-        // for clients like umami, we use a bi-logger
-        if (!window.context.sourcegraphDotComMode && window.context.siteID === 'UmamiWeb') {
-            telligentUrl = `${window.location.host}`.concat('/.bi-logger')
-        }
         this.telligent('newTracker', 'sg', telligentUrl, {
             appId: siteID,
             platform: 'Web',
