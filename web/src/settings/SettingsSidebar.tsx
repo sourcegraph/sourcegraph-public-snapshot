@@ -227,10 +227,10 @@ export class SettingsSidebar extends React.Component<Props, State> {
                 {/* Hide sign out for SSO users. */}
                 {this.props.user &&
                     this.props.user.externalID === null && (
-                        <div className="sidebar__item sidebar__item-action">
+                        <div className="sidebar__item sidebar__action">
                             <a
                                 href="/-/sign-out"
-                                className="sidebar__item-action-button btn"
+                                className="sidebar__action-button btn"
                                 onClick={this.logTelemetryOnSignOut}
                             >
                                 <SignOutIcon className="icon-inline sidebar__item-action-icon" />
