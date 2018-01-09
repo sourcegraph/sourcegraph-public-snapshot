@@ -110,10 +110,6 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
             query SearchResultsStats($query: String!) {
                 search(query: $query) {
                     results {
-                        limitHit
-                        missing
-                        cloning
-                        resultCount
                         approximateResultCount
                         sparkline
                     }
