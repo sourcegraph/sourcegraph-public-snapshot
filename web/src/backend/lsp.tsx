@@ -9,6 +9,7 @@ import { ErrorObservable } from 'rxjs/observable/ErrorObservable'
 import { map } from 'rxjs/operators/map'
 import { Definition, Hover, Location } from 'vscode-languageserver-types'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
+import { siteFlags } from '../site/backend'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
@@ -70,6 +71,14 @@ const isSupported = (path: string): boolean => {
     return supportedExtensions.has(ext) && !unsupportedExtensions.has(ext)
 }
 
+// TODO(sqs): This is a messy global var. Refactor this code after
+// https://github.com/sourcegraph/sourcegraph/pull/8893 is merged.
+let siteHasCodeIntelligence = false
+
+siteFlags.subscribe(v => (siteHasCodeIntelligence = v && v.hasCodeIntelligence))
+
+let loggedSiteHasNoCodeIntelligence = false
+
 /**
  * Sends an LSP request to the xlang API.
  * If an error is returned, the Promise is rejected with the error from the response.
@@ -80,6 +89,20 @@ const isSupported = (path: string): boolean => {
  * @return The result of the method call
  */
 const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Observable<any> => {
+    if (!siteHasCodeIntelligence) {
+        if (!loggedSiteHasNoCodeIntelligence) {
+            console.log(
+                '✱ Visit https://about.sourcegraph.com to enable code intelligence on this server (for hovers, go-to-definition, find references, etc.).'
+            )
+            loggedSiteHasNoCodeIntelligence = true
+        }
+        return ErrorObservable.create(
+            Object.assign(new Error('Code intelligence is not enabled'), {
+                code: EMODENOTFOUND,
+            })
+        )
+    }
+
     if (!isSupported(path)) {
         return ErrorObservable.create(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
     }

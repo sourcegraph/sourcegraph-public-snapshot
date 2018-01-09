@@ -101,6 +101,10 @@ func (r *siteResolver) TelemetrySamples(ctx context.Context) ([]string, error) {
 	return telemetry.Samples(), nil
 }
 
+var hasCodeIntelligence = os.Getenv("LSP_PROXY") != ""
+
+func (r *siteResolver) HasCodeIntelligence() bool { return hasCodeIntelligence }
+
 type siteConfigurationResolver struct{}
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (string, error) {

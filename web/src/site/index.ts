@@ -1,3 +1,3 @@
-export type SiteFlags = Pick<GQL.ISite, 'needsRepositoryConfiguration'> & {
+export type SiteFlags = Pick<GQL.ISite, 'needsRepositoryConfiguration' | 'hasCodeIntelligence'> & {
     repositoriesCloning: GQL.IRepositoryConnection
 }
