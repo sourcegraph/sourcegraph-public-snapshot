@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -36,6 +37,7 @@ var useJaeger = conf.Get().UseJaeger
 
 func Init(serviceName string) {
 	if useJaeger {
+		log15.Info("Distributed tracing enabled", "tracer", "jaeger")
 		cfg := jaegercfg.Configuration{
 			Sampler: &jaegercfg.SamplerConfig{
 				Type:  jaeger.SamplerTypeConst,
@@ -56,6 +58,7 @@ func Init(serviceName string) {
 	}
 
 	if lightstepAccessToken != "" {
+		log15.Info("Distributed tracing enabled", "tracer", "Lightstep")
 		var rec basictracer.SpanRecorder = lightstep.NewRecorder(lightstep.Options{
 			AccessToken: lightstepAccessToken,
 			UseGRPC:     true,
