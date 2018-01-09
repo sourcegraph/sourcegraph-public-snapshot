@@ -259,10 +259,6 @@ type Query {
 	isUsernameAvailable(username: String!): Boolean!
 	configuration: ConfigurationCascade!
 	search(query: String = ""): Search
-	# Like search, except it returns only a subset of information (excluding
-	# actual results) and it is heavily cached. Useful for e.g. quickly getting
-	# sparkline data for a search query.
-	searchResultStats(query: String = ""): SearchResultsStats
 	searchScopes: [SearchScope!]!
 	# All saved queries configured for the current user, merged from all configurations.
 	savedQueries: [SavedQuery!]!
@@ -301,6 +297,11 @@ type Query {
 type Search {
 	results: SearchResults!
 	suggestions(first: Int): [SearchSuggestion!]!
+
+	# A subset of results (excluding actual search results) which are heavily
+	# cached and thus quicker to query. Useful for e.g. querying sparkline
+	# data.
+	stats: SearchResultsStats!
 }
 
 union SearchResult = FileMatch | CommitSearchResult
@@ -324,15 +325,8 @@ type SearchResults {
 }
 
 type SearchResultsStats {
-	resultCount: Int!
 	approximateResultCount: String!
-	limitHit: Boolean!
-	# Integers representing the sparkline for the search results.
 	sparkline: [Int!]!
-	# Repositories that are busy cloning onto gitserver.
-	cloning: [String!]!
-	# Repositories or commits that do not exist.
-	missing: [String!]!
 }
 
 union SearchSuggestion = Repository | File
