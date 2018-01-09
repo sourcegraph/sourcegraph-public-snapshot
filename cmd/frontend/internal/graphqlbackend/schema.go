@@ -297,6 +297,11 @@ type Query {
 type Search {
 	results: SearchResults!
 	suggestions(first: Int): [SearchSuggestion!]!
+
+	# A subset of results (excluding actual search results) which are heavily
+	# cached and thus quicker to query. Useful for e.g. querying sparkline
+	# data.
+	stats: SearchResultsStats!
 }
 
 union SearchResult = FileMatch | CommitSearchResult
@@ -317,6 +322,11 @@ type SearchResults {
 	timedout: [String!]!
 	# An alert message that should be displayed before any results.
 	alert: SearchAlert
+}
+
+type SearchResultsStats {
+	approximateResultCount: String!
+	sparkline: [Int!]!
 }
 
 union SearchSuggestion = Repository | File

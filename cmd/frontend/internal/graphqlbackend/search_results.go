@@ -91,7 +91,6 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 
 type searchResults struct {
 	queryForFileMatches bool
-	combinedQuery       string
 	results             []*searchResult
 	searchResultsCommon
 	alert *searchAlert
@@ -239,70 +238,7 @@ func (sr *searchResults) blameFileMatch(ctx context.Context, fm *fileMatch, cach
 	return hunks[0].Author.Date, nil
 }
 
-var (
-	sparklineFileCache        = rcache.NewWithTTL("sparkline_file", 3600) // 1h
-	sparklineFileCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "graphql",
-		Name:      "sparkline_file_cache_hit",
-		Help:      "Counts cache hits and misses for SearchResults.Sparkline file calculations.",
-	}, []string{"type"})
-
-	sparklineGenericCache        = rcache.NewWithTTL("sparkline_generic", 5*60) // 5m
-	sparklineGenericCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "graphql",
-		Name:      "sparkline_generic_cache_hit",
-		Help:      "Counts cache hits and misses for SearchResults.Sparkline generic calculations.",
-	}, []string{"type"})
-)
-
-func init() {
-	prometheus.MustRegister(sparklineFileCacheCounter)
-	prometheus.MustRegister(sparklineGenericCacheCounter)
-}
-
 func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err error) {
-	if sr.combinedQuery == "" {
-		panic("internal search error (expected combined query to be present)")
-	}
-	cache := sparklineGenericCache
-	counter := sparklineGenericCacheCounter
-	if sr.queryForFileMatches {
-		// The query is for file matches. These are slower for calculating the
-		// sparkline information (requires blame), so we use a different cache
-		// with higher TTL.
-		cache = sparklineFileCache
-		counter = sparklineFileCacheCounter
-	}
-
-	// Check if value is in the cache.
-	jsonRes, ok := cache.Get(sr.combinedQuery)
-	if ok {
-		counter.WithLabelValues("hit").Inc()
-		if err := json.Unmarshal(jsonRes, &sparkline); err != nil {
-			return nil, err
-		}
-		return sparkline, nil
-	}
-
-	// Calculate value from scratch.
-	counter.WithLabelValues("miss").Inc()
-	sparkline, err = sr.doCalculateSparkline(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Store value in the cache.
-	jsonRes, err = json.Marshal(sparkline)
-	if err != nil {
-		return nil, err
-	}
-	cache.Set(sr.combinedQuery, jsonRes)
-	return sparkline, nil
-}
-
-func (sr *searchResults) doCalculateSparkline(ctx context.Context) (sparkline []int32, err error) {
 	var (
 		days     = 30                 // number of days the sparkline represents
 		maxBlame = 100                // maximum number of file results to blame for date/time information.
@@ -386,6 +322,76 @@ loop:
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResults, error) {
 	return r.doResults(ctx, "")
+}
+
+type searchResultsStats struct {
+	JApproximateResultCount string
+	JSparkline              []int32
+}
+
+func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }
+func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSparkline }
+
+var (
+	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
+	searchResultsStatsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "graphql",
+		Name:      "search_results_stats_cache_hit",
+		Help:      "Counts cache hits and misses for search results stats (e.g. sparklines).",
+	}, []string{"type"})
+)
+
+func init() {
+	prometheus.MustRegister(searchResultsStatsCounter)
+}
+
+func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, err error) {
+	// Override user context to ensure that stats for this query are cached
+	// regardless of the user context's cancellation. For example, if
+	// stats/sparklines are slow to load on the homepage and all users navigate
+	// away from that page before they load, no user would ever see them and we
+	// would never cache them. This fixes that by ensuring the first request
+	// 'kicks off loading' and places the result into cache regardless of
+	// whether or not the original querier of this information still wants it.
+	originalCtx := ctx
+	ctx = context.Background()
+	ctx = opentracing.ContextWithSpan(ctx, opentracing.SpanFromContext(originalCtx))
+
+	cacheKey := r.args.Query + r.args.ScopeQuery
+	// Check if value is in the cache.
+	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
+	if ok {
+		searchResultsStatsCounter.WithLabelValues("hit").Inc()
+		if err := json.Unmarshal(jsonRes, &stats); err != nil {
+			return nil, err
+		}
+		return stats, nil
+	}
+
+	// Calculate value from scratch.
+	searchResultsStatsCounter.WithLabelValues("miss").Inc()
+	v, err := r.doResults(ctx, "")
+	if err != nil {
+		return nil, err // do not cache errors.
+	}
+	sparkline, err := v.Sparkline(ctx)
+	if err != nil {
+		return nil, err // sparkline generation failed, so don't cache.
+	}
+	stats = &searchResultsStats{
+		JApproximateResultCount: v.ApproximateResultCount(),
+		JSparkline:              sparkline,
+	}
+
+	// Store value in the cache.
+	jsonRes, err = json.Marshal(stats)
+	if err != nil {
+		return nil, err
+	}
+	searchResultsStatsCache.Set(cacheKey, jsonRes)
+	return stats, nil
+
 }
 
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResults, err error) {
@@ -503,7 +509,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// Run all search funcs.
 	results := &searchResults{
 		queryForFileMatches: queryForFileMatches,
-		combinedQuery:       r.args.Query,
 	}
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)
