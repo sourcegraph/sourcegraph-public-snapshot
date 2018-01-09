@@ -21,6 +21,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 
+	"github.com/neelance/parallel"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -29,6 +30,21 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/zoekt"
+)
+
+var (
+	// textSearchLimiter limits the number of open TCP connections created by frontend to searcher.
+	textSearchLimiter = parallel.NewRun(500)
+
+	searchHTTPClient = &http.Client{
+		// nethttp.Transport will propogate opentracing spans
+		Transport: &nethttp.Transport{
+			RoundTripper: &http.Transport{
+				// Default is 2, but we can send a many concurrent requests
+				MaxIdleConnsPerHost: 250,
+			},
+		},
+	}
 )
 
 // A light wrapper around the search service. We implement the service here so
@@ -205,8 +221,10 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	client := &http.Client{Transport: &nethttp.Transport{}}
-	resp, err := client.Do(req)
+	// Limit number of outstanding searcher requests
+	textSearchLimiter.Acquire()
+	defer textSearchLimiter.Release()
+	resp, err := searchHTTPClient.Do(req)
 	if err != nil {
 		// If we failed due to cancellation or timeout, rather return that
 		if ctx.Err() != nil {
