@@ -113,14 +113,14 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                         </small>
                         <br />
                         <small>
-                            <strong>Automatic update checking:</strong> {this.state.channel ? 'on' : 'off'}.{' '}
+                            <strong>Automatic update checking:</strong> {autoUpdateCheckingEnabled ? 'on' : 'off'}.{' '}
                             <Link to="/site-admin/configuration">Configure</Link> <code>update.channel</code>{' '}
                             {!this.state.telemetryEnabled && (
                                 <span>
                                     and <code>disableTelemetry</code>
                                 </span>
                             )}{' '}
-                            to {this.state.channel ? 'disable' : 'enable'}.
+                            to {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
                         </small>
                     </p>
                 )}
