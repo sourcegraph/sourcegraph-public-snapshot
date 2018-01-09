@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -97,6 +98,13 @@ type Client struct {
 	// Host is the hostname of the zoekt instance. It can include a port. For
 	// example "localhost:6070".
 	Host string
+
+	// Transport is the actual RoundTripper to use for the request. A nil
+	// Transport defaults to http.DefaultTransport.
+	Transport http.RoundTripper
+
+	once   sync.Once
+	client *http.Client
 }
 
 // Search sends a search request. Read the documentation for SearchRequest and
@@ -124,6 +132,9 @@ func (c *Client) do(ctx context.Context, method string, reqBody, respBody interf
 	if c.Host == "" {
 		return errors.New("zoekt Host field is not set")
 	}
+	c.once.Do(func() {
+		c.client = &http.Client{Transport: &nethttp.Transport{RoundTripper: c.Transport}}
+	})
 
 	data, err := json.Marshal(reqBody)
 	if err != nil {
@@ -143,8 +154,7 @@ func (c *Client) do(ctx context.Context, method string, reqBody, respBody interf
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	cl := &http.Client{Transport: &nethttp.Transport{}}
-	resp, err := cl.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return err
 	}

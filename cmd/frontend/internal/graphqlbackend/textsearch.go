@@ -421,7 +421,6 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		return nil, nil
 	}
 
-	zoektCl := &zoekt.Client{Host: zoektHost}
 	resp, err := zoektCl.Search(ctx, zoekt.SearchRequest{
 		Query:    strings.Join(q, " "),
 		Restrict: restrict,
@@ -461,7 +460,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 }
 
 func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (indexed, unindexed []*repositoryRevisions, err error) {
-	if zoektHost == "" {
+	if zoektCl == nil {
 		return nil, repos, nil
 	}
 	for _, repoRev := range repos {
@@ -483,7 +482,6 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 		restrict[i].Repo = repoRev.repo.URI
 	}
 
-	zoektCl := &zoekt.Client{Host: zoektHost}
 	resp, err := zoektCl.List(ctx, zoekt.ListRequest{
 		Restrict: restrict,
 	})
@@ -662,7 +660,7 @@ func flattenFileMatches(unflattened [][]*fileMatch, fileMatchLimit int) []*fileM
 	return flattened
 }
 
-var zoektHost = env.Get("ZOEKT_HOST", "", "host:port of the zoekt instance")
+var zoektCl *zoekt.Client
 var searcherURLs *endpoint.Map
 
 func init() {
@@ -674,5 +672,10 @@ func init() {
 	searcherURLs, err = endpoint.New(searcherURL)
 	if err != nil {
 		panic(fmt.Sprintf("could not connect to searcher %s: %s", searcherURL, err))
+	}
+
+	zoektHost := env.Get("ZOEKT_HOST", "", "host:port of the zoekt instance")
+	if zoektHost != "" {
+		zoektCl = &zoekt.Client{Host: zoektHost}
 	}
 }
