@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,10 +32,25 @@ import (
 var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers")
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-var DefaultClient = &Client{Addrs: strings.Fields(gitservers)}
+var DefaultClient = &Client{
+	Addrs: strings.Fields(gitservers),
+	HTTPClient: &http.Client{
+		Transport: &http.Transport{
+			// Default is 2, but we can send many concurrent requests
+			MaxIdleConnsPerHost: 500,
+		},
+	},
+	HTTPLimiter: parallel.NewRun(500),
+}
 
 // Client is a gitserver client.
 type Client struct {
+	// HTTP client to use
+	HTTPClient *http.Client
+
+	// Limits concurrency of outstanding HTTP posts
+	HTTPLimiter *parallel.Run
+
 	Addrs   []string
 	NoCreds bool
 }
@@ -341,7 +357,17 @@ func (c *Client) httpPost(ctx context.Context, addr string, method string, paylo
 
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
-	return http.DefaultClient.Do(req)
+
+	if c.HTTPLimiter != nil {
+		c.HTTPLimiter.Acquire()
+		defer c.HTTPLimiter.Release()
+	}
+
+	if c.HTTPClient != nil {
+		return c.HTTPClient.Do(req)
+	} else {
+		return http.DefaultClient.Do(req)
+	}
 }
 
 func (c *Client) UploadPack(repoURI string, w http.ResponseWriter, r *http.Request) {

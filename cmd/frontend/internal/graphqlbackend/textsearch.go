@@ -40,8 +40,8 @@ var (
 		// nethttp.Transport will propogate opentracing spans
 		Transport: &nethttp.Transport{
 			RoundTripper: &http.Transport{
-				// Default is 2, but we can send a many concurrent requests
-				MaxIdleConnsPerHost: 250,
+				// Default is 2, but we can send many concurrent requests
+				MaxIdleConnsPerHost: 500,
 			},
 		},
 	}
