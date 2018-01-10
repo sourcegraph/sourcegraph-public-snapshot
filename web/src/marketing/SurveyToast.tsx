@@ -73,6 +73,7 @@ export class SurveyToast extends React.Component<{}, State> {
         const url = new URL(HUBSPOT_SURVEY_URL)
         url.searchParams.set('nps_score', score.toString())
         url.searchParams.set('user_is_authenticated', (this.state.user !== null).toString())
+        url.searchParams.set('site_id', window.context.siteID)
         if (this.state.user) {
             url.searchParams.set('email', this.state.user.email)
         }
