@@ -102,7 +102,7 @@
       "type": "boolean",
       "description": "Enable this if RBAC is enabled on your Kubernetes cluster."
     },
-	"experimentIndexedSearch": {
+    "experimentIndexedSearch": {
       "type": "boolean",
       "description": "Enable this to experimentally use an indexed code search backend."
     }
