@@ -245,6 +245,11 @@ export interface State {
     totalCount?: number
 }
 
+class FilteredUserConnection extends FilteredConnection<
+    GQL.IUser,
+    Pick<UserNodeProps, 'currentUser' | 'onDidUpdate'>
+> {}
+
 /**
  * A page displaying the users on this site.
  */
@@ -284,7 +289,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                         <GearIcon className="icon-inline" /> Configure SSO
                     </Link>
                 </div>
-                <FilteredConnection
+                <FilteredUserConnection
                     className="site-admin-page__filtered-connection"
                     noun="user"
                     pluralNoun="users"

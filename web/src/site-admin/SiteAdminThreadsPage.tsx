@@ -80,6 +80,8 @@ export interface State {
     totalCount?: number
 }
 
+class FilteredThreadConnection extends FilteredConnection<GQL.IThread> {}
+
 /**
  * A page displaying the threads on this site.
  */
@@ -110,7 +112,7 @@ export class SiteAdminThreadsPage extends React.Component<Props, State> {
                     Code comments are in beta and require{' '}
                     <a href="https://about.sourcegraph.com/products/editor">Sourcegraph Editor</a>.
                 </p>
-                <FilteredConnection
+                <FilteredThreadConnection
                     className="site-admin-page__filtered-connection"
                     noun="thread"
                     pluralNoun="threads"

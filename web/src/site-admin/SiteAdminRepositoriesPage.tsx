@@ -153,6 +153,8 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
 
 interface Props extends RouteComponentProps<any> {}
 
+class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
+
 /**
  * A page displaying the repositories on this site.
  */
@@ -180,7 +182,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
                         <GearIcon className="icon-inline" /> Configure repositories
                     </Link>
                 </div>
-                <FilteredConnection
+                <FilteredRepositoryConnection
                     className="site-admin-page__filtered-connection"
                     noun="repository"
                     pluralNoun="repositories"

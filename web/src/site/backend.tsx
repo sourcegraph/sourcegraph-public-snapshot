@@ -29,20 +29,14 @@ export function refreshSiteFlags(): Observable<never> {
             }
         }
     `).pipe(
-        tap(
-            ({
-                data,
-                errors,
-            }: {
-                data?: GQL.IQuery & { site: { repositoriesCloning: GQL.IRepositoryConnection | null } }
-                errors?: GQL.IGraphQLResponseError[]
-            }) => {
-                if (!data || !data.site) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-                }
-                siteFlags.next(data.site)
+        tap(({ data, errors }) => {
+            if (!data || !data.site) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-        ),
+            siteFlags.next(
+                (data as GQL.IQuery & { site: { repositoriesCloning: GQL.IRepositoryConnection | null } }).site
+            )
+        }),
         mergeMap(() => [])
     )
 }
