@@ -8,7 +8,7 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { userForgotPassword } from '../util/features'
-import { EmailInput, getReturnTo, PasswordInput } from './SignInSignUpCommon'
+import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface SignInFormProps {
     location: H.Location
@@ -45,8 +45,10 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
                     </Link>
                 )}
                 <div className="form-group">
-                    <EmailInput
-                        className="signin-signup-form__input"
+                    <input
+                        className={`form-control signin-signup-form__input`}
+                        type="text"
+                        placeholder="Username or email"
                         onChange={this.onEmailFieldChange}
                         required={true}
                         value={this.state.email}
