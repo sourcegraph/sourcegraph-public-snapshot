@@ -4,6 +4,7 @@ import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
+import { combineLatest } from 'rxjs/observable/combineLatest'
 import { fromEvent } from 'rxjs/observable/fromEvent'
 import { interval } from 'rxjs/observable/interval'
 import { merge } from 'rxjs/observable/merge'
@@ -748,24 +749,11 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
 
         // Fetch repository revision.
         this.subscriptions.add(
-            merge(
-                this.specChanges.pipe(
-                    map(specChanges => ({ ...specChanges, isLightTheme: getColorTheme() === 'light' }))
-                ),
-                colorTheme.pipe(
-                    map(colorTheme => ({
-                        repo: this.props.repoPath,
-                        commitID: this.props.commitID,
-                        filePath: this.props.filePath,
-                        renderMode: ToggleRenderedFileMode.getModeFromURL(this.props.location),
-                        isLightTheme: getColorTheme() === 'light',
-                    }))
-                )
-            )
+            combineLatest(this.specChanges, colorTheme)
                 .pipe(
                     tap(() => this.setState({ blob: undefined })),
-                    switchMap(({ repo, commitID, filePath, isLightTheme }) =>
-                        fetchBlob({ repoPath: repo, commitID, filePath, isLightTheme })
+                    switchMap(([{ repo, commitID, filePath }, colorTheme]) =>
+                        fetchBlob({ repoPath: repo, commitID, filePath, isLightTheme: colorTheme === 'light' })
                     )
                 )
                 .subscribe(blob => this.setState({ blob }), err => this.setState({ error: err.message }))
