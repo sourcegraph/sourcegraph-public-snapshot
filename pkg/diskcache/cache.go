@@ -31,6 +31,10 @@ type Store struct {
 	// context.WithTimeout(context.Background(), BackgroundTimeout). When not
 	// set fetches are done with the passed in context.
 	BackgroundTimeout time.Duration
+
+	// BeforeEvict, when non-nil, is a function to call before evicting a file.
+	// It is passed the path to the file to be evicted.
+	BeforeEvict func(string)
 }
 
 // File is an os.File, but includes the Path
@@ -225,6 +229,9 @@ func (s *Store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 			continue
 		}
 		path := filepath.Join(s.Dir, fi.Name())
+		if s.BeforeEvict != nil {
+			s.BeforeEvict(path)
+		}
 		err = os.Remove(path)
 		if err != nil {
 			log.Printf("failed to remove %s: %s", path, err)
