@@ -151,7 +151,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		return nil, false, badRequestError{err.Error()}
 	}
 
-	zr, err := s.Store.openReader(ctx, p.Repo, p.Commit)
+	zr, err := s.Store.prepareZip(ctx, p.Repo, p.Commit)
 	if err != nil {
 		return nil, false, err
 	}

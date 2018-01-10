@@ -234,7 +234,7 @@ func benchConcurrentFind(b *testing.B, p *protocol.Request) {
 	}
 
 	ctx := context.Background()
-	ar, err := githubStore.openReader(ctx, p.Repo, p.Commit)
+	ar, err := githubStore.prepareZip(ctx, p.Repo, p.Commit)
 	if err != nil {
 		b.Fatal(err)
 	}

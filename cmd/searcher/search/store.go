@@ -103,9 +103,9 @@ func (ar *archiveReadCloser) Close() error {
 	return ar.f.Close()
 }
 
-// openReader will open a zip reader to the archive. It will first consult the
+// prepareZip will open a zip reader to the archive. It will first consult the
 // local cache, otherwise will fetch from the network.
-func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiveReadCloser, err error) {
+func (s *Store) prepareZip(ctx context.Context, repo, commit string) (ar *archiveReadCloser, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "OpenReader")
 	ext.Component.Set(span, "store")
 	defer func() {

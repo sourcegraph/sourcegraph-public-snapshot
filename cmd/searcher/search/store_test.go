@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func TestOpenReader(t *testing.T) {
+func TestPrepareZip(t *testing.T) {
 	s, cleanup := tmpStore(t)
 	defer cleanup()
 
@@ -33,24 +33,24 @@ func TestOpenReader(t *testing.T) {
 	}
 
 	// Fetch same commit in parallel to ensure single-flighting works
-	startOpenReader := make(chan struct{})
-	openReaderErr := make(chan error)
+	startPrepareZip := make(chan struct{})
+	prepareZipErr := make(chan error)
 	for i := 0; i < 10; i++ {
 		go func() {
-			<-startOpenReader
-			ar, err := s.openReader(context.Background(), wantRepo, wantCommit)
-			openReaderErr <- err
+			<-startPrepareZip
+			ar, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
+			prepareZipErr <- err
 			if err == nil {
 				ar.Close()
 			}
 		}()
 	}
-	close(startOpenReader)
+	close(startPrepareZip)
 	close(returnFetch)
 	for i := 0; i < 10; i++ {
-		err := <-openReaderErr
+		err := <-prepareZipErr
 		if err != nil {
-			t.Fatal("expected openReader to succeed:", err)
+			t.Fatal("expected prepareZip to succeed:", err)
 		}
 	}
 
@@ -75,24 +75,24 @@ func TestOpenReader(t *testing.T) {
 	if !onDisk {
 		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
 	}
-	ar, err := s.openReader(context.Background(), wantRepo, wantCommit)
+	ar, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
 	if err != nil {
-		t.Fatal("expected openReader to succeed:", err)
+		t.Fatal("expected prepareZip to succeed:", err)
 		return
 	}
 	ar.Close()
 }
 
-func TestOpenReader_fetchTarFail(t *testing.T) {
+func TestPrepareZip_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
 	s, cleanup := tmpStore(t)
 	defer cleanup()
 	s.FetchTar = func(ctx context.Context, repo, commit string) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
-	_, err := s.openReader(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	_, err := s.prepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 	if errors.Cause(err) != fetchErr {
-		t.Fatalf("expected openReader to fail with %v, failed with %v", fetchErr, err)
+		t.Fatalf("expected prepareZip to fail with %v, failed with %v", fetchErr, err)
 	}
 }
 
