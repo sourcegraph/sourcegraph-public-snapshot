@@ -10,28 +10,29 @@ type ContainerOverrides struct {
 
 // DatacenterOpsConfiguration Configuration for Sourcegraph Datacenter Ops. Defines all config parameters that can be used to change the operational parameters of Sourcegraph Datacenter (e.g., for scaling).
 type DatacenterOpsConfiguration struct {
-	AlertmanagerConfig  string                          `json:"alertmanagerConfig,omitempty"`
-	AlertmanagerURL     string                          `json:"alertmanagerURL,omitempty"`
-	AuthProxyIP         string                          `json:"authProxyIP,omitempty"`
-	AuthProxyPassword   string                          `json:"authProxyPassword,omitempty"`
-	DeploymentOverrides map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
-	GitoliteIP          string                          `json:"gitoliteIP,omitempty"`
-	GitserverCount      int                             `json:"gitserverCount,omitempty"`
-	GitserverDiskSize   string                          `json:"gitserverDiskSize,omitempty"`
-	GitserverSSH        map[string]string               `json:"gitserverSSH,omitempty"`
-	HttpNodePort        int                             `json:"httpNodePort,omitempty"`
-	HttpsNodePort       int                             `json:"httpsNodePort,omitempty"`
-	LangGo              bool                            `json:"langGo,omitempty"`
-	LangJava            bool                            `json:"langJava,omitempty"`
-	LangJavaScript      bool                            `json:"langJavaScript,omitempty"`
-	LangPHP             bool                            `json:"langPHP,omitempty"`
-	LangPython          bool                            `json:"langPython,omitempty"`
-	LangSwift           bool                            `json:"langSwift,omitempty"`
-	LangTypeScript      bool                            `json:"langTypeScript,omitempty"`
-	NodeSSDPath         string                          `json:"nodeSSDPath,omitempty"`
-	PhabricatorIP       string                          `json:"phabricatorIP,omitempty"`
-	StorageClass        string                          `json:"storageClass,omitempty"`
-	UseRBAC             bool                            `json:"useRBAC,omitempty"`
+	AlertmanagerConfig      string                          `json:"alertmanagerConfig,omitempty"`
+	AlertmanagerURL         string                          `json:"alertmanagerURL,omitempty"`
+	AuthProxyIP             string                          `json:"authProxyIP,omitempty"`
+	AuthProxyPassword       string                          `json:"authProxyPassword,omitempty"`
+	DeploymentOverrides     map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
+	ExperimentIndexedSearch bool                            `json:"experimentIndexedSearch,omitempty"`
+	GitoliteIP              string                          `json:"gitoliteIP,omitempty"`
+	GitserverCount          int                             `json:"gitserverCount,omitempty"`
+	GitserverDiskSize       string                          `json:"gitserverDiskSize,omitempty"`
+	GitserverSSH            map[string]string               `json:"gitserverSSH,omitempty"`
+	HttpNodePort            int                             `json:"httpNodePort,omitempty"`
+	HttpsNodePort           int                             `json:"httpsNodePort,omitempty"`
+	LangGo                  bool                            `json:"langGo,omitempty"`
+	LangJava                bool                            `json:"langJava,omitempty"`
+	LangJavaScript          bool                            `json:"langJavaScript,omitempty"`
+	LangPHP                 bool                            `json:"langPHP,omitempty"`
+	LangPython              bool                            `json:"langPython,omitempty"`
+	LangSwift               bool                            `json:"langSwift,omitempty"`
+	LangTypeScript          bool                            `json:"langTypeScript,omitempty"`
+	NodeSSDPath             string                          `json:"nodeSSDPath,omitempty"`
+	PhabricatorIP           string                          `json:"phabricatorIP,omitempty"`
+	StorageClass            string                          `json:"storageClass,omitempty"`
+	UseRBAC                 bool                            `json:"useRBAC,omitempty"`
 }
 
 // DeploymentOverrides
