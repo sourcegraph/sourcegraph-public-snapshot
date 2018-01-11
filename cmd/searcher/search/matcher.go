@@ -16,7 +16,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/lazyzip"
 )
 
 const (
@@ -66,10 +65,6 @@ type readerGrep struct {
 
 	// ignoreCase if true means we need to do case insensitive matching.
 	ignoreCase bool
-
-	// buf is reused between file searches to avoid re-allocating. It
-	// holds an entire file.
-	buf []byte
 
 	// transformBuf is reused between file searches to avoid
 	// re-allocating. It is only used if we need to transform the input
@@ -145,24 +140,14 @@ func (rg *readerGrep) Copy() *readerGrep {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limitHit bool, err error) {
-	if rg.buf == nil {
-		// reader should always have maxFileSize bytes or less.
-		rg.buf = make([]byte, maxFileSize)
-		if rg.ignoreCase {
-			rg.transformBuf = make([]byte, maxFileSize)
-		}
+func (rg *readerGrep) Find(f *srcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
+	if rg.ignoreCase && rg.transformBuf == nil {
+		rg.transformBuf = make([]byte, f.zf.MaxLen)
 	}
 
-	// Read the file into memory. We have a relatively low maxFileSize, so
-	// we can simplify and avoid needing to stream the lines.
-	n, err := readAll(reader, rg.buf)
-	if err != nil {
-		return nil, false, err
-	}
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
-	fileBuf := rg.buf[:n]
+	fileBuf := f.Data()
 	fileMatchBuf := fileBuf
 
 	// If we are ignoring case, we transform the input instead of
@@ -227,7 +212,11 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limi
 			}
 			matches = append(matches, protocol.LineMatch{
 				// making a copy of lineBuf is intentional.
-				// the underlying slice is rg.buf, which may be overwritten by future calls to Find.
+				// we are not allowed to use f.Data after the parent zipFile has been Closed,
+				// which currently occurs before Preview has been serialized.
+				// TODO: consider moving the call to Close until after we are
+				// done with Preview, and stop making a copy here.
+				// Special care must be taken to call Close on all possible paths, including error paths.
 				Preview:          string(lineBuf),
 				LineNumber:       i,
 				OffsetAndLengths: offsetAndLengths,
@@ -240,13 +229,8 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limi
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(f *lazyzip.File) (protocol.FileMatch, error) {
-	rc, err := f.Open()
-	if err != nil {
-		return protocol.FileMatch{}, err
-	}
-	lm, limitHit, err := rg.Find(rc)
-	rc.Close()
+func (rg *readerGrep) FindZip(f *srcFile) (protocol.FileMatch, error) {
+	lm, limitHit, err := rg.Find(f)
 	return protocol.FileMatch{
 		Path:        f.Name,
 		LineMatches: lm,
@@ -255,7 +239,7 @@ func (rg *readerGrep) FindZip(f *lazyzip.File) (protocol.FileMatch, error) {
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fileMatchLimit int) (fm []protocol.FileMatch, limitHit bool, err error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchLimit int) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
 	span.SetTag("re", rg.re.String())
@@ -277,12 +261,11 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fil
 	defer cancel()
 
 	var (
-		files     = make(chan *lazyzip.File)
+		files     = make(chan *srcFile)
 		matches   = make(chan protocol.FileMatch)
 		wg        sync.WaitGroup
 		wgErrOnce sync.Once
 		wgErr     error
-		filesErr  error
 	)
 
 	// goroutine responsible for writing to files. It also is the only
@@ -300,14 +283,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fil
 		}()
 
 		done := ctx.Done()
-		for {
-			f, err := zr.Next()
-			if err != nil {
-				if err != io.EOF {
-					filesErr = err
-				}
-				return
-			}
+		for _, f := range zf.Files {
 			if !rg.matchPath.MatchPath(f.Name) {
 				filesSkipped++
 				continue
@@ -365,11 +341,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fil
 		}
 	}
 
-	err = wgErr
-	if err == nil {
-		err = filesErr
-	}
-	return m, limitHit, err
+	return m, limitHit, wgErr
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include

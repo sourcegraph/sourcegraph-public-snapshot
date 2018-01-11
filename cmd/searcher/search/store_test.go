@@ -38,11 +38,8 @@ func TestPrepareZip(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			<-startPrepareZip
-			ar, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
+			_, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
 			prepareZipErr <- err
-			if err == nil {
-				ar.Close()
-			}
 		}()
 	}
 	close(startPrepareZip)
@@ -75,12 +72,11 @@ func TestPrepareZip(t *testing.T) {
 	if !onDisk {
 		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
 	}
-	ar, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
+	_, err := s.prepareZip(context.Background(), wantRepo, wantCommit)
 	if err != nil {
 		t.Fatal("expected prepareZip to succeed:", err)
 		return
 	}
-	ar.Close()
 }
 
 func TestPrepareZip_fetchTarFail(t *testing.T) {

@@ -1,0 +1,236 @@
+package search
+
+import (
+	"archive/zip"
+	"bytes"
+	"fmt"
+	"hash/fnv"
+	"io"
+	"log"
+	"os"
+	"sort"
+	"sync"
+	"syscall"
+
+	"github.com/pkg/errors"
+	"golang.org/x/sys/unix"
+)
+
+// A zipCache is a shared data structure that provides efficient access to a collection of zip files.
+// The zero value is usable.
+type zipCache struct {
+	// Split the cache into many parts, to minimize lock contention.
+	// This matters because, for simplicity,
+	// we sometimes hold the lock for long-running operations,
+	// such as reading a zip file from disk
+	// or waiting for all users of a zip file to finish their work.
+	// (The latter case should basically never block, since it only
+	// occurs when a file is being deleted, and files are deleted
+	// when no one has used them for a long time. Nevertheless, take care.)
+	shards [64]zipCacheShard
+}
+
+type zipCacheShard struct {
+	mu sync.Mutex
+	m  map[string]*zipFile // path -> zipFile
+}
+
+func (c *zipCache) shardFor(path string) *zipCacheShard {
+	h := fnv.New32()
+	io.WriteString(h, path)
+	return &c.shards[h.Sum32()%uint32(len(c.shards))]
+}
+
+// get returns a zipFile for the file on disk at path.
+// The file MUST be Closed when it is no longer needed.
+func (c *zipCache) get(path string) (*zipFile, error) {
+	shard := c.shardFor(path)
+	shard.mu.Lock()
+	if shard.m == nil {
+		shard.m = make(map[string]*zipFile)
+	}
+	zf, ok := shard.m[path]
+	if ok {
+		zf.wg.Add(1)
+		shard.mu.Unlock()
+		return zf, nil
+	}
+	// Cache miss.
+	// Reading zip files is fast enough that we can populate the map in-band,
+	// which also conveniently provides free single-flighting.
+	zf, err := readZipFile(path)
+	if err != nil {
+		shard.mu.Unlock()
+		return nil, err
+	}
+	shard.m[path] = zf
+	zf.wg.Add(1)
+	shard.mu.Unlock()
+	return zf, nil
+}
+
+func (c *zipCache) delete(path string) {
+	shard := c.shardFor(path)
+	shard.mu.Lock()
+	zf, ok := shard.m[path]
+	if !ok {
+		// already deleted?!
+		shard.mu.Unlock()
+		return
+	}
+	// Wait for all clients using this zipFile to complete their work.
+	zf.wg.Wait()
+	// Mock zipFiles have nil f. Only try to munmap and close f if it is non-nil.
+	if zf.f != nil {
+		// For now, only log errors here.
+		// These calls shouldn't ever fail, and if they do,
+		// there's not much to do about it; best to just limp along.
+		if err := unix.Munmap(zf.Data); err != nil {
+			log.Printf("failed to munmap %q: %v", zf.f.Name(), err)
+		}
+		if err := zf.f.Close(); err != nil {
+			log.Printf("failed to close %q: %v", zf.f.Name(), err)
+		}
+	}
+	delete(shard.m, path)
+	shard.mu.Unlock()
+}
+
+// zipFile provides efficient access to a single zip file.
+type zipFile struct {
+	// Take care with the size of this struct.
+	// There are many zipFiles present during typical usage.;
+	Files  []*srcFile
+	MaxLen int
+	Data   []byte
+	f      *os.File
+	wg     sync.WaitGroup // ensures underlying file is not munmap'd or closed while in use
+}
+
+func readZipFile(path string) (*zipFile, error) {
+	// Open zip file at path, prepare to read it.
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	r, err := zip.NewReader(f, fi.Size())
+	if err != nil {
+		return nil, err
+	}
+
+	// Create at populate zipFile from contents.
+	zf := &zipFile{f: f}
+	if err := zf.populateFiles(r); err != nil {
+		return nil, err
+	}
+
+	// mmap file
+	zf.Data, err = unix.Mmap(int(f.Fd()), 0, int(fi.Size()), syscall.PROT_READ, syscall.MAP_SHARED)
+	if err != nil {
+		return nil, err
+	}
+	if err := unix.Madvise(zf.Data, syscall.MADV_SEQUENTIAL); err != nil {
+		// best effort at optimization, so only log failures here
+		log.Printf("failed to madvise for %q: %v", path, err)
+	}
+
+	return zf, nil
+}
+
+func (f *zipFile) populateFiles(r *zip.Reader) error {
+	f.Files = make([]*srcFile, 0, len(r.File))
+	for _, file := range r.File {
+		if file.Method != zip.Store {
+			return errors.Errorf("file %s stored with compression %v, want %v", file.Name, file.Method, zip.Store)
+		}
+		size := int(file.UncompressedSize64)
+		off, err := file.DataOffset()
+		if err != nil {
+			return err
+		}
+		if int64(int32(off)) != off {
+			return errors.Errorf("file %s has offset > 2gb: %v", file.Name, off)
+		}
+		if int(int32(size)) != size {
+			return errors.Errorf("file %s has size > 2gb: %v", file.Name, size)
+		}
+		f.Files = append(f.Files, &srcFile{Name: file.Name, Off: int32(off), Len: int32(size), zf: f})
+		if size > f.MaxLen {
+			f.MaxLen = size
+		}
+	}
+
+	// We want sequential reads.
+	// We wrote this zip file ourselves, in one pass,
+	// so r.File should already be ordered by DataOffset.
+	// Sort anyway just to make sure.
+	sort.Slice(f.Files, func(i, j int) bool { return f.Files[i].Off < f.Files[j].Off })
+	return nil
+}
+
+// Close allows resources associated with f to be released.
+// It MUST be called exactly once for every file retrieved using get.
+// Contents from any srcFile from within f MUST NOT be used after
+// Close has been called.
+func (f *zipFile) Close() {
+	f.wg.Done()
+}
+
+func mockZipFile(data []byte) (*zipFile, error) {
+	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, err
+	}
+	zf := new(zipFile)
+	if err := zf.populateFiles(r); err != nil {
+		return nil, err
+	}
+	// Make a copy of data to avoid accidental alias/re-use bugs.
+	// This method is only for testing, so don't sweat the performance.
+	zf.Data = make([]byte, len(data))
+	copy(zf.Data, data)
+	// zf.f is intentionally left nil;
+	// this is an indicator that this is a mock zipFile.
+	return zf, nil
+}
+
+// A srcFile is a single file inside a zipFile.
+type srcFile struct {
+	// Take care with the size of this struct.
+	// There will be *lots* of these in memory.
+	// This is why Off and Len are 32 bit ints.
+	// (Note that this means that zipCache cannot
+	// handle zip files bigger than 2gb.)
+	Name string
+	Off  int32
+	Len  int32
+	zf   *zipFile
+}
+
+// Data returns the contents of f.
+// The contents MUST NOT be modified.
+// It is not safe to use the contents after the parent zipFile has been Closed.
+func (f *srcFile) Data() []byte {
+	return f.zf.Data[f.Off : int64(f.Off)+int64(f.Len)]
+}
+
+func (f *srcFile) String() string {
+	return fmt.Sprintf("<%s: %d+%d bytes>", f.Name, f.Off, f.Len)
+}
+
+// count returns the number of elements in c, assuming c is otherwise unused during the call to c.
+// It is intended only for testing.
+func (c *zipCache) count() int {
+	var n int
+	for i := range c.shards {
+		shard := &c.shards[i]
+		shard.mu.Lock()
+		n += len(shard.m)
+		shard.mu.Unlock()
+	}
+	return n
+}
