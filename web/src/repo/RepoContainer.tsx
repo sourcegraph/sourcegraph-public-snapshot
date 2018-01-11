@@ -73,7 +73,7 @@ export class RepoContainer extends React.Component<Props, State> {
             parsedRouteChanges.subscribe(({ repoPath, rev, rest }) => {
                 this.setState({ repoPath, rev, rest })
 
-                queryUpdates.next(`repo:^${escapeRegexp(repoPath)}$${rev ? `@${rev}` : ''} `)
+                queryUpdates.next(`repo:^${escapeRegexp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''} `)
             })
         )
 
@@ -208,4 +208,11 @@ function extractFilePathFromRest(rest: string): string | undefined {
         return rest.slice('tree/'.length)
     }
     return undefined
+}
+
+function abbreviateOID(oid: string): string {
+    if (oid.length === 40) {
+        return oid.slice(0, 7)
+    }
+    return oid
 }
