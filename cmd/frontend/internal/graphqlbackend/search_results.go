@@ -101,7 +101,11 @@ func (sr *searchResults) Results() []*searchResult {
 }
 
 func (sr *searchResults) ResultCount() int32 {
-	return int32(len(sr.results))
+	var totalResults int32
+	for _, result := range sr.results {
+		totalResults += result.resultCount()
+	}
+	return totalResults
 }
 
 func (sr *searchResults) ApproximateResultCount() string {
@@ -109,9 +113,9 @@ func (sr *searchResults) ApproximateResultCount() string {
 		return "?"
 	}
 	if sr.limitHit || len(sr.missing) > 0 || len(sr.cloning) > 0 {
-		return fmt.Sprintf("%d+", len(sr.results))
+		return fmt.Sprintf("%d+", sr.ResultCount())
 	}
-	return strconv.Itoa(len(sr.results))
+	return strconv.Itoa(int(sr.ResultCount()))
 }
 
 func (sr *searchResults) Alert() *searchAlert { return sr.alert }
@@ -572,6 +576,20 @@ type searchResult struct {
 func (g *searchResult) ToFileMatch() (*fileMatch, bool) { return g.fileMatch, g.fileMatch != nil }
 func (g *searchResult) ToCommitSearchResult() (*commitSearchResult, bool) {
 	return g.diff, g.diff != nil
+}
+
+func (g *searchResult) resultCount() int32 {
+	switch {
+	case g.fileMatch != nil:
+		if l := len(g.fileMatch.LineMatches()); l > 0 {
+			return int32(l)
+		}
+		return 1 // 1 to count "empty" results like type:path results
+	case g.diff != nil:
+		return 1
+	default:
+		return 1
+	}
 }
 
 // regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain
