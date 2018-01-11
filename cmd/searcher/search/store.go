@@ -259,13 +259,13 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 		if n > 0 && bytes.IndexByte(buf[:n], 0x00) >= 0 {
 			continue
 		}
-		if err == io.EOF {
-			// tar.Reader.Read guarantees n == 0 if err ==
-			// io.EOF. So we do not have to write anything to zr
-			// for an empty file.
-			continue
-		}
-		if err != nil {
+		switch err {
+		case io.EOF:
+			if n == 0 {
+				continue
+			}
+		case nil:
+		default:
 			return err
 		}
 
