@@ -247,6 +247,7 @@ func benchConcurrentFind(b *testing.B, p *protocol.Request) {
 		if err != nil {
 			b.Fatal(err)
 		}
+		ar.Reader().Reset()
 	}
 }
 

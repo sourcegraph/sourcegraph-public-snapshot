@@ -217,7 +217,6 @@ func (s *Store) fetch(ctx context.Context, repo, commit string) (rc io.ReadClose
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
 			fetchFailed.Inc()
-			log.Printf("failed to fetch %s@%s: %s", repo, commit, err)
 		}
 		fetching.Dec()
 		span.Finish()
@@ -337,18 +336,6 @@ func (s *Store) watchAndEvict() {
 		cacheSizeBytes.Set(float64(stats.CacheSize))
 		evictions.Add(float64(stats.Evicted))
 	}
-}
-
-// afterFunc is like time.AfterFunc, but takes a context to cancel the timer.
-func afterFunc(ctx context.Context, d time.Duration, f func()) {
-	go func() {
-		t := time.NewTimer(2 * time.Minute)
-		select {
-		case <-ctx.Done():
-		case <-t.C:
-			f()
-		}
-	}()
 }
 
 var (
