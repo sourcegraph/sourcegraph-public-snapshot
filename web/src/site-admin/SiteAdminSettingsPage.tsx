@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
-import { PageTitle } from '../../components/PageTitle'
-import { SettingsFile } from '../../settings/SettingsFile'
-import { eventLogger } from '../../tracking/eventLogger'
-import { fetchUserSettings, updateUserSettings } from './backend'
+import { PageTitle } from '../components/PageTitle'
+import { SettingsFile } from '../settings/SettingsFile'
+import { eventLogger } from '../tracking/eventLogger'
+import { fetchSiteSettings, updateSiteSettings } from './backend'
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser
@@ -16,7 +16,7 @@ interface State {
     commitError?: Error
 }
 
-export class UserSettingsConfigurationPage extends React.Component<Props, State> {
+export class SiteAdminSettingsPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
@@ -25,7 +25,7 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
         eventLogger.logViewEvent('UserSettingsConfiguration')
 
         this.subscriptions.add(
-            fetchUserSettings().subscribe(
+            fetchSiteSettings().subscribe(
                 settings => this.setState({ settings }),
                 error => this.setState({ error: error.message })
             )
@@ -41,10 +41,10 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
 
         return (
             <div className="user-settings-configuration-page">
-                <PageTitle title="User configuration" />
+                <PageTitle title="Site settings" />
                 <h2>Configuration</h2>
                 {this.state.error && <div className="alert alert-danger">{this.state.error}</div>}
-                <p>View and edit your personal search scopes and saved queries.</p>
+                <p>View and edit global settings for search scopes and saved queries.</p>
                 {this.state.settings !== undefined && (
                     <SettingsFile
                         settings={this.state.settings}
@@ -74,7 +74,7 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
             error: undefined,
             commitError: undefined,
         })
-        updateUserSettings(lastKnownSettingsID, contents).subscribe(
+        updateSiteSettings(lastKnownSettingsID, contents).subscribe(
             settings =>
                 this.setState({
                     error: undefined,

@@ -124,6 +124,8 @@
 // ../../../migrations/1514937919_remove_user_activity_table.up.sql
 // ../../../migrations/1515125883_repo_blocked_to_enabled.down.sql
 // ../../../migrations/1515125883_repo_blocked_to_enabled.up.sql
+// ../../../migrations/1515651962_drop_has_subject_constraint.down.sql
+// ../../../migrations/1515651962_drop_has_subject_constraint.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2671,6 +2673,46 @@ func _1515125883_repo_blocked_to_enabledUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1515651962_drop_has_subject_constraintDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\xc8\x3b\x0e\xc2\x30\x0c\x06\xe0\x3d\xa7\xf8\x47\x38\x43\xa6\x34\x8d\x20\xc2\xb5\xa5\xd4\xcc\x15\x8f\xa8\x94\x01\xa4\x3a\xb9\x3f\x3b\xeb\x37\xa4\x53\x66\xef\x02\x69\x2a\xd0\x30\x50\x82\xd5\xd6\xb6\xcf\x6a\x08\xe3\x88\x28\x3c\x6b\x09\x99\x15\xaf\x9b\x2d\xd6\xef\xef\xfa\x68\x88\xe7\x14\x2f\x38\x7c\xf7\x75\xd9\x9e\xc8\x33\x58\x14\x7c\x25\x82\x14\x74\xab\xfb\x1f\x1f\xbd\x8b\x32\x4d\x59\xbd\xfb\x05\x00\x00\xff\xff\x84\x42\x82\x03\x72\x00\x00\x00")
+
+func _1515651962_drop_has_subject_constraintDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1515651962_drop_has_subject_constraintDownSql,
+		"1515651962_drop_has_subject_constraint.down.sql",
+	)
+}
+
+func _1515651962_drop_has_subject_constraintDownSql() (*asset, error) {
+	bytes, err := _1515651962_drop_has_subject_constraintDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1515651962_drop_has_subject_constraint.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1515651962_drop_has_subject_constraintUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4e\x2d\x29\xc9\xcc\x4b\x2f\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x51\xc8\x48\x2c\x8e\x2f\x2e\x4d\xca\x4a\x4d\x2e\xb1\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x46\x9c\x47\xa0\x41\x00\x00\x00")
+
+func _1515651962_drop_has_subject_constraintUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1515651962_drop_has_subject_constraintUpSql,
+		"1515651962_drop_has_subject_constraint.up.sql",
+	)
+}
+
+func _1515651962_drop_has_subject_constraintUpSql() (*asset, error) {
+	bytes, err := _1515651962_drop_has_subject_constraintUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1515651962_drop_has_subject_constraint.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2847,6 +2889,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1514937919_remove_user_activity_table.up.sql":                _1514937919_remove_user_activity_tableUpSql,
 	"1515125883_repo_blocked_to_enabled.down.sql":                 _1515125883_repo_blocked_to_enabledDownSql,
 	"1515125883_repo_blocked_to_enabled.up.sql":                   _1515125883_repo_blocked_to_enabledUpSql,
+	"1515651962_drop_has_subject_constraint.down.sql":             _1515651962_drop_has_subject_constraintDownSql,
+	"1515651962_drop_has_subject_constraint.up.sql":               _1515651962_drop_has_subject_constraintUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3014,6 +3058,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1514937919_remove_user_activity_table.up.sql":                &bintree{_1514937919_remove_user_activity_tableUpSql, map[string]*bintree{}},
 	"1515125883_repo_blocked_to_enabled.down.sql":                 &bintree{_1515125883_repo_blocked_to_enabledDownSql, map[string]*bintree{}},
 	"1515125883_repo_blocked_to_enabled.up.sql":                   &bintree{_1515125883_repo_blocked_to_enabledUpSql, map[string]*bintree{}},
+	"1515651962_drop_has_subject_constraint.down.sql":             &bintree{_1515651962_drop_has_subject_constraintDownSql, map[string]*bintree{}},
+	"1515651962_drop_has_subject_constraint.up.sql":               &bintree{_1515651962_drop_has_subject_constraintUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

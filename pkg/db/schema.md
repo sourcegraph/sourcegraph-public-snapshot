@@ -247,8 +247,6 @@ Indexes:
  author_user_id | integer                  | not null
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
-Check constraints:
-    "has_subject" CHECK (org_id IS NOT NULL OR user_id IS NOT NULL)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT

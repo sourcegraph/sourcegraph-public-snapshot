@@ -94,6 +94,16 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             Organizations
                         </NavLink>
                     </li>
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/site-admin/global-settings"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                            exact={true}
+                        >
+                            Global settings
+                        </NavLink>
+                    </li>
                 </ul>
                 <ul className="sidebar__items">
                     <li className="sidebar__item">

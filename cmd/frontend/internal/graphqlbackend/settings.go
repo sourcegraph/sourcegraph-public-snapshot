@@ -96,3 +96,37 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		settings: settings,
 	}, nil
 }
+
+func currentSiteSettings(ctx context.Context) (*settingsResolver, error) {
+	settings, err := db.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{})
+	if err != nil {
+		return nil, err
+	}
+	if settings == nil {
+		return nil, nil
+	}
+	return &settingsResolver{&configurationSubject{}, settings, nil}, nil
+}
+
+func (r *schemaResolver) CurrentSiteSettings(ctx context.Context) (*settingsResolver, error) {
+	return currentSiteSettings(ctx)
+}
+
+func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
+	LastKnownSettingsID *int32
+	Contents            string
+}) (*settingsResolver, error) {
+	// 🚨 SECURITY: Only admins should be authorized to set global settings.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsResolver{
+		subject:  &configurationSubject{},
+		settings: settings,
+	}, nil
+}

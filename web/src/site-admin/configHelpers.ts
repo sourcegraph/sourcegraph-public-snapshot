@@ -75,15 +75,6 @@ const addSSOViaSAML: ConfigHelper = config => {
     }
 }
 
-const addSearchScopeToSiteConfig: ConfigHelper = config => {
-    const value: { name: string; value: string } = {
-        name: '<name>',
-        value: '<partial query string that will be inserted when the scope is selected>',
-    }
-    const edits = setProperty(config, ['settings', 'search.scopes', -1], value, defaultFormattingOptions)
-    return { edits, selectText: '<name>' }
-}
-
 const addSearchScopeToSettings: ConfigHelper = config => {
     const value: { name: string; value: string } = {
         name: '<name>',
@@ -113,5 +104,4 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
     { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },
     { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },
-    { id: 'sourcegraph.site.searchScopes', label: 'Add search scope', run: addSearchScopeToSiteConfig },
 ]

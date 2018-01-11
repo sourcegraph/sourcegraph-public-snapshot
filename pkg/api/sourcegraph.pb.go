@@ -358,8 +358,8 @@ type OrgTag struct {
 	Name  string `json:"Name,omitempty"`
 }
 
-// A ConfigurationSubject is something that can have settings. Exactly one
-// field must be non-nil.
+// A ConfigurationSubject is something that can have settings. A subject with no
+// fields set represents the global site settings subject.
 type ConfigurationSubject struct {
 	Site *string // the site's ID
 	Org  *int32  // the org's ID

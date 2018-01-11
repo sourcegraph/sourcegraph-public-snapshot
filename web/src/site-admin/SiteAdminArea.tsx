@@ -11,6 +11,7 @@ import { SiteAdminInviteUserPage } from './SiteAdminInviteUserPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
+import { SiteAdminSettingsPage } from './SiteAdminSettingsPage'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
 import { SiteAdminTelemetryPage } from './SiteAdminTelemetryPage'
 import { SiteAdminThreadsPage } from './SiteAdminThreadsPage'
@@ -64,6 +65,12 @@ export class SiteAdminArea extends React.Component<Props> {
                             path={`${this.props.match.url}/configuration`}
                             component={SiteAdminConfigurationPage}
                             exact={true}
+                        />
+                        <RouteWithProps
+                            path={`${this.props.match.url}/global-settings`}
+                            component={SiteAdminSettingsPage}
+                            exact={true}
+                            other={transferProps}
                         />
                         <Route
                             path={`${this.props.match.url}/repositories`}

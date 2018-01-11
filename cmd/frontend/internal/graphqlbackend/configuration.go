@@ -113,7 +113,7 @@ func (s *configurationSubject) toSubject() sourcegraph.ConfigurationSubject {
 	case s.user != nil:
 		return sourcegraph.ConfigurationSubject{User: &s.user.user.ID}
 	default:
-		panic("no configuration subject")
+		return sourcegraph.ConfigurationSubject{}
 	}
 }
 
@@ -126,7 +126,7 @@ func (s *configurationSubject) ID() graphql.ID {
 	case s.user != nil:
 		return s.user.ID()
 	}
-	panic("no configuration subject")
+	return "Global"
 }
 
 func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
@@ -137,8 +137,9 @@ func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsRes
 		return s.org.LatestSettings(ctx)
 	case s.user != nil:
 		return s.user.LatestSettings(ctx)
+	default:
+		return currentSiteSettings(ctx)
 	}
-	panic("no configuration subject")
 }
 
 // readConfiguration unmarshals s's latest settings into v.
@@ -167,6 +168,13 @@ func (r *configurationResolver) Messages() []string {
 	return r.messages
 }
 
+// configurationCasecadeResolver resolves settings from multiple sources.
+// When there is overlap between configuration values they will be merged in the
+// following cascading order (first is lowest-priority):
+// 1. Global site server configuration
+// 2. Global site settings
+// 3. Organization settings
+// 4. Current user settings
 type configurationCascadeResolver struct{}
 
 func (r *configurationCascadeResolver) Defaults() *configurationResolver {
@@ -190,6 +198,9 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 	}
 
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+		// Apply global site settings
+		subjects = append(subjects, &configurationSubject{})
+
 		user, err := currentUser(ctx)
 		if err != nil {
 			return nil, err

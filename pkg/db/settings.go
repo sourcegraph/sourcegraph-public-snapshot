@@ -74,7 +74,8 @@ func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject
 	case subject.User != nil:
 		cond = sqlf.Sprintf("user_id=%d", *subject.User)
 	default:
-		panic("no settings subject")
+		// No org and no user represents global site settings.
+		cond = sqlf.Sprintf("user_id IS NULL AND org_id IS NULL")
 	}
 
 	q := sqlf.Sprintf(`

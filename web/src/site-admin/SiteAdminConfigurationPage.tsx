@@ -54,7 +54,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     private monaco: typeof monaco | null
-    private editor: monaco.editor.ICodeEditor
+    private configEditor: monaco.editor.ICodeEditor
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
@@ -228,7 +228,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-configuration-page">
                 <PageTitle title="Configuration - Admin" />
-                <h2>Configuration</h2>
+                <h2>Server Configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <a href="https://about.sourcegraph.com/docs/server/">documentation</a> for more information.
@@ -249,7 +249,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                                 key={id}
                                                 className="btn btn-primary btn-sm site-admin-configuration-page__action"
                                                 // tslint:disable-next-line:jsx-no-lambda
-                                                onClick={() => this.runAction(id)}
+                                                onClick={() => this.runAction(id, this.configEditor)}
                                             >
                                                 {label}
                                             </button>
@@ -324,16 +324,16 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateEditor(editor => {
-                        this.editor = editor
+                        this.configEditor = editor
                     })
                 )
             )
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateModel(model => {
-                        if (this.editor && isStandaloneCodeEditor(this.editor)) {
+                        if (this.configEditor && isStandaloneCodeEditor(this.configEditor)) {
                             for (const { id, label, run } of siteConfigActions) {
-                                addEditorAction(this.editor, model, label, id, run)
+                                addEditorAction(this.configEditor, model, label, id, run)
                             }
                         }
                     })
@@ -342,9 +342,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         }
     }
 
-    private runAction(id: string): void {
-        if (this.editor) {
-            const action = this.editor.getAction(id)
+    private runAction(id: string, editor: monaco.editor.ICodeEditor): void {
+        if (editor) {
+            const action = editor.getAction(id)
             action.run().done(() => void 0, (err: any) => console.error(err))
         } else {
             alert('Wait for editor to load before running action.')

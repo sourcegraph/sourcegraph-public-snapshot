@@ -59,6 +59,7 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
             <div className="settings-file-container">
                 <PageTitle title="Organization configuration" />
                 <h2>Configuration</h2>
+                <p>View and edit your organization's search scopes and saved queries.</p>
                 {this.state.settings !== undefined && (
                     <SettingsFile
                         settings={this.state.settings}

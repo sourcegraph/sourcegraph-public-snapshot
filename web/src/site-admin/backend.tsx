@@ -256,6 +256,67 @@ export function fetchSite(opt: { telemetrySamples?: boolean }): Observable<GQL.I
     )
 }
 
+const settingsFragment = gql`
+    fragment SettingsFields on Settings {
+        id
+        configuration {
+            contents
+        }
+    }
+`
+
+/**
+ * Fetches global site settings.
+ *
+ * @return Observable that emits the settings or `null` if it doesn't exist
+ */
+export function fetchSiteSettings(): Observable<GQL.ISettings | null> {
+    return queryGraphQL(
+        gql`
+            query CurrentSiteSettings() {
+                currentSiteSettings {
+                    ...SettingsFields
+                }
+            }
+            ${settingsFragment}
+        `
+    ).pipe(
+        map(({ data, errors }) => {
+            console.log('DATA ERR', data, errors)
+            if (!data) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.currentSiteSettings
+        })
+    )
+}
+
+/**
+ * Updates global site settings.
+ *
+ * @return Observable that emits the newly updated settings
+ */
+export function updateSiteSettings(lastKnownSettingsID: number | null, contents: string): Observable<GQL.ISettings> {
+    return mutateGraphQL(
+        gql`
+            mutation UpdateSiteSettings($lastKnownSettingsID: Int, $contents: String!) {
+                updateSiteSettings(lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
+                    ...SettingsFields
+                }
+            }
+            ${settingsFragment}
+        `,
+        { lastKnownSettingsID, contents }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0) || !data.updateSiteSettings) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.updateSiteSettings
+        })
+    )
+}
+
 /**
  * Updates the site's configuration.
  */

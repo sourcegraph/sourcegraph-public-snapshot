@@ -110,6 +110,8 @@ type Mutation {
 	updateUser(username: String, displayName: String, avatarURL: String): User!
 	# Update the settings for the currently authenticated user.
 	updateUserSettings(lastKnownSettingsID: Int, contents: String!): Settings!
+	# Update the global settings for all users.
+	updateSiteSettings(lastKnownSettingsID: Int, contents: String!): Settings!
 	updateThread(threadID: ID!, archived: Boolean): Thread!
 	addCommentToThread(threadID: ID!, contents: String!): Thread!
 	# This method is the same as addCommentToThread, the only difference is
@@ -249,6 +251,7 @@ type Query {
 	phabricatorRepo(uri: String!): PhabricatorRepo
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
+	currentSiteSettings: Settings
 	isUsernameAvailable(username: String!): Boolean!
 	configuration: ConfigurationCascade!
 	search(query: String = ""): Search

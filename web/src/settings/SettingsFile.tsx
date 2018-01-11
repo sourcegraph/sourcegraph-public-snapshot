@@ -129,7 +129,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className="settings-file">
-                <p>View and edit your personal and organization's search scopes and saved queries.</p>
                 <div className="site-admin-configuration-page__action-groups">
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
