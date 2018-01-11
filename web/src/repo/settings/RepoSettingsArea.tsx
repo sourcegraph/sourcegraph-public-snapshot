@@ -1,7 +1,7 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { mergeMap } from 'rxjs/operators/mergeMap'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
@@ -41,7 +41,7 @@ export class RepoSettingsArea extends React.Component<Props> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.repoChanges
-                .pipe(mergeMap(({ uri }) => fetchRepository(uri)))
+                .pipe(switchMap(({ uri }) => fetchRepository(uri)))
                 .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
         )
         this.repoChanges.next(this.props.repo)
