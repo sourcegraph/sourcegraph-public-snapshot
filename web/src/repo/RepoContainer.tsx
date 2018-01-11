@@ -2,21 +2,18 @@ import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Observable } from 'rxjs/Observable'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { makeRepoURI, parseRepoRev } from '.'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { parseRepoRev } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
-import { memoizeObservable } from '../util/memoize'
 import { RouteWithProps } from '../util/RouteWithProps'
 import { GoToGitHubAction } from './actions/GoToGitHubAction'
 import { GoToPhabricatorAction } from './actions/GoToPhabricator'
-import { RepoNotFoundError, RepoSeeOtherError } from './backend'
+import { fetchRepository } from './backend'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
@@ -24,36 +21,6 @@ import { RepoSettingsArea } from './settings/RepoSettingsArea'
 
 const RepoPageNotFound: React.SFC = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="The repository page was not found." />
-)
-
-const fetchRepository = memoizeObservable(
-    (args: { repoPath: string }): Observable<GQL.IRepository | null> =>
-        queryGraphQL(
-            gql`
-                query Repository($repoPath: String!) {
-                    repository(uri: $repoPath) {
-                        uri
-                        viewerCanAdminister
-                        redirectURL
-                    }
-                }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-                }
-                if (data.repository && data.repository.redirectURL) {
-                    throw new RepoSeeOtherError(data.repository.redirectURL)
-                }
-                if (!data.repository) {
-                    throw new RepoNotFoundError(args.repoPath)
-                }
-                return data.repository
-            })
-        ),
-    makeRepoURI
 )
 
 interface Props extends RouteComponentProps<{ repoRevAndRest: string }> {
