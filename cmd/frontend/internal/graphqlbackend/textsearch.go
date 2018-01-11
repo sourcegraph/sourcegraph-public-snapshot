@@ -207,7 +207,10 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	if p.PathPatternsAreCaseSensitive {
 		q.Set("PathPatternsAreCaseSensitive", "true")
 	}
-	searcherURL := searcherURLs.Get(repo + "@" + commit)
+	searcherURL, err := searcherURLs.Get(repo + "@" + commit)
+	if err != nil {
+		return nil, false, err
+	}
 	req, err := http.NewRequest("GET", searcherURL, nil)
 	if err != nil {
 		return nil, false, err

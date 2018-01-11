@@ -29,6 +29,7 @@ import (
 // also fallback to static URLs if not configured for kubernetes.
 type Map struct {
 	mu   sync.Mutex
+	err  error
 	urls *consistenthash.Map
 }
 
@@ -43,9 +44,7 @@ type Map struct {
 func New(rawurl string) (*Map, error) {
 	if !strings.HasPrefix(rawurl, "k8s+") {
 		// Non-k8s urls we return a static map
-		return &Map{
-			urls: newConsistentHashMap([]string{rawurl}),
-		}, nil
+		return &Map{urls: newConsistentHashMap([]string{rawurl})}, nil
 	}
 
 	u, err := parseURL(rawurl)
@@ -65,11 +64,24 @@ func New(rawurl string) (*Map, error) {
 		return nil, errors.Errorf("%s does not specify namespace and could not detect pod namespace", rawurl)
 	}
 
-	// Initially we return a map which just returns the URL for the
-	// service. Once we start watching the endpoints it will be updated.
-	m := &Map{
-		urls: newConsistentHashMap([]string{u.serviceURL()}),
-	}
+	// Kick off setting the initial urls or err. We don't rely just on inform
+	// since it may not communicate updates. We take the Lock now to ensure
+	// the first value set is from this goroutine.
+	m := &Map{}
+	m.mu.Lock()
+	go func() {
+		defer m.mu.Unlock()
+		endpoints, err := cl.Core().Endpoints(u.Namespace).List(v1.ListOptions{FieldSelector: "metadata.name=" + u.Service})
+		if err != nil {
+			m.err = err
+			return
+		}
+		b := &urlMapBuilder{K8sURL: u}
+		for _, ep := range endpoints.Items {
+			b.Add(&ep)
+		}
+		m.urls, m.err = b.Build()
+	}()
 
 	// Kick off watcher in the background
 	go inform(cl, m, u)
@@ -78,11 +90,15 @@ func New(rawurl string) (*Map, error) {
 }
 
 // Get the closest URL in the hash to the provided key.
-func (m *Map) Get(key string) string {
+func (m *Map) Get(key string) (string, error) {
 	m.mu.Lock()
-	u := m.urls.Get(key)
+	urls, err := m.urls, m.err
 	m.mu.Unlock()
-	return u
+
+	if err != nil {
+		return "", err
+	}
+	return urls.Get(key), nil
 }
 
 func inform(cl *kubernetes.Clientset, m *Map, u *k8sURL) {
@@ -115,27 +131,40 @@ func inform(cl *kubernetes.Clientset, m *Map, u *k8sURL) {
 
 	for {
 		<-updateC
-		var urls []string
+		b := &urlMapBuilder{K8sURL: u}
 		store := inf.GetStore()
 		for _, o := range store.List() {
-			ep := o.(*v1.Endpoints)
-			if ep.ObjectMeta.Name != u.Service {
-				continue
-			}
-			for _, subset := range ep.Subsets {
-				for _, addr := range subset.Addresses {
-					urls = append(urls, u.endpointURL(addr.IP))
-				}
-			}
+			b.Add(o.(*v1.Endpoints))
 		}
-		if len(urls) == 0 {
-			urls = []string{u.serviceURL()}
-		}
-		urlMap := newConsistentHashMap(urls)
+		urls, err := b.Build()
 		m.mu.Lock()
-		m.urls = urlMap
+		m.urls, m.err = urls, err
 		m.mu.Unlock()
 	}
+}
+
+type urlMapBuilder struct {
+	K8sURL *k8sURL
+	urls   []string
+}
+
+// Add adds all addresses associated with the endpoint for the Service.
+func (b *urlMapBuilder) Add(ep *v1.Endpoints) {
+	if ep.ObjectMeta.Name != b.K8sURL.Service {
+		return
+	}
+	for _, subset := range ep.Subsets {
+		for _, addr := range subset.Addresses {
+			b.urls = append(b.urls, b.K8sURL.endpointURL(addr.IP))
+		}
+	}
+}
+
+func (b *urlMapBuilder) Build() (*consistenthash.Map, error) {
+	if len(b.urls) == 0 {
+		return nil, errors.Errorf("No %s endpoints", b.K8sURL.Service)
+	}
+	return newConsistentHashMap(b.urls), nil
 }
 
 type k8sURL struct {
