@@ -21,77 +21,59 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
-// configAndClient binds together a GitHub config and the authenticated GitHub client created from that config.
-// This is a KLUDGE to enable public repository cloning with an authenticated client,
-// This data structure would probably be obviated by better separation of responsibility between the
-// different packages involved in indexing.
-type configAndClient struct {
-	config schema.GitHubConnection
+// githubConfig binds together a GitHub connection and the authenticated
+// GitHub client created from that config. This enables reuse of a single client
+// for a given config.
+type githubConfig struct {
+	conn   schema.GitHubConnection
 	client *github.Client
 }
 
 var (
-	githubConf = conf.Get().Github
+	githubConns = conf.Get().Github
 )
 
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the GitHub Enterprise instance to Sourcegraph
 func RunGitHubRepositorySyncWorker(ctx context.Context) error {
-	configs := githubConf
-	var clients []configAndClient
-	for _, c := range configs {
+	var configs []githubConfig
+	for _, c := range githubConns {
 		u, err := url.Parse(c.Url)
 		if err != nil {
 			return fmt.Errorf("error processing GitHub config URL %s: %s", c.Url, err)
 		}
 		if u.Hostname() == "github.com" {
-			config := &githubutil.Config{Context: ctx}
-			cc := configAndClient{config: c}
+			cfg := githubConfig{conn: c}
+			clientConf := &githubutil.Config{Context: ctx}
 			if c.Token != "" {
-				cc.client = config.AuthedClient(c.Token)
+				cfg.client = clientConf.AuthedClient(c.Token)
 			} else {
-				cc.client = config.UnauthedClient()
+				cfg.client = clientConf.UnauthedClient()
 			}
-			clients = append(clients, cc)
+			configs = append(configs, cfg)
 		} else {
 			cl, err := githubEnterpriseClient(ctx, c.Url, c.Certificate, c.Token)
 			if err != nil {
 				return err
 			}
-			clients = append(clients, configAndClient{config: c, client: cl})
+			configs = append(configs, githubConfig{conn: c, client: cl})
 		}
 	}
 
-	if len(clients) == 0 {
+	if len(configs) == 0 {
 		return nil
 	}
-	for {
-		for _, c := range clients {
-			// update explicitly listed repositories
-			var explicitRepos []*github.Repository
-			for _, ownerAndRepoString := range c.config.Repos {
-				ownerAndRepo := strings.Split(ownerAndRepoString, "/")
-				if len(ownerAndRepo) != 2 {
-					log15.Error("Could not update public GitHub repository, name must be owner/repo format", "repo", ownerAndRepoString)
-					continue
-				}
-				repo, _, err := c.client.Repositories.Get(ctx, ownerAndRepo[0], ownerAndRepo[1])
+	for _, c := range configs {
+		go func(c githubConfig) {
+			for {
+				err := updateForConfig(ctx, c.conn, c.client)
 				if err != nil {
-					log15.Error("Could not update public GitHub repository", "error", err)
-					continue
+					log15.Warn("error updating GitHub repos", "url", c.conn.Url, "err", err)
 				}
-				explicitRepos = append(explicitRepos, repo)
+				time.Sleep(updateInterval)
 			}
-			updateGitHubRepos(ctx, c.client, explicitRepos, c.config.PreemptivelyClone)
-
-			// update implicit repositories (repositories owned by an organization to which the user who created
-			// the personal access token belongs)
-			err := updateForClient(ctx, c.client, c.config.PreemptivelyClone)
-			if err != nil {
-				log15.Error("Could not update repositories", "error", err)
-			}
-		}
-		time.Sleep(updateInterval)
+		}(c)
 	}
+	select {}
 }
 
 func githubEnterpriseClient(ctx context.Context, gheURL, cert, accessToken string) (*github.Client, error) {
@@ -121,9 +103,27 @@ func githubEnterpriseClient(ctx context.Context, gheURL, cert, accessToken strin
 	return config.AuthedClient(accessToken), nil
 }
 
-// updateForClient ensures that all public and private repositories owned by the authenticated user
-// are updated.
-func updateForClient(ctx context.Context, client *github.Client, preemptivelyClone bool) error {
+// updateForConfig ensures that all public and private repositories listed by the given config
+func updateForConfig(ctx context.Context, conn schema.GitHubConnection, client *github.Client) error {
+	// update explicitly listed repositories
+	var explicitRepos []*github.Repository
+	for _, ownerAndRepoString := range conn.Repos {
+		ownerAndRepo := strings.Split(ownerAndRepoString, "/")
+		if len(ownerAndRepo) != 2 {
+			log15.Error("Could not update public GitHub repository, name must be owner/repo format", "repo", ownerAndRepoString)
+			continue
+		}
+		repo, _, err := client.Repositories.Get(ctx, ownerAndRepo[0], ownerAndRepo[1])
+		if err != nil {
+			log15.Error("Could not update public GitHub repository", "error", err)
+			continue
+		}
+		explicitRepos = append(explicitRepos, repo)
+	}
+	updateGitHubRepos(ctx, client, explicitRepos, conn.PreemptivelyClone)
+
+	// update implicit repositories (repositories owned by an organization to which the user who created
+	// the personal access token belongs)
 	var repos []*github.Repository
 	var err error
 	if client.BaseURL.Host == "api.github.com" {
@@ -134,13 +134,14 @@ func updateForClient(ctx context.Context, client *github.Client, preemptivelyClo
 	if err != nil {
 		return fmt.Errorf("could not list repositories: %s", err)
 	}
-	return updateGitHubRepos(ctx, client, repos, preemptivelyClone)
+	updateGitHubRepos(ctx, client, repos, conn.PreemptivelyClone)
+	return nil
 }
 
 // update ensures that all provided repositories exist in the repository table.
 // It adds each repository with a URI of the form
 // "${GITHUB_CLIENT_HOSTNAME}/${GITHUB_REPO_FULL_NAME}".
-func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*github.Repository, preemptivelyClone bool) error {
+func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*github.Repository, preemptivelyClone bool) {
 	// Sort repos by most recently pushed, so we prioritize cloning repos first that are more likely
 	// to be important.
 	sort.Slice(repos, func(i, j int) bool {
@@ -195,8 +196,6 @@ func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*gith
 			}
 		}
 	}
-
-	return nil
 }
 
 // fetchAllGitHubRepos returns all repos that belong to the org of the provided client's authenticated user.
