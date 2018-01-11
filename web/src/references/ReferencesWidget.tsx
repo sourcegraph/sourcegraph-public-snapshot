@@ -264,6 +264,9 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
 
     private onDismiss = (): void => {
         this.props.history.push(
+            // Cast because we want this to have a type with a full absolute position/range but
+            // with referencesMode undefined, because the purpose of this call is to remove
+            // referencesMode from the URL.
             toPrettyBlobURL({ ...this.props, referencesMode: undefined } as RepoFile &
                 Partial<PositionSpec> & { referencesMode: undefined } & Partial<RangeSpec>)
         )

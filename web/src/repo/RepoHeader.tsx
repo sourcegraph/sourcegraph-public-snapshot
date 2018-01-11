@@ -11,7 +11,7 @@ import { RepoBreadcrumb } from '../components/Breadcrumb'
  */
 export interface RepoHeaderAction {
     position: 'left' | 'right'
-    component: React.ReactElement<any>
+    element: React.ReactElement<any>
 }
 
 interface Props {
@@ -77,7 +77,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
      * @param action to add to the header
      */
     public static addAction(action: RepoHeaderAction): AnonymousSubscription {
-        if (action.component.key === undefined || action.component.key === null) {
+        if (action.element.key === undefined || action.element.key === null) {
             throw new Error('RepoHeader addAction: action must have key property')
         }
         RepoHeader.actionAdds.next(action)
@@ -141,9 +141,9 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         disableLinks={this.props.disableLinks}
                     />
                 </div>
-                {this.state.leftActions && this.state.leftActions.map(a => a.component)}
+                {this.state.leftActions && this.state.leftActions.map(a => a.element)}
                 <div className="repo-header__spacer" />
-                {this.state.rightActions && this.state.rightActions.map(a => a.component)}
+                {this.state.rightActions && this.state.rightActions.map(a => a.element)}
                 {this.props.repo.viewerCanAdminister && (
                     <NavLink
                         to={`/${this.props.repo.uri}/-/settings`}

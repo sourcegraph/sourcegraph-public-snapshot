@@ -29,7 +29,7 @@ import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
- * they are received.
+ * they are received. This is used to trigger an update; the source of truth is still the URL.
  */
 export const queryUpdates = new Subject<string>()
 

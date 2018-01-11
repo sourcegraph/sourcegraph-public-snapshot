@@ -166,7 +166,7 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                         />
                         <RepoHeaderActionPortal
                             position="left"
-                            component={
+                            element={
                                 <ThreadRevisionAction
                                     key="item.thread-revision"
                                     repoPath={item.thread.repo.repository ? item.thread.repo.repository.uri : itemRepo}
@@ -179,7 +179,7 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                         <RepoHeaderActionPortal
                             position="right"
                             key="toggle-line-wrap"
-                            component={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={nextWrapCodeChange} />}
+                            element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={nextWrapCodeChange} />}
                         />
                         {item &&
                             !item.thread.linesRevision && (

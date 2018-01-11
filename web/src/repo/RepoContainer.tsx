@@ -157,12 +157,12 @@ export class RepoContainer extends React.Component<Props, State> {
                 <RepoHeaderActionPortal
                     position="right"
                     key="go-to-github"
-                    component={<GoToGitHubAction key="go-to-github" location={this.props.location} />}
+                    element={<GoToGitHubAction key="go-to-github" location={this.props.location} />}
                 />
                 <RepoHeaderActionPortal
                     position="right"
                     key="go-to-phabricator"
-                    component={
+                    element={
                         <GoToPhabricatorAction
                             key="go-to-phabricator"
                             repo={this.state.repoPath}

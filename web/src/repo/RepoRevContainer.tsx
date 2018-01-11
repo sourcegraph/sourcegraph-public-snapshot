@@ -204,11 +204,11 @@ export class RepoRevContainer extends React.PureComponent<Props, State> {
                 <SurveyToast />
                 <RepoHeaderActionPortal
                     position="right"
-                    component={<CopyLinkAction key="copy-link" location={this.props.location} />}
+                    element={<CopyLinkAction key="copy-link" location={this.props.location} />}
                 />
                 <RepoHeaderActionPortal
                     position="left"
-                    component={
+                    element={
                         <RevSwitcher
                             key="rev-switcher"
                             repoPath={this.props.repo.uri}
@@ -219,7 +219,7 @@ export class RepoRevContainer extends React.PureComponent<Props, State> {
                 />
                 <RepoHeaderActionPortal
                     position="left"
-                    component={
+                    element={
                         <GoToPermalinkAction
                             key="go-to-permalink"
                             rev={this.props.rev}

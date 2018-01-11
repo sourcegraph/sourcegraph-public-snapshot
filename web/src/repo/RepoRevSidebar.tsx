@@ -124,7 +124,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 handlePosition="right"
                 storageKey="repo-rev-sidebar"
                 defaultSize={256 /* px */}
-                component={
+                element={
                     <div
                         id="explorer"
                         className={`repo-rev-sidebar ${this.props.className} ${

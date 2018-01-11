@@ -24,9 +24,9 @@ interface Props<C extends React.ReactElement<any>> {
     defaultSize: number
 
     /**
-     * The component that is resizable on its right side.
+     * The element that is resizable on its right side.
      */
-    component: C
+    element: C
 }
 
 interface State {
@@ -94,7 +94,7 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
                     onMouseMove={this.onMouseMove}
                     onMouseUp={this.onMouseUp}
                 />
-                {this.props.component}
+                {this.props.element}
                 <div
                     className={`resizable__handle resizable__handle--${this.props.handlePosition} ${
                         this.state.resizing ? 'resizable__handle--resizing' : ''

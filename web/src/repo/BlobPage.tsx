@@ -33,7 +33,7 @@ import { memoizeObservable } from '../util/memoize'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { OpenInEditorAction } from './actions/OpenInEditorAction'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
-import { FileRenderMode, ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
+import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import {
     AbsoluteRepoFile,
     AbsoluteRepoFilePosition,
@@ -726,7 +726,6 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
         repo: string
         commitID: string
         filePath: string
-        renderMode?: FileRenderMode
     }>()
     private subscriptions = new Subscription()
 
@@ -763,7 +762,6 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
             repo: this.props.repoPath,
             commitID: this.props.commitID,
             filePath: this.props.filePath,
-            renderMode: ToggleRenderedFileMode.getModeFromURL(this.props.location),
         })
     }
 
@@ -780,7 +778,6 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                 repo: props.repoPath,
                 commitID: props.commitID,
                 filePath: props.filePath,
-                renderMode,
             })
         }
     }
@@ -796,12 +793,14 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
         }
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
+        const hash = parseHash(this.props.location.hash)
 
-        const actions: JSX.Element[] = [
+        return [
+            <PageTitle key="page-title" title={this.getPageTitle()} />,
             <RepoHeaderActionPortal
                 position="right"
                 key="open-in-editor"
-                component={
+                element={
                     <OpenInEditorAction
                         key="open-in-editor"
                         repoPath={this.props.repoPath}
@@ -814,36 +813,26 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
             <RepoHeaderActionPortal
                 position="right"
                 key="toggle-line-wrap"
-                component={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
+                element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
             />,
-        ]
-
-        if (this.state.blob && this.state.blob.richHTML) {
-            actions.push(
-                <RepoHeaderActionPortal
-                    key="toggle-rendered-file-mode"
-                    position="right"
-                    component={
-                        <ToggleRenderedFileMode
-                            key="toggle-rendered-file-mode"
-                            mode={renderMode}
-                            location={this.props.location}
-                        />
-                    }
-                />
-            )
-        }
-
-        if (this.state.blob.richHTML && renderMode === 'rendered') {
-            return [...actions, <RenderedFile key="rendered-file" dangerousInnerHTML={this.state.blob.richHTML} />]
-        }
-
-        const hash = parseHash(this.props.location.hash)
-        const position = hash.line ? { line: hash.line, character: hash.character || 0 } : undefined
-
-        return [
-            ...actions,
-            <PageTitle key="page-title" title={this.getPageTitle()} />,
+            this.state.blob &&
+                this.state.blob.richHTML && (
+                    <RepoHeaderActionPortal
+                        key="toggle-rendered-file-mode"
+                        position="right"
+                        element={
+                            <ToggleRenderedFileMode
+                                key="toggle-rendered-file-mode"
+                                mode={renderMode}
+                                location={this.props.location}
+                            />
+                        }
+                    />
+                ),
+            this.state.blob.richHTML &&
+                renderMode === 'rendered' && (
+                    <RenderedFile key="rendered-file" dangerousInnerHTML={this.state.blob.richHTML} />
+                ),
             <Blob
                 key="blob"
                 repoPath={this.props.repoPath}
@@ -856,14 +845,14 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                 history={this.props.history}
             />,
             hash.modal === 'references' &&
-                position && (
+                hash.line && (
                     <Resizable
                         key="blob-page-references"
                         className="blob-page__panel--resizable"
                         handlePosition="top"
                         defaultSize={350}
                         storageKey="blob-page-references"
-                        component={
+                        element={
                             <ReferencesWidget
                                 key="refs"
                                 repoPath={this.props.repoPath}
@@ -871,7 +860,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                                 rev={this.props.rev}
                                 referencesMode={hash.modalMode}
                                 filePath={this.props.filePath}
-                                position={position}
+                                position={{ line: hash.line, character: hash.character || 0 }}
                                 location={this.props.location}
                                 history={this.props.history}
                             />

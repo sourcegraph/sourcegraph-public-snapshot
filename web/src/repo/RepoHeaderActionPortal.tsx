@@ -10,6 +10,11 @@ export interface RepoHeaderAction {
     component: React.ReactElement<any>
 }
 
+interface Props<C extends React.ReactElement<any>> {
+    element: C
+    position: 'left' | 'right'
+}
+
 /**
  * Used to add actions to the repository header from other components' render methods.
  *
@@ -19,7 +24,7 @@ export interface RepoHeaderAction {
  *     public render(): React.ReactNode {
  *         return (
  *             <div>
- *                 <RepoHeaderActionPortal position="right" component={
+ *                 <RepoHeaderActionPortal position="right" element={
  *                     <MyAction key="toggle-rendered-file-mode" foo="bar" />
  *                 } />
  *                 <h1>My component!</h1>
@@ -33,31 +38,28 @@ export interface RepoHeaderAction {
  *
  * See design note in the RepoHeader docstring.
  */
-export class RepoHeaderActionPortal<C extends React.ReactElement<any>> extends React.PureComponent<{
-    component: C
-    position: 'left' | 'right'
-}> {
+export class RepoHeaderActionPortal<C extends React.ReactElement<any>> extends React.PureComponent<Props<C>> {
     private subscription: AnonymousSubscription | undefined
 
     public componentDidMount(): void {
-        if (!this.props.component.key) {
+        if (!this.props.element.key) {
             throw new Error('RepoHeaderActionPortal component element must have a key prop')
         }
 
         this.subscription = RepoHeader.addAction({
             position: this.props.position,
-            component: this.props.component,
+            element: this.props.element,
         })
     }
 
-    public componentWillReceiveProps(props: { component: C; position: 'left' | 'right' }): void {
-        if (this.props.component !== props.component || this.props.position !== props.position) {
+    public componentWillReceiveProps(props: { element: C; position: 'left' | 'right' }): void {
+        if (this.props.element !== props.element || this.props.position !== props.position) {
             if (this.subscription) {
                 this.subscription.unsubscribe()
             }
             this.subscription = RepoHeader.addAction({
                 position: props.position,
-                component: props.component,
+                element: props.element,
             })
         }
     }

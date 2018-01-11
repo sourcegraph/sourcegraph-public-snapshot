@@ -1,11 +1,7 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
-/**
- * A repository header item that displays the branch and revision that a comment thread is attached
- * to.
- */
-export const ThreadRevisionAction: React.SFC<{
+interface Props {
     repoPath: string
     branch: string | undefined
     rev: string
@@ -15,7 +11,13 @@ export const ThreadRevisionAction: React.SFC<{
      * otherwise false).
      */
     link: boolean
-}> = ({ repoPath, branch, rev, link }) => {
+}
+
+/**
+ * A repository header item that displays the branch and revision that a comment thread is attached
+ * to.
+ */
+export const ThreadRevisionAction: React.SFC<Props> = ({ repoPath, branch, rev, link }) => {
     const contents = `@ ${branch} (${abbreviateOID(rev)})`
 
     return link ? (
@@ -29,7 +31,7 @@ export const ThreadRevisionAction: React.SFC<{
 
 function abbreviateOID(oid: string): string {
     if (oid.length === 40) {
-        return oid.slice(0, 6)
+        return oid.slice(0, 7)
     }
     return oid
 }
