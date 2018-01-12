@@ -294,7 +294,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 					filesmu.Unlock()
 					return
 				}
-				f := files[0]
+				f := &files[0]
 				files = files[1:]
 				filesmu.Unlock()
 

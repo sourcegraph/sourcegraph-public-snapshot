@@ -97,7 +97,7 @@ func (c *zipCache) delete(path string) {
 type zipFile struct {
 	// Take care with the size of this struct.
 	// There are many zipFiles present during typical usage.
-	Files  []*srcFile
+	Files  []srcFile
 	MaxLen int
 	Data   []byte
 	f      *os.File
@@ -139,8 +139,8 @@ func readZipFile(path string) (*zipFile, error) {
 }
 
 func (f *zipFile) populateFiles(r *zip.Reader) error {
-	f.Files = make([]*srcFile, 0, len(r.File))
-	for _, file := range r.File {
+	f.Files = make([]srcFile, len(r.File))
+	for i, file := range r.File {
 		if file.Method != zip.Store {
 			return errors.Errorf("file %s stored with compression %v, want %v", file.Name, file.Method, zip.Store)
 		}
@@ -155,7 +155,7 @@ func (f *zipFile) populateFiles(r *zip.Reader) error {
 		if int(int32(size)) != size {
 			return errors.Errorf("file %s has size > 2gb: %v", file.Name, size)
 		}
-		f.Files = append(f.Files, &srcFile{Name: file.Name, Off: int32(off), Len: int32(size)})
+		f.Files[i] = srcFile{Name: file.Name, Off: int32(off), Len: int32(size)}
 		if size > f.MaxLen {
 			f.MaxLen = size
 		}
