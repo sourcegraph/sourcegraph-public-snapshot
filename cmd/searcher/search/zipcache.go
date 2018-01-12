@@ -96,7 +96,7 @@ func (c *zipCache) delete(path string) {
 // zipFile provides efficient access to a single zip file.
 type zipFile struct {
 	// Take care with the size of this struct.
-	// There are many zipFiles present during typical usage.;
+	// There are many zipFiles present during typical usage.
 	Files  []*srcFile
 	MaxLen int
 	Data   []byte
