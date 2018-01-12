@@ -140,11 +140,11 @@ func (s *Store) prepareZip(ctx context.Context, repo, commit string) (path strin
 	}()
 
 	// When searching across thousands of repos at once, we don't want to wait
-	// for repos that are still be fetched. So we set a very aggressive
-	// deadline on how long we wait to open/fetch an archive. Note: This only
-	// times out how long we wait for this request, the fetch will still
-	// happen in the background so future requests don't have to wait.
-	ctx, cancel := context.WithTimeout(ctx, 300*time.Millisecond)
+	// for repos that are still be fetched. So we set a low deadline on how
+	// long we wait to open/fetch an archive. Note: This only times out how
+	// long we wait for this request, the fetch will still happen in the
+	// background so future requests don't have to wait.
+	ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 	defer cancel()
 
 	select {
