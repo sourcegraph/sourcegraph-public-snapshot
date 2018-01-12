@@ -126,6 +126,7 @@ function scrollToCell(cell: HTMLElement): void {
 interface Props extends AbsoluteRepoFile {
     location: H.Location
     history: H.History
+    className: string
     html: string
     wrapCode: boolean
 }
@@ -246,7 +247,7 @@ class Blob extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <code
-                className={'blob' + (this.props.wrapCode ? ' blob--wrapped' : '')}
+                className={`blob ${this.props.wrapCode ? ' blob--wrapped' : ''} ${this.props.className}`}
                 ref={this.onBlobRef}
                 dangerouslySetInnerHTML={{ __html: this.props.html }}
             />
@@ -835,6 +836,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                 ),
             <Blob
                 key="blob"
+                className="blob-page__blob"
                 repoPath={this.props.repoPath}
                 commitID={this.props.commitID}
                 filePath={this.props.filePath}
