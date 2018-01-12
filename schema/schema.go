@@ -74,9 +74,10 @@ type Repos struct {
 
 // Repository
 type Repository struct {
-	Path string `json:"path"`
-	Type string `json:"type,omitempty"`
-	Url  string `json:"url"`
+	CommitURL string `json:"commitURL,omitempty"`
+	Path      string `json:"path"`
+	Type      string `json:"type,omitempty"`
+	Url       string `json:"url"`
 }
 
 // ResourceOverride

@@ -392,6 +392,11 @@ const SiteSchemaJSON = `{
           "description": "Display path on Sourcegraph for the repository, such as my/repo",
           "type": "string",
           "pattern": "^[\\w_]"
+        },
+        "commitURL": {
+          "description":
+            "URL template for specifying how to link to commits at an external location. Use \"{commit}\" as a placeholder for a given commit ID e.g. \"https://codehost.internal.org/myrepo/view-commit/{commit}\"",
+          "type": "string"
         }
       }
     },
