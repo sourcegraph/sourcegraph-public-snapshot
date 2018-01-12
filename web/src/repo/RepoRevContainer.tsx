@@ -61,6 +61,7 @@ export class RepoRevContainer extends React.PureComponent<Props, State> {
                     distinctUntilChanged(),
                     tap(() =>
                         this.setState({
+                            loading: true,
                             error: undefined,
                             cloneInProgress: undefined,
                             commitID: undefined,
