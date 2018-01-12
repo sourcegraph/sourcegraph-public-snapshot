@@ -4,7 +4,7 @@ import { RepoHeader } from './RepoHeader'
 
 interface Props<C extends React.ReactElement<any>> {
     element: C
-    position: 'left' | 'right'
+    position: 'path' | 'left' | 'right'
 }
 
 /**

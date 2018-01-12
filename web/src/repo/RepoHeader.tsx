@@ -10,7 +10,7 @@ import { RepoBreadcrumb } from '../components/Breadcrumb'
  * An action link that is added to and displayed in the repository header.
  */
 export interface RepoHeaderAction {
-    position: 'left' | 'right'
+    position: 'path' | 'left' | 'right'
     element: React.ReactElement<any>
 }
 
@@ -42,6 +42,11 @@ interface Props {
 }
 
 interface State {
+    /**
+     * Actions to display just after the path (braedcrumb) in the header.
+     */
+    pathActions?: RepoHeaderAction[]
+
     /**
      * Actions to display on the left side of the header, after the path breadcrumb.
      */
@@ -96,6 +101,9 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             RepoHeader.actionAdds.subscribe(action => {
                 switch (action.position) {
+                    case 'path':
+                        this.setState(prevState => ({ pathActions: (prevState.pathActions || []).concat(action) }))
+                        break
                     case 'left':
                         this.setState(prevState => ({ leftActions: (prevState.leftActions || []).concat(action) }))
                         break
@@ -109,6 +117,11 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             RepoHeader.actionRemoves.subscribe(toRemove => {
                 switch (toRemove.position) {
+                    case 'path':
+                        this.setState(prevState => ({
+                            pathActions: (prevState.pathActions || []).filter(a => a !== toRemove),
+                        }))
+                        break
                     case 'left':
                         this.setState(prevState => ({
                             leftActions: (prevState.leftActions || []).filter(a => a !== toRemove),
@@ -140,6 +153,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         rev={this.props.rev}
                         disableLinks={this.props.disableLinks}
                     />
+                    {this.state.pathActions && this.state.pathActions.map(a => a.element)}
                 </div>
                 {this.state.leftActions && this.state.leftActions.map(a => a.element)}
                 <div className="repo-header__spacer" />

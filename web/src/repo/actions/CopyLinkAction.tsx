@@ -13,7 +13,7 @@ export class CopyLinkAction extends React.PureComponent<{ location: H.Location }
     public render(): JSX.Element | null {
         return (
             <button
-                className="btn btn-link btn-link-sm composite-container__header-action"
+                className="copy-link-action btn btn-link btn-link-sm"
                 title="Copy link to clipboard"
                 onClick={this.onClick}
             >

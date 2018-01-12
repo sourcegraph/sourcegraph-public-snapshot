@@ -182,7 +182,7 @@ export class RepoRevContainer extends React.PureComponent<Props, State> {
                 {IS_FIREFOX && <FirefoxExtensionToast />}
                 <SurveyToast />
                 <RepoHeaderActionPortal
-                    position="right"
+                    position="path"
                     element={<CopyLinkAction key="copy-link" location={this.props.location} />}
                 />
                 <RepoHeaderActionPortal

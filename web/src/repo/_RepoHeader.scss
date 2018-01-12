@@ -1,4 +1,5 @@
 @import '../components/Breadcrumb';
+@import './actions/CopyLinkAction';
 
 .repo-header {
     // Breadcrumb
@@ -8,8 +9,15 @@
         align-items: center;
         overflow: hidden;
         min-width: 0;
-        padding-right: 0.75rem;
+        padding-right: 0.25rem;
         padding-left: 0.25rem;
+
+        .copy-link-action {
+            opacity: 0;
+        }
+        &:hover .copy-link-action {
+            opacity: 1;
+        }
     }
 
     &__spacer {
