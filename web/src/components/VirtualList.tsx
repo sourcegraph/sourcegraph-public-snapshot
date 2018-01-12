@@ -3,6 +3,16 @@ import VisibilitySensor from 'react-visibility-sensor'
 
 interface Props {
     initItemsToShow?: number
+
+    /**
+     * The unique identifier of the list. Used to e.g. reset the number of
+     * shown items back to initItemsToShow when the items list changes.
+     *
+     * This is needed because simply knowing this.props.items !== nextProps.items
+     * is not enough when e.g. the virtual list is a dynamic one where items are
+     * constantly added.
+     */
+    listId: string
     items: JSX.Element[]
 }
 
@@ -23,7 +33,7 @@ export class VirtualList extends React.Component<Props, State> {
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
-        if (this.props.items !== nextProps.items) {
+        if (this.props.listId !== nextProps.listId && this.props.items !== nextProps.items) {
             this.setState({ itemsToShow: nextProps.initItemsToShow || 5 })
         }
     }
