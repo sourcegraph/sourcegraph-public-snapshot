@@ -50,27 +50,17 @@ func TestThreads_Create(t *testing.T) {
 
 	r := &schemaResolver{}
 	_, err := r.CreateThread(ctx, &struct {
-		OrgID             orgID
-		CanonicalRemoteID string
-		CloneURL          string
-		File              string
-		RepoRevision      string
-		LinesRevision     string
-		Branch            *string
-		StartLine         int32
-		EndLine           int32
-		StartCharacter    int32
-		EndCharacter      int32
-		RangeLength       int32
-		Contents          string
-		Lines             *threadLines
+		Input *createThreadInput
 	}{
-		CanonicalRemoteID: wantRepo.CanonicalRemoteID,
-		CloneURL:          wantRepo.CloneURL,
-		File:              "foo.go",
-		RepoRevision:      repoRev,
-		LinesRevision:     lineRev,
-		Contents:          "Hello",
+		Input: &createThreadInput{
+			CanonicalRemoteID: wantRepo.CanonicalRemoteID,
+			CloneURL:          wantRepo.CloneURL,
+			RepoRevisionPath:  "foo.go",
+			LinesRevisionPath: "foo.go",
+			RepoRevision:      repoRev,
+			LinesRevision:     lineRev,
+			Contents:          "Hello",
+		},
 	})
 
 	if err != nil {

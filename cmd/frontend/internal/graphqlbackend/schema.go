@@ -97,23 +97,8 @@ input CreateThreadInput {
 scalar JSONString
 
 type Mutation {
-	createThread(
-		orgID: ID!
-		canonicalRemoteID: String!
-		cloneURL: String!
-		file: String!
-		repoRevision: String!
-		linesRevision: String!
-		branch: String
-		startLine: Int!
-		endLine: Int!
-		startCharacter: Int!
-		endCharacter: Int!
-		rangeLength: Int!
-		contents: String!
-		lines: ThreadLinesInput
-	): Thread! @deprecated(reason: "use createThread2")
-	createThread2(input: CreateThreadInput!): Thread!
+	createThread(input: CreateThreadInput!): Thread!
+	createThread2(input: CreateThreadInput!): Thread! @deprecated(reason: "use createThread")
 	updateUser(username: String, displayName: String, avatarURL: String): User!
 	# Update the settings for the currently authenticated user.
 	updateUserSettings(lastKnownSettingsID: Int, contents: String!): Settings!

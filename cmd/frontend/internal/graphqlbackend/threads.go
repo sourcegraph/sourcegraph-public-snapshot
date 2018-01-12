@@ -340,42 +340,6 @@ func (v *threadID) UnmarshalGraphQL(input interface{}) error {
 	}
 }
 
-// TODO(nick): deprecated
-func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
-	OrgID             orgID
-	CanonicalRemoteID string
-	CloneURL          string
-	File              string
-	RepoRevision      string
-	LinesRevision     string
-	Branch            *string
-	StartLine         int32
-	EndLine           int32
-	StartCharacter    int32
-	EndCharacter      int32
-	RangeLength       int32
-	Contents          string
-	Lines             *threadLines
-}) (*threadResolver, error) {
-	return s.createThread2Input(ctx, &createThreadInput{
-		OrgID:             args.OrgID,
-		CanonicalRemoteID: args.CanonicalRemoteID,
-		CloneURL:          args.CloneURL,
-		RepoRevisionPath:  args.File,
-		LinesRevisionPath: args.File,
-		RepoRevision:      args.RepoRevision,
-		LinesRevision:     args.LinesRevision,
-		Branch:            args.Branch,
-		StartLine:         args.StartLine,
-		EndLine:           args.EndLine,
-		StartCharacter:    args.StartCharacter,
-		EndCharacter:      args.EndCharacter,
-		RangeLength:       args.RangeLength,
-		Contents:          args.Contents,
-		Lines:             args.Lines,
-	})
-}
-
 type createThreadInput struct {
 	OrgID             orgID // accept int32 and org graphql.ID
 	CanonicalRemoteID string
@@ -394,13 +358,20 @@ type createThreadInput struct {
 	Lines             *threadLines
 }
 
+func (s *schemaResolver) CreateThread(ctx context.Context, args *struct {
+	Input *createThreadInput
+}) (*threadResolver, error) {
+	return s.createThreadInput(ctx, args.Input)
+}
+
+// DEPRECATED
 func (s *schemaResolver) CreateThread2(ctx context.Context, args *struct {
 	Input *createThreadInput
 }) (*threadResolver, error) {
-	return s.createThread2Input(ctx, args.Input)
+	return s.createThreadInput(ctx, args.Input)
 }
 
-func (s *schemaResolver) createThread2Input(ctx context.Context, args *createThreadInput) (*threadResolver, error) {
+func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThreadInput) (*threadResolver, error) {
 	// 🚨 SECURITY: Check that the current user is a member of the org.
 	if err := backend.CheckCurrentUserIsOrgMember(ctx, args.OrgID.int32Value); err != nil {
 		return nil, err
