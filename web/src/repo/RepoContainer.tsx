@@ -151,7 +151,7 @@ export class RepoContainer extends React.Component<Props, State> {
                         other={{ ...transferProps, rev: this.state.rev, objectType: 'blob' }}
                     />
                     <RouteWithProps
-                        path={`${repoMatchURL}@:rev+/-/blob/:filePath+`}
+                        path={`${repoMatchURL}@${this.state.rev}/-/blob/:filePath+`}
                         component={RepoRevContainer}
                         exact={true}
                         other={{ ...transferProps, rev: this.state.rev, objectType: 'blob' }}
@@ -163,13 +163,13 @@ export class RepoContainer extends React.Component<Props, State> {
                         other={{ ...transferProps, rev: this.state.rev, objectType: 'tree' }}
                     />
                     <RouteWithProps
-                        path={`${repoMatchURL}@:rev+/-/tree/:filePath+`}
+                        path={`${repoMatchURL}@${this.state.rev}/-/tree/:filePath+`}
                         component={RepoRevContainer}
                         exact={true}
                         other={{ ...transferProps, rev: this.state.rev, objectType: 'tree' }}
                     />
                     <RouteWithProps
-                        path={`${repoMatchURL}@:rev+`}
+                        path={`${repoMatchURL}@${this.state.rev}`}
                         component={RepoRevContainer}
                         exact={true}
                         other={{ ...transferProps, rev: this.state.rev, objectType: 'tree' }}
