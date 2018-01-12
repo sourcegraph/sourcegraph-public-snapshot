@@ -76,9 +76,11 @@ interface State {
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
 export class RepoRevSidebar extends React.PureComponent<Props, State> {
+    private static STORAGE_KEY = 'repo-rev-sidebar-hidden'
+
     public state: State = {
         loading: true,
-        showSidebar: true, // TODO!(sqs): remember if sidebar was hidden
+        showSidebar: localStorage.getItem(RepoRevSidebar.STORAGE_KEY) === null,
     }
 
     private specChanges = new Subject<{ repoPath: string; commitID: string }>()
@@ -148,5 +150,12 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
         )
     }
 
-    private onSidebarToggle = () => this.setState({ showSidebar: !this.state.showSidebar })
+    private onSidebarToggle = () => {
+        if (this.state.showSidebar) {
+            localStorage.setItem(RepoRevSidebar.STORAGE_KEY, 'true')
+        } else {
+            localStorage.removeItem(RepoRevSidebar.STORAGE_KEY)
+        }
+        this.setState({ showSidebar: !this.state.showSidebar })
+    }
 }
