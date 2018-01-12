@@ -155,7 +155,7 @@ func (f *zipFile) populateFiles(r *zip.Reader) error {
 		if int(int32(size)) != size {
 			return errors.Errorf("file %s has size > 2gb: %v", file.Name, size)
 		}
-		f.Files = append(f.Files, &srcFile{Name: file.Name, Off: int32(off), Len: int32(size), zf: f})
+		f.Files = append(f.Files, &srcFile{Name: file.Name, Off: int32(off), Len: int32(size)})
 		if size > f.MaxLen {
 			f.MaxLen = size
 		}
@@ -205,14 +205,13 @@ type srcFile struct {
 	Name string
 	Off  int32
 	Len  int32
-	zf   *zipFile
 }
 
-// Data returns the contents of f.
+// Data returns the contents of s, which is a srcFile in f.
 // The contents MUST NOT be modified.
-// It is not safe to use the contents after the parent zipFile has been Closed.
-func (f *srcFile) Data() []byte {
-	return f.zf.Data[f.Off : int64(f.Off)+int64(f.Len)]
+// It is not safe to use the contents after f has been Closed.
+func (f *zipFile) DataFor(s *srcFile) []byte {
+	return f.Data[s.Off : int64(s.Off)+int64(s.Len)]
 }
 
 func (f *srcFile) String() string {

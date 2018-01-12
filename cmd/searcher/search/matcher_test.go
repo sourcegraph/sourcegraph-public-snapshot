@@ -365,11 +365,8 @@ func TestLineLimit(t *testing.T) {
 				MaxLen: maxBuf,
 				Data:   bytes.Repeat([]byte("A"), test.size),
 			}
-			fakeSrcFile := srcFile{
-				zf:  &fakeZipFile,
-				Len: int32(test.size),
-			}
-			matches, limitHit, err := rg.Find(&fakeSrcFile)
+			fakeSrcFile := srcFile{Len: int32(test.size)}
+			matches, limitHit, err := rg.Find(&fakeZipFile, &fakeSrcFile)
 			if err != nil {
 				t.Fatal(err)
 			}
