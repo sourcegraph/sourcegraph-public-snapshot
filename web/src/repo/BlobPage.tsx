@@ -12,6 +12,7 @@ import { catchError } from 'rxjs/operators/catchError'
 import { debounceTime } from 'rxjs/operators/debounceTime'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { take } from 'rxjs/operators/take'
 import { takeUntil } from 'rxjs/operators/takeUntil'
@@ -650,22 +651,33 @@ class Blob extends React.Component<Props, State> {
     })
 }
 
-export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean }): string {
-    return makeRepoURI(parsed) + parsed.isLightTheme
+export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
+    return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
 }
 
 const fetchBlob = memoizeObservable(
-    (args: { repoPath: string; commitID: string; filePath: string; isLightTheme: boolean }): Observable<GQL.IFile> =>
+    (args: {
+        repoPath: string
+        commitID: string
+        filePath: string
+        isLightTheme: boolean
+        disableTimeout: boolean
+    }): Observable<GQL.IFile> =>
         queryGraphQL(
             gql`
-                query Blob($repoPath: String!, $commitID: String!, $filePath: String!, $isLightTheme: Boolean) {
+                query Blob(
+                    $repoPath: String!
+                    $commitID: String!
+                    $filePath: String!
+                    $isLightTheme: Boolean!
+                    $disableTimeout: Boolean!
+                ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
                             commit {
                                 file(path: $filePath) {
                                     richHTML
-                                    highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
-                                        # TODO!(sqs): deal with aborted highlights
+                                    highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
                                         aborted
                                         html
                                     }
@@ -728,6 +740,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
         commitID: string
         filePath: string
     }>()
+    private extendHighlightingTimeoutClicks = new Subject<boolean>()
     private subscriptions = new Subscription()
 
     constructor(props: BlobPageProps) {
@@ -749,11 +762,17 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
 
         // Fetch repository revision.
         this.subscriptions.add(
-            combineLatest(this.specChanges, colorTheme)
+            combineLatest(this.specChanges, colorTheme, this.extendHighlightingTimeoutClicks.pipe(startWith(false)))
                 .pipe(
                     tap(() => this.setState({ blob: undefined })),
-                    switchMap(([{ repo, commitID, filePath }, colorTheme]) =>
-                        fetchBlob({ repoPath: repo, commitID, filePath, isLightTheme: colorTheme === 'light' })
+                    switchMap(([{ repo, commitID, filePath }, colorTheme, extendHighlightingTimeout]) =>
+                        fetchBlob({
+                            repoPath: repo,
+                            commitID,
+                            filePath,
+                            isLightTheme: colorTheme === 'light',
+                            disableTimeout: extendHighlightingTimeout,
+                        })
                     )
                 )
                 .subscribe(blob => this.setState({ blob }), err => this.setState({ error: err.message }))
@@ -816,36 +835,49 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                 key="toggle-line-wrap"
                 element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
             />,
-            this.state.blob &&
-                this.state.blob.richHTML && (
-                    <RepoHeaderActionPortal
-                        key="toggle-rendered-file-mode"
-                        position="right"
-                        element={
-                            <ToggleRenderedFileMode
-                                key="toggle-rendered-file-mode"
-                                mode={renderMode}
-                                location={this.props.location}
-                            />
-                        }
-                    />
-                ),
+            this.state.blob.richHTML && (
+                <RepoHeaderActionPortal
+                    key="toggle-rendered-file-mode"
+                    position="right"
+                    element={
+                        <ToggleRenderedFileMode
+                            key="toggle-rendered-file-mode"
+                            mode={renderMode}
+                            location={this.props.location}
+                        />
+                    }
+                />
+            ),
             this.state.blob.richHTML &&
                 renderMode === 'rendered' && (
                     <RenderedFile key="rendered-file" dangerousInnerHTML={this.state.blob.richHTML} />
                 ),
-            <Blob
-                key="blob"
-                className="blob-page__blob"
-                repoPath={this.props.repoPath}
-                commitID={this.props.commitID}
-                filePath={this.props.filePath}
-                html={this.state.blob.highlight.html}
-                rev={this.props.rev}
-                wrapCode={this.state.wrapCode}
-                location={this.props.location}
-                history={this.props.history}
-            />,
+            !this.state.blob.richHTML &&
+                !this.state.blob.highlight.aborted && (
+                    <Blob
+                        key="blob"
+                        className="blob-page__blob"
+                        repoPath={this.props.repoPath}
+                        commitID={this.props.commitID}
+                        filePath={this.props.filePath}
+                        html={this.state.blob.highlight.html}
+                        rev={this.props.rev}
+                        wrapCode={this.state.wrapCode}
+                        location={this.props.location}
+                        history={this.props.history}
+                    />
+                ),
+            !this.state.blob.richHTML &&
+                this.state.blob.highlight.aborted && (
+                    <div className="blob-page__aborted" key="aborted">
+                        <div className="alert alert-notice">
+                            Syntax-highlighting this file took too long. &nbsp;
+                            <button onClick={this.onExtendHighlightingTimeoutClick} className="btn btn-sm btn-primary">
+                                Try again
+                            </button>
+                        </div>
+                    </div>
+                ),
             hash.modal === 'references' &&
                 hash.line && (
                     <Resizable
@@ -873,6 +905,8 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
     }
 
     private onDidUpdateLineWrap = (value: boolean) => this.setState({ wrapCode: value })
+
+    private onExtendHighlightingTimeoutClick = () => this.extendHighlightingTimeoutClicks.next(true)
 
     private getPageTitle(): string {
         const repoPathSplit = this.props.repoPath.split('/')
