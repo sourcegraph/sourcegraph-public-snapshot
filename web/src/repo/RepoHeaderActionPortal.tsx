@@ -2,14 +2,6 @@ import * as React from 'react'
 import { AnonymousSubscription } from 'rxjs/Subscription'
 import { RepoHeader } from './RepoHeader'
 
-/**
- * An action link that is added to and displayed in the repository header.
- */
-export interface RepoHeaderAction {
-    position: 'left' | 'right'
-    component: React.ReactElement<any>
-}
-
 interface Props<C extends React.ReactElement<any>> {
     element: C
     position: 'left' | 'right'
