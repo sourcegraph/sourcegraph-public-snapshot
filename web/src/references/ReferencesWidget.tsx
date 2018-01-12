@@ -225,6 +225,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     {this.state.group === 'local' && (
                         <VirtualList
                             initItemsToShow={3}
+                            listId="references-local"
                             items={localRefs
                                 .sort()
                                 .map((uri, i) => (
@@ -242,6 +243,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     {this.state.group === 'external' && (
                         <VirtualList
                             initItemsToShow={3}
+                            listId="references-external"
                             items={externalRefs.map((uri, i) => (
                                 /* don't sort, to avoid jerky UI as new repo results come in */
                                 <FileMatch
