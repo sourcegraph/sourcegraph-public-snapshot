@@ -58,10 +58,11 @@ export interface RepoBreadcrumbProps {
 
 export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
     public render(): JSX.Element | null {
-        const trimmedUri = this.props.repoPath
-            .split('/')
-            .slice(1)
-            .join('/') // remove first path part
+        let parts = this.props.repoPath.split('/')
+        if (parts.length >= 3 && parts[0].includes('.')) {
+            parts = parts.slice(1) // remove hostname from repo path (reduce visual noise)
+        }
+        const trimmedUri = parts.join('/')
         return (
             <Breadcrumb
                 path={trimmedUri + (this.props.filePath ? '/' + this.props.filePath : '')}
