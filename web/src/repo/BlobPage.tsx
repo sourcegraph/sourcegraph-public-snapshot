@@ -1,3 +1,4 @@
+import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as H from 'history'
 import isEmpty from 'lodash/isEmpty'
 import isEqual from 'lodash/isEqual'
@@ -24,6 +25,7 @@ import { Position, Range } from 'vscode-languageserver-types'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../backend/lsp'
 import { triggerBlame } from '../blame'
+import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { Resizable } from '../components/Resizable'
 import { ReferencesWidget } from '../references/ReferencesWidget'
@@ -764,7 +766,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
         this.subscriptions.add(
             combineLatest(this.specChanges, colorTheme, this.extendHighlightingTimeoutClicks.pipe(startWith(false)))
                 .pipe(
-                    tap(() => this.setState({ blob: undefined })),
+                    tap(() => this.setState({ loading: true, blob: undefined, error: undefined })),
                     switchMap(([{ repo, commitID, filePath }, colorTheme, extendHighlightingTimeout]) =>
                         fetchBlob({
                             repoPath: repo,
@@ -772,10 +774,16 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                             filePath,
                             isLightTheme: colorTheme === 'light',
                             disableTimeout: extendHighlightingTimeout,
-                        })
+                        }).pipe(
+                            catchError(error => {
+                                console.error(error)
+                                this.setState({ loading: false, error })
+                                return []
+                            })
+                        )
                     )
                 )
-                .subscribe(blob => this.setState({ blob }), err => this.setState({ error: err.message }))
+                .subscribe(blob => this.setState({ loading: false, blob }), err => console.error(err))
         )
 
         this.specChanges.next({
@@ -807,9 +815,19 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
     }
 
     public render(): React.ReactNode {
-        if (!this.state.blob) {
+        if (this.state.loading) {
             // Render placeholder for layout before content is fetched.
             return <div className="blob-page__placeholder" />
+        }
+
+        if (!this.state.blob) {
+            return (
+                <HeroPage
+                    icon={DirectionalSignIcon}
+                    title="404: Not Found"
+                    subtitle="The requested file was not found."
+                />
+            )
         }
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
