@@ -44,7 +44,7 @@ export class RepoHeaderActionPortal<C extends React.ReactElement<any>> extends R
         })
     }
 
-    public componentWillReceiveProps(props: { element: C; position: 'left' | 'right' }): void {
+    public componentWillReceiveProps(props: Props<C>): void {
         if (this.props.element !== props.element || this.props.position !== props.position) {
             if (this.subscription) {
                 this.subscription.unsubscribe()
