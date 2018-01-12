@@ -46,13 +46,13 @@ func (c *zipCache) shardFor(path string) *zipCacheShard {
 func (c *zipCache) get(path string) (*zipFile, error) {
 	shard := c.shardFor(path)
 	shard.mu.Lock()
+	defer shard.mu.Unlock()
 	if shard.m == nil {
 		shard.m = make(map[string]*zipFile)
 	}
 	zf, ok := shard.m[path]
 	if ok {
 		zf.wg.Add(1)
-		shard.mu.Unlock()
 		return zf, nil
 	}
 	// Cache miss.
@@ -60,22 +60,20 @@ func (c *zipCache) get(path string) (*zipFile, error) {
 	// which also conveniently provides free single-flighting.
 	zf, err := readZipFile(path)
 	if err != nil {
-		shard.mu.Unlock()
 		return nil, err
 	}
 	shard.m[path] = zf
 	zf.wg.Add(1)
-	shard.mu.Unlock()
 	return zf, nil
 }
 
 func (c *zipCache) delete(path string) {
 	shard := c.shardFor(path)
 	shard.mu.Lock()
+	defer shard.mu.Unlock()
 	zf, ok := shard.m[path]
 	if !ok {
 		// already deleted?!
-		shard.mu.Unlock()
 		return
 	}
 	// Wait for all clients using this zipFile to complete their work.
@@ -93,7 +91,6 @@ func (c *zipCache) delete(path string) {
 		}
 	}
 	delete(shard.m, path)
-	shard.mu.Unlock()
 }
 
 // zipFile provides efficient access to a single zip file.
