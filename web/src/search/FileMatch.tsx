@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { CodeExcerpt } from '../components/CodeExcerpt'
+import { pluralize } from '../util/strings'
 import { toPrettyBlobURL } from '../util/url'
 import { ResultContainer } from './ResultContainer'
 
@@ -132,7 +133,11 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                 collapsedChildren={getChildren(false)}
                 expandedChildren={getChildren(true)}
                 collapseLabel={`Hide ${items.length - subsetMatches} matches`}
-                expandLabel={`Show ${items.length - subsetMatches} more matches`}
+                expandLabel={`Show ${items.length - subsetMatches} more ${pluralize(
+                    'match',
+                    items.length - subsetMatches,
+                    'matches'
+                )}`}
             />
         )
     }
