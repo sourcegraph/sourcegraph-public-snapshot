@@ -105,6 +105,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     folding: false,
                     renderLineHighlight: 'none',
                     scrollBeyondLastLine: false,
+                    quickSuggestions: true,
                     quickSuggestionsDelay: 200,
                     readOnly: this.props.readOnly,
                 }}
