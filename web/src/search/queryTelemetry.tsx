@@ -3,6 +3,8 @@ import { SearchOptions } from './index'
 
 export function queryTelemetryData(opt: SearchOptions): { [key: string]: any } {
     return {
+        // 🚨 PRIVACY: never provide any private data in { code_search: { query_data: { query } } }.
+        // This field is whitelisted for on-premises Server users.
         query: opt.query ? queryStringTelemetryData(opt.query) : undefined,
         combined: opt.query,
         empty: !opt.query,
@@ -10,6 +12,8 @@ export function queryTelemetryData(opt: SearchOptions): { [key: string]: any } {
 }
 
 function queryStringTelemetryData(q: string): { [key: string]: any } {
+    // 🚨 PRIVACY: never provide any private data in this function's return value.
+
     // This only takes ~1.7ms per call, so it does not need to be optimized.
     return {
         field_type: q.includes('type:')
@@ -131,6 +135,8 @@ function queryStringTelemetryData(q: string): { [key: string]: any } {
 }
 
 function defaultQueryFieldTelemetryData(q: string): { [key: string]: any } {
+    // 🚨 PRIVACY: never provide any private data in this function's return value.
+
     // Strip non-default fields. Does not account for backslashes.
     q = q.replace(/(^|\s)\w+:([^:"'/\s]+|"[^"]*"|'[^']*')/g, ' ')
 

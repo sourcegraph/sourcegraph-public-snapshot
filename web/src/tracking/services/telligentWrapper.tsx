@@ -50,6 +50,17 @@ class TelligentWrapper {
                 event_label: eventProps.eventLabel,
                 page_title: eventProps.page_title,
                 language: eventProps.language,
+                code_search: eventProps.code_search
+                    ? {
+                          query_data: eventProps.code_search.query_data
+                              ? {
+                                    query: eventProps.code_search.query_data.query,
+                                }
+                              : undefined,
+                          results: eventProps.code_search.results,
+                      }
+                    : undefined,
+                id: eventProps.id,
                 platform: eventProps.platform,
                 server: eventProps.server,
             }

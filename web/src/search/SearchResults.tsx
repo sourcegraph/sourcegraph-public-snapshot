@@ -97,6 +97,8 @@ export class SearchResults extends React.Component<Props, State> {
                                 res =>
                                     eventLogger.log('SearchResultsFetched', {
                                         code_search: {
+                                            // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
+                                            // This field is whitelisted for on-premises Server users.
                                             results: {
                                                 results_count: res.results.length,
                                                 result_items_count: res.results.reduce(
