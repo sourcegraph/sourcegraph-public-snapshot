@@ -76,6 +76,7 @@ export class SearchPage extends React.Component<Props, State> {
                             onChange={this.onUserQueryChange}
                             prependQueryForSuggestions={this.state.fieldsQuery}
                             autoFocus={'cursor-at-end'}
+                            global={true}
                         />
                         <SearchButton />
                         <SearchHelp />

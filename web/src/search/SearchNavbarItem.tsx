@@ -84,6 +84,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                     value={this.state.userQuery}
                     onChange={this.onUserQueryChange}
                     autoFocus={autoFocus ? 'cursor-at-end' : undefined}
+                    global={true}
                 />
                 <SearchButton />
                 <SearchHelp />

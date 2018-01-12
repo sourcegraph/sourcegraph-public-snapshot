@@ -225,6 +225,8 @@ export class RepoRevContainer extends React.PureComponent<Props, State> {
                             commitID={this.state.commitID}
                             rev={this.props.rev}
                             filePath={this.props.match.params.filePath || ''}
+                            location={this.props.location}
+                            history={this.props.history}
                         />
                     )}
                     {this.props.objectType === 'blob' && (

@@ -51,6 +51,12 @@ interface Props {
 
     /** Whether the input should be autofocused (and the behavior thereof) */
     autoFocus?: 'cursor-at-end'
+
+    /** The input placeholder, if different from the default is desired. */
+    placeholder?: string
+
+    /** Whether this is the global query input (singleton) on a page. */
+    global?: boolean
 }
 
 interface State {
@@ -164,69 +170,74 @@ export class QueryInput extends React.Component<Props, State> {
                 )
         )
 
-        // Quick-Open hotkeys
-        this.subscriptions.add(
-            fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(
-                    filter(
-                        event =>
-                            // Slash shortcut (if no input element is focused)
-                            (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
-                            // Cmd/Ctrl+P shortcut
-                            ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
-                            // Cmd/Ctrl+Shift+F shortcut
-                            ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
-                    ),
-                    switchMap(event => {
-                        event.preventDefault()
-                        // Use selection as query
-                        const selection = window.getSelection().toString()
-                        if (selection) {
-                            return new Observable<void>(observer =>
-                                this.setState(
-                                    {
-                                        // query: selection, TODO(sqs): add back this behavior
-                                        suggestions: [],
-                                        selectedSuggestion: -1,
-                                    },
-                                    () => {
-                                        observer.next()
-                                        observer.complete()
-                                    }
+        if (this.props.global) {
+            // Quick-Open hotkeys
+            this.subscriptions.add(
+                fromEvent<KeyboardEvent>(window, 'keydown')
+                    .pipe(
+                        filter(
+                            event =>
+                                // Slash shortcut (if no input element is focused)
+                                (event.key === '/' &&
+                                    !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
+                                // Cmd/Ctrl+P shortcut
+                                ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
+                                // Cmd/Ctrl+Shift+F shortcut
+                                ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
+                        ),
+                        switchMap(event => {
+                            event.preventDefault()
+                            // Use selection as query
+                            const selection = window.getSelection().toString()
+                            if (selection) {
+                                return new Observable<void>(observer =>
+                                    this.setState(
+                                        {
+                                            // query: selection, TODO(sqs): add back this behavior
+                                            suggestions: [],
+                                            selectedSuggestion: -1,
+                                        },
+                                        () => {
+                                            observer.next()
+                                            observer.complete()
+                                        }
+                                    )
                                 )
-                            )
+                            }
+                            return [undefined]
+                        })
+                    )
+                    .subscribe(() => {
+                        if (this.inputElement) {
+                            // Select all input
+                            this.inputElement.focus()
+                            this.inputElement.setSelectionRange(0, this.inputElement.value.length)
                         }
-                        return [undefined]
                     })
-                )
-                .subscribe(() => {
-                    if (this.inputElement) {
-                        // Select all input
-                        this.inputElement.focus()
-                        this.inputElement.setSelectionRange(0, this.inputElement.value.length)
-                    }
-                })
-        )
+            )
 
-        // Allow other components to update the query (e.g., to be relevant to what the user is
-        // currently viewing).
-        this.subscriptions.add(queryUpdates.pipe(distinctUntilChanged()).subscribe(query => this.props.onChange(query)))
+            // Allow other components to update the query (e.g., to be relevant to what the user is
+            // currently viewing).
+            this.subscriptions.add(
+                queryUpdates.pipe(distinctUntilChanged()).subscribe(query => this.props.onChange(query))
+            )
 
-        /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    startWith(props),
-                    filter(({ location }) => new URLSearchParams(location.search).get('focus') !== null)
-                )
-                .subscribe(props => {
-                    this.focusInputAndPositionCursorAtEnd()
+            /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
+            this.subscriptions.add(
+                this.componentUpdates
+                    .pipe(
+                        startWith(props),
+                        filter(({ location }) => new URLSearchParams(location.search).get('focus') !== null)
+                    )
+                    .subscribe(props => {
+                        this.focusInputAndPositionCursorAtEnd()
 
-                    const q = new URLSearchParams(props.location.search)
-                    q.delete('focus')
-                    this.props.history.replace({ search: q.toString() })
-                })
-        )
+                        const q = new URLSearchParams(props.location.search)
+                        q.delete('focus')
+                        this.props.history.replace({ search: q.toString() })
+                    })
+            )
+        }
     }
 
     public componentDidMount(): void {
@@ -268,7 +279,7 @@ export class QueryInput extends React.Component<Props, State> {
                     onBlur={this.onInputBlur}
                     spellCheck={false}
                     autoCapitalize="off"
-                    placeholder="Search code..."
+                    placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
                     ref={ref => (this.inputElement = ref!)}
                 />
                 {showSuggestions && (

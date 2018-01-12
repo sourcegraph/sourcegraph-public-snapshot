@@ -73,7 +73,7 @@ export class RepoContainer extends React.Component<Props, State> {
             parsedRouteChanges.subscribe(({ repoPath, rev, rest }) => {
                 this.setState({ repoPath, rev, rest })
 
-                queryUpdates.next(`repo:^${escapeRegexp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''} `)
+                queryUpdates.next(searchQueryForRepoRev(repoPath, rev))
             })
         )
 
@@ -215,4 +215,8 @@ function abbreviateOID(oid: string): string {
         return oid.slice(0, 7)
     }
     return oid
+}
+
+export function searchQueryForRepoRev(repoPath: string, rev?: string): string {
+    return `repo:^${escapeRegexp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''} `
 }

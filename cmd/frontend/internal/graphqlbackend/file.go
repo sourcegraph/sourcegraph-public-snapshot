@@ -189,7 +189,7 @@ func (r *fileResolver) LastCommit(ctx context.Context) (*commitInfoResolver, err
 }
 
 func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, error) {
-	return r.commits(ctx, 20)
+	return r.commits(ctx, 10)
 }
 
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*commitInfoResolver, error) {
