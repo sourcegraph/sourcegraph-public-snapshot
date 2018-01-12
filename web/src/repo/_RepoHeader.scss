@@ -1,0 +1,26 @@
+@import '../components/Breadcrumb';
+@import './actions/CopyLinkAction';
+
+.repo-header {
+    // Breadcrumb
+    &__path {
+        flex: 0 1 auto;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        min-width: 0;
+        padding-right: 0.25rem;
+        padding-left: 0.25rem;
+
+        .copy-link-action {
+            opacity: 0;
+        }
+        &:hover .copy-link-action {
+            opacity: 1;
+        }
+    }
+
+    &__spacer {
+        flex: 1 1 0;
+    }
+}

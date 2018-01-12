@@ -10,8 +10,7 @@ import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
 import { RepoBrowser } from './repo/RepoBrowser'
-import { RepositoryResolver } from './repo/RepositoryResolver'
-import { RepoSettingsArea } from './repo/settings/RepoSettingsArea'
+import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
 import { SavedQueries } from './search/SavedQueries'
 import { SearchPage } from './search/SearchPage'
@@ -121,19 +120,7 @@ export const routes: LayoutRouteProps[] = [
         exact: true,
     },
     {
-        path: '/:repo+/-/settings',
-        component: RepoSettingsArea,
-    },
-    {
-        path: '/:repoRev+/-/blob/:filePath+',
-        render: (props: any) => <RepositoryResolver {...props} isDirectory={false} />,
-    },
-    {
-        path: '/:repoRev+/-/tree/:filePath+',
-        render: (props: any) => <RepositoryResolver {...props} isDirectory={true} />,
-    },
-    {
-        path: '/:repoRev+',
-        render: (props: any) => <RepositoryResolver {...props} isDirectory={true} />,
+        path: '/:repoRevAndRest+',
+        component: RepoContainer,
     },
 ]

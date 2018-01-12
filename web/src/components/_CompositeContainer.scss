@@ -1,0 +1,58 @@
+// A full-width container with a horizontal header.
+.composite-container {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &__header {
+        flex: 0 0 auto;
+        height: 2.5rem;
+        padding: 0 0.5rem 0 0.25rem;
+
+        border-bottom: 1px solid #233043;
+        display: flex;
+        align-items: center;
+
+        &-action {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            cursor: pointer;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            padding: 0;
+            margin-left: 0.75rem;
+
+            &:not(&-active) {
+                opacity: 0.8;
+            }
+
+            user-select: none;
+
+            @media (max-width: $media-md) {
+                margin-left: 0.25rem;
+            }
+
+            &-text {
+                &:not(:empty) {
+                    margin-left: 0.25rem;
+                }
+
+                @media (max-width: $media-md) {
+                    display: none;
+                }
+            }
+        }
+    }
+}
+
+.theme-light {
+    .composite-container {
+        &__header {
+            border-color: $color-light-border;
+        }
+    }
+}

@@ -1,8 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
 import * as React from 'react'
-import { matchPath } from 'react-router'
 import { Observable } from 'rxjs/Observable'
 import { fromEvent } from 'rxjs/observable/fromEvent'
 import { merge } from 'rxjs/observable/merge'
@@ -23,12 +21,17 @@ import { tap } from 'rxjs/operators/tap'
 import { toArray } from 'rxjs/operators/toArray'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { routes } from '../routes'
 import { eventLogger } from '../tracking/eventLogger'
 import { scrollIntoView } from '../util'
 import { fetchSuggestions } from './backend'
 import { SearchOptions } from './index'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
+
+/**
+ * The query input field is clobbered and updated to contain this subject's values, as
+ * they are received. This is used to trigger an update; the source of truth is still the URL.
+ */
+export const queryUpdates = new Subject<string>()
 
 interface Props {
     location: H.Location
@@ -205,22 +208,9 @@ export class QueryInput extends React.Component<Props, State> {
                 })
         )
 
-        // Set scope to current repository when browsing in a repository, and remove it
-        // after browsing away.
-        this.subscriptions.add(
-            // Emits whenever a repository is browsed to or away from.
-            this.componentUpdates
-                .pipe(startWith(this.props), map(props => repoFromRoute(props.location)), distinctUntilChanged())
-                .subscribe(
-                    (repoPath: string | null) => {
-                        if (repoPath) {
-                            // Change the query input value to be scoped to just this repo.
-                            this.props.onChange(`repo:^${escapeRegexp(repoPath)}$ `)
-                        }
-                    },
-                    err => console.error(err)
-                )
-        )
+        // Allow other components to update the query (e.g., to be relevant to what the user is
+        // currently viewing).
+        this.subscriptions.add(queryUpdates.pipe(distinctUntilChanged()).subscribe(query => this.props.onChange(query)))
 
         /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
         this.subscriptions.add(
@@ -401,21 +391,4 @@ export class QueryInput extends React.Component<Props, State> {
             ),
         })
     }
-}
-
-/**
- * Returns the repo path, or null, of the location.
- */
-function repoFromRoute(loc: H.Location): string | null {
-    for (const route of routes) {
-        const match = matchPath<{ repoRev?: string }>(location.pathname, route)
-        if (match) {
-            if (match.path.startsWith('/:repoRev+')) {
-                const [repoPath] = match.params.repoRev!.split('@')
-                return repoPath
-            }
-            break
-        }
-    }
-    return null
 }

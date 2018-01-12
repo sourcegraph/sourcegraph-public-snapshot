@@ -9,10 +9,13 @@ import { scan } from 'rxjs/operators/scan'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { PageTitle } from '../components/PageTitle'
-import { RepoNav } from '../repo/RepoNav'
+import { ToggleLineWrap } from '../repo/actions/ToggleLineWrap'
+import { RepoHeader } from '../repo/RepoHeader'
+import { RepoHeaderActionPortal } from '../repo/RepoHeaderActionPortal'
 import { colorTheme, ColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { toEditorURL } from '../util/url'
+import { ThreadRevisionAction } from './actions/ThreadRevisionAction'
 import { CodeView } from './CodeView'
 import { Comment } from './Comment'
 import { CommentsInput } from './CommentsInput'
@@ -148,20 +151,35 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                     <div className="comments-page">
                         <PageTitle title={getPageTitle(item)} />
                         {/* TODO(slimsag): future: do not disable breadcrumb _if_ the repository is public */}
-                        <RepoNav
-                            repoPath={itemRepo}
+                        <RepoHeader
+                            repo={
+                                item.thread.repo.repository || {
+                                    uri: itemRepo,
+                                    viewerCanAdminister: false,
+                                }
+                            }
+                            disableLinks={!item.thread.repo.repository}
                             rev={item.thread.branch || item.thread.repoRevision}
                             filePath={item.thread.file}
-                            isDirectory={false}
-                            hideCopyLink={true}
-                            customEditorURL={editorURL}
-                            breadcrumbDisabled={true}
-                            revSwitcherDisabled={true}
-                            line={item && item.thread.startLine}
                             location={location}
                             history={history}
-                            showWrapCode={!!item}
-                            onWrapCodeChange={nextWrapCodeChange}
+                        />
+                        <RepoHeaderActionPortal
+                            position="left"
+                            element={
+                                <ThreadRevisionAction
+                                    key="item.thread-revision"
+                                    repoPath={item.thread.repo.repository ? item.thread.repo.repository.uri : itemRepo}
+                                    branch={item.thread.branch || undefined}
+                                    rev={item.thread.repoRevision}
+                                    link={!!item.thread.repo.repository}
+                                />
+                            }
+                        />
+                        <RepoHeaderActionPortal
+                            position="right"
+                            key="toggle-line-wrap"
+                            element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={nextWrapCodeChange} />}
                         />
                         {item &&
                             !item.thread.linesRevision && (

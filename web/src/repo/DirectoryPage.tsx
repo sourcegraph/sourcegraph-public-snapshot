@@ -10,6 +10,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { PageTitle } from '../components/PageTitle'
 import { UserAvatar } from '../user/UserAvatar'
 import { parseCommitDateString } from '../util/time'
 import { toPrettyRepoURL } from '../util/url'
@@ -106,6 +107,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
 
         return (
             <div className="dir-page">
+                <PageTitle key="page-title" title={this.getPageTitle()} />
                 <h2 className="dir-page__head">
                     <FolderIcon className="dir-page__icon-top" />
                     <span>{this.getLastPathPart()}</span>
@@ -220,5 +222,15 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
             return this.props.filePath.substr(0, this.props.filePath.lastIndexOf('/'))
         }
         return ''
+    }
+
+    private getPageTitle(): string {
+        const repoPathSplit = this.props.repoPath.split('/')
+        const repoStr = repoPathSplit.length > 2 ? repoPathSplit.slice(1).join('/') : this.props.repoPath
+        if (this.props.filePath) {
+            const fileOrDir = this.props.filePath.split('/').pop()
+            return `${fileOrDir} - ${repoStr}`
+        }
+        return `${repoStr}`
     }
 }

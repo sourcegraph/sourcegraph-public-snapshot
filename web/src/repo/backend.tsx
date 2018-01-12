@@ -29,12 +29,48 @@ class RevNotFoundError extends Error {
 }
 
 export const ERREPOSEEOTHER = 'ERREPOSEEOTHER'
-export class RepoSeeOtherError extends Error {
+export interface RepoSeeOtherError {
+    redirectURL: string
+}
+class RepoSeeOtherErrorImpl extends Error implements RepoSeeOtherErrorImpl {
     public readonly code = ERREPOSEEOTHER
     constructor(public redirectURL: string) {
         super(`repo not found at this location, but might exist at ${redirectURL}`)
     }
 }
+
+/**
+ * Fetch the repository.
+ */
+export const fetchRepository = memoizeObservable(
+    (args: { repoPath: string }): Observable<GQL.IRepository | null> =>
+        queryGraphQL(
+            gql`
+                query Repository($repoPath: String!) {
+                    repository(uri: $repoPath) {
+                        uri
+                        viewerCanAdminister
+                        redirectURL
+                    }
+                }
+            `,
+            args
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data) {
+                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                }
+                if (data.repository && data.repository.redirectURL) {
+                    throw new RepoSeeOtherErrorImpl(data.repository.redirectURL)
+                }
+                if (!data.repository) {
+                    throw new RepoNotFoundError(args.repoPath)
+                }
+                return data.repository
+            })
+        ),
+    makeRepoURI
+)
 
 export interface ResolvedRev {
     commitID: string
@@ -70,7 +106,7 @@ export const resolveRev = memoizeObservable(
                     throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
                 }
                 if (data.repository && data.repository.redirectURL) {
-                    throw new RepoSeeOtherError(data.repository.redirectURL)
+                    throw new RepoSeeOtherErrorImpl(data.repository.redirectURL)
                 }
                 if (!data.repository || !data.repository.commit) {
                     throw new RepoNotFoundError(ctx.repoPath)

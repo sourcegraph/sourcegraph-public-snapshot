@@ -22,7 +22,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { Location } from 'vscode-languageserver-types'
 import { fetchReferences } from '../backend/lsp'
 import { VirtualList } from '../components/VirtualList'
-import { AbsoluteRepoFilePosition, RepoFilePosition } from '../repo'
+import { AbsoluteRepoFilePosition, PositionSpec, RangeSpec, RepoFile, RepoFilePosition } from '../repo'
 import { FileMatch, IFileMatch, ILineMatch } from '../search/FileMatch'
 import { eventLogger } from '../tracking/eventLogger'
 import { parseHash, toPrettyBlobURL } from '../util/url'
@@ -212,7 +212,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     >
                         {externalRefCount}
                     </div>
-                    <span className="references-widget__close-icon" onClick={this.onDismiss}>
+                    <span className="references-widget__close-icon" onClick={this.onDismiss} title="Close">
                         <CloseIcon className="icon-inline" />
                     </span>
                 </div>
@@ -263,7 +263,13 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
     }
 
     private onDismiss = (): void => {
-        this.props.history.push(toPrettyBlobURL(this.props))
+        this.props.history.push(
+            // Cast because we want this to have a type with a full absolute position/range but
+            // with referencesMode undefined, because the purpose of this call is to remove
+            // referencesMode from the URL.
+            toPrettyBlobURL({ ...this.props, referencesMode: undefined } as RepoFile &
+                Partial<PositionSpec> & { referencesMode: undefined } & Partial<RangeSpec>)
+        )
     }
     private onLocalRefsButtonClick = () => eventLogger.log('ShowLocalRefsButtonClicked')
     private onShowExternalRefsButtonClick = () => eventLogger.log('ShowExternalRefsButtonClicked')
