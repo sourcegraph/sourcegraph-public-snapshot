@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"io"
 	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/lazyzip"
 )
 
 // Store manages the fetching and storing of git archives. Its main purpose is
@@ -66,6 +64,9 @@ type Store struct {
 	// fetchSem is a semaphore to limit concurrent calls to FetchTar. The
 	// semaphore size is controlled by MaxConcurrentFetchTar
 	fetchSem chan int
+
+	// zipCache provides efficient access to repo zip files.
+	zipCache zipCache
 }
 
 // Start initializes state and starts background goroutines. It can be called
@@ -82,30 +83,15 @@ func (s *Store) Start() {
 			Dir:               s.Path,
 			Component:         "store",
 			BackgroundTimeout: 2 * time.Minute,
+			BeforeEvict:       s.zipCache.delete,
 		}
 		go s.watchAndEvict()
 	})
 }
 
-// archiveReadCloser is like zip.ReadCloser. We need it since we can't use
-// zip.OpenReader.
-type archiveReadCloser struct {
-	r *lazyzip.Reader
-	f *os.File
-}
-
-func (ar *archiveReadCloser) Reader() *lazyzip.Reader {
-	return ar.r
-}
-
-// Close closes the file for the archive.
-func (ar *archiveReadCloser) Close() error {
-	return ar.f.Close()
-}
-
-// openReader will open a zip reader to the archive. It will first consult the
-// local cache, otherwise will fetch from the network.
-func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiveReadCloser, err error) {
+// prepareZip returns the path to a local zip archive of repo at commit.
+// It will first consult the local cache, otherwise will fetch from the network.
+func (s *Store) prepareZip(ctx context.Context, repo, commit string) (path string, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "OpenReader")
 	ext.Component.Set(span, "store")
 	defer func() {
@@ -122,7 +108,7 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 	// We already validate commit is absolute in ServeHTTP, but since we
 	// rely on it for caching we check again.
 	if len(commit) != 40 {
-		return nil, errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
+		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
 	}
 
 	// key is a sha256 hash since we want to use it for the disk name
@@ -132,18 +118,25 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 
 	// Our fetch can take a long time, and the frontend aggressively cancels
 	// requests. So we open in the background to give it extra time.
-	resC := make(chan struct {
-		File *diskcache.File
-		Err  error
-	})
+	type result struct {
+		path string
+		err  error
+	}
+	resC := make(chan result)
 	go func() {
+		// TODO: consider adding a cache method that doesn't actually bother opening the file,
+		// since we're just going to close it again immediately.
 		f, err := s.cache.Open(context.Background(), key, func(ctx context.Context) (io.ReadCloser, error) {
 			return s.fetch(ctx, repo, commit)
 		})
-		resC <- struct {
-			File *diskcache.File
-			Err  error
-		}{f, err}
+		var path string
+		if f != nil {
+			path = f.Path
+			if f.File != nil {
+				f.File.Close()
+			}
+		}
+		resC <- result{path, err}
 	}()
 
 	// When searching across thousands of repos at once, we don't want to wait
@@ -156,31 +149,13 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 
 	select {
 	case <-ctx.Done():
-		// We are fetching in the background, so must remember to close the
-		// file even though we won't read it.
-		go func() {
-			res := <-resC
-			if res.File != nil {
-				res.File.Close()
-			}
-		}()
-		return nil, ctx.Err()
+		return "", ctx.Err()
 
 	case res := <-resC:
-		if res.Err != nil {
-			return nil, res.Err
+		if res.err != nil {
+			return "", res.err
 		}
-		fi, err := res.File.Stat()
-		if err != nil {
-			res.File.Close()
-			return nil, err
-		}
-		zr, err := lazyzip.NewReader(res.File, fi.Size())
-		if err != nil {
-			res.File.Close()
-			return nil, err
-		}
-		return &archiveReadCloser{r: zr, f: res.File.File}, nil
+		return res.path, nil
 	}
 }
 
@@ -284,13 +259,13 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 		if n > 0 && bytes.IndexByte(buf[:n], 0x00) >= 0 {
 			continue
 		}
-		if err == io.EOF {
-			// tar.Reader.Read guarantees n == 0 if err ==
-			// io.EOF. So we do not have to write anything to zr
-			// for an empty file.
-			continue
-		}
-		if err != nil {
+		switch err {
+		case io.EOF:
+			if n == 0 {
+				continue
+			}
+		case nil:
+		default:
 			return err
 		}
 

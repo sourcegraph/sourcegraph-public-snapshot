@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"regexp/syntax"
 	"sync"
+	"sync/atomic"
 	"unicode"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
@@ -16,7 +17,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/lazyzip"
 )
 
 const (
@@ -66,10 +66,6 @@ type readerGrep struct {
 
 	// ignoreCase if true means we need to do case insensitive matching.
 	ignoreCase bool
-
-	// buf is reused between file searches to avoid re-allocating. It
-	// holds an entire file.
-	buf []byte
 
 	// transformBuf is reused between file searches to avoid
 	// re-allocating. It is only used if we need to transform the input
@@ -145,24 +141,14 @@ func (rg *readerGrep) Copy() *readerGrep {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limitHit bool, err error) {
-	if rg.buf == nil {
-		// reader should always have maxFileSize bytes or less.
-		rg.buf = make([]byte, maxFileSize)
-		if rg.ignoreCase {
-			rg.transformBuf = make([]byte, maxFileSize)
-		}
+func (rg *readerGrep) Find(f *srcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
+	if rg.ignoreCase && rg.transformBuf == nil {
+		rg.transformBuf = make([]byte, f.zf.MaxLen)
 	}
 
-	// Read the file into memory. We have a relatively low maxFileSize, so
-	// we can simplify and avoid needing to stream the lines.
-	n, err := readAll(reader, rg.buf)
-	if err != nil {
-		return nil, false, err
-	}
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
-	fileBuf := rg.buf[:n]
+	fileBuf := f.Data()
 	fileMatchBuf := fileBuf
 
 	// If we are ignoring case, we transform the input instead of
@@ -227,7 +213,11 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limi
 			}
 			matches = append(matches, protocol.LineMatch{
 				// making a copy of lineBuf is intentional.
-				// the underlying slice is rg.buf, which may be overwritten by future calls to Find.
+				// we are not allowed to use f.Data after the parent zipFile has been Closed,
+				// which currently occurs before Preview has been serialized.
+				// TODO: consider moving the call to Close until after we are
+				// done with Preview, and stop making a copy here.
+				// Special care must be taken to call Close on all possible paths, including error paths.
 				Preview:          string(lineBuf),
 				LineNumber:       i,
 				OffsetAndLengths: offsetAndLengths,
@@ -240,13 +230,8 @@ func (rg *readerGrep) Find(reader io.Reader) (matches []protocol.LineMatch, limi
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(f *lazyzip.File) (protocol.FileMatch, error) {
-	rc, err := f.Open()
-	if err != nil {
-		return protocol.FileMatch{}, err
-	}
-	lm, limitHit, err := rg.Find(rc)
-	rc.Close()
+func (rg *readerGrep) FindZip(f *srcFile) (protocol.FileMatch, error) {
+	lm, limitHit, err := rg.Find(f)
 	return protocol.FileMatch{
 		Path:        f.Name,
 		LineMatches: lm,
@@ -255,7 +240,7 @@ func (rg *readerGrep) FindZip(f *lazyzip.File) (protocol.FileMatch, error) {
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fileMatchLimit int) (fm []protocol.FileMatch, limitHit bool, err error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchLimit int) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
 	span.SetTag("re", rg.re.String())
@@ -277,99 +262,80 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *lazyzip.Reader, fil
 	defer cancel()
 
 	var (
-		files     = make(chan *lazyzip.File)
-		matches   = make(chan protocol.FileMatch)
-		wg        sync.WaitGroup
-		wgErrOnce sync.Once
-		wgErr     error
-		filesErr  error
+		filesmu       sync.Mutex // protects files
+		files         = zf.Files
+		matchesmu     sync.Mutex // protects matches, limitHit
+		matches       = []protocol.FileMatch{}
+		done          = ctx.Done()
+		wg            sync.WaitGroup
+		wgErrOnce     sync.Once
+		wgErr         error
+		filesSkipped  uint32 // accessed atomically
+		filesSearched uint32 // accessed atomically
 	)
-
-	// goroutine responsible for writing to files. It also is the only
-	// goroutine which listens for cancellation.
-	go func() {
-		var filesSkipped, filesSearched int
-		defer func() {
-			// We can write to span since nothing else will until files is
-			// closed
-			span.LogFields(
-				otlog.Int("filesSkipped", filesSkipped),
-				otlog.Int("filesSearched", filesSearched),
-			)
-			close(files)
-		}()
-
-		done := ctx.Done()
-		for {
-			f, err := zr.Next()
-			if err != nil {
-				if err != io.EOF {
-					filesErr = err
-				}
-				return
-			}
-			if !rg.matchPath.MatchPath(f.Name) {
-				filesSkipped++
-				continue
-			}
-			select {
-			case files <- f:
-				filesSearched++
-			case <-done:
-				return
-			}
-		}
-	}()
 
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func(rg *readerGrep) {
 			defer wg.Done()
-			for f := range files {
+
+			for {
+				// check whether we've been cancelled
+				select {
+				case <-done:
+					return
+				default:
+				}
+
+				// grab a file to work on
+				filesmu.Lock()
+				if len(files) == 0 {
+					filesmu.Unlock()
+					return
+				}
+				f := files[0]
+				files = files[1:]
+				filesmu.Unlock()
+
+				// decide whether to process, record that decision
+				if !rg.matchPath.MatchPath(f.Name) {
+					atomic.AddUint32(&filesSkipped, 1)
+					continue
+				}
+				atomic.AddUint32(&filesSearched, 1)
+
+				// process
 				fm, err := rg.FindZip(f)
 				if err != nil {
 					wgErrOnce.Do(func() {
 						wgErr = err
-						// Drain files
-						for range files {
-						}
+						cancel()
 					})
 					return
 				}
 				if len(fm.LineMatches) > 0 {
-					matches <- fm
+					matchesmu.Lock()
+					if len(matches) < fileMatchLimit {
+						matches = append(matches, fm)
+					} else {
+						limitHit = true
+						cancel()
+					}
+					matchesmu.Unlock()
 				}
 			}
 		}(rg.Copy())
 	}
 
-	// Wait for workers to be done. Signal to collector there is no more
-	// results coming by closing matches.
-	go func() {
-		wg.Wait()
-		close(matches)
-	}()
+	wg.Wait()
 
-	// Collect all matches. Do not return a nil slice if we find nothing
-	// so we can nicely serialize it.
-	m := []protocol.FileMatch{}
-	for fm := range matches {
-		m = append(m, fm)
-		if len(m) >= fileMatchLimit {
-			limitHit = true
-			cancel()
-			// drain matches
-			for range matches {
-			}
-		}
-	}
+	span.LogFields(
+		otlog.Int("filesSkipped", int(atomic.LoadUint32(&filesSkipped))),
+		otlog.Int("filesSearched", int(atomic.LoadUint32(&filesSearched))),
+	)
 
-	err = wgErr
-	if err == nil {
-		err = filesErr
-	}
-	return m, limitHit, err
+	return matches, limitHit, wgErr
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include

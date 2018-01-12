@@ -18,8 +18,6 @@ import (
 	"testing/iotest"
 	"testing/quick"
 
-	"github.com/sourcegraph/lazyzip"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 )
 
@@ -234,20 +232,25 @@ func benchConcurrentFind(b *testing.B, p *protocol.Request) {
 	}
 
 	ctx := context.Background()
-	ar, err := githubStore.openReader(ctx, p.Repo, p.Commit)
+	path, err := githubStore.prepareZip(ctx, p.Repo, p.Commit)
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer ar.Close()
+
+	var zc zipCache
+	zf, err := zc.get(path)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer zf.Close()
 
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := concurrentFind(ctx, rg, ar.Reader(), 0)
+		_, _, err := concurrentFind(ctx, rg, zf, 0)
 		if err != nil {
 			b.Fatal(err)
 		}
-		ar.Reader().Reset()
 	}
 }
 
@@ -346,15 +349,27 @@ func TestLineLimit(t *testing.T) {
 		{size: maxLineSize, matches: true},
 		{size: maxLineSize + 1, matches: false},
 	}
+
+	// calculate maximum size in tests,
+	// needed because readerGreps re-use their buffers.
+	maxBuf := 0
+	for _, test := range tests {
+		if test.size > maxBuf {
+			maxBuf = test.size
+		}
+	}
+
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			var buf bytes.Buffer
-			for i := 0; i < test.size; i++ {
-				if _, err := buf.WriteString("a"); err != nil {
-					t.Fatal(err)
-				}
+			fakeZipFile := zipFile{
+				MaxLen: maxBuf,
+				Data:   bytes.Repeat([]byte("A"), test.size),
 			}
-			matches, limitHit, err := rg.Find(&buf)
+			fakeSrcFile := srcFile{
+				zf:  &fakeZipFile,
+				Len: int32(test.size),
+			}
+			matches, limitHit, err := rg.Find(&fakeSrcFile)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -395,7 +410,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zr, err := lazyzip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	zf, err := mockZipFile(buf.Bytes())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -404,7 +419,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zr, 0)
+	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -151,14 +151,18 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		return nil, false, badRequestError{err.Error()}
 	}
 
-	zr, err := s.Store.openReader(ctx, p.Repo, p.Commit)
+	path, err := s.Store.prepareZip(ctx, p.Repo, p.Commit)
 	if err != nil {
 		return nil, false, err
 	}
-	defer zr.Close()
+	zf, err := s.Store.zipCache.get(path)
+	if err != nil {
+		return nil, false, err
+	}
+	defer zf.Close()
 
-	nFiles := zr.Reader().DirectoryRecords
-	bytes := zr.Reader().Size()
+	nFiles := uint64(len(zf.Files))
+	bytes := int64(len(zf.Data))
 	tr.LazyPrintf("files=%d bytes=%d", nFiles, bytes)
 	span.LogFields(
 		otlog.Uint64("archive.files", nFiles),
@@ -166,7 +170,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveFiles.Observe(float64(nFiles))
 	archiveSize.Observe(float64(bytes))
 
-	return concurrentFind(ctx, rg, zr.Reader(), p.FileMatchLimit)
+	return concurrentFind(ctx, rg, zf, p.FileMatchLimit)
 }
 
 func validateParams(p *protocol.Request) error {

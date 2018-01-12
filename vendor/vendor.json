@@ -1548,12 +1548,6 @@
 			"revisionTime": "2017-11-25T14:15:44Z"
 		},
 		{
-			"checksumSHA1": "oq0G9wyV4ceByBaHJumiWgkLkk0=",
-			"path": "github.com/sourcegraph/lazyzip",
-			"revision": "672a4b512c097b2322ffe700ed431379f2787319",
-			"revisionTime": "2018-01-04T14:16:18Z"
-		},
-		{
 			"checksumSHA1": "XoUO4WpqMYyhT8Qb1BpOE1HdN8Q=",
 			"path": "github.com/sourcegraph/syntaxhighlight",
 			"revision": "bd320f5d308e1a3c4314c678d8227a0d72574ae7",
