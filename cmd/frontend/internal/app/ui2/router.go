@@ -27,6 +27,7 @@ import (
 const (
 	routeHome          = "home"
 	routeSearch        = "search"
+	routeSearchBadge   = "search-badge"
 	routeSearchQueries = "search-queries"
 	routeComment       = "comment"
 	routeOpen          = "open"
@@ -94,6 +95,7 @@ func newRouter() *mux.Router {
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
+	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/queries").Methods("GET").Name(routeSearchQueries)
 	r.Path("/c/{ULID}").Methods("GET").Name(routeComment)
 	r.Path("/open").Methods("GET").Name(routeOpen)
@@ -175,6 +177,9 @@ func initRouter() {
 		// e.g. "myquery - Sourcegraph"
 		return fmt.Sprintf("%s - Sourcegraph", shortQuery)
 	})))
+
+	// search badge
+	router.Get(routeSearchBadge).Handler(searchBadgeHandler)
 
 	// dashboard
 	router.Get(routeSearchQueries).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {

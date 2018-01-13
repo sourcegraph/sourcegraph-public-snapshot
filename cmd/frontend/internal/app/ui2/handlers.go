@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"path"
 	"regexp"
@@ -395,6 +396,16 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 
 	common.Title = fmt.Sprintf("%s - Sourcegraph", title)
 	return renderTemplate(w, "app.html", common)
+}
+
+// searchBadgeHandler serves the search readme badges from the search-badger service
+// https://github.com/sourcegraph/search-badger
+var searchBadgeHandler = &httputil.ReverseProxy{
+	Director: func(r *http.Request) {
+		r.URL.Scheme = "http"
+		r.URL.Host = "search-badger"
+		r.URL.Path = "/"
+	},
 }
 
 func serveOpen(w http.ResponseWriter, r *http.Request) error {

@@ -45,6 +45,13 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
+		// search badge
+		{
+			path:      "/search/badge",
+			wantRoute: routeSearchBadge,
+			wantVars:  map[string]string{},
+		},
+
 		// comment
 		{
 			path:      "/c/01BW1W498T6QK1M4EVYXZ0ASS2",
