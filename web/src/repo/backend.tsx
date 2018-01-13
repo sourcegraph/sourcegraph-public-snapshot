@@ -308,3 +308,28 @@ export const fetchPhabricatorRepo = memoizeObservable(
         ),
     makeRepoURI
 )
+
+export const fetchRepoListConfig = memoizeObservable(
+    (ctx: { repoPath: string }): Observable<GQL.IRepoListConfig | null> =>
+        queryGraphQL(
+            gql`
+                query RepoListConfig($repoPath: String) {
+                    repoListConfig(uri: $repoPath) {
+                        blobURL
+                        commitURL
+                        treeURL
+                        viewURL
+                    }
+                }
+            `,
+            ctx
+        ).pipe(
+            map(result => {
+                if (result.errors || !result.data || !result.data.repoListConfig) {
+                    return null
+                }
+                return result.data.repoListConfig
+            })
+        ),
+    makeRepoURI
+)

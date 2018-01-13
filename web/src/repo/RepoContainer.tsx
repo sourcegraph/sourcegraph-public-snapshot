@@ -12,6 +12,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { parseRepoRev } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
+import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { GoToGitHubAction } from './actions/GoToGitHubAction'
 import { GoToPhabricatorAction } from './actions/GoToPhabricator'
 import { fetchRepository } from './backend'
@@ -144,6 +145,17 @@ export class RepoContainer extends React.Component<Props, State> {
                     position="right"
                     key="go-to-github"
                     element={<GoToGitHubAction key="go-to-github" location={this.props.location} />}
+                />
+                <RepoHeaderActionPortal
+                    position="right"
+                    key="go-to-code-host"
+                    element={
+                        <GoToCodeHostAction
+                            key="go-to-code-host"
+                            repo={this.state.repoPath}
+                            location={this.props.location}
+                        />
+                    }
                 />
                 <RepoHeaderActionPortal
                     position="right"

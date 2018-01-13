@@ -20,7 +20,9 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
@@ -39,8 +41,14 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"type", "field", "error"})
 
+var repoListConfigs = make(map[string]schema.Repository)
+
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
+	reposList := conf.Get().ReposList
+	for _, r := range reposList {
+		repoListConfigs[r.Path] = r
+	}
 }
 
 type prometheusTracer struct {
@@ -191,6 +199,14 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI 
 		return nil, err
 	}
 	return &phabricatorRepoResolver{repo}, nil
+}
+
+func (r *schemaResolver) RepoListConfig(ctx context.Context, args *struct{ URI string }) (*repoListConfigResolver, error) {
+	repo, ok := repoListConfigs[args.URI]
+	if !ok {
+		return nil, nil
+	}
+	return &repoListConfigResolver{&repo}, nil
 }
 
 var skipRefresh = false // set by tests

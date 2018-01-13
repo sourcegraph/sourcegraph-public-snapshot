@@ -237,6 +237,7 @@ type RandomizeUserPasswordBySiteAdminResult {
 }
 
 type Query {
+<<<<<<< HEAD
     root: Query! @deprecated
     node(id: ID!): Node
     repository(uri: String!): Repository
@@ -280,6 +281,52 @@ type Query {
     updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
     # The current site.
     site: Site!
+=======
+	root: Query! @deprecated
+	node(id: ID!): Node
+	repository(uri: String!): Repository
+	phabricatorRepo(uri: String!): PhabricatorRepo
+	repoListConfig(uri: String!): RepoListConfig
+	symbols(id: String!, mode: String!): [Symbol!]!
+	currentUser: User
+	currentSiteSettings: Settings
+	isUsernameAvailable(username: String!): Boolean!
+	configuration: ConfigurationCascade!
+	search(query: String = ""): Search
+	searchScopes: [SearchScope!]!
+	# All saved queries configured for the current user, merged from all configurations.
+	savedQueries: [SavedQuery!]!
+	# All repository groups for the current user, merged from all configurations.
+	repoGroups: [RepoGroup!]!
+	org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
+	sharedItem(ulid: String!): SharedItem
+	packages(
+		lang: String!
+		id: String
+		type: String
+		name: String
+		commit: String
+		baseDir: String
+		repoURL: String
+		version: String
+		limit: Int
+	): [Package!]!
+	dependents(
+		lang: String!
+		id: String
+		type: String
+		name: String
+		commit: String
+		baseDir: String
+		repoURL: String
+		version: String
+		package: String
+		limit: Int
+	): [Dependency!]!
+	updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
+	# The current site.
+	site: Site!
+>>>>>>> frontend: add blob, tree, repo external link configs
 }
 
 type Search {
@@ -711,6 +758,17 @@ type PhabricatorRepo {
     callsign: String!
     # the URL to the phabricator instance, e.g. http://phabricator.sgdev.org
     url: String!
+}
+
+type RepoListConfig {
+	# The template for generating blob URLs.
+	blobURL: String
+	# The template for generating commit URLs.
+	commitURL: String
+	# The template for generating tree URLs.
+	treeURL: String
+	# The template for generating view URLs.
+	viewURL: String
 }
 
 type TotalRefList {
