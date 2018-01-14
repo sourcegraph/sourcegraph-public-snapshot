@@ -64,6 +64,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
 
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
+
+    /** Do not update the URL query string to reflect the filter and pagination state. */
+    noUpdateURLQuery?: boolean
 }
 
 /**
@@ -129,7 +132,9 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     debounceTime(200),
                     startWith(this.state.query),
                     tap(query => {
-                        this.props.history.replace({ search: this.urlQuery({ query }) })
+                        if (!this.props.noUpdateURLQuery) {
+                            this.props.history.replace({ search: this.urlQuery({ query }) })
+                        }
                     }),
                     switchMap(query => {
                         const result = this.props
@@ -157,7 +162,9 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     map(() => this.state.first * 2),
                     tap(first => {
                         this.setState({ first })
-                        this.props.history.replace({ search: this.urlQuery({ first }) })
+                        if (!this.props.noUpdateURLQuery) {
+                            this.props.history.replace({ search: this.urlQuery({ first }) })
+                        }
                     }),
                     switchMap(first => this.props.queryConnection({ first, query: this.state.query }))
                 )
