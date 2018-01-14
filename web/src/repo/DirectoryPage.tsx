@@ -228,7 +228,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             value={this.state.query}
                             onChange={this.onQueryChange}
                             prependQueryForSuggestions={this.getQueryPrefix()}
-                            autoFocus={'cursor-at-end'}
+                            autoFocus={true}
                             location={this.props.location}
                             history={this.props.history}
                             placeholder=""
