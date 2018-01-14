@@ -84,6 +84,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
                     value={this.state.userQuery}
                     onChange={this.onUserQueryChange}
                     autoFocus={autoFocus ? 'cursor-at-end' : undefined}
+                    hasGlobalQueryBehavior={true}
                 />
                 <SearchButton />
                 <SearchHelp />
@@ -115,9 +116,13 @@ export class SearchNavbarItem extends React.Component<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, {
-            query: this.state.userQuery,
-        })
+        submitSearch(
+            this.props.history,
+            {
+                query: this.state.userQuery,
+            },
+            'nav'
+        )
     }
 
     /**

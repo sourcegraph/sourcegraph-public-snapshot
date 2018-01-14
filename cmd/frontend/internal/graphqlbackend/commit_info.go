@@ -13,7 +13,7 @@ func (r *commitInfoResolver) Repository() *repositoryResolver { return r.reposit
 
 func (r *commitInfoResolver) OID() gitObjectID { return r.oid }
 
-func (r *commitInfoResolver) AbbreviatedOID() string { return string(r.oid)[:6] }
+func (r *commitInfoResolver) AbbreviatedOID() string { return string(r.oid)[:7] }
 
 func (r *commitInfoResolver) Rev() string {
 	return string(r.oid)

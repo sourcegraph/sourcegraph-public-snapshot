@@ -71,8 +71,6 @@ function closeDirectory(store: Store, dir: string): void {
 }
 
 export class Tree extends React.PureComponent<Props, State> {
-    private ref: HTMLDivElement | null
-
     constructor(props: Props) {
         super(props)
         const { nodes, nodeMap } = this.parseNodes(props.paths, props.selectedPath)
@@ -128,7 +126,7 @@ export class Tree extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div ref={this.focusOnMount} className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
+            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
                 <TreeLayer
                     history={this.props.history}
                     repoPath={this.props.repoPath}
@@ -264,13 +262,6 @@ export class Tree extends React.PureComponent<Props, State> {
             rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) /*or $(window).height() */ &&
             rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
         )
-    }
-
-    private focusOnMount = (ref: HTMLDivElement | null) => {
-        if (this.ref === undefined && ref) {
-            this.ref = ref
-            ref.focus()
-        }
     }
 
     private selectElement(el: HTMLElement): void {
@@ -522,6 +513,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                         })}
                                         className="tree__row-label"
                                         draggable={false}
+                                        title={node.filePath}
                                     >
                                         {node.filePath.split('/').pop()}
                                     </Link>
@@ -560,6 +552,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                     })}
                                     data-tree-path={node.filePath}
                                     draggable={false}
+                                    title={node.filePath}
                                 >
                                     {node.filePath.split('/').pop()}
                                 </Link>

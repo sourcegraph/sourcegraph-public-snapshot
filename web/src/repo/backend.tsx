@@ -49,6 +49,7 @@ export const fetchRepository = memoizeObservable(
                 query Repository($repoPath: String!) {
                     repository(uri: $repoPath) {
                         uri
+                        description
                         viewerCanAdminister
                         redirectURL
                     }
@@ -349,94 +350,6 @@ export const fetchPhabricatorRepo = memoizeObservable(
                     return null
                 }
                 return result.data.phabricatorRepo
-            })
-        ),
-    makeRepoURI
-)
-
-export const fetchDirTree = memoizeObservable(
-    (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.ITree> =>
-        queryGraphQL(
-            gql`
-                query fetchDirectoryTree($repoPath: String, $commitID: String, $filePath: String) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                tree(path: $filePath) {
-                                    directories {
-                                        name
-                                    }
-                                    files {
-                                        name
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit.commit ||
-                    !data.repository.commit.commit.tree
-                ) {
-                    throw Object.assign(
-                        'Could not fetch directory tree: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
-                }
-                return data.repository.commit.commit.tree
-            })
-        ),
-    makeRepoURI
-)
-
-export const fetchFileCommitInfo = memoizeObservable(
-    (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.ICommitInfo> =>
-        queryGraphQL(
-            gql`
-                query fetchFileCommitInfo($repoPath: String, $commitID: String, $filePath: String) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    lastCommit {
-                                        rev
-                                        message
-                                        committer {
-                                            person {
-                                                name
-                                                avatarURL
-                                            }
-                                            date
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit.commit ||
-                    !data.repository.commit.commit.file ||
-                    !data.repository.commit.commit.file.lastCommit
-                ) {
-                    throw Object.assign(
-                        'Could not fetch commit info: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
-                }
-                return data.repository.commit.commit.file.lastCommit
             })
         ),
     makeRepoURI

@@ -56,16 +56,26 @@ export interface RepoBreadcrumbProps {
     isDirectory?: boolean
 }
 
+/**
+ *  Returns the friendly display form of the repository path (e.g., removing "github.com/").
+ */
+export function displayRepoPath(repoPath: string): string {
+    let parts = repoPath.split('/')
+    if (parts.length >= 3 && parts[0].includes('.')) {
+        parts = parts.slice(1) // remove hostname from repo path (reduce visual noise)
+    }
+    return parts.join('/')
+}
+
 export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
     public render(): JSX.Element | null {
         let parts = this.props.repoPath.split('/')
         if (parts.length >= 3 && parts[0].includes('.')) {
             parts = parts.slice(1) // remove hostname from repo path (reduce visual noise)
         }
-        const trimmedUri = parts.join('/')
         return (
             <Breadcrumb
-                path={trimmedUri + (this.props.filePath ? '/' + this.props.filePath : '')}
+                path={displayRepoPath(this.props.repoPath) + (this.props.filePath ? '/' + this.props.filePath : '')}
                 partToUrl={this.partToUrl}
                 partToClassName={this.partToClassName}
             />
