@@ -1,4 +1,4 @@
-$navbar-search-height: 3rem;
+$navbar-search-height: 2.75rem;
 
 .navbar {
     position: sticky;
@@ -20,8 +20,8 @@ $navbar-search-height: 3rem;
 
         .avatar,
         .avatar-icon {
-            width: 2rem;
-            height: 2rem;
+            width: 1.5rem;
+            height: 1.5rem;
         }
     }
 
@@ -64,8 +64,8 @@ $navbar-search-height: 3rem;
     &.navbar-search {
         height: $navbar-search-height; // +.05 to avoid the search box leaking
         .navbar__logo {
-            width: 2rem;
-            height: 2rem;
+            width: 1.5rem;
+            height: 1.5rem;
         }
     }
 }
@@ -73,5 +73,7 @@ $navbar-search-height: 3rem;
 .theme-light {
     .navbar {
         background-color: $color-light-bg-2;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        border-bottom: solid 1px darken($color-light-bg-2, 3%);
     }
 }

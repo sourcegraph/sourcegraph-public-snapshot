@@ -3,6 +3,8 @@
     width: 100%;
     overflow: auto;
     white-space: pre;
+    line-height: 20px;
+    font-size: 14px;
 
     user-select: none;
 
@@ -36,6 +38,10 @@
         color: white !important; // override link color
         display: flex;
         align-items: center;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        width: 1.1em;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        height: 1.1em;
     }
 
     &__row-contents {

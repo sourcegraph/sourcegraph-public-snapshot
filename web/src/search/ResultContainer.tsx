@@ -86,17 +86,17 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     <div className="result-container__header-title">{this.props.title}</div>
                     {this.props.collapsible &&
                         (this.state.expanded ? (
-                            <span className="result-container__toggle-matches-container">
+                            <small className="result-container__toggle-matches-container">
                                 {this.props.collapseLabel}
                                 {this.props.collapseLabel && <ChevronUpIcon className="icon-inline" />}
                                 {!this.props.collapseLabel && <ChevronDownIcon className="icon-inline" />}
-                            </span>
+                            </small>
                         ) : (
-                            <span className="result-container__toggle-matches-container">
+                            <small className="result-container__toggle-matches-container">
                                 {this.props.expandLabel}
                                 {this.props.expandLabel && <ChevronDownIcon className="icon-inline" />}
                                 {!this.props.expandLabel && <ChevronRightIcon className="icon-inline" />}
-                            </span>
+                            </small>
                         ))}
                 </div>
                 {!this.state.expanded && this.props.collapsedChildren}
