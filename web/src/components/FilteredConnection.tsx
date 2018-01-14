@@ -61,6 +61,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
 
     /** Hides the filter input field. */
     hideFilter?: boolean
+
+    /** Autofocuses the filter input field. */
+    autoFocus?: boolean
 }
 
 /**
@@ -179,6 +182,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                 .pipe(
                     map(({ queryConnection }) => queryConnection),
                     distinctUntilChanged(),
+                    tap(() => this.focusFilter()),
                     switchMap(queryConnection => queryConnection({ first: this.state.first, query: this.state.query }))
                 )
                 .subscribe(c => this.setState({ connection: c }))
@@ -262,9 +266,11 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                             name="query"
                             value={this.state.query}
                             onChange={this.onChange}
+                            autoFocus={this.props.autoFocus}
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="off"
+                            ref={this.filterRef}
                             spellCheck={false}
                         />
                     </form>
@@ -293,6 +299,14 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     )}
             </div>
         )
+    }
+
+    private filterRef = (e: HTMLInputElement | null) => {
+        if (e && this.props.autoFocus) {
+            // TODO(sqs): The 30 msec delay is needed, or else the input is not
+            // reliably focused. Find out why.
+            setTimeout(() => e.focus(), 30)
+        }
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
