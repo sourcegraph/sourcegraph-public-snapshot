@@ -53,6 +53,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
     /** An observable that upon emission causes the connection to refresh the data (by calling queryConnection). */
     updates?: Observable<void>
 
+    /** The number of items to fetch, by default. */
+    defaultFirst?: number
+
     /** Hides the filter input field. */
     hideFilter?: boolean
 }
@@ -91,7 +94,9 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     Props<C, N>,
     State<C, N>
 > {
-    private static DEFAULT_FIRST = 20
+    public static defaultProps: Partial<Props<any, any>> = {
+        defaultFirst: 20,
+    }
 
     private queryInputChanges = new Subject<string>()
     private showMoreClicks = new Subject<void>()
@@ -104,7 +109,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
         this.state = {
             loading: true,
             query: q.get('q') || '',
-            first: parseQueryInt(q, 'first') || FilteredConnection.DEFAULT_FIRST,
+            first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
         }
     }
 
@@ -176,7 +181,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
         if (arg.query) {
             q.set('q', arg.query)
         }
-        if (arg.first !== FilteredConnection.DEFAULT_FIRST) {
+        if (arg.first !== this.props.defaultFirst) {
             q.set('first', String(arg.first))
         }
         return q.toString()
