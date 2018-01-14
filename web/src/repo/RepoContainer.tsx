@@ -2,9 +2,11 @@ import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { parseRepoRev } from '.'
@@ -32,6 +34,8 @@ interface State {
     rev?: string
     rest?: string
 
+    loading: boolean
+
     repoHeaderLeftChildren?: React.ReactFragment | null
     repoHeaderRightChildren?: React.ReactFragment | null
 
@@ -49,7 +53,10 @@ export class RepoContainer extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.state = { ...parseURLPath(props.match.params.repoRevAndRest) }
+        this.state = {
+            ...parseURLPath(props.match.params.repoRevAndRest),
+            loading: true,
+        }
     }
 
     public componentDidMount(): void {
@@ -63,9 +70,18 @@ export class RepoContainer extends React.Component<Props, State> {
                 .pipe(
                     map(({ repoPath }) => repoPath),
                     distinctUntilChanged(),
-                    switchMap(repoPath => fetchRepository({ repoPath }))
+                    tap(() => this.setState({ loading: true })),
+                    switchMap(repoPath =>
+                        fetchRepository({ repoPath }).pipe(
+                            catchError(error => {
+                                console.error(error)
+                                this.setState({ loading: false, error })
+                                return []
+                            })
+                        )
+                    )
                 )
-                .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
+                .subscribe(repo => this.setState({ repo, loading: false }), err => console.error(err))
         )
 
         // Update header and other global state.
@@ -91,6 +107,10 @@ export class RepoContainer extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        if (this.state.loading) {
+            return null
+        }
+
         if (this.state.error) {
             return <HeroPage icon={DirectionalSignIcon} title="Error" subtitle={this.state.error} />
         }
