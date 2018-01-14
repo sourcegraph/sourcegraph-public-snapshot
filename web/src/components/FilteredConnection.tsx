@@ -117,10 +117,10 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
         this.subscriptions.add(
             this.queryInputChanges
                 .pipe(
-                    startWith(this.state.query),
                     distinctUntilChanged(),
                     tap(query => this.setState({ query })),
                     debounceTime(200),
+                    startWith(this.state.query),
                     tap(query => {
                         this.props.history.replace({ search: this.urlQuery({ query }) })
                     }),
