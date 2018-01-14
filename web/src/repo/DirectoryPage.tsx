@@ -22,7 +22,7 @@ import { SearchHelp } from '../search/SearchHelp'
 import { UserAvatar } from '../user/UserAvatar'
 import { memoizeObservable } from '../util/memoize'
 import { parseCommitDateString } from '../util/time'
-import { toPrettyBlobURL, toTreeURL } from '../util/url'
+import { externalCommitURL, toPrettyBlobURL, toTreeURL } from '../util/url'
 import { searchQueryForRepoRev } from './RepoContainer'
 
 const DirectoryEntry: React.SFC<{
@@ -276,7 +276,9 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                                                 className="directory-page__section-commits-commit-id"
                                                 title={c.abbreviatedOID}
                                             >
-                                                <code>{c.abbreviatedOID}</code>
+                                                <a href={externalCommitURL(this.props.repoPath, this.props.commitID)}>
+                                                    <code>{c.abbreviatedOID}</code>
+                                                </a>
                                             </td>
                                             <td className="directory-page__section-commits-commit-author">
                                                 {c.author.person && <UserAvatar user={c.author.person} />}{' '}

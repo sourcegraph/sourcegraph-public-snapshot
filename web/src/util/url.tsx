@@ -183,3 +183,11 @@ export function openFromJS(path: string, event?: MouseEvent): void {
         window.location.href = path
     }
 }
+
+/**
+ * Returns a URL that redirects to the commit for the given repository on the repository's
+ * original code host.
+ */
+export function externalCommitURL(repoPath: string, commitID: string): string {
+    return `/${repoPath}/-/external/commit/${commitID}`
+}
