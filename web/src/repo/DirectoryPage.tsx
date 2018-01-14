@@ -287,6 +287,11 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                     this.state.commits.length > 0 && (
                         <section className="directory-page__section">
                             <h3 className="directory-page__section-header">Recent changes</h3>
+                            {this.props.rev && (
+                                <div>
+                                    From <code>{this.props.rev}</code>
+                                </div>
+                            )}
                             <table className="directory-page__section-commits table">
                                 <tbody>
                                     {this.state.commits.map((c, i) => (
