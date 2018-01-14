@@ -11,6 +11,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
+import './components/tooltip/Tooltip'
+import { Tooltip } from './components/tooltip/Tooltip'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
@@ -94,7 +96,7 @@ class App extends React.Component<{}, AppState> {
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element | null {
+    public render(): React.ReactFragment | null {
         if (this.state.error) {
             return <HeroPage icon={ErrorIcon} title={'Something happened'} subtitle={this.state.error.message} />
         }
@@ -132,11 +134,12 @@ class App extends React.Component<{}, AppState> {
             return null
         }
 
-        return (
-            <BrowserRouter>
+        return [
+            <BrowserRouter key={0}>
                 <Route path="/" render={this.renderLayout} />
-            </BrowserRouter>
-        )
+            </BrowserRouter>,
+            <Tooltip key={1} />,
+        ]
     }
 
     private renderLayout = (props: LayoutProps) => (
