@@ -327,7 +327,11 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, { query: this.getQueryPrefix() + this.state.query })
+        submitSearch(
+            this.props.history,
+            { query: this.getQueryPrefix() + this.state.query },
+            this.props.filePath ? 'tree' : 'repo'
+        )
     }
 
     private getPageTitle(): string {

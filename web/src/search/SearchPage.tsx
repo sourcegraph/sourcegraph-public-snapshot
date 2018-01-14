@@ -107,7 +107,7 @@ export class SearchPage extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.fieldsQuery, this.state.userQuery].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, { query })
+        submitSearch(this.props.history, { query }, 'home')
     }
 
     private getPageTitle(): string | undefined {

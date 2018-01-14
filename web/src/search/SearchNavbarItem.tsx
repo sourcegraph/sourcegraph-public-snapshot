@@ -116,9 +116,13 @@ export class SearchNavbarItem extends React.Component<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, {
-            query: this.state.userQuery,
-        })
+        submitSearch(
+            this.props.history,
+            {
+                query: this.state.userQuery,
+            },
+            'nav'
+        )
     }
 
     /**
