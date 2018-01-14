@@ -1,13 +1,13 @@
 .filtered-connection {
-    &__form {
-        margin: 1rem 0 0.5rem;
-    }
-
     &__nodes {
         list-style-type: none;
     }
 
-    &__show-more {
+    &--noncompact &__form {
+        margin: 1rem 0 0.5rem;
+    }
+
+    &--noncompact &__show-more {
         margin-bottom: 2rem;
     }
 }

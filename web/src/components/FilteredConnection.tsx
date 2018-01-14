@@ -32,6 +32,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
     /** CSS class name for the root element. */
     className?: string
 
+    /** Whether to display it more compactly. */
+    compact?: boolean
+
     /** CSS class name for the list element (<ul>). */
     listClassName?: string
 
@@ -216,7 +219,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
             !this.state.loading &&
             this.state.connection &&
             (this.state.connection.totalCount > 0 ? (
-                <p>
+                <p className="filtered-connection__summary">
                     <small>
                         <span>
                             {this.state.connection.totalCount}{' '}
@@ -235,7 +238,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     </small>
                 </p>
             ) : (
-                <p>
+                <p className="filtered-connection__summary">
                     <small>
                         No {this.props.pluralNoun}{' '}
                         {this.state.connectionQuery && (
@@ -247,12 +250,13 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                 </p>
             ))
 
+        const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
-            <div className={`filtered-connection ${this.props.className || ''}`}>
+            <div className={`filtered-connection ${compactnessClass} ${this.props.className || ''}`}>
                 {!this.props.hideFilter && (
                     <form className="filtered-connection__form">
                         <input
-                            className="form-control"
+                            className="form-control filtered-connection__filter"
                             type="search"
                             placeholder={`Search ${this.props.pluralNoun}...`}
                             name="query"
@@ -265,7 +269,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                         />
                     </form>
                 )}
-                {this.state.loading && <Loader className="icon-inline" />}
+                {this.state.loading && <Loader className="icon-inline filtered-connection__loader" />}
                 {this.state.connectionQuery && summary}
                 {!this.state.loading &&
                     this.state.connection &&
