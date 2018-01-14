@@ -55,8 +55,15 @@ interface Props {
     /** The input placeholder, if different from the default is desired. */
     placeholder?: string
 
-    /** Whether this is the global query input (singleton) on a page. */
-    global?: boolean
+    /**
+     * Whether this input should behave like the global query input: (1)
+     * pressing the '/' key focuses it and (2) other components contribute a
+     * query to it with their context (such as the repository area contributing
+     * 'repo:foo@bar' for the current repository and revision).
+     *
+     * At most one query input per page should have this behavior.
+     */
+    hasGlobalQueryBehavior?: boolean
 }
 
 interface State {
@@ -170,7 +177,7 @@ export class QueryInput extends React.Component<Props, State> {
                 )
         )
 
-        if (this.props.global) {
+        if (this.props.hasGlobalQueryBehavior) {
             // Quick-Open hotkeys
             this.subscriptions.add(
                 fromEvent<KeyboardEvent>(window, 'keydown')
