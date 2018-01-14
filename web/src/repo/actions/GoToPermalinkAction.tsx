@@ -62,7 +62,7 @@ export class GoToPermalinkAction extends React.PureComponent<{
                 className="btn btn-link btn-sm composite-container__header-action"
                 onClick={this.onClick}
                 to={this.permalinkURL}
-                title="Permalink (with full Git commit SHA)"
+                data-tooltip="Permalink (with full Git commit SHA)"
             >
                 <LinkIcon className="icon-inline" />
             </Link>

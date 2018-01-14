@@ -28,7 +28,7 @@ export class ThemeSwitcher extends React.Component<Props, State> {
             <div
                 className="theme-switcher theme-switcher__nav-bar"
                 onClick={this.toggleTheme}
-                title="Switch color theme"
+                title={this.state.isLightTheme ? 'Switch to dark color theme' : 'Switch to light color theme'}
             >
                 <div
                     className={

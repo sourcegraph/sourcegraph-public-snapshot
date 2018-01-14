@@ -9,7 +9,7 @@ export interface Props {
 export const TreeHeader = (props: Props) => (
     <h5 className="tree-header">
         <span className="tree-header__title">{props.title}</span>
-        <button onClick={props.onDismiss} className="btn btn-icon tree-header__close-button" title="Close">
+        <button onClick={props.onDismiss} className="btn btn-icon tree-header__close-button" data-tooltip="Close">
             <CloseIcon />
         </button>
     </h5>

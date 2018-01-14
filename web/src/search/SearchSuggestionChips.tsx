@@ -120,7 +120,7 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                         className="btn btn-secondary btn-sm search-suggestion-chips__chip"
                         key={i}
                         value={scope.value}
-                        title={this.props.query.includes(scope.value) ? 'Scope already in query' : scope.value}
+                        data-tooltip={this.props.query.includes(scope.value) ? 'Scope already in query' : scope.value}
                         disabled={this.props.query.includes(scope.value)}
                         onMouseDown={this.onMouseDown}
                         onClick={this.onClick}
@@ -130,7 +130,11 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                 ))}
                 {this.state.user && (
                     <div className="search-suggestion-chips__edit">
-                        <NavLink className="search-page__edit" to="/settings/configuration">
+                        <NavLink
+                            className="search-page__edit"
+                            to="/settings/configuration"
+                            data-tooltip="Edit search scopes"
+                        >
                             <small className="search-page__center">Edit</small>
                         </NavLink>
                     </div>

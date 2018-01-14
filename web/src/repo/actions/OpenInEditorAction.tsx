@@ -53,7 +53,7 @@ export class OpenInEditorAction extends React.PureComponent<
                     )
                 }
                 className="composite-container__header-action"
-                title="Open in Sourcegraph Editor"
+                data-tooltip="Open in Sourcegraph Editor"
                 onClick={this.onClick}
             >
                 <PencilIcon className="icon-inline" />

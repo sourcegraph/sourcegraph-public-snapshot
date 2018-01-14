@@ -27,7 +27,7 @@ export const GoToGitHubAction: React.SFC<{ location: H.Location }> = ({ location
             className="btn btn-link btn-sm composite-container__header-action"
             onClick={onClick}
             href={urlToGitHub({ repoPath, filePath, rev, position, range })}
-            title="View on GitHub"
+            data-tooltip="View on GitHub"
         >
             <GitHubIcon className="icon-inline" />
         </a>

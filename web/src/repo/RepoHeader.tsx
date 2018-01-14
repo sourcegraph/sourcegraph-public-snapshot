@@ -163,7 +163,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         to={`/${this.props.repo.uri}/-/settings`}
                         className="composite-container__header-action"
                         activeClassName="composite-container__header-action-active"
-                        title="Repository settings"
+                        data-tooltip="Repository settings"
                     >
                         <GearIcon className="icon-inline" />
                         <span className="composite-container__header-action-text">Settings</span>

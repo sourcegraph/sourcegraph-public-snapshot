@@ -33,7 +33,7 @@ export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: rep
                 <Link
                     to={`/${repo.uri}/-/settings`}
                     className="btn btn-secondary btn-sm repo-browser__item-action"
-                    title="Repository settings"
+                    data-tooltip="Repository settings"
                 >
                     <GearIcon className="icon-inline" />
                 </Link>
@@ -41,14 +41,14 @@ export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: rep
             <Link
                 to={`/${repo.uri}`}
                 className="btn btn-secondary btn-sm repo-browser__item-action"
-                title="Explore files in repository"
+                data-tooltip="Explore files in repository"
             >
                 <FolderIcon className="icon-inline" />
             </Link>
             <Link
                 to={`/search?${buildSearchURLQuery({ query: `repo:^${escapeRegexp(repo.uri)}$ ` })}&focus`}
                 className="btn btn-secondary btn-sm repo-browser__item-action"
-                title="Search in repository"
+                data-tooltip="Search in repository"
             >
                 <SearchIcon className="icon-inline" />
                 &nbsp;Search
