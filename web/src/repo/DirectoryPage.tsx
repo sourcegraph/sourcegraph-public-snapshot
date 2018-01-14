@@ -271,31 +271,22 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             <table className="directory-page__section-commits table">
                                 <tbody>
                                     {this.state.commits.map((c, i) => (
-                                        <tr key={i} className="directory-page__section-commits-commit">
-                                            <td
-                                                className="directory-page__section-commits-commit-id"
-                                                title={c.abbreviatedOID}
-                                            >
+                                        <tr key={i} className="directory-page__commit">
+                                            <td className="directory-page__commit-id" title={c.abbreviatedOID}>
                                                 <a href={externalCommitURL(this.props.repoPath, this.props.commitID)}>
                                                     <code>{c.abbreviatedOID}</code>
                                                 </a>
                                             </td>
-                                            <td className="directory-page__section-commits-commit-author">
+                                            <td className="directory-page__commit-author">
                                                 {c.author.person && <UserAvatar user={c.author.person} />}{' '}
                                                 {c.author.person && c.author.person.name}
                                             </td>
-                                            <td
-                                                className="directory-page__section-commits-commit-date"
-                                                title={c.author.date}
-                                            >
+                                            <td className="directory-page__commit-date" title={c.author.date}>
                                                 {formatDistance(parseCommitDateString(c.author.date), new Date(), {
                                                     addSuffix: true,
                                                 })}
                                             </td>
-                                            <td
-                                                className="directory-page__section-commits-commit-message"
-                                                title={c.message}
-                                            >
+                                            <td className="directory-page__commit-message" title={c.message}>
                                                 {c.message}
                                             </td>
                                         </tr>
