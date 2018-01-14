@@ -74,6 +74,7 @@ export const fetchTreeAndCommits = memoizeObservable(
                                 }
                                 file(path: $filePath) {
                                     commits {
+                                        oid
                                         abbreviatedOID
                                         message
                                         author {
@@ -297,7 +298,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                                     {this.state.commits.map((c, i) => (
                                         <tr key={i} className="directory-page__commit">
                                             <td className="directory-page__commit-id" title={c.abbreviatedOID}>
-                                                <a href={externalCommitURL(this.props.repoPath, this.props.commitID)}>
+                                                <a href={externalCommitURL(this.props.repoPath, c.oid)}>
                                                     <code>{c.abbreviatedOID}</code>
                                                 </a>
                                             </td>
