@@ -67,6 +67,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
 
     /** Do not update the URL query string to reflect the filter and pagination state. */
     noUpdateURLQuery?: boolean
+
+    /** Do not show a "Show more" button. */
+    noShowMore?: boolean
 }
 
 /**
@@ -295,6 +298,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     )}
                 {!this.state.connectionQuery && summary}
                 {!this.state.loading &&
+                    !this.props.noShowMore &&
                     this.state.connection &&
                     this.state.connection.nodes.length < this.state.connection.totalCount && (
                         <button
