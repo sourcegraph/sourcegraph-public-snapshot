@@ -3,6 +3,12 @@
     padding: 2rem;
     flex: 1;
 
+    &__title {
+        display: flex;
+        align-items: center;
+        margin-left: -0.5rem; // icon flush with left
+    }
+
     &__section {
         margin-bottom: 1.75rem;
 

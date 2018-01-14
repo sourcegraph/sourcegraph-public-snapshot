@@ -222,6 +222,7 @@ export class RepoRevContainer extends React.PureComponent<Props, State> {
                     {this.props.objectType === 'tree' && (
                         <DirectoryPage
                             repoPath={this.props.repo.uri}
+                            repoDescription={this.props.repo.description}
                             commitID={this.state.commitID}
                             rev={this.props.rev}
                             filePath={this.props.match.params.filePath || ''}

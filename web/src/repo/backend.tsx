@@ -49,6 +49,7 @@ export const fetchRepository = memoizeObservable(
                 query Repository($repoPath: String!) {
                     repository(uri: $repoPath) {
                         uri
+                        description
                         viewerCanAdminister
                         redirectURL
                     }

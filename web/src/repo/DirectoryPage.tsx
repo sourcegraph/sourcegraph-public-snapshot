@@ -1,4 +1,6 @@
+import { Folder as FolderIcon } from '@sourcegraph/icons/lib/Folder'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
+import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
 import formatDistance from 'date-fns/formatDistance'
 import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
@@ -14,6 +16,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
+import { displayRepoPath } from '../components/Breadcrumb'
 import { PageTitle } from '../components/PageTitle'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/QueryInput'
@@ -112,6 +115,7 @@ export const fetchTreeAndCommits = memoizeObservable(
 
 interface Props {
     repoPath: string
+    repoDescription: string
     // filePath is a directory path in DirectoryPage. We call it filePath for consistency elsewhere.
     filePath: string
     commitID: string
@@ -201,6 +205,21 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
         return (
             <div className="directory-page">
                 <PageTitle key="page-title" title={this.getPageTitle()} />
+                {this.props.filePath ? (
+                    <header>
+                        <h1 className="directory-page__title">
+                            <FolderIcon className="icon-inline" /> {this.props.filePath}
+                        </h1>
+                    </header>
+                ) : (
+                    <header>
+                        <h1 className="directory-page__title">
+                            <RepositoryIcon className="icon-inline" /> {displayRepoPath(this.props.repoPath)}
+                        </h1>
+                        {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
+                    </header>
+                )}
+
                 <section className="directory-page__section">
                     <h3 className="directory-page__section-header">
                         Search in this {this.props.filePath ? 'directory' : 'repository'}
