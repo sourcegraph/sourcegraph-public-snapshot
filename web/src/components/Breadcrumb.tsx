@@ -69,10 +69,6 @@ export function displayRepoPath(repoPath: string): string {
 
 export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
     public render(): JSX.Element | null {
-        let parts = this.props.repoPath.split('/')
-        if (parts.length >= 3 && parts[0].includes('.')) {
-            parts = parts.slice(1) // remove hostname from repo path (reduce visual noise)
-        }
         return (
             <Breadcrumb
                 path={displayRepoPath(this.props.repoPath) + (this.props.filePath ? '/' + this.props.filePath : '')}
