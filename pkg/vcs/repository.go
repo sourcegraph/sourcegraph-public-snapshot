@@ -53,13 +53,11 @@ type Repository interface {
 	// ErrCommitNotFound if no such commit exists.
 	GetCommit(context.Context, CommitID) (*Commit, error)
 
-	// Commits returns all commits matching the options, as well as
-	// the total number of commits (the count of which is not subject
-	// to the N/Skip options).
-	//
-	// Optionally, the caller can request the total not to be computed,
-	// as this can be expensive for large branches.
-	Commits(context.Context, CommitsOptions) (commits []*Commit, total uint, err error)
+	// Commits returns all commits matching the options.
+	Commits(context.Context, CommitsOptions) ([]*Commit, error)
+
+	// CommitCount returns the number of commits that would be returned by Commits.
+	CommitCount(context.Context, CommitsOptions) (total uint, err error)
 
 	// Committers returns the per-author commit statistics of the repo.
 	Committers(context.Context, CommittersOptions) ([]*Committer, error)
@@ -141,8 +139,7 @@ func (c *CommitID) Unmarshal(data []byte) error {
 	return nil
 }
 
-// CommitsOptions specifies limits on the list of commits returned by
-// (Repository).Commits.
+// CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
 type CommitsOptions struct {
 	Head CommitID // include all commits reachable from this commit (required)
 	Base CommitID // exlude all commits reachable from this commit (optional, like `git log Base..Head`)
@@ -151,8 +148,6 @@ type CommitsOptions struct {
 	Skip uint // skip this many commits at the beginning
 
 	Path string // only commits modifying the given path are selected (optional)
-
-	NoTotal bool // avoid counting the total number of commits
 }
 
 // CommittersOptions specifies limits on the list of committers returned by

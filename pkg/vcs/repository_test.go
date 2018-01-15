@@ -542,7 +542,8 @@ func TestRepository_Commits(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
+			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error)
+			CommitCount(ctx context.Context, opt vcs.CommitsOptions) (uint, error)
 		}
 		id          vcs.CommitID
 		wantCommits []*vcs.Commit
@@ -557,9 +558,15 @@ func TestRepository_Commits(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, total, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: test.id})
+		commits, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: test.id})
 		if err != nil {
 			t.Errorf("%s: Commits: %s", label, err)
+			continue
+		}
+
+		total, err := test.repo.CommitCount(ctx, vcs.CommitsOptions{Head: test.id})
+		if err != nil {
+			t.Errorf("%s: CommitCount: %s", label, err)
 			continue
 		}
 
@@ -585,7 +592,7 @@ func TestRepository_Commits(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns ErrRevisionNotFound.
-		if _, _, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: nonexistentCommitID}); err != vcs.ErrRevisionNotFound {
+		if _, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: nonexistentCommitID}); err != vcs.ErrRevisionNotFound {
 			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrRevisionNotFound)
 		}
 	}
@@ -619,7 +626,8 @@ func TestRepository_Commits_options(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
+			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error)
+			CommitCount(ctx context.Context, opt vcs.CommitsOptions) (uint, error)
 		}
 		opt         vcs.CommitsOptions
 		wantCommits []*vcs.Commit
@@ -629,7 +637,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			repo:        makeGitRepositoryCmd(t, gitCommands...),
 			opt:         vcs.CommitsOptions{Head: "ade564eba4cf904492fb56dcd287ac633e6e082c", N: 1, Skip: 1},
 			wantCommits: wantGitCommits,
-			wantTotal:   3,
+			wantTotal:   1,
 		},
 		"git cmd Head": {
 			repo: makeGitRepositoryCmd(t, gitCommands...),
@@ -643,9 +651,15 @@ func TestRepository_Commits_options(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, total, err := test.repo.Commits(ctx, test.opt)
+		commits, err := test.repo.Commits(ctx, test.opt)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
+			continue
+		}
+
+		total, err := test.repo.CommitCount(ctx, test.opt)
+		if err != nil {
+			t.Errorf("%s: CommitCount(): %s", label, err)
 			continue
 		}
 
@@ -694,7 +708,8 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
+			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error)
+			CommitCount(ctx context.Context, opt vcs.CommitsOptions) (uint, error)
 		}
 		opt         vcs.CommitsOptions
 		wantCommits []*vcs.Commit
@@ -721,9 +736,15 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, total, err := test.repo.Commits(ctx, test.opt)
+		commits, err := test.repo.Commits(ctx, test.opt)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
+			continue
+		}
+
+		total, err := test.repo.CommitCount(ctx, test.opt)
+		if err != nil {
+			t.Errorf("%s: CommitCount: %s", label, err)
 			continue
 		}
 

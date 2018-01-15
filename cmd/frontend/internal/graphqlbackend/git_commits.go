@@ -27,10 +27,9 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitRe
 	if r.first != nil {
 		n = *r.first
 	}
-	commits, _, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head:    vcs.CommitID(r.headCommitID),
-		N:       uint(n),
-		NoTotal: true,
+	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
+		Head: vcs.CommitID(r.headCommitID),
+		N:    uint(n),
 	})
 	if err != nil {
 		return nil, err

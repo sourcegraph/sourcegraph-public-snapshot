@@ -131,11 +131,11 @@ func Test_Repos_ListCommits(t *testing.T) {
 		}
 		return wantCommits[0].ID, nil
 	}
-	mockRepo.Commits_ = func(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
+	mockRepo.Commits_ = func(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error) {
 		if !(opt.Head == wantCommits[0].ID && opt.Base == "") {
 			t.Fatalf("call to Commits with unexpected argument opt=%+v", opt)
 		}
-		return wantCommits, uint(len(wantCommits)), nil
+		return wantCommits, nil
 	}
 	db.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
 		return mockRepo, nil
