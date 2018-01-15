@@ -84,41 +84,36 @@ func (r *repositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, err
 	return true, nil
 }
 
-func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
+func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) {
+	_, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: r.repo.ID,
+		Rev:  "HEAD",
+	})
+	if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
 	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,
 		Rev:  args.Rev,
 	})
 	if err != nil {
 		if err == vcs.ErrRevisionNotFound {
-			return &commitStateResolver{}, nil
+			return nil, nil
 		}
 		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
-			return &commitStateResolver{cloneInProgress: true}, nil
+			return nil, err
 		}
 		return nil, err
 	}
-	return createCommitState(*r.repo, rev), nil
-}
-
-func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: r.repo.ID,
-		Rev:  args.Rev,
-	})
+	commit, err := backend.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{Repo: r.repo.ID, CommitID: rev.CommitID})
 	if err != nil {
-		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
-			return &commitStateResolver{cloneInProgress: true}, nil
-		}
 		return nil, err
 	}
-
-	return &commitStateResolver{
-		commit: &commitResolver{
-			commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID},
-			repo:   *r.repo,
-		},
-	}, nil
+	return toGitCommitResolver(r, commit), nil
 }
 
 // GitCmdRaw executes whitelisted git cmds from the gitserver.
@@ -133,26 +128,13 @@ func (r *repositoryResolver) GitCmdRaw(ctx context.Context, args *struct {
 	return vcsrepo.GitCmdRaw(ctx, args.Params)
 }
 
-func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, error) {
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: r.repo.ID,
-	})
-	if err != nil {
-		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
-			return &commitStateResolver{cloneInProgress: true}, nil
-		}
-		return nil, err
-	}
-	return createCommitState(*r.repo, rev), nil
-}
-
-func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*commitStateResolver, error) {
+func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCommitResolver, error) {
 	// This method is a stopgap until we no longer require git:// URIs on the client which include rev data.
 	// THIS RESOLVER WILL BE REMOVED SOON, DO NOT USE IT!!!
 	if r.repo.IndexedRevision != nil && *r.repo.IndexedRevision != "" {
-		return createCommitState(*r.repo, &sourcegraph.ResolvedRev{CommitID: *r.repo.IndexedRevision}), nil
+		return r.Commit(ctx, &struct{ Rev string }{Rev: *r.repo.IndexedRevision})
 	}
-	return r.Latest(ctx)
+	return r.Commit(ctx, &struct{ Rev string }{Rev: "HEAD"})
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error) {
@@ -170,42 +152,6 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error)
 	}
 	t := strings.TrimSpace(defaultBranch)
 	return &t, nil
-}
-
-func (r *repositoryResolver) Branches(ctx context.Context) ([]string, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	branches, err := vcsrepo.Branches(ctx, vcs.BranchesOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	names := make([]string, len(branches))
-	for i, b := range branches {
-		names[i] = b.Name
-	}
-	return names, nil
-}
-
-func (r *repositoryResolver) Tags(ctx context.Context) ([]string, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	tags, err := vcsrepo.Tags(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	names := make([]string, len(tags))
-	for i, t := range tags {
-		names[i] = t.Name
-	}
-	return names, nil
 }
 
 func (r *repositoryResolver) Private() bool {

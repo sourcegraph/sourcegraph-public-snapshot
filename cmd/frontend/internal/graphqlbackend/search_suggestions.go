@@ -94,11 +94,15 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
-		cache := map[string]commitSpec{}
-		getCommitSpec := func(ctx context.Context, fm *fileMatch) (commitSpec, error) {
+		type repoCommitSpec struct {
+			repo     int32
+			commitID string
+		}
+		cache := map[string]repoCommitSpec{}
+		getCommitSpec := func(ctx context.Context, fm *fileMatch) (repoCommitSpec, error) {
 			u, err := url.Parse(fm.uri)
 			if err != nil {
-				return commitSpec{}, err
+				return repoCommitSpec{}, err
 			}
 			key := u.Host + u.Path + "?" + u.RawQuery
 			if spec, ok := cache[key]; ok {
@@ -106,16 +110,16 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			repo, err := db.Repos.GetByURI(ctx, u.Host+u.Path)
 			if err != nil {
-				return commitSpec{}, err
+				return repoCommitSpec{}, err
 			}
 			rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 				Repo: repo.ID,
 				Rev:  u.RawQuery,
 			})
 			if err != nil {
-				return commitSpec{}, err
+				return repoCommitSpec{}, err
 			}
-			spec := commitSpec{RepoID: repo.ID, CommitID: rev.CommitID}
+			spec := repoCommitSpec{repo: repo.ID, commitID: rev.CommitID}
 			cache[key] = spec
 			return spec, nil
 		}
@@ -148,10 +152,15 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 				path := res.fileMatch.JPath
 				fileResolver := &fileResolver{
-					path:   path,
-					name:   path,
-					commit: commit,
-					stat:   createFileInfo(path, false),
+					path: path,
+					name: path,
+					commit: &gitCommitResolver{
+						// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
+						// (which would make it slow). This gitCommitResolver will return empty
+						// values for all other fields.
+						repoID: commit.repo,
+					},
+					stat: createFileInfo(path, false),
 				}
 				suggestions = append(suggestions, newSearchResultResolver(fileResolver, len(results.results)-i))
 			}
@@ -211,8 +220,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		case *repositoryResolver:
 			k.repoURI = s.URI()
 		case *fileResolver:
-			k.repoID = s.commit.RepoID
-			k.repoRev = s.commit.CommitID
+			k.repoID = s.commit.repositoryIDInt32()
+			k.repoRev = string(s.commit.oid)
 			k.file = s.path
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))

@@ -13,16 +13,17 @@ import (
 )
 
 type treeResolver struct {
-	commit  commitSpec
+	commit *gitCommitResolver
+
 	path    string
 	entries []os.FileInfo
 }
 
-func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recursive bool) (*treeResolver, error) {
+func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path string, recursive bool) (*treeResolver, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, commit.repositoryIDInt32())
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +32,7 @@ func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recur
 		return nil, errors.New("not implemented")
 	}
 
-	entries, err := vcsrepo.ReadDir(ctx, vcs.CommitID(commit.CommitID), path, recursive)
+	entries, err := vcsrepo.ReadDir(ctx, vcs.CommitID(commit.oid), path, recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error

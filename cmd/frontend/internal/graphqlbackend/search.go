@@ -321,7 +321,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 			// specified.
 			//
 			// TODO(sqs): make this support multiple revspecs and ref globs
-			_, err := repoResolver.RevState(ctx, &struct {
+			_, err := repoResolver.Commit(ctx, &struct {
 				Rev string
 			}{
 				Rev: repoRev.revSpecsOrDefaultBranch()[0],
@@ -503,17 +503,16 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 	}
 
 	repoResolver := &repositoryResolver{repo: repoRevs.repo}
-	commitStateResolver, err := repoResolver.Commit(ctx, &struct {
+	commitResolver, err := repoResolver.Commit(ctx, &struct {
 		Rev string
 	}{Rev: repoRevs.revSpecsOrDefaultBranch()[0]})
 	if err != nil {
 		return nil, err
 	}
-	if commitStateResolver.cloneInProgress {
+	if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
 		// TODO report a cloning repo
 		return res, nil
 	}
-	commitResolver := commitStateResolver.Commit()
 	if commitResolver == nil {
 		// TODO(sqs): this means the repository is empty or the revision did not resolve - in either case,
 		// there no tree entries here, but maybe we should handle this better

@@ -17,24 +17,22 @@ export const fetchBlameFile = memoizeObservable(
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    blame(startLine: $startLine, endLine: $endLine) {
-                                        startLine
-                                        endLine
-                                        startByte
-                                        endByte
-                                        rev
-                                        author {
-                                            person {
-                                                name
-                                                email
-                                                gravatarHash
-                                            }
-                                            date
+                            file(path: $filePath) {
+                                blame(startLine: $startLine, endLine: $endLine) {
+                                    startLine
+                                    endLine
+                                    startByte
+                                    endByte
+                                    rev
+                                    author {
+                                        person {
+                                            name
+                                            email
+                                            gravatarHash
                                         }
-                                        message
+                                        date
                                     }
+                                    message
                                 }
                             }
                         }
@@ -54,14 +52,13 @@ export const fetchBlameFile = memoizeObservable(
                     !result.data ||
                     !result.data.repository ||
                     !result.data.repository.commit ||
-                    !result.data.repository.commit.commit ||
-                    !result.data.repository.commit.commit.file ||
-                    !result.data.repository.commit.commit.file.blame
+                    !result.data.repository.commit.file ||
+                    !result.data.repository.commit.file.blame
                 ) {
                     console.error('unexpected BlameFile response:', result)
                     return null
                 }
-                return result.data.repository.commit.commit.file.blame
+                return result.data.repository.commit.file.blame
             })
         ),
     makeRepoURI

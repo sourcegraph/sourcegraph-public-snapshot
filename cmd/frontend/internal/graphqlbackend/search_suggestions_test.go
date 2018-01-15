@@ -145,12 +145,12 @@ func TestSearchSuggestions(t *testing.T) {
 			if repoRevs.repo.URI == "foo-repo1" {
 				calledSearchFilesFoo = true
 				return []*searchResultResolver{
-					{result: &fileResolver{path: "dir/foo-repo1-file-name-match", commit: commitSpec{RepoID: 1}}, score: 1},
+					{result: &fileResolver{path: "dir/foo-repo1-file-name-match", commit: &gitCommitResolver{repoID: 1}}, score: 1},
 				}, nil
 			} else if repoRevs.repo.URI == "repo3" {
 				calledSearchFilesRepo3 = true
 				return []*searchResultResolver{
-					{result: &fileResolver{path: "dir/foo-repo3-file-name-match", commit: commitSpec{RepoID: 1}}, score: 2},
+					{result: &fileResolver{path: "dir/foo-repo3-file-name-match", commit: &gitCommitResolver{repoID: 1}}, score: 2},
 				}, nil
 			}
 			t.Errorf("got %q, want %q or %q", repoRevs.repo.URI, "foo-repo1", "repo3")
@@ -210,7 +210,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repoRevs.repo.URI, want)
 			}
 			return []*searchResultResolver{
-				{result: &fileResolver{path: "dir/file", commit: commitSpec{RepoID: 1}}, score: 1},
+				{result: &fileResolver{path: "dir/file", commit: &gitCommitResolver{repoID: 1}}, score: 1},
 			}, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()
@@ -245,7 +245,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repoRevs.repo.URI, want)
 			}
 			return []*searchResultResolver{
-				{result: &fileResolver{path: "dir/bar-file", commit: commitSpec{RepoID: 1}}, score: 1},
+				{result: &fileResolver{path: "dir/bar-file", commit: &gitCommitResolver{repoID: 1}}, score: 1},
 			}, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()

@@ -54,10 +54,10 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	if want := []*commitSearchResult{
 		{
-			commit: &commitInfoResolver{
-				repository: &repositoryResolver{repo: &sourcegraph.Repo{ID: 1, URI: "repo"}},
-				oid:        "c1",
-				author:     *toSignatureResolver(&vcs.Signature{}),
+			commit: &gitCommitResolver{
+				repo:   &repositoryResolver{repo: &sourcegraph.Repo{ID: 1, URI: "repo"}},
+				oid:    "c1",
+				author: *toSignatureResolver(&vcs.Signature{}),
 			},
 			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
 		},

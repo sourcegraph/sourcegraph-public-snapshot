@@ -22,9 +22,10 @@ import (
 )
 
 type fileResolver struct {
-	commit commitSpec
-	name   string
-	path   string
+	commit *gitCommitResolver
+
+	name string
+	path string
 
 	// stat is populated by the creator of this fileResolver if it has this
 	// information available. Not all creators will have the stat info; in
@@ -45,12 +46,12 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
 	if err != nil {
 		return "", err
 	}
 
-	contents, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.CommitID), r.path)
+	contents, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return "", err
 	}
@@ -67,12 +68,12 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
 	if err != nil {
 		return false, err
 	}
 
-	stat, err := vcsrepo.Stat(ctx, vcs.CommitID(r.commit.CommitID), r.path)
+	stat, err := vcsrepo.Stat(ctx, vcs.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return false, err
 	}
@@ -81,11 +82,7 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 }
 
 func (r *fileResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
-	repo, err := db.Repos.Get(ctx, r.commit.RepoID)
-	if err != nil {
-		return nil, err
-	}
-	return &repositoryResolver{repo: repo}, nil
+	return r.commit.Repository(ctx)
 }
 
 func (r *fileResolver) RichHTML(ctx context.Context) (string, error) {
@@ -141,12 +138,12 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
 	if err != nil {
 		return nil, err
 	}
 
-	code, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.CommitID), r.path)
+	code, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return nil, err
 	}
@@ -169,37 +166,18 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	return result, nil
 }
 
-func (r *fileResolver) Commit(ctx context.Context) (*commitResolver, error) {
-	repo, err := db.Repos.Get(ctx, r.commit.RepoID)
-	if err != nil {
-		return nil, err
-	}
-	return &commitResolver{
-		commit: r.commit,
-		repo:   *repo,
-	}, nil
-}
-
-func (r *fileResolver) LastCommit(ctx context.Context) (*commitInfoResolver, error) {
-	commits, err := r.commits(ctx, 1)
-	if err != nil {
-		return nil, err
-	}
-	return commits[0], nil
-}
-
-func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, error) {
+func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error) {
 	return r.commits(ctx, 10)
 }
 
-func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*commitInfoResolver, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
+func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
 	if err != nil {
 		return nil, err
 	}
 
 	commits, _, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head:    vcs.CommitID(r.commit.CommitID),
+		Head:    vcs.CommitID(r.commit.oid),
 		N:       limit,
 		Path:    r.path,
 		NoTotal: true,
@@ -207,30 +185,26 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*commitInfoRe
 	if err != nil {
 		return nil, err
 	}
-	commitsResolver := make([]*commitInfoResolver, len(commits))
+	resolvers := make([]*gitCommitResolver, len(commits))
 	for i, commit := range commits {
-		commitsResolver[i] = &commitInfoResolver{
-			oid:       gitObjectID(commit.ID),
-			author:    *toSignatureResolver(&commit.Author),
-			committer: toSignatureResolver(commit.Committer),
-			message:   commit.Message,
-		}
+		resolvers[i] = toGitCommitResolver(nil, commit)
+		resolvers[i].repoID = r.commit.repositoryIDInt32()
 	}
 
-	return commitsResolver, nil
+	return resolvers, nil
 }
 
 func (r *fileResolver) BlameRaw(ctx context.Context, args *struct {
 	StartLine int32
 	EndLine   int32
 }) (string, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
 	if err != nil {
 		return "", err
 	}
 
 	rawBlame, err := vcsrepo.BlameFileRaw(ctx, r.path, &vcs.BlameOptions{
-		NewestCommit: vcs.CommitID(r.commit.CommitID),
+		NewestCommit: vcs.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
 	})
@@ -246,13 +220,13 @@ func (r *fileResolver) Blame(ctx context.Context,
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.RepoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
 	if err != nil {
 		return nil, err
 	}
 
 	hunks, err := vcsrepo.BlameFile(ctx, r.path, &vcs.BlameOptions{
-		NewestCommit: vcs.CommitID(r.commit.CommitID),
+		NewestCommit: vcs.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
 	})
@@ -276,8 +250,8 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 	Character int32
 }) (*dependencyReferencesResolver, error) {
 	depRefs, err := backend.Defs.DependencyReferences(ctx, sourcegraph.DependencyReferencesOptions{
-		RepoID:    r.commit.RepoID,
-		CommitID:  r.commit.CommitID,
+		RepoID:    r.commit.repositoryIDInt32(),
+		CommitID:  string(r.commit.oid),
 		Language:  args.Language,
 		File:      r.path,
 		Line:      int(args.Line),
@@ -292,7 +266,7 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 	var repos []*repositoryResolver
 	var repoIDs []int32
 	for _, ref := range depRefs.References {
-		if ref.RepoID == r.commit.RepoID {
+		if ref.RepoID == r.commit.repositoryIDInt32() {
 			continue
 		}
 

@@ -48,6 +48,7 @@ export const fetchRepository = memoizeObservable(
             gql`
                 query Repository($repoPath: String!) {
                     repository(uri: $repoPath) {
+                        id
                         uri
                         description
                         viewerCanAdminister
@@ -89,11 +90,9 @@ export const resolveRev = memoizeObservable(
             gql`
                 query ResolveRev($repoPath: String, $rev: String) {
                     repository(uri: $repoPath) {
+                        cloneInProgress
                         commit(rev: $rev) {
-                            cloneInProgress
-                            commit {
-                                sha1
-                            }
+                            oid
                         }
                         defaultBranch
                         redirectURL
@@ -109,20 +108,20 @@ export const resolveRev = memoizeObservable(
                 if (data.repository && data.repository.redirectURL) {
                     throw new RepoSeeOtherErrorImpl(data.repository.redirectURL)
                 }
-                if (!data.repository || !data.repository.commit) {
+                if (!data.repository) {
                     throw new RepoNotFoundError(ctx.repoPath)
                 }
-                if (data.repository.commit.cloneInProgress) {
+                if (data.repository.cloneInProgress) {
                     throw new CloneInProgressError(ctx.repoPath)
                 }
-                if (!data.repository.commit.commit) {
+                if (!data.repository.commit) {
                     throw new RevNotFoundError(ctx.rev)
                 }
                 if (!data.repository.defaultBranch) {
                     throw new RevNotFoundError('HEAD')
                 }
                 return {
-                    commitID: data.repository.commit.commit.sha1,
+                    commitID: data.repository.commit.oid,
                     defaultBranch: data.repository.defaultBranch,
                 }
             })
@@ -157,14 +156,12 @@ export const fetchHighlightedFile = memoizeObservable(
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    isDirectory
-                                    richHTML
-                                    highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
-                                        aborted
-                                        html
-                                    }
+                            file(path: $filePath) {
+                                isDirectory
+                                richHTML
+                                highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
+                                    aborted
+                                    html
                                 }
                             }
                         }
@@ -178,16 +175,15 @@ export const fetchHighlightedFile = memoizeObservable(
                     !data ||
                     !data.repository ||
                     !data.repository.commit ||
-                    !data.repository.commit.commit ||
-                    !data.repository.commit.commit.file ||
-                    !data.repository.commit.commit.file.highlight
+                    !data.repository.commit.file ||
+                    !data.repository.commit.file.highlight
                 ) {
                     throw Object.assign(
                         new Error('Could not fetch highlighted file: ' + (errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                const file = data.repository.commit.commit.file
+                const file = data.repository.commit.file
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
@@ -226,11 +222,9 @@ export const listAllFiles = memoizeObservable(
                 query FileTree($repoPath: String!, $commitID: String!) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            commit {
-                                tree(recursive: true) {
-                                    files {
-                                        name
-                                    }
+                            tree(recursive: true) {
+                                files {
+                                    name
                                 }
                             }
                         }
@@ -244,13 +238,12 @@ export const listAllFiles = memoizeObservable(
                     !data ||
                     !data.repository ||
                     !data.repository.commit ||
-                    !data.repository.commit.commit ||
-                    !data.repository.commit.commit.tree ||
-                    !data.repository.commit.commit.tree.files
+                    !data.repository.commit.tree ||
+                    !data.repository.commit.tree.files
                 ) {
                     throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
                 }
-                return data.repository.commit.commit.tree.files.map(file => file.name)
+                return data.repository.commit.tree.files.map(file => file.name)
             })
         ),
     makeRepoURI
@@ -268,11 +261,9 @@ export const fetchBlobContent = memoizeObservable(
                 query BlobContent($repoPath: String, $commitID: String, $filePath: String) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    isDirectory
-                                    content
-                                }
+                            file(path: $filePath) {
+                                isDirectory
+                                content
                             }
                         }
                     }
@@ -281,19 +272,13 @@ export const fetchBlobContent = memoizeObservable(
             ctx
         ).pipe(
             map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.commit ||
-                    !data.repository.commit.commit.file
-                ) {
+                if (!data || !data.repository || !data.repository.commit || !data.repository.commit.file) {
                     throw Object.assign(
                         'Could not fetch blob content: ' + new Error((errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                const file = data.repository.commit.commit.file
+                const file = data.repository.commit.file
                 return { isDirectory: file.isDirectory, content: file.content }
             })
         ),
