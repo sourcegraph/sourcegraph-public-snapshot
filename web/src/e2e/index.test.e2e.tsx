@@ -21,7 +21,7 @@ describe('e2e test suite', () => {
         }
     })
     beforeEach(() => {
-        chrome = new Chromeless({ waitTimeout: 30000, launchChrome: false })
+        chrome = new Chromeless({ waitTimeout: 5000, launchChrome: false })
         chrome.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
     })
     afterEach(() => chrome.end())
@@ -210,6 +210,7 @@ describe('e2e test suite', () => {
                 )
                 await chrome.wait('.tree__row') // wait for tree to render
 
+                await chrome.click('.tree')
                 await chrome.press(38) // arrow up to 'diff' directory
                 await chrome.wait('.tree__row--selected [data-tree-path="diff"]')
                 await chrome.press(39) // arrow right (expand 'diff' directory)
