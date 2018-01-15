@@ -100,6 +100,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
 
     private queryInputChanges = new Subject<string>()
     private showMoreClicks = new Subject<void>()
+    private componentUpdates = new Subject<Props<C, N>>()
     private subscriptions = new Subscription()
 
     public constructor(props: Props<C, N>) {
@@ -168,6 +169,17 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     .subscribe(c => this.setState({ connection: c }))
             )
         }
+
+        // Reload collection when the query callback changes.
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(({ queryConnection }) => queryConnection),
+                    distinctUntilChanged(),
+                    switchMap(queryConnection => queryConnection({ first: this.state.first, query: this.state.query }))
+                )
+                .subscribe(c => this.setState({ connection: c }))
+        )
     }
 
     private urlQuery(arg: { first?: number; query?: string }): string {
@@ -185,6 +197,12 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
             q.set('first', String(arg.first))
         }
         return q.toString()
+    }
+
+    public componentWillReceiveProps(nextProps: Props<C, N>): void {
+        if (nextProps.queryConnection !== this.props.queryConnection) {
+            this.componentUpdates.next(nextProps)
+        }
     }
 
     public componentWillUnmount(): void {
