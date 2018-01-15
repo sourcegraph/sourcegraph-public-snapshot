@@ -530,7 +530,12 @@ type RepositoryConnection {
 	nodes: [Repository!]!
 	# The total count of repositories in the connection. This total count may be larger
 	# than the number of nodes in this object when the result is paginated.
-	totalCount: Int!
+	#
+	# In some cases, the total count can't be computed quickly; if so, it is null. Pass
+	# precise: true to always compute total counts even if it takes a while.
+	totalCount(precise: Boolean = false): Int
+	# Pagination information.
+	pageInfo: PageInfo!
 }
 
 type Repository implements Node {

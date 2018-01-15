@@ -2,10 +2,41 @@ import CircleChevronLeft from '@sourcegraph/icons/lib/CircleChevronLeft'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { Observable } from 'rxjs/Observable'
+import { map } from 'rxjs/operators/map'
+import { gql, queryGraphQL } from '../backend/graphql'
 import { displayRepoPath } from '../components/Breadcrumb'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
-import { fetchAllRepositoriesAndPollIfAnyCloning } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
+
+function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
+    return queryGraphQL(
+        gql`
+            query Repositories($first: Int, $query: String) {
+                site {
+                    repositories(first: $first, query: $query) {
+                        nodes {
+                            id
+                            uri
+                        }
+                        totalCount
+                        pageInfo {
+                            hasNextPage
+                        }
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.site || !data.site.repositories) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.site.repositories
+        })
+    )
+}
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -66,6 +97,5 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs) =>
-        fetchAllRepositoriesAndPollIfAnyCloning({ ...args, includeDisabled: true })
+    private queryRepositories = (args: FilteredConnectionQueryArgs) => fetchRepositories({ ...args })
 }

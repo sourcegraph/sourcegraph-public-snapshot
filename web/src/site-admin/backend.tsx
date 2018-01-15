@@ -124,7 +124,7 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
                             viewerCanAdminister
                             cloneInProgress
                         }
-                        totalCount
+                        totalCount(precise: true)
                     }
                 }
             }

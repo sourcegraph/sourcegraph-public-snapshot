@@ -174,7 +174,7 @@ function fetchOverview(): Observable<OverviewInfo> {
         query Overview {
             site {
                 repositories {
-                    totalCount
+                    totalCount(precise: true)
                 }
                 users {
                     totalCount
