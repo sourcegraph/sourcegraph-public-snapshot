@@ -57,33 +57,31 @@ export const fetchTreeAndCommits = memoizeObservable(
         repoPath: string
         commitID: string
         filePath: string
-    }): Observable<{ tree: GQL.ITree; commits: GQL.ICommitInfo[] }> =>
+    }): Observable<{ tree: GQL.ITree; commits: GQL.IGitCommit[] }> =>
         queryGraphQL(
             gql`
                 query fetchTreeAndCommits($repoPath: String, $commitID: String, $filePath: String) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            commit {
-                                tree(path: $filePath) {
-                                    directories {
-                                        name
-                                    }
-                                    files {
-                                        name
-                                    }
+                            tree(path: $filePath) {
+                                directories {
+                                    name
                                 }
-                                file(path: $filePath) {
-                                    commits {
-                                        oid
-                                        abbreviatedOID
-                                        message
-                                        author {
-                                            person {
-                                                name
-                                                avatarURL
-                                            }
-                                            date
+                                files {
+                                    name
+                                }
+                            }
+                            file(path: $filePath) {
+                                commits {
+                                    oid
+                                    abbreviatedOID
+                                    message
+                                    author {
+                                        person {
+                                            name
+                                            avatarURL
                                         }
+                                        date
                                     }
                                 }
                             }
@@ -98,17 +96,17 @@ export const fetchTreeAndCommits = memoizeObservable(
                     !data ||
                     errors ||
                     !data.repository ||
-                    !data.repository.commit.commit ||
-                    !data.repository.commit.commit.tree ||
-                    !data.repository.commit.commit.file ||
-                    !data.repository.commit.commit.file.commits
+                    !data.repository.commit ||
+                    !data.repository.commit.tree ||
+                    !data.repository.commit.file ||
+                    !data.repository.commit.file.commits
                 ) {
                     throw Object.assign(
                         'Could not fetch tree and commits: ' + new Error((errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                return { tree: data.repository.commit.commit.tree, commits: data.repository.commit.commit.file.commits }
+                return { tree: data.repository.commit.tree, commits: data.repository.commit.file.commits }
             })
         ),
     makeRepoURI
@@ -129,7 +127,7 @@ interface Props {
 interface State {
     loading: boolean
     tree?: GQL.ITree
-    commits?: GQL.ICommitInfo[]
+    commits?: GQL.IGitCommit[]
     errorDescription?: string
 
     /**

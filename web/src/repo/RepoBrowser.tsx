@@ -18,14 +18,13 @@ export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: rep
             <Link to={`/${repo.uri}`} className="repo-browser__item-path">
                 <RepoBreadcrumb repoPath={repo.uri} disableLinks={true} />
             </Link>
-            {repo.latest &&
-                repo.latest.cloneInProgress && (
-                    <span className="repo-browser__item-cloning">
-                        <small>
-                            <Loader className="icon-inline" /> Cloning
-                        </small>
-                    </span>
-                )}
+            {repo.cloneInProgress && (
+                <span className="repo-browser__item-cloning">
+                    <small>
+                        <Loader className="icon-inline" /> Cloning
+                    </small>
+                </span>
+            )}
         </div>
         <div className="repo-browser__item-spacer" />
         <div className="repo-browser__item-actions">

@@ -26,6 +26,7 @@ func TestTree(t *testing.T) {
 			CommitID: exampleCommitSHA1,
 		}, nil
 	}
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{ID: exampleCommitSHA1})
 
 	mockRepo := vcstest.MockRepository{}
 	mockRepo.ReadDir_ = func(ctx context.Context, commit vcs.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
@@ -48,14 +49,12 @@ func TestTree(t *testing.T) {
 				{
 					repository(uri: "github.com/gorilla/mux") {
 						commit(rev: "` + exampleCommitSHA1 + `") {
-							commit {
-								tree(path: "/foo") {
-									directories {
-										name
-									}
-									files {
-										name
-									}
+							tree(path: "/foo") {
+								directories {
+									name
+								}
+								files {
+									name
 								}
 							}
 						}
@@ -66,15 +65,13 @@ func TestTree(t *testing.T) {
 				{
 					"repository": {
 						"commit": {
-							"commit": {
-								"tree": {
-									"directories": [
-										{"name": "testDirectory"}
-									],
-									"files": [
-										{"name": "testFile"}
-									]
-								}
+							"tree": {
+								"directories": [
+									{"name": "testDirectory"}
+								],
+								"files": [
+									{"name": "testFile"}
+								]
 							}
 						}
 					}

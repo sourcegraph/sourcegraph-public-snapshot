@@ -35,12 +35,11 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                         <RepoBreadcrumb repoPath={this.props.node.uri} disableLinks={true} />
                     </Link>
                     <ul className="site-admin-detail-list__info site-admin-repositories-page__repo-info">
-                        {this.props.node.latest &&
-                            this.props.node.latest.cloneInProgress && (
-                                <li>
-                                    <Loader className="icon-inline" /> Cloning
-                                </li>
-                            )}
+                        {this.props.node.cloneInProgress && (
+                            <li>
+                                <Loader className="icon-inline" /> Cloning
+                            </li>
+                        )}
                         <li>
                             Access:{' '}
                             {this.props.node.enabled ? (

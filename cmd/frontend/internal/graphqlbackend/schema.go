@@ -374,7 +374,7 @@ type Diff {
 # A search result that is a Git commit.
 type CommitSearchResult {
 	# The commit that matched the search query.
-	commit: CommitInfo!
+	commit: GitCommit!
 	# The ref names of the commit.
 	refs: [GitRef!]!
 	# The refs by which this commit was reached.
@@ -553,14 +553,40 @@ type Repository implements Node {
 	private: Boolean!
 	createdAt: String!
 	pushedAt: String!
-	commit(rev: String!): CommitState!
-	revState(rev: String!): RevState!
-	latest: CommitState!
-	lastIndexedRevOrLatest: CommitState!
+	# Returns information about the given commit in the repository.
+	commit(rev: String!): GitCommit
+	# Whether the repository is currently being cloned.
+	cloneInProgress: Boolean!
+	# The commit that was last indexed for cross-references, if any.
+	lastIndexedRevOrLatest: GitCommit
 	# defaultBranch will not be set if we are cloning the repository
 	defaultBranch: String
-	branches: [String!]!
-	tags: [String!]!
+	# The repository's Git refs.
+	gitRefs(
+		# Returns the first n Git refs from the list.
+		first: Int
+		# Return Git refs whose names match the query.
+		query: String
+		# Return only Git refs of the given type.
+		#
+		# Known issue: It is only supported to retrieve Git branch and tag refs, not
+		# other Git refs.
+		type: GitRefType
+	): GitRefConnection!
+	# The repository's Git branches.
+	branches(
+		# Returns the first n Git branches from the list.
+		first: Int
+		# Return Git branches whose names match the query.
+		query: String
+	): GitRefConnection!
+	# The repository's Git tags.
+	tags(
+		# Returns the first n Git tags from the list.
+		first: Int
+		# Return Git tags whose names match the query.
+		query: String
+	): GitRefConnection!
 	listTotalRefs: TotalRefList!
 	gitCmdRaw(params: [String!]!): String!
 	# Link to another sourcegraph instance location where this repository is located.
@@ -569,13 +595,26 @@ type Repository implements Node {
 	viewerCanAdminister: Boolean!
 }
 
+# A list of Git refs.
+type GitRefConnection {
+	# A list of Git refs.
+	nodes: [GitRef!]!
+	# The total count of Git refs in the connection. This total count may be larger
+	# than the number of nodes in this object when the result is paginated.
+	totalCount: Int!
+}
+
 # A Git object ID (SHA-1 hash, 40 hexadecimal characters).
 scalar GitObjectID
 
 # A Git ref.
-type GitRef {
+type GitRef implements Node {
+	# The globally addressable ID for the Git ref.
+	id: ID!
 	# The full ref name (e.g., "refs/heads/mybranch" or "refs/tags/mytag").
 	name: String!
+	# An unambiguous short name for the ref.
+	abbrevName: String!
 	# The display name of the ref. For branches ("refs/heads/foo"), this is the branch
 	# name ("foo").
 	#
@@ -585,10 +624,22 @@ type GitRef {
 	# The prefix of the ref, either "", "refs/", "refs/heads/", "refs/pull/", or
 	# "refs/tags/". This prefix is always a prefix of the ref's name.
 	prefix: String!
+	# The type of this Git ref.
+	type: GitRefType!
 	# The object that the ref points to.
 	target: GitObject!
 	# The associated repository.
 	repository: Repository!
+}
+
+# ALl possible types of Git refs.
+enum GitRefType {
+	# A Git branch (in refs/heads/).
+	GIT_BRANCH
+	# A Git tag (in refs/tags/).
+	GIT_TAG
+	# A Git ref that is neither a branch nor tag.
+	GIT_REF_OTHER
 }
 
 # A Git object.
@@ -643,32 +694,46 @@ type Symbol {
 	character: Int!
 }
 
-type CommitState {
-	commit: Commit
-	cloneInProgress: Boolean!
+# A list of Git commits.
+type GitCommitConnection {
+	# A list of Git commits.
+	nodes: [GitCommit!]!
+	# The total count of Git commits in the connection. This total count may be larger
+	# than the number of nodes in this object when the result is paginated.
+	#
+	# This field is expensive to compute. Omit it from queries where speed is important.
+	totalCount: Int!
 }
 
-type RevState {
-	commit: Commit
-	cloneInProgress: Boolean!
-}
-
-type Commit implements Node {
+# A Git commit.
+type GitCommit implements Node {
+	# The globally addressable ID for this commit.
 	id: ID!
-	sha1: String!
-	tree(path: String = "", recursive: Boolean = false): Tree
-	file(path: String!): File
-	languages: [String!]!
-}
-
-type CommitInfo {
+	# The repository that contains this commit.
 	repository: Repository!
+	# This commit's Git object ID (OID), a 40-character SHA-1 hash.
 	oid: GitObjectID!
+	# The abbreviated form of this commit's OID.
 	abbreviatedOID: String!
-	rev: String!
+	# This commit's author.
 	author: Signature!
+	# This commit's committer, if any.
 	committer: Signature
+	# The full commit message.
 	message: String!
+	# Lists the Git tree as of this commit.
+	tree(path: String = "", recursive: Boolean = false): Tree
+	# Retrieves a Git blob (file) as of this commit.
+	file(path: String!): File
+	# Lists the programming languages present in the tree at this commit.
+	languages: [String!]!
+	# The log of commits consisting of this commit and its ancestors.
+	ancestors(
+		# Returns the first n commits from the list.
+		first: Int
+		# Return commits that match the query.
+		query: String
+	): GitCommitConnection!
 }
 
 type Signature {
@@ -697,16 +762,14 @@ interface TreeEntry {
 	name: String!
 	isDirectory: Boolean!
 	repository: Repository!
-	commits: [CommitInfo!]!
-	lastCommit: CommitInfo!
+	commits: [GitCommit!]!
 }
 
 type Directory implements TreeEntry {
 	name: String!
 	isDirectory: Boolean!
 	repository: Repository!
-	commits: [CommitInfo!]!
-	lastCommit: CommitInfo!
+	commits: [GitCommit!]!
 	tree: Tree!
 }
 
@@ -728,11 +791,9 @@ type File implements TreeEntry {
 	repository: Repository!
 	binary: Boolean!
 	isDirectory: Boolean!
-	commit: Commit!
 	highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+	commits: [GitCommit!]!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
-	commits: [CommitInfo!]!
-	lastCommit: CommitInfo!
 	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
 	blameRaw(startLine: Int!, endLine: Int!): String!
 }

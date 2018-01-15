@@ -87,6 +87,11 @@ func (r *nodeResolver) ToComment() (*commentResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
+	n, ok := r.node.(*gitRefResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
 	n, ok := r.node.(*repositoryResolver)
 	return n, ok
@@ -102,8 +107,8 @@ func (r *nodeResolver) ToOrg() (*orgResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToCommit() (*commitResolver, bool) {
-	n, ok := r.node.(*commitResolver)
+func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
+	n, ok := r.node.(*gitCommitResolver)
 	return n, ok
 }
 
@@ -134,6 +139,8 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 
 func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
+	case "GitRef":
+		return gitRefByID(ctx, id)
 	case "Comment":
 		return commentByID(ctx, id)
 	case "Repository":
@@ -142,8 +149,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return userByID(ctx, id)
 	case "Org":
 		return orgByID(ctx, id)
-	case "Commit":
-		return commitByID(ctx, id)
+	case "GitCommit":
+		return gitCommitByID(ctx, id)
 	case "SavedQuery":
 		return savedQueryByID(ctx, id)
 	case "Site":

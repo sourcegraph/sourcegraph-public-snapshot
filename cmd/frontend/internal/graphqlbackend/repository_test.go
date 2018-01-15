@@ -9,21 +9,23 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-var exampleCommitSHA1 = "1234567890123456789012345678901234567890"
+const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
 
-func TestRepositoryLatestCommit(t *testing.T) {
+func TestRepository_Commit(t *testing.T) {
 	resetMocks()
 	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
-		if op.Repo != 2 || op.Rev != "" {
+		if op.Repo != 2 || op.Rev != "abc" {
 			t.Error("wrong arguments to ResolveRev")
 		}
 		return &sourcegraph.ResolvedRev{
 			CommitID: exampleCommitSHA1,
 		}, nil
 	}
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{ID: exampleCommitSHA1})
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
@@ -31,10 +33,8 @@ func TestRepositoryLatestCommit(t *testing.T) {
 			Query: `
 				{
 					repository(uri: "github.com/gorilla/mux") {
-						latest {
-							commit {
-								sha1
-							}
+						commit(rev: "abc") {
+							oid
 						}
 					}
 				}
@@ -42,10 +42,8 @@ func TestRepositoryLatestCommit(t *testing.T) {
 			ExpectedResult: `
 				{
 					"repository": {
-						"latest": {
-							"commit": {
-								"sha1": "` + exampleCommitSHA1 + `"
-							}
+						"commit": {
+							"oid": "` + exampleCommitSHA1 + `"
 						}
 					}
 				}

@@ -29,32 +29,28 @@ export const fetchDependencyReferences = memoizeObservable(
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    dependencyReferences(Language: $mode, Line: $line, Character: $character) {
-                                        dependencyReferenceData {
-                                            references {
-                                                dependencyData
-                                                repoId
-                                                hints
-                                            }
-                                            location {
-                                                location
-                                                symbol
+                            file(path: $filePath) {
+                                dependencyReferences(Language: $mode, Line: $line, Character: $character) {
+                                    dependencyReferenceData {
+                                        references {
+                                            dependencyData
+                                            repoId
+                                            hints
+                                        }
+                                        location {
+                                            location
+                                            symbol
+                                        }
+                                    }
+                                    repoData {
+                                        repos {
+                                            id
+                                            uri
+                                            lastIndexedRevOrLatest {
+                                                oid
                                             }
                                         }
-                                        repoData {
-                                            repos {
-                                                id
-                                                uri
-                                                lastIndexedRevOrLatest {
-                                                    commit {
-                                                        sha1
-                                                    }
-                                                }
-                                            }
-                                            repoIds
-                                        }
+                                        repoIds
                                     }
                                 }
                             }
@@ -76,18 +72,16 @@ export const fetchDependencyReferences = memoizeObservable(
                     !result.data ||
                     !result.data.repository ||
                     !result.data.repository.commit ||
-                    !result.data.repository.commit.commit ||
-                    !result.data.repository.commit.commit.file ||
-                    !result.data.repository.commit.commit.file.dependencyReferences ||
-                    !result.data.repository.commit.commit.file.dependencyReferences.repoData ||
-                    !result.data.repository.commit.commit.file.dependencyReferences.dependencyReferenceData ||
-                    !result.data.repository.commit.commit.file.dependencyReferences.dependencyReferenceData.references
-                        .length
+                    !result.data.repository.commit.file ||
+                    !result.data.repository.commit.file.dependencyReferences ||
+                    !result.data.repository.commit.file.dependencyReferences.repoData ||
+                    !result.data.repository.commit.file.dependencyReferences.dependencyReferenceData ||
+                    !result.data.repository.commit.file.dependencyReferences.dependencyReferenceData.references.length
                 ) {
                     return null
                 }
 
-                return result.data.repository.commit.commit.file.dependencyReferences
+                return result.data.repository.commit.file.dependencyReferences
             })
         )
     },
@@ -114,9 +108,9 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                         refs.dependencyReferenceData.references
                             .map(ref => {
                                 const repo = idToRepo(ref.repoId)
-                                const commit = repo.lastIndexedRevOrLatest.commit
+                                const commit = repo.lastIndexedRevOrLatest
                                 return {
-                                    workspace: commit && { repoPath: repo.uri, commitID: commit.sha1 },
+                                    workspace: commit && { repoPath: repo.uri, commitID: commit.oid },
                                     hints: ref.hints ? JSON.parse(ref.hints) : {},
                                 }
                             })

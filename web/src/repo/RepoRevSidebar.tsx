@@ -20,11 +20,9 @@ const fetchTree = memoizeObservable(
                 query FileTree($repoPath: String!, $commitID: String!) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            commit {
-                                tree(recursive: true) {
-                                    files {
-                                        name
-                                    }
+                            tree(recursive: true) {
+                                files {
+                                    name
                                 }
                             }
                         }
@@ -38,13 +36,12 @@ const fetchTree = memoizeObservable(
                     !data ||
                     !data.repository ||
                     !data.repository.commit ||
-                    !data.repository.commit.commit ||
-                    !data.repository.commit.commit.tree ||
-                    !data.repository.commit.commit.tree.files
+                    !data.repository.commit.tree ||
+                    !data.repository.commit.tree.files
                 ) {
                     throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
                 }
-                return data.repository.commit.commit.tree.files.map(file => file.name)
+                return data.repository.commit.tree.files.map(file => file.name)
             })
         ),
     makeRepoURI

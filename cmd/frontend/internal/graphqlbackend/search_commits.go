@@ -34,14 +34,14 @@ func mustParseDuration(s string) time.Duration {
 }
 
 type commitSearchResult struct {
-	commit         *commitInfoResolver
+	commit         *gitCommitResolver
 	refs           []*gitRefResolver
 	sourceRefs     []*gitRefResolver
 	messagePreview *highlightedString
 	diffPreview    *highlightedString
 }
 
-func (r *commitSearchResult) Commit() *commitInfoResolver        { return r.commit }
+func (r *commitSearchResult) Commit() *gitCommitResolver         { return r.commit }
 func (r *commitSearchResult) Refs() []*gitRefResolver            { return r.refs }
 func (r *commitSearchResult) SourceRefs() []*gitRefResolver      { return r.sourceRefs }
 func (r *commitSearchResult) MessagePreview() *highlightedString { return r.messagePreview }
@@ -210,15 +210,7 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 	results = make([]*commitSearchResult, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
-		results[i] = &commitSearchResult{
-			commit: &commitInfoResolver{
-				repository: repoResolver,
-				oid:        gitObjectID(commit.ID),
-				author:     *toSignatureResolver(&commit.Author),
-				committer:  toSignatureResolver(commit.Committer),
-				message:    commit.Message,
-			},
-		}
+		results[i] = &commitSearchResult{commit: toGitCommitResolver(repoResolver, &commit)}
 
 		addRefs := func(dst *[]*gitRefResolver, src []string) {
 			for _, ref := range src {

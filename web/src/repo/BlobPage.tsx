@@ -676,13 +676,11 @@ const fetchBlob = memoizeObservable(
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            commit {
-                                file(path: $filePath) {
-                                    richHTML
-                                    highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
-                                        aborted
-                                        html
-                                    }
+                            file(path: $filePath) {
+                                richHTML
+                                highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
+                                    aborted
+                                    html
                                 }
                             }
                         }
@@ -696,16 +694,15 @@ const fetchBlob = memoizeObservable(
                     !data ||
                     !data.repository ||
                     !data.repository.commit ||
-                    !data.repository.commit.commit ||
-                    !data.repository.commit.commit.file ||
-                    !data.repository.commit.commit.file.highlight
+                    !data.repository.commit.file ||
+                    !data.repository.commit.file.highlight
                 ) {
                     throw Object.assign(
                         'Could not fetch blob content: ' + new Error((errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
-                return data.repository.commit.commit.file
+                return data.repository.commit.file
             })
         ),
     fetchBlobCacheKey
