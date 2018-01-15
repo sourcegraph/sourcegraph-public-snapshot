@@ -46,13 +46,13 @@ func (c *zipCache) shardFor(path string) *zipCacheShard {
 func (c *zipCache) get(path string) (*zipFile, error) {
 	shard := c.shardFor(path)
 	shard.mu.Lock()
+	defer shard.mu.Unlock()
 	if shard.m == nil {
 		shard.m = make(map[string]*zipFile)
 	}
 	zf, ok := shard.m[path]
 	if ok {
 		zf.wg.Add(1)
-		shard.mu.Unlock()
 		return zf, nil
 	}
 	// Cache miss.
@@ -60,22 +60,20 @@ func (c *zipCache) get(path string) (*zipFile, error) {
 	// which also conveniently provides free single-flighting.
 	zf, err := readZipFile(path)
 	if err != nil {
-		shard.mu.Unlock()
 		return nil, err
 	}
 	shard.m[path] = zf
 	zf.wg.Add(1)
-	shard.mu.Unlock()
 	return zf, nil
 }
 
 func (c *zipCache) delete(path string) {
 	shard := c.shardFor(path)
 	shard.mu.Lock()
+	defer shard.mu.Unlock()
 	zf, ok := shard.m[path]
 	if !ok {
 		// already deleted?!
-		shard.mu.Unlock()
 		return
 	}
 	// Wait for all clients using this zipFile to complete their work.
@@ -93,14 +91,13 @@ func (c *zipCache) delete(path string) {
 		}
 	}
 	delete(shard.m, path)
-	shard.mu.Unlock()
 }
 
 // zipFile provides efficient access to a single zip file.
 type zipFile struct {
 	// Take care with the size of this struct.
-	// There are many zipFiles present during typical usage.;
-	Files  []*srcFile
+	// There are many zipFiles present during typical usage.
+	Files  []srcFile
 	MaxLen int
 	Data   []byte
 	f      *os.File
@@ -142,8 +139,8 @@ func readZipFile(path string) (*zipFile, error) {
 }
 
 func (f *zipFile) populateFiles(r *zip.Reader) error {
-	f.Files = make([]*srcFile, 0, len(r.File))
-	for _, file := range r.File {
+	f.Files = make([]srcFile, len(r.File))
+	for i, file := range r.File {
 		if file.Method != zip.Store {
 			return errors.Errorf("file %s stored with compression %v, want %v", file.Name, file.Method, zip.Store)
 		}
@@ -158,7 +155,7 @@ func (f *zipFile) populateFiles(r *zip.Reader) error {
 		if int(int32(size)) != size {
 			return errors.Errorf("file %s has size > 2gb: %v", file.Name, size)
 		}
-		f.Files = append(f.Files, &srcFile{Name: file.Name, Off: int32(off), Len: int32(size), zf: f})
+		f.Files[i] = srcFile{Name: file.Name, Off: int32(off), Len: int32(size)}
 		if size > f.MaxLen {
 			f.MaxLen = size
 		}
@@ -208,14 +205,13 @@ type srcFile struct {
 	Name string
 	Off  int32
 	Len  int32
-	zf   *zipFile
 }
 
-// Data returns the contents of f.
+// Data returns the contents of s, which is a srcFile in f.
 // The contents MUST NOT be modified.
-// It is not safe to use the contents after the parent zipFile has been Closed.
-func (f *srcFile) Data() []byte {
-	return f.zf.Data[f.Off : int64(f.Off)+int64(f.Len)]
+// It is not safe to use the contents after f has been Closed.
+func (f *zipFile) DataFor(s *srcFile) []byte {
+	return f.Data[s.Off : int64(s.Off)+int64(s.Len)]
 }
 
 func (f *srcFile) String() string {

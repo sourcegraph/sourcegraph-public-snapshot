@@ -141,14 +141,14 @@ func (rg *readerGrep) Copy() *readerGrep {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(f *srcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
+func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
 	if rg.ignoreCase && rg.transformBuf == nil {
-		rg.transformBuf = make([]byte, f.zf.MaxLen)
+		rg.transformBuf = make([]byte, zf.MaxLen)
 	}
 
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
-	fileBuf := f.Data()
+	fileBuf := zf.DataFor(f)
 	fileMatchBuf := fileBuf
 
 	// If we are ignoring case, we transform the input instead of
@@ -213,7 +213,7 @@ func (rg *readerGrep) Find(f *srcFile) (matches []protocol.LineMatch, limitHit b
 			}
 			matches = append(matches, protocol.LineMatch{
 				// making a copy of lineBuf is intentional.
-				// we are not allowed to use f.Data after the parent zipFile has been Closed,
+				// we are not allowed to use the fileBuf data after the zipFile has been Closed,
 				// which currently occurs before Preview has been serialized.
 				// TODO: consider moving the call to Close until after we are
 				// done with Preview, and stop making a copy here.
@@ -230,8 +230,8 @@ func (rg *readerGrep) Find(f *srcFile) (matches []protocol.LineMatch, limitHit b
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(f *srcFile) (protocol.FileMatch, error) {
-	lm, limitHit, err := rg.Find(f)
+func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile) (protocol.FileMatch, error) {
+	lm, limitHit, err := rg.Find(zf, f)
 	return protocol.FileMatch{
 		Path:        f.Name,
 		LineMatches: lm,
@@ -294,7 +294,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 					filesmu.Unlock()
 					return
 				}
-				f := files[0]
+				f := &files[0]
 				files = files[1:]
 				filesmu.Unlock()
 
@@ -306,7 +306,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 				atomic.AddUint32(&filesSearched, 1)
 
 				// process
-				fm, err := rg.FindZip(f)
+				fm, err := rg.FindZip(zf, f)
 				if err != nil {
 					wgErrOnce.Do(func() {
 						wgErr = err
