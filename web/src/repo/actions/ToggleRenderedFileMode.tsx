@@ -48,6 +48,7 @@ export class ToggleRenderedFileMode extends React.PureComponent<{
                 to={ToggleRenderedFileMode.getURLForMode(this.props.location, otherMode)}
                 className="composite-container__header-action"
                 onClick={this.onClick}
+                data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
             >
                 <ViewIcon className="icon-inline" />
                 <span className="composite-container__header-action-text">

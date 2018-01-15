@@ -12,6 +12,7 @@ export const SearchHelp: React.SFC = () => (
         className="search-help"
         href="https://about.sourcegraph.com/docs/search"
         target="_blank"
+        data-tooltip="View search documentation"
     >
         <small>
             <HelpIcon className="icon-inline" />

@@ -79,7 +79,7 @@ export class GoToPhabricatorAction extends React.PureComponent<Props, State> {
                 className="btn btn-link btn-sm composite-container__header-action"
                 onClick={onClick}
                 href={urlToPhabricator(this.state.phabRepo, filePath)}
-                title="View on Phabricator"
+                data-tooltip="View on Phabricator"
             >
                 <PhabricatorIcon className="icon-inline" />
                 {/* Most people won't recognize the Phabricator icon, so include the text label here, too. */}

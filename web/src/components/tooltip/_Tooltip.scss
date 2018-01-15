@@ -1,0 +1,64 @@
+.tooltip2 {
+    padding: 0.75rem;
+    position: absolute;
+    z-index: 9999;
+    cursor: default;
+    animation: 0.5s fade-in;
+
+    &__container {
+        position: relative;
+    }
+
+    &__content {
+        text-align: center;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        background: darken($color-page-background, 10%);
+        color: $color-text;
+    }
+
+    &::after {
+        content: '';
+        width: 0;
+        height: 0;
+        margin: auto;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        border: 0.375rem solid transparent;
+    }
+
+    &--bottom::after {
+        bottom: auto;
+    }
+}
+
+.theme-light {
+    .tooltip2 {
+        &__content {
+            background: black;
+            color: $color-light-text-4;
+        }
+        &--bottom::after {
+            border-bottom-color: black;
+        }
+    }
+}
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

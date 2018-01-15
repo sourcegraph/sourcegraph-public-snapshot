@@ -212,7 +212,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     >
                         {externalRefCount}
                     </div>
-                    <span className="references-widget__close-icon" onClick={this.onDismiss} title="Close">
+                    <span className="references-widget__close-icon" onClick={this.onDismiss} data-tooltip="Close">
                         <CloseIcon className="icon-inline" />
                     </span>
                 </div>
