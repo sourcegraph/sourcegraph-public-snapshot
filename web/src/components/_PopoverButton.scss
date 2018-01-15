@@ -1,0 +1,82 @@
+@import './Popover';
+
+.popover-button {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    user-select: none;
+    cursor: pointer;
+
+    padding: 0.125rem 0 0.125rem 0.325rem;
+
+    color: $color-text;
+    background-color: transparent;
+
+    border: solid 1px transparent;
+    border-radius: 0.25rem;
+
+    outline: none !important;
+
+    &:hover,
+    &--open {
+        border-color: $color-border;
+    }
+
+    &__icon {
+        opacity: 0.4;
+        .icon {
+            height: 1.25rem;
+            width: 1.25rem;
+        }
+    }
+    &--open &__icon {
+        // Flip vertically so that it's a caret-up icon (not caret-down).
+        transform: rotate(180deg) translateY(-1px);
+    }
+
+    &__popover {
+        position: absolute;
+        top: 100%;
+        left: -1px; // flush with button border
+        width: auto;
+
+        background-color: $color-page-background;
+        border-radius: 0.25rem;
+        border: solid 1px $color-border;
+        border-top-left-radius: 0;
+
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+
+        z-index: 2;
+
+        visibility: hidden;
+
+        // Reset styles from <button>.
+        text-align: initial;
+    }
+    &--open {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    &--open &__popover {
+        visibility: visible;
+    }
+}
+
+.theme-light {
+    .popover-button {
+        color: $color-light-text-5;
+
+        &:hover,
+        &--open {
+            border-color: $color-light-border;
+        }
+
+        &__popover {
+            background-color: $color-light-bg-1;
+            border-color: $color-light-border;
+        }
+    }
+}

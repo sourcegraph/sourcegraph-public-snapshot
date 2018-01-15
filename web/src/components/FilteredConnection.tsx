@@ -119,6 +119,8 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     private componentUpdates = new Subject<Props<C, N>>()
     private subscriptions = new Subscription()
 
+    private filterRef: HTMLInputElement | null
+
     public constructor(props: Props<C, N>) {
         super(props)
 
@@ -300,7 +302,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="off"
-                            ref={this.filterRef}
+                            ref={this.setFilterRef}
                             spellCheck={false}
                         />
                     </form>
@@ -332,11 +334,18 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
         )
     }
 
-    private filterRef = (e: HTMLInputElement | null) => {
+    private setFilterRef = (e: HTMLInputElement | null) => {
+        this.filterRef = e
         if (e && this.props.autoFocus) {
             // TODO(sqs): The 30 msec delay is needed, or else the input is not
             // reliably focused. Find out why.
             setTimeout(() => e.focus(), 30)
+        }
+    }
+
+    private focusFilter = () => {
+        if (this.filterRef) {
+            this.filterRef.focus()
         }
     }
 
