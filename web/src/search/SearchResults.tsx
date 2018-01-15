@@ -275,8 +275,7 @@ export class SearchResults extends React.Component<Props, State> {
                             {this.state.results.length > 0 && (
                                 <span className="search-results__header-stats">
                                     {numberWithCommas(totalResults)}
-                                    {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)} in{' '}
-                                    {this.state.searchDuration! / 1000} seconds
+                                    {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)}
                                 </span>
                             )}
                             {!this.state.didSave &&
@@ -354,7 +353,7 @@ export class SearchResults extends React.Component<Props, State> {
 function resultItemsCount(result: GQL.SearchResult): number {
     switch (result.__typename) {
         case 'FileMatch':
-            return result.lineMatches.length
+            return 1
         case 'CommitSearchResult':
             return 1
     }
