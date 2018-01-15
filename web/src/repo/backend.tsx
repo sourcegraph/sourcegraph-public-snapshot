@@ -296,8 +296,16 @@ export const fetchRepoRevisions = memoizeObservable(
             gql`
                 query RepoRevisions($repoPath: String) {
                     repository(uri: $repoPath) {
-                        branches
-                        tags
+                        branches {
+                            nodes {
+                                abbrevName
+                            }
+                        }
+                        tags {
+                            nodes {
+                                abbrevName
+                            }
+                        }
                     }
                 }
             `,
@@ -310,7 +318,10 @@ export const fetchRepoRevisions = memoizeObservable(
                         { errors }
                     )
                 }
-                return data.repository
+                return {
+                    branches: data.repository.branches.nodes.map(({ abbrevName }) => abbrevName),
+                    tags: data.repository.tags.nodes.map(({ abbrevName }) => abbrevName),
+                }
             })
         ),
     makeRepoURI
