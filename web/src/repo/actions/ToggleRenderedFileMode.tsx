@@ -2,8 +2,8 @@ import ViewIcon from '@sourcegraph/icons/lib/View'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { eventLogger } from '../../tracking/eventLogger'
 import { Tooltip } from '../../components/tooltip/Tooltip'
+import { eventLogger } from '../../tracking/eventLogger'
 
 /**
  * The file rendering modes.
