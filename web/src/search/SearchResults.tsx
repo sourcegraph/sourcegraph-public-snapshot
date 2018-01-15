@@ -86,13 +86,6 @@ export class SearchResults extends React.Component<Props, State> {
 
                         const start = Date.now()
                         return searchText(searchOptions).pipe(
-                            tap(res => {
-                                if (res.cloning.length > 0) {
-                                    // Perform search again if there are repos still waiting to be cloned,
-                                    // so we can update the results list with those repos' results.
-                                    setTimeout(() => this.searchRequested.next(searchOptions), 2000)
-                                }
-                            }),
                             tap(
                                 res =>
                                     eventLogger.log('SearchResultsFetched', {
@@ -254,14 +247,29 @@ export class SearchResults extends React.Component<Props, State> {
                     />
                 )}
                 <div className="search-results__header">
-                    {(this.state.timedout.length > 0 || this.state.results.length > 0) && (
+                    {(this.state.timedout.length > 0 ||
+                        this.state.cloning.length > 0 ||
+                        this.state.results.length > 0) && (
                         <small className="search-results__header-row">
-                            {this.state.timedout.length > 0 && (
-                                <span className="search-results__header-notice" title={this.state.timedout.join('\n')}>
+                            {(this.state.timedout.length > 0 || this.state.cloning.length > 0) && (
+                                <span className="search-results__header-notice">
                                     <HourglassIcon className="icon-inline" />
-                                    {this.state.timedout.length}&nbsp;
-                                    {pluralize('repository', this.state.timedout.length, 'repositories')} timed out
-                                    (reload to try again)
+                                    {this.state.timedout.length > 0 && (
+                                        <span title={this.state.timedout.join('\n')}>
+                                            {this.state.timedout.length}&nbsp;
+                                            {pluralize('repository', this.state.timedout.length, 'repositories')} timed
+                                            out
+                                        </span>
+                                    )}
+                                    {this.state.timedout.length > 0 &&
+                                        this.state.cloning.length > 0 && <span> and </span>}
+                                    {this.state.cloning.length > 0 && (
+                                        <span title={this.state.cloning.join('\n')}>
+                                            {this.state.cloning.length}&nbsp;
+                                            {pluralize('repository', this.state.cloning.length, 'repositories')} cloning
+                                        </span>
+                                    )}
+                                    &nbsp;(reload to try again)
                                 </span>
                             )}
                             {this.state.results.length > 0 && (
@@ -290,9 +298,6 @@ export class SearchResults extends React.Component<Props, State> {
                         showDotComMarketing && <ServerBanner />}
                 </div>
                 {this.state.results.length > 0 && <div className="search-results__header-border-bottom" />}
-                {this.state.cloning.map((repoPath, i) => (
-                    <RepoSearchResult repoPath={repoPath} key={i} icon={Loader} />
-                ))}
                 {this.state.missing.map((repoPath, i) => (
                     <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
                 ))}
