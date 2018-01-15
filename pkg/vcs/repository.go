@@ -147,6 +147,8 @@ type CommitsOptions struct {
 	N    uint // limit the number of returned commits to this many (0 means no limit)
 	Skip uint // skip this many commits at the beginning
 
+	MessageQuery string // include only commits whose commit message contains this substring
+
 	Path string // only commits modifying the given path are selected (optional)
 }
 

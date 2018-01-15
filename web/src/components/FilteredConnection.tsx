@@ -70,6 +70,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
 
     /** Do not show a "Show more" button. */
     noShowMore?: boolean
+
+    /** Do not show a count summary if all nodes are visible in the list's first page. */
+    noSummaryIfAllNodesVisible?: boolean
 }
 
 /**
@@ -94,7 +97,8 @@ interface State<C extends Connection<N>, N> {
  */
 interface Connection<N> {
     nodes: N[]
-    totalCount: number
+    totalCount?: number
+    pageInfo?: { hasNextPage: boolean }
 }
 
 /**
@@ -229,40 +233,56 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
 
-        const summary =
+        const hasNextPage =
+            this.state.connection &&
+            ((this.state.connection.pageInfo && this.state.connection.pageInfo.hasNextPage) ||
+                (typeof this.state.connection.totalCount === 'number' &&
+                    this.state.connection.nodes.length < this.state.connection.totalCount))
+
+        let summary: React.ReactFragment | undefined
+        if (
             !this.state.loading &&
             this.state.connection &&
-            (this.state.connection.totalCount > 0 ? (
-                <p className="filtered-connection__summary">
-                    <small>
-                        <span>
-                            {this.state.connection.totalCount}{' '}
-                            {pluralize(this.props.noun, this.state.connection.totalCount, this.props.pluralNoun)}{' '}
-                            {this.state.connectionQuery ? (
+            (!this.props.noSummaryIfAllNodesVisible || this.state.connection.nodes.length === 0 || hasNextPage)
+        ) {
+            if (typeof this.state.connection.totalCount === 'number' && this.state.connection.totalCount > 0) {
+                summary = (
+                    <p className="filtered-connection__summary">
+                        <small>
+                            <span>
+                                {this.state.connection.totalCount}{' '}
+                                {pluralize(this.props.noun, this.state.connection.totalCount, this.props.pluralNoun)}{' '}
+                                {this.state.connectionQuery ? (
+                                    <span>
+                                        {' '}
+                                        matching <strong>{this.state.connectionQuery}</strong>
+                                    </span>
+                                ) : (
+                                    'total'
+                                )}
+                            </span>{' '}
+                            {this.state.connection.nodes.length < this.state.connection.totalCount &&
+                                `(showing first ${this.state.connection.nodes.length})`}
+                        </small>
+                    </p>
+                )
+            } else if (this.state.connection.pageInfo && this.state.connection.pageInfo.hasNextPage) {
+                // No total count to show, but it will show a 'Show more' button.
+            } else {
+                summary = (
+                    <p className="filtered-connection__summary">
+                        <small>
+                            No {this.props.pluralNoun}{' '}
+                            {this.state.connectionQuery && (
                                 <span>
-                                    {' '}
                                     matching <strong>{this.state.connectionQuery}</strong>
                                 </span>
-                            ) : (
-                                'total'
                             )}
-                        </span>{' '}
-                        {this.state.connection.nodes.length < this.state.connection.totalCount &&
-                            `(showing first ${this.state.connection.nodes.length})`}
-                    </small>
-                </p>
-            ) : (
-                <p className="filtered-connection__summary">
-                    <small>
-                        No {this.props.pluralNoun}{' '}
-                        {this.state.connectionQuery && (
-                            <span>
-                                matching <strong>{this.state.connectionQuery}</strong>
-                            </span>
-                        )}
-                    </small>
-                </p>
-            ))
+                        </small>
+                    </p>
+                )
+            }
+        }
 
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
@@ -300,7 +320,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                 {!this.state.loading &&
                     !this.props.noShowMore &&
                     this.state.connection &&
-                    this.state.connection.nodes.length < this.state.connection.totalCount && (
+                    hasNextPage && (
                         <button
                             className="btn btn-secondary btn-sm filtered-connection__show-more"
                             onClick={this.onClickShowMore}

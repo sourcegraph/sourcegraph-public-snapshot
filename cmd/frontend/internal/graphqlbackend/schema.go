@@ -694,15 +694,18 @@ type Symbol {
 	character: Int!
 }
 
+# Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+type PageInfo {
+	# Whether there is a next page of nodes in the connection.
+	hasNextPage: Boolean!
+}
+
 # A list of Git commits.
 type GitCommitConnection {
 	# A list of Git commits.
 	nodes: [GitCommit!]!
-	# The total count of Git commits in the connection. This total count may be larger
-	# than the number of nodes in this object when the result is paginated.
-	#
-	# This field is expensive to compute. Omit it from queries where speed is important.
-	totalCount: Int!
+	# Pagination information.
+	pageInfo: PageInfo!
 }
 
 # A Git commit.

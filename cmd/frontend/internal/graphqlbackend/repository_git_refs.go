@@ -58,8 +58,10 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 				return false
 			case bj.Commit == nil:
 				return true
-			default:
+			case !bi.Commit.Author.Date.IsZero():
 				return bi.Commit.Author.Date.After(bj.Commit.Author.Date)
+			default:
+				return bi.Name < bj.Name
 			}
 		})
 	}
@@ -71,38 +73,23 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
+		// Sort tags by reverse alpha.
+		sort.Slice(tags, func(i, j int) bool {
+			return tags[i].Name > tags[j].Name
+		})
 	}
 
-	return &gitRefConnectionResolver{
-		first:    args.First,
-		query:    args.Query,
-		branches: branches,
-		tags:     tags,
-		repo:     r,
-	}, nil
-}
-
-type gitRefConnectionResolver struct {
-	first    *int32
-	query    *string
-	branches []*vcs.Branch
-	tags     []*vcs.Tag
-
-	repo *repositoryResolver
-}
-
-func (r *gitRefConnectionResolver) Nodes() []*gitRefResolver {
 	// Combine branches and tags.
-	refs := make([]*gitRefResolver, len(r.branches)+len(r.tags))
-	for i, b := range r.branches {
-		refs[i] = &gitRefResolver{name: "refs/heads/" + b.Name, repo: r.repo, target: gitObjectID(b.Head)}
+	refs := make([]*gitRefResolver, len(branches)+len(tags))
+	for i, b := range branches {
+		refs[i] = &gitRefResolver{name: "refs/heads/" + b.Name, repo: r, target: gitObjectID(b.Head)}
 	}
-	for i, t := range r.tags {
-		refs[i+len(r.branches)] = &gitRefResolver{name: "refs/tags/" + t.Name, repo: r.repo, target: gitObjectID(t.CommitID)}
+	for i, t := range tags {
+		refs[i+len(branches)] = &gitRefResolver{name: "refs/tags/" + t.Name, repo: r, target: gitObjectID(t.CommitID)}
 	}
 
-	if r.query != nil {
-		query := strings.ToLower(*r.query)
+	if args.Query != nil {
+		query := strings.ToLower(*args.Query)
 
 		// Filter using query.
 		filtered := refs[:0]
@@ -114,14 +101,33 @@ func (r *gitRefConnectionResolver) Nodes() []*gitRefResolver {
 		refs = filtered
 	}
 
+	return &gitRefConnectionResolver{
+		first: args.First,
+		refs:  refs,
+		repo:  r,
+	}, nil
+}
+
+type gitRefConnectionResolver struct {
+	first *int32
+	refs  []*gitRefResolver
+
+	repo *repositoryResolver
+}
+
+func (r *gitRefConnectionResolver) Nodes() []*gitRefResolver {
+	var nodes []*gitRefResolver
+
 	// Paginate.
-	if r.first != nil && len(refs) > int(*r.first) {
-		refs = refs[:int(*r.first)]
+	if r.first != nil && len(r.refs) > int(*r.first) {
+		nodes = r.refs[:int(*r.first)]
+	} else {
+		nodes = r.refs
 	}
 
-	return refs
+	return nodes
 }
 
 func (r *gitRefConnectionResolver) TotalCount() int32 {
-	return int32(len(r.Nodes()))
+	return int32(len(r.refs))
 }

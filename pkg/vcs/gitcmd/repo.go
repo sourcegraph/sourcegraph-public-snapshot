@@ -408,6 +408,10 @@ func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions, addFollowIfPath
 		args = append(args, "--skip="+strconv.FormatUint(uint64(opt.Skip), 10))
 	}
 
+	if opt.MessageQuery != "" {
+		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
+	}
+
 	if opt.Path != "" && addFollowIfPath {
 		args = append(args, "--follow")
 	}

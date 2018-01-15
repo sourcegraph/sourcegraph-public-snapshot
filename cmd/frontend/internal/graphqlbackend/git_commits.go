@@ -2,7 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
+	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -15,22 +15,41 @@ type gitCommitConnectionResolver struct {
 	query *string
 
 	repo *repositoryResolver
+
+	// cache results because it is used by multiple fields
+	once    sync.Once
+	commits []*vcs.Commit
+	err     error
+}
+
+func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commit, error) {
+	do := func() ([]*vcs.Commit, error) {
+		vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.repo.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		var n int32
+		if r.first != nil {
+			n = *r.first
+		}
+		var query string
+		if r.query != nil {
+			query = *r.query
+		}
+		return vcsrepo.Commits(ctx, vcs.CommitsOptions{
+			Head:         vcs.CommitID(r.headCommitID),
+			N:            uint(n),
+			MessageQuery: query,
+		})
+	}
+
+	r.once.Do(func() { r.commits, r.err = do() })
+	return r.commits, r.err
 }
 
 func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitResolver, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.repo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	var n int32
-	if r.first != nil {
-		n = *r.first
-	}
-	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head: vcs.CommitID(r.headCommitID),
-		N:    uint(n),
-	})
+	commits, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +62,14 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitRe
 	return resolvers, nil
 }
 
-func (r *gitCommitConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// TODO(sqs)
-	return 0, errors.New("GitCommitConnection.totalCount is not yet supported")
+func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+	commits, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the last commit in the list has parents, then there is another page.
+	return &pageInfo{
+		hasNextPage: len(commits) > 0 && len(commits[len(commits)-1].Parents) > 0,
+	}, nil
 }
