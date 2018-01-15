@@ -285,48 +285,6 @@ export const fetchBlobContent = memoizeObservable(
     makeRepoURI
 )
 
-export interface RepoRevisions {
-    branches: string[]
-    tags: string[]
-}
-
-export const fetchRepoRevisions = memoizeObservable(
-    (ctx: { repoPath: string }): Observable<RepoRevisions> =>
-        queryGraphQL(
-            gql`
-                query RepoRevisions($repoPath: String) {
-                    repository(uri: $repoPath) {
-                        branches {
-                            nodes {
-                                abbrevName
-                            }
-                        }
-                        tags {
-                            nodes {
-                                abbrevName
-                            }
-                        }
-                    }
-                }
-            `,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.repository || !data.repository.branches || !data.repository.tags) {
-                    throw Object.assign(
-                        'Could not fetch repo revisions: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
-                }
-                return {
-                    branches: data.repository.branches.nodes.map(({ abbrevName }) => abbrevName),
-                    tags: data.repository.tags.nodes.map(({ abbrevName }) => abbrevName),
-                }
-            })
-        ),
-    makeRepoURI
-)
-
 export const fetchPhabricatorRepo = memoizeObservable(
     (ctx: { repoPath: string }): Observable<GQL.IPhabricatorRepo | null> =>
         queryGraphQL(
