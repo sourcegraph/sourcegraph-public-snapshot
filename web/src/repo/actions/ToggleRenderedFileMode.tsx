@@ -3,20 +3,23 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { eventLogger } from '../../tracking/eventLogger'
+import { Tooltip } from '../../components/tooltip/Tooltip'
 
 /**
  * The file rendering modes.
  */
 export type FileRenderMode = 'code' | 'rendered'
 
+interface Props {
+    location: H.Location
+    mode: FileRenderMode
+}
+
 /**
  * A repository header action that toggles between showing a rendered file and the file's original
  * source, for files that can be rendered (such as Markdown files).
  */
-export class ToggleRenderedFileMode extends React.PureComponent<{
-    location: H.Location
-    mode: FileRenderMode
-}> {
+export class ToggleRenderedFileMode extends React.PureComponent<Props> {
     private static URL_QUERY_PARAM = 'view'
 
     /**
@@ -38,6 +41,12 @@ export class ToggleRenderedFileMode extends React.PureComponent<{
             q.delete(ToggleRenderedFileMode.URL_QUERY_PARAM)
         }
         return { search: q.toString() }
+    }
+
+    public componentDidUpdate(prevProps: Props): void {
+        if (prevProps.mode !== this.props.mode) {
+            Tooltip.forceUpdate()
+        }
     }
 
     public render(): JSX.Element | null {
