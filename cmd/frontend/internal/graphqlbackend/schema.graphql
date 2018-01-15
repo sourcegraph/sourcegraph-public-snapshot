@@ -714,6 +714,8 @@ type GitCommit implements Node {
 	committer: Signature
 	# The full commit message.
 	message: String!
+	# The first line of the commit message.
+	subject: String!
 	# Lists the Git tree as of this commit.
 	tree(path: String = "", recursive: Boolean = false): Tree
 	# Retrieves a Git blob (file) as of this commit.

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"path"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -92,6 +93,8 @@ func (r *gitCommitResolver) Author() *signatureResolver    { return &r.author }
 func (r *gitCommitResolver) Committer() *signatureResolver { return r.committer }
 func (r *gitCommitResolver) Message() string               { return r.message }
 
+func (r *gitCommitResolver) Subject() string { return gitCommitSubject(r.message) }
+
 func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
@@ -135,4 +138,12 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		query:        args.Query,
 		repo:         r.repo,
 	}
+}
+
+func gitCommitSubject(message string) string {
+	i := strings.Index(message, "\n")
+	if i == -1 {
+		return message
+	}
+	return message[:i]
 }
