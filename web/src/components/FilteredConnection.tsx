@@ -53,6 +53,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
     /** An observable that upon emission causes the connection to refresh the data (by calling queryConnection). */
     updates?: Observable<void>
 
+    /** The number of items to fetch, by default. */
+    defaultFirst?: number
+
     /** Hides the filter input field. */
     hideFilter?: boolean
 }
@@ -91,10 +94,13 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     Props<C, N>,
     State<C, N>
 > {
-    private static DEFAULT_FIRST = 20
+    public static defaultProps: Partial<Props<any, any>> = {
+        defaultFirst: 20,
+    }
 
     private queryInputChanges = new Subject<string>()
     private showMoreClicks = new Subject<void>()
+    private componentUpdates = new Subject<Props<C, N>>()
     private subscriptions = new Subscription()
 
     public constructor(props: Props<C, N>) {
@@ -104,7 +110,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
         this.state = {
             loading: true,
             query: q.get('q') || '',
-            first: parseQueryInt(q, 'first') || FilteredConnection.DEFAULT_FIRST,
+            first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
         }
     }
 
@@ -112,10 +118,10 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
         this.subscriptions.add(
             this.queryInputChanges
                 .pipe(
-                    startWith(this.state.query),
                     distinctUntilChanged(),
                     tap(query => this.setState({ query })),
                     debounceTime(200),
+                    startWith(this.state.query),
                     tap(query => {
                         this.props.history.replace({ search: this.urlQuery({ query }) })
                     }),
@@ -163,6 +169,17 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     .subscribe(c => this.setState({ connection: c }))
             )
         }
+
+        // Reload collection when the query callback changes.
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(({ queryConnection }) => queryConnection),
+                    distinctUntilChanged(),
+                    switchMap(queryConnection => queryConnection({ first: this.state.first, query: this.state.query }))
+                )
+                .subscribe(c => this.setState({ connection: c }))
+        )
     }
 
     private urlQuery(arg: { first?: number; query?: string }): string {
@@ -176,10 +193,16 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
         if (arg.query) {
             q.set('q', arg.query)
         }
-        if (arg.first !== FilteredConnection.DEFAULT_FIRST) {
+        if (arg.first !== this.props.defaultFirst) {
             q.set('first', String(arg.first))
         }
         return q.toString()
+    }
+
+    public componentWillReceiveProps(nextProps: Props<C, N>): void {
+        if (nextProps.queryConnection !== this.props.queryConnection) {
+            this.componentUpdates.next(nextProps)
+        }
     }
 
     public componentWillUnmount(): void {
