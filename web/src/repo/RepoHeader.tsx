@@ -29,6 +29,7 @@ interface Props {
               id?: GQLID
 
               uri: string
+              enabled: boolean
               viewerCanAdminister: boolean
           }
 
@@ -186,6 +187,14 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                             {repoBase}
                         </Link>
                     </PopoverButton>
+                    {!this.props.repo.enabled && (
+                        <div
+                            className="alert alert-danger repo-header__alert"
+                            data-tooltip="Only site admins can access disabled repositories. Go to Settings to enable it."
+                        >
+                            Repository disabled
+                        </div>
+                    )}
                 </div>
                 {this.state.navActions &&
                     this.state.navActions.map(a => [

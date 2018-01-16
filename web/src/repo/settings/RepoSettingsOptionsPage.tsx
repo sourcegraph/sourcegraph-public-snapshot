@@ -15,6 +15,7 @@ import { ActionContainer } from './components/ActionContainer'
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
     user: GQL.IUser
+    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }
 
 interface State {
@@ -120,11 +121,17 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
     private enableRepository = () =>
         setRepositoryEnabled(this.state.repo.id, true)
             .toPromise()
-            .then(() => this.repoUpdates.next())
+            .then(() => {
+                this.repoUpdates.next()
+                this.props.onDidUpdateRepository({ enabled: true })
+            })
     private disableRepository = () =>
         setRepositoryEnabled(this.state.repo.id, false)
             .toPromise()
-            .then(() => this.repoUpdates.next())
+            .then(() => {
+                this.repoUpdates.next()
+                this.props.onDidUpdateRepository({ enabled: false })
+            })
 
     private deleteRepository = () => {
         if (!window.confirm(REPO_DELETE_CONFIRMATION_MESSAGE)) {

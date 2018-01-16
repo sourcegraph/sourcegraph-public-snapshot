@@ -21,6 +21,7 @@ const NotFoundPage = () => (
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
     user: GQL.IUser | null
+    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }
 
 interface State {
@@ -97,7 +98,11 @@ export class RepoSettingsArea extends React.Component<Props> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepoSettingsOptionsPage {...routeComponentProps} {...transferProps} />
+                                <RepoSettingsOptionsPage
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    onDidUpdateRepository={this.props.onDidUpdateRepository}
+                                />
                             )}
                         />
                         <Route key="hardcoded-key" component={NotFoundPage} />

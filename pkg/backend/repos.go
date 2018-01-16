@@ -12,7 +12,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
@@ -33,19 +32,7 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	ctx, done := trace(ctx, "Repos", "Get", repoSpec, &err)
 	defer done()
 
-	repo, err := db.Repos.Get(ctx, repoSpec.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	if !repo.Enabled {
-		// TODO(sqs): handle when user is site admin but CheckCurrentUserIsSiteAdmin has error
-		if err := CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-			return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is disabled", repo.URI)
-		}
-	}
-
-	return repo, nil
+	return db.Repos.Get(ctx, repoSpec.ID)
 }
 
 func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo, err error) {
@@ -56,19 +43,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
 	defer done()
 
-	repo, err := db.Repos.GetByURI(ctx, uri)
-	if err != nil {
-		return nil, err
-	}
-
-	if !repo.Enabled {
-		// TODO(sqs): handle when user is site admin but CheckCurrentUserIsSiteAdmin has error
-		if err := CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-			return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is disabled", repo.URI)
-		}
-	}
-
-	return repo, nil
+	return db.Repos.GetByURI(ctx, uri)
 }
 
 func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
