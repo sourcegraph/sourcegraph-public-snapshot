@@ -132,6 +132,14 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
+    # Tests the connection to a mirror repository's original source repository. This is an
+    # expensive and slow operation, so it should only be used for interactive diagnostics.
+    #
+    # Only site admins may perform this mutation.
+    checkMirrorRepositoryConnection(
+        # The mirror repository to check.
+        repository: ID!
+    ): CheckMirrorRepositoryConnectionResult!
     # Deletes a repository and all data associated with it, irreversibly.
     #
     # If the repository was added because it was present in the site configuration (directly,
@@ -222,6 +230,13 @@ input UpdateConfigurationInput {
 # The payload for ConfigurationMutation.updateConfiguration.
 type UpdateConfigurationPayload {
     empty: EmptyResponse
+}
+
+# The result for Mutation.checkMirrorRepositoryConnection.
+type CheckMirrorRepositoryConnectionResult {
+    # The error message encountered during the update operation, if any. If null, then
+    # the connection check succeeded.
+    error: String
 }
 
 # The result for Mutation.createUserBySiteAdmin.

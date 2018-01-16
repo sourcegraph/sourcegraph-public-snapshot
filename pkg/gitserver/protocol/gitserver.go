@@ -29,6 +29,12 @@ type IsRepoCloneableRequest struct {
 	Repo string
 }
 
+// IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
+type IsRepoCloneableResponse struct {
+	Cloneable bool   // whether the repo is cloneable
+	Reason    string // if not cloneable, the reason why not
+}
+
 // IsRepoClonedRequest is a request to determine if a repo currently exists on gitserver.
 type IsRepoClonedRequest struct {
 	// Repo is the repository to check.

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
@@ -70,4 +71,36 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*string, 
 	}
 	s := info.LastFetched.Format(time.RFC3339)
 	return &s, nil
+}
+
+func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, args *struct {
+	Repository graphql.ID
+}) (*checkMirrorRepositoryConnectionResult, error) {
+	// 🚨 SECURITY: This is an expensive operation and the errors may contain secrets,
+	// so only site admins may run it.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repo, err := repositoryByID(ctx, args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var result checkMirrorRepositoryConnectionResult
+	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, repo.repo.URI); err != nil {
+		result.errorMessage = err.Error()
+	}
+	return &result, nil
+}
+
+type checkMirrorRepositoryConnectionResult struct {
+	errorMessage string
+}
+
+func (r *checkMirrorRepositoryConnectionResult) Error() *string {
+	if r.errorMessage == "" {
+		return nil
+	}
+	return &r.errorMessage
 }
