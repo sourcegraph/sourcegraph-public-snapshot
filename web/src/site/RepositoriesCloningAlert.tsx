@@ -18,7 +18,8 @@ export const RepositoriesCloningAlert: React.SFC<{
             <Link className="site-alert__link repositories-cloning-alert__link" to="/site-admin/repositories">
                 <Loader className="icon-inline site-alert__link-icon" />{' '}
                 <span className="underline">
-                    Cloning {repositories.totalCount} {pluralize('repository', repositories.totalCount, 'repositories')}...
+                    Cloning {repositories.totalCount}{' '}
+                    {pluralize('repository', repositories.totalCount!, 'repositories')}...
                 </span>
             </Link>
             <div className="repositories-cloning-alert__repositories" title={showRepositories.join('\n')}>

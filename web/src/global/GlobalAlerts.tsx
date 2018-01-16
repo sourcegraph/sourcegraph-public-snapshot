@@ -34,7 +34,12 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             // Refresh site flags periodically while repositories are cloning.
             this.subscriptions.add(
                 siteFlags
-                    .pipe(filter(({ repositoriesCloning }) => repositoriesCloning.totalCount > 0))
+                    .pipe(
+                        filter(
+                            ({ repositoriesCloning }) =>
+                                repositoriesCloning.totalCount !== null && repositoriesCloning.totalCount > 0
+                        )
+                    )
                     .pipe(delay(5000), switchMap(refreshSiteFlags))
                     .subscribe()
             )
@@ -56,6 +61,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
         if (
             this.state.siteFlags &&
             this.state.siteFlags.repositoriesCloning &&
+            this.state.siteFlags.repositoriesCloning.totalCount !== null &&
             this.state.siteFlags.repositoriesCloning.totalCount > 0
         ) {
             return <RepositoriesCloningAlert repositoriesCloning={this.state.siteFlags.repositoriesCloning} />

@@ -59,7 +59,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 >
                                     <RepoIcon className="icon-inline site-admin-overview-page__item-header-icon" />
                                     {this.state.info.repositories}&nbsp;
-                                    {pluralize('repository', this.state.info.repositories, 'repositories')}
+                                    {this.state.info.repositories !== null
+                                        ? pluralize('repository', this.state.info.repositories, 'repositories')
+                                        : '?'}
                                 </Link>
                             </div>
                             <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
@@ -136,7 +138,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                         </li>
                     )}
                     {this.state.info &&
-                        this.state.info.repositories > 0 && (
+                        typeof this.state.info.repositories === 'number' && (
                             <li className="site-admin-overview-page__item site-admin-overview-page__item">
                                 <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
                                     <GlobeIcon className="icon-inline site-admin-overview-page__item-header-icon" />
@@ -163,7 +165,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
 }
 
 interface OverviewInfo {
-    repositories: number
+    repositories: number | null
     users: number
     orgs: number
     hasCodeIntelligence: boolean
