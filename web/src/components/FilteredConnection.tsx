@@ -223,9 +223,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     }
 
     public componentWillReceiveProps(nextProps: Props<C, N>): void {
-        if (nextProps.queryConnection !== this.props.queryConnection) {
-            this.componentUpdates.next(nextProps)
-        }
+        this.componentUpdates.next(nextProps)
     }
 
     public componentWillUnmount(): void {
