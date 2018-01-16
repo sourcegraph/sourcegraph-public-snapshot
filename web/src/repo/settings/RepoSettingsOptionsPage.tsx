@@ -10,75 +10,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { deleteRepository, setRepositoryEnabled } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
-
-interface ActionContainerProps {
-    title: React.ReactFragment
-    description: React.ReactFragment
-    buttonLabel: React.ReactFragment
-
-    /** The message to briefly display below the button when the action is successful. */
-    flashText?: string
-
-    run: () => Promise<void>
-}
-
-interface ActionContainerState {
-    loading: boolean
-    flash: boolean
-    error?: string
-}
-
-class ActionContainer extends React.PureComponent<ActionContainerProps, ActionContainerState> {
-    public state: ActionContainerState = {
-        loading: false,
-        flash: false,
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div className="repo-settings-options-page__action">
-                <div className="repo-settings-options-page__action-description">
-                    <h4 className="repo-settings-options-page__action-title">{this.props.title}</h4>
-                    {this.props.description}
-                </div>
-                <div className="repo-settings-options-page__action-btn-container">
-                    <button
-                        className="btn btn-primary repo-settings-options-page__action-btn"
-                        onClick={this.onClick}
-                        disabled={this.state.loading}
-                    >
-                        {this.props.buttonLabel}
-                    </button>
-                    {this.props.flashText && (
-                        <div
-                            className={
-                                'repo-settings-options-page__flash' +
-                                (this.state.flash ? ' repo-settings-options-page__flash--visible' : '')
-                            }
-                        >
-                            <small>{this.props.flashText}</small>
-                        </div>
-                    )}
-                </div>
-            </div>
-        )
-    }
-
-    private onClick = () => {
-        this.setState({
-            error: undefined,
-            loading: true,
-        })
-
-        this.props.run().then(
-            () => {
-                this.setState({ loading: false, flash: true })
-                setTimeout(() => this.setState({ flash: false }), 1000)
-            },
-            err => this.setState({ loading: false, error: err.message })
-        )
-    }
-}
+import { ActionContainer } from './components/ActionContainer'
 
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
