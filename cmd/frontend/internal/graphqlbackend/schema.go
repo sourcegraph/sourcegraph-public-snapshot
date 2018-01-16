@@ -545,18 +545,44 @@ type RepositoryConnection {
 	pageInfo: PageInfo!
 }
 
+# A repository is a Git source control repository that is mirrored from some origin code host.
 type Repository implements Node {
+	# The repository's unique ID.
 	id: ID!
+	# The repository's name, as a path with one or more components. It conventionally consists of
+	# the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
+	#
+	# Examples:
+	#
+	# - `github.com/foo/bar`
+	# - `my-code-host.example.com/myrepo`
+	# - `myrepo`
 	uri: String!
+	# The repository's description.
 	description: String!
+	# The primary programming language in the repository.
 	language: String!
-	# Whether the repository is enabled. A disabled repository is only accessible to site admins.
+	# Whether the repository is enabled. A disabled repository should only be accessible to site admins.
+	#
+	# NOTE: Disabling a repository does not provide any additional security. This field is merely a
+	# guideline to UI implementations.
 	enabled: Boolean!
+	# Whether the repository is a fork (of another repository). This field is not guaranteed to be
+	# set correctly and up-to-date with the repository's origin code host.
 	fork: Boolean!
+	# The number of stars on this repository on its origin code host. This field is not guaranteed to be
+	# set correctly and up-to-date with the repository's origin code host.
 	starsCount: Int
+	# The number of forks of this repository on its origin code host. This field is not guaranteed to be
+	# set correctly and up-to-date with the repository's origin code host.
 	forksCount: Int
+	# Whether the repository is private on its origin code host. This field is not guaranteed to be
+	# set correctly and up-to-date with the repository's origin code host.
 	private: Boolean!
+	# The date when this repository was created on Sourcegraph.
 	createdAt: String!
+	# The date when this repository was last pushed to on its origin code host. This field is not guaranteed to be
+	# set correctly and up-to-date with the repository's origin code host.
 	pushedAt: String!
 	# Returns information about the given commit in the repository.
 	commit(rev: String!): GitCommit
@@ -564,7 +590,8 @@ type Repository implements Node {
 	cloneInProgress: Boolean!
 	# The commit that was last indexed for cross-references, if any.
 	lastIndexedRevOrLatest: GitCommit
-	# defaultBranch will not be set if we are cloning the repository
+	# The repository's default Git branch. If the repository is currently being cloned or is empty,
+	# this field will be null.
 	defaultBranch: String
 	# The repository's Git refs.
 	gitRefs(
@@ -593,8 +620,10 @@ type Repository implements Node {
 		query: String
 	): GitRefConnection!
 	listTotalRefs: TotalRefList!
+	# Executes a `git` command in this repository's directory. The commands are subject to a
+	# strict whitelist.
 	gitCmdRaw(params: [String!]!): String!
-	# Link to another sourcegraph instance location where this repository is located.
+	# Link to another Sourcegraph instance location where this repository is located.
 	redirectURL: String
 	# Whether the viewer has admin privileges on this repository.
 	viewerCanAdminister: Boolean!
