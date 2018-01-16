@@ -65,6 +65,8 @@ var (
 	tlsKey      = conf.Get().TlsKey
 	tlsKeyFile  = env.Get("TLS_KEY_FILE", "", "key file for TLS (overrides TLS_KEY)")
 
+	httpToHttpsRedirect = conf.Get().HttpToHttpsRedirect
+
 	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
 )
 
@@ -287,8 +289,15 @@ func Main() error {
 			return err
 		}
 
+		httpServer := srv
+		if httpToHttpsRedirect {
+			httpServer = &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(`<script>window.location.protocol = "https:";</script>`))
+			})}
+		}
+
 		log15.Debug("HTTP running", "on", httpAddr)
-		go func() { log.Fatal(srv.Serve(l)) }()
+		go func() { log.Fatal(httpServer.Serve(l)) }()
 	}
 
 	// Start HTTPS server.

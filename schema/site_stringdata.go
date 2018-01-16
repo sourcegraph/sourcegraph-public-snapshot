@@ -44,6 +44,10 @@ const SiteSchemaJSON = `{
       "description": "TLS key for the web app.",
       "type": "string"
     },
+    "httpToHttpsRedirect": {
+      "description": "Redirect users from HTTP to HTTPS.",
+      "type": "boolean"
+    },
     "corsOrigin": {
       "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
       "type": "string"
