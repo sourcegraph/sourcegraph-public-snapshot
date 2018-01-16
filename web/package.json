@@ -17,7 +17,7 @@
     "build-tests": "tsc -p ./tsconfig.test.json",
     "graphql": "cat ../cmd/frontend/internal/graphqlbackend/schema.graphql | gql2ts -o typings/graphqlschema.d.ts && node introspect_schema",
     "watch-graphql": "chokidar --silent ../cmd/frontend/internal/graphqlbackend/schema.graphql --initial -c \"npm run graphql\"",
-    "schema": "export DEBUG=; mkdir -p src/schema && cd ../schema && json2ts -i settings.schema.json -o ../web/src/schema/settings.schema.d.ts && json2ts -i site.schema.json -o ../web/src/schema/site.schema.d.ts && cd ../web && prettier --write src/schema/*.d.ts",
+    "schema": "export DEBUG=; mkdir -p src/schema && cd ../schema && json2ts -i settings.schema.json -o ../web/src/schema/settings.schema.d.ts && json2ts -i site.schema.json -o ../web/src/schema/site.schema.d.ts && cd ../web",
     "watch-schema": "chokidar --silent '../schema/**.schema.json' --initial -c 'npm run schema'",
     "lint": "npm run tslint && npm run stylelint",
     "tslint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.ts?(x)'",
@@ -36,7 +36,6 @@
     ]
   },
   "devDependencies": {
-    "@sourcegraph/prettierrc": "^2.1.0",
     "@sourcegraph/tsconfig": "^2.0.0",
     "@sourcegraph/tslint-config": "^11.0.0",
     "@types/copy-webpack-plugin": "^4.0.1",

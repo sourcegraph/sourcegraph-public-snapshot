@@ -44,9 +44,9 @@ If you want to log custom data with an event, `eventLogger.log` accepts an optio
 
 ```ts
 eventLogger.log('BrowserExtInstallClicked', {
-	marketing: {
-		browser: 'Chrome',
-	},
+  marketing: {
+    browser: 'Chrome',
+  },
 })
 ```
 

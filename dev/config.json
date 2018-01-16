@@ -2,7 +2,8 @@
 {
   "autoRepoAdd": true,
   "disablePublicRepoRedirects": true,
-  "licenseKey": "24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735",
+  "licenseKey":
+    "24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735",
   "phabricator": [
     {
       "url": "http://phabricator.sgdev.org",
