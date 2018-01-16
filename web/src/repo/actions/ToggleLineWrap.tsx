@@ -5,6 +5,7 @@ import { fromEvent } from 'rxjs/observable/fromEvent'
 import { filter } from 'rxjs/operators/filter'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { Tooltip } from '../../components/tooltip/Tooltip'
 import { eventLogger } from '../../tracking/eventLogger'
 
 /**
@@ -48,6 +49,7 @@ export class ToggleLineWrap extends React.PureComponent<
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })
                 this.props.onDidUpdate(value)
+                Tooltip.forceUpdate()
             })
         )
 
