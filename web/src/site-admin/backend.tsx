@@ -280,7 +280,6 @@ export function fetchSiteSettings(): Observable<GQL.ISettings | null> {
         `
     ).pipe(
         map(({ data, errors }) => {
-            console.log('DATA ERR', data, errors)
             if (!data) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
