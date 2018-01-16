@@ -1,16 +1,19 @@
+import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
 import * as React from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
 import { AnonymousSubscription, Subscription } from 'rxjs/Subscription'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
+import { displayRepoPath } from '../components/Breadcrumb'
+import { PopoverButton } from '../components/PopoverButton'
+import { RepositoriesPopover } from './RepositoriesPopover'
 
 /**
  * An action link that is added to and displayed in the repository header.
  */
 export interface RepoHeaderAction {
-    position: 'path' | 'left' | 'right'
+    position: 'nav' | 'left' | 'right'
     element: React.ReactElement<any>
 }
 
@@ -18,7 +21,16 @@ interface Props {
     /**
      * The repository that this header is for.
      */
-    repo: GQL.IRepository | { uri: string; viewerCanAdminister: boolean }
+    repo:
+        | GQL.IRepository
+        | {
+              /** The repository's GQLID, if it has one.
+               */
+              id?: GQLID
+
+              uri: string
+              viewerCanAdminister: boolean
+          }
 
     /**
      * An optional class name to add to the element.
@@ -43,9 +55,9 @@ interface Props {
 
 interface State {
     /**
-     * Actions to display just after the path (braedcrumb) in the header.
+     * Actions to display as breadcrumb levels on the left side of the header.
      */
-    pathActions?: RepoHeaderAction[]
+    navActions?: RepoHeaderAction[]
 
     /**
      * Actions to display on the left side of the header, after the path breadcrumb.
@@ -101,14 +113,20 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             RepoHeader.actionAdds.subscribe(action => {
                 switch (action.position) {
-                    case 'path':
-                        this.setState(prevState => ({ pathActions: (prevState.pathActions || []).concat(action) }))
+                    case 'nav':
+                        this.setState(prevState => ({
+                            navActions: (prevState.navActions || []).concat(action),
+                        }))
                         break
                     case 'left':
-                        this.setState(prevState => ({ leftActions: (prevState.leftActions || []).concat(action) }))
+                        this.setState(prevState => ({
+                            leftActions: (prevState.leftActions || []).concat(action),
+                        }))
                         break
                     case 'right':
-                        this.setState(prevState => ({ rightActions: (prevState.rightActions || []).concat(action) }))
+                        this.setState(prevState => ({
+                            rightActions: (prevState.rightActions || []).concat(action),
+                        }))
                         break
                 }
             })
@@ -117,9 +135,9 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             RepoHeader.actionRemoves.subscribe(toRemove => {
                 switch (toRemove.position) {
-                    case 'path':
+                    case 'nav':
                         this.setState(prevState => ({
-                            pathActions: (prevState.pathActions || []).filter(a => a !== toRemove),
+                            navActions: (prevState.navActions || []).filter(a => a !== toRemove),
                         }))
                         break
                     case 'left':
@@ -144,17 +162,38 @@ export class RepoHeader extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.uri))
         return (
             <div className={`repo-header composite-container__header ${this.props.className || ''}`}>
-                <div className="repo-header__path">
-                    <RepoBreadcrumb
-                        repoPath={this.props.repo.uri}
-                        filePath={this.props.filePath}
-                        rev={this.props.rev}
-                        disableLinks={this.props.disableLinks}
-                    />
-                    {this.state.pathActions && this.state.pathActions.map(a => a.element)}
+                <div className="repo-header__section">
+                    <PopoverButton
+                        className="repo-header__section-btn repo-header__repo"
+                        popoverElement={
+                            <RepositoriesPopover
+                                currentRepo={this.props.repo.id}
+                                history={this.props.history}
+                                location={this.props.location}
+                            />
+                        }
+                        popoverKey="repo"
+                        hideOnChange={this.props.repo.uri}
+                    >
+                        {repoDir}/<Link
+                            onClick={this.onClickRepoBasename}
+                            to={`/${this.props.repo.uri}`}
+                            className="repo-header__repo-link"
+                        >
+                            {repoBase}
+                        </Link>
+                    </PopoverButton>
                 </div>
+                {this.state.navActions &&
+                    this.state.navActions.map(a => [
+                        <ChevronRightIcon key={1} className="icon-inline repo-header__icon-chevron" />,
+                        <div key={0} className="repo-header__section repo-header__rev">
+                            {a.element}
+                        </div>,
+                    ])}
                 {this.state.leftActions && this.state.leftActions.map(a => a.element)}
                 <div className="repo-header__spacer" />
                 {this.state.rightActions && this.state.rightActions.map(a => a.element)}
@@ -172,4 +211,13 @@ export class RepoHeader extends React.PureComponent<Props, State> {
             </div>
         )
     }
+
+    private onClickRepoBasename = (e: React.MouseEvent<HTMLElement>): void => {
+        e.stopPropagation()
+    }
+}
+
+function splitPath(path: string): [string, string] {
+    const components = path.split('/')
+    return [components.slice(0, -1).join('/'), components[components.length - 1]]
 }

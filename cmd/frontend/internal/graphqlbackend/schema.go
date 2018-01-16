@@ -537,7 +537,12 @@ type RepositoryConnection {
 	nodes: [Repository!]!
 	# The total count of repositories in the connection. This total count may be larger
 	# than the number of nodes in this object when the result is paginated.
-	totalCount: Int!
+	#
+	# In some cases, the total count can't be computed quickly; if so, it is null. Pass
+	# precise: true to always compute total counts even if it takes a while.
+	totalCount(precise: Boolean = false): Int
+	# Pagination information.
+	pageInfo: PageInfo!
 }
 
 type Repository implements Node {
@@ -694,15 +699,18 @@ type Symbol {
 	character: Int!
 }
 
+# Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+type PageInfo {
+	# Whether there is a next page of nodes in the connection.
+	hasNextPage: Boolean!
+}
+
 # A list of Git commits.
 type GitCommitConnection {
 	# A list of Git commits.
 	nodes: [GitCommit!]!
-	# The total count of Git commits in the connection. This total count may be larger
-	# than the number of nodes in this object when the result is paginated.
-	#
-	# This field is expensive to compute. Omit it from queries where speed is important.
-	totalCount: Int!
+	# Pagination information.
+	pageInfo: PageInfo!
 }
 
 # A Git commit.
@@ -721,6 +729,8 @@ type GitCommit implements Node {
 	committer: Signature
 	# The full commit message.
 	message: String!
+	# The first line of the commit message.
+	subject: String!
 	# Lists the Git tree as of this commit.
 	tree(path: String = "", recursive: Boolean = false): Tree
 	# Retrieves a Git blob (file) as of this commit.

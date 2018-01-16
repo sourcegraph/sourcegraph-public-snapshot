@@ -176,11 +176,10 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitRes
 		return nil, err
 	}
 
-	commits, _, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head:    vcs.CommitID(r.commit.oid),
-		N:       limit,
-		Path:    r.path,
-		NoTotal: true,
+	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
+		Head: vcs.CommitID(r.commit.oid),
+		N:    limit,
+		Path: r.path,
 	})
 	if err != nil {
 		return nil, err

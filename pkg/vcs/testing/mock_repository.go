@@ -15,8 +15,9 @@ type MockRepository struct {
 	Branches_ func(context.Context, vcs.BranchesOptions) ([]*vcs.Branch, error)
 	Tags_     func(context.Context) ([]*vcs.Tag, error)
 
-	GetCommit_ func(context.Context, vcs.CommitID) (*vcs.Commit, error)
-	Commits_   func(context.Context, vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
+	GetCommit_   func(context.Context, vcs.CommitID) (*vcs.Commit, error)
+	Commits_     func(context.Context, vcs.CommitsOptions) ([]*vcs.Commit, error)
+	CommitCount_ func(context.Context, vcs.CommitsOptions) (uint, error)
 
 	BlameFile_    func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error)
 	BlameFileRaw_ func(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error)
@@ -59,8 +60,12 @@ func (r MockRepository) GetCommit(ctx context.Context, id vcs.CommitID) (*vcs.Co
 	return r.GetCommit_(ctx, id)
 }
 
-func (r MockRepository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, uint, error) {
+func (r MockRepository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error) {
 	return r.Commits_(ctx, opt)
+}
+
+func (r MockRepository) CommitCount(ctx context.Context, opt vcs.CommitsOptions) (uint, error) {
+	return r.CommitCount_(ctx, opt)
 }
 
 func (r MockRepository) GitCmdRaw(ctx context.Context, params []string) (string, error) {

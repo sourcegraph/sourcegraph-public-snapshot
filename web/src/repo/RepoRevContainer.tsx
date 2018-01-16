@@ -11,6 +11,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
+import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
@@ -19,9 +20,10 @@ import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ERREPOSEEOTHER, RepoSeeOtherError, resolveRev } from './backend'
 import { BlobPage } from './BlobPage'
 import { DirectoryPage } from './DirectoryPage'
+import { FilePathBreadcrumb } from './FilePathBreadcrumb'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
-import { RevSwitcher } from './RevSwitcher'
+import { RevisionsPopover } from './RevisionsPopover'
 
 interface Props extends RouteComponentProps<{ filePath: string }> {
     repo: GQL.IRepository
@@ -183,22 +185,53 @@ export class RepoRevContainer extends React.PureComponent<Props, State> {
                 {IS_FIREFOX && <FirefoxExtensionToast />}
                 <SurveyToast />
                 <RepoHeaderActionPortal
-                    position="path"
+                    position="nav"
+                    element={
+                        <PopoverButton
+                            key="repo-rev"
+                            className="repo-header__section-btn repo-header__rev"
+                            popoverElement={
+                                <RevisionsPopover
+                                    repo={this.props.repo.id}
+                                    repoPath={this.props.repo.uri}
+                                    defaultBranch={this.state.defaultBranch}
+                                    currentRev={this.props.rev}
+                                    currentCommitID={this.state.commitID}
+                                    history={this.props.history}
+                                    location={this.props.location}
+                                />
+                            }
+                            popoverKey="repo-rev"
+                            hideOnChange={`${this.props.repo}:${this.props.rev}`}
+                        >
+                            {(this.props.rev && this.props.rev === this.state.commitID
+                                ? this.state.commitID.slice(0, 7)
+                                : this.props.rev) ||
+                                this.state.defaultBranch ||
+                                'HEAD'}
+                        </PopoverButton>
+                    }
+                />
+                {this.props.match.params.filePath && (
+                    <RepoHeaderActionPortal
+                        position="nav"
+                        element={
+                            <FilePathBreadcrumb
+                                key="path"
+                                repoPath={this.props.repo.uri}
+                                rev={this.props.rev}
+                                filePath={this.props.match.params.filePath}
+                                isDir={this.props.objectType === 'tree'}
+                            />
+                        }
+                    />
+                )}
+                <RepoHeaderActionPortal
+                    position="left"
                     element={<CopyLinkAction key="copy-link" location={this.props.location} />}
                 />
                 <RepoHeaderActionPortal
-                    position="left"
-                    element={
-                        <RevSwitcher
-                            key="rev-switcher"
-                            repoPath={this.props.repo.uri}
-                            rev={this.props.rev || this.state.defaultBranch || 'HEAD'}
-                            history={this.props.history}
-                        />
-                    }
-                />
-                <RepoHeaderActionPortal
-                    position="left"
+                    position="right"
                     element={
                         <GoToPermalinkAction
                             key="go-to-permalink"

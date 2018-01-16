@@ -3,9 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"sync"
+	"time"
 
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -37,6 +40,24 @@ func (r *siteResolver) Repositories(args *struct {
 type repositoryConnectionResolver struct {
 	opt     db.ReposListOptions
 	cloning bool
+
+	// cache results because they is used by multiple fields
+	once  sync.Once
+	repos []*sourcegraph.Repo
+	err   error
+}
+
+func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*sourcegraph.Repo, error) {
+	r.once.Do(func() {
+		opt2 := r.opt
+		opt2.PerPage++ // so we can detect if there is a next page
+		repos, err := backend.Repos.List(ctx, &opt2)
+		r.err = err
+		if repos != nil {
+			r.repos = repos.Repos
+		}
+	})
+	return r.repos, r.err
 }
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repositoryResolver, error) {
@@ -66,28 +87,70 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 		return l, nil
 	}
 
-	reposList, err := backend.Repos.List(ctx, &r.opt)
+	repos, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	var l []*repositoryResolver
-	for _, repo := range reposList.Repos {
-		l = append(l, &repositoryResolver{
-			repo: repo,
-		})
+	resolvers := make([]*repositoryResolver, 0, len(repos))
+	for i, repo := range repos {
+		if i == r.opt.PerPageOrDefault() {
+			break
+		}
+		resolvers = append(resolvers, &repositoryResolver{repo: repo})
 	}
-	return l, nil
+	return resolvers, nil
 }
 
-func (r *repositoryConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *struct {
+	Precise bool
+}) (countptr *int32, err error) {
+	i32ptr := func(v int32) *int32 {
+		return &v
+	}
+
 	if r.cloning {
 		repos, err := r.resolveCloning(ctx)
-		return int32(len(repos)), err
+		return i32ptr(int32(len(repos))), err
+	}
+
+	if args.Precise {
+		// Only site admins can perform precise counts, because it is a slow operation.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
+	if !args.Precise && envvar.SourcegraphDotComMode() {
+		if len(r.opt.Query) < 4 {
+			return nil, nil
+		}
+
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, 300*time.Millisecond)
+		defer cancel()
+		defer func() {
+			if ctx.Err() == context.DeadlineExceeded {
+				countptr = nil
+				err = nil
+			}
+		}()
 	}
 
 	count, err := db.Repos.Count(ctx, r.opt)
-	return int32(count), err
+	return i32ptr(int32(count)), err
+}
+
+func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+	if r.cloning {
+		return nil, errors.New("pageInfo is not supported with cloning: true")
+	}
+
+	repos, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &pageInfo{hasNextPage: len(repos) > r.opt.PerPageOrDefault()}, nil
 }
 
 func (r *repositoryConnectionResolver) resolveCloning(ctx context.Context) (repos []string, err error) {

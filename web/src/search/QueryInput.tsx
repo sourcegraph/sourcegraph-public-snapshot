@@ -50,7 +50,7 @@ interface Props {
     prependQueryForSuggestions?: string
 
     /** Whether the input should be autofocused (and the behavior thereof) */
-    autoFocus?: 'cursor-at-end'
+    autoFocus?: true | 'cursor-at-end'
 
     /** The input placeholder, if different from the default is desired. */
     placeholder?: string
@@ -280,6 +280,7 @@ export class QueryInput extends React.Component<Props, State> {
                 <input
                     className="form-control query-input2__input"
                     value={this.props.value}
+                    autoFocus={this.props.autoFocus === true}
                     onChange={this.onInputChange}
                     onKeyDown={this.onInputKeyDown}
                     onFocus={this.onInputFocus}

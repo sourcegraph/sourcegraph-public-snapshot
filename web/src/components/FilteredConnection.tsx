@@ -32,6 +32,9 @@ interface Props<C extends Connection<N>, N, NP = {}> {
     /** CSS class name for the root element. */
     className?: string
 
+    /** Whether to display it more compactly. */
+    compact?: boolean
+
     /** CSS class name for the list element (<ul>). */
     listClassName?: string
 
@@ -58,6 +61,18 @@ interface Props<C extends Connection<N>, N, NP = {}> {
 
     /** Hides the filter input field. */
     hideFilter?: boolean
+
+    /** Autofocuses the filter input field. */
+    autoFocus?: boolean
+
+    /** Do not update the URL query string to reflect the filter and pagination state. */
+    noUpdateURLQuery?: boolean
+
+    /** Do not show a "Show more" button. */
+    noShowMore?: boolean
+
+    /** Do not show a count summary if all nodes are visible in the list's first page. */
+    noSummaryIfAllNodesVisible?: boolean
 }
 
 /**
@@ -82,7 +97,8 @@ interface State<C extends Connection<N>, N> {
  */
 interface Connection<N> {
     nodes: N[]
-    totalCount: number
+    totalCount?: number
+    pageInfo?: { hasNextPage: boolean }
 }
 
 /**
@@ -102,6 +118,8 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     private showMoreClicks = new Subject<void>()
     private componentUpdates = new Subject<Props<C, N>>()
     private subscriptions = new Subscription()
+
+    private filterRef: HTMLInputElement | null
 
     public constructor(props: Props<C, N>) {
         super(props)
@@ -123,7 +141,9 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     debounceTime(200),
                     startWith(this.state.query),
                     tap(query => {
-                        this.props.history.replace({ search: this.urlQuery({ query }) })
+                        if (!this.props.noUpdateURLQuery) {
+                            this.props.history.replace({ search: this.urlQuery({ query }) })
+                        }
                     }),
                     switchMap(query => {
                         const result = this.props
@@ -151,7 +171,9 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     map(() => this.state.first * 2),
                     tap(first => {
                         this.setState({ first })
-                        this.props.history.replace({ search: this.urlQuery({ first }) })
+                        if (!this.props.noUpdateURLQuery) {
+                            this.props.history.replace({ search: this.urlQuery({ first }) })
+                        }
                     }),
                     switchMap(first => this.props.queryConnection({ first, query: this.state.query }))
                 )
@@ -176,6 +198,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                 .pipe(
                     map(({ queryConnection }) => queryConnection),
                     distinctUntilChanged(),
+                    tap(() => this.focusFilter()),
                     switchMap(queryConnection => queryConnection({ first: this.state.first, query: this.state.query }))
                 )
                 .subscribe(c => this.setState({ connection: c }))
@@ -212,60 +235,79 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
 
-        const summary =
+        const hasNextPage =
+            this.state.connection &&
+            ((this.state.connection.pageInfo && this.state.connection.pageInfo.hasNextPage) ||
+                (typeof this.state.connection.totalCount === 'number' &&
+                    this.state.connection.nodes.length < this.state.connection.totalCount))
+
+        let summary: React.ReactFragment | undefined
+        if (
             !this.state.loading &&
             this.state.connection &&
-            (this.state.connection.totalCount > 0 ? (
-                <p>
-                    <small>
-                        <span>
-                            {this.state.connection.totalCount}{' '}
-                            {pluralize(this.props.noun, this.state.connection.totalCount, this.props.pluralNoun)}{' '}
-                            {this.state.connectionQuery ? (
+            (!this.props.noSummaryIfAllNodesVisible || this.state.connection.nodes.length === 0 || hasNextPage)
+        ) {
+            if (typeof this.state.connection.totalCount === 'number' && this.state.connection.totalCount > 0) {
+                summary = (
+                    <p className="filtered-connection__summary">
+                        <small>
+                            <span>
+                                {this.state.connection.totalCount}{' '}
+                                {pluralize(this.props.noun, this.state.connection.totalCount, this.props.pluralNoun)}{' '}
+                                {this.state.connectionQuery ? (
+                                    <span>
+                                        {' '}
+                                        matching <strong>{this.state.connectionQuery}</strong>
+                                    </span>
+                                ) : (
+                                    'total'
+                                )}
+                            </span>{' '}
+                            {this.state.connection.nodes.length < this.state.connection.totalCount &&
+                                `(showing first ${this.state.connection.nodes.length})`}
+                        </small>
+                    </p>
+                )
+            } else if (this.state.connection.pageInfo && this.state.connection.pageInfo.hasNextPage) {
+                // No total count to show, but it will show a 'Show more' button.
+            } else {
+                summary = (
+                    <p className="filtered-connection__summary">
+                        <small>
+                            No {this.props.pluralNoun}{' '}
+                            {this.state.connectionQuery && (
                                 <span>
-                                    {' '}
                                     matching <strong>{this.state.connectionQuery}</strong>
                                 </span>
-                            ) : (
-                                'total'
                             )}
-                        </span>{' '}
-                        {this.state.connection.nodes.length < this.state.connection.totalCount &&
-                            `(showing first ${this.state.connection.nodes.length})`}
-                    </small>
-                </p>
-            ) : (
-                <p>
-                    <small>
-                        No {this.props.pluralNoun}{' '}
-                        {this.state.connectionQuery && (
-                            <span>
-                                matching <strong>{this.state.connectionQuery}</strong>
-                            </span>
-                        )}
-                    </small>
-                </p>
-            ))
+                        </small>
+                    </p>
+                )
+            }
+        }
 
+        const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
-            <div className={`filtered-connection ${this.props.className || ''}`}>
+            <div className={`filtered-connection ${compactnessClass} ${this.props.className || ''}`}>
                 {!this.props.hideFilter && (
                     <form className="filtered-connection__form">
                         <input
-                            className="form-control"
+                            className="form-control filtered-connection__filter"
                             type="search"
                             placeholder={`Search ${this.props.pluralNoun}...`}
                             name="query"
                             value={this.state.query}
                             onChange={this.onChange}
+                            autoFocus={this.props.autoFocus}
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="off"
+                            ref={this.setFilterRef}
                             spellCheck={false}
                         />
                     </form>
                 )}
-                {this.state.loading && <Loader className="icon-inline" />}
+                {this.state.loading && <Loader className="icon-inline filtered-connection__loader" />}
                 {this.state.connectionQuery && summary}
                 {!this.state.loading &&
                     this.state.connection &&
@@ -278,8 +320,9 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     )}
                 {!this.state.connectionQuery && summary}
                 {!this.state.loading &&
+                    !this.props.noShowMore &&
                     this.state.connection &&
-                    this.state.connection.nodes.length < this.state.connection.totalCount && (
+                    hasNextPage && (
                         <button
                             className="btn btn-secondary btn-sm filtered-connection__show-more"
                             onClick={this.onClickShowMore}
@@ -289,6 +332,21 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                     )}
             </div>
         )
+    }
+
+    private setFilterRef = (e: HTMLInputElement | null) => {
+        this.filterRef = e
+        if (e && this.props.autoFocus) {
+            // TODO(sqs): The 30 msec delay is needed, or else the input is not
+            // reliably focused. Find out why.
+            setTimeout(() => e.focus(), 30)
+        }
+    }
+
+    private focusFilter = () => {
+        if (this.filterRef) {
+            this.filterRef.focus()
+        }
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {

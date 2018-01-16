@@ -123,13 +123,12 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 	if op.Opt.PerPage == -1 {
 		n = 0 // retrieve all commits
 	}
-	commits, _, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head:    head,
-		Base:    base,
-		Skip:    uint(op.Opt.ListOptions.Offset()),
-		N:       n,
-		Path:    op.Opt.Path,
-		NoTotal: true,
+	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
+		Head: head,
+		Base: base,
+		Skip: uint(op.Opt.ListOptions.Offset()),
+		N:    n,
+		Path: op.Opt.Path,
 	})
 	if err != nil {
 		return nil, err
