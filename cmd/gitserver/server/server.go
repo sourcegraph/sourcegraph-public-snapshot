@@ -390,7 +390,7 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
 		}()
 
 		log15.Debug("cloning repo", "repo", repoPath)
-		cmd := cloneCmd(ctx, origin, path.Join(dir, ".git"))
+		cmd := cloneCmd(ctx, origin, filepath.Join(dir, ".git"))
 		if output, err := s.runWithRemoteOpts(cmd, repoPath); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))
 			return
