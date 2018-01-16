@@ -1,4 +1,5 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { switchMap } from 'rxjs/operators/switchMap'
@@ -61,14 +62,23 @@ export class RepoSettingsArea extends React.Component<Props> {
             return <HeroPage icon={DirectionalSignIcon} title="Error" subtitle={this.state.error} />
         }
 
-        if (this.state.repo === undefined || !this.props.user) {
+        if (this.state.repo === undefined) {
             return null
         }
         if (this.state.repo === null) {
             return <NotFoundPage />
         }
         if (!this.state.repo.viewerCanAdminister) {
-            return <HeroPage icon={DirectionalSignIcon} title="Repository administrators only" />
+            return (
+                <HeroPage
+                    icon={NoEntryIcon}
+                    title="Forbidden"
+                    subtitle="You are not authorized to view or change this repository's settings."
+                />
+            )
+        }
+        if (!this.props.user) {
+            return null
         }
 
         const transferProps: { user: GQL.IUser; repo: GQL.IRepository } = {
