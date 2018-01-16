@@ -94,10 +94,15 @@ func makeGitPassHelper(user, pass string) (gitPassHelperDir string, err error) {
 	return tempDir, nil
 }
 
-// repoCloned checks if dir is a valid GIT_DIR.
+// repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
 var repoCloned = func(dir string) bool {
-	_, err := os.Stat(filepath.Join(dir, "HEAD"))
-	return !os.IsNotExist(err)
+	if _, err := os.Stat(filepath.Join(dir, "HEAD")); !os.IsNotExist(err) {
+		return true
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".git", "HEAD")); !os.IsNotExist(err) {
+		return true
+	}
+	return false
 }
 
 // environ is a slice of strings representing the environment, in the form "key=value".

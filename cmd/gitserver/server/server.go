@@ -62,8 +62,8 @@ type Server struct {
 	// host. Defaults to 100.
 	MaxConcurrentClones int
 
-	// cloning tracks repositories (key is '/'-separated path) that are
-	// in the process of being cloned.
+	// cloning tracks repositories that are in the process of being cloned
+	// by the parent directory of the .git directory they are cloned to.
 	cloningMu sync.Mutex
 	cloning   map[string]struct{}
 
@@ -350,6 +350,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 }
 
 // cloneRepo issues a non-blocking git clone command for the given repo to the given directory.
+// The repository will be cloned to ${dir}/.git.
 func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
 	origin := OriginMap(repoPath)
 	if origin == "" {
@@ -388,7 +389,7 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
 		}()
 
 		log15.Debug("cloning repo", "repo", repoPath)
-		cmd := cloneCmd(ctx, origin, dir)
+		cmd := cloneCmd(ctx, origin, path.Join(dir, ".git"))
 		if output, err := s.runWithRemoteOpts(cmd, repoPath); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))
 			return
