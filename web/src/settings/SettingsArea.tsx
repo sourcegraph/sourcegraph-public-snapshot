@@ -9,7 +9,6 @@ import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPag
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
 import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
 import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
-import { RouteWithProps } from '../util/RouteWithProps'
 import { SettingsSidebar } from './SettingsSidebar'
 
 const SettingsNotFoundPage = () => (
@@ -53,34 +52,56 @@ export class SettingsArea extends React.Component<Props> {
                         {/* Render empty page if no settings page selected */}
                         <Route
                             path={`${this.props.match.url}/profile`}
-                            component={UserSettingsProfilePage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <UserSettingsProfilePage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/configuration`}
-                            component={UserSettingsConfigurationPage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <UserSettingsConfigurationPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/account`}
-                            component={UserSettingsAccountPage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <UserSettingsAccountPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/emails`}
-                            component={UserSettingsEmailsPage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <UserSettingsEmailsPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
                         <Route
                             path={`${this.props.match.url}/accept-invite`}
-                            component={AcceptInvitePage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <AcceptInvitePage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
-                        <Route path={`${this.props.match.url}/editor-auth`} component={EditorAuthPage} exact={true} />
-                        <Route component={SettingsNotFoundPage} />
+                        <Route
+                            path={`${this.props.match.url}/editor-auth`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            component={EditorAuthPage}
+                        />
+                        <Route component={SettingsNotFoundPage} key="hardcoded-key" />
                     </Switch>
                 </div>
             </div>

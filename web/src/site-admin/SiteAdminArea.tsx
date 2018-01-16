@@ -3,7 +3,6 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
-import { RouteWithProps } from '../util/RouteWithProps'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
@@ -66,11 +65,14 @@ export class SiteAdminArea extends React.Component<Props> {
                             component={SiteAdminConfigurationPage}
                             exact={true}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/global-settings`}
-                            component={SiteAdminSettingsPage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <SiteAdminSettingsPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
                         <Route
                             path={`${this.props.match.url}/repositories`}
@@ -82,11 +84,15 @@ export class SiteAdminArea extends React.Component<Props> {
                             component={SiteAdminOrgsPage}
                             exact={true}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/users`}
                             component={SiteAdminAllUsersPage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <SiteAdminAllUsersPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
                         <Route
                             path={`${this.props.match.url}/invite-user`}

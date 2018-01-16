@@ -21,11 +21,11 @@ import { pluralize } from '../util/strings'
 /**
  * Props for the FilteredConnection component.
  *
- * @template C is the GraphQL connection type, such as GQL.IRepositoryConnection.
- * @template N is the node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
- * @template NP is the type of the nodeComponent's props
+ * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
+ * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
  */
-interface Props<C extends Connection<N>, N, NP = {}> {
+interface FilteredConnectionProps<C extends Connection<N>, N extends GQL.Node, NP = {}> {
     history: H.History
     location: H.Location
 
@@ -44,7 +44,7 @@ interface Props<C extends Connection<N>, N, NP = {}> {
     /** The component type to use to display each node. */
     nodeComponent: React.ComponentType<{ node: N } & NP>
 
-    /** Props to pass to each nodeComponent. */
+    /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
     nodeComponentProps?: NP
 
     /** The English noun (in singular form) describing what this connection contains. */
@@ -97,7 +97,7 @@ interface State<C extends Connection<N>, N> {
  */
 interface Connection<N> {
     nodes: N[]
-    totalCount?: number
+    totalCount?: number | null
     pageInfo?: { hasNextPage: boolean }
 }
 
@@ -105,23 +105,28 @@ interface Connection<N> {
  * Displays a collection of items with filtering and pagination. It is called
  * "connection" because it is intended for use with GraphQL, which calls it that
  * (see http://graphql.org/learn/pagination/).
+ *
+ * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
+ * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
  */
-export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> extends React.PureComponent<
-    Props<C, N>,
-    State<C, N>
-> {
-    public static defaultProps: Partial<Props<any, any>> = {
+export class FilteredConnection<
+    N extends GQL.Node,
+    NP = {},
+    C extends Connection<N> = Connection<N>
+> extends React.PureComponent<FilteredConnectionProps<C, N, NP>, State<C, N>> {
+    public static defaultProps: Partial<FilteredConnectionProps<any, any>> = {
         defaultFirst: 20,
     }
 
     private queryInputChanges = new Subject<string>()
     private showMoreClicks = new Subject<void>()
-    private componentUpdates = new Subject<Props<C, N>>()
+    private componentUpdates = new Subject<FilteredConnectionProps<C, N, NP>>()
     private subscriptions = new Subscription()
 
     private filterRef: HTMLInputElement | null
 
-    public constructor(props: Props<C, N>) {
+    public constructor(props: FilteredConnectionProps<C, N, NP>) {
         super(props)
 
         const q = new URLSearchParams(this.props.location.search)
@@ -222,7 +227,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
         return q.toString()
     }
 
-    public componentWillReceiveProps(nextProps: Props<C, N>): void {
+    public componentWillReceiveProps(nextProps: FilteredConnectionProps<C, N, NP>): void {
         this.componentUpdates.next(nextProps)
     }
 

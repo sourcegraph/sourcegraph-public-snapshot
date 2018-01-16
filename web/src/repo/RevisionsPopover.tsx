@@ -196,6 +196,16 @@ interface RevisionsPopoverTab {
     type?: GQL.IGitRefTypeEnum
 }
 
+class FilteredGitRefConnection extends FilteredConnection<
+    GQL.IGitRef,
+    Pick<GitRefNodeProps, 'defaultBranch' | 'currentRev' | 'location'>
+> {}
+
+class FilteredGitCommitConnection extends FilteredConnection<
+    GQL.IGitCommit,
+    Pick<GitCommitNodeProps, 'currentCommitID' | 'location'>
+> {}
+
 /**
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
@@ -245,7 +255,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                     ))}
                 </div>
                 {activeTab.type ? (
-                    <FilteredConnection
+                    <FilteredGitRefConnection
                         key={activeTab.value}
                         className="popover__content"
                         compact={true}
@@ -271,7 +281,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                         noSummaryIfAllNodesVisible={true}
                     />
                 ) : (
-                    <FilteredConnection
+                    <FilteredGitCommitConnection
                         key={activeTab.value}
                         className="popover__content"
                         compact={true}

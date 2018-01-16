@@ -142,8 +142,13 @@ class App extends React.Component<{}, AppState> {
         ]
     }
 
-    private renderLayout = (props: LayoutProps) => (
-        <Layout {...props} user={this.state.user!} isLightTheme={this.state.isLightTheme} />
+    private renderLayout = (props: RouteComponentProps<any>) => (
+        <Layout
+            {...props}
+            /* Checked for undefined in render() above */
+            user={this.state.user as GQL.IUser | null}
+            isLightTheme={this.state.isLightTheme}
+        />
     )
 }
 

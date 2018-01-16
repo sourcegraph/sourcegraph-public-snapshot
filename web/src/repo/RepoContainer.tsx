@@ -12,7 +12,6 @@ import { Subscription } from 'rxjs/Subscription'
 import { parseRepoRev } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
-import { RouteWithProps } from '../util/RouteWithProps'
 import { GoToGitHubAction } from './actions/GoToGitHubAction'
 import { GoToPhabricatorAction } from './actions/GoToPhabricator'
 import { fetchRepository } from './backend'
@@ -158,49 +157,98 @@ export class RepoContainer extends React.Component<Props, State> {
                     }
                 />
                 <Switch>
-                    <RouteWithProps
+                    <Route
                         path={`${repoMatchURL}`}
-                        component={RepoRevContainer}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        other={{ ...transferProps, rev: this.state.rev, objectType: 'tree' }}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={routeComponentProps => (
+                            <RepoRevContainer
+                                {...routeComponentProps}
+                                {...transferProps}
+                                rev={this.state.rev}
+                                objectType={'tree'}
+                            />
+                        )}
                     />
-                    <RouteWithProps
+                    <Route
                         path={`${repoMatchURL}/-/blob/:filePath+`}
-                        component={RepoRevContainer}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        other={{ ...transferProps, rev: this.state.rev, objectType: 'blob' }}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={routeComponentProps => (
+                            <RepoRevContainer
+                                {...routeComponentProps}
+                                {...transferProps}
+                                rev={this.state.rev}
+                                objectType={'blob'}
+                            />
+                        )}
                     />
-                    <RouteWithProps
+                    <Route
                         path={`${repoMatchURL}@${this.state.rev}/-/blob/:filePath+`}
-                        component={RepoRevContainer}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        other={{ ...transferProps, rev: this.state.rev, objectType: 'blob' }}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={routeComponentProps => (
+                            <RepoRevContainer
+                                {...routeComponentProps}
+                                {...transferProps}
+                                rev={this.state.rev}
+                                objectType={'blob'}
+                            />
+                        )}
                     />
-                    <RouteWithProps
+                    <Route
                         path={`${repoMatchURL}/-/tree/:filePath+`}
-                        component={RepoRevContainer}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        other={{ ...transferProps, rev: this.state.rev, objectType: 'tree' }}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={routeComponentProps => (
+                            <RepoRevContainer
+                                {...routeComponentProps}
+                                {...transferProps}
+                                rev={this.state.rev}
+                                objectType={'tree'}
+                            />
+                        )}
                     />
-                    <RouteWithProps
+                    <Route
                         path={`${repoMatchURL}@${this.state.rev}/-/tree/:filePath+`}
-                        component={RepoRevContainer}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        other={{ ...transferProps, rev: this.state.rev, objectType: 'tree' }}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={routeComponentProps => (
+                            <RepoRevContainer
+                                {...routeComponentProps}
+                                {...transferProps}
+                                rev={this.state.rev}
+                                objectType={'tree'}
+                            />
+                        )}
                     />
-                    <RouteWithProps
+                    <Route
                         path={`${repoMatchURL}@${this.state.rev}`}
-                        component={RepoRevContainer}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        other={{ ...transferProps, rev: this.state.rev, objectType: 'tree' }}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={routeComponentProps => (
+                            <RepoRevContainer
+                                {...routeComponentProps}
+                                {...transferProps}
+                                rev={this.state.rev}
+                                objectType={'tree'}
+                            />
+                        )}
                     />
-                    <RouteWithProps
+                    <Route
                         path={`${repoMatchURL}/-/settings`}
-                        component={RepoSettingsArea}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        other={transferProps}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={routeComponentProps => <RepoSettingsArea {...routeComponentProps} {...transferProps} />}
                     />
-                    <Route component={RepoPageNotFound} />
+                    <Route key="hardcoded-key" component={RepoPageNotFound} />
                 </Switch>
             </div>
         )

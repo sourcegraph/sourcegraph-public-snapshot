@@ -74,7 +74,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe((state: State) => this.setState(state))
+                .subscribe(state => this.setState(state as State))
         )
         // TODO(sqs): handle errors
     }

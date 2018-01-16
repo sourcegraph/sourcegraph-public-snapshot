@@ -1,13 +1,13 @@
 import * as React from 'react'
 
-interface Props {
+interface HeroPageProps {
     icon: React.ComponentType
     title?: string | JSX.Element
     subtitle?: string | JSX.Element
     cta?: JSX.Element
 }
 
-export class HeroPage extends React.Component<Props, {}> {
+export class HeroPage extends React.Component<HeroPageProps, {}> {
     public render(): JSX.Element | null {
         return (
             <div className="hero-page">

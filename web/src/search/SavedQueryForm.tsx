@@ -98,14 +98,18 @@ export const SavedQueryForm = reactive<Props>(props => {
         props.pipe(
             take(1),
             map(({ defaultValues }) => defaultValues),
-            filter<SavedQueryFields>(defaultValues => !!defaultValues),
-            tap(defaultValues => {
-                inputChanges.next({
-                    description: defaultValues.description,
-                    query: defaultValues.query,
-                    subject: defaultValues.subject,
-                    showOnHomepage: defaultValues.showOnHomepage,
-                })
+            filter(
+                (defaultValues?: Partial<SavedQueryFields>): defaultValues is Partial<SavedQueryFields> =>
+                    !!defaultValues
+            ),
+            map(defaultValues => ({
+                description: defaultValues.description || '',
+                query: defaultValues.query || '',
+                subject: defaultValues.subject || '',
+                showOnHomepage: defaultValues.showOnHomepage || false,
+            })),
+            tap(concreteValues => {
+                inputChanges.next(concreteValues)
             }),
             map((defaultValues): Update => state => ({
                 ...state,

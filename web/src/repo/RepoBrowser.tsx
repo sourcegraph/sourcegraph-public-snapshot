@@ -12,7 +12,11 @@ import { buildSearchURLQuery } from '../search'
 import { fetchAllRepositoriesAndPollIfAnyCloning } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
-export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: repo }) => (
+interface RepositoryNodeProps {
+    node: GQL.IRepository
+}
+
+export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
     <li key={repo.id} className="repo-browser__item">
         <div className="repo-browser__item-header">
             <Link to={`/${repo.uri}`} className="repo-browser__item-path">
@@ -56,11 +60,13 @@ export const RepositoryNode: React.SFC<{ node: GQL.IRepository }> = ({ node: rep
     </li>
 )
 
-interface Props extends RouteComponentProps<any> {
+interface RepoBrowserProps extends RouteComponentProps<any> {
     user: GQL.IUser | null
 }
 
-export class RepoBrowser extends React.PureComponent<Props> {
+class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
+
+export class RepoBrowser extends React.PureComponent<RepoBrowserProps> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('Browse')
     }
@@ -84,7 +90,7 @@ export class RepoBrowser extends React.PureComponent<Props> {
                             </div>
                         )}
                 </div>
-                <FilteredConnection
+                <FilteredRepositoryConnection
                     className="repo-browser__filtered-connection"
                     listClassName="repo-browser__items"
                     noun="repository"

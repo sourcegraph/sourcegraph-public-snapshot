@@ -144,9 +144,9 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
     // Poll if there are repositories that are being cloned.
     //
     // TODO(sqs): This is hacky, but I couldn't figure out a better way.
-    const subject = new Subject<void>()
+    const subject = new Subject<null>()
     return subject.pipe(
-        startWith(void 0),
+        startWith(null),
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
             if (result.nodes.some(n => n.cloneInProgress)) {
@@ -164,9 +164,10 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
 export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Observable<void> {
     return mutateGraphQL(
         gql`
-    mutation SetRepositoryEnabled($repository: ID!, $enabled: Boolean!) {
-        setRepositoryEnabled(repository: $repository, enabled: $enabled) { }
-    }`,
+            mutation SetRepositoryEnabled($repository: ID!, $enabled: Boolean!) {
+                setRepositoryEnabled(repository: $repository, enabled: $enabled)
+            }
+        `,
         { repository, enabled }
     ).pipe(
         map(({ data, errors }) => {
@@ -180,9 +181,10 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
 export function deleteRepository(repository: GQLID): Observable<void> {
     return mutateGraphQL(
         gql`
-    mutation DeleteRepository($repository: ID!) {
-        deleteRepository(repository: $repository) { }
-    }`,
+            mutation DeleteRepository($repository: ID!) {
+                deleteRepository(repository: $repository)
+            }
+        `,
         { repository }
     ).pipe(
         map(({ data, errors }) => {
@@ -320,9 +322,10 @@ export function updateSiteSettings(lastKnownSettingsID: number | null, contents:
 export function updateSiteConfiguration(input: string): Observable<void> {
     return mutateGraphQL(
         gql`
-        mutation UpdateSiteConfiguration($input: String!) {
-        updateSiteConfiguration(input: $input) {}
-    }`,
+            mutation UpdateSiteConfiguration($input: String!) {
+                updateSiteConfiguration(input: $input)
+            }
+        `,
         { input }
     ).pipe(
         map(({ data, errors }) => {
@@ -338,7 +341,13 @@ export function updateSiteConfiguration(input: string): Observable<void> {
  * Reloads the site.
  */
 export function reloadSite(): Observable<void> {
-    return mutateGraphQL(gql`mutation ReloadSite() { reloadSite {} }`).pipe(
+    return mutateGraphQL(
+        gql`
+            mutation ReloadSite {
+                reloadSite
+            }
+        `
+    ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.reloadSite) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -370,9 +379,10 @@ export function updateDeploymentConfiguration(email: string, telemetryEnabled: b
 export function setUserIsSiteAdmin(userID: GQLID, siteAdmin: boolean): Observable<void> {
     return mutateGraphQL(
         gql`
-    mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
-        setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) { }
-    }`,
+            mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
+                setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin)
+            }
+        `,
         { userID, siteAdmin }
     ).pipe(
         map(({ data, errors }) => {
@@ -407,7 +417,7 @@ export function deleteUser(user: GQLID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteUser($user: ID!) {
-                deleteUser(user: $user) { }
+                deleteUser(user: $user)
             }
         `,
         { user }
@@ -444,7 +454,7 @@ export function deleteOrganization(organization: GQLID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteOrganization($organization: ID!) {
-                deleteOrganization(organization: $organization) { }
+                deleteOrganization(organization: $organization)
             }
         `,
         { organization }
@@ -521,7 +531,7 @@ export function fetchSiteUpdateCheck(): Observable<{
 }> {
     return queryGraphQL(
         gql`
-            query SiteUpdateCheck() {
+            query SiteUpdateCheck {
                 site {
                     buildVersion
                     productVersion
@@ -532,7 +542,8 @@ export function fetchSiteUpdateCheck(): Observable<{
                         updateVersionAvailable
                     }
                 }
-            }        `
+            }
+        `
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.updateCheck) {

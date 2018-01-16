@@ -114,6 +114,8 @@ export interface State {
     totalCount?: number
 }
 
+class FilteredOrgConnection extends FilteredConnection<GQL.IOrg, Pick<OrgNodeProps, 'onDidUpdate'>> {}
+
 /**
  * A page displaying the orgs on this site.
  */
@@ -145,7 +147,7 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                         <AddIcon className="icon-inline" /> Create organization
                     </Link>
                 </div>
-                <FilteredConnection
+                <FilteredOrgConnection
                     className="site-admin-page__filtered-connection"
                     noun="organization"
                     pluralNoun="organizations"

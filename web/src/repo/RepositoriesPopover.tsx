@@ -65,6 +65,8 @@ interface Props {
     location: H.Location
 }
 
+class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
+
 /**
  * A popover that displays a searchable list of repositories.
  */
@@ -78,7 +80,7 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
 
         return (
             <div className="repositories-popover popover">
-                <FilteredConnection
+                <FilteredRepositoryConnection
                     className="popover__content"
                     compact={true}
                     noun="repository"
