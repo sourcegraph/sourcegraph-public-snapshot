@@ -116,18 +116,6 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 	return toGitCommitResolver(r, commit), nil
 }
 
-// GitCmdRaw executes whitelisted git cmds from the gitserver.
-func (r *repositoryResolver) GitCmdRaw(ctx context.Context, args *struct {
-	Params []string
-}) (string, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
-	if err != nil {
-		return "", err
-	}
-
-	return vcsrepo.GitCmdRaw(ctx, args.Params)
-}
-
 func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCommitResolver, error) {
 	// This method is a stopgap until we no longer require git:// URIs on the client which include rev data.
 	// THIS RESOLVER WILL BE REMOVED SOON, DO NOT USE IT!!!
