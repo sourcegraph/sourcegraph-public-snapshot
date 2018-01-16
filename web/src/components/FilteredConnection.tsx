@@ -159,7 +159,7 @@ export class FilteredConnection<C extends Connection<N>, N extends GQL.Node> ext
                                 publishReplay(),
                                 refCount()
                             )
-                        return merge(result, of({ loading: true }).pipe(delay(100), takeUntil(result)))
+                        return merge(result, of({ loading: true }).pipe(delay(250), takeUntil(result)))
                     })
                 )
                 .subscribe((stateUpdate: State<C, N>) => this.setState(stateUpdate))

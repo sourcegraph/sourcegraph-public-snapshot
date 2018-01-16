@@ -3,6 +3,7 @@ $popover-item-padding-v: 0.325rem;
 
 .popover {
     height: auto;
+    min-height: 27rem; // avoid jitter when only loading indicator is shown
     max-height: 75vh;
 
     min-width: 25rem;
@@ -13,6 +14,7 @@ $popover-item-padding-v: 0.325rem;
 
     &__content {
         overflow: hidden;
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
     }
@@ -52,15 +54,18 @@ $popover-item-padding-v: 0.325rem;
 
         &__loader {
             padding: $popover-item-padding-v $popover-item-padding-h;
+            flex: 0 0;
         }
 
         &__nodes {
+            flex: 1 1;
             overflow-y: auto;
             margin-top: 0.25rem;
             margin-bottom: 0.25rem;
         }
 
         &__summary {
+            flex: 0 0;
             padding: $popover-item-padding-v $popover-item-padding-h;
             opacity: 0.7;
             border-top: solid 1px $color-border;
