@@ -344,7 +344,16 @@ func (c *Client) RepoFromRemoteURL(ctx context.Context, remoteURL string) (strin
 	return repo, err
 }
 
-func (c *Client) httpPost(ctx context.Context, addr string, method string, payload interface{}) (*http.Response, error) {
+func (c *Client) httpPost(ctx context.Context, addr string, method string, payload interface{}) (resp *http.Response, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -359,8 +368,10 @@ func (c *Client) httpPost(ctx context.Context, addr string, method string, paylo
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
+		span.LogKV("event", "Waiting on HTTP limiter")
 		c.HTTPLimiter.Acquire()
 		defer c.HTTPLimiter.Release()
+		span.LogKV("event", "Acquired HTTP limiter")
 	}
 
 	if c.HTTPClient != nil {
