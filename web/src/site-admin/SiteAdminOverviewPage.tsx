@@ -47,7 +47,6 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
-                {/* <h2>Site overview</h2> */}
                 {!this.state.info && <Loader className="icon-inline" />}
                 <ul className="site-admin-overview-page__list">
                     {this.state.info && (
