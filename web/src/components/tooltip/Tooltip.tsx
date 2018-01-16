@@ -123,7 +123,11 @@ export class Tooltip extends React.PureComponent<Props, State> {
 
         const content = subject.getAttribute(Tooltip.SUBJECT_ATTRIBUTE) || ''
 
-        const { top: containerTop, left: containerLeft } = this.containerRef.getBoundingClientRect()
+        const {
+            top: containerTop,
+            left: containerLeft,
+            right: containerRight,
+        } = this.containerRef.getBoundingClientRect()
 
         const { width: tooltipWidth } = this.tooltipRef.getBoundingClientRect()
 
@@ -135,7 +139,12 @@ export class Tooltip extends React.PureComponent<Props, State> {
         } = subject.getBoundingClientRect()
 
         const top = subjectHeight
-        const left = (subjectWidth - tooltipWidth) / 2
+        let left = (subjectWidth - tooltipWidth) / 2
+
+        const outOfBoundsWidth = Math.floor(containerRight - subjectLeft - left - tooltipWidth)
+        if (outOfBoundsWidth < 0) {
+            left += outOfBoundsWidth
+        }
 
         return {
             content,
