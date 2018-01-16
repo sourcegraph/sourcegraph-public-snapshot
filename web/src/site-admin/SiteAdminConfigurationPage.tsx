@@ -228,7 +228,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-configuration-page">
                 <PageTitle title="Configuration - Admin" />
-                <h2>Server Configuration</h2>
+                <h2>Site configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <a href="https://about.sourcegraph.com/docs/server/">documentation</a> for more information.
