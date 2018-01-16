@@ -197,6 +197,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := path.Join(s.ReposDir, req.Repo)
 	if !repoCloned(dir) && !skipCloneForTests {
 		err := s.cloneRepo(r.Context(), req.Repo, dir)
