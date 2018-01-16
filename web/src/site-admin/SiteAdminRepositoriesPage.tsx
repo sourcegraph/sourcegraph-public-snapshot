@@ -35,7 +35,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                         <RepoBreadcrumb repoPath={this.props.node.uri} disableLinks={true} />
                     </Link>
                     <ul className="site-admin-detail-list__info site-admin-repositories-page__repo-info">
-                        {this.props.node.cloneInProgress && (
+                        {this.props.node.mirrorInfo.cloneInProgress && (
                             <li>
                                 <Loader className="icon-inline" /> Cloning
                             </li>

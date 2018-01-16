@@ -19,7 +19,7 @@ export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) =
             <Link to={`/${repo.uri}`} className="repo-browser__item-path">
                 <RepoBreadcrumb repoPath={repo.uri} disableLinks={true} />
             </Link>
-            {repo.cloneInProgress && (
+            {repo.mirrorInfo.cloneInProgress && (
                 <span className="repo-browser__item-cloning">
                     <small>
                         <Loader className="icon-inline" /> Cloning

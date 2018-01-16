@@ -127,6 +127,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
+	mux.HandleFunc("/repo", s.handleRepoInfo)
 	mux.HandleFunc("/repo-from-remote-url", s.handleRepoFromRemoteURL)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/upload-pack", s.handleUploadPack)

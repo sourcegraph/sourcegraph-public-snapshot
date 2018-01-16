@@ -1,6 +1,10 @@
 package protocol
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+import (
+	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+)
 
 // ExecRequest is a request to execute a command inside a git repository.
 type ExecRequest struct {
@@ -29,6 +33,20 @@ type IsRepoCloneableRequest struct {
 type IsRepoClonedRequest struct {
 	// Repo is the repository to check.
 	Repo string
+}
+
+// RepoInfoRequest is a request for information about a repository on gitserver.
+type RepoInfoRequest struct {
+	// Repo is the repository to get information about.
+	Repo string
+}
+
+// RepoInfoResponse is the response to a repository information request (RepoInfoRequest).
+type RepoInfoResponse struct {
+	URL             string     // this repository's clone URL
+	CloneInProgress bool       // whether the repository is currently being cloned
+	Cloned          bool       // whether the repository has been cloned successfully
+	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
 }
 
 // RepoFromRemoteURLRequest is a request to determine a repository URI (like

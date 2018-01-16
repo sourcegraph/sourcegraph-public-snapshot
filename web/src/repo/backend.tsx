@@ -90,7 +90,9 @@ export const resolveRev = memoizeObservable(
             gql`
                 query ResolveRev($repoPath: String, $rev: String) {
                     repository(uri: $repoPath) {
-                        cloneInProgress
+                        mirrorInfo {
+                            cloneInProgress
+                        }
                         commit(rev: $rev) {
                             oid
                         }
@@ -111,7 +113,7 @@ export const resolveRev = memoizeObservable(
                 if (!data.repository) {
                     throw new RepoNotFoundError(ctx.repoPath)
                 }
-                if (data.repository.cloneInProgress) {
+                if (data.repository.mirrorInfo.cloneInProgress) {
                     throw new CloneInProgressError(ctx.repoPath)
                 }
                 if (!data.repository.commit) {

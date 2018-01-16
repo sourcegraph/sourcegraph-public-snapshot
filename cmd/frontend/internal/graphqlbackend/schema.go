@@ -586,8 +586,12 @@ type Repository implements Node {
     pushedAt: String!
     # Returns information about the given commit in the repository.
     commit(rev: String!): GitCommit
+    # Information and status related to mirroring, if this repository is a mirror of another repository (e.g., on
+    # some code host). In this case, the remote source repository is external to Sourcegraph and the mirror is
+    # maintained by the Sourcegraph site (not the other way around).
+    mirrorInfo: MirrorRepositoryInfo!
     # Whether the repository is currently being cloned.
-    cloneInProgress: Boolean!
+    cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress")
     # The commit that was last indexed for cross-references, if any.
     lastIndexedRevOrLatest: GitCommit
     # The repository's default Git branch. If the repository is currently being cloned or is empty,
@@ -624,6 +628,20 @@ type Repository implements Node {
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
+}
+
+# Information and status about the mirroring of a repository. In this case, the remote source repository
+# is external to Sourcegraph and the mirror is maintained by the Sourcegraph site (not the other way
+# around).
+type MirrorRepositoryInfo {
+    # The URL of the remote source repository.
+    remoteURL: String!
+    # Whether the clone of the repository has begun but not yet completed.
+    cloneInProgress: Boolean!
+    # Whether the repository has ever been successfully cloned.
+    cloned: Boolean!
+    # When the repository was last successfully updated from the remote source repository..
+    updatedAt: String
 }
 
 # A list of Git refs.
