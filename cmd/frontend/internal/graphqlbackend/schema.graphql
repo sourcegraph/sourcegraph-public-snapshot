@@ -133,6 +133,14 @@ type Mutation {
         # The mirror repository to check.
         repository: ID!
     ): CheckMirrorRepositoryConnectionResult!
+    # Schedule the mirror repository to be updated from its original source repository. Updating
+    # occurs automatically, so this should not normally be needed.
+    #
+    # Only site admins may perform this mutation.
+    updateMirrorRepository(
+        # The mirror repository to update.
+        repository: ID!
+    ): EmptyResponse!
     # Deletes a repository and all data associated with it, irreversibly.
     #
     # If the repository was added because it was present in the site configuration (directly,
