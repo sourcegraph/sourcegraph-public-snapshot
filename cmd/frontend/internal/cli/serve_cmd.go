@@ -291,6 +291,7 @@ func Main() error {
 
 		httpServer := srv
 		if httpToHttpsRedirect {
+			// Use JS for the redirect because this is the most reliable solution if reverse proxies are involved.
 			httpServer = &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(`<script>window.location.protocol = "https:";</script>`))
 			})}
