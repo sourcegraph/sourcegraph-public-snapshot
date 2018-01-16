@@ -15,19 +15,23 @@ interface ActionContainerProps {
     title: React.ReactChild
     description: React.ReactChild
     buttonLabel: React.ReactChild
+
+    /** The message to briefly display below the button when the action is successful. */
+    flashText?: string
+
     run: () => Promise<void>
 }
 
 interface ActionContainerState {
     loading: boolean
-    updated: boolean
+    flash: boolean
     error?: string
 }
 
 class ActionContainer extends React.PureComponent<ActionContainerProps, ActionContainerState> {
     public state: ActionContainerState = {
         loading: false,
-        updated: false,
+        flash: false,
     }
 
     public render(): JSX.Element | null {
@@ -45,14 +49,16 @@ class ActionContainer extends React.PureComponent<ActionContainerProps, ActionCo
                     >
                         {this.props.buttonLabel}
                     </button>
-                    <div
-                        className={
-                            'repo-settings-options-page__updated' +
-                            (this.state.updated ? ' repo-settings-options-page__updated--visible' : '')
-                        }
-                    >
-                        <small>Updated</small>
-                    </div>
+                    {this.props.flashText && (
+                        <div
+                            className={
+                                'repo-settings-options-page__flash' +
+                                (this.state.flash ? ' repo-settings-options-page__flash--visible' : '')
+                            }
+                        >
+                            <small>{this.props.flashText}</small>
+                        </div>
+                    )}
                 </div>
             </div>
         )
@@ -66,8 +72,8 @@ class ActionContainer extends React.PureComponent<ActionContainerProps, ActionCo
 
         this.props.run().then(
             () => {
-                this.setState({ loading: false, updated: true })
-                setTimeout(() => this.setState({ updated: false }), 1000)
+                this.setState({ loading: false, flash: true })
+                setTimeout(() => this.setState({ flash: false }), 1000)
             },
             err => this.setState({ loading: false, error: err.message })
         )
@@ -166,6 +172,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             : 'The repository was disabled by a site admin. Enable it to allow users to search and view the repository.'
                     }
                     buttonLabel={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
+                    flashText="Updated"
                     run={this.state.repo.enabled ? this.disableRepository : this.enableRepository}
                 />
                 <ActionContainer
