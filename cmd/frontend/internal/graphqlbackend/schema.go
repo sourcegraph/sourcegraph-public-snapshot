@@ -620,9 +620,6 @@ type Repository implements Node {
 		query: String
 	): GitRefConnection!
 	listTotalRefs: TotalRefList!
-	# Executes a git command in this repository's directory. The commands are subject to a
-	# strict whitelist.
-	gitCmdRaw(params: [String!]!): String!
 	# Link to another Sourcegraph instance location where this repository is located.
 	redirectURL: String
 	# Whether the viewer has admin privileges on this repository.
