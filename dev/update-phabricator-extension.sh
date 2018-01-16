@@ -7,6 +7,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../client/phabricator" # cd to repo root dir
 rm -rf .extension
 git clone git@github.com:sourcegraph/browser-extension.git .extension
 cd .extension
+echo "REVERT THIS SCRIPT AFTER DEBUGGING PHABRICATOR"
 git fetch origin && git checkout phab-with-logging
 
 npm install
