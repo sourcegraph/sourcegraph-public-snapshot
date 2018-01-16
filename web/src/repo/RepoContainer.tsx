@@ -75,7 +75,7 @@ export class RepoContainer extends React.Component<Props, State> {
                         fetchRepository({ repoPath }).pipe(
                             catchError(error => {
                                 console.error(error)
-                                this.setState({ loading: false, error })
+                                this.setState({ loading: false, error: error.message })
                                 return []
                             })
                         )
