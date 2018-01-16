@@ -97,7 +97,7 @@ interface State<C extends Connection<N>, N> {
  */
 interface Connection<N> {
     nodes: N[]
-    totalCount?: number
+    totalCount?: number | null
     pageInfo?: { hasNextPage: boolean }
 }
 

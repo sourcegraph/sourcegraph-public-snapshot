@@ -9,7 +9,6 @@ import { currentUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { OrgSettingsConfigurationPage } from '../org/OrgSettingsConfigurationPage'
 import { OrgSettingsProfilePage } from '../org/OrgSettingsProfilePage'
-import { RouteWithProps } from '../util/RouteWithProps'
 import { fetchOrg } from './backend'
 import { OrgSidebar } from './OrgSidebar'
 import { OrgSettingsMembersPage } from './settings/OrgSettingsMembersPage'
@@ -96,23 +95,32 @@ export class OrgArea extends React.Component<Props> {
                 <OrgSidebar {...this.props} />
                 <div className="area__content">
                     <Switch>
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/settings/profile`}
-                            component={OrgSettingsProfilePage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <OrgSettingsProfilePage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/settings/members`}
-                            component={OrgSettingsMembersPage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <OrgSettingsMembersPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}/settings/configuration`}
-                            component={OrgSettingsConfigurationPage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <OrgSettingsConfigurationPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
                         <Route component={NotFoundPage} />
                     </Switch>

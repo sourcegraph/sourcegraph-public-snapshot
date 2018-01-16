@@ -5,7 +5,6 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
-import { RouteWithProps } from '../../util/RouteWithProps'
 import { fetchRepository } from './backend'
 import { RepoSettingsOptionsPage } from './RepoSettingsOptionsPage'
 import { RepoSettingsSidebar } from './RepoSettingsSidebar'
@@ -82,13 +81,16 @@ export class RepoSettingsArea extends React.Component<Props> {
                 <RepoSettingsSidebar {...this.props} {...transferProps} />
                 <div className="area__content">
                     <Switch>
-                        <RouteWithProps
+                        <Route
                             path={`${this.props.match.url}`}
-                            component={RepoSettingsOptionsPage}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            other={transferProps}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoSettingsOptionsPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
-                        <Route component={NotFoundPage} />
+                        <Route key="hardcoded-key" component={NotFoundPage} />
                     </Switch>
                 </div>
             </div>

@@ -25,7 +25,7 @@ import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
 import { RevisionsPopover } from './RevisionsPopover'
 
-interface Props extends RouteComponentProps<{ filePath: string }> {
+interface RepoRevContainerProps extends RouteComponentProps<{ filePath: string }> {
     repo: GQL.IRepository
     rev: string | undefined
     user: GQL.IUser | null
@@ -46,7 +46,7 @@ interface State {
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
-export class RepoRevContainer extends React.PureComponent<Props, State> {
+export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps, State> {
     public state: State = {
         loading: true,
         showSidebar: true,
@@ -130,7 +130,7 @@ export class RepoRevContainer extends React.PureComponent<Props, State> {
         this.repoRevChanges.next({ repo: this.props.repo.uri, rev: this.props.rev })
     }
 
-    public componentWillReceiveProps(props: Props): void {
+    public componentWillReceiveProps(props: RepoRevContainerProps): void {
         if (props.repo !== this.props.repo || props.rev !== this.props.rev) {
             this.repoRevChanges.next({ repo: props.repo.uri, rev: props.rev })
         }

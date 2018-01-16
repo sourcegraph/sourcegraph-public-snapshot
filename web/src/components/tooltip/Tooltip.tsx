@@ -103,7 +103,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
     /**
      * Find the nearest ancestor element to e that contains a tooltip.
      */
-    private getSubject = (e: HTMLElement | null) => {
+    private getSubject = (e: HTMLElement | null): HTMLElement | undefined => {
         while (e) {
             if (e === document.body) {
                 break
@@ -113,7 +113,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
             }
             e = e.parentElement
         }
-        return null
+        return undefined
     }
 
     public getStateForSubject = (subject: HTMLElement): { content: string; top: number; left: number } | undefined => {
