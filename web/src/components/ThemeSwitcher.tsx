@@ -3,6 +3,7 @@ import SunIcon from '@sourcegraph/icons/lib/Sun'
 import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
 import { colorTheme, getColorTheme, setColorTheme } from '../settings/theme'
+import { Tooltip } from './tooltip/Tooltip'
 
 interface Props {}
 
@@ -16,7 +17,11 @@ export class ThemeSwitcher extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
+        this.subscriptions.add(
+            colorTheme.subscribe(theme =>
+                this.setState({ isLightTheme: theme === 'light' }, () => Tooltip.forceUpdate())
+            )
+        )
     }
 
     public componentWillUnmount(): void {
@@ -28,7 +33,7 @@ export class ThemeSwitcher extends React.Component<Props, State> {
             <div
                 className="theme-switcher theme-switcher__nav-bar"
                 onClick={this.toggleTheme}
-                title={this.state.isLightTheme ? 'Switch to dark color theme' : 'Switch to light color theme'}
+                data-tooltip={this.state.isLightTheme ? 'Switch to dark color theme' : 'Switch to light color theme'}
             >
                 <div
                     className={
