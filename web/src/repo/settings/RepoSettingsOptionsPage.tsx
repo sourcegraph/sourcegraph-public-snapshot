@@ -12,9 +12,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
 
 interface ActionContainerProps {
-    title: React.ReactChild
-    description: React.ReactChild
-    buttonLabel: React.ReactChild
+    title: React.ReactFragment
+    description: React.ReactFragment
+    buttonLabel: React.ReactFragment
 
     /** The message to briefly display below the button when the action is successful. */
     flashText?: string
