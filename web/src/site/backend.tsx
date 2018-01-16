@@ -34,10 +34,10 @@ export function refreshSiteFlags(): Observable<never> {
                 data,
                 errors,
             }: {
-                data?: GQL.IQuery & { site: { repositoriesCloning: GQL.IRepositoryConnection } }
+                data?: GQL.IQuery & { site: { repositoriesCloning: GQL.IRepositoryConnection | null } }
                 errors?: GQL.IGraphQLResponseError[]
             }) => {
-                if (!data || !data.site || (errors && errors.length > 0)) {
+                if (!data || !data.site) {
                     throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
                 }
                 siteFlags.next(data.site)

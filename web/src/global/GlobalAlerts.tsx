@@ -37,7 +37,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                     .pipe(
                         filter(
                             ({ repositoriesCloning }) =>
-                                repositoriesCloning.totalCount !== null && repositoriesCloning.totalCount > 0
+                                !!repositoriesCloning &&
+                                repositoriesCloning.totalCount !== null &&
+                                repositoriesCloning.totalCount > 0
                         )
                     )
                     .pipe(delay(5000), switchMap(refreshSiteFlags))
