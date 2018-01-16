@@ -207,7 +207,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             activeClassName="sidebar__item--active"
                         >
                             <GlobeIcon className="icon-inline sidebar__action-icon" />
-                            GraphQL API explorer
+                            API console
                         </NavLink>
                     </div>
                 )}

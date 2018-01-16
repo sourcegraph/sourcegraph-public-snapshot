@@ -113,7 +113,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             activeClassName="sidebar__item--active"
                             exact={true}
                         >
-                            Threads &amp; comments
+                            Comments
                         </NavLink>
                     </li>
                 </ul>
@@ -156,7 +156,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                         activeClassName="sidebar__item--active"
                     >
                         <GlobeIcon className="icon-inline sidebar__action-icon" />
-                        GraphQL API explorer
+                        API console
                     </NavLink>
                 </div>
             </div>
