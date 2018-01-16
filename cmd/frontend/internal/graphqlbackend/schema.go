@@ -554,9 +554,9 @@ type Repository implements Node {
 	#
 	# Examples:
 	#
-	# - `github.com/foo/bar`
-	# - `my-code-host.example.com/myrepo`
-	# - `myrepo`
+	# - github.com/foo/bar
+	# - my-code-host.example.com/myrepo
+	# - myrepo
 	uri: String!
 	# The repository's description.
 	description: String!
@@ -620,7 +620,7 @@ type Repository implements Node {
 		query: String
 	): GitRefConnection!
 	listTotalRefs: TotalRefList!
-	# Executes a `git` command in this repository's directory. The commands are subject to a
+	# Executes a git command in this repository's directory. The commands are subject to a
 	# strict whitelist.
 	gitCmdRaw(params: [String!]!): String!
 	# Link to another Sourcegraph instance location where this repository is located.
