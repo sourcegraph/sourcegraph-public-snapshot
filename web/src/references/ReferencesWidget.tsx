@@ -33,27 +33,31 @@ interface Props extends AbsoluteRepoFilePosition {
     history: H.History
 }
 
-interface State {
-    group?: 'local' | 'external'
+interface ReferencesState {
     references: Location[]
     loadingLocal: boolean
     loadingExternal: boolean
 }
 
+interface State extends ReferencesState {
+    group?: 'local' | 'external'
+    itemsToShow: number
+}
+
 export class ReferencesWidget extends React.PureComponent<Props, State> {
-    public state: State = {
-        group: 'local',
-        references: [],
-        loadingLocal: true,
-        loadingExternal: true,
-    }
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
         const parsedHash = parseHash(props.location.hash)
-        this.state.group = parsedHash.modalMode ? parsedHash.modalMode : 'local'
+        this.state = {
+            group: parsedHash.modalMode || 'local',
+            itemsToShow: 3,
+            references: [],
+            loadingLocal: true,
+            loadingExternal: true,
+        }
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -80,7 +84,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     ),
                     bufferTime(500),
                     filter(updates => updates.length > 0),
-                    scan<State[], State>(
+                    scan<ReferencesState[], ReferencesState>(
                         (currState, updates) => {
                             let newState = currState
                             for (const update of updates) {
@@ -95,7 +99,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                             }
                             return newState
                         },
-                        { references: [], loadingLocal: true, loadingExternal: true } as State
+                        { references: [], loadingLocal: true, loadingExternal: true }
                     )
                 )
                 .subscribe(state => this.setState(state))
@@ -109,7 +113,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
     public componentWillReceiveProps(nextProps: Props): void {
         const parsedHash = parseHash(nextProps.location.hash)
         if (parsedHash.modalMode && parsedHash.modalMode !== this.state.group) {
-            this.setState({ group: parsedHash.modalMode })
+            this.setState({ group: parsedHash.modalMode, itemsToShow: 3 })
         }
         if (isEqual(omit(this.props, 'rev'), omit(nextProps, 'rev'))) {
             this.componentUpdates.next(nextProps)
@@ -222,44 +226,50 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     </div>
                 )}
                 <div className="references-widget__groups">
-                    {this.state.group === 'local' && (
-                        <VirtualList
-                            initItemsToShow={3}
-                            listId="references-local"
-                            items={localRefs
-                                .sort()
-                                .map((uri, i) => (
+                    {this.state.group === 'local' &&
+                        this.state.itemsToShow && (
+                            <VirtualList
+                                itemsToShow={this.state.itemsToShow}
+                                onShowMoreItems={this.onShowMoreItems}
+                                items={localRefs
+                                    .sort()
+                                    .map((uri, i) => (
+                                        <FileMatch
+                                            key={i}
+                                            expanded={true}
+                                            result={refsToFileMatch(uri, this.props.rev, refsByUri[uri])}
+                                            icon={RepoIcon}
+                                            onSelect={this.logLocalSelection}
+                                            showAllMatches={true}
+                                        />
+                                    ))}
+                            />
+                        )}
+                    {this.state.group === 'external' &&
+                        this.state.itemsToShow && (
+                            <VirtualList
+                                itemsToShow={this.state.itemsToShow}
+                                onShowMoreItems={this.onShowMoreItems}
+                                items={externalRefs.map((uri, i) => (
+                                    /* don't sort, to avoid jerky UI as new repo results come in */
                                     <FileMatch
                                         key={i}
                                         expanded={true}
-                                        result={refsToFileMatch(uri, this.props.rev, refsByUri[uri])}
-                                        icon={RepoIcon}
-                                        onSelect={this.logLocalSelection}
+                                        result={refsToFileMatch(uri, undefined, refsByUri[uri])}
+                                        icon={GlobeIcon}
+                                        onSelect={this.logExternalSelection}
                                         showAllMatches={true}
                                     />
                                 ))}
-                        />
-                    )}
-                    {this.state.group === 'external' && (
-                        <VirtualList
-                            initItemsToShow={3}
-                            listId="references-external"
-                            items={externalRefs.map((uri, i) => (
-                                /* don't sort, to avoid jerky UI as new repo results come in */
-                                <FileMatch
-                                    key={i}
-                                    expanded={true}
-                                    result={refsToFileMatch(uri, undefined, refsByUri[uri])}
-                                    icon={GlobeIcon}
-                                    onSelect={this.logExternalSelection}
-                                    showAllMatches={true}
-                                />
-                            ))}
-                        />
-                    )}
+                            />
+                        )}
                 </div>
             </div>
         )
+    }
+
+    private onShowMoreItems = (): void => {
+        this.setState(state => ({ itemsToShow: state.itemsToShow + 3 }))
     }
 
     private onDismiss = (): void => {
