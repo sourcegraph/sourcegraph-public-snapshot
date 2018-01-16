@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { RouteComponentProps, RouteProps } from 'react-router'
-import { APIExplorer } from './api/APIExplorer'
+import { APIConsole } from './api/APIConsole'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
@@ -115,8 +115,8 @@ export const routes: LayoutRouteProps[] = [
         forceNarrowWidth: true,
     },
     {
-        path: '/api/explorer',
-        component: APIExplorer,
+        path: '/api/console',
+        component: APIConsole,
         exact: true,
     },
     {

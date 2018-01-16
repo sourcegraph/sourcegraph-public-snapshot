@@ -12,7 +12,7 @@ var relayHandler = &relay.Handler{Schema: graphqlbackend.GraphQLSchema}
 
 func serveGraphQL(w http.ResponseWriter, r *http.Request) (err error) {
 	if r.Method == "GET" {
-		// Allow displaying in an iframe on the /api/explorer page.
+		// Allow displaying in an iframe on the /api/console page.
 		w.Header().Set("x-frame-options", "SAMEORIGIN")
 
 		w.Header().Set("content-type", "text/html")

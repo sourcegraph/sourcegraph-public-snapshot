@@ -43,7 +43,7 @@ const (
 	routeSiteAdmin     = "site-admin"
 	routePasswordReset = "password-reset"
 	routeBrowseRepos   = "browse"
-	routeAPIExplorer   = "api-explorer"
+	routeAPIConsole    = "api-console"
 
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
@@ -106,7 +106,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
 	r.Path("/browse").Methods("GET").Name(routeBrowseRepos)
-	r.Path("/api/explorer").Methods("GET").Name(routeAPIExplorer)
+	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 
 	// Legacy redirects
@@ -153,7 +153,7 @@ func initRouter() {
 	router.Get(routeSiteAdmin).Handler(handler(serveBasicPageString("Admin - Sourcegraph")))
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))
 	router.Get(routeBrowseRepos).Handler(handler(serveBasicPageString("Browse repositories - Sourcegraph")))
-	router.Get(routeAPIExplorer).Handler(handler(serveBasicPageString("API explorer - Sourcegraph")))
+	router.Get(routeAPIConsole).Handler(handler(serveBasicPageString("API explorer - Sourcegraph")))
 	router.Get(routeRepoSettings).Handler(handler(serveBasicPageString("Repository settings - Sourcegraph")))
 
 	// Legacy redirects

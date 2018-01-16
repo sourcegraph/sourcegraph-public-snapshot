@@ -151,7 +151,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                 </ul>
                 <div className="sidebar__item sidebar__action">
                     <NavLink
-                        to="/api/explorer"
+                        to="/api/console"
                         className="sidebar__action-button btn"
                         activeClassName="sidebar__item--active"
                     >

@@ -28,7 +28,7 @@ export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
                 </li>
             </ul>
             <div className="sidebar__item sidebar__action">
-                <Link to="/api/explorer" className="sidebar__action-button btn">
+                <Link to="/api/console" className="sidebar__action-button btn">
                     <GlobeIcon className="icon-inline sidebar__action-icon" />
                     API console
                 </Link>

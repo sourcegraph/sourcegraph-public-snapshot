@@ -10,7 +10,7 @@ interface State {
     initialIframeSrc: string
 }
 
-export class APIExplorer extends React.PureComponent<Props, State> {
+export class APIConsole extends React.PureComponent<Props, State> {
     private updates = new Subject<Props>()
     private subscriptions = new Subscription()
 
@@ -42,14 +42,14 @@ export class APIExplorer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="api-explorer">
-                <h2>Sourcegraph GraphQL API</h2>
-                <div className="alert alert-notice api-explorer__alert">
+            <div className="api-console">
+                <h2>Sourcegraph GraphQL API console</h2>
+                <div className="alert alert-notice api-console__alert">
                     The API console uses your <strong>real production data</strong>.
                 </div>
                 <iframe
                     ref={this.setIframeRef}
-                    className="api-explorer__iframe"
+                    className="api-console__iframe"
                     src={`/.api/graphql?${encodeURIComponent(this.state.initialIframeSrc)}`}
                 />
             </div>
