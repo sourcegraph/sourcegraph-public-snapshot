@@ -20,6 +20,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
 	"golang.org/x/net/trace"
 
 	"github.com/neelance/parallel"
@@ -220,6 +221,9 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Server.handleExec")
+	defer span.Finish()
+
 	var req protocol.ExecRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -232,7 +236,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w = fw
 	defer fw.Close()
 
-	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout(req.Args))
+	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
 	defer cancel()
 
 	start := time.Now()
@@ -399,7 +403,7 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
 			s.releaseCloneLock(dir)
 		}()
 
-		log15.Debug("cloning repo", "repo", repoPath)
+		log15.Debug("cloning repo", "repo", repoPath, "origin", origin)
 		cmd := cloneCmd(ctx, origin, filepath.Join(dir, ".git"))
 		if output, err := s.runWithRemoteOpts(cmd, repoPath); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))

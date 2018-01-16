@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
 const repoCleanupInterval = 24 * time.Hour
@@ -31,6 +32,7 @@ var (
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
+	tracer.Init("gitserver")
 
 	// Filter log output by level.
 	lvl, err := log15.LvlFromString(env.LogLevel)
