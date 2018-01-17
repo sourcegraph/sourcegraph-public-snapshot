@@ -64,13 +64,13 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <h2>Settings</h2>
                 {this.state.loading && <LoaderIcon className="icon-inline" />}
                 {this.state.error && <div className="alert alert-danger">{this.state.error}</div>}
-                <form className="repo-settings-options-page__form form-inline">
+                <form className="settings-page__form form-inline">
                     <dl className="form-group">
                         <dt className="input-label">Repository name</dt>
                         <dd>
                             <input
                                 type="text"
-                                className="form-control repo-settings-options-page__form-control"
+                                className="form-control settings-page__form-control"
                                 readOnly={true}
                                 disabled={true}
                                 value={this.state.repo.uri}
@@ -83,7 +83,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                                 Rename
                             </button>
                         </dd>
-                        <p className="repo-settings-options-page__form-notice">
+                        <p className="settings-page__form-notice">
                             <small>
                                 This repository's name is set by its{' '}
                                 {this.state.repo.viewerCanAdminister ? (
