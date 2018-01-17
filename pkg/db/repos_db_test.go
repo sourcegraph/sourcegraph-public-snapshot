@@ -33,7 +33,7 @@ func repoURIs(repos []*sourcegraph.Repo) []string {
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *sourcegraph.Repo) {
-	if err := Repos.TryInsertNew(ctx, repo.URI, repo.Description, repo.Fork, repo.Private); err != nil {
+	if err := Repos.TryInsertNew(ctx, repo.URI, repo.Description, repo.Fork, repo.Private, true); err != nil {
 		t.Fatal(err)
 	}
 }

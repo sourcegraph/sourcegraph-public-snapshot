@@ -84,7 +84,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true, true); err != nil {
 		t.Fatal(err)
 	}
 	rp, err := Repos.GetByURI(ctx, "myrepo")
@@ -162,7 +162,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true, true); err != nil {
 		t.Fatal(err)
 	}
 	rp, err := Repos.GetByURI(ctx, "myrepo")
@@ -248,7 +248,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	repoIDs := make([]int32, 5)
 	for i := 0; i < 5; i++ {
 		uri := fmt.Sprintf("myrepo-%d", i)
-		if err := Repos.TryInsertNew(ctx, uri, "", false, true); err != nil {
+		if err := Repos.TryInsertNew(ctx, uri, "", false, true, true); err != nil {
 			t.Fatal(err)
 		}
 		rp, err := Repos.GetByURI(ctx, uri)

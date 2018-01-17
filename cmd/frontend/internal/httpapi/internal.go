@@ -74,7 +74,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	for _, uri := range whitelist {
-		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, false)
+		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, false, true)
 		if err != nil {
 			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)
 		}
@@ -111,7 +111,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Repos.TryInsertNew(r.Context(), repo.URI, repo.Description, repo.Fork, repo.Private)
+	err = backend.Repos.TryInsertNew(r.Context(), repo.URI, repo.Description, repo.Fork, repo.Private, repo.Enabled)
 	if err != nil {
 		return err
 	}

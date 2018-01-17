@@ -46,7 +46,7 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 
 func updateRepo(ctx context.Context, repoConf schema.Repository) error {
 	uri := repoConf.Path
-	repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, uri, "", false, false)
+	repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, uri, "", false, false, true)
 	if err != nil {
 		return err
 	}

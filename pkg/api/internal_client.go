@@ -86,12 +86,13 @@ func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri, revision str
 	return nil
 }
 
-func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, private bool) (*Repo, error) {
+func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, private, enabled bool) (*Repo, error) {
 	req, err := json.Marshal(RepoCreateOrUpdateRequest{
 		URI:         uri,
 		Description: description,
 		Fork:        fork,
 		Private:     private,
+		Enabled:     enabled,
 	})
 	if err != nil {
 		return nil, err

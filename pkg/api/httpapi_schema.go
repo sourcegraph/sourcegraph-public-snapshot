@@ -10,6 +10,7 @@ type RepoCreateOrUpdateRequest struct {
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
 	Private     bool   `json:"private"`
+	Enabled     bool   `json:"enabled"`
 }
 
 type RepoUpdateIndexRequest struct {

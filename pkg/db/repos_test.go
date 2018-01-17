@@ -71,7 +71,7 @@ func TestRepos_Delete(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false, true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -146,7 +146,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false, true); err != nil {
 		t.Fatal(err)
 	}
 

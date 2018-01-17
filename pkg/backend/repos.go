@@ -46,8 +46,8 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 	return db.Repos.GetByURI(ctx, uri)
 }
 
-func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
-	return db.Repos.TryInsertNew(ctx, uri, description, fork, private)
+func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private, enabled bool) error {
+	return db.Repos.TryInsertNew(ctx, uri, description, fork, private, enabled)
 }
 
 func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (res *sourcegraph.RepoList, err error) {
