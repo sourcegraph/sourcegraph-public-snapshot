@@ -77,7 +77,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                             disabled={this.state.loading}
                             data-tooltip="Disable access to the repository. Users will be unable to view and search it."
                         >
-                            Disable access
+                            Disable
                         </button>
                     ) : (
                         <button
@@ -86,7 +86,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                             disabled={this.state.loading}
                             data-tooltip="Enable access to the repository. Users will be able to view and search it."
                         >
-                            Enable access
+                            Enable
                         </button>
                     )}
                     {this.state.errorDescription && (
