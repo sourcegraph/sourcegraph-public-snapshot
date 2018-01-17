@@ -184,6 +184,28 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
     )
 }
 
+export function checkMirrorRepositoryConnection(args: {
+    repository: GQLID
+}): Observable<GQL.ICheckMirrorRepositoryConnectionResult> {
+    return mutateGraphQL(
+        gql`
+            mutation CheckMirrorRepositoryConnection($repository: ID!) {
+                checkMirrorRepositoryConnection(repository: $repository) {
+                    error
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.checkMirrorRepositoryConnection || (errors && errors.length > 0)) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.checkMirrorRepositoryConnection
+        })
+    )
+}
+
 export function deleteRepository(repository: GQLID): Observable<void> {
     return mutateGraphQL(
         gql`

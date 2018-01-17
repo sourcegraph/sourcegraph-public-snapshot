@@ -302,20 +302,41 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo string) error {
 	return nil
 }
 
-// IsRepoCloneable returns true if the repository is cloneable.
-func (c *Client) IsRepoCloneable(ctx context.Context, repo string) (bool, error) {
+// IsRepoCloneable returns nil if the repository is cloneable.
+func (c *Client) IsRepoCloneable(ctx context.Context, repo string) error {
 	req := &protocol.IsRepoCloneableRequest{
 		Repo: repo,
 	}
-	resp, err := c.httpPost(ctx, repo, "is-repo-cloneable", req)
+	r, err := c.httpPost(ctx, repo, "is-repo-cloneable", req)
 	if err != nil {
-		return false, err
+		return err
 	}
-	defer resp.Body.Close()
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
 
+	// Try unmarshaling new response format (?v=2) first.
+	var resp protocol.IsRepoCloneableResponse
+	if err := json.Unmarshal(body, &resp); err == nil {
+		if resp.Cloneable {
+			return nil
+		}
+		return fmt.Errorf("repository is not cloneable: %s", resp.Reason)
+	}
+
+	// Backcompat (gitserver is old, does not recognize ?v=2)
+	//
+	// TODO(sqs): remove when unneeded
 	var cloneable bool
-	err = json.NewDecoder(resp.Body).Decode(&cloneable)
-	return cloneable, err
+	if err := json.Unmarshal(body, &cloneable); err != nil {
+		return err
+	}
+	if cloneable {
+		return nil
+	}
+	return errors.New("repository is not cloneable (no reason given)")
 }
 
 func (c *Client) IsRepoCloned(ctx context.Context, repo string) (bool, error) {

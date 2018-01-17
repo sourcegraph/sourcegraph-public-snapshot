@@ -157,8 +157,17 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cloneable := s.isCloneable(r.Context(), req.Repo)
-	if err := json.NewEncoder(w).Encode(cloneable); err != nil {
+	var resp protocol.IsRepoCloneableResponse
+	if err := s.isCloneable(r.Context(), req.Repo); err == nil {
+		resp = protocol.IsRepoCloneableResponse{Cloneable: true}
+	} else {
+		resp = protocol.IsRepoCloneableResponse{
+			Cloneable: false,
+			Reason:    err.Error(),
+		}
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -358,8 +367,8 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
 	if origin == "" {
 		return fmt.Errorf("error cloning repo: no origin map entry found for %s", repoPath)
 	}
-	if !s.isCloneable(ctx, repoPath) {
-		return fmt.Errorf("error cloning repo: repo %s not cloneable", repoPath)
+	if err := s.isCloneable(ctx, repoPath); err != nil {
+		return fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repoPath, err)
 	}
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
@@ -404,29 +413,35 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
 
 // testRepoExists is a test fixture that overrides the return value
 // for isCloneable when it is set.
-var testRepoExists func(ctx context.Context, origin string, repoURI string) bool
+var testRepoExists func(ctx context.Context, origin string, repoURI string) error
 
 // isCloneable checks to see if the repo is cloneable.
-func (s *Server) isCloneable(ctx context.Context, repo string) bool {
+func (s *Server) isCloneable(ctx context.Context, repo string) error {
 	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(nil))
 	defer cancel()
 
 	if strings.ToLower(repo) == "github.com/sourcegraphtest/alwayscloningtest" {
-		return true
+		return nil
 	}
 
 	repo = protocol.NormalizeRepo(repo)
 	origin := OriginMap(repo)
 	if origin == "" {
-		return false
+		return fmt.Errorf("repo %q not in origin map", repo)
 	}
 
 	if testRepoExists != nil {
 		return testRepoExists(ctx, origin, repo)
 	}
 	cmd := exec.CommandContext(ctx, "git", "ls-remote", origin, "HEAD")
-	_, err := s.runWithRemoteOpts(cmd, repo)
-	return err == nil
+	out, err := s.runWithRemoteOpts(cmd, repo)
+	if err != nil {
+		if len(out) > 0 {
+			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
+		}
+		return err
+	}
+	return nil
 }
 
 var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{

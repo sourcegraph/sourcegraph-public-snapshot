@@ -114,11 +114,8 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				return nil, err
 			}
 		}
-		cloneable, err := gitserver.DefaultClient.IsRepoCloneable(ctx, uri)
-		if err != nil {
-			return nil, err
-		}
-		if !cloneable {
+
+		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, uri); err != nil {
 			return nil, ErrRepoNotFound
 		}
 		if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {

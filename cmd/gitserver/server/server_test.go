@@ -82,8 +82,11 @@ func TestRequest(t *testing.T) {
 		return dir == "/testroot/github.com/gorilla/mux"
 	}
 
-	testRepoExists = func(ctx context.Context, origin string, repo string) bool {
-		return origin == "https://github.com/nicksnyder/go-i18n.git"
+	testRepoExists = func(ctx context.Context, origin string, repo string) error {
+		if origin == "https://github.com/nicksnyder/go-i18n.git" {
+			return nil
+		}
+		return errors.New("not cloneable")
 	}
 	defer func() {
 		testRepoExists = nil
