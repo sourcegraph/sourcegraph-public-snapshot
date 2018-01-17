@@ -57,46 +57,52 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                     </ul>
                 </div>
                 <div className="site-admin-detail-list__actions site-admin-repositories-page__actions">
-                    <Link
-                        className="btn btn-primary btn-sm site-admin-detail-list__action"
-                        to={`/${this.props.node.uri}/-/settings`}
-                        title="Repository settings"
-                    >
-                        <GearIcon className="icon-inline" /> Settings
-                    </Link>
-                    <Link
-                        to={`/${this.props.node.uri}`}
-                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                        title="Explore files in repository"
-                    >
-                        <RepoIcon className="icon-inline" />
-                        View
-                    </Link>
+                    {this.props.node.enabled && (
+                        <Link
+                            className="btn btn-primary btn-sm site-admin-detail-list__action"
+                            to={`/${this.props.node.uri}/-/settings`}
+                            data-tooltip="Repository settings"
+                        >
+                            <GearIcon className="icon-inline" /> Settings
+                        </Link>
+                    )}
+                    {this.props.node.enabled && (
+                        <Link
+                            className="btn btn-primary btn-sm site-admin-detail-list__action"
+                            to={`/${this.props.node.uri}`}
+                            data-tooltip="View repository"
+                        >
+                            <RepoIcon className="icon-inline" />
+                        </Link>
+                    )}
                     {this.props.node.enabled ? (
                         <button
                             className="btn btn-secondary btn-sm site-admin-detail-list__action"
                             onClick={this.disableRepository}
                             disabled={this.state.loading}
-                            title="Disable access to the repository. It will not appear in search results or in the repositories list."
+                            data-tooltip="Disable access to the repository. It will not appear in search results or in the repositories list."
                         >
                             Disable access
                         </button>
                     ) : (
                         <button
-                            className="btn btn-secondary btn-sm site-admin-detail-list__action"
+                            className="btn btn-success btn-sm site-admin-detail-list__action"
                             onClick={this.enableRepository}
                             disabled={this.state.loading}
+                            data-tooltip="Enable access to the repository. Users will be able to view and search it."
                         >
                             Enable access
                         </button>
                     )}
-                    <button
-                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                        onClick={this.deleteRepository}
-                        disabled={this.state.loading}
-                    >
-                        Delete
-                    </button>
+                    {!this.props.node.enabled && (
+                        <button
+                            className="btn btn-secondary btn-sm site-admin-detail-list__action"
+                            onClick={this.deleteRepository}
+                            disabled={this.state.loading}
+                        >
+                            Delete
+                        </button>
+                    )}
                     {this.state.errorDescription && (
                         <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
                     )}

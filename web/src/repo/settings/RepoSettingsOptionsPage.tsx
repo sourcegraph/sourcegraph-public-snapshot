@@ -10,69 +10,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { deleteRepository, setRepositoryEnabled } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
-
-interface ActionContainerProps {
-    title: React.ReactChild
-    description: React.ReactChild
-    buttonLabel: React.ReactChild
-    run: () => Promise<void>
-}
-
-interface ActionContainerState {
-    loading: boolean
-    updated: boolean
-    error?: string
-}
-
-class ActionContainer extends React.PureComponent<ActionContainerProps, ActionContainerState> {
-    public state: ActionContainerState = {
-        loading: false,
-        updated: false,
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div className="repo-settings-options-page__action">
-                <div className="repo-settings-options-page__action-description">
-                    <h4 className="repo-settings-options-page__action-title">{this.props.title}</h4>
-                    {this.props.description}
-                </div>
-                <div className="repo-settings-options-page__action-btn-container">
-                    <button
-                        className="btn btn-primary repo-settings-options-page__action-btn"
-                        onClick={this.onClick}
-                        disabled={this.state.loading}
-                    >
-                        {this.props.buttonLabel}
-                    </button>
-                    <div
-                        className={
-                            'repo-settings-options-page__updated' +
-                            (this.state.updated ? ' repo-settings-options-page__updated--visible' : '')
-                        }
-                    >
-                        <small>Updated</small>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    private onClick = () => {
-        this.setState({
-            error: undefined,
-            loading: true,
-        })
-
-        this.props.run().then(
-            () => {
-                this.setState({ loading: false, updated: true })
-                setTimeout(() => this.setState({ updated: false }), 1000)
-            },
-            err => this.setState({ loading: false, error: err.message })
-        )
-    }
-}
+import { ActionContainer } from './components/ActionContainer'
 
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
@@ -166,6 +104,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             : 'The repository was disabled by a site admin. Enable it to allow users to search and view the repository.'
                     }
                     buttonLabel={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
+                    flashText="Updated"
                     run={this.state.repo.enabled ? this.disableRepository : this.enableRepository}
                 />
                 <ActionContainer
