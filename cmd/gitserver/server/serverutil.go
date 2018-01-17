@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,7 +18,7 @@ import (
 )
 
 // runWithRemoteOpts runs the command after applying the remote options.
-func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, repoURI string) ([]byte, error) {
+func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, repoURI string) ([]byte, error) {
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 
 	// Suppress asking to add SSH host key to known_hosts (which will hang because
@@ -48,7 +49,7 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, repoURI string) ([]byte, error
 	var b bytes.Buffer
 	cmd.Stdout = &b
 	cmd.Stderr = &b
-	err, _ := runCommand(cmd)
+	err, _ := runCommand(ctx, cmd)
 	return b.Bytes(), err
 }
 

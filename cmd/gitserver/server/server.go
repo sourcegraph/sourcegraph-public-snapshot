@@ -32,7 +32,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
-var runCommand = func(cmd *exec.Cmd) (error, int) { // mocked by tests
+var runCommand = func(ctx context.Context, cmd *exec.Cmd) (error, int) { // mocked by tests
+	span, ctx := opentracing.StartSpanFromContext(ctx, "runCommand")
+	span.SetTag("path", cmd.Path)
+	span.SetTag("args", cmd.Args)
+	span.SetTag("dir", cmd.Dir)
+	defer span.Finish()
+
 	err := cmd.Run()
 	exitStatus := -10810
 	if cmd.ProcessState != nil { // is nil if process failed to start
@@ -338,7 +344,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	cmd.Stderr = stderrW
 
 	var err error
-	err, exitStatus = runCommand(cmd)
+	err, exitStatus = runCommand(ctx, cmd)
 	if err != nil {
 		errStr = err.Error()
 	}
@@ -399,7 +405,7 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
 
 		log15.Debug("cloning repo", "repo", repoPath, "origin", origin)
 		cmd := cloneCmd(ctx, origin, filepath.Join(dir, ".git"))
-		if output, err := s.runWithRemoteOpts(cmd, repoPath); err != nil {
+		if output, err := s.runWithRemoteOpts(ctx, cmd, repoPath); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))
 			return
 		}
@@ -432,7 +438,7 @@ func (s *Server) isCloneable(ctx context.Context, repo string) error {
 		return testRepoExists(ctx, origin, repo)
 	}
 	cmd := exec.CommandContext(ctx, "git", "ls-remote", origin, "HEAD")
-	out, err := s.runWithRemoteOpts(cmd, repo)
+	out, err := s.runWithRemoteOpts(ctx, cmd, repo)
 	if err != nil {
 		if len(out) > 0 {
 			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
@@ -515,7 +521,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo string) {
 func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 	cmd := exec.CommandContext(ctx, "git", "remote", "update", "--prune")
 	cmd.Dir = path.Join(s.ReposDir, repo)
-	if output, err := s.runWithRemoteOpts(cmd, repo); err != nil {
+	if output, err := s.runWithRemoteOpts(ctx, cmd, repo); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return
 	}
@@ -525,7 +531,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 	// try to fetch HEAD from origin
 	cmd = exec.CommandContext(ctx, "git", "remote", "show", "origin")
 	cmd.Dir = path.Join(s.ReposDir, repo)
-	output, err := s.runWithRemoteOpts(cmd, repo)
+	output, err := s.runWithRemoteOpts(ctx, cmd, repo)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
 		return
