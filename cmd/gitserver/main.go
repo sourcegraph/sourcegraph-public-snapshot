@@ -13,6 +13,9 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	opentracing "github.com/opentracing/opentracing-go"
+
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -70,7 +73,9 @@ func main() {
 		}()
 	}
 
+	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
+
 	log15.Info("git-server: listening", "addr", ":3178")
-	srv := &http.Server{Addr: ":3178", Handler: gitserver.Handler()}
+	srv := &http.Server{Addr: ":3178", Handler: handler}
 	log.Fatal(srv.ListenAndServe())
 }
