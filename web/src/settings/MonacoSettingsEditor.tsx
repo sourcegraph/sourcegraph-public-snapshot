@@ -35,8 +35,8 @@ interface State {
 export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     public state: State = {}
 
-    private monaco: typeof monaco | null
-    private editor: monaco.editor.ICodeEditor | null
+    private monaco: typeof monaco | null = null
+    private editor: monaco.editor.ICodeEditor | null = null
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()

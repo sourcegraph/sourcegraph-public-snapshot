@@ -47,8 +47,8 @@ const disposableToFn = (disposable: monaco.IDisposable) => () => disposable.disp
 export class SettingsFile extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
-    private editor: monaco.editor.ICodeEditor
-    private monaco: typeof monaco | null
+    private editor?: monaco.editor.ICodeEditor
+    private monaco: typeof monaco | null = null
 
     constructor(props: Props) {
         super(props)

@@ -43,8 +43,8 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
     private sizeUpdates = new Subject<number>()
     private subscriptions = new Subscription()
 
-    private containerRef: HTMLElement | null
-    private ghostRef: HTMLElement | null
+    private containerRef: HTMLElement | null = null
+    private ghostRef: HTMLElement | null = null
 
     constructor(props: Props<C>) {
         super(props)

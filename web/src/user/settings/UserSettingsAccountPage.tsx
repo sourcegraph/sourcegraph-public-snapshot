@@ -36,7 +36,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private subscriptions = new Subscription()
 
-    private newPasswordConfirmationField: HTMLInputElement | null
+    private newPasswordConfirmationField: HTMLInputElement | null = null
     private setNewPasswordConfirmationField = (e: HTMLInputElement | null) => (this.newPasswordConfirmationField = e)
 
     public componentDidMount(): void {

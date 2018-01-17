@@ -36,7 +36,7 @@
     ]
   },
   "devDependencies": {
-    "@sourcegraph/tsconfig": "^2.0.0",
+    "@sourcegraph/tsconfig": "^3.0.0",
     "@sourcegraph/tslint-config": "^11.0.0",
     "@types/copy-webpack-plugin": "^4.0.1",
     "@types/d3-scale": "^1.0.10",
@@ -98,7 +98,7 @@
     "ts-node": "^3.3.0",
     "tslint": "^5.8.0",
     "tslint-language-service": "^0.9.6",
-    "typescript": "^2.7.0-insiders.20171214",
+    "typescript": "~2.7.0-rc",
     "webpack": "^3.10.0",
     "webpack-bundle-analyzer": "^2.9.1",
     "webpack-dev-server": "^2.10.0"

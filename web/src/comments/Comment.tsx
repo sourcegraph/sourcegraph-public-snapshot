@@ -18,7 +18,7 @@ interface State {
 }
 
 export class Comment extends React.Component<Props, State> {
-    private scrollToElement: HTMLElement | null
+    private scrollToElement: HTMLElement | null = null
 
     public state: State = {
         copiedLink: false,

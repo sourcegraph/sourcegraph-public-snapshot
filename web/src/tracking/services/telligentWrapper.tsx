@@ -5,7 +5,7 @@ declare global {
 }
 
 class TelligentWrapper {
-    private telligent: (...args: any[]) => void | null
+    private telligent?: (...args: any[]) => void | null
     private DEV_ENV = 'development'
     private PROD_ENV = 'production'
 

@@ -30,7 +30,7 @@ interface State {
 }
 
 export class CodeExcerpt extends React.PureComponent<Props, State> {
-    private tableContainerElement: HTMLElement | null
+    private tableContainerElement: HTMLElement | null = null
     private isVisible = false
     private subscriptions = new Subscription()
 

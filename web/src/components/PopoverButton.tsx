@@ -48,8 +48,8 @@ export class PopoverButton extends React.PureComponent<Props, State> {
 
     private subscriptions = new Subscription()
 
-    private rootRef: HTMLElement | null
-    private popoverRef: HTMLDivElement | null
+    private rootRef: HTMLElement | null = null
+    private popoverRef: HTMLDivElement | null = null
 
     constructor(props: Props) {
         super(props)

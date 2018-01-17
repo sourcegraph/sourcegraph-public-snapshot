@@ -53,8 +53,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
-    private monaco: typeof monaco | null
-    private configEditor: monaco.editor.ICodeEditor
+    private monaco: typeof monaco | null = null
+    private configEditor?: monaco.editor.ICodeEditor
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
@@ -342,7 +342,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         }
     }
 
-    private runAction(id: string, editor: monaco.editor.ICodeEditor): void {
+    private runAction(id: string, editor?: monaco.editor.ICodeEditor): void {
         if (editor) {
             const action = editor.getAction(id)
             action.run().done(() => void 0, (err: any) => console.error(err))

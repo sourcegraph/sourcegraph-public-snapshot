@@ -48,7 +48,7 @@ interface State {
  * highlighting).
  */
 export class DecoratedTextLines extends React.PureComponent<Props, State> {
-    private tableContainerElement: HTMLElement | null
+    private tableContainerElement: HTMLElement | null = null
 
     constructor(props: Props) {
         super(props)

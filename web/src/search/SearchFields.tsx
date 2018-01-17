@@ -20,11 +20,11 @@ interface State {
  * The individual input fields for the various elements of the search query syntax.
  */
 export class SearchFields extends React.Component<Props, State> {
-    private repoFieldInput: HTMLInputElement | null
-    private fileFieldInput: HTMLInputElement | null
-    private patternsFieldInput: HTMLInputElement | null
-    private quotedTermFieldInput: HTMLInputElement | null
-    private caseFieldInput: HTMLSelectElement | null
+    private repoFieldInput: HTMLInputElement | null = null
+    private fileFieldInput: HTMLInputElement | null = null
+    private patternsFieldInput: HTMLInputElement | null = null
+    private quotedTermFieldInput: HTMLInputElement | null = null
+    private caseFieldInput: HTMLSelectElement | null = null
 
     constructor(props: Props) {
         super(props)

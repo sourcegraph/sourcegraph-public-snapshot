@@ -23,8 +23,8 @@ export class Tooltip extends React.PureComponent<Props, State> {
 
     public state: State = {}
 
-    private containerRef: HTMLElement | null
-    private tooltipRef: HTMLElement | null
+    private containerRef: HTMLElement | null = null
+    private tooltipRef: HTMLElement | null = null
     private _timeout?: number
 
     /**

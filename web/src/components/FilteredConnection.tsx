@@ -144,7 +144,7 @@ export class FilteredConnection<
     private componentUpdates = new Subject<FilteredConnectionProps<C, N, NP>>()
     private subscriptions = new Subscription()
 
-    private filterRef: HTMLInputElement | null
+    private filterRef: HTMLInputElement | null = null
 
     public constructor(props: FilteredConnectionProps<C, N, NP>) {
         super(props)
