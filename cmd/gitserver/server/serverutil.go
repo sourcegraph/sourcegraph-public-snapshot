@@ -113,7 +113,13 @@ var repoCloned = func(dir string) bool {
 var repoLastFetched = func(dir string) (time.Time, error) {
 	fi, err := os.Stat(filepath.Join(dir, "FETCH_HEAD"))
 	if os.IsNotExist(err) {
+		fi, err = os.Stat(filepath.Join(dir, ".git", "FETCH_HEAD"))
+	}
+	if os.IsNotExist(err) {
 		fi, err = os.Stat(filepath.Join(dir, "HEAD"))
+	}
+	if os.IsNotExist(err) {
+		fi, err = os.Stat(filepath.Join(dir, ".git", "HEAD"))
 	}
 	if err != nil {
 		return time.Time{}, err

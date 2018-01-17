@@ -595,6 +595,10 @@ func (s *Server) ensureRevision(ctx context.Context, repo string, rev string, re
 func quickRevParseHead(dir string) (string, error) {
 	// See if HEAD contains a commit hash and return it if so.
 	head, err := ioutil.ReadFile(filepath.Join(dir, "HEAD"))
+	if os.IsNotExist(err) {
+		dir = filepath.Join(dir, ".git")
+		head, err = ioutil.ReadFile(filepath.Join(dir, "HEAD"))
+	}
 	if err != nil {
 		return "", err
 	}
