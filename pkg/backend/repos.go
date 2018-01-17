@@ -50,7 +50,7 @@ func (s *repos) TryInsertNew(ctx context.Context, uri string, description string
 	return db.Repos.TryInsertNew(ctx, uri, description, fork, private)
 }
 
-func (s *repos) List(ctx context.Context, opt *db.ReposListOptions) (res *sourcegraph.RepoList, err error) {
+func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (res *sourcegraph.RepoList, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}

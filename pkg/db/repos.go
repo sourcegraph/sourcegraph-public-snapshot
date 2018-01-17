@@ -314,7 +314,7 @@ type ReposListOptions struct {
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
-func (s *repos) List(ctx context.Context, opt *ReposListOptions) (results []*sourcegraph.Repo, err error) {
+func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*sourcegraph.Repo, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "repos.List")
 	tr := trace.New(traceName, "")
 	defer func() {
@@ -329,10 +329,7 @@ func (s *repos) List(ctx context.Context, opt *ReposListOptions) (results []*sou
 		return Mocks.Repos.List(ctx, opt)
 	}
 
-	if opt == nil {
-		opt = &ReposListOptions{}
-	}
-	conds, err := s.listSQL(*opt)
+	conds, err := s.listSQL(opt)
 	if err != nil {
 		return nil, err
 	}
@@ -389,15 +386,14 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
 	}
 
-	var enabledConds []*sqlf.Query
-	if opt.Enabled {
-		enabledConds = append(enabledConds, sqlf.Sprintf(`enabled`))
-	}
-	if opt.Disabled {
-		enabledConds = append(enabledConds, sqlf.Sprintf(`NOT enabled`))
-	}
-	if len(enabledConds) > 0 {
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(enabledConds, " OR ")))
+	if opt.Enabled && opt.Disabled {
+		// nothing to do
+	} else if opt.Enabled && !opt.Disabled {
+		conds = append(conds, sqlf.Sprintf("enabled"))
+	} else if !opt.Enabled && opt.Disabled {
+		conds = append(conds, sqlf.Sprintf("NOT enabled"))
+	} else {
+		return nil, errors.New("Repos.List: must specify at least one of Enabled=true or Disabled=true")
 	}
 
 	return conds, nil

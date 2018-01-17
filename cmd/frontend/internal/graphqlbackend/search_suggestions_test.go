@@ -53,9 +53,9 @@ func TestSearchSuggestions(t *testing.T) {
 
 	t.Run("single term", func(t *testing.T) {
 		var calledReposListAll, calledReposListFoo bool
-		db.Mocks.Repos.List = func(_ context.Context, op *db.ReposListOptions) ([]*sourcegraph.Repo, error) {
-			wantFoo := &db.ReposListOptions{IncludePatterns: []string{"foo"}, ListOptions: listOpts} // when treating term as repo: field
-			wantAll := &db.ReposListOptions{ListOptions: listOpts}                                   // when treating term as text query
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*sourcegraph.Repo, error) {
+			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, ListOptions: listOpts} // when treating term as repo: field
+			wantAll := db.ReposListOptions{Enabled: true, ListOptions: listOpts}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
 				return []*sourcegraph.Repo{{URI: "bar-repo"}}, nil
@@ -105,11 +105,11 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repogroup: and single term", func(t *testing.T) {
 		var mu sync.Mutex
 		var calledReposListReposInGroup, calledReposListFooRepo3 bool
-		db.Mocks.Repos.List = func(_ context.Context, op *db.ReposListOptions) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*sourcegraph.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			wantReposInGroup := &db.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, ListOptions: listOpts}    // when treating term as repo: field
-			wantFooRepo3 := &db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, ListOptions: listOpts} // when treating term as repo: field
+			wantReposInGroup := db.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, Enabled: true, ListOptions: listOpts}    // when treating term as repo: field
+			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, Enabled: true, ListOptions: listOpts} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListReposInGroup = true
 				return []*sourcegraph.Repo{{URI: "foo-repo1"}, {URI: "repo3"}}, nil
@@ -191,11 +191,11 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repo: field", func(t *testing.T) {
 		var mu sync.Mutex
 		calledReposList := false
-		db.Mocks.Repos.List = func(_ context.Context, op *db.ReposListOptions) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*sourcegraph.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (&db.ReposListOptions{IncludePatterns: []string{"foo"}, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
+			if want := (db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil
@@ -226,11 +226,11 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repo: and file: field", func(t *testing.T) {
 		var mu sync.Mutex
 		calledReposList := false
-		db.Mocks.Repos.List = func(_ context.Context, op *db.ReposListOptions) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*sourcegraph.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (&db.ReposListOptions{IncludePatterns: []string{"foo"}, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
+			if want := (db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "foo-repo"}}, nil

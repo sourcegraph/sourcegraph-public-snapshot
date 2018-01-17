@@ -156,7 +156,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := Repos.List(ctx, nil)
+	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
 	if err != nil {
 		t.Fatal(err)
 	}

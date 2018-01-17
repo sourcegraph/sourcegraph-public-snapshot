@@ -218,7 +218,7 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	res, err := backend.Repos.List(r.Context(), &opt)
+	res, err := backend.Repos.List(r.Context(), opt)
 	if err != nil {
 		return err
 	}

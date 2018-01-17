@@ -84,7 +84,7 @@ func TestRepos_List(t *testing.T) {
 
 	want := mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
 
-	repos, err := Repos.List(ctx, nil)
+	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		{perPage: 4, page: 2, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, &ReposListOptions{ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
+		repos, err := Repos.List(ctx, ReposListOptions{ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -170,7 +170,7 @@ func TestRepos_List_query1(t *testing.T) {
 		{"jkl mno pqr", []string{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, &ReposListOptions{Query: test.query})
+		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -212,7 +212,7 @@ func TestRepos_List_query2(t *testing.T) {
 		{"def/m", []string{"def/mno"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, &ReposListOptions{Query: test.query})
+		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -266,7 +266,7 @@ func TestRepos_List_patterns(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, &ReposListOptions{
+		repos, err := Repos.List(ctx, ReposListOptions{
 			IncludePatterns: test.includePatterns,
 			ExcludePattern:  test.excludePattern,
 		})
@@ -284,14 +284,14 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
-		_, err := Repos.List(ctx, &ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
+		_, err := Repos.List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
 	t.Run("Query and ExcludePattern", func(t *testing.T) {
-		_, err := Repos.List(ctx, &ReposListOptions{Query: "x", ExcludePattern: "y"})
+		_, err := Repos.List(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}

@@ -42,7 +42,7 @@ func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) 
 	}
 
 	// Fastest way to see if even a single enabled repository exists.
-	repos, err := db.Repos.List(ctx, &db.ReposListOptions{
+	repos, err := db.Repos.List(ctx, db.ReposListOptions{
 		Enabled:     true,
 		Disabled:    false,
 		ListOptions: sourcegraph.ListOptions{PerPage: 1},
