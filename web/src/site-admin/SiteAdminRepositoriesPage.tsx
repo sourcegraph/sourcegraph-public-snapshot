@@ -163,14 +163,16 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         return (
             <div className="site-admin-detail-list site-admin-repositories-page">
                 <PageTitle title="Repositories" />
-                <h2>Repositories</h2>
-                <div className="site-admin-page__actions">
-                    <Link
-                        to="/site-admin/configuration"
-                        className="btn btn-primary btn-sm site-admin-page__actions-btn"
-                    >
-                        <GearIcon className="icon-inline" /> Configure repositories
-                    </Link>
+                <div className="site-admin-page__header">
+                    <h2 className="site-admin-page__header-title">Repositories</h2>
+                    <div className="site-admin-page__actions">
+                        <Link
+                            to="/site-admin/configuration"
+                            className="btn btn-primary btn-sm site-admin-page__actions-btn"
+                        >
+                            <GearIcon className="icon-inline" /> Configure repositories
+                        </Link>
+                    </div>
                 </div>
                 <FilteredRepositoryConnection
                     className="site-admin-page__filtered-connection"
