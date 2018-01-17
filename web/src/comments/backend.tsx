@@ -1,6 +1,8 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { makeRepoURI, ParsedRepoURI } from '../repo/index'
+import { memoizeObservable } from '../util/memoize'
 
 export const EPERMISSIONDENIED = 'EPERMISSIONDENIED'
 class PermissionDeniedError extends Error {
@@ -76,45 +78,50 @@ const threadFragment = gql`
     }
 `
 
+export function createSharedItemCacheKey(parsed: ParsedRepoURI & { ulid: string; isLightTheme: boolean }): string {
+    return makeRepoURI(parsed) + parsed.ulid + parsed.isLightTheme
+}
 /**
  * Fetches shared item by ULID
  *
  * @return Observable that emits the item or `null` if it doesn't exist
  */
-export function fetchSharedItem(ulid: string, isLightTheme: boolean): Observable<GQL.ISharedItem | null> {
-    return queryGraphQL(
-        gql`
-            query SharedItem($ulid: String!, $isLightTheme: Boolean!) {
-                sharedItem(ulid: $ulid) {
-                    author {
-                        displayName
-                    }
-                    public
-                    thread {
-                        ...SharedItemThreadFields
-                    }
-                    comment {
-                        id
-                        title
+export const fetchSharedItem = memoizeObservable(
+    (args: { ulid: string; isLightTheme: boolean }): Observable<GQL.ISharedItem | null> =>
+        queryGraphQL(
+            gql`
+                query SharedItem($ulid: String!, $isLightTheme: Boolean!) {
+                    sharedItem(ulid: $ulid) {
+                        author {
+                            displayName
+                        }
+                        public
+                        thread {
+                            ...SharedItemThreadFields
+                        }
+                        comment {
+                            id
+                            title
+                        }
                     }
                 }
-            }
-            ${sharedItemThreadFragment}
-        `,
-        { ulid, isLightTheme }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || errors) {
-                // TODO(slimsag): string comparison is bad practice, remove this
-                if (errors && errors[0].message === 'permission denied') {
-                    throw new PermissionDeniedError()
+                ${sharedItemThreadFragment}
+            `,
+            args
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || errors) {
+                    // TODO(slimsag): string comparison is bad practice, remove this
+                    if (errors && errors[0].message === 'permission denied') {
+                        throw new PermissionDeniedError()
+                    }
+                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
                 }
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-            }
-            return data.sharedItem
-        })
-    )
-}
+                return data.sharedItem
+            })
+        ),
+    createSharedItemCacheKey
+)
 
 /**
  * Fetches thread by ID.

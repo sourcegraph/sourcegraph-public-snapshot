@@ -209,17 +209,17 @@ func colorSwap(html string, isLightTheme bool) string {
 
 	// lightTheme is a map of old colors to new (light theme) colors.
 	lightTheme := map[string]string{
-		"#ffa8a8": "#2aa198",
-		"#72c3fc": "#657b83",
-		"#fff3bf": "#268bd2",
-		"#2b8a3e": "#93a1a1",
+		"#ffa8a8": "#f08c00",
+		"#72c3fc": "#495057",
+		"#fff3bf": "#1862ab",
+		"#2b8a3e": "#adb5bd",
 		"#c9d4e3": "#657b83",
 		"#d4d4d4": "#859900",
-		"#268bd2": "#b58900",
 		"#d3f9d8": "#6c71c4",
 		"#ffc078": "#fc8e00",
 		"#f2f4f8": "#39496a",
-		"#87cefa": "#7443ad"}
+		"#87cefa": "#7443ad",
+		"#4ec9b0": "#20c997"}
 	for oldColor, newColor := range lightTheme {
 		oldColor = fmt.Sprintf("color: %s;", oldColor)
 		newColor = fmt.Sprintf("color: %s;", newColor)

@@ -5,6 +5,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import reactive from 'rx-component'
+import { combineLatest } from 'rxjs/observable/combineLatest'
 import { merge } from 'rxjs/observable/merge'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
@@ -55,13 +56,9 @@ export const CommentsPage = reactive<Props>(props => {
                 user,
             }))
         ),
-
-        props.pipe(
-            map(props => props.match.params.ulid),
-            distinctUntilChanged(),
-            withLatestFrom(colorTheme),
+        combineLatest(props.pipe(map(props => props.match.params.ulid), distinctUntilChanged()), colorTheme).pipe(
             mergeMap(([ulid, colorTheme]) =>
-                fetchSharedItem(ulid, colorTheme === 'light').pipe(
+                fetchSharedItem({ ulid, isLightTheme: colorTheme === 'light' }).pipe(
                     map((sharedItem): Update => state => ({ ...state, sharedItem, ulid })),
                     catchError((error): Update[] => {
                         console.error(error)
