@@ -98,7 +98,9 @@ export class RepoContainer extends React.Component<Props, State> {
 
         // Merge in repository updates.
         this.subscriptions.add(
-            this.repositoryUpdates.subscribe(update => this.setState(({ repo }) => ({ repo: { ...repo, ...update } })))
+            this.repositoryUpdates.subscribe(update =>
+                this.setState(({ repo }) => ({ repo: { ...repo, ...update } as GQL.IRepository }))
+            )
         )
     }
 
