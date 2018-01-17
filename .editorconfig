@@ -6,13 +6,13 @@ insert_final_newline = true
 end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
-indent_style = tab
+indent_style = space
 indent_size = 4
 
-[{*.{ts,tsx,js,jsx,json,scss},.babelrc,.stylelintrc}]
-indent_style = space
+[*.go]
+indent_style = tab
 
-[{*.json,*.md,.babelrc,.stylelintrc}]
+[{*.js?(on),*.md,.babelrc,.stylelintrc}]
 indent_size = 2
 
 [*.md]
