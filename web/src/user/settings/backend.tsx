@@ -190,7 +190,9 @@ export function updatePassword(args: { oldPassword: string; newPassword: string 
     return mutateGraphQL(
         gql`
             mutation updatePassword($oldPassword: String!, $newPassword: String!) {
-                updatePassword(oldPassword: $oldPassword, newPassword: $newPassword) { }
+                updatePassword(oldPassword: $oldPassword, newPassword: $newPassword) {
+                    alwaysNil
+                }
             }
         `,
         args

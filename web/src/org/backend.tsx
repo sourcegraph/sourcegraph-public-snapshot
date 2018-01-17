@@ -171,7 +171,9 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<v
             return mutateGraphQL(
                 gql`
                     mutation AcceptUserInvite {
-                        acceptUserInvite(inviteToken: $inviteToken) { }
+                        acceptUserInvite(inviteToken: $inviteToken) {
+                            alwaysNil
+                        }
                     }
                 `,
                 options
@@ -284,7 +286,9 @@ export function updateOrgSettings(id: string, lastKnownSettingsID: number | null
     return mutateGraphQL(
         gql`
             mutation UpdateOrgSettings($id: ID!, $lastKnownSettingsID: Int, $contents: String!) {
-                updateOrgSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) { }
+                updateOrgSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
+                    alwaysNil
+                }
             }
         `,
         { id, lastKnownSettingsID, contents }

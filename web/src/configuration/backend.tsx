@@ -43,11 +43,13 @@ function doUpdateConfiguration(
     return mutateGraphQL(
         gql`
             mutation UpdateConfiguration(
-                $configurationInput: ConfigurationMutationGroupInput!,
+                $configurationInput: ConfigurationMutationGroupInput!
                 $updateInput: UpdateConfigurationInput
             ) {
                 configurationMutation(input: $configurationInput) {
-                    updateConfiguration(input: $updateInput) { }
+                    updateConfiguration(input: $updateInput) {
+                        alwaysNil
+                    }
                 }
             }
         `,

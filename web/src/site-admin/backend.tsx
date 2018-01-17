@@ -165,7 +165,9 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
     return mutateGraphQL(
         gql`
             mutation SetRepositoryEnabled($repository: ID!, $enabled: Boolean!) {
-                setRepositoryEnabled(repository: $repository, enabled: $enabled)
+                setRepositoryEnabled(repository: $repository, enabled: $enabled) {
+                    alwaysNil
+                }
             }
         `,
         { repository, enabled }
@@ -182,7 +184,9 @@ export function deleteRepository(repository: GQLID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteRepository($repository: ID!) {
-                deleteRepository(repository: $repository)
+                deleteRepository(repository: $repository) {
+                    alwaysNil
+                }
             }
         `,
         { repository }
@@ -323,7 +327,9 @@ export function updateSiteConfiguration(input: string): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation UpdateSiteConfiguration($input: String!) {
-                updateSiteConfiguration(input: $input)
+                updateSiteConfiguration(input: $input) {
+                    alwaysNil
+                }
             }
         `,
         { input }
@@ -344,7 +350,9 @@ export function reloadSite(): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation ReloadSite {
-                reloadSite
+                reloadSite {
+                    alwaysNil
+                }
             }
         `
     ).pipe(
@@ -380,7 +388,9 @@ export function setUserIsSiteAdmin(userID: GQLID, siteAdmin: boolean): Observabl
     return mutateGraphQL(
         gql`
             mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
-                setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin)
+                setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
+                    alwaysNil
+                }
             }
         `,
         { userID, siteAdmin }
@@ -417,7 +427,9 @@ export function deleteUser(user: GQLID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteUser($user: ID!) {
-                deleteUser(user: $user)
+                deleteUser(user: $user) {
+                    alwaysNil
+                }
             }
         `,
         { user }
@@ -454,7 +466,9 @@ export function deleteOrganization(organization: GQLID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteOrganization($organization: ID!) {
-                deleteOrganization(organization: $organization)
+                deleteOrganization(organization: $organization) {
+                    alwaysNil
+                }
             }
         `,
         { organization }
