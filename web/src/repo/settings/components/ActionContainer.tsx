@@ -21,6 +21,7 @@ export const BaseActionContainer: React.SFC<{
 interface Props {
     title: React.ReactFragment
     description: React.ReactFragment
+    buttonClassName?: string
     buttonLabel: React.ReactFragment
 
     /** The message to briefly display below the button when the action is successful. */
@@ -60,7 +61,7 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 action={
                     <>
                         <button
-                            className="btn btn-primary action-container__btn"
+                            className={`btn ${this.props.buttonClassName || 'btn-primary'} action-container__btn`}
                             onClick={this.onClick}
                             disabled={this.state.loading}
                         >
