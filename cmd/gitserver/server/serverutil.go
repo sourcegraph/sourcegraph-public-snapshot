@@ -105,6 +105,22 @@ var repoCloned = func(dir string) bool {
 	return false
 }
 
+// repoLastFetched returns the mtime of the repo's FETCH_HEAD, which is the date of the last successful `git remote
+// update` or `git fetch` (even if nothing new was fetched). As a special case when the repo has been cloned but
+// none of those other two operations have been run (and so FETCH_HEAD does not exist), it will return the mtime of HEAD.
+//
+// This breaks on file systems that do not record mtime and if Git ever changes this undocumented behavior.
+var repoLastFetched = func(dir string) (time.Time, error) {
+	fi, err := os.Stat(filepath.Join(dir, "FETCH_HEAD"))
+	if os.IsNotExist(err) {
+		fi, err = os.Stat(filepath.Join(dir, "HEAD"))
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return fi.ModTime(), nil
+}
+
 // environ is a slice of strings representing the environment, in the form "key=value".
 type environ []string
 

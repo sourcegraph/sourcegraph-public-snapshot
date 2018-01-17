@@ -85,14 +85,7 @@ func (r *repositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, err
 }
 
 func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) {
-	_, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: r.repo.ID,
-		Rev:  "HEAD",
-	})
-	if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
-		return true, nil
-	}
-	return false, nil
+	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {

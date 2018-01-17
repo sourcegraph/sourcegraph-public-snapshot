@@ -122,7 +122,11 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
                             enabled
                             createdAt
                             viewerCanAdminister
-                            cloneInProgress
+                            mirrorInfo {
+                                cloned
+                                cloneInProgress
+                                updatedAt
+                            }
                         }
                         totalCount(precise: true)
                     }
@@ -149,7 +153,7 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
         startWith(null),
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
-            if (result.nodes.some(n => n.cloneInProgress)) {
+            if (result.nodes.some(n => n.mirrorInfo.cloneInProgress)) {
                 setTimeout(() => subject.next(), 3000)
 
                 // Also trigger the global alert for "Cloning repositories...".
