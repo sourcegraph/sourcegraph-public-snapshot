@@ -86,7 +86,6 @@ export class SiteAdminArea extends React.Component<Props> {
                         />
                         <Route
                             path={`${this.props.match.url}/users`}
-                            component={SiteAdminAllUsersPage}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
