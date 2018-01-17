@@ -5,7 +5,7 @@ import * as React from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
 import { AnonymousSubscription, Subscription } from 'rxjs/Subscription'
-import { displayRepoPath } from '../components/Breadcrumb'
+import { displayRepoPath, splitPath } from '../components/Breadcrumb'
 import { PopoverButton } from '../components/PopoverButton'
 import { RepositoriesPopover } from './RepositoriesPopover'
 
@@ -224,9 +224,4 @@ export class RepoHeader extends React.PureComponent<Props, State> {
     private onClickRepoBasename = (e: React.MouseEvent<HTMLElement>): void => {
         e.stopPropagation()
     }
-}
-
-function splitPath(path: string): [string, string] {
-    const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components[components.length - 1]]
 }
