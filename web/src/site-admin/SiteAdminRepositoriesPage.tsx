@@ -203,8 +203,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs) =>
-        fetchAllRepositoriesAndPollIfAnyCloning({ ...args, includeDisabled: true })
+    private queryRepositories = (args: FilteredConnectionQueryArgs) => fetchAllRepositories({ ...args })
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 }

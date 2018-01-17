@@ -300,8 +300,11 @@ type ReposListOptions struct {
 	// returned in the list.
 	ExcludePattern string
 
-	// IncludeDisabled includes disabled repositories in the list.
-	IncludeDisabled bool
+	// Enabled includes enabled repositories in the list.
+	Enabled bool
+
+	// Disabled includes disabled repositories in the list.
+	Disabled bool
 
 	sourcegraph.ListOptions
 }
@@ -385,9 +388,18 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	if opt.ExcludePattern != "" {
 		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
 	}
-	if !opt.IncludeDisabled {
-		conds = append(conds, sqlf.Sprintf("enabled=true"))
+
+	var enabledConds []*sqlf.Query
+	if opt.Enabled {
+		enabledConds = append(enabledConds, sqlf.Sprintf(`enabled`))
 	}
+	if opt.Disabled {
+		enabledConds = append(enabledConds, sqlf.Sprintf(`NOT enabled`))
+	}
+	if len(enabledConds) > 0 {
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(enabledConds, " OR ")))
+	}
+
 	return conds, nil
 }
 

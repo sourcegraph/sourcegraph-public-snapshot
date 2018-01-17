@@ -101,7 +101,8 @@ export function fetchAllOrgs(args: { first?: number; query?: string }): Observab
 interface RepositoryArgs {
     first?: number
     query?: string
-    includeDisabled?: boolean
+    enabled?: boolean
+    disabled?: boolean
 }
 
 /**
@@ -110,12 +111,12 @@ interface RepositoryArgs {
  * @return Observable that emits the list of repositories
  */
 export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
-    args = { includeDisabled: false, ...args }
+    args = { enabled: true, disabled: false, ...args } // apply defaults
     return queryGraphQL(
         gql`
-            query Repositories($first: Int, $query: String, $includeDisabled: Boolean) {
+            query Repositories($first: Int, $query: String, $enabled: Boolean, $disabled: Boolean) {
                 site {
-                    repositories(first: $first, query: $query, includeDisabled: $includeDisabled) {
+                    repositories(first: $first, query: $query, enabled: $enabled, disabled: $disabled) {
                         nodes {
                             id
                             uri

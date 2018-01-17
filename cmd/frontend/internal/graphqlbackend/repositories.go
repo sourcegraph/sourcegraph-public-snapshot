@@ -16,16 +16,21 @@ import (
 
 func (r *siteResolver) Repositories(args *struct {
 	connectionArgs
-	Query           *string
-	Cloning         bool
-	IncludeDisabled bool
+	Query    *string
+	Cloning  bool
+	Enabled  bool
+	Disabled bool
 }) (*repositoryConnectionResolver, error) {
-	if args.Cloning && args.IncludeDisabled {
-		return nil, errors.New("mutually exclusive arguments: cloning, includeDisabled")
+	if args.Cloning && !args.Enabled {
+		return nil, errors.New("mutually exclusive arguments: cloning, !enabled")
+	}
+	if args.Cloning && args.Disabled {
+		return nil, errors.New("mutually exclusive arguments: cloning, disabled")
 	}
 
 	opt := db.ReposListOptions{
-		IncludeDisabled: args.IncludeDisabled,
+		Enabled:  args.Enabled,
+		Disabled: args.Disabled,
 	}
 	if args.Query != nil {
 		opt.Query = *args.Query

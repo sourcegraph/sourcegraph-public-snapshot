@@ -1069,8 +1069,10 @@ type Site implements ConfigurationSubject {
         query: String
         # Returns only repositories that are currently being cloned.
         cloning: Boolean = false
+        # Include enabled repositories.
+        enabled: Boolean = true
         # Include disabled repositories.
-        includeDisabled: Boolean = false
+        disabled: Boolean = false
     ): RepositoryConnection!
     # List all users.
     users(
