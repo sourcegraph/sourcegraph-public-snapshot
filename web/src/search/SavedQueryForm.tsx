@@ -180,18 +180,6 @@ export const SavedQueryForm = reactive<Props>(props => {
             }: State): JSX.Element | null => (
                 <form className="saved-query-form" onSubmit={nextSubmit}>
                     {title && <h3 className="saved-query-form__title">{title}</h3>}
-                    <span>Description</span>
-                    <input
-                        type="text"
-                        name="description"
-                        className="form-control"
-                        placeholder="Description"
-                        autoFocus={true}
-                        onChange={nextInputChange}
-                        value={description || ''}
-                        required={true}
-                        ref={e => (descriptionInput = e)}
-                    />
                     <span>Search query</span>
                     <input
                         type="text"
@@ -201,9 +189,21 @@ export const SavedQueryForm = reactive<Props>(props => {
                         onChange={nextInputChange}
                         value={query || ''}
                         autoCorrect="off"
+                        autoFocus={true}
                         spellCheck={false}
                         autoCapitalize="off"
                         ref={e => (queryInput = e)}
+                    />
+                    <span>Description</span>
+                    <input
+                        type="text"
+                        name="description"
+                        className="form-control"
+                        placeholder="Description"
+                        onChange={nextInputChange}
+                        value={description || ''}
+                        required={true}
+                        ref={e => (descriptionInput = e)}
                     />
                     <span>Save location</span>
                     <div className="saved-query-form__save-location">
