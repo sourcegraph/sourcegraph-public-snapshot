@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/neelance/parallel"
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -35,9 +36,11 @@ var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the 
 var DefaultClient = &Client{
 	Addrs: strings.Fields(gitservers),
 	HTTPClient: &http.Client{
-		Transport: &http.Transport{
-			// Default is 2, but we can send many concurrent requests
-			MaxIdleConnsPerHost: 500,
+		Transport: &nethttp.Transport{
+			RoundTripper: &http.Transport{
+				// Default is 2, but we can send many concurrent requests
+				MaxIdleConnsPerHost: 500,
+			},
 		},
 	},
 	HTTPLimiter: parallel.NewRun(500),
@@ -421,6 +424,11 @@ func (c *Client) httpPost(ctx context.Context, repo, method string, payload inte
 		defer c.HTTPLimiter.Release()
 		span.LogKV("event", "Acquired HTTP limiter")
 	}
+
+	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+		nethttp.OperationName("Gitserver Client"),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
 
 	if c.HTTPClient != nil {
 		return c.HTTPClient.Do(req)
