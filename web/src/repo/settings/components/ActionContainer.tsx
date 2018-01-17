@@ -49,27 +49,27 @@ export class ActionContainer extends React.PureComponent<Props, State> {
             <BaseActionContainer
                 title={this.props.title}
                 description={this.props.description}
-                action={[
-                    <button
-                        key={0}
-                        className="btn btn-primary action-container__btn"
-                        onClick={this.onClick}
-                        disabled={this.state.loading}
-                    >
-                        {this.props.buttonLabel}
-                    </button>,
-                    this.props.flashText && (
-                        <div
-                            key={1}
-                            className={
-                                'action-container__flash' +
-                                (this.state.flash ? ' action-container__flash--visible' : '')
-                            }
+                action={
+                    <>
+                        <button
+                            className="btn btn-primary action-container__btn"
+                            onClick={this.onClick}
+                            disabled={this.state.loading}
                         >
-                            <small>{this.props.flashText}</small>
-                        </div>
-                    ),
-                ]}
+                            {this.props.buttonLabel}
+                        </button>
+                        {this.props.flashText && (
+                            <div
+                                className={
+                                    'action-container__flash' +
+                                    (this.state.flash ? ' action-container__flash--visible' : '')
+                                }
+                            >
+                                <small>{this.props.flashText}</small>
+                            </div>
+                        )}
+                    </>
+                }
             />
         )
     }
