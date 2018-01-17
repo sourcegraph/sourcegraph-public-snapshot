@@ -583,6 +583,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) (res []*searchResult
 					return
 				}
 				err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
+				tr.LazyPrintf("cancel due to error: %v", err)
 				cancel()
 			}
 			if len(matches) > 0 {
@@ -597,6 +598,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) (res []*searchResult
 				// lead to potentially unstable result ordering, but is worth
 				// it for the performance benefit.
 				if flattenedSize > int(args.query.FileMatchLimit) {
+					tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.query.FileMatchLimit)
 					cancel()
 				}
 			}
