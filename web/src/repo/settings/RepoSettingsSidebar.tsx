@@ -3,6 +3,7 @@ import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
 interface Props extends RouteComponentProps<any> {
+    className: string
     repo?: GQL.IRepository
 }
 
@@ -11,7 +12,7 @@ interface Props extends RouteComponentProps<any> {
  */
 export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
     props.repo ? (
-        <div className="sidebar repo-sidebar">
+        <div className={`sidebar repo-sidebar ${props.className}`}>
             <ul className="sidebar__items">
                 <div className="sidebar__header">
                     <h5 className="sidebar__header-title">Repository settings</h5>
@@ -35,5 +36,5 @@ export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
             </div>
         </div>
     ) : (
-        <div className="sidebar repo-sidebar" />
+        <div className={`sidebar repo-sidebar ${props.className}`} />
     )

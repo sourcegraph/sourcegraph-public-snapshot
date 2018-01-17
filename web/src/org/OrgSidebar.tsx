@@ -5,7 +5,9 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { OrgAvatar } from '../org/OrgAvatar'
 
-interface Props extends RouteComponentProps<{ orgName: string }> {}
+interface Props extends RouteComponentProps<{ orgName: string }> {
+    className: string
+}
 
 interface State {
     orgs?: GQL.IOrg[]
@@ -36,13 +38,13 @@ export class OrgSidebar extends React.Component<Props, State> {
             this.state.orgs && this.state.orgs.find(org => org.name === this.props.match.params.orgName)
 
         if (!this.state.orgs) {
-            return <div className="sidebar org-sidebar" />
+            return <div className={`sidebar org-sidebar ${this.props.className}`} />
         } else if (!org) {
             return null
         }
 
         return (
-            <div className="sidebar org-sidebar">
+            <div className={`sidebar org-sidebar ${this.props.className}`}>
                 <ul className="sidebar__items">
                     <div className="sidebar__header">
                         <div className="sidebar__header-icon">

@@ -55,7 +55,11 @@ export class SiteAdminArea extends React.Component<Props> {
 
         return (
             <div className="site-admin-area area">
-                <SiteAdminSidebar history={this.props.history} location={this.props.location} />
+                <SiteAdminSidebar
+                    className="area__sidebar"
+                    history={this.props.history}
+                    location={this.props.location}
+                />
                 <div className="area__content">
                     <Switch>
                         {/* Render empty page if no page selected. */}

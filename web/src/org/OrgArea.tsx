@@ -92,7 +92,7 @@ export class OrgArea extends React.Component<Props> {
 
         return (
             <div className="org-area area">
-                <OrgSidebar {...this.props} />
+                <OrgSidebar className="area__sidebar" {...this.props} />
                 <div className="area__content">
                     <Switch>
                         <Route

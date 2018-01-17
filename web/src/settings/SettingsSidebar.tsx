@@ -19,6 +19,7 @@ import { eventLogger } from '../tracking/eventLogger'
 interface Props {
     history: H.History
     location: H.Location
+    className: string
     user: GQL.IUser | null
 }
 
@@ -63,7 +64,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="sidebar settings-sidebar">
+            <div className={`sidebar settings-sidebar ${this.props.className}`}>
                 <ul className="sidebar__items">
                     <li className="sidebar__header">
                         <div className="sidebar__header-icon">

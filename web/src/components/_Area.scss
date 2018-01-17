@@ -8,9 +8,48 @@
     overflow-y: scroll;
     min-height: calc(100vh - $navbar-search-height - 1.5rem);
 
+    @media (max-width: $media-sm) {
+        // Stacked layout on narrow screens.
+        flex-wrap: wrap;
+        align-content: flex-start;
+
+        &__sidebar {
+            flex: 1 0 auto;
+            margin-left: 1rem;
+            margin-right: 1rem;
+        }
+        &__content {
+            padding: 1rem;
+            flex: 1 0 auto;
+        }
+    }
+
+    @media (min-width: $media-sm) {
+        &__sidebar {
+            flex: 0 0 auto;
+        }
+        &__content {
+            padding: 0 2rem;
+        }
+    }
+
     &__content {
         flex: 1 1 auto;
-        padding: 0 2rem;
-        max-width: 48rem;
+
+        @media (max-width: $media-sm) {
+            width: 100%;
+        }
+
+        @media (min-width: $media-sm) and (max-width: $media-md) {
+            max-width: 28rem;
+        }
+
+        @media (min-width: $media-md) and (max-width: $media-lg) {
+            max-width: 36rem;
+        }
+
+        @media (min-width: $media-lg) {
+            max-width: 48rem;
+        }
     }
 }

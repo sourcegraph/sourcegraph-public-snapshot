@@ -88,7 +88,7 @@ export class RepoSettingsArea extends React.Component<Props> {
 
         return (
             <div className="repo-settings-area area">
-                <RepoSettingsSidebar {...this.props} {...transferProps} />
+                <RepoSettingsSidebar className="area__sidebar" {...this.props} {...transferProps} />
                 <div className="area__content">
                     <Switch>
                         <Route

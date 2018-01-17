@@ -8,6 +8,7 @@ import { Subscription } from 'rxjs/Subscription'
 interface Props {
     history: H.History
     location: H.Location
+    className: string
 }
 
 interface State {}
@@ -24,7 +25,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="sidebar site-admin-sidebar">
+            <div className={`sidebar site-admin-sidebar ${this.props.className}`}>
                 <ul className="sidebar__items">
                     <li className="sidebar__header">
                         <div className="sidebar__header-icon">
