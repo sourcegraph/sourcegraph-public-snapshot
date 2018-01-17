@@ -177,6 +177,7 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
         `,
         { repository, enabled }
     ).pipe(
+        tap(() => refreshSiteFlags().toPromise()), // add/remove global alert banner for noRepositoriesEnabled
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })

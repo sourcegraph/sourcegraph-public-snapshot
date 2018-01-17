@@ -1,1 +1,4 @@
-export type SiteFlags = Pick<GQL.ISite, 'needsRepositoryConfiguration' | 'hasCodeIntelligence'>
+export type SiteFlags = Pick<
+    GQL.ISite,
+    'needsRepositoryConfiguration' | 'noRepositoriesEnabled' | 'hasCodeIntelligence'
+>

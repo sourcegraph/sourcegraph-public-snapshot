@@ -3,6 +3,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
+import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
 
 interface Props {
     isSiteAdmin: boolean
@@ -29,8 +30,13 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (this.state.siteFlags && this.state.siteFlags.needsRepositoryConfiguration) {
-            return <NeedsRepositoryConfigurationAlert />
+        if (this.state.siteFlags) {
+            if (this.state.siteFlags.needsRepositoryConfiguration) {
+                return <NeedsRepositoryConfigurationAlert />
+            }
+            if (this.state.siteFlags.noRepositoriesEnabled) {
+                return <NoRepositoriesEnabledAlert />
+            }
         }
         return null
     }
