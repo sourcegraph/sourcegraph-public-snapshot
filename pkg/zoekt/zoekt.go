@@ -220,7 +220,18 @@ func (c *Cache) start() {
 		c.listResp, c.listErr = listResp, listErr
 		c.mu.Unlock()
 
-		// Sleep 30s + rand([0, 1m))
-		time.Sleep(30*time.Second + time.Duration(rand.Int63n(int64(time.Minute))))
+		if listErr != nil {
+			// If we encounter an error, try again soon
+			randSleep(5*time.Second, 2*time.Second)
+		} else {
+			randSleep(time.Minute, 30*time.Second)
+		}
 	}
+}
+
+// randSleep will sleep for an expected d duration with a jitter in [-jitter /
+// 2, jitter / 2].
+func randSleep(d, jitter time.Duration) {
+	delta := time.Duration(rand.Int63n(int64(jitter))) - (jitter / 2)
+	time.Sleep(d + delta)
 }
