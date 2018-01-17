@@ -102,7 +102,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                     description={
                         this.state.repo.enabled
                             ? 'Disable access to the repository to prevent users from searching and browsing the repository.'
-                            : 'The repository was disabled by a site admin. Enable it to allow users to search and view the repository.'
+                            : 'The repository is disabled. Enable it to allow users to search and view the repository.'
                     }
                     buttonClassName={this.state.repo.enabled ? 'btn-danger' : 'btn-success'}
                     buttonLabel={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
