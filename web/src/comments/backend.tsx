@@ -78,9 +78,16 @@ const threadFragment = gql`
     }
 `
 
-export function createSharedItemCacheKey(parsed: ParsedRepoURI & { ulid: string; isLightTheme: boolean }): string {
-    return makeRepoURI(parsed) + parsed.ulid + parsed.isLightTheme
+export function createSharedItemCacheKey(
+    parsed: (ParsedRepoURI | { ulid: string }) & { isLightTheme: boolean }
+): string {
+    return (isULIDObject(parsed) ? parsed.ulid : makeRepoURI(parsed)) + parsed.isLightTheme
 }
+
+function isULIDObject(value: any): value is { ulid: string } {
+    return value && value.ulid
+}
+
 /**
  * Fetches shared item by ULID
  *
