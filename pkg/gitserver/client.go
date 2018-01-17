@@ -341,7 +341,7 @@ func (c *Client) RepoInfo(ctx context.Context, repo string) (*protocol.RepoInfoR
 	req := &protocol.RepoInfoRequest{
 		Repo: repo,
 	}
-	resp, err := c.httpPost(ctx, c.Addrs[0], "repo", req)
+	resp, err := c.httpPost(ctx, repo, "repo", req)
 	if err != nil {
 		return nil, err
 	}
