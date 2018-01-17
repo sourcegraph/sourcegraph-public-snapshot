@@ -130,6 +130,7 @@ export class RepoContainer extends React.Component<Props, State> {
         }
 
         const repoMatchURL = `/${this.state.repo.uri}`
+        const isDirectory = location.pathname.includes('/-/tree') // TODO(sqs): hacky
 
         return (
             <div className="repo-composite-container composite-container">
@@ -144,7 +145,9 @@ export class RepoContainer extends React.Component<Props, State> {
                 <RepoHeaderActionPortal
                     position="right"
                     key="go-to-github"
-                    element={<GoToGitHubAction key="go-to-github" location={this.props.location} />}
+                    element={
+                        <GoToGitHubAction key="go-to-github" location={this.props.location} isDirectory={isDirectory} />
+                    }
                 />
                 <RepoHeaderActionPortal
                     position="right"
@@ -153,6 +156,9 @@ export class RepoContainer extends React.Component<Props, State> {
                         <GoToCodeHostAction
                             key="go-to-code-host"
                             repo={this.state.repoPath}
+                            // We need a rev to generate code host URLs, since we don't have a default use HEAD.
+                            rev={this.state.rev || 'HEAD'}
+                            isDirectory={isDirectory}
                             location={this.props.location}
                         />
                     }

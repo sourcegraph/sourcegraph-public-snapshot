@@ -18,11 +18,13 @@ interface RepoListConfig {
 
 interface Props {
     repo: string
+    rev: string
+    isDirectory: boolean
     location: H.Location
 }
 
 interface State {
-    repoListConfig?: RepoListConfig | null
+    repoListConfig?: RepoListConfig | undefined
 }
 
 /**
@@ -40,7 +42,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                 .pipe(
                     tap(() => {
                         if (this.state.repoListConfig) {
-                            this.setState({ repoListConfig: null })
+                            this.setState({ repoListConfig: undefined })
                         }
                     }),
                     switchMap(repo =>
@@ -56,12 +58,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                     config => {
                         if (config) {
                             this.setState({
-                                repoListConfig: {
-                                    commitURL: config.commitURL,
-                                    viewURL: config.viewURL,
-                                    treeURL: config.treeURL,
-                                    blobURL: config.blobURL,
-                                },
+                                repoListConfig: config,
                             })
                         }
                     },
@@ -87,10 +84,10 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             return null
         }
 
-        const { repoPath, filePath, rev } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
-        const isDirectory = location.pathname.includes('/-/tree') // TODO(sqs): hacky
+        const { repoPath, filePath } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
+        const rev = this.props.rev
 
-        const url = urlToCodeHost(this.state.repoListConfig, isDirectory, { repoPath, filePath, rev })
+        const url = urlToCodeHost(this.state.repoListConfig, this.props.isDirectory, { repoPath, filePath, rev })
         if (url === null) {
             return null
         }

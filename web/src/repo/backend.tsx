@@ -301,7 +301,12 @@ export const fetchPhabricatorRepo = memoizeObservable(
         ).pipe(
             map(result => {
                 if (result.errors || !result.data || !result.data.phabricatorRepo) {
-                    return null
+                    throw Object.assign(
+                        new Error(
+                            'Could not fetch phabricator repo: ' + (result.errors || []).map(e => e.message).join('\n')
+                        ),
+                        { errors: result.errors }
+                    )
                 }
                 return result.data.phabricatorRepo
             })
@@ -326,7 +331,12 @@ export const fetchRepoListConfig = memoizeObservable(
         ).pipe(
             map(result => {
                 if (result.errors || !result.data || !result.data.repoListConfig) {
-                    return null
+                    throw Object.assign(
+                        new Error(
+                            'Could not fetch repo list config: ' + (result.errors || []).map(e => e.message).join('\n')
+                        ),
+                        { errors: result.errors }
+                    )
                 }
                 return result.data.repoListConfig
             })

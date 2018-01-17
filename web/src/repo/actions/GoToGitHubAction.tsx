@@ -12,7 +12,10 @@ const githubHosts: { [repoPathPrefix: string]: string } = {
 /**
  * A repository header action that goes to the corresponding URL on GitHub.
  */
-export const GoToGitHubAction: React.SFC<{ location: H.Location }> = ({ location }) => {
+export const GoToGitHubAction: React.SFC<{ location: H.Location; isDirectory: boolean }> = ({
+    location,
+    isDirectory,
+}) => {
     const { repoPath, filePath, rev, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
@@ -26,7 +29,7 @@ export const GoToGitHubAction: React.SFC<{ location: H.Location }> = ({ location
         <a
             className="btn btn-link btn-sm composite-container__header-action"
             onClick={onClick}
-            href={urlToGitHub({ repoPath, filePath, rev, position, range })}
+            href={urlToGitHub({ repoPath, filePath, rev, position, range }, isDirectory)}
             data-tooltip="View on GitHub"
         >
             <GitHubIcon className="icon-inline" />
@@ -38,15 +41,13 @@ function onClick(): void {
     eventLogger.log('OpenInCodeHostClicked')
 }
 
-function urlToGitHub({ repoPath, filePath, rev, position, range }: ParsedRepoURI): string {
+function urlToGitHub({ repoPath, filePath, rev, position, range }: ParsedRepoURI, isDirectory: boolean): string {
     if (!rev) {
         rev = 'HEAD'
     }
 
     const host = repoPath.split('/')[0]
     const repoURL = `${githubHosts[host]}${repoPath.slice(host.length)}`
-
-    const isDirectory = location.pathname.includes('/-/tree') // TODO(sqs): hacky
 
     if (filePath) {
         if (isDirectory) {
