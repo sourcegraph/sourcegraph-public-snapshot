@@ -44,6 +44,14 @@ export class ActionContainer extends React.PureComponent<Props, State> {
         flash: false,
     }
 
+    private timeoutHandle?: number
+
+    public componentWillUnmount(): void {
+        if (this.timeoutHandle) {
+            window.clearTimeout(this.timeoutHandle)
+        }
+    }
+
     public render(): JSX.Element | null {
         return (
             <BaseActionContainer
@@ -83,7 +91,10 @@ export class ActionContainer extends React.PureComponent<Props, State> {
         this.props.run().then(
             () => {
                 this.setState({ loading: false, flash: true })
-                setTimeout(() => this.setState({ flash: false }), 1000)
+                if (typeof this.timeoutHandle === 'number') {
+                    window.clearTimeout(this.timeoutHandle)
+                }
+                this.timeoutHandle = window.setTimeout(() => this.setState({ flash: false }), 1000)
             },
             err => this.setState({ loading: false, error: err.message })
         )
