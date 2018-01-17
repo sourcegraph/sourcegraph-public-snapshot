@@ -481,7 +481,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 }
 
 func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (indexed, unindexed []*repositoryRevisions, err error) {
-	if zoektCl == nil {
+	if zoektCache == nil {
 		return nil, repos, nil
 	}
 	for _, repoRev := range repos {
@@ -498,25 +498,12 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 		return indexed, unindexed, nil
 	}
 
-	restrict := make([]zoekt.ListRequestRestriction, len(indexed))
-	for i, repoRev := range indexed {
-		restrict[i].Repo = repoRev.repo.URI
-	}
-
-	resp, err := zoektCl.List(ctx, zoekt.ListRequest{
-		Restrict: restrict,
-	})
+	resp, err := zoektCache.ListAll(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	if resp.Error != nil {
 		return nil, nil, errors.Errorf("zoekt list failed: %s", *resp.Error)
-	}
-
-	// If we get back as many repos as we restricted, then we know everything
-	// is indexed
-	if len(resp.Repos) == len(indexed) {
-		return indexed, unindexed, nil
 	}
 
 	// Everything currently in indexed is at HEAD. Filter out repos which
@@ -691,6 +678,7 @@ func flattenFileMatches(unflattened [][]*fileMatch, fileMatchLimit int) []*fileM
 }
 
 var zoektCl *zoekt.Client
+var zoektCache *zoekt.Cache
 var searcherURLs *endpoint.Map
 
 func init() {
@@ -707,5 +695,6 @@ func init() {
 	zoektHost := env.Get("ZOEKT_HOST", "", "host:port of the zoekt instance")
 	if zoektHost != "" {
 		zoektCl = &zoekt.Client{Host: zoektHost}
+		zoektCache = &zoekt.Cache{Client: zoektCl}
 	}
 }
