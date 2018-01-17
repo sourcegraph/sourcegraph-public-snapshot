@@ -395,7 +395,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 	return nil
 }
 
-func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) ([]*fileMatch, error) {
+func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) (fm []*fileMatch, err error) {
 	if len(repos) == 0 {
 		return nil, nil
 	}
@@ -442,10 +442,25 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		return nil, nil
 	}
 
-	resp, err := zoektCl.Search(ctx, zoekt.SearchRequest{
+	req := zoekt.SearchRequest{
 		Query:    strings.Join(q, " "),
 		Restrict: restrict,
-	})
+	}
+
+	traceName, ctx := traceutil.TraceName(ctx, "zoekt.Search")
+	tr := trace.New(traceName, fmt.Sprintf("%d %+v", len(req.Restrict), req.Query))
+	defer func() {
+		if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		}
+		if len(fm) > 0 {
+			tr.LazyPrintf("%d file matches", len(fm))
+		}
+		tr.Finish()
+	}()
+
+	resp, err := zoektCl.Search(ctx, req)
 	if err != nil {
 		return nil, err
 	}
