@@ -55,6 +55,14 @@ type Client struct {
 	NoCreds bool
 }
 
+// addrForRepo returns the gitserver address to use for the given repo URI.
+func (c *Client) addrForRepo(repo string) string {
+	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
+	sum := md5.Sum([]byte(repo))
+	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.Addrs))
+	return c.Addrs[serverIndex]
+}
+
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoURI := protocol.NormalizeRepo(c.Repo.URI)
 
@@ -76,16 +84,12 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		return nil, nil, err
 	}
 
-	sum := md5.Sum([]byte(repoURI))
-	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.Addrs))
-	addr := c.client.Addrs[serverIndex]
-
 	req := &protocol.ExecRequest{
 		Repo:           repoURI,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 	}
-	resp, err := c.client.httpPost(ctx, addr, "exec", req)
+	resp, err := c.client.httpPost(ctx, repoURI, "exec", req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -291,7 +295,7 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo string) error {
 	req := &protocol.RepoUpdateRequest{
 		Repo: repo,
 	}
-	_, err := c.httpPost(ctx, c.Addrs[0], "enqueue-repo-update", req)
+	_, err := c.httpPost(ctx, repo, "enqueue-repo-update", req)
 	if err != nil {
 		return err
 	}
@@ -303,7 +307,7 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo string) (bool, error)
 	req := &protocol.IsRepoCloneableRequest{
 		Repo: repo,
 	}
-	resp, err := c.httpPost(ctx, c.Addrs[0], "is-repo-cloneable", req)
+	resp, err := c.httpPost(ctx, repo, "is-repo-cloneable", req)
 	if err != nil {
 		return false, err
 	}
@@ -318,7 +322,7 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo string) (bool, error) {
 	req := &protocol.IsRepoClonedRequest{
 		Repo: repo,
 	}
-	resp, err := c.httpPost(ctx, c.Addrs[0], "is-repo-cloned", req)
+	resp, err := c.httpPost(ctx, repo, "is-repo-cloned", req)
 	if err != nil {
 		return false, err
 	}
@@ -333,7 +337,7 @@ func (c *Client) RepoFromRemoteURL(ctx context.Context, remoteURL string) (strin
 	req := &protocol.RepoFromRemoteURLRequest{
 		RemoteURL: remoteURL,
 	}
-	resp, err := c.httpPost(ctx, c.Addrs[0], "repo-from-remote-url", req)
+	resp, err := c.httpPost(ctx, "" /* any gitserver is ok */, "repo-from-remote-url", req)
 	if err != nil {
 		return "", err
 	}
@@ -344,7 +348,7 @@ func (c *Client) RepoFromRemoteURL(ctx context.Context, remoteURL string) (strin
 	return repo, err
 }
 
-func (c *Client) httpPost(ctx context.Context, addr string, method string, payload interface{}) (resp *http.Response, err error) {
+func (c *Client) httpPost(ctx context.Context, repo, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {
 		if err != nil {
@@ -359,6 +363,7 @@ func (c *Client) httpPost(ctx context.Context, addr string, method string, paylo
 		return nil, err
 	}
 
+	addr := c.addrForRepo(repo)
 	req, err := http.NewRequest("POST", "http://"+addr+"/"+method, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
@@ -383,9 +388,7 @@ func (c *Client) httpPost(ctx context.Context, addr string, method string, paylo
 
 func (c *Client) UploadPack(repoURI string, w http.ResponseWriter, r *http.Request) {
 	repoURI = protocol.NormalizeRepo(repoURI)
-	sum := md5.Sum([]byte(repoURI))
-	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.Addrs))
-	addr := c.Addrs[serverIndex]
+	addr := c.addrForRepo(repoURI)
 
 	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(repoURI))
 	if err != nil {
