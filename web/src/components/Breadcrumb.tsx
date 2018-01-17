@@ -20,13 +20,13 @@ export class Breadcrumb extends React.Component<Props, {}> {
             }`
             if (link) {
                 spans.push(
-                    <Link onClick={this.logBreadcrumbClicked} key={i} className={className} to={link} title={part}>
+                    <Link onClick={this.logBreadcrumbClicked} key={i} className={className} to={link}>
                         {part}
                     </Link>
                 )
             } else {
                 spans.push(
-                    <span key={i} className={className} title={part}>
+                    <span key={i} className={className}>
                         {part}
                     </span>
                 )
