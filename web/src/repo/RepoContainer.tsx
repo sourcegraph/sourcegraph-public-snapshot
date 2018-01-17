@@ -259,7 +259,6 @@ export class RepoContainer extends React.Component<Props, State> {
                     <Route
                         path={`${repoMatchURL}/-/settings`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
                         // tslint:disable-next-line:jsx-no-lambda
                         render={routeComponentProps => (
                             <RepoSettingsArea

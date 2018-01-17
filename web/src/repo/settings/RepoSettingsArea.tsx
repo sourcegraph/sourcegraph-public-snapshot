@@ -7,6 +7,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
 import { fetchRepository } from './backend'
+import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
 import { RepoSettingsOptionsPage } from './RepoSettingsOptionsPage'
 import { RepoSettingsSidebar } from './RepoSettingsSidebar'
 
@@ -99,6 +100,19 @@ export class RepoSettingsArea extends React.Component<Props> {
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
                                 <RepoSettingsOptionsPage
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    onDidUpdateRepository={this.props.onDidUpdateRepository}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/mirror`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoSettingsMirrorPage
                                     {...routeComponentProps}
                                     {...transferProps}
                                     onDidUpdateRepository={this.props.onDidUpdateRepository}

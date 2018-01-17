@@ -14,6 +14,12 @@ export function fetchRepository(uri: string): Observable<GQL.IRepository> {
                     uri
                     viewerCanAdminister
                     enabled
+                    mirrorInfo {
+                        remoteURL
+                        cloneInProgress
+                        cloned
+                        updatedAt
+                    }
                 }
             }
         `,
