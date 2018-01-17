@@ -2,6 +2,7 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
+import { combineLatest } from 'rxjs/observable/combineLatest'
 import { merge } from 'rxjs/observable/merge'
 import { of } from 'rxjs/observable/of'
 import { debounceTime } from 'rxjs/operators/debounceTime'
@@ -17,6 +18,47 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { pluralize } from '../util/strings'
+
+interface FilterProps {
+    /** All filters. */
+    filters: FilteredConnectionFilter[]
+
+    /** Called when a filter is selected. */
+    onDidSelectFilter: (filter: FilteredConnectionFilter) => void
+
+    /** The ID of the active filter. */
+    value: string
+}
+
+interface FilterState {}
+
+class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, FilterState> {
+    public render(): React.ReactFragment {
+        return (
+            <div className="filtered-connection-filter-control">
+                {this.props.filters.map((filter, i) => (
+                    <label key={i} className="filtered-connection-filter-control__item" title={filter.tooltip}>
+                        <input
+                            className="filtered-connection-filter-control__input"
+                            name="filter"
+                            type="radio"
+                            onChange={this.onChange}
+                            value={filter.id}
+                            checked={this.props.value === filter.id}
+                        />{' '}
+                        <div className="filtered-connection-filter-control__label">{filter.label}</div>
+                    </label>
+                ))}
+            </div>
+        )
+    }
+
+    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
+        const id = e.currentTarget.value
+        const filter = this.props.filters.find(f => f.id === id)!
+        this.props.onDidSelectFilter(filter)
+    }
+}
 
 /**
  * Props for the FilteredConnection component.
@@ -73,6 +115,13 @@ interface FilteredConnectionProps<C extends Connection<N>, N extends GQL.Node, N
 
     /** Do not show a count summary if all nodes are visible in the list's first page. */
     noSummaryIfAllNodesVisible?: boolean
+
+    /**
+     * Filters to display next to the filter input field.
+     *
+     * Filters are mutually exclusive.
+     */
+    filters?: FilteredConnectionFilter[]
 }
 
 /**
@@ -83,10 +132,32 @@ export interface FilteredConnectionQueryArgs {
     query?: string
 }
 
+/**
+ * A filter to display next to the filter input field.
+ */
+export interface FilteredConnectionFilter {
+    /** The UI label for the filter. */
+    label: string
+
+    /**
+     * The URL string for this filter (conventionally the label, lowercased and without spaces and punctuation).
+     */
+    id: string
+
+    /** An optional tooltip to display for this filter. */
+    tooltip?: string
+
+    /** Additional query args to pass to the queryConnection function when this filter is enabled. */
+    args: { [name: string]: string | number | boolean }
+}
+
 interface State<C extends Connection<N>, N> {
     loading: boolean
     query: string
     first: number
+
+    /** The active filter's ID (FilteredConnectionFilter.id), if any. */
+    activeFilter: FilteredConnectionFilter | undefined
 
     connectionQuery?: string
     connection?: C
@@ -140,6 +211,7 @@ export class FilteredConnection<
     }
 
     private queryInputChanges = new Subject<string>()
+    private activeFilterChanges = new Subject<FilteredConnectionFilter>()
     private showMoreClicks = new Subject<void>()
     private componentUpdates = new Subject<FilteredConnectionProps<C, N, NP>>()
     private subscriptions = new Subscription()
@@ -153,26 +225,38 @@ export class FilteredConnection<
         this.state = {
             loading: true,
             query: q.get('q') || '',
+            activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
         }
     }
 
     public componentDidMount(): void {
+        const activeFilterChanges = this.activeFilterChanges.pipe(startWith(this.state.activeFilter))
+        const queryChanges = this.queryInputChanges.pipe(
+            distinctUntilChanged(),
+            tap(query => this.setState({ query })),
+            debounceTime(200),
+            startWith(this.state.query)
+        )
+        const refreshRequests = new Subject<void>()
+
         this.subscriptions.add(
-            this.queryInputChanges
+            this.activeFilterChanges
+                .pipe(distinctUntilChanged())
+                .subscribe(filter => this.setState({ activeFilter: filter }))
+        )
+
+        this.subscriptions.add(
+            combineLatest(queryChanges, activeFilterChanges, refreshRequests)
                 .pipe(
-                    distinctUntilChanged(),
-                    tap(query => this.setState({ query })),
-                    debounceTime(200),
-                    startWith(this.state.query),
-                    tap(query => {
+                    tap(([query, filter]) => {
                         if (!this.props.noUpdateURLQuery) {
-                            this.props.history.replace({ search: this.urlQuery({ query }) })
+                            this.props.history.replace({ search: this.urlQuery({ query, filter }) })
                         }
                     }),
-                    switchMap(query => {
+                    switchMap(([query, filter]) => {
                         const result = this.props
-                            .queryConnection({ first: this.state.first, query })
+                            .queryConnection({ first: this.state.first, query, ...(filter ? filter.args : {}) })
                             .pipe(
                                 map(
                                     c =>
@@ -192,29 +276,12 @@ export class FilteredConnection<
 
         this.subscriptions.add(
             this.showMoreClicks
-                .pipe(
-                    map(() => this.state.first * 2),
-                    tap(first => {
-                        this.setState({ first })
-                        if (!this.props.noUpdateURLQuery) {
-                            this.props.history.replace({ search: this.urlQuery({ first }) })
-                        }
-                    }),
-                    switchMap(first => this.props.queryConnection({ first, query: this.state.query }))
-                )
-                .subscribe(c => this.setState({ connection: c }))
+                .pipe(map(() => this.state.first * 2))
+                .subscribe(first => this.setState({ first }), () => refreshRequests.next())
         )
 
         if (this.props.updates) {
-            this.subscriptions.add(
-                this.props.updates
-                    .pipe(
-                        switchMap(() =>
-                            this.props.queryConnection({ first: this.state.first, query: this.state.query })
-                        )
-                    )
-                    .subscribe(c => this.setState({ connection: c }))
-            )
+            this.subscriptions.add(this.props.updates.subscribe(c => refreshRequests.next()))
         }
 
         // Reload collection when the query callback changes.
@@ -223,19 +290,22 @@ export class FilteredConnection<
                 .pipe(
                     map(({ queryConnection }) => queryConnection),
                     distinctUntilChanged(),
-                    tap(() => this.focusFilter()),
-                    switchMap(queryConnection => queryConnection({ first: this.state.first, query: this.state.query }))
+                    tap(() => this.focusFilter())
                 )
-                .subscribe(c => this.setState({ connection: c }))
+                .subscribe(() => refreshRequests.next())
         )
+        this.componentUpdates.next(this.props)
     }
 
-    private urlQuery(arg: { first?: number; query?: string }): string {
+    private urlQuery(arg: { first?: number; query?: string; filter?: FilteredConnectionFilter }): string {
         if (!arg.first) {
             arg.first = this.state.first
         }
         if (!arg.query) {
             arg.query = this.state.query
+        }
+        if (!arg.filter) {
+            arg.filter = this.state.activeFilter
         }
         const q = new URLSearchParams()
         if (arg.query) {
@@ -243,6 +313,9 @@ export class FilteredConnection<
         }
         if (arg.first !== this.props.defaultFirst) {
             q.set('first', String(arg.first))
+        }
+        if (arg.filter && this.props.filters && arg.filter !== this.props.filters[0]) {
+            q.set('filter', arg.filter.id)
         }
         return q.toString()
     }
@@ -328,6 +401,14 @@ export class FilteredConnection<
                             ref={this.setFilterRef}
                             spellCheck={false}
                         />
+                        {this.props.filters &&
+                            this.state.activeFilter && (
+                                <FilteredConnectionFilterControl
+                                    filters={this.props.filters}
+                                    onDidSelectFilter={this.onDidSelectFilter}
+                                    value={this.state.activeFilter.id}
+                                />
+                            )}
                     </form>
                 )}
                 {this.state.loading && <Loader className="icon-inline filtered-connection__loader" />}
@@ -376,6 +457,8 @@ export class FilteredConnection<
         this.queryInputChanges.next(e.currentTarget.value)
     }
 
+    private onDidSelectFilter = (filter: FilteredConnectionFilter) => this.activeFilterChanges.next(filter)
+
     private onClickShowMore: React.MouseEventHandler<HTMLButtonElement> = e => {
         this.showMoreClicks.next()
     }
@@ -391,4 +474,21 @@ function parseQueryInt(q: URLSearchParams, name: string): number | null {
         return n
     }
     return null
+}
+
+function getFilterFromURL(
+    q: URLSearchParams,
+    filters: FilteredConnectionFilter[] | undefined
+): FilteredConnectionFilter | undefined {
+    if (filters === undefined || filters.length === 0) {
+        return undefined
+    }
+    const id = q.get('filter')
+    if (id !== null) {
+        const filter = filters.find(f => f.id === id)
+        if (filter) {
+            return filter
+        }
+    }
+    return filters[0] // default
 }

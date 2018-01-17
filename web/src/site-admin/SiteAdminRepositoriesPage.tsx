@@ -1,16 +1,19 @@
+import { Checkmark } from '@sourcegraph/icons/lib/Checkmark'
+import { Close } from '@sourcegraph/icons/lib/Close'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import Loader from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
+import { displayRepoPath, splitPath } from '../components/Breadcrumb'
+import {
+    FilteredConnection,
+    FilteredConnectionFilter,
+    FilteredConnectionQueryArgs,
+} from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { REPO_DELETE_CONFIRMATION_MESSAGE } from '../repo/settings'
 import { eventLogger } from '../tracking/eventLogger'
-import { deleteRepository, fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled } from './backend'
+import { fetchAllRepositories, setRepositoryEnabled } from './backend'
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -28,59 +31,51 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
     }
 
     public render(): JSX.Element | null {
+        const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.node.uri))
+
         return (
-            <li key={this.props.node.id} className="site-admin-detail-list__item site-admin-repositories-page__repo">
+            <li
+                key={this.props.node.id}
+                className={`site-admin-detail-list__item site-admin-repositories-page__repo site-admin-repositories-page__repo--${
+                    this.props.node.enabled ? 'enabled' : 'disabled'
+                }`}
+            >
                 <div className="site-admin-detail-list__header site-admin-repositories-page__repo-header">
-                    <Link to={`/${this.props.node.uri}`}>
-                        <RepoBreadcrumb repoPath={this.props.node.uri} disableLinks={true} />
+                    <Link to={`/${this.props.node.uri}/-/settings`} className="site-admin-repositories-page__repo-link">
+                        {repoDir}/<strong>{repoBase}</strong>
                     </Link>
-                    <ul className="site-admin-detail-list__info site-admin-repositories-page__repo-info">
-                        {this.props.node.mirrorInfo.cloneInProgress && (
-                            <li>
-                                <Loader className="icon-inline" /> Cloning
-                            </li>
-                        )}
-                        <li>
-                            Access:{' '}
-                            {this.props.node.enabled ? (
-                                <span>
-                                    <span className="site-admin-repositories-page__repo-enabled">enabled</span> (for all
-                                    users)
-                                </span>
-                            ) : (
-                                <span>
-                                    <span className="site-admin-repositories-page__repo-disabled">disabled</span> (only
-                                    visible to site admins)
-                                </span>
-                            )}
-                        </li>
-                    </ul>
+                    {this.props.node.enabled ? (
+                        <small
+                            data-tooltip="Access to this repository is enabled. All users can view and search it."
+                            className="site-admin-repositories-page__repo-access"
+                        >
+                            <Checkmark className="icon-inline" />Enabled
+                        </small>
+                    ) : (
+                        <small
+                            data-tooltip="Access to this repository is disabled. Enable access to it to allow users to view and search it."
+                            className="site-admin-repositories-page__repo-access"
+                        >
+                            <Close className="icon-inline" />Disabled
+                        </small>
+                    )}
                 </div>
                 <div className="site-admin-detail-list__actions site-admin-repositories-page__actions">
-                    {this.props.node.enabled && (
+                    {
                         <Link
-                            className="btn btn-primary btn-sm site-admin-detail-list__action"
+                            className="btn btn-secondary btn-sm site-admin-detail-list__action"
                             to={`/${this.props.node.uri}/-/settings`}
                             data-tooltip="Repository settings"
                         >
-                            <GearIcon className="icon-inline" /> Settings
+                            <GearIcon className="icon-inline" />
                         </Link>
-                    )}
-                    {this.props.node.enabled && (
-                        <Link
-                            className="btn btn-primary btn-sm site-admin-detail-list__action"
-                            to={`/${this.props.node.uri}`}
-                            data-tooltip="View repository"
-                        >
-                            <RepoIcon className="icon-inline" />
-                        </Link>
-                    )}
+                    }
                     {this.props.node.enabled ? (
                         <button
                             className="btn btn-secondary btn-sm site-admin-detail-list__action"
                             onClick={this.disableRepository}
                             disabled={this.state.loading}
-                            data-tooltip="Disable access to the repository. It will not appear in search results or in the repositories list."
+                            data-tooltip="Disable access to the repository. Users will be unable to view and search it."
                         >
                             Disable access
                         </button>
@@ -92,15 +87,6 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                             data-tooltip="Enable access to the repository. Users will be able to view and search it."
                         >
                             Enable access
-                        </button>
-                    )}
-                    {!this.props.node.enabled && (
-                        <button
-                            className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                            onClick={this.deleteRepository}
-                            disabled={this.state.loading}
-                        >
-                            Delete
                         </button>
                     )}
                     {this.state.errorDescription && (
@@ -132,29 +118,6 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                 err => this.setState({ loading: false, errorDescription: err.message })
             )
     }
-
-    private deleteRepository = () => {
-        if (!window.confirm(REPO_DELETE_CONFIRMATION_MESSAGE)) {
-            return
-        }
-
-        this.setState({
-            errorDescription: undefined,
-            loading: true,
-        })
-
-        deleteRepository(this.props.node.id)
-            .toPromise()
-            .then(
-                () => {
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                err => this.setState({ loading: false, errorDescription: err.message })
-            )
-    }
 }
 
 interface Props extends RouteComponentProps<any> {}
@@ -165,6 +128,27 @@ class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {
  * A page displaying the repositories on this site.
  */
 export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
+    private static FILTERS: FilteredConnectionFilter[] = [
+        {
+            label: 'All',
+            id: 'all',
+            tooltip: 'Show all repositories',
+            args: { enabled: true, disabled: true },
+        },
+        {
+            label: 'Enabled',
+            id: 'enabled',
+            tooltip: 'Show access-enabled repositories only',
+            args: { enabled: true, disabled: false },
+        },
+        {
+            label: 'Disabled',
+            id: 'disabled',
+            tooltip: 'Show access-disabled repositories only',
+            args: { enabled: false, disabled: true },
+        },
+    ]
+
     private repositoryUpdates = new Subject<void>()
 
     public componentDidMount(): void {
@@ -196,6 +180,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
                     nodeComponent={RepositoryNode}
                     nodeComponentProps={nodeProps}
                     updates={this.repositoryUpdates}
+                    filters={SiteAdminRepositoriesPage.FILTERS}
                     history={this.props.history}
                     location={this.props.location}
                 />
