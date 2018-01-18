@@ -13,7 +13,7 @@ import {
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchAllRepositories, setRepositoryEnabled } from './backend'
+import { fetchAllRepositories, setRepositoryEnabled, updateMirrorRepository } from './backend'
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -108,6 +108,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
 
         setRepositoryEnabled(this.props.node.id, enabled)
             .toPromise()
+            .then(() => updateMirrorRepository({ repository: this.props.node.id }).toPromise())
             .then(
                 () => {
                     this.setState({ loading: false })
