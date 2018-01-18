@@ -5,7 +5,6 @@ import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { refreshSiteFlags } from '../site/backend'
 
 /**
  * Fetches all users.
@@ -155,12 +154,7 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
             if (result.nodes.some(n => n.mirrorInfo.cloneInProgress)) {
-                setTimeout(() => subject.next(), 3000)
-
-                // Also trigger the global alert for "Cloning repositories...".
-                refreshSiteFlags()
-                    .toPromise()
-                    .catch(err => console.error(err))
+                setTimeout(() => subject.next(), 5000)
             }
         })
     )
