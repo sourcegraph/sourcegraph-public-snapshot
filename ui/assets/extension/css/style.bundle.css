@@ -15,10 +15,10 @@
   display: -ms-flexbox;
   display: flex; }
 
-.selection-highlight {
-  background-color: rgba(3, 102, 214, 0.3); }
-
-.selection-highlight-sticky {
+.selection-highlight,
+.selection-highlight span,
+.selection-highlight-sticky,
+.selection-highlight-sticky span {
   background-color: rgba(3, 102, 214, 0.3); }
 
 /* jsTree default theme */
