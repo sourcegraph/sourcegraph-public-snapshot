@@ -13,14 +13,16 @@ interface Props {
 export class Timestamp extends React.PureComponent<Props> {
     private static RERENDER_INTERVAL_MSEC = 7000
 
-    private intervalHandle: number
+    private intervalHandle: number | null = null
 
     public componentDidMount(): void {
         this.intervalHandle = window.setInterval(() => this.forceUpdate(), Timestamp.RERENDER_INTERVAL_MSEC)
     }
 
     public componentWillUnmount(): void {
-        window.clearInterval(this.intervalHandle)
+        if (this.intervalHandle !== null) {
+            window.clearInterval(this.intervalHandle)
+        }
     }
 
     public render(): JSX.Element {
