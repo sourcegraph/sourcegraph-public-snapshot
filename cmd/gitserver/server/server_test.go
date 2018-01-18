@@ -92,7 +92,7 @@ func TestRequest(t *testing.T) {
 		testRepoExists = nil
 	}()
 
-	runCommand = func(cmd *exec.Cmd) (error, int) {
+	runCommand = func(ctx context.Context, cmd *exec.Cmd) (error, int) {
 		switch cmd.Args[1] {
 		case "testcommand":
 			cmd.Stdout.Write([]byte("teststdout"))
