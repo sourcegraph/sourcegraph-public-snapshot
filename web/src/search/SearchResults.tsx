@@ -262,7 +262,7 @@ export class SearchResults extends React.Component<Props, State> {
                                         </span>
                                     )}
                                     {this.state.timedout.length > 0 &&
-                                        this.state.cloning.length > 0 && <span> and </span>}
+                                        this.state.cloning.length > 0 && <span>&nbsp;and&nbsp;</span>}
                                     {this.state.cloning.length > 0 && (
                                         <span title={this.state.cloning.join('\n')}>
                                             {this.state.cloning.length}&nbsp;
