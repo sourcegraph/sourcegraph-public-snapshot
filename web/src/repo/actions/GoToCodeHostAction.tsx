@@ -6,6 +6,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { Position, Range } from 'vscode-languageserver-types'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileMetadata, FileMetadata } from '../backend'
 
@@ -13,6 +14,8 @@ interface Props {
     repo?: GQL.IRepository | null
     rev: string
     filePath?: string
+    position?: Position
+    range?: Range
 }
 
 interface State {
@@ -83,19 +86,26 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             return null
         }
 
-        const url = urlToCodeHost(this.props.repo, this.state.file)
-        if (url === null) {
+        const rawURL = urlToCodeHost(this.props.repo, this.state.file)
+        if (rawURL === null) {
             return null
         }
+        const url = new URL(rawURL)
 
         let tooltip: string
         let label = ''
         let icon: JSX.Element | null = null
+
         switch (this.props.repo.hostType) {
             case 'GitHub':
             case 'GitHub Enterprise':
                 tooltip = 'View on GitHub'
                 icon = <GitHubIcon className="icon-inline" />
+                if (this.props.range) {
+                    url.hash = `#L${this.props.range.start.line}-L${this.props.range.end.line}`
+                } else if (this.props.position) {
+                    url.hash = '#L' + this.props.position.line
+                }
                 break
             case 'Phabricator':
                 tooltip = 'View on Phabricator'
@@ -110,7 +120,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             <a
                 className="btn btn-link btn-sm composite-container__header-action"
                 onClick={onClick}
-                href={url}
+                href={url.href}
                 data-tooltip={tooltip}
             >
                 {icon}

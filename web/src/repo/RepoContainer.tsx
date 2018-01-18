@@ -11,6 +11,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { parseRepoRev } from '.'
+import { parseBrowserRepoURL } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
@@ -147,13 +148,14 @@ export class RepoContainer extends React.Component<Props, State> {
         }
 
         const repoMatchURL = `/${this.state.repo.uri}`
+        const { filePath, position, range } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
 
         return (
             <div className="repo-composite-container composite-container">
                 <RepoHeader
                     repo={this.state.repo}
                     rev={this.state.rev}
-                    filePath={this.state.rest ? extractFilePathFromRest(this.state.rest) : undefined}
+                    filePath={filePath}
                     className="repo-composite-container__header"
                     location={this.props.location}
                     history={this.props.history}
@@ -167,7 +169,9 @@ export class RepoContainer extends React.Component<Props, State> {
                             repo={this.state.repo}
                             // We need a rev to generate code host URLs, since we don't have a default use HEAD.
                             rev={this.state.rev || 'HEAD'}
-                            filePath={this.state.rest ? extractFilePathFromRest(this.state.rest) : undefined}
+                            filePath={filePath}
+                            position={position}
+                            range={range}
                         />
                     }
                 />
@@ -288,16 +292,6 @@ function parseURLPath(repoRevAndRest: string): { repoPath: string; rev?: string;
     const [repoRev, rest] = repoRevAndRest.split('/-/', 2)
     const { repoPath, rev } = parseRepoRev(repoRev)
     return { repoPath, rev, rest }
-}
-
-function extractFilePathFromRest(rest: string): string | undefined {
-    if (rest.startsWith('blob/')) {
-        return rest.slice('blob/'.length)
-    }
-    if (rest.startsWith('tree/')) {
-        return rest.slice('tree/'.length)
-    }
-    return undefined
 }
 
 function abbreviateOID(oid: string): string {
