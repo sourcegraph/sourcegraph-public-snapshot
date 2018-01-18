@@ -12,8 +12,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { parseRepoRev } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
-import { GoToGitHubAction } from './actions/GoToGitHubAction'
-import { GoToPhabricatorAction } from './actions/GoToPhabricator'
+import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchRepository } from './backend'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
@@ -31,6 +30,7 @@ interface Props extends RouteComponentProps<{ repoRevAndRest: string }> {
 interface State {
     repoPath: string
     rev?: string
+    filePath?: string
     rest?: string
 
     loading: boolean
@@ -142,17 +142,14 @@ export class RepoContainer extends React.Component<Props, State> {
                 />
                 <RepoHeaderActionPortal
                     position="right"
-                    key="go-to-github"
-                    element={<GoToGitHubAction key="go-to-github" location={this.props.location} />}
-                />
-                <RepoHeaderActionPortal
-                    position="right"
-                    key="go-to-phabricator"
+                    key="go-to-code-host"
                     element={
-                        <GoToPhabricatorAction
-                            key="go-to-phabricator"
-                            repo={this.state.repoPath}
-                            location={this.props.location}
+                        <GoToCodeHostAction
+                            key="go-to-code-host"
+                            repo={this.state.repo}
+                            // We need a rev to generate code host URLs, since we don't have a default use HEAD.
+                            rev={this.state.rev || 'HEAD'}
+                            filePath={this.state.rest ? extractFilePathFromRest(this.state.rest) : undefined}
                         />
                     }
                 />

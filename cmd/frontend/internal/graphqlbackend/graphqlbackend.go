@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -16,11 +17,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
@@ -39,8 +43,25 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"type", "field", "error"})
 
+// githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
+// This is used for the purposes of generating external GitHub enterprise links.
+var githubEnterpriseURLs = make(map[string]string)
+var repoListConfigs = make(map[string]schema.Repository)
+
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
+	githubConf := conf.Get().Github
+	for _, c := range githubConf {
+		gheURL, err := url.Parse(c.Url)
+		if err != nil {
+			log15.Error("error parsing GitHub config", "error", err)
+		}
+		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
+	}
+	reposList := conf.Get().ReposList
+	for _, r := range reposList {
+		repoListConfigs[r.Path] = r
+	}
 }
 
 type prometheusTracer struct {

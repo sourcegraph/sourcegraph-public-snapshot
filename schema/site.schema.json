@@ -387,6 +387,32 @@
           "description": "Display path on Sourcegraph for the repository, such as my/repo",
           "type": "string",
           "pattern": "^[\\w_]"
+        },
+        "links": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "description":
+                "URL specifying where to view the repository at an external location e.g. \"https://example.com/myrepo\"",
+              "type": "string"
+            },
+            "commit": {
+              "description":
+                "URL template for specifying how to link to commits at an external location. Use \"{commit}\" as a placeholder for a given commit ID e.g. \"https://example.com/myrepo/view-commit/{commit}\"",
+              "type": "string"
+            },
+            "tree": {
+              "description":
+                "URL template for specifying how to link to paths at an external location. Use \"{path}\" as a placeholder for a given path and \"{rev}\" as a placeholder for a given revision e.g. \"https://example.com/myrepo@{rev}/browse/{path}\"",
+              "type": "string"
+            },
+            "blob": {
+              "description":
+                "URL template for specifying how to link to files at an external location. Use \"{path}\" as a placeholder for a given path and \"{rev}\" as a placeholder for a given revision e.g. \"https://example.com/myrepo@{rev}/browse/{path}\"",
+              "type": "string"
+            }
+          }
         }
       }
     },

@@ -612,6 +612,10 @@ type Repository implements Node {
     # The repository's default Git branch. If the repository is currently being cloned or is empty,
     # this field will be null.
     defaultBranch: String
+    # URL specifying where to view the repository at an external location.
+    url: String
+    # The type of code host that hosts this repository at its external url (e.g. GitHub, Phabricator).
+    hostType: String
     # The repository's Git refs.
     gitRefs(
         # Returns the first n Git refs from the list.
@@ -857,6 +861,8 @@ type File implements TreeEntry {
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
 
+    # URL specifying where to view the file at an external location.
+    url: String
     repository: Repository!
     binary: Boolean!
     isDirectory: Boolean!

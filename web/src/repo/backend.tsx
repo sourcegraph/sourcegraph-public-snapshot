@@ -50,6 +50,8 @@ export const fetchRepository = memoizeObservable(
                     repository(uri: $repoPath) {
                         id
                         uri
+                        url
+                        hostType
                         description
                         viewerCanAdminister
                         redirectURL
@@ -287,6 +289,48 @@ export const fetchBlobContent = memoizeObservable(
     makeRepoURI
 )
 
+interface FetchFileMetadataCtx {
+    repoPath: string
+    rev: string
+    filePath: string
+}
+
+export interface FileMetadata {
+    isDirectory: boolean
+    url: string | null
+}
+
+export const fetchFileMetadata = memoizeObservable(
+    (ctx: FetchFileMetadataCtx): Observable<FileMetadata> =>
+        queryGraphQL(
+            gql`
+                query FileMetadata($repoPath: String, $rev: String, $filePath: String) {
+                    repository(uri: $repoPath) {
+                        commit(rev: $rev) {
+                            file(path: $filePath) {
+                                isDirectory
+                                url
+                            }
+                        }
+                    }
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.repository || !data.repository.commit || !data.repository.commit.file) {
+                    throw Object.assign(
+                        'Could not fetch blob metadata: ' + new Error((errors || []).map(e => e.message).join('\n')),
+                        { errors }
+                    )
+                }
+                const file = data.repository.commit.file
+                return file
+            })
+        ),
+    makeRepoURI
+)
+
 export const fetchPhabricatorRepo = memoizeObservable(
     (ctx: { repoPath: string }): Observable<GQL.IPhabricatorRepo | null> =>
         queryGraphQL(
@@ -303,7 +347,12 @@ export const fetchPhabricatorRepo = memoizeObservable(
         ).pipe(
             map(result => {
                 if (result.errors || !result.data || !result.data.phabricatorRepo) {
-                    return null
+                    throw Object.assign(
+                        new Error(
+                            'Could not fetch phabricator repo: ' + (result.errors || []).map(e => e.message).join('\n')
+                        ),
+                        { errors: result.errors }
+                    )
                 }
                 return result.data.phabricatorRepo
             })
