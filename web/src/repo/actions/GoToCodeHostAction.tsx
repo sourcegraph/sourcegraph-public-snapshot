@@ -88,7 +88,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             return null
         }
 
-        let label: string
+        let label: string | undefined
         let tooltip: string
         let icon: JSX.Element | null = null
         switch (this.props.repo.hostType) {
