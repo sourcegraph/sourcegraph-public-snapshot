@@ -190,7 +190,9 @@ export function updateMirrorRepository(args: { repository: GQLID }): Observable<
     return mutateGraphQL(
         gql`
             mutation UpdateMirrorRepository($repository: ID!) {
-                updateMirrorRepository(repository: $repository) { }
+                updateMirrorRepository(repository: $repository) {
+                    alwaysNil
+                }
             }
         `,
         args
