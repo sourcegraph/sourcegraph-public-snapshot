@@ -12,6 +12,7 @@ import {
     FilteredConnectionQueryArgs,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchAllRepositories, setRepositoryEnabled, updateMirrorRepository } from './backend'
 
@@ -154,6 +155,18 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminRepos')
+
+        // Refresh global alert about enabling repositories when the user visits here.
+        refreshSiteFlags()
+            .toPromise()
+            .then(null, err => console.error(err))
+    }
+
+    public componentWillUnmount(): void {
+        // Remove global alert about enabling repositories when the user navigates away from here.
+        refreshSiteFlags()
+            .toPromise()
+            .then(null, err => console.error(err))
     }
 
     public render(): JSX.Element | null {
