@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@sourcegraph/tsconfig": "^3.0.0",
-    "@sourcegraph/tslint-config": "^11.0.0",
+    "@sourcegraph/tslint-config": "^11.0.1",
     "@types/copy-webpack-plugin": "^4.0.1",
     "@types/d3-scale": "^1.0.10",
     "@types/d3-selection": "^1.2.0",
