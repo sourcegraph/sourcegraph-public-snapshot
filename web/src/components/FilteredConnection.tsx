@@ -246,6 +246,10 @@ export class FilteredConnection<
                 .subscribe(filter => this.setState({ activeFilter: filter }))
         )
 
+        // Track the last query and filter we used. We only want to show the loader if these change,
+        // not when a refresh is requested for the same query/filter (or else there would be jitter).
+        let lastQuery: string | undefined
+        let lastFilter: FilteredConnectionFilter | undefined
         this.subscriptions.add(
             combineLatest(queryChanges, activeFilterChanges, refreshRequests)
                 .pipe(
@@ -268,7 +272,13 @@ export class FilteredConnection<
                                 publishReplay(),
                                 refCount()
                             )
-                        return merge(result, of({ loading: true }).pipe(delay(250), takeUntil(result)))
+
+                        const showLoading = query !== lastQuery || filter !== lastFilter
+                        lastQuery = query
+                        lastFilter = filter
+                        return showLoading
+                            ? merge(result, of({ loading: true }).pipe(delay(250), takeUntil(result)))
+                            : result
                     })
                 )
                 .subscribe((stateUpdate: State<C, N>) => this.setState(stateUpdate))
@@ -277,7 +287,7 @@ export class FilteredConnection<
         this.subscriptions.add(
             this.showMoreClicks
                 .pipe(map(() => this.state.first * 2))
-                .subscribe(first => this.setState({ first }), () => refreshRequests.next())
+                .subscribe(first => this.setState({ first }, () => refreshRequests.next()))
         )
 
         if (this.props.updates) {
@@ -292,7 +302,7 @@ export class FilteredConnection<
                     distinctUntilChanged(),
                     tap(() => this.focusFilter())
                 )
-                .subscribe(() => refreshRequests.next())
+                .subscribe(() => this.setState({ loading: true }, () => refreshRequests.next()))
         )
         this.componentUpdates.next(this.props)
     }

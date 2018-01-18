@@ -1,6 +1,7 @@
 import { Checkmark } from '@sourcegraph/icons/lib/Checkmark'
 import { Close } from '@sourcegraph/icons/lib/Close'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
+import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -12,8 +13,9 @@ import {
     FilteredConnectionQueryArgs,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchAllRepositoriesAndPollUntilNonempty, setRepositoryEnabled, updateMirrorRepository } from './backend'
+import { fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled, updateMirrorRepository } from './backend'
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -47,18 +49,33 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                     {this.props.node.enabled ? (
                         <small
                             data-tooltip="Access to this repository is enabled. All users can view and search it."
-                            className="site-admin-repositories-page__repo-access"
+                            className="site-admin-repositories-page__repo-info site-admin-repositories-page__repo-access"
                         >
                             <Checkmark className="icon-inline" />Enabled
                         </small>
                     ) : (
                         <small
                             data-tooltip="Access to this repository is disabled. Enable access to it to allow users to view and search it."
-                            className="site-admin-repositories-page__repo-access"
+                            className="site-admin-repositories-page__repo-info site-admin-repositories-page__repo-access"
                         >
                             <Close className="icon-inline" />Disabled
                         </small>
                     )}
+                    {this.props.node.mirrorInfo.cloneInProgress && (
+                        <small className="site-admin-repositories-page__repo-info">
+                            <Loader className="icon-inline" /> Cloning
+                        </small>
+                    )}
+                    {this.props.node.enabled &&
+                        !this.props.node.mirrorInfo.cloneInProgress &&
+                        !this.props.node.mirrorInfo.cloned && (
+                            <small
+                                data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
+                                className="site-admin-repositories-page__repo-info"
+                            >
+                                Not yet cloned
+                            </small>
+                        )}
                 </div>
                 <div className="site-admin-detail-list__actions site-admin-repositories-page__actions">
                     {
@@ -106,18 +123,19 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
             loading: true,
         })
 
-        setRepositoryEnabled(this.props.node.id, enabled)
-            .toPromise()
-            .then(() => updateMirrorRepository({ repository: this.props.node.id }).toPromise())
-            .then(
-                () => {
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                err => this.setState({ loading: false, errorDescription: err.message })
-            )
+        const promises: Promise<any>[] = [setRepositoryEnabled(this.props.node.id, enabled).toPromise()]
+        if (enabled) {
+            promises.push(updateMirrorRepository({ repository: this.props.node.id }).toPromise())
+        }
+        Promise.all(promises).then(
+            () => {
+                if (this.props.onDidUpdate) {
+                    this.props.onDidUpdate()
+                }
+                this.setState({ loading: false })
+            },
+            err => this.setState({ loading: false, errorDescription: err.message })
+        )
     }
 }
 
@@ -154,6 +172,18 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminRepos')
+
+        // Refresh global alert about enabling repositories when the user visits here.
+        refreshSiteFlags()
+            .toPromise()
+            .then(null, err => console.error(err))
+    }
+
+    public componentWillUnmount(): void {
+        // Remove global alert about enabling repositories when the user navigates away from here.
+        refreshSiteFlags()
+            .toPromise()
+            .then(null, err => console.error(err))
     }
 
     public render(): JSX.Element | null {
@@ -192,10 +222,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
     }
 
     private queryRepositories = (args: FilteredConnectionQueryArgs) =>
-        // On initial site setup, handle the case where the user just restarted the site with
-        // repo code host config, but the repos haven't yet been added. In that case, poll so that we show
-        // new repos when they are added.
-        fetchAllRepositoriesAndPollUntilNonempty({ ...args })
+        fetchAllRepositoriesAndPollIfAnyCloning({ ...args })
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 }

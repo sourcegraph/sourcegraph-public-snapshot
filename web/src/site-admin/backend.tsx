@@ -5,7 +5,6 @@ import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { refreshSiteFlags } from '../site/backend'
 
 /**
  * Fetches all users.
@@ -155,26 +154,7 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
             if (result.nodes.some(n => n.mirrorInfo.cloneInProgress)) {
-                setTimeout(() => subject.next(), 3000)
-
-                // Also trigger the global alert for "Cloning repositories...".
-                refreshSiteFlags()
-                    .toPromise()
-                    .catch(err => console.error(err))
-            }
-        })
-    )
-}
-
-export function fetchAllRepositoriesAndPollUntilNonempty(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
-    // TODO(sqs): This is hacky, but I couldn't figure out a better way.
-    const subject = new Subject<null>()
-    return subject.pipe(
-        startWith(null),
-        mergeMap(() => fetchAllRepositories(args)),
-        tap(result => {
-            if (result.nodes.length === 0) {
-                setTimeout(() => subject.next(), 3000)
+                setTimeout(() => subject.next(), 5000)
             }
         })
     )
@@ -191,7 +171,6 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
         `,
         { repository, enabled }
     ).pipe(
-        tap(() => setTimeout(() => refreshSiteFlags().toPromise(), 1000)), // add/remove global alert banner for noRepositoriesEnabled
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
