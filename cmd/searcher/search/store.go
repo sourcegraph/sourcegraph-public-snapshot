@@ -92,7 +92,7 @@ func (s *Store) Start() {
 // prepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
 func (s *Store) prepareZip(ctx context.Context, repo, commit string) (path string, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "OpenReader")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	defer func() {
 		if err != nil {
@@ -126,7 +126,8 @@ func (s *Store) prepareZip(ctx context.Context, repo, commit string) (path strin
 	go func() {
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
-		f, err := s.cache.Open(context.Background(), key, func(ctx context.Context) (io.ReadCloser, error) {
+		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
+		f, err := s.cache.Open(bgctx, key, func(ctx context.Context) (io.ReadCloser, error) {
 			return s.fetch(ctx, repo, commit)
 		})
 		var path string
@@ -153,7 +154,7 @@ func (s *Store) prepareZip(ctx context.Context, repo, commit string) (path strin
 
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
-// openReader.
+// prepareZip.
 func (s *Store) fetch(ctx context.Context, repo, commit string) (rc io.ReadCloser, err error) {
 	fetchQueueSize.Inc()
 	s.fetchSem <- 1 // Acquire concurrent fetches semaphore
@@ -164,7 +165,7 @@ func (s *Store) fetch(ctx context.Context, repo, commit string) (rc io.ReadClose
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 
 	fetching.Inc()
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Fetch")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)
@@ -341,4 +342,7 @@ var (
 func init() {
 	prometheus.MustRegister(cacheSizeBytes)
 	prometheus.MustRegister(evictions)
+	prometheus.MustRegister(fetching)
+	prometheus.MustRegister(fetchQueueSize)
+	prometheus.MustRegister(fetchFailed)
 }
