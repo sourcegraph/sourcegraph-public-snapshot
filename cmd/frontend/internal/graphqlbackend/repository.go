@@ -186,6 +186,52 @@ func (r *repositoryResolver) CreatedAt() string {
 	return ""
 }
 
+func (r *repositoryResolver) URL() *string {
+	uri := r.repo.URI
+	rc, ok := repoListConfigs[uri]
+	if ok && rc.Links != nil && rc.Links.Repository != "" {
+		return &rc.Links.Repository
+	}
+
+	if strings.HasPrefix(uri, "github.com/") {
+		url := fmt.Sprintf("https://%s", uri)
+		return &url
+	}
+
+	host := strings.Split(uri, "/")[0]
+	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(uri, host))
+		return &url
+	}
+
+	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
+	if phabRepo != nil {
+		url := fmt.Sprintf("%s/r%s", phabRepo.URL, phabRepo.Callsign)
+		return &url
+	}
+
+	return nil
+}
+
+func (r *repositoryResolver) HostType() *string {
+	uri := r.repo.URI
+	if strings.HasPrefix(uri, "github.com/") {
+		host := "GitHub"
+		return &host
+	}
+	host := strings.Split(uri, "/")[0]
+	if _, ok := githubEnterpriseURLs[host]; ok {
+		host := "GitHub Enterprise"
+		return &host
+	}
+	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
+	if phabRepo != nil {
+		host := "Phabricator"
+		return &host
+	}
+	return nil
+}
+
 func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListResolver, error) {
 	totalRefs, err := backend.Defs.ListTotalRefs(ctx, r.repo.URI)
 	if err != nil {

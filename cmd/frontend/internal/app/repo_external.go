@@ -18,7 +18,6 @@ import (
 // githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
 // This is used for the purposes of generating external GitHub enterprise links.
 var githubEnterpriseURLs = make(map[string]string)
-
 var reposListURLs = make(map[string]string)
 
 func init() {
@@ -32,8 +31,8 @@ func init() {
 	}
 	reposList := conf.Get().ReposList
 	for _, r := range reposList {
-		if r.CommitURL != "" {
-			reposListURLs[r.Path] = r.CommitURL
+		if r.Links != nil && r.Links.Commit != "" {
+			reposListURLs[r.Path] = r.Links.Commit
 		}
 	}
 }

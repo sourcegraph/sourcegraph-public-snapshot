@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"os"
 	"path"
@@ -83,6 +84,82 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 
 func (r *fileResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
 	return r.commit.Repository(ctx)
+}
+
+func (r *fileResolver) URL(ctx context.Context) (*string, error) {
+	isDir, err := r.IsDirectory(ctx)
+	if err != nil {
+		return nil, nil
+	}
+	if isDir {
+		return r.treeURL(ctx)
+	} else {
+		return r.blobURL(ctx)
+	}
+}
+
+func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
+	repo, err := r.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	uri, rev := repo.URI(), string(r.commit.oid)
+	rc, ok := repoListConfigs[uri]
+	if ok && rc.Links != nil && rc.Links.Tree != "" {
+		url := strings.Replace(strings.Replace(rc.Links.Tree, "{rev}", rev, 1), "{path}", r.path, 1)
+		return &url, nil
+	}
+
+	if strings.HasPrefix(uri, "github.com/") {
+		url := fmt.Sprintf("https://%s/tree/%s/%s", uri, rev, r.path)
+		return &url, nil
+	}
+
+	host := strings.Split(uri, "/")[0]
+	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(uri, host), rev, r.path)
+		return &url, nil
+	}
+
+	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
+	if phabRepo != nil {
+		url := fmt.Sprintf("%s/source/%s/browse/%s", phabRepo.URL, phabRepo.Callsign, r.path)
+		return &url, nil
+	}
+
+	return nil, nil
+}
+
+func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
+	repo, err := r.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	uri, rev := repo.URI(), string(r.commit.oid)
+	rc, ok := repoListConfigs[uri]
+	if ok && rc.Links != nil && rc.Links.Tree != "" {
+		url := strings.Replace(strings.Replace(rc.Links.Blob, "{rev}", rev, 1), "{path}", r.path, 1)
+		return &url, nil
+	}
+
+	if strings.HasPrefix(uri, "github.com/") {
+		url := fmt.Sprintf("https://%s/blob/%s/%s", uri, rev, r.path)
+		return &url, nil
+	}
+
+	host := strings.Split(uri, "/")[0]
+	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(uri, host), rev, r.path)
+		return &url, nil
+	}
+
+	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
+	if phabRepo != nil {
+		url := fmt.Sprintf("%s/source/%s/browse/%s", phabRepo.URL, phabRepo.Callsign, r.path)
+		return &url, nil
+	}
+
+	return nil, nil
 }
 
 func (r *fileResolver) RichHTML(ctx context.Context) (string, error) {

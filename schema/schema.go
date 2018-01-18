@@ -50,6 +50,14 @@ type GitHubConnection struct {
 	Url               string   `json:"url,omitempty"`
 }
 
+// Links
+type Links struct {
+	Blob       string `json:"blob,omitempty"`
+	Commit     string `json:"commit,omitempty"`
+	Repository string `json:"repository,omitempty"`
+	Tree       string `json:"tree,omitempty"`
+}
+
 // OpenIDConnectAuthProvider Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
 	ClientID           string `json:"clientID"`
@@ -74,13 +82,10 @@ type Repos struct {
 
 // Repository
 type Repository struct {
-	BlobURL   string `json:"blobURL,omitempty"`
-	CommitURL string `json:"commitURL,omitempty"`
-	Path      string `json:"path"`
-	TreeURL   string `json:"treeURL,omitempty"`
-	Type      string `json:"type,omitempty"`
-	Url       string `json:"url"`
-	ViewURL   string `json:"viewURL,omitempty"`
+	Links *Links `json:"links,omitempty"`
+	Path  string `json:"path"`
+	Type  string `json:"type,omitempty"`
+	Url   string `json:"url"`
 }
 
 // ResourceOverride

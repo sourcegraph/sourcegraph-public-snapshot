@@ -1,30 +1,22 @@
-import * as H from 'history'
+import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
+import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
 import * as React from 'react'
 import { catchError } from 'rxjs/operators/catchError'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { parseBrowserRepoURL, ParsedRepoURI } from '..'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchRepoListConfig } from '../backend'
-
-interface RepoListConfig {
-    blobURL: string | null
-    commitURL: string | null
-    treeURL: string | null
-    viewURL: string | null
-}
+import { fetchFileMetadata, FileMetadata } from '../backend'
 
 interface Props {
-    repo: string
+    repo?: GQL.IRepository | null
     rev: string
-    isDirectory: boolean
-    location: H.Location
+    filePath?: string
 }
 
 interface State {
-    repoListConfig?: RepoListConfig | undefined
+    file?: FileMetadata | undefined
 }
 
 /**
@@ -33,32 +25,39 @@ interface State {
 export class GoToCodeHostAction extends React.PureComponent<Props, State> {
     public state: State = {}
 
-    private repoChanges = new Subject<string>()
+    private fileChanges = new Subject<string>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.repoChanges
+            this.fileChanges
                 .pipe(
                     tap(() => {
-                        if (this.state.repoListConfig) {
-                            this.setState({ repoListConfig: undefined })
+                        if (this.state.file) {
+                            this.setState({ file: undefined })
                         }
                     }),
-                    switchMap(repo =>
-                        fetchRepoListConfig({ repoPath: repo }).pipe(
+                    switchMap(filePath => {
+                        if (!this.props.repo || !filePath) {
+                            return []
+                        }
+                        return fetchFileMetadata({
+                            repoPath: this.props.repo.uri,
+                            rev: this.props.rev,
+                            filePath,
+                        }).pipe(
                             catchError(err => {
                                 console.error(err)
                                 return []
                             })
                         )
-                    )
+                    })
                 )
                 .subscribe(
-                    config => {
-                        if (config) {
+                    file => {
+                        if (file) {
                             this.setState({
-                                repoListConfig: config,
+                                file,
                             })
                         }
                     },
@@ -66,12 +65,12 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                 )
         )
 
-        this.repoChanges.next(this.props.repo)
+        this.fileChanges.next(this.props.filePath)
     }
 
     public componentWillReceiveProps(props: Props): void {
-        if (props.repo !== this.props.repo) {
-            this.repoChanges.next(props.repo)
+        if (props.filePath !== this.props.filePath) {
+            this.fileChanges.next(props.filePath)
         }
     }
 
@@ -80,16 +79,31 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.repoListConfig) {
+        if (!this.props.repo) {
             return null
         }
 
-        const { repoPath, filePath } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
-        const rev = this.props.rev
-
-        const url = urlToCodeHost(this.state.repoListConfig, this.props.isDirectory, { repoPath, filePath, rev })
+        const url = urlToCodeHost(this.props.repo, this.state.file)
         if (url === null) {
             return null
+        }
+
+        let label: string
+        let tooltip: string
+        let icon: JSX.Element | null = null
+        switch (this.props.repo.hostType) {
+            case 'GitHub':
+            case 'GitHub Enterprise':
+                tooltip = 'View on GitHub'
+                icon = <GitHubIcon className="icon-inline" />
+                break
+            case 'Phabricator':
+                tooltip = 'View on Phabricator'
+                icon = <PhabricatorIcon className="icon-inline" />
+                break
+            default:
+                label = 'View on code host'
+                tooltip = label
         }
 
         return (
@@ -97,9 +111,10 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                 className="btn btn-link btn-sm composite-container__header-action"
                 onClick={onClick}
                 href={url}
-                data-tooltip="View on code host"
+                data-tooltip={tooltip}
             >
-                <span className="composite-container__header-action-text">View on code host</span>
+                {icon}
+                <span className="composite-container__header-action-text">{label}</span>
             </a>
         )
     }
@@ -109,19 +124,12 @@ function onClick(): void {
     eventLogger.log('OpenInCodeHostClicked')
 }
 
-function urlToCodeHost(
-    config: RepoListConfig,
-    isDirectory: boolean,
-    { repoPath, filePath, rev }: ParsedRepoURI
-): string | null {
-    if (!filePath && repoPath && config.viewURL) {
-        return config.viewURL
+function urlToCodeHost(repo: GQL.IRepository, file?: FileMetadata): string | null {
+    if (file && file.url) {
+        return file.url
     }
-    if (filePath && isDirectory && config.treeURL) {
-        return config.treeURL.replace('{rev}', rev || '').replace('{path}', filePath)
-    }
-    if (filePath && !isDirectory && config.blobURL) {
-        return config.blobURL.replace('{rev}', rev || '').replace('{path}', filePath)
+    if (!file && repo.url) {
+        return repo.url
     }
     return null
 }

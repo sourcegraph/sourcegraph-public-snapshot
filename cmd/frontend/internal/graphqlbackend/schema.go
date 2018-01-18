@@ -241,7 +241,6 @@ type Query {
     node(id: ID!): Node
     repository(uri: String!): Repository
     phabricatorRepo(uri: String!): PhabricatorRepo
-    repoListConfig(uri: String!): RepoListConfig
     symbols(id: String!, mode: String!): [Symbol!]!
     currentUser: User
     currentSiteSettings: Settings
@@ -594,6 +593,10 @@ type Repository implements Node {
     # The repository's default Git branch. If the repository is currently being cloned or is empty,
     # this field will be null.
     defaultBranch: String
+    # URL specifying where to view the repository at an external location.
+    url: String
+    # The type of code host that hosts this repository at its external url (e.g. GitHub, Phabricator).
+    hostType: String
     # The repository's Git refs.
     gitRefs(
         # Returns the first n Git refs from the list.
@@ -714,17 +717,6 @@ type PhabricatorRepo {
     url: String!
 }
 
-type RepoListConfig {
-    # The template for generating blob URLs.
-    blobURL: String
-    # The template for generating commit URLs.
-    commitURL: String
-    # The template for generating tree URLs.
-    treeURL: String
-    # The template for generating view URLs.
-    viewURL: String
-}
-
 type TotalRefList {
     repositories: [Repository!]!
     total: Int!
@@ -836,6 +828,8 @@ type File implements TreeEntry {
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
 
+    # URL specifying where to view the file at an external location.
+    url: String
     repository: Repository!
     binary: Boolean!
     isDirectory: Boolean!
