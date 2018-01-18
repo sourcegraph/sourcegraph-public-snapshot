@@ -13,7 +13,6 @@ feedback, including:
 Let us know all the things you like, don't like, and would like to see
 in Sourcegraph!
 
-
 ## Channels
 
 In addition to this forum, you can reach us at the following coordinates:
@@ -22,4 +21,6 @@ In addition to this forum, you can reach us at the following coordinates:
 * [Email](mailto:support@sourcegraph.com)
 
 
-## [FAQ](https://sourcegraph.com/help/faq)
+## Product documentation
+
+Visit or search [Sourcegraph Server documentation](https://about.sourcegraph.com/docs) for detailed instructions on setting up Sourcegraph and frequently asked questions.
