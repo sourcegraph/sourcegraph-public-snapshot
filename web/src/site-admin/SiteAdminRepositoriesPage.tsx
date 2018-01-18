@@ -107,18 +107,19 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
             loading: true,
         })
 
-        setRepositoryEnabled(this.props.node.id, enabled)
-            .toPromise()
-            .then(() => updateMirrorRepository({ repository: this.props.node.id }).toPromise())
-            .then(
-                () => {
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                err => this.setState({ loading: false, errorDescription: err.message })
-            )
+        const promises: Promise<any>[] = [setRepositoryEnabled(this.props.node.id, enabled).toPromise()]
+        if (enabled) {
+            promises.push(updateMirrorRepository({ repository: this.props.node.id }).toPromise())
+        }
+        Promise.all(promises).then(
+            () => {
+                if (this.props.onDidUpdate) {
+                    this.props.onDidUpdate()
+                }
+                this.setState({ loading: false })
+            },
+            err => this.setState({ loading: false, errorDescription: err.message })
+        )
     }
 }
 
