@@ -13,7 +13,7 @@ import {
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchAllRepositoriesAndPollUntilNonempty, setRepositoryEnabled, updateMirrorRepository } from './backend'
+import { fetchAllRepositories, setRepositoryEnabled, updateMirrorRepository } from './backend'
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -191,11 +191,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs) =>
-        // On initial site setup, handle the case where the user just restarted the site with
-        // repo code host config, but the repos haven't yet been added. In that case, poll so that we show
-        // new repos when they are added.
-        fetchAllRepositoriesAndPollUntilNonempty({ ...args })
+    private queryRepositories = (args: FilteredConnectionQueryArgs) => fetchAllRepositories({ ...args })
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 }
