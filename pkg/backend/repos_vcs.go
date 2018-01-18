@@ -28,12 +28,6 @@ func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevO
 
 	commitID, err := resolveRepoRev(ctx, op.Repo, op.Rev)
 	if err != nil {
-		if notExistErr, isNotExist := err.(vcs.RepoNotExistError); isNotExist && !notExistErr.CloneInProgress {
-			// Delete repository if gitserver says it doesn't exist
-			if err := db.Repos.Delete(ctx, op.Repo); err != nil {
-				log15.Warn("svc.local.repos.ResolveRev failed to delete non-existent repository")
-			}
-		}
 		return nil, err
 	}
 	return &sourcegraph.ResolvedRev{CommitID: string(commitID)}, nil
