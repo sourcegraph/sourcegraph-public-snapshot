@@ -1,6 +1,8 @@
 package env
 
 import (
+	"encoding/json"
+	"expvar"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +11,7 @@ import (
 
 var descriptions = make(map[string]string)
 var locked = false
+var env = expvar.NewMap("env")
 
 var (
 	Version  = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
@@ -39,7 +42,15 @@ func Get(name string, defaultValue string, description string) string {
 	if !ok {
 		value = defaultValue
 	}
+	env.Set(name, jsonStringer(value))
 	return value
+}
+
+type jsonStringer string
+
+func (s jsonStringer) String() string {
+	v, _ := json.Marshal(s)
+	return string(v)
 }
 
 // Lock makes later calls to Get fail with a panic. Call this at the beginning of the main function.
