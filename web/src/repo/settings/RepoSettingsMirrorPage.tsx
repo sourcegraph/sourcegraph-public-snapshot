@@ -89,7 +89,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<MirrorRe
         } else {
             title = 'Clone this repository'
             description = 'This repository has not yet been cloned from its remote repository.'
-            buttonLabel = 'foo' // TODO!(sqs)
+            buttonLabel = 'Clone now'
         }
 
         return (
