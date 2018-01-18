@@ -19,7 +19,7 @@ parts will be automated.
    [sourcegraph/website](https://github.com/sourcegraph/website).
 1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseBuild` to the
    timestamp and semver version string of the new version.
-1. Update any old blog posts on Contentful to point to the new version, if a point release (e.g., the 2.4 blog post should contain the snippet for 2.4.x where x is the latest minor release).
+1. If the blog post for the last release contains a command referencing a version like 2.4 but you are releasing 2.4.x, then remove the version string and refer to the canonical docs so that people don't accidentally run the old version.
 1. `git push origin -f origin/master:docker-images/server`
 1. Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
 1. `gcloud docker -- pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
