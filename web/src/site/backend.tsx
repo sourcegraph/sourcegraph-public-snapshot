@@ -18,13 +18,8 @@ export function refreshSiteFlags(): Observable<never> {
     return queryGraphQL(gql`
         query SiteFlags {
             site {
-                repositoriesCloning: repositories(cloning: true) {
-                    nodes {
-                        uri
-                    }
-                    totalCount
-                }
                 needsRepositoryConfiguration
+                noRepositoriesEnabled
                 hasCodeIntelligence
             }
         }
@@ -33,9 +28,7 @@ export function refreshSiteFlags(): Observable<never> {
             if (!data || !data.site) {
                 throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
             }
-            siteFlags.next(
-                (data as GQL.IQuery & { site: { repositoriesCloning: GQL.IRepositoryConnection | null } }).site
-            )
+            siteFlags.next(data.site)
         }),
         mergeMap(() => [])
     )

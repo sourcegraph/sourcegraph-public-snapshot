@@ -11,9 +11,15 @@
 @import './SiteAdminUpdatesPage';
 
 .site-admin-page {
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        &-title {
+            margin-bottom: 0;
+        }
+    }
+
     &__actions {
-        padding-top: 0.5rem;
-        margin: -0.25rem;
         display: flex;
         align-items: center;
         flex-wrap: wrap;

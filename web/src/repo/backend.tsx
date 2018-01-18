@@ -53,6 +53,7 @@ export const fetchRepository = memoizeObservable(
                         url
                         hostType
                         description
+                        enabled
                         viewerCanAdminister
                         redirectURL
                     }

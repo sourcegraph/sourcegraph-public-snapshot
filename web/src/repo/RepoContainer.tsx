@@ -1,4 +1,5 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -47,6 +48,7 @@ interface State {
  */
 export class RepoContainer extends React.Component<Props, State> {
     private routeMatchChanges = new Subject<{ repoRevAndRest: string }>()
+    private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -93,6 +95,13 @@ export class RepoContainer extends React.Component<Props, State> {
         )
 
         this.routeMatchChanges.next(this.props.match.params)
+
+        // Merge in repository updates.
+        this.subscriptions.add(
+            this.repositoryUpdates.subscribe(update =>
+                this.setState(({ repo }) => ({ repo: { ...repo, ...update } as GQL.IRepository }))
+            )
+        )
     }
 
     public componentWillReceiveProps(props: Props): void {
@@ -120,6 +129,15 @@ export class RepoContainer extends React.Component<Props, State> {
         if (this.state.repo === null) {
             return (
                 <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="The repository was not found." />
+            )
+        }
+        if (!this.state.repo.enabled && !this.state.repo.viewerCanAdminister) {
+            return (
+                <HeroPage
+                    icon={NoEntryIcon}
+                    title="Repository disabled"
+                    subtitle="To access this repository, contact the Sourcegraph admin."
+                />
             )
         }
 
@@ -241,15 +259,22 @@ export class RepoContainer extends React.Component<Props, State> {
                     <Route
                         path={`${repoMatchURL}/-/settings`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
                         // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => <RepoSettingsArea {...routeComponentProps} {...transferProps} />}
+                        render={routeComponentProps => (
+                            <RepoSettingsArea
+                                {...routeComponentProps}
+                                {...transferProps}
+                                onDidUpdateRepository={this.onDidUpdateRepository}
+                            />
+                        )}
                     />
                     <Route key="hardcoded-key" component={RepoPageNotFound} />
                 </Switch>
             </div>
         )
     }
+
+    private onDidUpdateRepository = (update: Partial<GQL.IRepository>) => this.repositoryUpdates.next(update)
 }
 
 /**

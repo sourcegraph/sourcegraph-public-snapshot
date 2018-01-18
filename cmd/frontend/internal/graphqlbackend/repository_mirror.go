@@ -104,3 +104,22 @@ func (r *checkMirrorRepositoryConnectionResult) Error() *string {
 	}
 	return &r.errorMessage
 }
+
+func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struct {
+	Repository graphql.ID
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repo, err := repositoryByID(ctx, args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.repo.URI); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}

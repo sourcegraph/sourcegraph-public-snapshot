@@ -118,7 +118,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, uri); err != nil {
 			return nil, ErrRepoNotFound
 		}
-		if err := s.TryInsertNew(ctx, uri, "", false, false); err != nil {
+		if err := s.TryInsertNew(ctx, uri, "", false, false, true); err != nil {
 			return nil, err
 		}
 		return s.getByURI(ctx, uri)
@@ -147,7 +147,7 @@ func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*sourcegraph.
 		}
 	}
 
-	if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private); err != nil {
+	if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private, true); err != nil {
 		return nil, err
 	}
 
@@ -300,8 +300,11 @@ type ReposListOptions struct {
 	// returned in the list.
 	ExcludePattern string
 
-	// IncludeDisabled includes disabled repositories in the list.
-	IncludeDisabled bool
+	// Enabled includes enabled repositories in the list.
+	Enabled bool
+
+	// Disabled includes disabled repositories in the list.
+	Disabled bool
 
 	sourcegraph.ListOptions
 }
@@ -311,7 +314,7 @@ type ReposListOptions struct {
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
-func (s *repos) List(ctx context.Context, opt *ReposListOptions) (results []*sourcegraph.Repo, err error) {
+func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*sourcegraph.Repo, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "repos.List")
 	tr := trace.New(traceName, "")
 	defer func() {
@@ -326,10 +329,7 @@ func (s *repos) List(ctx context.Context, opt *ReposListOptions) (results []*sou
 		return Mocks.Repos.List(ctx, opt)
 	}
 
-	if opt == nil {
-		opt = &ReposListOptions{}
-	}
-	conds, err := s.listSQL(*opt)
+	conds, err := s.listSQL(opt)
 	if err != nil {
 		return nil, err
 	}
@@ -385,9 +385,17 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	if opt.ExcludePattern != "" {
 		conds = append(conds, sqlf.Sprintf("lower(uri) !~* %s", opt.ExcludePattern))
 	}
-	if !opt.IncludeDisabled {
-		conds = append(conds, sqlf.Sprintf("enabled=true"))
+
+	if opt.Enabled && opt.Disabled {
+		// nothing to do
+	} else if opt.Enabled && !opt.Disabled {
+		conds = append(conds, sqlf.Sprintf("enabled"))
+	} else if !opt.Enabled && opt.Disabled {
+		conds = append(conds, sqlf.Sprintf("NOT enabled"))
+	} else {
+		return nil, errors.New("Repos.List: must specify at least one of Enabled=true or Disabled=true")
 	}
+
 	return conds, nil
 }
 
@@ -635,7 +643,7 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repoID int32, rev str
 
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
-func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private bool) error {
+func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork, private, enabled bool) error {
 	// Avoid logspam in postgres for violating the constraint. So we first
 	// check if the repo exists.
 	if _, err := s.getByURI(ctx, uri); err == nil {
@@ -644,7 +652,7 @@ func (s *repos) TryInsertNew(ctx context.Context, uri string, description string
 		return err
 	}
 
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, created_at, language, enabled) VALUES ($1, $2, $3, $4, $5, '', true)", uri, description, fork, private, time.Now()) // FIXME: bad DB schema: nullable columns
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, language, created_at, enabled) VALUES ($1, $2, $3, $4, '', now(), $5)", uri, description, fork, private, enabled)
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {

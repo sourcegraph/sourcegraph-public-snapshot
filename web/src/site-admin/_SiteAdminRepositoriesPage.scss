@@ -9,10 +9,29 @@
     }
 
     &__repo {
-        &-enabled {
+        align-items: center;
+
+        &-header {
+            display: flex;
+            align-items: center;
+        }
+        &-link {
+            flex: 0 0 auto;
+        }
+        &-access {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            opacity: 0.8;
+            margin-left: 0.125rem;
+            font-size: 11px;
+            cursor: default;
+            user-select: none;
+        }
+        &--enabled &-access {
             color: $color-success;
         }
-        &-disabled {
+        &--disabled &-access {
             color: $color-error;
         }
     }

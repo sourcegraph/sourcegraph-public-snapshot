@@ -71,7 +71,7 @@ func TestRepos_Delete(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false, true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -140,23 +140,23 @@ func TestRepos_Count(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false, true); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := Repos.List(ctx, nil)
+	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)

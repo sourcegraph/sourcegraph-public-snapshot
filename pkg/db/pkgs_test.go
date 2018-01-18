@@ -22,7 +22,7 @@ func TestPkgs_update_delete(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false, true); err != nil {
 		t.Fatal(err)
 	}
 	rp, err := Repos.GetByURI(ctx, "myrepo")
@@ -90,7 +90,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false, true); err != nil {
 		t.Fatal(err)
 	}
 	rp, err := Repos.GetByURI(ctx, "myrepo")

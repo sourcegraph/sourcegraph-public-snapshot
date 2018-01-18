@@ -155,6 +155,7 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                             repo={
                                 item.thread.repo.repository || {
                                     uri: itemRepo,
+                                    enabled: true,
                                     viewerCanAdminister: false,
                                 }
                             }

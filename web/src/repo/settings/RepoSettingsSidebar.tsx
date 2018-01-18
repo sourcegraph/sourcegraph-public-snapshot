@@ -27,6 +27,16 @@ export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
                         Options
                     </NavLink>
                 </li>
+                <li className="sidebar__item">
+                    <NavLink
+                        to={`/${props.repo.uri}/-/settings/mirror`}
+                        exact={true}
+                        className="sidebar__item-link"
+                        activeClassName="sidebar__item--active"
+                    >
+                        Mirroring
+                    </NavLink>
+                </li>
             </ul>
             <div className="sidebar__item sidebar__action">
                 <Link to="/api/console" className="sidebar__action-button btn">

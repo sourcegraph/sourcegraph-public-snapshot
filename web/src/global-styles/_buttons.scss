@@ -87,6 +87,19 @@
     }
 }
 
+.btn-danger {
+    background: rgba(201, 42, 42, 0.9);
+
+    &:hover:not(:disabled) {
+        background: darken(rgba(201, 42, 42, 0.9), 10%);
+    }
+
+    &:focus:not(:disabled) {
+        outline: darken($color-error, 5%);
+        box-shadow: 0 0 0 2px rgba($color-error, 0.5);
+    }
+}
+
 .btn-secondary {
     border: solid 1px $color-secondary;
     background-color: transparent;
@@ -134,6 +147,7 @@
 
 .btn-primary,
 .btn-success,
+.btn-danger,
 .btn-info {
     // Make sure these styles are applied
     // even when used on an anchor element

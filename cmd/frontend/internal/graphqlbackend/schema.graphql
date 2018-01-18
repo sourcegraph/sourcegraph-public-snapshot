@@ -133,6 +133,14 @@ type Mutation {
         # The mirror repository to check.
         repository: ID!
     ): CheckMirrorRepositoryConnectionResult!
+    # Schedule the mirror repository to be updated from its original source repository. Updating
+    # occurs automatically, so this should not normally be needed.
+    #
+    # Only site admins may perform this mutation.
+    updateMirrorRepository(
+        # The mirror repository to update.
+        repository: ID!
+    ): EmptyResponse!
     # Deletes a repository and all data associated with it, irreversibly.
     #
     # If the repository was added because it was present in the site configuration (directly,
@@ -1054,8 +1062,10 @@ type Site implements ConfigurationSubject {
         query: String
         # Returns only repositories that are currently being cloned.
         cloning: Boolean = false
+        # Include enabled repositories.
+        enabled: Boolean = true
         # Include disabled repositories.
-        includeDisabled: Boolean = false
+        disabled: Boolean = false
     ): RepositoryConnection!
     # List all users.
     users(
@@ -1089,6 +1099,8 @@ type Site implements ConfigurationSubject {
     telemetrySamples: [String!]!
     # Whether the site needs to be configured to add repositories.
     needsRepositoryConfiguration: Boolean!
+    # Whether the site has zero access-enabled repositories.
+    noRepositoriesEnabled: Boolean!
     # Whether the site has code intelligence. This field will be expanded in the future to describe
     # more about the code intelligence available (languages supported, etc.). It is subject to
     # change without notice.

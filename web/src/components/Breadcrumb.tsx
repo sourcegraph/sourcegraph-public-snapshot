@@ -67,6 +67,14 @@ export function displayRepoPath(repoPath: string): string {
     return parts.join('/')
 }
 
+/**
+ * Splits the repository path into the dir and base components.
+ */
+export function splitPath(path: string): [string, string] {
+    const components = path.split('/')
+    return [components.slice(0, -1).join('/'), components[components.length - 1]]
+}
+
 export class RepoBreadcrumb extends React.Component<RepoBreadcrumbProps, {}> {
     public render(): JSX.Element | null {
         return (

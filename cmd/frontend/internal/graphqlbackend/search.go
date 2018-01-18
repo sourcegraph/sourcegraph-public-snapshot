@@ -294,9 +294,10 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	}
 
 	tr.LazyPrintf("Repos.List - start")
-	repos, err := backend.Repos.List(ctx, &db.ReposListOptions{
+	repos, err := backend.Repos.List(ctx, db.ReposListOptions{
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
+		Enabled:         true,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		ListOptions: sourcegraph.ListOptions{PerPage: int32(maxRepoListSize + 1)},
 	})
