@@ -44,6 +44,7 @@ var (
 		},
 		FieldAliases: map[string]string{
 			"r":     FieldRepo,
+			"g":     FieldRepoGroup,
 			"f":     FieldFile,
 			"since": FieldAfter,
 			"until": FieldBefore,
