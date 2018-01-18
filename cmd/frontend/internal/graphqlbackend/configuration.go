@@ -197,9 +197,10 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 		&configurationSubject{site: singletonSiteResolver},
 	}
 
+	// Apply global site settings
+	subjects = append(subjects, &configurationSubject{})
+
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
-		// Apply global site settings
-		subjects = append(subjects, &configurationSubject{})
 
 		user, err := currentUser(ctx)
 		if err != nil {
