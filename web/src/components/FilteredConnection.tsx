@@ -287,7 +287,7 @@ export class FilteredConnection<
         this.subscriptions.add(
             this.showMoreClicks
                 .pipe(map(() => this.state.first * 2))
-                .subscribe(first => this.setState({ first }), () => refreshRequests.next())
+                .subscribe(first => this.setState({ first }, () => refreshRequests.next()))
         )
 
         if (this.props.updates) {
