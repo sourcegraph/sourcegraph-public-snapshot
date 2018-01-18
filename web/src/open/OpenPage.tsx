@@ -2,7 +2,6 @@ import * as H from 'history'
 import * as React from 'react'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { basename, dirname } from '../util/path'
 
 interface Props {
     location: H.Location
@@ -50,12 +49,9 @@ export class OpenPage extends React.Component<Props, State> {
         return (
             <div className="open-page">
                 <PageTitle title={'Open in Sourcegraph - Sourcegraph'} />
-                <h2>Open in {validSchemes[this.state.scheme]}:</h2>
-                <pre>
-                    <code className="open-page__commands alert alert-primary">{this.commandsToRun()}</code>
-                </pre>
-                <p className="open-page__info">
-                    Don't have the editor yet?{' '}
+                <h1>Opening in {validSchemes[this.state.scheme]}</h1>
+                <p>
+                    Your should be redirected in a few seconds. Don't have the editor yet?{' '}
                     <a href="https://about.sourcegraph.com/beta/201708/#beta">Download Sourcegraph Editor</a>.
                     <br />
                     Using a different build?{' '}
@@ -74,6 +70,7 @@ export class OpenPage extends React.Component<Props, State> {
                             </span>
                         ))}
                 </p>
+                <iframe className="open-page__iframe" src={`${this.state.scheme}:open?${this.props.location.search}`} />
             </div>
         )
     }
@@ -90,44 +87,5 @@ export class OpenPage extends React.Component<Props, State> {
         // Update local storage and component state.
         window.localStorage.setItem(localStorageKey, scheme)
         this.setState({ scheme })
-    }
-
-    private commandsToRun(): string {
-        const params = new URLSearchParams(this.props.location.search)
-
-        const commands: string[] = []
-
-        const sanitize = (s: string): string => s.replace(/[^a-zA-Z0-9_/@:.-]/g, '_')
-
-        const repo = params.get('repo')
-        if (repo) {
-            const repoParts: string[] = [basename(repo).replace(/\.git$/, '')]
-            const repoDirname = dirname(repo)
-            if (repoDirname && repoDirname !== '.') {
-                repoParts.unshift(basename(repoDirname).replace(/^.*:/, ''))
-            }
-            commands.push(`cd /path/to/${sanitize(repoParts.join('/'))}`)
-        }
-
-        const revision = params.get('revision')
-        if (revision) {
-            commands.push(`git checkout ${sanitize(revision)}`)
-            commands.push(`git pull`)
-        }
-
-        const cmd = this.state.scheme
-        let path = params.get('path')
-        const selection = params.get('selection')
-        if (path) {
-            if (path.startsWith('--')) {
-                path = `-- ${path}` // don't interpret -- in path as CLI flags
-            }
-            const args = selection ? `--goto ${sanitize(path)}:${sanitize(selection)}` : path
-            commands.push(`${cmd} ${args}`)
-        } else {
-            commands.push(`${cmd} -n .`)
-        }
-
-        return commands.join('\n')
     }
 }
