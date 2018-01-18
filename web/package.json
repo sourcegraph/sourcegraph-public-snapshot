@@ -20,7 +20,7 @@
     "schema": "export DEBUG=; mkdir -p src/schema && cd ../schema && json2ts -i settings.schema.json -o ../web/src/schema/settings.schema.d.ts && json2ts -i site.schema.json -o ../web/src/schema/site.schema.d.ts && cd ../web",
     "watch-schema": "chokidar --silent '../schema/**.schema.json' --initial -c 'npm run schema'",
     "lint": "npm run tslint && npm run stylelint",
-    "tslint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' '**/*.ts?(x)'",
+    "tslint": "tslint -c tslint.json -p tsconfig.json -e '{node_modules/**,src/schema/**}' '**/*.ts?(x)'",
     "stylelint": "stylelint --quiet 'src/**/*.scss'",
     "stylelint-compact": "npm run stylelint -- --custom-formatter ./node_modules/stylelint-formatter-compact/index.js"
   },
