@@ -166,6 +166,20 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
     )
 }
 
+export function fetchAllRepositoriesAndPollUntilNonempty(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
+    // TODO(sqs): This is hacky, but I couldn't figure out a better way.
+    const subject = new Subject<null>()
+    return subject.pipe(
+        startWith(null),
+        mergeMap(() => fetchAllRepositories(args)),
+        tap(result => {
+            if (result.nodes.length === 0) {
+                setTimeout(() => subject.next(), 3000)
+            }
+        })
+    )
+}
+
 export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Observable<void> {
     return mutateGraphQL(
         gql`
