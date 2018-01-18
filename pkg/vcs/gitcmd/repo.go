@@ -110,7 +110,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 		spec = spec + "^0"
 	}
 
-	cmd := r.command("git", "rev-parse", spec)
+	cmd := r.command("git", "rev-parse", spec, "--")
 	cmd.EnsureRevision = string(spec)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {

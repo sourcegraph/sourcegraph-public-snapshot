@@ -493,6 +493,10 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 var headBranchPattern = regexp.MustCompile("HEAD branch: (.+?)\\n")
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo string) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Server.doRepoUpdate")
+	span.SetTag("repo", repo)
+	defer span.Finish()
+
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
 	if !ok {
@@ -545,7 +549,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 	}
 
 	// check if branch pointed to by HEAD exists
-	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch)
+	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch, "--")
 	cmd.Dir = path.Join(s.ReposDir, repo)
 	if err := cmd.Run(); err != nil {
 		// branch does not exist, pick first branch
@@ -581,9 +585,12 @@ func (s *Server) ensureRevision(ctx context.Context, repo string, rev string, re
 			return
 		}
 	}
-	cmd := exec.CommandContext(ctx, "git", "rev-parse", rev)
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", rev, "--")
 	cmd.Dir = repoDir
 	if err := cmd.Run(); err == nil {
+		return
+	}
+	if rev == "HEAD" || rev == "" {
 		return
 	}
 	// Revision not found, update before returning.
