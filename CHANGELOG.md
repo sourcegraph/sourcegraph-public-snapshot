@@ -15,7 +15,17 @@ Before cutting a new release, please:
 3. Ensure the documentation is ready
 4. Tag and push a new version. Update this document.
 
-## Next
+## 2.4.2
+
+### Added
+
+* Repository settings mirror/cloning diagnostics page
+
+### Changed
+
+* Repositories added from GitHub are no longer enabled by default. The site admin UI for enabling/disabling repositories is improved.
+
+## 2.4.0
 
 ### Added
 
