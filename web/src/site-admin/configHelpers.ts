@@ -98,7 +98,7 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.githubDotCom', label: 'Add GitHub.com repositories', run: addGitHubDotCom },
     {
         id: 'sourcegraph.site.githubEnterprise',
-        label: 'Add GitHub.com Enterprise repositories',
+        label: 'Add GitHub Enterprise repositories',
         run: addGitHubEnterprise,
     },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
