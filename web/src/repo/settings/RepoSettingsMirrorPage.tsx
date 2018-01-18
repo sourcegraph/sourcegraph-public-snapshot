@@ -271,6 +271,26 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                         onDidUpdateRepository={this.onDidUpdateRepository}
                     />
                 }
+                <hr />
+                <div className="alert alert-notice repo-settings-mirror-page__troubleshooting">
+                    Problems cloning or updating this repository?
+                    <ul className="repo-settings-mirror-page__steps">
+                        <li className="repo-settings-mirror-page__step">
+                            Press <strong>Check connection</strong> above to see log output from attempting to reach the
+                            remote repository.
+                        </li>
+                        <li className="repo-settings-mirror-page__step">
+                            Consult{' '}
+                            <a href="https://about.sourcegraph.com/docs/server/config/repositories">
+                                Sourcegraph Server repositories documentation
+                            </a>{' '}
+                            for resolving authentication issues (such as HTTPS certificates and SSH keys).
+                        </li>
+                        <li className="repo-settings-mirror-page__step">
+                            <a href="mailto:support@sourcegraph.com">Contact support</a> for further help.
+                        </li>
+                    </ul>
+                </div>
             </div>
         )
     }
