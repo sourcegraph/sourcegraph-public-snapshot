@@ -159,6 +159,25 @@ func BenchmarkConcurrentFind_large_re_anchor(b *testing.B) {
 	})
 }
 
+func BenchmarkConcurrentFind_large_path(b *testing.B) {
+	do := func(b *testing.B, content, path bool) {
+		benchConcurrentFind(b, &protocol.Request{
+			Repo:   "github.com/golang/go",
+			Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+			PatternInfo: protocol.PatternInfo{
+				Pattern:               "http.*client",
+				IsRegExp:              true,
+				IsCaseSensitive:       true,
+				PatternMatchesContent: content,
+				PatternMatchesPath:    path,
+			},
+		})
+	}
+	b.Run("path only", func(b *testing.B) { do(b, false, true) })
+	b.Run("content only", func(b *testing.B) { do(b, true, false) })
+	b.Run("both path and content", func(b *testing.B) { do(b, true, true) })
+}
+
 func BenchmarkConcurrentFind_small_fixed(b *testing.B) {
 	benchConcurrentFind(b, &protocol.Request{
 		Repo:   "github.com/sourcegraph/go-langserver",
@@ -247,7 +266,7 @@ func benchConcurrentFind(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := concurrentFind(ctx, rg, zf, 0)
+		_, _, err := concurrentFind(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -416,7 +435,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, 0)
+	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, 0, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}

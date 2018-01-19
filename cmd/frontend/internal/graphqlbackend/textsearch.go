@@ -50,7 +50,8 @@ var (
 // A light wrapper around the search service. We implement the service here so
 // that we can unmarshal the result directly into graphql resolvers.
 
-// patternInfo is the struct used by vscode pass on search queries.
+// patternInfo is the struct used by vscode pass on search queries. Keep it in sync with
+// pkg/searcher/protocol.PatternInfo.
 type patternInfo struct {
 	Pattern         string
 	IsRegExp        bool
@@ -66,6 +67,9 @@ type patternInfo struct {
 
 	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
+
+	PatternMatchesContent bool
+	PatternMatchesPath    bool
 }
 
 func (p *patternInfo) validate() error {
@@ -207,6 +211,10 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	if p.PathPatternsAreCaseSensitive {
 		q.Set("PathPatternsAreCaseSensitive", "true")
 	}
+	// TEMP BACKCOMPAT: always set even if false so that searcher can distinguish new frontends that send
+	// these fields from old frontends that do not (and provide a default in the latter case).
+	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
+	q.Set("PatternMatchesPath", strconv.FormatBool(p.PatternMatchesPath))
 	searcherURL, err := searcherURLs.Get(repo + "@" + commit)
 	if err != nil {
 		return nil, false, err

@@ -131,6 +131,7 @@ main.go:6:	fmt.Println("Hello world")
 	defer ts.Close()
 
 	for _, test := range cases {
+		test.arg.PatternMatchesContent = true
 		req := protocol.Request{
 			Repo:        "foo",
 			Commit:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -266,6 +267,7 @@ func TestSearch_badrequest(t *testing.T) {
 	defer ts.Close()
 
 	for _, p := range cases {
+		p.PatternInfo.PatternMatchesContent = true
 		_, err := doSearch(ts.URL, &p)
 		if err == nil {
 			t.Fatalf("%v expected to fail", p)
@@ -299,6 +301,12 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	}
 	if p.PathPatternsAreCaseSensitive {
 		form.Set("PathPatternsAreCaseSensitive", "true")
+	}
+	if p.PatternMatchesContent {
+		form.Set("PatternMatchesContent", "true")
+	}
+	if p.PatternMatchesPath {
+		form.Set("PatternMatchesPath", "true")
 	}
 	resp, err := http.PostForm(u, form)
 	if err != nil {
