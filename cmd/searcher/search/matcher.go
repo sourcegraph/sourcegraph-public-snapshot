@@ -7,6 +7,7 @@ import (
 	"io"
 	"regexp"
 	"regexp/syntax"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"unicode"
@@ -138,6 +139,15 @@ func (rg *readerGrep) Copy() *readerGrep {
 	}
 }
 
+// matchString returns whether rg's regexp pattern matches s. It is intended to be
+// used to match file paths.
+func (rg *readerGrep) matchString(s string) bool {
+	if rg.ignoreCase {
+		s = strings.ToLower(s)
+	}
+	return rg.re.MatchString(s)
+}
+
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
@@ -240,7 +250,7 @@ func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile) (protocol.FileMatch, erro
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchLimit int) (fm []protocol.FileMatch, limitHit bool, err error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
 	span.SetTag("re", rg.re.String())
@@ -253,6 +263,10 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 		span.Finish()
 	}()
 
+	if !patternMatchesContent && !patternMatchesPaths {
+		return nil, false, errors.New("nothing to match (neither file contents nor paths)")
+	}
+
 	if fileMatchLimit > maxFileMatches || fileMatchLimit <= 0 {
 		fileMatchLimit = maxFileMatches
 	}
@@ -262,10 +276,28 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 	defer cancel()
 
 	var (
-		filesmu       sync.Mutex // protects files
-		files         = zf.Files
-		matchesmu     sync.Mutex // protects matches, limitHit
-		matches       = []protocol.FileMatch{}
+		filesmu   sync.Mutex // protects files
+		files     = zf.Files
+		matchesmu sync.Mutex // protects matches, limitHit
+		matches   = []protocol.FileMatch{}
+	)
+
+	if !patternMatchesContent {
+		// Fast path for only matching file paths.
+		for _, f := range files {
+			if rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name) {
+				if len(matches) < fileMatchLimit {
+					matches = append(matches, protocol.FileMatch{Path: f.Name})
+				} else {
+					limitHit = true
+					break
+				}
+			}
+		}
+		return matches, limitHit, nil
+	}
+
+	var (
 		done          = ctx.Done()
 		wg            sync.WaitGroup
 		wgErrOnce     sync.Once
@@ -306,6 +338,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 				atomic.AddUint32(&filesSearched, 1)
 
 				// process
+				var fm protocol.FileMatch
 				fm, err := rg.FindZip(zf, f)
 				if err != nil {
 					wgErrOnce.Do(func() {
@@ -314,7 +347,15 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 					})
 					return
 				}
-				if len(fm.LineMatches) > 0 {
+				match := len(fm.LineMatches) > 0
+				if !match && patternMatchesPaths {
+					// Try matching against the file path.
+					match = rg.matchString(f.Name)
+					if match {
+						fm.Path = f.Name
+					}
+				}
+				if match {
 					matchesmu.Lock()
 					if len(matches) < fileMatchLimit {
 						matches = append(matches, fm)

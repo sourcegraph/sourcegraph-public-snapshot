@@ -111,6 +111,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
 	span.SetTag("pathPatternsAreCaseSensitive", strconv.FormatBool(p.PathPatternsAreCaseSensitive))
 	span.SetTag("fileMatchLimit", p.FileMatchLimit)
+	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
+	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled requests. We do not want to
@@ -142,7 +144,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 			if err != nil {
 				errS = " error=" + strconv.Quote(err.Error())
 			}
-			s.RequestLog.Printf("search request repo=%v commit=%v pattern=%q isRegExp=%v isWordMatch=%v isCaseSensitive=%v matches=%d code=%s duration=%v%s", p.Repo, p.Commit, p.Pattern, p.IsRegExp, p.IsWordMatch, p.IsCaseSensitive, len(matches), code, time.Since(start), errS)
+			s.RequestLog.Printf("search request repo=%v commit=%v pattern=%q isRegExp=%v isWordMatch=%v isCaseSensitive=%v patternMatchesContent=%v patternMatchesPath=%v matches=%d code=%s duration=%v%s", p.Repo, p.Commit, p.Pattern, p.IsRegExp, p.IsWordMatch, p.IsCaseSensitive, p.PatternMatchesContent, p.PatternMatchesPath, len(matches), code, time.Since(start), errS)
 		}
 	}(time.Now())
 
@@ -177,7 +179,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveFiles.Observe(float64(nFiles))
 	archiveSize.Observe(float64(bytes))
 
-	return concurrentFind(ctx, rg, zf, p.FileMatchLimit)
+	return concurrentFind(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
 }
 
 func validateParams(p *protocol.Request) error {

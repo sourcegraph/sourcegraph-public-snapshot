@@ -3,10 +3,8 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -90,8 +88,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 }
 
 type searchResults struct {
-	queryForFileMatches bool
-	results             []*searchResult
+	results []*searchResult
 	searchResultsCommon
 	alert *searchAlert
 }
@@ -501,34 +498,34 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.combinedQuery.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file"}
-
-			// TODO(sqs): env var for opting into potentially slower default search type
-			if v, _ := strconv.ParseBool(os.Getenv("EXP_SEARCH_PATHS")); v {
-				resultTypes = append(resultTypes, "path")
-			}
+			resultTypes = []string{"file", "path"}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
-	queryForFileMatches := false
+	for _, resultType := range resultTypes {
+		if resultType == "file" {
+			args.query.PatternMatchesContent = true
+		} else if resultType == "path" {
+			args.query.PatternMatchesPath = true
+		}
+	}
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
+
+	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
 		if _, seen := seenResultTypes[resultType]; seen {
 			continue
 		}
 		seenResultTypes[resultType] = struct{}{}
 		switch resultType {
-		case "file":
-			queryForFileMatches = true
-			if len(patternsToCombine) == 0 {
-				return nil, errors.New("no query terms or regexp specified")
+		case "file", "path":
+			if searchedFileContentsOrPaths {
+				// type:file and type:path use same searchRepos, so don't call 2x.
+				continue
 			}
+			searchedFileContentsOrPaths = true
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
 				return searchRepos(ctx, &args)
-			})
-		case "path":
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
-				return searchPathsInRepos(ctx, args.repos, r.combinedQuery)
 			})
 		case "diff":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
@@ -542,9 +539,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	// Run all search funcs.
-	results := &searchResults{
-		queryForFileMatches: queryForFileMatches,
-	}
+	var results searchResults
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)
 		if err != nil {
@@ -565,7 +560,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
-	return results, nil
+	return &results, nil
 }
 
 type searchResult struct {
