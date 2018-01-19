@@ -334,7 +334,10 @@ body {
 
         &-notice {
             background: rgba(250, 245, 228, 0.75);
-            color: $color-light-text-1;
+            &,
+            a {
+                color: $color-light-text-1;
+            }
         }
     }
 }
