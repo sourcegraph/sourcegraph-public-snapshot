@@ -53,8 +53,7 @@ type Client struct {
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
 
-	Addrs   []string
-	NoCreds bool
+	Addrs []string
 }
 
 // addrForRepo returns the gitserver address to use for the given repo URI.

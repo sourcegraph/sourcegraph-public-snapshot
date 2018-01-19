@@ -37,7 +37,6 @@ func main() {
 	env.HandleHelpFlag()
 	log.SetFlags(0)
 	tracer.Init("searcher")
-	gitserver.DefaultClient.NoCreds = true
 
 	// Filter log output by level.
 	lvl, err := log15.LvlFromString(env.LogLevel)

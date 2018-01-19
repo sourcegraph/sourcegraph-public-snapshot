@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer/idx"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
@@ -47,7 +46,6 @@ func main() {
 
 	tracer.Init("indexer")
 
-	gitserver.DefaultClient.NoCreds = true
 	if googleAPIKey != "" {
 		if err := idx.Google.SetAPIKey(googleAPIKey); err != nil {
 			log.Println("Could not initialize Google API client: ", err)

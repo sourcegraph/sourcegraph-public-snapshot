@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
@@ -19,7 +18,6 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init("repo-updater")
-	gitserver.DefaultClient.NoCreds = true
 
 	waitForFrontend(ctx)
 
