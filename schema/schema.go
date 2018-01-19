@@ -43,11 +43,12 @@ type DeploymentOverrides struct {
 
 // GitHubConnection
 type GitHubConnection struct {
-	Certificate       string   `json:"certificate,omitempty"`
-	PreemptivelyClone bool     `json:"preemptivelyClone,omitempty"`
-	Repos             []string `json:"repos,omitempty"`
-	Token             string   `json:"token"`
-	Url               string   `json:"url,omitempty"`
+	Certificate                 string   `json:"certificate,omitempty"`
+	InitialRepositoryEnablement bool     `json:"initialRepositoryEnablement,omitempty"`
+	PreemptivelyClone           bool     `json:"preemptivelyClone,omitempty"`
+	Repos                       []string `json:"repos,omitempty"`
+	Token                       string   `json:"token"`
+	Url                         string   `json:"url,omitempty"`
 }
 
 // Links
