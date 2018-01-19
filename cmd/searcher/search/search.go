@@ -54,20 +54,16 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TEMP BACKCOMPAT with new PatternMatchesContent and PatternMatchesPath fields: if they are not present, treat
-	// it as PatternMatchesContent==true and PatternMatchesPath==false. This can be removed when both the new frontend
-	// and searcher (as of this commit) are deployed.
-	_, hasPatternMatchesContent := r.Form["PatternMatchesContent"]
-	_, hasPatternMatchesPath := r.Form["PatternMatchesPath"]
-	if !hasPatternMatchesContent && !hasPatternMatchesPath {
-		r.Form.Set("PatternMatchesContent", "true")
-	}
-
 	var p protocol.Request
 	err = decoder.Decode(&p, r.Form)
 	if err != nil {
 		http.Error(w, "failed to decode form: "+err.Error(), http.StatusBadRequest)
 		return
+	}
+	if !p.PatternMatchesContent && !p.PatternMatchesPath {
+		// BACKCOMPAT: Old frontends send neither of these fields, but we still want to
+		// search file content in that case.
+		p.PatternMatchesContent = true
 	}
 	if err = validateParams(&p); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

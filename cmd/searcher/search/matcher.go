@@ -264,7 +264,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 	}()
 
 	if !patternMatchesContent && !patternMatchesPaths {
-		return nil, false, errors.New("nothing to match (neither file contents nor paths)")
+		patternMatchesContent = true
 	}
 
 	if fileMatchLimit > maxFileMatches || fileMatchLimit <= 0 {

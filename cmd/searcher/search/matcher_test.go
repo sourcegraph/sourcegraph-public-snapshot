@@ -112,9 +112,8 @@ func BenchmarkConcurrentFind_large_fixed_casesensitive(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:               "error handler",
-			IsCaseSensitive:       true,
-			PatternMatchesContent: true,
+			Pattern:         "error handler",
+			IsCaseSensitive: true,
 		},
 	})
 }
@@ -135,10 +134,9 @@ func BenchmarkConcurrentFind_large_re_common(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:               "func +[A-Z]",
-			IsRegExp:              true,
-			IsCaseSensitive:       true,
-			PatternMatchesContent: true,
+			Pattern:         "func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
 		},
 	})
 }
@@ -154,10 +152,9 @@ func BenchmarkConcurrentFind_large_re_anchor(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:               "^func +[A-Z]",
-			IsRegExp:              true,
-			IsCaseSensitive:       true,
-			PatternMatchesContent: true,
+			Pattern:         "^func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
 		},
 	})
 }
@@ -196,9 +193,8 @@ func BenchmarkConcurrentFind_small_fixed_casesensitive(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:               "object not found",
-			IsCaseSensitive:       true,
-			PatternMatchesContent: true,
+			Pattern:         "object not found",
+			IsCaseSensitive: true,
 		},
 	})
 }
@@ -219,10 +215,9 @@ func BenchmarkConcurrentFind_small_re_common(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:               "func +[A-Z]",
-			IsRegExp:              true,
-			IsCaseSensitive:       true,
-			PatternMatchesContent: true,
+			Pattern:         "func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
 		},
 	})
 }
@@ -232,10 +227,9 @@ func BenchmarkConcurrentFind_small_re_anchor(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:               "^func +[A-Z]",
-			IsRegExp:              true,
-			IsCaseSensitive:       true,
-			PatternMatchesContent: true,
+			Pattern:         "^func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
 		},
 	})
 }
