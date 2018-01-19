@@ -337,21 +337,6 @@ func (c *Client) RepoInfo(ctx context.Context, repo string) (*protocol.RepoInfoR
 	return info, err
 }
 
-func (c *Client) RepoFromRemoteURL(ctx context.Context, remoteURL string) (string, error) {
-	req := &protocol.RepoFromRemoteURLRequest{
-		RemoteURL: remoteURL,
-	}
-	resp, err := c.httpPost(ctx, "" /* any gitserver is ok */, "repo-from-remote-url", req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var repo string
-	err = json.NewDecoder(resp.Body).Decode(&repo)
-	return repo, err
-}
-
 func (c *Client) httpPost(ctx context.Context, repo, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {

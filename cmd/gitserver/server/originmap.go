@@ -102,25 +102,6 @@ func OriginMap(repoURI string) string {
 	return ""
 }
 
-// reverse maps the repository origin (clone URL) to the repo URI. Returns empty string of no mapping was found.
-func reverse(cloneURL string) string {
-	for uri, origin := range reposListOriginMap {
-		if cloneURL == origin {
-			return uri
-		}
-	}
-	for _, entry := range originMap {
-		s := strings.Split(entry.Origin, "%")
-		originPrefix := s[0]
-		if strings.HasPrefix(cloneURL, originPrefix) {
-			originSuffix := s[1]
-			repo := strings.TrimSuffix(strings.TrimPrefix(cloneURL, originPrefix), originSuffix)
-			return entry.Prefix + repo
-		}
-	}
-	return ""
-}
-
 func parse(raw string, placeholderCount int) (originMap []prefixAndOrgin, err error) {
 	for _, e := range strings.Fields(raw) {
 		p := strings.Split(e, "!")

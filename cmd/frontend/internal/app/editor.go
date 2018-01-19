@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"path"
 	"strconv"
+	"strings"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 func editorBranch(ctx context.Context, repoURI, branchName string) (string, error) {
@@ -91,10 +91,12 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	// Open-file request.
 
 	// Determine the repo URI and branch.
-	repoURI, err := gitserver.DefaultClient.RepoFromRemoteURL(r.Context(), remoteURL)
-	if err != nil {
-		return err
-	}
+	//
+	// TODO(sqs): This used to hit gitserver, which would be more accurate in case of nonstandard clone URLs.
+	// It now generates the guessed repo URI statically, which means in some cases it won't work, but it
+	// is worth the increase in simplicity (plus there is an error message for users). In the future we can
+	// let users specify a custom mapping to the Sourcegraph repo in their local Git repo.
+	repoURI := guessRepoURIFromRemoteURL(remoteURL)
 	if repoURI == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
@@ -103,7 +105,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 		fmt.Fprintln(w, html.EscapeString(msg))
 		return nil
 	}
-	branch, err = editorBranch(r.Context(), repoURI, branch)
+	branch, err := editorBranch(r.Context(), repoURI, branch)
 	if err != nil {
 		return err
 	}
@@ -125,4 +127,19 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	}
 	http.Redirect(w, r, u.String(), http.StatusSeeOther)
 	return nil
+}
+
+// guessRepoURIFromRemoteURL return a guess at the repo URI for the given remote URL. For example, given
+// "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
+func guessRepoURIFromRemoteURL(urlStr string) string {
+	if strings.HasPrefix(urlStr, "git@") {
+		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
+	}
+	urlStr = strings.TrimSuffix(urlStr, ".git")
+
+	u, _ := url.Parse(urlStr)
+	if u != nil {
+		return u.Hostname() + u.Path
+	}
+	return ""
 }
