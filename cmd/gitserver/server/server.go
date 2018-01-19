@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/trace"
 
 	"github.com/neelance/parallel"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
@@ -32,14 +33,23 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
-var runCommand = func(ctx context.Context, cmd *exec.Cmd) (error, int) { // mocked by tests
+// runCommand runs the command and returns the exit status. All clients of this function should set the context
+// in cmd themselves, but we have to pass the context separately here for the sake of tracing.
+var runCommand = func(ctx context.Context, cmd *exec.Cmd) (err error, exitCode int) { // mocked by tests
 	span, ctx := opentracing.StartSpanFromContext(ctx, "runCommand")
 	span.SetTag("path", cmd.Path)
 	span.SetTag("args", cmd.Args)
 	span.SetTag("dir", cmd.Dir)
-	defer span.Finish()
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+			span.SetTag("exitCode", exitCode)
+		}
+		span.Finish()
+	}()
 
-	err := cmd.Run()
+	err = cmd.Run()
 	exitStatus := -10810
 	if cmd.ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
@@ -590,7 +600,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo string, rev string, re
 	if err := cmd.Run(); err == nil {
 		return
 	}
-	if rev == "HEAD" || rev == "" {
+	if rev == "HEAD" {
 		return
 	}
 	// Revision not found, update before returning.
