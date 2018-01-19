@@ -20,7 +20,8 @@ go install -tags dist \
    sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver \
    sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer \
    sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater \
-   sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher
+   sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher \
+   sourcegraph.com/sourcegraph/sourcegraph/cmd/lsp-proxy
 
 cat > $GOBIN/syntect_server <<EOF
 #!/bin/sh

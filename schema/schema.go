@@ -51,6 +51,12 @@ type GitHubConnection struct {
 	Url                         string   `json:"url,omitempty"`
 }
 
+// Langservers
+type Langservers struct {
+	Address  string `json:"address,omitempty"`
+	Language string `json:"language,omitempty"`
+}
+
 // Links
 type Links struct {
 	Blob       string `json:"blob,omitempty"`
@@ -167,6 +173,7 @@ type SiteConfiguration struct {
 	HtmlHeadBottom                 string                     `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop                    string                     `json:"htmlHeadTop,omitempty"`
 	HttpToHttpsRedirect            bool                       `json:"httpToHttpsRedirect,omitempty"`
+	Langservers                    []Langservers              `json:"langservers,omitempty"`
 	LicenseKey                     string                     `json:"licenseKey,omitempty"`
 	LightstepAccessToken           string                     `json:"lightstepAccessToken,omitempty"`
 	LightstepProject               string                     `json:"lightstepProject,omitempty"`

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -36,7 +37,33 @@ func connectToServer(ctx context.Context, mode string) (io.ReadWriteCloser, erro
 	}
 }
 
-// RegisterServersFromEnv registers a lang/build server for each
+func RegisterServers() error {
+	err := registerServersFromEnv()
+	if err != nil {
+		return err
+	}
+	err = registerServersFromConfig()
+	if err != nil {
+		return err
+	}
+	if len(ServersByMode) == 0 {
+		log15.Debug("No language servers registered")
+	}
+	return nil
+}
+
+func registerServersFromConfig() error {
+	langservers := conf.Get().Langservers
+	for _, l := range langservers {
+		err := registerTCPServer(l.Language, l.Address)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// registerServersFromEnv registers a lang/build server for each
 // environment variable of the form `LANGSERVER_XYZ=addr-or-program`
 // (where XYZ is the case-insensitive "mode", such as "go" or
 // "typescript").
@@ -45,7 +72,7 @@ func connectToServer(ctx context.Context, mode string) (io.ReadWriteCloser, erro
 //
 //   tcp://addr:port (connect to TCP listener)
 //   path/to/executable (exec subprocess and connect to its stdio)
-func RegisterServersFromEnv() error {
+func registerServersFromEnv() error {
 	for _, kv := range os.Environ() {
 		parts := strings.SplitN(kv, "=", 2)
 		if len(parts) != 2 || parts[1] == "" {
@@ -54,18 +81,14 @@ func RegisterServersFromEnv() error {
 		name, val := parts[0], parts[1]
 		if prefix := "LANGSERVER_"; strings.HasPrefix(name, prefix) && !strings.HasSuffix(name, "_ARGS_JSON") {
 			mode := strings.ToLower(strings.TrimPrefix(name, prefix))
-			if _, present := ServersByMode[mode]; present {
-				return fmt.Errorf("invalid language server registration from env var %s: a server is already registered for the mode %q", name, mode)
-			}
-			switch {
-			case strings.HasPrefix(val, "tcp://"):
-				log15.Info("Registering language server listener", "mode", mode, "listener", val)
-				ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
-					return net.DialTimeout("tcp", strings.TrimPrefix(val, "tcp://"), 5*time.Second)
+			if strings.HasPrefix(val, "tcp://") {
+				err := registerTCPServer(name, mode)
+				if err != nil {
+					return err
 				}
-			case strings.Contains(val, ":"):
+			} else if strings.HasPrefix(val, ":") {
 				return fmt.Errorf(`invalid language server URL %q (you probably mean "tcp://%s")`, val, val)
-			default:
+			} else {
 				// Allow specifying extra command-line args to
 				// language server executables in
 				// LANGSERVER_name_ARGS_JSON env vars.
@@ -96,8 +119,16 @@ func RegisterServersFromEnv() error {
 			}
 		}
 	}
-	if len(ServersByMode) == 0 {
-		log15.Warn("No language servers registered")
+	return nil
+}
+
+func registerTCPServer(mode, addr string) error {
+	if _, present := ServersByMode[mode]; present {
+		return fmt.Errorf("a server is already registered for the mode %q", mode)
+	}
+	log15.Info("Registering language server listener", "mode", mode, "listener", addr)
+	ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
+		return net.DialTimeout("tcp", strings.TrimPrefix(addr, "tcp://"), 5*time.Second)
 	}
 	return nil
 }

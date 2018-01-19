@@ -28,6 +28,7 @@ var defaultEnv = map[string]string{
 	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
 	"GITHUB_BASE_URL":         "http://127.0.0.1:3180", // points to github-proxy
+	"LSP_PROXY":               "127.0.0.1:4388",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher to ensure this value isn't larger than the volume for
@@ -102,6 +103,7 @@ func main() {
 	procfile := []string{
 		`gitserver: gitserver`,
 		`indexer: indexer`,
+		`lsp-proxy: lsp-proxy`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`frontend: frontend`,

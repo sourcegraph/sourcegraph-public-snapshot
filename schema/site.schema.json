@@ -329,6 +329,26 @@
       "enum": ["release", null],
       "default": "release"
     },
+    "langservers": {
+      "description": "Language server configuration.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "description": "Name of the language mode for the langserver (e.g. go, java)",
+            "type": "string"
+          },
+          "address": {
+            "description": "TCP address of the language server.",
+            "type": "string",
+            "pattern": "^tcp://",
+            "format": "uri"
+          }
+        }
+      }
+    },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
       "$ref": "settings.schema.json#"

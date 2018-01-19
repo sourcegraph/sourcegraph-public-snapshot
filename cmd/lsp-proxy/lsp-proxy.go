@@ -50,7 +50,7 @@ func run() error {
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
 
-	if err := proxy.RegisterServersFromEnv(); err != nil {
+	if err := proxy.RegisterServers(); err != nil {
 		return err
 	}
 
