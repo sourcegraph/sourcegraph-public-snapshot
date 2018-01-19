@@ -561,7 +561,7 @@ describe('e2e test suite', () => {
                 const label = await chrome.evaluate<string>(
                     () => document.querySelector('.search-results__header-stats')!.textContent
                 )
-                assert.equal(label.startsWith('27 results'), true, 'incorrect number of search results')
+                assert.equal(label.startsWith('42 results'), true, 'incorrect number of search results')
             })
             // navigate to result on click
             await chrome.click('.file-match__item')
