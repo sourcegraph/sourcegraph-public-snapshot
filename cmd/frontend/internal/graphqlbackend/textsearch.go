@@ -211,12 +211,10 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	if p.PathPatternsAreCaseSensitive {
 		q.Set("PathPatternsAreCaseSensitive", "true")
 	}
-	if p.PatternMatchesContent {
-		q.Set("PatternMatchesContent", "true")
-	}
-	if p.PatternMatchesPath {
-		q.Set("PatternMatchesPath", "true")
-	}
+	// TEMP BACKCOMPAT: always set even if false so that searcher can distinguish new frontends that send
+	// these fields from old frontends that do not (and provide a default in the latter case).
+	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
+	q.Set("PatternMatchesPath", strconv.FormatBool(p.PatternMatchesPath))
 	searcherURL, err := searcherURLs.Get(repo + "@" + commit)
 	if err != nil {
 		return nil, false, err

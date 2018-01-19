@@ -54,6 +54,15 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TEMP BACKCOMPAT with new PatternMatchesContent and PatternMatchesPath fields: if they are not present, treat
+	// it as PatternMatchesContent==true and PatternMatchesPath==false. This can be removed when both the new frontend
+	// and searcher (as of this commit) are deployed.
+	_, hasPatternMatchesContent := r.Form["PatternMatchesContent"]
+	_, hasPatternMatchesPath := r.Form["PatternMatchesPath"]
+	if !hasPatternMatchesContent && !hasPatternMatchesPath {
+		r.Form.Set("PatternMatchesContent", "true")
+	}
+
 	var p protocol.Request
 	err = decoder.Decode(&p, r.Form)
 	if err != nil {
