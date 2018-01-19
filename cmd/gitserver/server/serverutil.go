@@ -3,9 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,12 +11,10 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
 // runWithRemoteOpts runs the command after applying the remote options.
-func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, repoURI string) ([]byte, error) {
+func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd) ([]byte, error) {
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 
 	// Suppress asking to add SSH host key to known_hosts (which will hang because
@@ -27,75 +23,14 @@ func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, repoURI s
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=yes -o ConnectTimeout=7")
 
-	// Add github creds if we have them configured. This should never run for
-	// Sourcegraph.com, but does run on our dogfood server.
-	if s.GithubAccessToken != "" && strings.HasPrefix(repoURI, "github.com/") {
-		gitPassHelperDir, err := makeGitPassHelper("x-oauth-token", s.GithubAccessToken)
-		if err != nil {
-			return nil, err
-		}
-		if gitPassHelperDir != "" {
-			defer os.RemoveAll(gitPassHelperDir)
-		}
-		cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper=gitserver-helper"}, cmd.Args[1:]...)...)
-		env := environ(os.Environ())
-		env.Set("PATH", gitPassHelperDir+string(filepath.ListSeparator)+os.Getenv("PATH"))
-		cmd.Env = env
-	} else {
-		// Unset credential helper because the command is non-interactive.
-		cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
-	}
+	// Unset credential helper because the command is non-interactive.
+	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
 
 	var b bytes.Buffer
 	cmd.Stdout = &b
 	cmd.Stderr = &b
 	err, _ := runCommand(ctx, cmd)
 	return b.Bytes(), err
-}
-
-// makeGitPassHelper writes a git credential helper that supplies username and password over stdout.
-// Its name is "git-credential-gitserver-helper" and it's located inside gitPassHelperDir.
-// If err is nil, the caller is responsible for removing gitPassHelperDir after it's done using it.
-func makeGitPassHelper(user, pass string) (gitPassHelperDir string, err error) {
-	tempDir, err := ioutil.TempDir("", "gitserver_")
-	if err != nil {
-		return "", err
-	}
-
-	// Write the credentials content to credentialsFile file.
-	// This is done to avoid code injection attacks.
-	// Usernames and passwords are untrusted arbitrary user data. It's hard to escape
-	// strings in shell scripts, so we opt to `cat` this non-executable credentials file instead.
-	credentialsFile := filepath.Join(tempDir, "credentials-content")
-	{
-		// Always provide username and password via git credential helper.
-		// Do this even if some of the values are blank strings.
-		// Otherwise, git will fallback to asking via other means.
-		content := fmt.Sprintf("username=%s\npassword=%s\n", user, pass)
-
-		err := util.WriteFileWithPermissions(credentialsFile, []byte(content), 0600)
-		if err != nil {
-			os.RemoveAll(tempDir)
-			return "", err
-		}
-	}
-
-	// Write the credential helper executable that uses credentialsFile.
-	{
-		// We assume credentialsFile can be escaped with a simple wrapping of single
-		// quotes. The path is not user controlled so this assumption should
-		// not be violated.
-		content := fmt.Sprintf("#!/bin/sh\ncat '%s'\n", credentialsFile)
-
-		path := filepath.Join(tempDir, "git-credential-gitserver-helper")
-		err := util.WriteFileWithPermissions(path, []byte(content), 0500)
-		if err != nil {
-			os.RemoveAll(tempDir)
-			return "", err
-		}
-	}
-
-	return tempDir, nil
 }
 
 // repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
