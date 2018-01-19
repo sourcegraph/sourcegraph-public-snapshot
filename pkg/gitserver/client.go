@@ -13,10 +13,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -240,46 +238,6 @@ func (c *Client) ListGitolite(ctx context.Context) ([]string, error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
 	return doListOne(ctx, "?gitolite", c.Addrs[0])
-}
-
-// ListCloning lists repositories that are currently being cloned.
-func (c *Client) ListCloning(ctx context.Context) ([]string, error) {
-	return doListMulti(ctx, "?cloning", c.Addrs)
-}
-
-// doListMulti calls the /list endpoint with the given URL suffix on the gitservers whose
-// addresses are specified. The results from all of the gitservers are merged.
-func doListMulti(ctx context.Context, urlSuffix string, addrs []string) ([]string, error) {
-	if len(addrs) == 1 {
-		return doListOne(ctx, urlSuffix, addrs[0])
-	}
-
-	var (
-		mu           sync.Mutex
-		err          error
-		combinedList []string
-	)
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	for _, addr := range addrs {
-		wg.Add(1)
-		go func(addr string) {
-			defer wg.Done()
-			var listErr error
-			list, listErr := doListOne(ctx, urlSuffix, addr)
-			mu.Lock()
-			defer mu.Unlock()
-			if listErr != nil && listErr != context.Canceled && err == nil {
-				cancel()
-				err = listErr
-			}
-			combinedList = append(combinedList, list...)
-		}(addr)
-	}
-	wg.Wait()
-	sort.Strings(combinedList)
-	return combinedList, err
 }
 
 func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, error) {

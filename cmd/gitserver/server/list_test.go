@@ -12,11 +12,11 @@ func TestServer_handleList(t *testing.T) {
 	s.setCloneLock("a")
 
 	rr := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/list?cloning", nil)
+	req := httptest.NewRequest("GET", "/list", nil)
 	h.ServeHTTP(rr, req)
 
 	body := strings.TrimSpace(rr.Body.String())
-	if want := `["a"]`; body != want {
+	if want := `[]`; body != want {
 		t.Errorf("got %q, want %q", body, want)
 	}
 }

@@ -1060,8 +1060,6 @@ type Site implements ConfigurationSubject {
         first: Int
         # Return repositories whose names match the query.
         query: String
-        # Returns only repositories that are currently being cloned.
-        cloning: Boolean = false
         # Include enabled repositories.
         enabled: Boolean = true
         # Include disabled repositories.
