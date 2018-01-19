@@ -20,6 +20,12 @@ import (
 func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, repoURI string) ([]byte, error) {
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 
+	// Suppress asking to add SSH host key to known_hosts (which will hang because
+	// the command is non-interactive).
+	//
+	// And set a timeout to avoid indefinite hangs if the server is unreachable.
+	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=yes -o ConnectTimeout=7")
+
 	// Add github creds if we have them configured. This should never run for
 	// Sourcegraph.com, but does run on our dogfood server.
 	if s.GithubAccessToken != "" && strings.HasPrefix(repoURI, "github.com/") {
@@ -35,10 +41,7 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, repoURI string) ([]byte, error
 		env.Set("PATH", gitPassHelperDir+string(filepath.ListSeparator)+os.Getenv("PATH"))
 		cmd.Env = env
 	} else {
-		// Suppress asking to add SSH host key to known_hosts (which will hang because
-		// the command is non-interactive).
-		cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=yes")
-
+		// Unset credential helper because the command is non-interactive.
 		cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
 	}
 
