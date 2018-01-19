@@ -1,0 +1,25 @@
+.site-admin-integrations {
+    &__header {
+        padding-bottom: 1rem;
+    }
+
+    &__integration-name {
+        padding-bottom: 1rem;
+    }
+
+    &__copy-icon {
+        margin-right: 0.25rem;
+    }
+
+    &__form {
+        max-width: 24rem;
+    }
+
+    &__input {
+        margin: 1rem 0;
+    }
+
+    &__section {
+        padding-top: 1rem;
+    }
+}

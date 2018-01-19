@@ -6,6 +6,7 @@ import { HeroPage } from '../components/HeroPage'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
+import { SiteAdminIntegrationsPage } from './SiteAdminIntegrationsPage'
 import { SiteAdminInviteUserPage } from './SiteAdminInviteUserPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
@@ -116,6 +117,11 @@ export class SiteAdminArea extends React.Component<Props> {
                         <Route
                             path={`${this.props.match.url}/telemetry`}
                             component={SiteAdminTelemetryPage}
+                            exact={true}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/integrations`}
+                            component={SiteAdminIntegrationsPage}
                             exact={true}
                         />
                         <Route component={NotFoundPage} />
