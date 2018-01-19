@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
+
 	"context"
 
 	"github.com/NYTimes/gziphandler"
@@ -330,11 +332,19 @@ func Main() error {
 
 		log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
 		go func() {
-			log.Fatal((&http.Server{
+			httpServer := http.Server{
 				Handler:      internalHandler,
 				ReadTimeout:  75 * time.Second,
 				WriteTimeout: 60 * time.Second,
-			}).Serve(l))
+			}
+			go func() {
+				<-processrestart.WillRestart
+				log15.Debug("Stopping HTTP server due to imminent restart")
+				_ = httpServer.Close()
+			}()
+			if err := httpServer.Serve(l); err != http.ErrServerClosed {
+				log.Fatal(err)
+			}
 		}()
 	}
 

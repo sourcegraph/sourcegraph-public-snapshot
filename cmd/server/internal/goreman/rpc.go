@@ -7,14 +7,20 @@ import (
 
 type Goreman struct{}
 
-// rpc: restart
-func (Goreman) Restart(proc string, ret *string) (err error) {
+// rpc: restart all (stop all, then start all)
+func (Goreman) RestartAll(args struct{}, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
 		}
 	}()
-	return restartProc(proc)
+
+	// Prevent the server from shutting down (which it does when all processes are stopped).
+	wg.Add(1)
+	defer wg.Done()
+
+	stopProcs(false)
+	return startProcs()
 }
 
 // start rpc server.
