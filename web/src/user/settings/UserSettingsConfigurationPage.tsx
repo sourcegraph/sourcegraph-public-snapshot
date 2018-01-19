@@ -8,6 +8,7 @@ import { fetchUserSettings, updateUserSettings } from './backend'
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser
+    isLightTheme: boolean
 }
 
 interface State {
@@ -51,6 +52,7 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
                         onDidCommit={this.onDidCommit}
                         commitError={this.state.commitError}
                         history={this.props.history}
+                        isLightTheme={this.props.isLightTheme}
                     />
                 )}
                 <small className="form-text">

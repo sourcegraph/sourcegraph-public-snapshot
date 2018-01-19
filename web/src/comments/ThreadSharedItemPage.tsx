@@ -6,13 +6,11 @@ import reactive from 'rx-component'
 import { merge } from 'rxjs/observable/merge'
 import { map } from 'rxjs/operators/map'
 import { scan } from 'rxjs/operators/scan'
-import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { PageTitle } from '../components/PageTitle'
 import { ToggleLineWrap } from '../repo/actions/ToggleLineWrap'
 import { RepoHeader } from '../repo/RepoHeader'
 import { RepoHeaderActionPortal } from '../repo/RepoHeaderActionPortal'
-import { colorTheme, ColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { toEditorURL } from '../util/url'
 import { ThreadRevisionAction } from './actions/ThreadRevisionAction'
@@ -52,6 +50,7 @@ interface Props {
 
     location: H.Location
     history: H.History
+    isLightTheme: boolean
 }
 
 interface State {
@@ -61,7 +60,7 @@ interface State {
     highlightComment: GQLID | null
     location: H.Location
     history: H.History
-    colorTheme: ColorTheme
+    isLightTheme: boolean
     signedIn: boolean
     wrapCode: boolean
 }
@@ -84,15 +83,14 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
     return merge(
         codeWrapUpdates.pipe(map((wrapCode): Update => state => ({ ...state, wrapCode }))),
         props.pipe(
-            withLatestFrom(colorTheme),
-            map(([{ item, ulid, location, history, user }, colorTheme]): Update => state => ({
+            map(({ item, ulid, location, history, user, isLightTheme }): Update => state => ({
                 ...state,
                 item,
                 ulid,
                 location,
                 highlightComment: new URLSearchParams(location.search).get('id'),
                 history,
-                colorTheme,
+                isLightTheme,
                 signedIn: !!user,
             }))
         ),
@@ -119,7 +117,7 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                 highlightComment,
                 location,
                 history,
-                colorTheme,
+                isLightTheme,
                 signedIn,
                 wrapCode,
             }: State): JSX.Element | null => {
@@ -243,6 +241,7 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                                         threadID={item.thread.id}
                                         ulid={isSharedItem(item) ? ulid : undefined}
                                         onThreadUpdated={nextThreadUpdate}
+                                        isLightTheme={isLightTheme}
                                     />
                                 ) : (
                                     <Link className="btn btn-primary comments-page__sign-in" to={signInURL}>

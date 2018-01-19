@@ -44,6 +44,8 @@ interface Props {
      * Whether or not to show all matches for this file, or only a subset.
      */
     showAllMatches: boolean
+
+    isLightTheme: boolean
 }
 
 const subsetMatches = 2
@@ -106,6 +108,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                                 previewWindowExtraLines={1}
                                 highlightRanges={item.highlightRanges}
                                 line={item.line}
+                                isLightTheme={props.isLightTheme}
                             />
                         </Link>
                     )

@@ -8,7 +8,8 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import settingsSchemaJSON from '../schema/settings.schema.json'
 import siteSchemaJSON from '../schema/site.schema.json'
-import { colorTheme } from './theme'
+
+const isLightThemeToMonacoTheme = (isLightTheme: boolean): string => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
 interface Props {
     className: string
@@ -23,11 +24,10 @@ interface Props {
     jsonSchema: 'https://sourcegraph.com/v1/site.schema.json#' | 'https://sourcegraph.com/v1/settings.schema.json#'
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
+    isLightTheme: boolean
 }
 
-interface State {
-    isLightTheme?: boolean
-}
+interface State {}
 
 /**
  * A JSON settings editor using the Monaco editor.
@@ -42,29 +42,24 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
     private disposables: monaco.IDisposable[] = []
 
-    constructor(props: Props) {
-        super(props)
-
+    public componentDidMount(): void {
         this.subscriptions.add(
             this.componentUpdates
-                .pipe(startWith(props), map(props => props.readOnly), distinctUntilChanged())
+                .pipe(startWith(this.props), map(props => props.readOnly), distinctUntilChanged())
                 .subscribe(readOnly => {
                     if (this.editor) {
                         this.editor.updateOptions({ readOnly })
                     }
                 })
         )
-    }
-
-    public componentDidMount(): void {
         this.subscriptions.add(
-            colorTheme.subscribe(theme => {
-                this.setState({ isLightTheme: theme === 'light' }, () => {
+            this.componentUpdates
+                .pipe(map(props => props.isLightTheme), map(isLightThemeToMonacoTheme))
+                .subscribe(monacoTheme => {
                     if (this.monaco) {
-                        this.monaco.editor.setTheme(this.monacoTheme())
+                        this.monaco.editor.setTheme(monacoTheme)
                     }
                 })
-            })
         )
     }
 
@@ -90,7 +85,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             <MonacoEditor
                 language="json"
                 height={this.props.height || 400}
-                theme={this.monacoTheme()}
+                theme={isLightThemeToMonacoTheme(this.props.isLightTheme)}
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}
                 options={{
@@ -112,10 +107,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                 requireConfig={{ paths: { vs: '/.assets/scripts/vs' }, url: '/.assets/scripts/vs/loader.js' }}
             />
         )
-    }
-
-    private monacoTheme(isLightTheme = this.state.isLightTheme): string {
-        return isLightTheme ? 'vs' : 'sourcegraph-dark'
     }
 
     private editorWillMount = (e: typeof monaco) => {

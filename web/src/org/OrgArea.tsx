@@ -21,7 +21,9 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{ orgName: string }> {}
+interface Props extends RouteComponentProps<{ orgName: string }> {
+    isLightTheme: boolean
+}
 
 interface State {
     org?: GQL.IOrg | null
@@ -88,7 +90,7 @@ export class OrgArea extends React.Component<Props> {
             return <NotFoundPage />
         }
 
-        const transferProps: { user: GQL.IUser; org: GQL.IOrg } = { user: this.state.user, org: this.state.org }
+        const transferProps = { user: this.state.user, org: this.state.org, isLightTheme: this.props.isLightTheme }
 
         return (
             <div className="org-area area">

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RouteComponentProps, RouteProps } from 'react-router'
+import { RouteProps } from 'react-router'
 import { APIConsole } from './api/APIConsole'
 import { PasswordResetPage } from './auth/PasswordResetPage'
 import { SignInPage } from './auth/SignInPage'
@@ -39,7 +39,7 @@ export interface LayoutRouteProps extends RouteProps {
 export const routes: LayoutRouteProps[] = [
     {
         path: '/search',
-        render: (props: RouteComponentProps<any>) =>
+        render: (props: any) =>
             parseSearchURLQuery(props.location.search) ? <SearchResults {...props} /> : <SearchPage {...props} />,
         exact: true,
     },

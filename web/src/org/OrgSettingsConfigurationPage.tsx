@@ -14,6 +14,7 @@ import { fetchOrg, updateOrgSettings } from './backend'
 interface Props extends RouteComponentProps<any> {
     org: GQL.IOrg
     user: GQL.IUser
+    isLightTheme: boolean
 }
 
 interface State {
@@ -66,6 +67,7 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
                         commitError={this.state.commitError}
                         onDidCommit={this.onDidCommit}
                         history={this.props.history}
+                        isLightTheme={this.props.isLightTheme}
                     />
                 )}
                 <small className="form-text">

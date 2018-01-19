@@ -30,6 +30,7 @@ interface RepoRevContainerProps extends RouteComponentProps<{ filePath: string }
     rev: string | undefined
     user: GQL.IUser | null
     objectType: 'blob' | 'tree'
+    isLightTheme: boolean
 }
 
 interface State {
@@ -271,6 +272,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             filePath={this.props.match.params.filePath || ''}
                             location={this.props.location}
                             history={this.props.history}
+                            isLightTheme={this.props.isLightTheme}
                         />
                     )}
                 </div>

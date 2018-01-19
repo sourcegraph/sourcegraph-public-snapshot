@@ -1,9 +1,12 @@
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
+import { combineLatest } from 'rxjs/observable/combineLatest'
+import { filter } from 'rxjs/operators/filter'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { AbsoluteRepoFile } from '../repo'
 import { fetchHighlightedFileLines } from '../repo/backend'
-import { colorTheme, getColorTheme } from '../settings/theme'
 import { highlightNode } from '../util/dom'
 
 interface Props extends AbsoluteRepoFile {
@@ -11,6 +14,7 @@ interface Props extends AbsoluteRepoFile {
     previewWindowExtraLines?: number
     line: number
     highlightRanges: HighlightRange[]
+    isLightTheme: boolean
 }
 
 interface HighlightRange {
@@ -26,35 +30,42 @@ interface HighlightRange {
 
 interface State {
     blobLines?: string[]
-    isLightTheme: boolean
 }
 
 export class CodeExcerpt extends React.PureComponent<Props, State> {
+    public state: State = {}
     private tableContainerElement: HTMLElement | null = null
-    private isVisible = false
+    private propsChanges = new Subject<Props>()
+    private visibilityChanges = new Subject<boolean>()
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
+    public constructor(props: Props) {
         super(props)
-        this.state = { isLightTheme: getColorTheme() === 'light' }
-    }
-
-    public componentDidMount(): void {
         this.subscriptions.add(
-            colorTheme.subscribe(theme =>
-                this.setState({ isLightTheme: theme === 'light' }, () => {
-                    if (this.isVisible) {
-                        this.fetchContents(this.props)
+            combineLatest(this.propsChanges, this.visibilityChanges)
+                .pipe(
+                    filter(([, isVisible]) => isVisible),
+                    switchMap(([{ repoPath, filePath, commitID, isLightTheme }]) =>
+                        fetchHighlightedFileLines({ repoPath, commitID, filePath, isLightTheme, disableTimeout: true })
+                    )
+                )
+                .subscribe(
+                    blobLines => {
+                        this.setState({ blobLines })
+                    },
+                    err => {
+                        console.error('failed to fetch blob content', err)
                     }
-                })
-            )
+                )
         )
     }
 
+    public componentDidMount(): void {
+        this.propsChanges.next(this.props)
+    }
+
     public componentWillReceiveProps(nextProps: Props): void {
-        if (this.isVisible) {
-            this.fetchContents(nextProps)
-        }
+        this.propsChanges.next(nextProps)
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -76,7 +87,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public getPreviewWindowLines(): number[] {
+    private getPreviewWindowLines(): number[] {
         const targetLine = this.props.line
         let res = [targetLine]
         for (
@@ -100,11 +111,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         return res
     }
 
-    public onChangeVisibility = (isVisible: boolean): void => {
-        this.isVisible = isVisible
-        if (isVisible) {
-            this.fetchContents(this.props)
-        }
+    private onChangeVisibility = (isVisible: boolean): void => {
+        this.visibilityChanges.next(isVisible)
     }
 
     public render(): JSX.Element | null {
@@ -137,23 +145,6 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
 
     private setTableContainerElement = (ref: HTMLElement | null) => {
         this.tableContainerElement = ref
-    }
-
-    private fetchContents(props: Props): void {
-        fetchHighlightedFileLines({
-            repoPath: props.repoPath,
-            commitID: props.commitID,
-            filePath: props.filePath,
-            disableTimeout: true,
-            isLightTheme: this.state.isLightTheme,
-        }).subscribe(
-            lines => {
-                this.setState({ blobLines: lines })
-            },
-            err => {
-                console.error('failed to fetch blob content', err)
-            }
-        )
     }
 
     private makeTableHTML(): string {

@@ -3,6 +3,7 @@ import * as H from 'history'
 import isEmpty from 'lodash/isEmpty'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
+import pick from 'lodash/pick'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { combineLatest } from 'rxjs/observable/combineLatest'
@@ -11,8 +12,10 @@ import { interval } from 'rxjs/observable/interval'
 import { merge } from 'rxjs/observable/merge'
 import { catchError } from 'rxjs/operators/catchError'
 import { debounceTime } from 'rxjs/operators/debounceTime'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
+import { mapTo } from 'rxjs/operators/mapTo'
 import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { take } from 'rxjs/operators/take'
@@ -29,7 +32,6 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { Resizable } from '../components/Resizable'
 import { ReferencesWidget } from '../references/ReferencesWidget'
-import { colorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../util'
 import { memoizeObservable } from '../util/memoize'
@@ -711,6 +713,7 @@ const fetchBlob = memoizeObservable(
 interface BlobPageProps {
     location: H.Location
     history: H.History
+    isLightTheme: boolean
     repoPath: string
     rev: string | undefined
     commitID: string
@@ -734,12 +737,8 @@ interface BlobPageState {
 }
 
 export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> {
-    private specChanges = new Subject<{
-        repo: string
-        commitID: string
-        filePath: string
-    }>()
-    private extendHighlightingTimeoutClicks = new Subject<boolean>()
+    private propsUpdates = new Subject<BlobPageProps>()
+    private extendHighlightingTimeoutClicks = new Subject<void>()
     private subscriptions = new Subscription()
 
     constructor(props: BlobPageProps) {
@@ -752,24 +751,30 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
         }
     }
 
-    private logViewEvent(referencesShown: boolean): void {
-        eventLogger.logViewEvent('Blob', { fileShown: true, referencesShown })
+    private logViewEvent(): void {
+        eventLogger.logViewEvent('Blob', { fileShown: true, referencesShown: this.state.showRefs })
     }
 
     public componentDidMount(): void {
-        this.logViewEvent(this.state.showRefs)
+        this.logViewEvent()
 
         // Fetch repository revision.
         this.subscriptions.add(
-            combineLatest(this.specChanges, colorTheme, this.extendHighlightingTimeoutClicks.pipe(startWith(false)))
+            combineLatest(
+                this.propsUpdates.pipe(
+                    map(props => pick(props, 'repoPath', 'commitID', 'filePath', 'isLightTheme')),
+                    distinctUntilChanged((a, b) => isEqual(a, b))
+                ),
+                this.extendHighlightingTimeoutClicks.pipe(mapTo(true), startWith(false))
+            )
                 .pipe(
                     tap(() => this.setState({ loading: true, blob: undefined, error: undefined })),
-                    switchMap(([{ repo, commitID, filePath }, colorTheme, extendHighlightingTimeout]) =>
+                    switchMap(([{ repoPath, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
                         fetchBlob({
-                            repoPath: repo,
+                            repoPath,
                             commitID,
                             filePath,
-                            isLightTheme: colorTheme === 'light',
+                            isLightTheme,
                             disableTimeout: extendHighlightingTimeout,
                         }).pipe(
                             catchError(error => {
@@ -780,30 +785,22 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                         )
                     )
                 )
-                .subscribe(blob => this.setState({ loading: false, blob }), err => console.error(err))
+                .subscribe(blob => this.setState({ loading: false, blob, error: undefined }), err => console.error(err))
         )
 
-        this.specChanges.next({
-            repo: this.props.repoPath,
-            commitID: this.props.commitID,
-            filePath: this.props.filePath,
-        })
+        this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: BlobPageProps): void {
-        const renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
+    public componentWillReceiveProps(newProps: BlobPageProps): void {
+        this.propsUpdates.next(newProps)
         if (
-            props.repoPath !== this.props.repoPath ||
-            props.commitID !== this.props.commitID ||
-            props.filePath !== this.props.filePath ||
-            renderMode !== ToggleRenderedFileMode.getModeFromURL(this.props.location)
+            newProps.repoPath !== this.props.repoPath ||
+            newProps.commitID !== this.props.commitID ||
+            newProps.filePath !== this.props.filePath ||
+            ToggleRenderedFileMode.getModeFromURL(newProps.location) !==
+                ToggleRenderedFileMode.getModeFromURL(this.props.location)
         ) {
-            this.logViewEvent(this.state.showRefs)
-            this.specChanges.next({
-                repo: props.repoPath,
-                commitID: props.commitID,
-                filePath: props.filePath,
-            })
+            this.logViewEvent()
         }
     }
 
@@ -912,6 +909,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                                 position={{ line: hash.line, character: hash.character || 0 }}
                                 location={this.props.location}
                                 history={this.props.history}
+                                isLightTheme={this.props.isLightTheme}
                             />
                         }
                     />
@@ -921,7 +919,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
 
     private onDidUpdateLineWrap = (value: boolean) => this.setState({ wrapCode: value })
 
-    private onExtendHighlightingTimeoutClick = () => this.extendHighlightingTimeoutClicks.next(true)
+    private onExtendHighlightingTimeoutClick = () => this.extendHighlightingTimeoutClicks.next()
 
     private getPageTitle(): string {
         const repoPathSplit = this.props.repoPath.split('/')

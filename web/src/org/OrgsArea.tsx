@@ -16,6 +16,7 @@ const NotFoundPage = () => (
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser | null
+    isLightTheme: boolean
 }
 
 /**
@@ -36,11 +37,15 @@ export class OrgsArea extends React.Component<Props> {
                 <div className="orgs-area__content">
                     <Switch>
                         <Route path={`${this.props.match.url}/new`} component={NewOrganizationPage} exact={true} />
-                        <Route path={`${this.props.match.url}/:orgName`} component={OrgArea} />
+                        <Route path={`${this.props.match.url}/:orgName`} render={this.renderOrgArea} />
                         <Route component={NotFoundPage} />
                     </Switch>
                 </div>
             </div>
         )
     }
+
+    private renderOrgArea = (routeComponentProps: RouteComponentProps<any>) => (
+        <OrgArea {...this.props} {...routeComponentProps} />
+    )
 }

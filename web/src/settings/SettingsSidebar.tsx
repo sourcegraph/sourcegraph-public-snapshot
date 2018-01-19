@@ -13,7 +13,6 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { OrgAvatar } from '../org/OrgAvatar'
 import { hasTagRecursive } from '../settings/tags'
-import { colorTheme, getColorTheme, setColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
@@ -21,13 +20,14 @@ interface Props {
     location: H.Location
     className: string
     user: GQL.IUser | null
+    isLightTheme: boolean
+    onThemeChange: () => void
 }
 
 interface State {
     editorBeta: boolean
     currentUser?: GQL.IUser
     orgs?: GQL.IOrg[]
-    isLightTheme: boolean
 }
 
 /**
@@ -38,7 +38,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = { editorBeta: false, isLightTheme: getColorTheme() === 'light' }
+        this.state = { editorBeta: false }
     }
 
     public componentDidMount(): void {
@@ -54,8 +54,6 @@ export class SettingsSidebar extends React.Component<Props, State> {
                 this.setState({ orgs: user.orgs, currentUser: user, editorBeta })
             })
         )
-
-        this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
     }
 
     public componentWillUnmount(): void {
@@ -125,11 +123,15 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     )}
                     <li className="sidebar__item">
                         <div className="settings-sidebar__theme-switcher">
-                            <a className="sidebar__link" onClick={this.toggleTheme} title="Switch to light theme">
+                            <a
+                                className="sidebar__link"
+                                onClick={this.props.onThemeChange}
+                                title="Switch to light theme"
+                            >
                                 <div
                                     className={
                                         'settings-sidebar__theme-switcher--button' +
-                                        (this.state.isLightTheme
+                                        (this.props.isLightTheme
                                             ? ' settings-sidebar__theme-switcher--button--selected'
                                             : '')
                                     }
@@ -138,11 +140,15 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                     Light
                                 </div>
                             </a>
-                            <a className="sidebar__link" onClick={this.toggleTheme} title="Switch to dark theme">
+                            <a
+                                className="sidebar__link"
+                                onClick={this.props.onThemeChange}
+                                title="Switch to dark theme"
+                            >
                                 <div
                                     className={
                                         'settings-sidebar__theme-switcher--button' +
-                                        (!this.state.isLightTheme
+                                        (!this.props.isLightTheme
                                             ? ' settings-sidebar__theme-switcher--button--selected'
                                             : '')
                                     }
@@ -242,8 +248,6 @@ export class SettingsSidebar extends React.Component<Props, State> {
             </div>
         )
     }
-
-    private toggleTheme = () => setColorTheme(getColorTheme() === 'light' ? 'dark' : 'light')
 
     private logTelemetryOnSignOut = (): void => {
         eventLogger.log('SignOutClicked')

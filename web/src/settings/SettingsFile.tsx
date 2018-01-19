@@ -26,6 +26,8 @@ interface Props {
      * if any.
      */
     commitError?: Error
+
+    isLightTheme: boolean
 }
 
 interface State {
@@ -160,6 +162,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     onChange={this.onEditorChange}
                     readOnly={this.state.saving}
                     monacoRef={this.monacoRef}
+                    isLightTheme={this.props.isLightTheme}
                 />
             </div>
         )

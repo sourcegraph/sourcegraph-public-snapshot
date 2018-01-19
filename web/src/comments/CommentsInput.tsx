@@ -12,7 +12,6 @@ import { scan } from 'rxjs/operators/scan'
 import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
-import { colorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { addCommentToThread } from './backend'
 
@@ -22,6 +21,7 @@ interface Props {
     onThreadUpdated: (updatedThread: GQL.ISharedItemThread | GQL.IThread) => void
     threadID: GQLID
     ulid?: string
+    isLightTheme: boolean
 }
 
 interface State {
@@ -58,12 +58,12 @@ export const CommentsInput = reactive<Props>(props => {
             textAreaKeyDowns.pipe(filter(e => (e.ctrlKey || e.metaKey) && (e.keyCode === 13 || e.keyCode === 10)))
         ).pipe(
             tap(e => eventLogger.log('RepliedToThread')),
-            withLatestFrom(textAreaChanges, props, colorTheme),
-            mergeMap(([, textAreaValue, props, colorTheme]) =>
+            withLatestFrom(textAreaChanges, props),
+            mergeMap(([, textAreaValue, props]) =>
                 // Start with setting submitting: true
                 of<Update>(state => ({ ...state, submitting: true })).pipe(
                     concat(
-                        addCommentToThread(props.threadID, textAreaValue, props.ulid, colorTheme === 'light').pipe(
+                        addCommentToThread(props.threadID, textAreaValue, props.ulid, props.isLightTheme).pipe(
                             tap(updatedThread => props.onThreadUpdated(updatedThread)),
                             tap(() => textAreaChanges.next('')),
                             map((updatedThread): Update => state => ({

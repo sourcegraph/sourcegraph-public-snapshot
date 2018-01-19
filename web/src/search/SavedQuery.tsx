@@ -23,6 +23,7 @@ interface Props {
     onDidDuplicate?: () => void
     onDidDelete?: () => void
     hideBottomBorder: boolean
+    isLightTheme: boolean
 }
 
 interface State {
@@ -141,7 +142,12 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             {!this.state.loading &&
                                 this.state.sparkline && (
                                     <div title="Results found in the last 30 days" className="saved-query__sparkline">
-                                        <Sparkline data={this.state.sparkline} width={200} height={40} />
+                                        <Sparkline
+                                            data={this.state.sparkline}
+                                            width={200}
+                                            height={40}
+                                            isLightTheme={this.props.isLightTheme}
+                                        />
                                     </div>
                                 )}
                             {this.state.loading ? (

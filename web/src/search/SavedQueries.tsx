@@ -9,7 +9,6 @@ import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
-import { colorTheme, getColorTheme } from '../settings/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { observeSavedQueries } from './backend'
 import { SavedQuery } from './SavedQuery'
@@ -17,6 +16,7 @@ import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 
 interface Props {
     location: H.Location
+    isLightTheme: boolean
 }
 
 interface State {
@@ -29,7 +29,6 @@ interface State {
 
     loading: boolean
     error?: Error
-    isLightTheme: boolean
     user: GQL.IUser | null
 }
 
@@ -38,7 +37,6 @@ export class SavedQueries extends React.Component<Props, State> {
         savedQueries: [],
         creating: false,
         loading: true,
-        isLightTheme: getColorTheme() === 'light',
         user: null,
     }
 
@@ -69,7 +67,6 @@ export class SavedQueries extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
         this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
         eventLogger.logViewEvent('SavedQueries')
     }
@@ -149,6 +146,7 @@ export class SavedQueries extends React.Component<Props, State> {
                             key={i}
                             savedQuery={savedQuery}
                             onDidDuplicate={this.onDidDuplicateSavedQuery}
+                            isLightTheme={this.props.isLightTheme}
                         />
                     ))}
                 </div>

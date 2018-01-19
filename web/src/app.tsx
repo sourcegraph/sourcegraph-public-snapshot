@@ -18,11 +18,11 @@ import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
-import { colorTheme, getColorTheme } from './settings/theme'
 
 interface LayoutProps extends RouteComponentProps<any> {
-    isLightTheme: boolean
     user: GQL.IUser | null
+    isLightTheme: boolean
+    onThemeChange: () => void
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -33,14 +33,10 @@ const Layout: React.SFC<LayoutProps> = props => {
 
     const hideNavbar = isSearchHomepage || isSiteInit
 
-    const transferProps: Pick<LayoutProps, 'user'> = {
-        user: props.user,
-    }
-
     return (
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
-            {!hideNavbar && <Navbar location={props.location} history={props.history} />}
+            {!hideNavbar && <Navbar {...props} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
                 {routes.map((route, i) => {
@@ -52,15 +48,17 @@ const Layout: React.SFC<LayoutProps> = props => {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             component={undefined}
                             // tslint:disable-next-line:jsx-no-lambda
-                            render={props => (
+                            render={routeComponentProps => (
                                 <div
                                     className={[
                                         'layout__app-router-container',
                                         `layout__app-router-container--${isFullWidth ? 'full-width' : 'restricted'}`,
                                     ].join(' ')}
                                 >
-                                    {Component && <Component {...props} {...transferProps} isFullWidth={isFullWidth} />}
-                                    {route.render && route.render({ ...props, ...transferProps })}
+                                    {Component && (
+                                        <Component {...props} {...routeComponentProps} isFullWidth={isFullWidth} />
+                                    )}
+                                    {route.render && route.render({ ...props, ...routeComponentProps })}
                                 </div>
                             )}
                         />
@@ -74,26 +72,35 @@ const Layout: React.SFC<LayoutProps> = props => {
 interface AppState {
     error?: Error
     user?: GQL.IUser | null
+
+    /**
+     * Whether the light theme is enabled or not
+     */
     isLightTheme: boolean
 }
+
+const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 
 /**
  * The root component
  */
 class App extends React.Component<{}, AppState> {
     public state: AppState = {
-        isLightTheme: getColorTheme() === 'light',
+        isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
     }
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
-        this.subscriptions.add(colorTheme.subscribe(theme => this.setState({ isLightTheme: theme === 'light' })))
     }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+    }
+
+    public componentDidUpdate(): void {
+        localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.isLightTheme + '')
     }
 
     public render(): React.ReactFragment | null {
@@ -148,8 +155,13 @@ class App extends React.Component<{}, AppState> {
             /* Checked for undefined in render() above */
             user={this.state.user as GQL.IUser | null}
             isLightTheme={this.state.isLightTheme}
+            onThemeChange={this.onThemeChange}
         />
     )
+
+    private onThemeChange = () => {
+        this.setState(({ isLightTheme }) => ({ isLightTheme: !isLightTheme }))
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {

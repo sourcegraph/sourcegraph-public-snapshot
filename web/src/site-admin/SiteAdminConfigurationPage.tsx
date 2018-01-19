@@ -22,7 +22,9 @@ import { siteConfigActions } from './configHelpers'
  */
 const disposableToFn = (disposable: monaco.IDisposable) => () => disposable.dispose()
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<any> {
+    isLightTheme: boolean
+}
 
 interface State {
     site?: GQL.ISite
@@ -274,6 +276,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 readOnly={isReloading || this.state.saving}
                                 height={600}
                                 monacoRef={this.monacoRef}
+                                isLightTheme={this.props.isLightTheme}
                             />
                             <p className="form-text">
                                 <small>Source: {formatEnvVar(this.state.site.configuration.source)}</small>

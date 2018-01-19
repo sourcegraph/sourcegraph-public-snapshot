@@ -2,44 +2,22 @@ import { scaleLinear } from 'd3-scale'
 import { select } from 'd3-selection'
 import { line } from 'd3-shape'
 import * as React from 'react'
-import { Subscription } from 'rxjs/Subscription'
-import { colorTheme, getColorTheme } from '../settings/theme'
 
 interface Props {
     data: number[]
     width: number
     height: number
-}
-
-interface State {
     isLightTheme: boolean
 }
 
-export class Sparkline extends React.Component<Props, State> {
-    private svgRef?: SVGElement | null
-    private subscriptions = new Subscription()
+interface State {}
 
-    public state: State = { isLightTheme: getColorTheme() === 'light' }
+export class Sparkline extends React.PureComponent<Props, State> {
+    private drawSparkline = (ref: SVGElement | null): void => {
+        if (!ref) {
+            return
+        }
 
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            colorTheme.subscribe(theme => {
-                this.setState({ isLightTheme: theme === 'light' }, () => this.drawSparkline())
-            })
-        )
-        this.drawSparkline()
-    }
-
-    public shouldComponentUpdate(): boolean {
-        this.drawSparkline()
-        return true
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    private drawSparkline(): void {
         const { data, width, height } = this.props
         if (!data.length) {
             return
@@ -55,11 +33,10 @@ export class Sparkline extends React.Component<Props, State> {
             .x((d, i) => x(i))
             .y((d, i) => y(Number(d)))
 
-        const svg = select(this.svgRef!)
+        const svg = select(ref!)
         svg.selectAll('*').remove()
 
-        const { isLightTheme } = this.state
-        const strokeColor = isLightTheme ? '#cad2e2' : '#566e9f'
+        const strokeColor = this.props.isLightTheme ? '#cad2e2' : '#566e9f'
 
         svg
             .append('path')
@@ -84,6 +61,6 @@ export class Sparkline extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const { width, height } = this.props
 
-        return <svg viewBox={`0 0 200 20`} width={width} height={height} ref={ref => (this.svgRef = ref)} />
+        return <svg viewBox={`0 0 200 20`} width={width} height={height} ref={this.drawSparkline} />
     }
 }

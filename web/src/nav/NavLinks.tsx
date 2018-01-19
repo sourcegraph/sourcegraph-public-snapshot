@@ -10,6 +10,8 @@ import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
 interface Props {
     location: H.Location
+    isLightTheme: boolean
+    onThemeChange: () => void
 }
 
 interface State {
@@ -87,7 +89,7 @@ export class NavLinks extends React.Component<Props, State> {
                             Sign in
                         </Link>
                     )}
-                <ThemeSwitcher />
+                <ThemeSwitcher {...this.props} />
             </div>
         )
     }

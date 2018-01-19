@@ -27,6 +27,7 @@ const RepoPageNotFound: React.SFC = () => (
 
 interface Props extends RouteComponentProps<{ repoRevAndRest: string }> {
     user: GQL.IUser | null
+    isLightTheme: boolean
 }
 
 interface State {
@@ -145,6 +146,7 @@ export class RepoContainer extends React.Component<Props, State> {
         const transferProps = {
             repo: this.state.repo,
             user: this.props.user,
+            isLightTheme: this.props.isLightTheme,
         }
 
         const repoMatchURL = `/${this.state.repo.uri}`

@@ -21,6 +21,8 @@ const SettingsNotFoundPage = () => (
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser | null
+    isLightTheme: boolean
+    onThemeChange: () => void
 }
 
 /**
@@ -42,16 +44,12 @@ export class SettingsArea extends React.Component<Props> {
             return <Redirect to="/settings/profile" />
         }
 
-        const transferProps = { user: this.props.user }
+        // We redefine this here so the type of user is non-null
+        const transferProps = { ...this.props, user: this.props.user }
 
         return (
             <div className="settings-area area">
-                <SettingsSidebar
-                    className="area__sidebar"
-                    history={this.props.history}
-                    location={this.props.location}
-                    user={this.props.user}
-                />
+                <SettingsSidebar className="area__sidebar" {...transferProps} />
                 <div className="area__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}

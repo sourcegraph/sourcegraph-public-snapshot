@@ -30,6 +30,7 @@ const NotSiteAdminPage = () => (
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser | null
+    isLightTheme: boolean
 }
 
 /**
@@ -51,7 +52,7 @@ export class SiteAdminArea extends React.Component<Props> {
             return <NotSiteAdminPage />
         }
 
-        const transferProps = { user: this.props.user }
+        const transferProps = { user: this.props.user, isLightTheme: this.props.isLightTheme }
 
         return (
             <div className="site-admin-area area">
@@ -66,8 +67,11 @@ export class SiteAdminArea extends React.Component<Props> {
                         <Route path={this.props.match.url} component={SiteAdminOverviewPage} exact={true} />
                         <Route
                             path={`${this.props.match.url}/configuration`}
-                            component={SiteAdminConfigurationPage}
                             exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <SiteAdminConfigurationPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
                         <Route
                             path={`${this.props.match.url}/global-settings`}
