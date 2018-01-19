@@ -22,3 +22,6 @@ func Restart() error {
 	}
 	return errors.New("unable to restart processes")
 }
+
+// WillRestart is a channel that is closed when the process will imminently restart.
+var WillRestart = make(chan struct{})

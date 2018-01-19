@@ -99,8 +99,6 @@ func main() {
 
 	// TODO validate known_hosts contains all code hosts in config.
 
-	// Should be kept in sync with package processrestart's goreman_server.go
-	// process list.
 	procfile := []string{
 		`gitserver: gitserver`,
 		`indexer: indexer`,
