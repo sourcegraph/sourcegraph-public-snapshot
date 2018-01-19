@@ -189,10 +189,10 @@ export const SavedQueryForm = reactive<Props>(props => {
                         onChange={nextInputChange}
                         value={query || ''}
                         autoCorrect="off"
-                        autoFocus={true}
                         spellCheck={false}
                         autoCapitalize="off"
                         ref={e => (queryInput = e)}
+                        autoFocus={!query}
                     />
                     <span>Description</span>
                     <input
@@ -204,6 +204,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                         value={description || ''}
                         required={true}
                         ref={e => (descriptionInput = e)}
+                        autoFocus={!!query}
                     />
                     <span>Save location</span>
                     <div className="saved-query-form__save-location">
