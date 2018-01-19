@@ -100,5 +100,11 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		}
 	}
 
+	for _, ghCfg := range cfg.Github {
+		if ghCfg.PreemptivelyClone {
+			invalid(`github[].preemptivelyClone is deprecated; use initialRepositoryEnablement instead`)
+		}
+	}
+
 	return validationErrors, nil
 }

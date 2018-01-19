@@ -366,9 +366,14 @@ const SiteSchemaJSON = `{
           "type": "array",
           "items": { "type": "string" }
         },
+        "initialRepositoryEnablement": {
+          "description":
+            "Defines whether repositories from this GitHub instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitHub repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitHub); site admins can still disable them explicitly, and they'll remain disabled.",
+          "type": "boolean"
+        },
         "preemptivelyClone": {
           "description":
-            "Preemptively clone GitHub repositories added (instead of cloning on-demand when the repository is searched or viewed)",
+            "Preemptively clone GitHub repositories added (instead of cloning on-demand when the repository is searched or viewed)\n\nDEPRECATED: Use initialRepositoryEnablement instead.",
           "type": "boolean"
         }
       }

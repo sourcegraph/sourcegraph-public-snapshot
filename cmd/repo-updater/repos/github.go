@@ -105,6 +105,11 @@ func githubEnterpriseClient(ctx context.Context, gheURL, cert, accessToken strin
 
 // updateForConfig ensures that all public and private repositories listed by the given config
 func updateForConfig(ctx context.Context, conn schema.GitHubConnection, client *github.Client) error {
+	initialEnablement := conn.InitialRepositoryEnablement || conn.PreemptivelyClone
+	if conn.PreemptivelyClone {
+		log15.Info("The site config element github[].preemptivelyClone is deprecated. Use initialRepositoryEnablement instead.")
+	}
+
 	// update explicitly listed repositories
 	var explicitRepos []*github.Repository
 	for _, ownerAndRepoString := range conn.Repos {
@@ -120,7 +125,7 @@ func updateForConfig(ctx context.Context, conn schema.GitHubConnection, client *
 		}
 		explicitRepos = append(explicitRepos, repo)
 	}
-	updateGitHubRepos(ctx, client, explicitRepos, conn.PreemptivelyClone)
+	updateGitHubRepos(ctx, client, explicitRepos, initialEnablement)
 
 	// update implicit repositories (repositories owned by an organization to which the user who created
 	// the personal access token belongs)
@@ -134,52 +139,43 @@ func updateForConfig(ctx context.Context, conn schema.GitHubConnection, client *
 	if err != nil {
 		return fmt.Errorf("could not list repositories: %s", err)
 	}
-	updateGitHubRepos(ctx, client, repos, conn.PreemptivelyClone)
+	updateGitHubRepos(ctx, client, repos, initialEnablement)
 	return nil
 }
 
 // update ensures that all provided repositories exist in the repository table.
 // It adds each repository with a URI of the form
 // "${GITHUB_CLIENT_HOSTNAME}/${GITHUB_REPO_FULL_NAME}".
-func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*github.Repository, preemptivelyClone bool) {
-	// Sort repos by most recently pushed, so we prioritize cloning repos first that are more likely
-	// to be important.
+func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*github.Repository, initialEnablement bool) {
+	// Sort repos by most recently pushed, so we prioritize adding (and possibly enabling/cloning) repos first that
+	// are more likely to be important.
 	sort.Slice(repos, func(i, j int) bool {
 		return repos[i].GetPushedAt().Time.After(repos[j].GetPushedAt().Time)
 	})
 
-	var toClone int
-	if preemptivelyClone {
-		toClone = len(repos) // preemptively clone all repositories
-	} else {
-		// Only preemptively clone the first N (recently pushed) repositories. The other repositories will
-		// be cloned on-demand (when searched or viewed).
-		toClone = 7 // 7 is an arbitrary number
-	}
-
 	cloned := 0
-	for i, ghRepo := range repos {
+	for _, ghRepo := range repos {
 		hostPart := client.BaseURL.Host
 		if hostPart == "api.github.com" {
 			hostPart = "github.com"
 		}
 		uri := fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName())
 
-		repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), ghRepo.GetPrivate(), false)
+		repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), ghRepo.GetPrivate(), initialEnablement)
 		if err != nil {
 			log15.Warn("Could not ensure repository exists", "uri", uri, "error", err)
 			continue
 		}
 
-		shouldClone := i < toClone
-		if shouldClone {
-			// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
+		if initialEnablement {
+			// If newly added, the repository will have been set to enabled upon creation above. Explicitly enqueue a
+			// clone/update now so that those occur in order of most recently pushed.
 			isCloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, repo.URI)
 			if err != nil {
 				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 				continue
 			}
-			if !conf.Get().DisableAutoGitUpdates || !isCloned {
+			if !isCloned {
 				cloned++
 				log15.Debug("fetching GitHub repo", "repo", repo.URI, "cloned", isCloned)
 				err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.URI)
