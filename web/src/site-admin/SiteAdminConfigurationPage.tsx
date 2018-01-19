@@ -155,7 +155,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         if (this.state.error) {
             alerts.push(
                 <div key="error" className="alert alert-danger site-admin-configuration-page__alert">
-                    <p>Error: {this.state.error}</p>
+                    <p>Error: {this.state.error.message}</p>
                 </div>
             )
         }
