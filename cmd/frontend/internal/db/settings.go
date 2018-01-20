@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -12,12 +12,12 @@ import (
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *sourcegraph.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject types.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorUserID, contents)
 	}
 
-	s := sourcegraph.Settings{
+	s := types.Settings{
 		Subject:      subject,
 		AuthorUserID: authorUserID,
 		Contents:     contents,
@@ -58,7 +58,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject sourcegraph.Con
 	return latestSetting, nil
 }
 
-func (o *settings) GetLatest(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
+func (o *settings) GetLatest(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
 	if Mocks.Settings.GetLatest != nil {
 		return Mocks.Settings.GetLatest(ctx, subject)
 	}
@@ -66,7 +66,7 @@ func (o *settings) GetLatest(ctx context.Context, subject sourcegraph.Configurat
 	return o.getLatest(ctx, globalDB, subject)
 }
 
-func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
+func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject types.ConfigurationSubject) (*types.Settings, error) {
 	var cond *sqlf.Query
 	switch {
 	case subject.Org != nil:
@@ -103,11 +103,11 @@ type queryable interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*sourcegraph.Settings, error) {
-	settings := []*sourcegraph.Settings{}
+func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*types.Settings, error) {
+	settings := []*types.Settings{}
 	defer rows.Close()
 	for rows.Next() {
-		s := sourcegraph.Settings{}
+		s := types.Settings{}
 		err := rows.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorUserID, &s.Contents, &s.CreatedAt)
 		if err != nil {
 			return nil, err

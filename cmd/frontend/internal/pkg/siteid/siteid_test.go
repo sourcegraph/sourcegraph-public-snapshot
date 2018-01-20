@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -44,8 +44,8 @@ func TestGet(t *testing.T) {
 
 	t.Run("from DB", func(t *testing.T) {
 		defer reset()
-		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*sourcegraph.SiteConfig, error) {
-			return &sourcegraph.SiteConfig{SiteID: "a"}, nil
+		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
+			return &types.SiteConfig{SiteID: "a"}, nil
 		}
 
 		if err := tryInit(); err != nil {
@@ -61,7 +61,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("panics if DB unavailable", func(t *testing.T) {
 		defer reset()
-		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*sourcegraph.SiteConfig, error) {
+		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
 			return nil, errors.New("x")
 		}
 
@@ -95,8 +95,8 @@ func TestGet(t *testing.T) {
 	t.Run("JSON site config takes precedence over DB", func(t *testing.T) {
 		defer reset()
 		conf.MockGetData = &schema.SiteConfiguration{SiteID: "a"}
-		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*sourcegraph.SiteConfig, error) {
-			return &sourcegraph.SiteConfig{SiteID: "b"}, nil
+		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
+			return &types.SiteConfig{SiteID: "b"}, nil
 		}
 
 		if err := tryInit(); err != nil {

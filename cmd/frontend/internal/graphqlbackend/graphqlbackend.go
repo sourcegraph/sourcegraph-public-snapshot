@@ -21,6 +21,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -388,7 +389,7 @@ func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args
 	Email           string
 	EnableTelemetry bool
 }) (*EmptyResponse, error) {
-	configuration := &sourcegraph.SiteConfig{
+	configuration := &types.SiteConfig{
 		Email:            args.Email,
 		TelemetryEnabled: args.EnableTelemetry,
 	}

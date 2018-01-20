@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -14,7 +14,7 @@ type siteConfig struct{}
 
 var telemetryDisabled = conf.Get().DisableTelemetry
 
-func (o *siteConfig) Get(ctx context.Context) (*sourcegraph.SiteConfig, error) {
+func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 	if Mocks.SiteConfig.Get != nil {
 		return Mocks.SiteConfig.Get(ctx)
 	}
@@ -30,8 +30,8 @@ func (o *siteConfig) Get(ctx context.Context) (*sourcegraph.SiteConfig, error) {
 	return o.getConfiguration(ctx)
 }
 
-func (o *siteConfig) getConfiguration(ctx context.Context) (*sourcegraph.SiteConfig, error) {
-	configuration := &sourcegraph.SiteConfig{}
+func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, error) {
+	configuration := &types.SiteConfig{}
 	err := globalDB.QueryRowContext(ctx, "SELECT site_id, enable_telemetry, updated_at from site_config LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.TelemetryEnabled,
@@ -46,7 +46,7 @@ func (o *siteConfig) getConfiguration(ctx context.Context) (*sourcegraph.SiteCon
 	return configuration, nil
 }
 
-func (o *siteConfig) UpdateConfiguration(ctx context.Context, updatedConfiguration *sourcegraph.SiteConfig) error {
+func (o *siteConfig) UpdateConfiguration(ctx context.Context, updatedConfiguration *types.SiteConfig) error {
 	_, err := o.Get(ctx)
 	if err != nil {
 		return err

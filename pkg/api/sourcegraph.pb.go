@@ -229,36 +229,6 @@ type OrgTag struct {
 	Name  string `json:"Name,omitempty"`
 }
 
-// A ConfigurationSubject is something that can have settings. A subject with no
-// fields set represents the global site settings subject.
-type ConfigurationSubject struct {
-	Site *string // the site's ID
-	Org  *int32  // the org's ID
-	User *int32  // the user's ID
-}
-
-func (s ConfigurationSubject) String() string {
-	switch {
-	case s.Site != nil:
-		return fmt.Sprintf("site %q", *s.Site)
-	case s.Org != nil:
-		return fmt.Sprintf("org %d", *s.Org)
-	case s.User != nil:
-		return fmt.Sprintf("user %d", *s.User)
-	default:
-		return "unknown configuration subject"
-	}
-}
-
-// Settings contains configuration settings for a subject.
-type Settings struct {
-	ID           int32 `json:"ID"`
-	Subject      ConfigurationSubject
-	AuthorUserID int32     `json:"AuthorUserID"`
-	Contents     string    `json:"Contents"`
-	CreatedAt    time.Time `json:"CreatedAt"`
-}
-
 type PhabricatorRepo struct {
 	ID       int32  `json:"ID"`
 	URI      string `json:"URI"`
@@ -270,11 +240,4 @@ type UserActivity struct {
 	UserID        int32
 	PageViews     int32
 	SearchQueries int32
-}
-
-type SiteConfig struct {
-	SiteID           string `json:"SiteID"`
-	Email            string `json:"Email"`
-	TelemetryEnabled bool   `json:"TelemetryEnabled"`
-	UpdatedAt        string `json:"UpdatedAt"`
 }

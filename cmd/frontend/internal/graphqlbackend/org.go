@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -93,7 +94,7 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := db.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{Org: &o.org.ID})
+	settings, err := db.Settings.GetLatest(ctx, types.ConfigurationSubject{Org: &o.org.ID})
 	if err != nil {
 		return nil, err
 	}

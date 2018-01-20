@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 type MockSiteConfig struct {
-	Get func(ctx context.Context) (*sourcegraph.SiteConfig, error)
+	Get func(ctx context.Context) (*types.SiteConfig, error)
 }

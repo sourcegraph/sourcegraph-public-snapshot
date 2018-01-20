@@ -9,12 +9,12 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"github.com/sourcegraph/jsonx"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
 type savedQueryIDSpec struct {
-	Subject sourcegraph.ConfigurationSubject
+	Subject types.ConfigurationSubject
 	Key     string
 }
 
@@ -55,7 +55,7 @@ func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, er
 }
 
 func (r savedQueryResolver) ID() graphql.ID {
-	var subject sourcegraph.ConfigurationSubject
+	var subject types.ConfigurationSubject
 	switch {
 	case r.subject.user != nil:
 		subject.User = &r.subject.user.user.ID
