@@ -116,22 +116,6 @@ func (d *DependencyReference) String() string {
 	return fmt.Sprintf("DependencyReference{DepData: %v, RepoID: %v, Hints: %v}", d.DepData, d.RepoID, d.Hints)
 }
 
-// UserEvent encodes any user initiated event on the local instance.
-type UserEvent struct {
-	Type    string `json:"Type,omitempty"`
-	UID     string `json:"UID,omitempty"`
-	Service string `json:"Service,omitempty"`
-	Method  string `json:"Method,omitempty"`
-	Result  string `json:"Result,omitempty"`
-	// CreatedAt holds the time when this event was logged.
-	CreatedAt *time.Time `json:"CreatedAt,omitempty"`
-	Message   string     `json:"Message,omitempty"`
-	// Version holds the release version of the Sourcegraph binary.
-	Version string `json:"Version,omitempty"`
-	// URL holds the http request url.
-	URL string `json:"URL,omitempty"`
-}
-
 const (
 	// UserProviderHTTPHeader is the http-header auth provider.
 	UserProviderHTTPHeader = "http-header"
