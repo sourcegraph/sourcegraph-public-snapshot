@@ -68,7 +68,6 @@ export class SavedQueries extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
-        eventLogger.logViewEvent('SavedQueries')
     }
 
     public componentWillReceiveProps(newProps: Props): void {
@@ -184,5 +183,12 @@ export class SavedQueries extends React.Component<Props, State> {
 
     private onDidClickQueryHelp = () => {
         eventLogger.log('SavedQueriesHelpButtonClicked')
+    }
+}
+
+export class SavedQueriesPage extends SavedQueries {
+    public componentDidMount(): void {
+        super.componentDidMount()
+        eventLogger.logViewEvent('SavedQueries')
     }
 }

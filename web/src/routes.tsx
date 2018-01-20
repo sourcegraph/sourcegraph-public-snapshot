@@ -12,7 +12,7 @@ import { OrgsArea } from './org/OrgsArea'
 import { RepoBrowser } from './repo/RepoBrowser'
 import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
-import { SavedQueries } from './search/SavedQueries'
+import { SavedQueriesPage } from './search/SavedQueries'
 import { SearchPage } from './search/SearchPage'
 import { SearchResults } from './search/SearchResults'
 import { SettingsArea } from './settings/SettingsArea'
@@ -45,7 +45,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/search/queries',
-        component: SavedQueries,
+        component: SavedQueriesPage,
         exact: true,
         forceNarrowWidth: true,
     },
