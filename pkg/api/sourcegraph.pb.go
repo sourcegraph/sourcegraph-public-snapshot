@@ -96,12 +96,6 @@ type Repo struct {
 	FreezeIndexedRevision bool `json:"FreezeIndexedRevision,omitempty"`
 }
 
-type Contributor struct {
-	Login         string `json:"Login,omitempty"`
-	AvatarURL     string `json:"AvatarURL,omitempty"`
-	Contributions int    `json:"Contributions,omitempty"`
-}
-
 // RepoRevSpec specifies a repository at a specific commit.
 type RepoRevSpec struct {
 	Repo int32 `json:"Repo,omitempty"`
