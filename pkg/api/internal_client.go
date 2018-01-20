@@ -74,16 +74,20 @@ func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri, revision str
 	if err != nil {
 		return err
 	}
-	resp, err := c.post("defs/refresh-index", req)
+	_, err = c.post("defs/refresh-index", req)
+	return err
+}
+
+func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri, revision string) error {
+	req, err := json.Marshal(&PkgsRefreshIndexRequest{
+		URI:      uri,
+		Revision: revision,
+	})
 	if err != nil {
 		return err
 	}
-	var inv inventory.Inventory
-	err = json.NewDecoder(resp.Body).Decode(&inv)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = c.post("pkgs/refresh-index", req)
+	return err
 }
 
 func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, private, enabled bool) (*Repo, error) {

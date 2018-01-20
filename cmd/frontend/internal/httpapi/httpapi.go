@@ -91,6 +91,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.ReposList).Handler(traceutil.TraceRoute(handler(serveReposList)))
 	m.Get(apirouter.ReposGetByURI).Handler(traceutil.TraceRoute(handler(serveReposGetByURI)))
 	m.Get(apirouter.DefsRefreshIndex).Handler(traceutil.TraceRoute(handler(serveDefsRefreshIndex)))
+	m.Get(apirouter.PkgsRefreshIndex).Handler(traceutil.TraceRoute(handler(servePkgsRefreshIndex)))
 	m.Get(apirouter.GitoliteUpdateRepos).Handler(traceutil.TraceRoute(handler(serveGitoliteUpdateRepos)))
 	m.Get(apirouter.GitInfoRefs).Handler(traceutil.TraceRoute(handler(serveGitInfoRefs)))
 	m.Get(apirouter.GitUploadPack).Handler(traceutil.TraceRoute(handler(serveGitUploadPack)))

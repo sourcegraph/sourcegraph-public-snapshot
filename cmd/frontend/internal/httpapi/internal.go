@@ -246,6 +246,21 @@ func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
+	var args sourcegraph.PkgsRefreshIndexRequest
+	err := json.NewDecoder(r.Body).Decode(&args)
+	if err != nil {
+		return err
+	}
+	err = backend.Pkgs.RefreshIndex(r.Context(), args.URI, args.Revision)
+	if err != nil {
+		return nil
+	}
+	w.WriteHeader(http.StatusNoContent)
+	w.Write([]byte("OK"))
+	return nil
+}
+
 func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	service := r.URL.Query().Get("service")
 	if service != "git-upload-pack" {

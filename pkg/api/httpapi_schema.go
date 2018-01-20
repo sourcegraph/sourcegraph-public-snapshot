@@ -5,6 +5,11 @@ type DefsRefreshIndexRequest struct {
 	Revision string `json:"revision"`
 }
 
+type PkgsRefreshIndexRequest struct {
+	URI      string `json:"uri"`
+	Revision string `json:"revision"`
+}
+
 type RepoCreateOrUpdateRequest struct {
 	URI         string `json:"uri"`
 	Description string `json:"description"`

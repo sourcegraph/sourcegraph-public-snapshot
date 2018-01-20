@@ -170,7 +170,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err
 		// As part of package indexing, it's fine to index private repositories
 		// because backend.Pkgs.ListPackages is responsible for authentication
 		// checks.
-		pkgErr := sourcegraph.InternalClient.DefsRefreshIndex(ctx, repo.URI, commit)
+		pkgErr := sourcegraph.InternalClient.PkgsRefreshIndex(ctx, repo.URI, commit)
 		if err != nil {
 			pkgErr = fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)
 		}
