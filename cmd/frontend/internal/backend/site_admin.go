@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
+	store "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 var errMustBeSiteAdmin = errors.New("must be site admin")

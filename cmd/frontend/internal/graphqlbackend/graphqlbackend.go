@@ -19,11 +19,11 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"

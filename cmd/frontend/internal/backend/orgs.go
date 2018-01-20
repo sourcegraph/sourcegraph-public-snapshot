@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )
 
 func CheckCurrentUserIsOrgMember(ctx context.Context, orgID int32) error {

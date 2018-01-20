@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
 
 type gitObjectID string

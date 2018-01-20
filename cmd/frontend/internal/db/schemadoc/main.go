@@ -9,8 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 
 	_ "github.com/lib/pq"
 )
@@ -29,7 +28,7 @@ func main() {
 	defer exec.Command("dropdb", dbname).Run()
 	db.ConnectToDB("dbname=" + dbname)
 
-	db, err := dbutil2.Open("dbname=" + dbname)
+	db, err := db.Open("dbname=" + dbname)
 	if err != nil {
 		log.Fatal(err)
 	}

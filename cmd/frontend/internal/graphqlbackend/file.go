@@ -15,9 +15,9 @@ import (
 
 	"github.com/microcosm-cc/bluemonday"
 	gfm "github.com/shurcooL/github_flavored_markdown"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )

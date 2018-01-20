@@ -10,9 +10,9 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 // githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.

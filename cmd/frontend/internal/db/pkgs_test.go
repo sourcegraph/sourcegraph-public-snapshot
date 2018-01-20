@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -38,7 +37,7 @@ func TestPkgs_update_delete(t *testing.T) {
 	}}
 
 	t.Log("update")
-	if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+	if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		if err := Pkgs.update(ctx, tx, rp.ID, "go", pks); err != nil {
 			return err
 		}
@@ -198,7 +197,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 
 	for repo, pks := range repoToPkgs {
-		if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+		if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id) VALUES ($1)`, repo); err != nil {
 				return err
 			}

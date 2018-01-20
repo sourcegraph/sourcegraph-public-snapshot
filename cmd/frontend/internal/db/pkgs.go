@@ -17,7 +17,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -99,7 +98,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		pks = append(pks, pk)
 	}
 
-	err = dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+	err = Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		// Update the pkgs table.
 		err = p.update(ctx, tx, repo.ID, language, pks)
 		if err != nil {

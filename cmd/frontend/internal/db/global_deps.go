@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -418,7 +417,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 		table = "global_dep_private"
 	}
 
-	err = dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+	err = Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		// Update the table.
 		err = g.update(ctx, tx, table, language, deps, repo.ID)
 		if err != nil {

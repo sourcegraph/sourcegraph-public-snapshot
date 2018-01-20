@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -86,7 +85,7 @@ func TestRepos_Delete(t *testing.T) {
 			Attributes: map[string]interface{}{"name": "dep1"},
 		}},
 	}}
-	if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+	if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		if err := Pkgs.update(ctx, tx, rp.ID, "go", pks); err != nil {
 			return err
 		}
@@ -98,7 +97,7 @@ func TestRepos_Delete(t *testing.T) {
 	inputRefs := []lspext.DependencyReference{{
 		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
 	}}
-	if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+	if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, rp.ID)
 	}); err != nil {
 		t.Fatal(err)

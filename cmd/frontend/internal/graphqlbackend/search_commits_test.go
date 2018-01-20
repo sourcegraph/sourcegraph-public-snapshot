@@ -9,8 +9,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )

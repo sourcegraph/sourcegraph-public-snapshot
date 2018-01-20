@@ -1,4 +1,4 @@
-package dbutil
+package db
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 // Transaction calls f within a transaction, rolling back if any error is
 // returned by the function.
 func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "dbutil.Transaction")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Transaction")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -28,7 +28,7 @@ func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err
 	defer func() {
 		if err != nil {
 			if err2 := tx.Rollback(); err2 != nil {
-				log.Println("dbutil.Transaction Rollback failed:", err2)
+				log.Println("Transaction Rollback failed:", err2)
 			}
 		}
 	}()

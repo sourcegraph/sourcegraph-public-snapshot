@@ -8,7 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 

@@ -14,12 +14,12 @@ import (
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/gorilla/csrf"

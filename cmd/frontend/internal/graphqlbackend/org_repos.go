@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type orgRepoResolver struct {

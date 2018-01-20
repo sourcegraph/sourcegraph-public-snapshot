@@ -1,20 +1,26 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/keegancsmith/sqlhooks"
+	"github.com/lib/pq"
 	"github.com/mattes/migrate"
 	"github.com/mattes/migrate/database/postgres"
 	bindata "github.com/mattes/migrate/source/go-bindata"
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db/migrations"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db/migrations"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -57,13 +63,69 @@ func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 		if time.Now().After(startupDeadline) {
 			return nil, fmt.Errorf("database did not start up within %s (%v)", startupTimeout, err)
 		}
-		db, err = dbutil2.Open(dataSource)
+		db, err = Open(dataSource)
 		if err != nil && strings.Contains(err.Error(), "pq: the database system is starting up") {
 			time.Sleep(startupTimeout / 10)
 			continue
 		}
 		return db, err
 	}
+}
+
+var registerOnce sync.Once
+
+// Open creates a new DB handle with the given schema by connecting to
+// the database identified by dataSource (e.g., "dbname=mypgdb" or
+// blank to use the PG* env vars).
+//
+// Open assumes that the database already exists.
+func Open(dataSource string) (*sql.DB, error) {
+	registerOnce.Do(func() {
+		sql.Register("postgres-proxy", sqlhooks.Wrap(&pq.Driver{}, &hook{}))
+	})
+	db, err := sql.Open("postgres-proxy", dataSource)
+	if err != nil {
+		return nil, fmt.Errorf("%s (datasource=%q)", err, dataSource)
+	}
+
+	// Ensure we're in UTC.
+	var tz string
+	if err := db.QueryRow("SELECT current_setting('TIMEZONE')").Scan(&tz); err != nil {
+		return nil, fmt.Errorf("getting DB timezone: %s", err)
+	}
+	if tz != "UTC" {
+		return nil, fmt.Errorf("PostgresQL timezone must be UTC, but it is set to %q. (Set it by specifying `timezone = 'UTC'` in postgresql.conf and then restart PostgreSQL.)", tz)
+	}
+	return db, nil
+}
+
+type hook struct{}
+
+// Before implements sqlhooks.Hooks
+func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+	parent := opentracing.SpanFromContext(ctx)
+	if parent == nil {
+		return ctx, nil
+	}
+	span := opentracing.StartSpan("sql",
+		opentracing.ChildOf(parent.Context()),
+		ext.SpanKindRPCClient)
+	ext.DBStatement.Set(span, query)
+	ext.DBType.Set(span, "sql")
+	span.LogFields(
+		otlog.Object("args", args),
+	)
+
+	return opentracing.ContextWithSpan(ctx, span), nil
+}
+
+// After implements sqlhooks.Hooks
+func (h *hook) After(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		span.Finish()
+	}
+	return ctx, nil
 }
 
 func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/neelance/graphql-go/gqltesting"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func TestNode_User(t *testing.T) {

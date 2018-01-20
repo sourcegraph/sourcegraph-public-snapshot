@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -96,7 +95,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	inputRefs := []lspext.DependencyReference{{
 		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
 	}}
-	if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+	if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repoID)
 	}); err != nil {
 		t.Fatal(err)
@@ -267,7 +266,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 
 	for repoID, inputRefs := range inputRefs {
-		if err := dbutil.Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+		if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 			return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repoID)
 		}); err != nil {
 			t.Fatal(err)
