@@ -138,38 +138,6 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 	return &sourcegraph.CommitList{Commits: commits, StreamResponse: streamResponse}, nil
 }
 
-func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCommittersOp) (res *sourcegraph.CommitterList, err error) {
-	if Mocks.Repos.ListCommitters != nil {
-		return Mocks.Repos.ListCommitters(ctx, op)
-	}
-
-	ctx, done := trace(ctx, "Repos", "ListCommitters", op, &err)
-	defer done()
-
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
-	if err != nil {
-		return nil, err
-	}
-
-	vcsrepo, err := db.RepoVCS.Open(ctx, repo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	var opt vcs.CommittersOptions
-	if op.Opt != nil {
-		opt.Rev = op.Opt.Rev
-		opt.N = int(op.Opt.PerPage)
-	}
-
-	committers, err := vcsrepo.Committers(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sourcegraph.CommitterList{Committers: committers}, nil
-}
-
 func isAbsCommitID(commitID string) bool { return len(commitID) == 40 }
 
 func makeErrNotAbsCommitID(prefix string) error {

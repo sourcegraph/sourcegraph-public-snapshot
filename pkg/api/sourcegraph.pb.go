@@ -160,21 +160,6 @@ type CommitList struct {
 	StreamResponse `json:""`
 }
 
-type ReposListCommittersOp struct {
-	Repo int32                      `json:"Repo,omitempty"`
-	Opt  *RepoListCommittersOptions `json:"Opt,omitempty"`
-}
-
-type RepoListCommittersOptions struct {
-	Rev         string `json:"Rev,omitempty"`
-	ListOptions `json:""`
-}
-
-type CommitterList struct {
-	Committers     []*vcs.Committer `json:"Committers,omitempty"`
-	StreamResponse `json:""`
-}
-
 // UserSpec specifies a user. At least one of Login and UID must be
 // nonempty.
 type UserSpec struct {
