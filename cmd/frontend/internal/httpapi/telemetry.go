@@ -1,12 +1,17 @@
 package httpapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 
 	"github.com/gorilla/mux"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -25,23 +30,24 @@ func init() {
 			fmt.Fprintln(w, "telemetry is disabled")
 		})
 	} else {
-		telemetryReverseProxy = &httputil.ReverseProxy{
-			Director: func(req *http.Request) {
-				stripTelemetryRequest(req)
-				req.URL.Scheme, req.URL.Host = "https", "example.com" // needed for DumpRequestOut
-				telemetry.Sample(req)
+		// If on sourcegraph.com, no request body modification is necessary — just proxy the request
+		if envvar.SourcegraphDotComMode() {
+			telemetryReverseProxy = &httputil.ReverseProxy{
+				Director: func(req *http.Request) {
+					stripTelemetryRequest(req)
+					req.URL.Scheme, req.URL.Host = "https", "example.com" // needed for DumpRequestOut
+					telemetry.Sample(req)
 
-				if useBILogger(siteid.Get()) {
-					req.URL.Scheme = "http"
-					req.URL.Host = req.Host
-					req.URL.Path = "/.bi-logger"
-				} else {
 					req.URL.Scheme = "https"
 					req.URL.Host = "sourcegraph-logging.telligentdata.com"
 					req.Host = "sourcegraph-logging.telligentdata.com"
 					req.URL.Path = "/" + mux.Vars(req)["TelemetryPath"]
-				}
-			},
+				},
+			}
+		} else {
+			telemetryReverseProxy = &httputil.ReverseProxy{
+				Director: serveOnPremTelemetryModification,
+			}
 		}
 	}
 }
@@ -73,4 +79,53 @@ func stripTelemetryRequest(req *http.Request) {
 // service for on-prem telemetry logging
 func useBILogger(siteID string) bool {
 	return siteID == "Uber" || siteID == "UmamiWeb"
+}
+
+// serveOnPremTelemetryModification tranforms the telemetry payload by swapping out
+// the appID for the Server instance's siteID.
+//
+// This allows the Editor and browser extensions to log events without caring what
+// Server instance they're connected to. If the Server instance isn't sourcegraph.com,
+// the Editor/Extension events will be correctly logged with an appID that matches
+// the Server instance's siteID.
+func serveOnPremTelemetryModification(r *http.Request) {
+	// Decode the telemetry payload.
+	var msg map[string]interface{}
+	err := json.NewDecoder(r.Body).Decode(&msg)
+	if err != nil {
+		log15.Error("serveOnPremTelemetryModification: decoding JSON", "error", err)
+		return
+	}
+
+	// Find the telemetry header map.
+	header, ok := msg["header"].(map[string]interface{})
+	if !ok {
+		log15.Error("serveOnPremTelemetryModification: telemetry payload 'header' value must be a map")
+		return
+	}
+
+	// Swap the appID for the siteID.
+	header["app_id"] = siteid.Get()
+
+	// Encode the new telemtry payload.
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(msg); err != nil {
+		log15.Error("serveOnPremTelemetryModification: encoding JSON", "error", err)
+		return
+	}
+
+	r.ContentLength = int64(buf.Len())
+	r.Body = ioutil.NopCloser(&buf)
+
+	// Point the request to the ultimate telemetry endpoint.
+	if useBILogger(siteid.Get()) {
+		r.URL.Scheme = "http"
+		r.URL.Host = r.Host
+		r.URL.Path = "/.bi-logger"
+	} else {
+		r.URL.Scheme = "https"
+		r.URL.Host = "sourcegraph-logging.telligentdata.com"
+		r.Host = "sourcegraph-logging.telligentdata.com"
+		r.URL.Path = "/" + mux.Vars(r)["TelemetryPath"]
+	}
 }
