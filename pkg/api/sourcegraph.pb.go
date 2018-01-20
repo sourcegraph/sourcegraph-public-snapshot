@@ -118,10 +118,6 @@ type RepoSpec struct {
 	ID int32 `json:"ID,omitempty"`
 }
 
-type RepoList struct {
-	Repos []*Repo `json:"Repos,omitempty"`
-}
-
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.
 type ReposResolveRevOp struct {
 	Repo int32 `json:"repo,omitempty"`
@@ -136,10 +132,6 @@ type ResolvedRev struct {
 	// CommitID is the 40-character absolute SHA-1 hex digest of the
 	// commit's Git oid.
 	CommitID string `json:"CommitID,omitempty"`
-}
-
-type URIList struct {
-	URIs []string `json:"URIs,omitempty"`
 }
 
 // UserSpec specifies a user. At least one of Login and UID must be
@@ -373,8 +365,4 @@ type SiteConfig struct {
 	Email            string `json:"Email"`
 	TelemetryEnabled bool   `json:"TelemetryEnabled"`
 	UpdatedAt        string `json:"UpdatedAt"`
-}
-
-type UserList struct {
-	Users []*User
 }

@@ -50,27 +50,23 @@ func (s *repos) TryInsertNew(ctx context.Context, uri string, description string
 	return db.Repos.TryInsertNew(ctx, uri, description, fork, private, enabled)
 }
 
-func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (res *sourcegraph.RepoList, err error) {
+func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*sourcegraph.Repo, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
 
 	ctx, done := trace(ctx, "Repos", "List", opt, &err)
 	defer func() {
-		if res != nil {
+		if err == nil {
 			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(res.Repos)))
+			span.LogFields(otlog.Int("result.len", len(repos)))
 		}
 		done()
 	}()
 
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.List")
 
-	repos, err := db.Repos.List(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-	return &sourcegraph.RepoList{Repos: repos}, nil
+	return db.Repos.List(ctx, opt)
 }
 
 var inventoryCache = rcache.New("inv")

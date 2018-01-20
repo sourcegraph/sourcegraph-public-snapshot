@@ -43,11 +43,9 @@ func TestReposService_List(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	wantRepos := &sourcegraph.RepoList{
-		Repos: []*sourcegraph.Repo{
-			{URI: "r1"},
-			{URI: "r2"},
-		},
+	wantRepos := []*sourcegraph.Repo{
+		{URI: "r1"},
+		{URI: "r2"},
 	}
 
 	calledList := db.Mocks.Repos.MockList(t, "r1", "r2")

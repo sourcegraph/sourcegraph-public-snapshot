@@ -305,12 +305,12 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	if err != nil {
 		return nil, nil, nil, false, err
 	}
-	overLimit = len(repos.Repos) >= maxRepoListSize
+	overLimit = len(repos) >= maxRepoListSize
 
-	repoRevisions = make([]*repositoryRevisions, 0, len(repos.Repos))
-	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
+	repoRevisions = make([]*repositoryRevisions, 0, len(repos))
+	repoResolvers = make([]*searchResultResolver, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
-	for _, repo := range repos.Repos {
+	for _, repo := range repos {
 		repoRev := &repositoryRevisions{
 			repo: repo,
 			revs: getRevsForMatchedRepo(repo.URI),

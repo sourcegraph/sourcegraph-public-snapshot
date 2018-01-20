@@ -16,10 +16,10 @@ import (
 type MockRepos struct {
 	Get                  func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	GetByURI             func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
-	List                 func(v0 context.Context, v1 db.ReposListOptions) (*sourcegraph.RepoList, error)
+	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*sourcegraph.Repo, error)
 	GetCommit            func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
 	ResolveRev           func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
-	ListDeps             func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
+	ListDeps             func(v0 context.Context, v1 []string) ([]string, error)
 	GetInventory         func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo string) (err error)
@@ -66,13 +66,13 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (cal
 
 func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
-	s.List = func(ctx context.Context, opt db.ReposListOptions) (*sourcegraph.RepoList, error) {
+	s.List = func(ctx context.Context, opt db.ReposListOptions) ([]*sourcegraph.Repo, error) {
 		*called = true
 		repos := make([]*sourcegraph.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
 			repos[i] = &sourcegraph.Repo{URI: repo}
 		}
-		return &sourcegraph.RepoList{Repos: repos}, nil
+		return repos, nil
 	}
 	return
 }

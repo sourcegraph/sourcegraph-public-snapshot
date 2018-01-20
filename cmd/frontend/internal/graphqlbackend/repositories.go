@@ -44,11 +44,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*sourcegr
 	r.once.Do(func() {
 		opt2 := r.opt
 		opt2.PerPage++ // so we can detect if there is a next page
-		repos, err := backend.Repos.List(ctx, opt2)
-		r.err = err
-		if repos != nil {
-			r.repos = repos.Repos
-		}
+		r.repos, r.err = backend.Repos.List(ctx, opt2)
 	})
 	return r.repos, r.err
 }
