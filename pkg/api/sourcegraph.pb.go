@@ -240,7 +240,7 @@ type ConfigurationSubject struct {
 func (s ConfigurationSubject) String() string {
 	switch {
 	case s.Site != nil:
-		return fmt.Sprintf("site %query", *s.Site)
+		return fmt.Sprintf("site %q", *s.Site)
 	case s.Org != nil:
 		return fmt.Sprintf("org %d", *s.Org)
 	case s.User != nil:
