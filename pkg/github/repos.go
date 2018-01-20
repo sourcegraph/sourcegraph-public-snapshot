@@ -9,7 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -30,22 +30,22 @@ func init() {
 }
 
 type cachedRepo struct {
-	sourcegraph.Repo
+	api.Repo
 
 	// NotFound indicates that the GitHub API returned a 404 when
 	// using an Unauthed or Authed request (repo may be exist privately for another authed user).
 	NotFound bool
 }
 
-var GetRepoMock func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+var GetRepoMock func(ctx context.Context, repo string) (*api.Repo, error)
 
-func MockGetRepo_Return(returns *sourcegraph.Repo) {
-	GetRepoMock = func(context.Context, string) (*sourcegraph.Repo, error) {
+func MockGetRepo_Return(returns *api.Repo) {
+	GetRepoMock = func(context.Context, string) (*api.Repo, error) {
 		return returns, nil
 	}
 }
 
-func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+func GetRepo(ctx context.Context, repo string) (*api.Repo, error) {
 	if GetRepoMock != nil {
 		return GetRepoMock(ctx, repo)
 	}
@@ -120,7 +120,7 @@ var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
 
 // getFromAPI attempts to fetch a public or private repo from the GitHub API
 // without use of the redis cache.
-func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
+func getFromAPI(ctx context.Context, owner, repoName string) (*api.Repo, error) {
 	ghrepo, resp, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
 	if err == nil {
 		return ToRepo(ghrepo), nil
@@ -131,7 +131,7 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 	return nil, err
 }
 
-func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
+func ToRepo(ghrepo *github.Repository) *api.Repo {
 	strv := func(s *string) string {
 		if s == nil {
 			return ""
@@ -151,7 +151,7 @@ func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 		u := uint(*v)
 		return &u
 	}
-	repo := sourcegraph.Repo{
+	repo := api.Repo{
 		URI:         "github.com/" + *ghrepo.FullName,
 		Description: strv(ghrepo.Description),
 		Language:    strv(ghrepo.Language),

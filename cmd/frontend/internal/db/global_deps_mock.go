@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type MockGlobalDeps struct {
-	Dependencies func(context.Context, DependenciesOptions) ([]*sourcegraph.DependencyReference, error)
+	Dependencies func(context.Context, DependenciesOptions) ([]*api.DependencyReference, error)
 }

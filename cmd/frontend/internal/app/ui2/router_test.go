@@ -232,12 +232,12 @@ func TestRouter_RootPath(t *testing.T) {
 			}
 
 			// Mock GetByURI to return the proper repo not found error type.
-			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*api.Repo, error) {
 				if uri != tst.repo {
 					panic("unexpected")
 				}
 				if tst.exists {
-					return &sourcegraph.Repo{URI: uri}, nil
+					return &api.Repo{URI: uri}, nil
 				}
 				return nil, legacyerr.Errorf(legacyerr.NotFound, "repo not found")
 			}

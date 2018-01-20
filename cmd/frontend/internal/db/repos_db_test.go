@@ -10,7 +10,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
@@ -18,13 +18,13 @@ import (
  * Helpers
  */
 
-func sortedRepoURIs(repos []*sourcegraph.Repo) []string {
+func sortedRepoURIs(repos []*api.Repo) []string {
 	uris := repoURIs(repos)
 	sort.Strings(uris)
 	return uris
 }
 
-func repoURIs(repos []*sourcegraph.Repo) []string {
+func repoURIs(repos []*api.Repo) []string {
 	var uris []string
 	for _, repo := range repos {
 		uris = append(uris, repo.URI)
@@ -32,14 +32,14 @@ func repoURIs(repos []*sourcegraph.Repo) []string {
 	return uris
 }
 
-func createRepo(ctx context.Context, t *testing.T, repo *sourcegraph.Repo) {
+func createRepo(ctx context.Context, t *testing.T, repo *api.Repo) {
 	if err := Repos.TryInsertNew(ctx, repo.URI, repo.Description, repo.Fork, repo.Private, true); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
-	var createdRepos []*sourcegraph.Repo
+func mustCreate(ctx context.Context, t *testing.T, repos ...*api.Repo) []*api.Repo {
+	var createdRepos []*api.Repo
 	for _, repo := range repos {
 		createRepo(ctx, t, repo)
 		repo, err := Repos.GetByURI(ctx, repo.URI)
@@ -62,7 +62,7 @@ func TestRepos_Get(t *testing.T) {
 
 	ctx := testContext()
 
-	want := mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
+	want := mustCreate(ctx, t, &api.Repo{URI: "r"})
 
 	repo, err := Repos.Get(ctx, want[0].ID)
 	if err != nil {
@@ -82,7 +82,7 @@ func TestRepos_List(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	want := mustCreate(ctx, t, &sourcegraph.Repo{URI: "r"})
+	want := mustCreate(ctx, t, &api.Repo{URI: "r"})
 
 	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
 	if err != nil {
@@ -102,7 +102,7 @@ func TestRepos_List_pagination(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	createdRepos := []*sourcegraph.Repo{
+	createdRepos := []*api.Repo{
 		{URI: "r1"},
 		{URI: "r2"},
 		{URI: "r3"},
@@ -150,7 +150,7 @@ func TestRepos_List_query1(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	createdRepos := []*sourcegraph.Repo{
+	createdRepos := []*api.Repo{
 		{URI: "abc/def"},
 		{URI: "def/ghi"},
 		{URI: "jkl/mno/pqr"},
@@ -190,7 +190,7 @@ func TestRepos_List_query2(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	createdRepos := []*sourcegraph.Repo{
+	createdRepos := []*api.Repo{
 		{URI: "a/def"},
 		{URI: "b/def", Fork: true},
 		{URI: "c/def", Private: true},
@@ -233,7 +233,7 @@ func TestRepos_List_patterns(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	createdRepos := []*sourcegraph.Repo{
+	createdRepos := []*api.Repo{
 		{URI: "a/b"},
 		{URI: "c/d"},
 		{URI: "e/f"},
@@ -307,7 +307,7 @@ func TestRepos_Create(t *testing.T) {
 	ctx := testContext()
 
 	// Add a repo.
-	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b"})
+	createRepo(ctx, t, &api.Repo{URI: "a/b"})
 
 	repo, err := Repos.GetByURI(ctx, "a/b")
 	if err != nil {
@@ -326,10 +326,10 @@ func TestRepos_Create_dupe(t *testing.T) {
 	ctx := testContext()
 
 	// Add a repo.
-	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b"})
+	createRepo(ctx, t, &api.Repo{URI: "a/b"})
 
 	// Add another repo with the same name.
-	createRepo(ctx, t, &sourcegraph.Repo{URI: "a/b"})
+	createRepo(ctx, t, &api.Repo{URI: "a/b"})
 }
 
 func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
@@ -338,7 +338,7 @@ func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
 	}
 
 	ctx := testContext()
-	ghrepo := &sourcegraph.Repo{
+	ghrepo := &api.Repo{
 		URI: "github.com/u/r",
 	}
 	github.MockGetRepo_Return(ghrepo)

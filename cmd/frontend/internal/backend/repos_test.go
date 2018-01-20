@@ -6,7 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
@@ -14,12 +14,12 @@ func TestReposService_Get(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	wantRepo := &sourcegraph.Repo{
+	wantRepo := &api.Repo{
 		ID:      1,
 		URI:     "github.com/u/r",
 		Enabled: true,
 	}
-	ghrepo := &sourcegraph.Repo{
+	ghrepo := &api.Repo{
 		URI: "github.com/u/r",
 	}
 
@@ -44,7 +44,7 @@ func TestReposService_List(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	wantRepos := []*sourcegraph.Repo{
+	wantRepos := []*api.Repo{
 		{URI: "r1"},
 		{URI: "r2"},
 	}

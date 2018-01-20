@@ -1,4 +1,4 @@
-package sourcegraph
+package api
 
 type DefsRefreshIndexRequest struct {
 	URI      string `json:"uri"`

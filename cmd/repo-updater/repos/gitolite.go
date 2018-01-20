@@ -7,7 +7,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -21,7 +21,7 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) error {
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 
 	for {
-		if err := sourcegraph.InternalClient.GitoliteUpdateRepos(context.Background()); err != nil {
+		if err := api.InternalClient.GitoliteUpdateRepos(context.Background()); err != nil {
 			log.Println(err)
 		} else {
 			log15.Debug("updated Gitolite repos")

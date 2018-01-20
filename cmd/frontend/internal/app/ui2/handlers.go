@@ -66,7 +66,7 @@ type Common struct {
 	Error    *pageError
 
 	// The fields below have zero values when not on a repo page.
-	Repo    *sourcegraph.Repo
+	Repo    *api.Repo
 	Rev     string            // unresolved / user-specified revision (e.x.: "@master")
 	RevSpec types.RepoRevSpec // resolved SHA1 revision
 }

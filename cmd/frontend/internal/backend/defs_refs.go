@@ -13,7 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
@@ -151,7 +151,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []types.Re
 }
 
 // Dependencies returns the dependency references for the given repoID. I.e., the repo's dependencies.
-func (s *defs) Dependencies(ctx context.Context, repoID int32) ([]*sourcegraph.DependencyReference, error) {
+func (s *defs) Dependencies(ctx context.Context, repoID int32) ([]*api.DependencyReference, error) {
 	if Mocks.Defs.Dependencies != nil {
 		return Mocks.Defs.Dependencies(ctx, repoID)
 	}
@@ -161,7 +161,7 @@ func (s *defs) Dependencies(ctx context.Context, repoID int32) ([]*sourcegraph.D
 	})
 }
 
-func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error) {
+func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error) {
 	if Mocks.Defs.DependencyReferences != nil {
 		return Mocks.Defs.DependencyReferences(ctx, op)
 	}
@@ -181,7 +181,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 	if err != nil {
 		return nil, err
 	}
-	vcs := "git" // TODO: store VCS type in *sourcegraph.Repo object.
+	vcs := "git" // TODO: store VCS type in *api.Repo object.
 	span.SetTag("repo", repo.URI)
 
 	// Determine the rootURI.
@@ -208,7 +208,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 	// If the symbol is not referenceable according to language semantics, then
 	// there is no need to consult the database or perform roundtrips for
 	// workspace/xreferences requests.
-	var depRefs []*sourcegraph.DependencyReference
+	var depRefs []*api.DependencyReference
 	if !xlang.IsSymbolReferenceable(op.Language, location.Symbol) {
 		span.SetTag("nonreferencable", true)
 	} else {
@@ -228,7 +228,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 	}
 
 	span.SetTag("# depRefs", len(depRefs))
-	return &sourcegraph.DependencyReferences{
+	return &api.DependencyReferences{
 		References: depRefs,
 		Location:   location,
 	}, nil
@@ -249,7 +249,7 @@ func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err 
 type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
 	ListTotalRefs        func(ctx context.Context, source string) (res []types.RepoSpec, err error)
-	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
+	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error)
 	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
-	Dependencies         func(ctx context.Context, repoID int32) ([]*sourcegraph.DependencyReference, error)
+	Dependencies         func(ctx context.Context, repoID int32) ([]*api.DependencyReference, error)
 }

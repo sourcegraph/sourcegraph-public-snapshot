@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 var Pkgs = &pkgs{}
@@ -22,7 +22,7 @@ func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err 
 	return db.Pkgs.RefreshIndex(ctx, repoURI, commitID, Repos.GetInventory)
 }
 
-func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error) {
+func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pkgs []api.PackageInfo, err error) {
 	if Mocks.Pkgs.ListPackages != nil {
 		return Mocks.Pkgs.ListPackages(ctx, op)
 	}
@@ -31,5 +31,5 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 
 type MockPkgs struct {
 	RefreshIndex func(ctx context.Context, repoURI, commitID string) error
-	ListPackages func(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error)
+	ListPackages func(ctx context.Context, op *api.ListPackagesOp) (pkgs []api.PackageInfo, err error)
 }

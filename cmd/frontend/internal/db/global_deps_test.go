@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -103,7 +103,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	}
 
 	t.Log("update")
-	wantRefs := []*sourcegraph.DependencyReference{{
+	wantRefs := []*api.DependencyReference{{
 		DepData: map[string]interface{}{"name": "dep1", "vendor": true},
 		RepoID:  repoID,
 	}}
@@ -198,11 +198,11 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*api.Repo, error) {
 		calledReposGetByURI = true
 		switch repo {
 		case "github.com/my/repo":
-			return &sourcegraph.Repo{ID: repoID, URI: repo}, nil
+			return &api.Repo{ID: repoID, URI: repo}, nil
 		default:
 			return nil, errors.New("not found")
 		}
@@ -220,7 +220,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 		t.Fatalf("!calledReposGetByURI")
 	}
 
-	wantRefs := []*sourcegraph.DependencyReference{{
+	wantRefs := []*api.DependencyReference{{
 		DepData: map[string]interface{}{"name": "github.com/gorilla/dep", "vendor": true},
 		RepoID:  repoID,
 	}}
@@ -275,7 +275,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 
 	{ // Test case 1
-		wantRefs := []*sourcegraph.DependencyReference{{
+		wantRefs := []*api.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true},
 			RepoID:  repoIDs[0],
 		}}
@@ -294,7 +294,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		}
 	}
 	{ // Test case 2
-		wantRefs := []*sourcegraph.DependencyReference{{
+		wantRefs := []*api.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true},
 			RepoID:  repoIDs[1],
 		}}
@@ -313,7 +313,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		}
 	}
 	{ // Test case 3
-		wantRefs := []*sourcegraph.DependencyReference{{
+		wantRefs := []*api.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
 			RepoID:  repoIDs[2],
 		}, {
@@ -341,7 +341,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 }
 
-type sortDepRefs []*sourcegraph.DependencyReference
+type sortDepRefs []*api.DependencyReference
 
 func (s sortDepRefs) Len() int { return len(s) }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 
@@ -120,7 +120,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			}
 
 			span.LogEvent("cross-repo jump to def")
-			pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{PkgQuery: pkgDescriptor, Lang: c.mode, Limit: 1})
+			pkgs, err := backend.Pkgs.ListPackages(ctx, &api.ListPackagesOp{PkgQuery: pkgDescriptor, Lang: c.mode, Limit: 1})
 			if err != nil {
 				return nil, errors.Wrap(err, "getting repo by package db query")
 			}
@@ -140,7 +140,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 					}
 					commit = string(rev)
 				}
-				// TODO: store VCS type in *sourcegraph.Repo object.
+				// TODO: store VCS type in *api.Repo object.
 				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+repo.URI+"?"+commit))
 			}
 			span.LogEvent("resolved rootURIs")

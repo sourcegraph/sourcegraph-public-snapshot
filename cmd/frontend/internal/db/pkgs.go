@@ -17,7 +17,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -59,7 +59,7 @@ func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, repos
 	return nil
 }
 
-func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *sourcegraph.Repo, commitID string) (err error) {
+func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *api.Repo, commitID string) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -69,7 +69,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		span.Finish()
 	}()
 
-	vcs := "git" // TODO: store VCS type in *sourcegraph.Repo object.
+	vcs := "git" // TODO: store VCS type in *api.Repo object.
 
 	// Query all external dependencies for the repository. We do this using the
 	// "<language>_bg" mode which runs this request on a separate language
@@ -194,7 +194,7 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language
 	return nil
 }
 
-func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pks []sourcegraph.PackageInfo, err error) {
+func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []api.PackageInfo, err error) {
 	if Mocks.Pkgs.ListPackages != nil {
 		return Mocks.Pkgs.ListPackages(ctx, op)
 	}
@@ -246,7 +246,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 	}
 	defer rows.Close()
 
-	var rawPkgs []sourcegraph.PackageInfo
+	var rawPkgs []api.PackageInfo
 	for rows.Next() {
 		var (
 			pkg, lang string
@@ -255,7 +255,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		if err := rows.Scan(&repoID, &lang, &pkg); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		r := sourcegraph.PackageInfo{
+		r := api.PackageInfo{
 			RepoID: repoID,
 			Lang:   lang,
 		}

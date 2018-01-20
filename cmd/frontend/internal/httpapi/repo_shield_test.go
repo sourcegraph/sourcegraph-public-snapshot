@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -37,10 +37,10 @@ func TestRepoShield(t *testing.T) {
 		"value": " 200 projects",
 	}
 
-	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*api.Repo, error) {
 		switch uri {
 		case "github.com/gorilla/mux":
-			return &sourcegraph.Repo{ID: 2, URI: uri}, nil
+			return &api.Repo{ID: 2, URI: uri}, nil
 		default:
 			panic("wrong path")
 		}

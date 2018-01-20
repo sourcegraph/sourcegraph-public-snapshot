@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -235,7 +235,7 @@ func repoURIToGoPathPrefixes(repoURI string) []string {
 // doTotalRefs is the generic implementation of total references, using the `pkgs` table.
 func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (sum int, err error) {
 	// Get packages contained in the repo
-	packages, err := (&pkgs{}).ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
+	packages, err := (&pkgs{}).ListPackages(ctx, &api.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
 	if err != nil {
 		return 0, errors.Wrap(err, "ListPackages")
 	}
@@ -283,7 +283,7 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 // using the `pkgs` table.
 func (g *globalDeps) doListTotalRefs(ctx context.Context, repo int32, lang string) (results []int32, err error) {
 	// Get packages contained in the repo
-	packages, err := (&pkgs{}).ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
+	packages, err := (&pkgs{}).ListPackages(ctx, &api.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
 	if err != nil {
 		return nil, errors.Wrap(err, "ListPackages")
 	}
@@ -389,7 +389,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]in
 	return results, nil
 }
 
-func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *sourcegraph.Repo, commitID string) (err error) {
+func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *api.Repo, commitID string) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -399,7 +399,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 		span.Finish()
 	}()
 
-	vcs := "git" // TODO: store VCS type in *sourcegraph.Repo object.
+	vcs := "git" // TODO: store VCS type in *api.Repo object.
 
 	// Query all external dependencies for the repository. We do this using the
 	// "<language>_bg" mode which runs this request on a separate language
@@ -452,7 +452,7 @@ type DependenciesOptions struct {
 	Limit int
 }
 
-func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
+func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*api.DependencyReference, err error) {
 	if Mocks.GlobalDeps.Dependencies != nil {
 		return Mocks.GlobalDeps.Dependencies(ctx, op)
 	}
@@ -473,7 +473,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 // queryDependencies is invoked first for `global_dep_private` (private repos)
 // and then for `global_dep` (public repos). See the globalDeps type docstring
 // for more concrete information.
-func (g *globalDeps) queryDependencies(ctx context.Context, table string, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
+func (g *globalDeps) queryDependencies(ctx context.Context, table string, op DependenciesOptions) (refs []*api.DependencyReference, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "db.Dependencies")
 	defer func() {
 		if err != nil {
@@ -535,7 +535,7 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 		if err := rows.Scan(&depData, &repoID, &hints); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		r := &sourcegraph.DependencyReference{
+		r := &api.DependencyReference{
 			RepoID: repoID,
 		}
 		if err := json.Unmarshal([]byte(depData), &r.DepData); err != nil {

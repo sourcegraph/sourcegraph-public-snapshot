@@ -19,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
@@ -91,14 +91,14 @@ type searchResolver struct {
 	repoErr                   error
 }
 
-var mockResolveRepoGroups func() (map[string][]*sourcegraph.Repo, error)
+var mockResolveRepoGroups func() (map[string][]*api.Repo, error)
 
-func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, error) {
+func resolveRepoGroups(ctx context.Context) (map[string][]*api.Repo, error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
 
-	groups := map[string][]*sourcegraph.Repo{}
+	groups := map[string][]*api.Repo{}
 
 	// Repo groups can be defined in the search.repoGroups settings field.
 	merged, err := (&configurationCascadeResolver{}).Merged(ctx)
@@ -110,9 +110,9 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 		return nil, err
 	}
 	for name, repoPaths := range settings.SearchRepositoryGroups {
-		repos := make([]*sourcegraph.Repo, len(repoPaths))
+		repos := make([]*api.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &sourcegraph.Repo{URI: repoPath}
+			repos[i] = &api.Repo{URI: repoPath}
 		}
 		groups[name] = repos
 	}
@@ -130,10 +130,10 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 
 var (
 	sampleReposMu sync.Mutex
-	sampleRepos   []*sourcegraph.Repo
+	sampleRepos   []*api.Repo
 )
 
-func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
+func getSampleRepos(ctx context.Context) ([]*api.Repo, error) {
 	sampleReposMu.Lock()
 	defer sampleReposMu.Unlock()
 	if sampleRepos == nil {
@@ -146,7 +146,7 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 			"github.com/golang/oauth2",
 			"github.com/pallets/flask",
 		}
-		repos := make([]*sourcegraph.Repo, len(sampleRepoPaths))
+		repos := make([]*api.Repo, len(sampleRepoPaths))
 		for i, path := range sampleRepoPaths {
 			repo, err := backend.Repos.GetByURI(ctx, path)
 			if err != nil {

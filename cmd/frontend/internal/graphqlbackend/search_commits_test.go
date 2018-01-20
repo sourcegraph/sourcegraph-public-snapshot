@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
@@ -47,7 +47,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoRevs := repositoryRevisions{repo: &sourcegraph.Repo{ID: 1, URI: "repo"}, revs: []revspecOrRefGlob{{revspec: "rev"}}}
+	repoRevs := repositoryRevisions{repo: &api.Repo{ID: 1, URI: "repo"}, revs: []revspecOrRefGlob{{revspec: "rev"}}}
 	results, limitHit, err := searchCommitsInRepo(ctx, repoRevs, &patternInfo{Pattern: "p"}, *query, true, vcs.TextSearchOptions{Pattern: "p"}, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -55,7 +55,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if want := []*commitSearchResult{
 		{
 			commit: &gitCommitResolver{
-				repo:   &repositoryResolver{repo: &sourcegraph.Repo{ID: 1, URI: "repo"}},
+				repo:   &repositoryResolver{repo: &api.Repo{ID: 1, URI: "repo"}},
 				oid:    "c1",
 				author: *toSignatureResolver(&vcs.Signature{}),
 			},

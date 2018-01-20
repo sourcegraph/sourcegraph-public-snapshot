@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
@@ -46,7 +46,7 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 
 func updateRepo(ctx context.Context, repoConf schema.Repository) error {
 	uri := repoConf.Path
-	repo, err := sourcegraph.InternalClient.ReposCreateIfNotExists(ctx, uri, "", false, false, true)
+	repo, err := api.InternalClient.ReposCreateIfNotExists(ctx, uri, "", false, false, true)
 	if err != nil {
 		return err
 	}

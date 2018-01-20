@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -46,7 +46,7 @@ func TestPkgs_update_delete(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	expPkgs := []sourcegraph.PackageInfo{{
+	expPkgs := []api.PackageInfo{{
 		RepoID: rp.ID,
 		Lang:   "go",
 		Pkg:    map[string]interface{}{"name": "pkg"},
@@ -134,11 +134,11 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*api.Repo, error) {
 		calledReposGetByURI = true
 		switch repo {
 		case "github.com/my/repo":
-			return &sourcegraph.Repo{ID: rp.ID, URI: repo}, nil
+			return &api.Repo{ID: rp.ID, URI: repo}, nil
 		default:
 			return nil, errors.New("not found")
 		}
@@ -156,7 +156,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		t.Fatalf("!calledReposGetByURI")
 	}
 
-	expPkgs := []sourcegraph.PackageInfo{{
+	expPkgs := []api.PackageInfo{{
 		RepoID: rp.ID,
 		Lang:   "typescript",
 		Pkg: map[string]interface{}{
@@ -212,12 +212,12 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 
 	{ // Test case 1
-		expPkgInfo := []sourcegraph.PackageInfo{{
+		expPkgInfo := []api.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 		}}
-		op := &sourcegraph.ListPackagesOp{
+		op := &api.ListPackagesOp{
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg1"},
 			Limit:    10,
@@ -231,12 +231,12 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 2
-		expPkgInfo := []sourcegraph.PackageInfo{{
+		expPkgInfo := []api.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 		}}
-		op := &sourcegraph.ListPackagesOp{
+		op := &api.ListPackagesOp{
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 			Limit:    10,
@@ -250,8 +250,8 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 3
-		var expPkgInfo []sourcegraph.PackageInfo
-		op := &sourcegraph.ListPackagesOp{
+		var expPkgInfo []api.PackageInfo
+		op := &api.ListPackagesOp{
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg1", "version": "2"},
 			Limit:    10,
@@ -265,7 +265,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 4
-		expPkgInfo := []sourcegraph.PackageInfo{{
+		expPkgInfo := []api.PackageInfo{{
 			RepoID: 3,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
@@ -280,7 +280,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 				Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
 			},
 		}
-		op := &sourcegraph.ListPackagesOp{
+		op := &api.ListPackagesOp{
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg3"},
 			Limit:    10,
@@ -294,12 +294,12 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 5, filter by repo ID
-		expPkgInfo := []sourcegraph.PackageInfo{{
+		expPkgInfo := []api.PackageInfo{{
 			RepoID: 3,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
 		}}
-		op := &sourcegraph.ListPackagesOp{
+		op := &api.ListPackagesOp{
 			Lang:   "go",
 			RepoID: 3,
 			Limit:  10,
@@ -314,7 +314,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 }
 
-func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []sourcegraph.PackageInfo, err error) {
+func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []api.PackageInfo, err error) {
 	rows, err := db.QueryContext(ctx, "SELECT * FROM pkgs ORDER BY language ASC")
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
@@ -330,7 +330,7 @@ func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []sourcegraph
 		if err := rows.Scan(&repoID, &language, &pkg); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		p := sourcegraph.PackageInfo{
+		p := api.PackageInfo{
 			RepoID: repoID,
 			Lang:   language,
 		}

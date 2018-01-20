@@ -7,15 +7,15 @@ import (
 	"github.com/neelance/graphql-go/gqltesting"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestPkgs(t *testing.T) {
 	resetMocks()
 
-	db.Mocks.Pkgs.ListPackages = func(ctx context.Context, op *sourcegraph.ListPackagesOp) ([]sourcegraph.PackageInfo, error) {
+	db.Mocks.Pkgs.ListPackages = func(ctx context.Context, op *api.ListPackagesOp) ([]api.PackageInfo, error) {
 		if op.Lang == "python" && op.PkgQuery["name"] == "fflask" {
-			return []sourcegraph.PackageInfo{{
+			return []api.PackageInfo{{
 				RepoID: 1,
 				Lang:   "python",
 				Pkg: map[string]interface{}{
@@ -25,7 +25,7 @@ func TestPkgs(t *testing.T) {
 		}
 		return nil, nil
 	}
-	db.Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "github.com/pallets/fflask"})
+	db.Mocks.Repos.MockGet_Return(t, &api.Repo{ID: 1, URI: "github.com/pallets/fflask"})
 
 	gqltesting.RunTests(t, []*gqltesting.Test{{
 		Schema: GraphQLSchema,

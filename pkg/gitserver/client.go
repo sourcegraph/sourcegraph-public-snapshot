@@ -22,7 +22,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context/ctxhttp"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -130,7 +130,7 @@ type Cmd struct {
 	client *Client
 
 	Args           []string
-	Repo           *sourcegraph.Repo
+	Repo           *api.Repo
 	EnsureRevision string
 	ExitStatus     int
 }

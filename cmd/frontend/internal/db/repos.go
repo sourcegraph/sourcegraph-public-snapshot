@@ -16,7 +16,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -52,7 +52,7 @@ type repos struct{}
 // caller is concerned the copy of the data in the database might be
 // stale, the caller is responsible for fetching data from any
 // external services.
-func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
+func (s *repos) Get(ctx context.Context, id int32) (*api.Repo, error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, id)
 	}
@@ -100,7 +100,7 @@ func (s *repos) GetURI(ctx context.Context, id int32) (string, error) {
 //
 // If the repository already exists in the db, that information is returned
 // and no effort is made to detect if the repo is cloned or cloning.
-func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+func (s *repos) GetByURI(ctx context.Context, uri string) (*api.Repo, error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
 	}
@@ -132,7 +132,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	return repo, nil
 }
 
-func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*api.Repo, error) {
 	// Repo does not exist in DB, create new entry.
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
 	ghRepo, err := github.GetRepo(ctx, uri)
@@ -154,7 +154,7 @@ func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*sourcegraph.
 	return s.getByURI(ctx, ghRepo.URI)
 }
 
-func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+func (s *repos) getByURI(ctx context.Context, uri string) (*api.Repo, error) {
 	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", uri))
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	return count, nil
 }
 
-func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourcegraph.Repo, error) {
+func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*api.Repo, error) {
 	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
 	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -193,9 +193,9 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*sourc
 	}
 	defer rows.Close()
 
-	var repos []*sourcegraph.Repo
+	var repos []*api.Repo
 	for rows.Next() {
-		var repo sourcegraph.Repo
+		var repo api.Repo
 		var freezeIndexedRevision *bool
 
 		if err := rows.Scan(
@@ -314,7 +314,7 @@ type ReposListOptions struct {
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
-func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*sourcegraph.Repo, err error) {
+func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*api.Repo, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "repos.List")
 	tr := trace.New(traceName, "")
 	defer func() {
@@ -596,7 +596,7 @@ func (s *repos) UpdateRepoFieldsFromRemote(ctx context.Context, repoID int32) er
 	return nil
 }
 
-func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *sourcegraph.Repo) error {
+func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *api.Repo) error {
 	// Fetch latest metadata from GitHub
 	ghrepo, err := github.GetRepo(ctx, repo.URI)
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func (r *siteResolver) Repositories(args *struct {
@@ -36,11 +36,11 @@ type repositoryConnectionResolver struct {
 
 	// cache results because they is used by multiple fields
 	once  sync.Once
-	repos []*sourcegraph.Repo
+	repos []*api.Repo
 	err   error
 }
 
-func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*sourcegraph.Repo, error) {
+func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*api.Repo, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		opt2.Limit++ // so we can detect if there is a next page

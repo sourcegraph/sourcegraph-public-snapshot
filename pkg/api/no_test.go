@@ -1,1 +1,1 @@
-package sourcegraph
+package api

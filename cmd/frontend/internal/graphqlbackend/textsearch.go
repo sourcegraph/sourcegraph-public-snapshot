@@ -23,7 +23,7 @@ import (
 
 	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -333,9 +333,9 @@ func isErrorPredicate(err error, p func(err error) bool) bool {
 	return false
 }
 
-var mockSearchRepo func(ctx context.Context, repo *sourcegraph.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+var mockSearchRepo func(ctx context.Context, repo *api.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
 
-func searchRepo(ctx context.Context, repo *sourcegraph.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func searchRepo(ctx context.Context, repo *api.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if mockSearchRepo != nil {
 		return mockSearchRepo(ctx, repo, rev, info)
 	}

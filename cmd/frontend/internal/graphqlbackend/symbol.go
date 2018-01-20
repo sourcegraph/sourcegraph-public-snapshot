@@ -1,12 +1,12 @@
 package graphqlbackend
 
-import sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
 type symbolResolver struct {
 	path      string
 	line      int32
 	character int32
-	repo      *sourcegraph.Repo
+	repo      *api.Repo
 }
 
 func (r *symbolResolver) Path() string {

@@ -20,7 +20,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -115,7 +115,7 @@ func fetchTar(ctx context.Context, repo, commit string) (r io.ReadCloser, err er
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=tar", commit)
-	cmd.Repo = &sourcegraph.Repo{URI: repo}
+	cmd.Repo = &api.Repo{URI: repo}
 	cmd.EnsureRevision = commit
 	r, err = gitserver.StdoutReader(ctx, cmd)
 	if err != nil {

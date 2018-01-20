@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // revpecOrRefGlob represents either a revspec or a ref glob. Exactly one field is set.
@@ -28,7 +28,7 @@ func (r revspecOrRefGlob) String() string {
 // If no revspecs and no ref globs are specified, then the repository's default branch
 // is used.
 type repositoryRevisions struct {
-	repo *sourcegraph.Repo
+	repo *api.Repo
 	revs []revspecOrRefGlob
 }
 

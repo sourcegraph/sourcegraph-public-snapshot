@@ -1,4 +1,4 @@
-package sourcegraph
+package api
 
 import (
 	"bytes"

@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type MockPkgs struct {
-	ListPackages func(context.Context, *sourcegraph.ListPackagesOp) ([]sourcegraph.PackageInfo, error)
+	ListPackages func(context.Context, *api.ListPackagesOp) ([]api.PackageInfo, error)
 }
