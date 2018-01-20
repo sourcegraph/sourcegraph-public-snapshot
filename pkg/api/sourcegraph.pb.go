@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type TreeEntryType int32
@@ -141,23 +140,6 @@ type ResolvedRev struct {
 
 type URIList struct {
 	URIs []string `json:"URIs,omitempty"`
-}
-
-type ReposListCommitsOp struct {
-	Repo int32                   `json:"Repo,omitempty"`
-	Opt  *RepoListCommitsOptions `json:"Opt,omitempty"`
-}
-
-type RepoListCommitsOptions struct {
-	Head        string `json:"Head,omitempty" url:",omitempty"`
-	Base        string `json:"Base,omitempty" url:",omitempty"`
-	ListOptions `json:""`
-	Path        string `json:"Path,omitempty" url:",omitempty"`
-}
-
-type CommitList struct {
-	Commits        []*vcs.Commit `json:"Commits,omitempty"`
-	StreamResponse `json:""`
 }
 
 // UserSpec specifies a user. At least one of Login and UID must be

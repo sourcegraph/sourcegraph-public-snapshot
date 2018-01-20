@@ -19,7 +19,6 @@ type MockRepos struct {
 	List                 func(v0 context.Context, v1 db.ReposListOptions) (*sourcegraph.RepoList, error)
 	GetCommit            func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
 	ResolveRev           func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
-	ListCommits          func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
 	ListDeps             func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
 	GetInventory         func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
@@ -74,19 +73,6 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 			repos[i] = &sourcegraph.Repo{URI: repo}
 		}
 		return &sourcegraph.RepoList{Repos: repos}, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockListCommits(t *testing.T, wantCommitIDs ...vcs.CommitID) (called *bool) {
-	called = new(bool)
-	s.ListCommits = func(ctx context.Context, op *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error) {
-		*called = true
-		commits := make([]*vcs.Commit, len(wantCommitIDs))
-		for i, commit := range wantCommitIDs {
-			commits[i] = &vcs.Commit{ID: commit}
-		}
-		return &sourcegraph.CommitList{Commits: commits}, nil
 	}
 	return
 }
