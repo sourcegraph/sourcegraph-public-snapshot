@@ -35,19 +35,6 @@ type ListOptions struct {
 	Page    int32 `json:"Page,omitempty" url:",omitempty"`
 }
 
-// ListResponse specifies a general paginated response when fetching a list of results.
-type ListResponse struct {
-	// Total is the total number of results in the list.
-	Total int32 `json:"Total,omitempty" url:",omitempty"`
-}
-
-// StreamResponse specifies a paginated response where the total number of results
-// that can be returned is too expensive to compute, unbounded, or unknown.
-type StreamResponse struct {
-	// HasMore is true if there are more results available after the returned page.
-	HasMore bool `json:"HasMore,omitempty" url:",omitempty"`
-}
-
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
