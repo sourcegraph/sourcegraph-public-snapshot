@@ -138,24 +138,6 @@ type UserEvent struct {
 	URL string `json:"URL,omitempty"`
 }
 
-// UserInvite holds the result of an invite for Orgs.InviteUser
-type UserInvite struct {
-	UserLogin string `json:"UserID,omitempty"`
-	UserEmail string `json:"UserEmail,omitempty"`
-	// OrgID is a string representation of the organiztion's unique GitHub ID (e.g., for Sourcegraph: "3979584")
-	OrgID    string     `json:"OrgID,omitempty"`
-	OrgLogin string     `json:"OrgName,omitempty"`
-	SentAt   *time.Time `json:"SentAt,omitempty"`
-	URI      string     `json:"URI,omitempty"`
-}
-type UserInviteResponse int
-
-const (
-	InviteSuccess UserInviteResponse = iota
-	InviteMissingEmail
-	InviteError
-)
-
 const (
 	// UserProviderHTTPHeader is the http-header auth provider.
 	UserProviderHTTPHeader = "http-header"
