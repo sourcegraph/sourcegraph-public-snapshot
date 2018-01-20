@@ -33,10 +33,10 @@ interface State {
 }
 
 export class SavedQueryForm extends React.Component<Props, State> {
-    private handleQueryChange: (evt: React.FormEvent<HTMLInputElement>) => void
-    private handleDescriptionChange: (evt: React.FormEvent<HTMLInputElement>) => void
-    private handleSubjectChange: (evt: React.FormEvent<HTMLInputElement>) => void
-    private handleShowOnHomeChange: (evt: React.FormEvent<HTMLInputElement>) => void
+    private handleQueryChange = this.createInputChangeHandler('query')
+    private handleDescriptionChange = this.createInputChangeHandler('description')
+    private handleSubjectChange = this.createInputChangeHandler('subject')
+    private handleShowOnHomeChange = this.createInputChangeHandler('showOnHomepage')
 
     private subscriptions = new Subscription()
 
@@ -55,11 +55,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
             subjectOptions: [],
             isSubmitting: false,
         }
-
-        this.handleQueryChange = this.handleInputChange('query')
-        this.handleDescriptionChange = this.handleInputChange('description')
-        this.handleSubjectChange = this.handleInputChange('subject')
-        this.handleShowOnHomeChange = this.handleInputChange('showOnHomepage')
     }
 
     public componentDidMount(): void {
@@ -213,15 +208,22 @@ export class SavedQueryForm extends React.Component<Props, State> {
             .subscribe(this.props.onDidCommit)
     }
 
-    private handleInputChange: (key: string) => (evt: React.FormEvent<HTMLInputElement>) => void = key => evt => {
-        const { currentTarget: { value, type } } = evt
+    /**
+     * Returns an input change handler that updates the SavedQueryFields in the component's state
+     *
+     * @param key The key of saved query fields that a change of this input should update
+     */
+    private createInputChangeHandler(key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> {
+        return event => {
+            const { currentTarget: { value, type } } = event
 
-        this.setState({
-            values: {
-                ...this.state.values,
-                [key]: type === 'checkbox' ? Boolean(value) : String(value),
-            },
-        })
+            this.setState(state => ({
+                values: {
+                    ...state.values,
+                    [key]: type === 'checkbox' ? Boolean(value) : String(value),
+                },
+            }))
+        }
     }
 }
 
