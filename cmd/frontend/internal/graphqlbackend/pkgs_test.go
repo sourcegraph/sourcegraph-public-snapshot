@@ -7,6 +7,7 @@ import (
 	"github.com/neelance/graphql-go/gqltesting"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -25,7 +26,7 @@ func TestPkgs(t *testing.T) {
 		}
 		return nil, nil
 	}
-	db.Mocks.Repos.MockGet_Return(t, &api.Repo{ID: 1, URI: "github.com/pallets/fflask"})
+	db.Mocks.Repos.MockGet_Return(t, &types.Repo{ID: 1, URI: "github.com/pallets/fflask"})
 
 	gqltesting.RunTests(t, []*gqltesting.Test{{
 		Schema: GraphQLSchema,

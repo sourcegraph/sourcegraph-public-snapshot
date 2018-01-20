@@ -11,7 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 
 	"github.com/gorilla/mux"
@@ -232,12 +232,12 @@ func TestRouter_RootPath(t *testing.T) {
 			}
 
 			// Mock GetByURI to return the proper repo not found error type.
-			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*api.Repo, error) {
+			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*types.Repo, error) {
 				if uri != tst.repo {
 					panic("unexpected")
 				}
 				if tst.exists {
-					return &api.Repo{URI: uri}, nil
+					return &types.Repo{URI: uri}, nil
 				}
 				return nil, legacyerr.Errorf(legacyerr.NotFound, "repo not found")
 			}

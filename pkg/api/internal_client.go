@@ -90,12 +90,11 @@ func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri, revision str
 	return err
 }
 
-func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, private, enabled bool) (*Repo, error) {
+func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, enabled bool) (*Repo, error) {
 	req, err := json.Marshal(RepoCreateOrUpdateRequest{
 		URI:         uri,
 		Description: description,
 		Fork:        fork,
-		Private:     private,
 		Enabled:     enabled,
 	})
 	if err != nil {

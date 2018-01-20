@@ -8,16 +8,15 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type MockRepos struct {
-	Get                  func(v0 context.Context, v1 *types.RepoSpec) (*api.Repo, error)
-	GetByURI             func(v0 context.Context, v1 string) (*api.Repo, error)
-	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*api.Repo, error)
+	Get                  func(v0 context.Context, v1 *types.RepoSpec) (*types.Repo, error)
+	GetByURI             func(v0 context.Context, v1 string) (*types.Repo, error)
+	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 	GetCommit            func(v0 context.Context, v1 *types.RepoRevSpec) (*vcs.Commit, error)
 	ResolveRev           func(v0 context.Context, repo int32, rev string) (vcs.CommitID, error)
 	ListDeps             func(v0 context.Context, v1 []string) ([]string, error)
@@ -28,33 +27,33 @@ type MockRepos struct {
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 	called = new(bool)
-	s.Get = func(ctx context.Context, repo *types.RepoSpec) (*api.Repo, error) {
+	s.Get = func(ctx context.Context, repo *types.RepoSpec) (*types.Repo, error) {
 		*called = true
 		if repo.ID != wantRepo {
 			t.Errorf("got repo %d, want %d", repo.ID, wantRepo)
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %d not found", wantRepo)
 		}
-		return &api.Repo{ID: repo.ID}, nil
+		return &types.Repo{ID: repo.ID}, nil
 	}
 	return
 }
 
 func (s *MockRepos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (called *bool) {
 	called = new(bool)
-	s.GetByURI = func(ctx context.Context, uri string) (*api.Repo, error) {
+	s.GetByURI = func(ctx context.Context, uri string) (*types.Repo, error) {
 		*called = true
 		if uri != wantURI {
 			t.Errorf("got repo URI %q, want %q", uri, wantURI)
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", uri)
 		}
-		return &api.Repo{ID: repoID, URI: uri}, nil
+		return &types.Repo{ID: repoID, URI: uri}, nil
 	}
 	return
 }
 
-func (s *MockRepos) MockGet_Return(t *testing.T, returns *api.Repo) (called *bool) {
+func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *bool) {
 	called = new(bool)
-	s.Get = func(ctx context.Context, repo *types.RepoSpec) (*api.Repo, error) {
+	s.Get = func(ctx context.Context, repo *types.RepoSpec) (*types.Repo, error) {
 		*called = true
 		if repo.ID != returns.ID {
 			t.Errorf("got repo %d, want %d", repo.ID, returns.ID)
@@ -67,11 +66,11 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *api.Repo) (called *boo
 
 func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
-	s.List = func(ctx context.Context, opt db.ReposListOptions) ([]*api.Repo, error) {
+	s.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
 		*called = true
-		repos := make([]*api.Repo, len(wantRepos))
+		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
-			repos[i] = &api.Repo{URI: repo}
+			repos[i] = &types.Repo{URI: repo}
 		}
 		return repos, nil
 	}

@@ -21,7 +21,7 @@ import (
 	"golang.org/x/net/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -121,7 +121,7 @@ func (sr *searchResults) Alert() *searchAlert { return sr.alert }
 // operations.
 type blameFileMatchCache struct {
 	cachedReposMu sync.RWMutex
-	cachedRepos   map[string]*api.Repo
+	cachedRepos   map[string]*types.Repo
 
 	cachedRevsMu sync.RWMutex
 	cachedRevs   map[string]vcs.CommitID
@@ -131,7 +131,7 @@ type blameFileMatchCache struct {
 }
 
 // repoVCSOpen is like localstore.Repos.GetByURI except it is cached by b.
-func (b *blameFileMatchCache) reposGetByURI(ctx context.Context, repoURI string) (*api.Repo, error) {
+func (b *blameFileMatchCache) reposGetByURI(ctx context.Context, repoURI string) (*types.Repo, error) {
 	b.cachedReposMu.RLock()
 	repo, ok := b.cachedRepos[repoURI]
 	b.cachedReposMu.RUnlock()
@@ -247,7 +247,7 @@ func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err 
 		sparklineMu sync.Mutex
 		blameOps    = 0
 		cache       = &blameFileMatchCache{
-			cachedRepos:    map[string]*api.Repo{},
+			cachedRepos:    map[string]*types.Repo{},
 			cachedRevs:     map[string]vcs.CommitID{},
 			cachedVCSRepos: map[string]vcs.Repository{},
 		}

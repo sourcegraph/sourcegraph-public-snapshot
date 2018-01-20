@@ -19,11 +19,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
+	searchquerytypes "sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -65,7 +65,7 @@ func (r *schemaResolver) Search(args *searchArgs) (*searchResolver, error) {
 	}, nil
 }
 
-func asString(v *types.Value) string {
+func asString(v *searchquerytypes.Value) string {
 	switch {
 	case v.String != nil:
 		return *v.String
@@ -91,14 +91,14 @@ type searchResolver struct {
 	repoErr                   error
 }
 
-var mockResolveRepoGroups func() (map[string][]*api.Repo, error)
+var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
 
-func resolveRepoGroups(ctx context.Context) (map[string][]*api.Repo, error) {
+func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
 
-	groups := map[string][]*api.Repo{}
+	groups := map[string][]*types.Repo{}
 
 	// Repo groups can be defined in the search.repoGroups settings field.
 	merged, err := (&configurationCascadeResolver{}).Merged(ctx)
@@ -110,9 +110,9 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*api.Repo, error) {
 		return nil, err
 	}
 	for name, repoPaths := range settings.SearchRepositoryGroups {
-		repos := make([]*api.Repo, len(repoPaths))
+		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &api.Repo{URI: repoPath}
+			repos[i] = &types.Repo{URI: repoPath}
 		}
 		groups[name] = repos
 	}
@@ -130,10 +130,10 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*api.Repo, error) {
 
 var (
 	sampleReposMu sync.Mutex
-	sampleRepos   []*api.Repo
+	sampleRepos   []*types.Repo
 )
 
-func getSampleRepos(ctx context.Context) ([]*api.Repo, error) {
+func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 	sampleReposMu.Lock()
 	defer sampleReposMu.Unlock()
 	if sampleRepos == nil {
@@ -146,7 +146,7 @@ func getSampleRepos(ctx context.Context) ([]*api.Repo, error) {
 			"github.com/golang/oauth2",
 			"github.com/pallets/flask",
 		}
-		repos := make([]*api.Repo, len(sampleRepoPaths))
+		repos := make([]*types.Repo, len(sampleRepoPaths))
 		for i, path := range sampleRepoPaths {
 			repo, err := backend.Repos.GetByURI(ctx, path)
 			if err != nil {

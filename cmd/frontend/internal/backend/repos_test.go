@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	githubpkg "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
@@ -14,16 +14,13 @@ func TestReposService_Get(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	wantRepo := &api.Repo{
+	wantRepo := &types.Repo{
 		ID:      1,
 		URI:     "github.com/u/r",
 		Enabled: true,
 	}
-	ghrepo := &api.Repo{
-		URI: "github.com/u/r",
-	}
 
-	github.MockGetRepo_Return(ghrepo)
+	github.MockGetRepo_Return(&githubpkg.Repository{FullName: strptr("u/r")})
 
 	calledGet := db.Mocks.Repos.MockGet_Return(t, wantRepo)
 
@@ -44,7 +41,7 @@ func TestReposService_List(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	wantRepos := []*api.Repo{
+	wantRepos := []*types.Repo{
 		{URI: "r1"},
 		{URI: "r2"},
 	}
@@ -62,3 +59,5 @@ func TestReposService_List(t *testing.T) {
 		t.Errorf("got %+v, want %+v", repos, wantRepos)
 	}
 }
+
+func strptr(s string) *string { return &s }

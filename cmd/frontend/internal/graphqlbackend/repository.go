@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -17,12 +17,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type repositoryResolver struct {
-	repo        *api.Repo
+	repo        *types.Repo
 	redirectURL *string
 }
 
@@ -133,48 +132,22 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error)
 	return &t, nil
 }
 
-func (r *repositoryResolver) Private() bool {
-	return r.repo.Private
-}
-
 func (r *repositoryResolver) Language() string {
 	return r.repo.Language
 }
 
 func (r *repositoryResolver) Enabled() bool { return r.repo.Enabled }
 
-func (r *repositoryResolver) Fork() bool {
-	return r.repo.Fork
-}
-
-func (r *repositoryResolver) StarsCount() *int32 {
-	return uintPtrToInt32Ptr(r.repo.StarsCount)
-}
-
-func (r *repositoryResolver) ForksCount() *int32 {
-	return uintPtrToInt32Ptr(r.repo.ForksCount)
-}
-
-func uintPtrToInt32Ptr(v *uint) *int32 {
-	if v == nil || *v > math.MaxInt32 {
-		return nil
-	}
-	v32 := int32(*v)
-	return &v32
-}
-
-func (r *repositoryResolver) PushedAt() string {
-	if r.repo.PushedAt != nil {
-		return r.repo.PushedAt.String()
-	}
-	return ""
-}
-
 func (r *repositoryResolver) CreatedAt() string {
-	if r.repo.CreatedAt != nil {
-		return r.repo.CreatedAt.String()
+	return r.repo.CreatedAt.Format(time.RFC3339)
+}
+
+func (r *repositoryResolver) UpdatedAt() *string {
+	if r.repo.UpdatedAt != nil {
+		t := r.repo.UpdatedAt.Format(time.RFC3339)
+		return &t
 	}
-	return ""
+	return nil
 }
 
 func (r *repositoryResolver) URL() *string {

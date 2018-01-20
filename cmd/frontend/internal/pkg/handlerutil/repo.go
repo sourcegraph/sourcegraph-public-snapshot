@@ -8,14 +8,13 @@ import (
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
 // RepoSpec route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
-func GetRepo(ctx context.Context, vars map[string]string) (*api.Repo, error) {
+func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 
 	repo, err := backend.Repos.GetByURI(ctx, origRepo)
@@ -45,7 +44,7 @@ func getRepoRev(ctx context.Context, vars map[string]string, repoID int32) (type
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
 // also return custom error URLMovedError to allow special handling of this case,
 // such as for example redirecting the user.
-func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *api.Repo, repoRevSpec types.RepoRevSpec, err error) {
+func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *types.Repo, repoRevSpec types.RepoRevSpec, err error) {
 	repo, err = GetRepo(ctx, vars)
 	if err != nil {
 		return repo, repoRevSpec, err

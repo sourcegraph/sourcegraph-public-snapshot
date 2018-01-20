@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -192,7 +191,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 	repo, err := db.Repos.GetByURI(ctx, args.URI)
 	if err != nil {
 		if err, ok := err.(db.ErrRepoSeeOther); ok {
-			return &repositoryResolver{repo: &api.Repo{}, redirectURL: &err.RedirectURL}, nil
+			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
 			return nil, nil
@@ -217,17 +216,10 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI 
 
 var skipRefresh = false // set by tests
 
-func refreshRepo(ctx context.Context, repo *api.Repo) error {
+func refreshRepo(ctx context.Context, repo *types.Repo) error {
 	if skipRefresh {
 		return nil
 	}
-
-	go func() {
-		if err := db.Repos.UpdateRepoFieldsFromRemote(context.Background(), repo.ID); err != nil {
-			log.Printf("failed to update repo %s from remote: %s", repo.URI, err)
-		}
-	}()
-
 	return backend.Repos.RefreshIndex(ctx, repo.URI)
 }
 

@@ -5,26 +5,24 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"context"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 /*
  * Helpers
  */
 
-func sortedRepoURIs(repos []*api.Repo) []string {
+func sortedRepoURIs(repos []*types.Repo) []string {
 	uris := repoURIs(repos)
 	sort.Strings(uris)
 	return uris
 }
 
-func repoURIs(repos []*api.Repo) []string {
+func repoURIs(repos []*types.Repo) []string {
 	var uris []string
 	for _, repo := range repos {
 		uris = append(uris, repo.URI)
@@ -32,14 +30,14 @@ func repoURIs(repos []*api.Repo) []string {
 	return uris
 }
 
-func createRepo(ctx context.Context, t *testing.T, repo *api.Repo) {
-	if err := Repos.TryInsertNew(ctx, repo.URI, repo.Description, repo.Fork, repo.Private, true); err != nil {
+func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
+	if err := Repos.TryInsertNew(ctx, repo.URI, repo.Description, repo.Fork, true); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func mustCreate(ctx context.Context, t *testing.T, repos ...*api.Repo) []*api.Repo {
-	var createdRepos []*api.Repo
+func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*types.Repo {
+	var createdRepos []*types.Repo
 	for _, repo := range repos {
 		createRepo(ctx, t, repo)
 		repo, err := Repos.GetByURI(ctx, repo.URI)
@@ -62,7 +60,7 @@ func TestRepos_Get(t *testing.T) {
 
 	ctx := testContext()
 
-	want := mustCreate(ctx, t, &api.Repo{URI: "r"})
+	want := mustCreate(ctx, t, &types.Repo{URI: "r"})
 
 	repo, err := Repos.Get(ctx, want[0].ID)
 	if err != nil {
@@ -82,7 +80,7 @@ func TestRepos_List(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	want := mustCreate(ctx, t, &api.Repo{URI: "r"})
+	want := mustCreate(ctx, t, &types.Repo{URI: "r"})
 
 	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
 	if err != nil {
@@ -102,7 +100,7 @@ func TestRepos_List_pagination(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	createdRepos := []*api.Repo{
+	createdRepos := []*types.Repo{
 		{URI: "r1"},
 		{URI: "r2"},
 		{URI: "r3"},
@@ -150,7 +148,7 @@ func TestRepos_List_query1(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	createdRepos := []*api.Repo{
+	createdRepos := []*types.Repo{
 		{URI: "abc/def"},
 		{URI: "def/ghi"},
 		{URI: "jkl/mno/pqr"},
@@ -190,13 +188,13 @@ func TestRepos_List_query2(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	createdRepos := []*api.Repo{
+	createdRepos := []*types.Repo{
 		{URI: "a/def"},
-		{URI: "b/def", Fork: true},
-		{URI: "c/def", Private: true},
+		{URI: "b/def"},
+		{URI: "c/def"},
 		{URI: "def/ghi"},
-		{URI: "def/jkl", Fork: true},
-		{URI: "def/mno", Private: true},
+		{URI: "def/jkl"},
+		{URI: "def/mno"},
 		{URI: "abc/m"},
 	}
 	for _, repo := range createdRepos {
@@ -233,7 +231,7 @@ func TestRepos_List_patterns(t *testing.T) {
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	createdRepos := []*api.Repo{
+	createdRepos := []*types.Repo{
 		{URI: "a/b"},
 		{URI: "c/d"},
 		{URI: "e/f"},
@@ -307,14 +305,14 @@ func TestRepos_Create(t *testing.T) {
 	ctx := testContext()
 
 	// Add a repo.
-	createRepo(ctx, t, &api.Repo{URI: "a/b"})
+	createRepo(ctx, t, &types.Repo{URI: "a/b"})
 
 	repo, err := Repos.GetByURI(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if repo.CreatedAt == nil {
-		t.Fatal("got CreatedAt nil")
+	if repo.CreatedAt.IsZero() {
+		t.Fatal("got CreatedAt.IsZero()")
 	}
 }
 
@@ -326,79 +324,10 @@ func TestRepos_Create_dupe(t *testing.T) {
 	ctx := testContext()
 
 	// Add a repo.
-	createRepo(ctx, t, &api.Repo{URI: "a/b"})
+	createRepo(ctx, t, &types.Repo{URI: "a/b"})
 
 	// Add another repo with the same name.
-	createRepo(ctx, t, &api.Repo{URI: "a/b"})
-}
-
-func TestRepos_UpdateRepoFieldsFromRemote(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := testContext()
-	ghrepo := &api.Repo{
-		URI: "github.com/u/r",
-	}
-	github.MockGetRepo_Return(ghrepo)
-	createRepo(ctx, t, ghrepo)
-
-	repoWant, err := Repos.GetByURI(ctx, "github.com/u/r")
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Copy to ensure we aren't mutating an inmemory reference
-	repoWantCopy := *repoWant
-	repoWant = &repoWantCopy
-
-	normaliseTime := func(ts *time.Time) *time.Time {
-		if ts == nil {
-			return nil
-		}
-		x := ts.UTC().Round(time.Second)
-		return &x
-	}
-	check := func(label string) {
-		err := Repos.UpdateRepoFieldsFromRemote(ctx, repoWant.ID)
-		if err != nil {
-			t.Fatal(label, err)
-		}
-		repo, err := Repos.Get(ctx, repoWant.ID)
-		if err != nil {
-			t.Fatal(label, err)
-		}
-		repo.UpdatedAt = normaliseTime(repo.UpdatedAt)
-		repo.PushedAt = normaliseTime(repo.PushedAt)
-		if !jsonEqual(t, repo, repoWant) {
-			t.Errorf("%s: got %v, want %v", label, asJSON(t, repo), asJSON(t, repoWant))
-		}
-	}
-
-	check("no updates")
-
-	// Update one field
-	repoWant.Description = "Test description"
-	ghrepo.Description = "Test description"
-	check("one update")
-
-	// Update two fields
-	repoWant.Private = true
-	ghrepo.Private = true
-	repoWant.Description = "Test description2"
-	ghrepo.Description = "Test description2"
-	check("two updates")
-
-	// Update the other fields we get from GitHub
-	t1 := time.Now().UTC()
-	t2 := t1.Add(time.Second)
-	repoWant.Private = false
-	ghrepo.Private = false
-	repoWant.UpdatedAt = normaliseTime(&t1)
-	ghrepo.UpdatedAt = normaliseTime(&t1)
-	repoWant.PushedAt = normaliseTime(&t2)
-	ghrepo.PushedAt = normaliseTime(&t2)
-	check("other updates")
+	createRepo(ctx, t, &types.Repo{URI: "a/b"})
 }
 
 func TestMakeFuzzyLikeRepoQuery(t *testing.T) {

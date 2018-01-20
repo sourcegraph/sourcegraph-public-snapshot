@@ -59,7 +59,7 @@ func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, repos
 	return nil
 }
 
-func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *api.Repo, commitID string) (err error) {
+func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID string) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -69,7 +69,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		span.Finish()
 	}()
 
-	vcs := "git" // TODO: store VCS type in *api.Repo object.
+	vcs := "git" // TODO: store VCS type in *types.Repo object.
 
 	// Query all external dependencies for the repository. We do this using the
 	// "<language>_bg" mode which runs this request on a separate language

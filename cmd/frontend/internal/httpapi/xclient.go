@@ -140,7 +140,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 					}
 					commit = string(rev)
 				}
-				// TODO: store VCS type in *api.Repo object.
+				// TODO: store VCS type in *types.Repo object.
 				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+repo.URI+"?"+commit))
 			}
 			span.LogEvent("resolved rootURIs")

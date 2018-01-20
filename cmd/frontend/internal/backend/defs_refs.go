@@ -181,7 +181,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 	if err != nil {
 		return nil, err
 	}
-	vcs := "git" // TODO: store VCS type in *api.Repo object.
+	vcs := "git" // TODO: store VCS type in *types.Repo object.
 	span.SetTag("repo", repo.URI)
 
 	// Determine the rootURI.

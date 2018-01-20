@@ -16,7 +16,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -52,7 +52,7 @@ type repos struct{}
 // caller is concerned the copy of the data in the database might be
 // stale, the caller is responsible for fetching data from any
 // external services.
-func (s *repos) Get(ctx context.Context, id int32) (*api.Repo, error) {
+func (s *repos) Get(ctx context.Context, id int32) (*types.Repo, error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, id)
 	}
@@ -100,7 +100,7 @@ func (s *repos) GetURI(ctx context.Context, id int32) (string, error) {
 //
 // If the repository already exists in the db, that information is returned
 // and no effort is made to detect if the repo is cloned or cloning.
-func (s *repos) GetByURI(ctx context.Context, uri string) (*api.Repo, error) {
+func (s *repos) GetByURI(ctx context.Context, uri string) (*types.Repo, error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
 	}
@@ -118,7 +118,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*api.Repo, error) {
 		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, uri); err != nil {
 			return nil, ErrRepoNotFound
 		}
-		if err := s.TryInsertNew(ctx, uri, "", false, false, true); err != nil {
+		if err := s.TryInsertNew(ctx, uri, "", false, true); err != nil {
 			return nil, err
 		}
 		return s.getByURI(ctx, uri)
@@ -132,29 +132,30 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*api.Repo, error) {
 	return repo, nil
 }
 
-func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*api.Repo, error) {
+func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*types.Repo, error) {
 	// Repo does not exist in DB, create new entry.
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
 	ghRepo, err := github.GetRepo(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
-	if ghRepo.URI != uri {
+
+	if actualURI := "github.com/" + ghRepo.GetFullName(); actualURI != uri {
 		// not canonical name (the GitHub api will redirect from the old name to
 		// the results for the new name if the repo got renamed on GitHub)
-		if repo, err := s.getByURI(ctx, ghRepo.URI); err == nil {
+		if repo, err := s.getByURI(ctx, actualURI); err == nil {
 			return repo, nil
 		}
 	}
 
-	if err := s.TryInsertNew(ctx, ghRepo.URI, ghRepo.Description, ghRepo.Fork, ghRepo.Private, true); err != nil {
+	if err := s.TryInsertNew(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), true); err != nil {
 		return nil, err
 	}
 
-	return s.getByURI(ctx, ghRepo.URI)
+	return s.getByURI(ctx, uri)
 }
 
-func (s *repos) getByURI(ctx context.Context, uri string) (*api.Repo, error) {
+func (s *repos) getByURI(ctx context.Context, uri string) (*types.Repo, error) {
 	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", uri))
 	if err != nil {
 		return nil, err
@@ -185,17 +186,17 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	return count, nil
 }
 
-func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*api.Repo, error) {
-	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, fork, private, indexed_revision, created_at, updated_at, pushed_at, freeze_indexed_revision FROM repo %s", querySuffix)
+func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, indexed_revision, created_at, updated_at, freeze_indexed_revision FROM repo %s", querySuffix)
 	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var repos []*api.Repo
+	var repos []*types.Repo
 	for rows.Next() {
-		var repo api.Repo
+		var repo types.Repo
 		var freezeIndexedRevision *bool
 
 		if err := rows.Scan(
@@ -204,12 +205,9 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*api.R
 			&repo.Description,
 			&repo.Language,
 			&repo.Enabled,
-			&repo.Fork,
-			&repo.Private,
 			&repo.IndexedRevision,
 			&repo.CreatedAt,
 			&repo.UpdatedAt,
-			&repo.PushedAt,
 			&freezeIndexedRevision,
 		); err != nil {
 			return nil, err
@@ -314,7 +312,7 @@ type ReposListOptions struct {
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
-func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*api.Repo, err error) {
+func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "repos.List")
 	tr := trace.New(traceName, "")
 	defer func() {
@@ -583,51 +581,6 @@ func (s *repos) SetEnabled(ctx context.Context, id int32, enabled bool) error {
 	return nil
 }
 
-// UpdateRepoFieldsFromRemote updates the DB from the remote (e.g., GitHub).
-func (s *repos) UpdateRepoFieldsFromRemote(ctx context.Context, repoID int32) error {
-	repo, err := s.Get(ctx, repoID)
-	if err != nil {
-		return err
-	}
-
-	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
-		return s.updateRepoFieldsFromGitHub(ctx, repo)
-	}
-	return nil
-}
-
-func (s *repos) updateRepoFieldsFromGitHub(ctx context.Context, repo *api.Repo) error {
-	// Fetch latest metadata from GitHub
-	ghrepo, err := github.GetRepo(ctx, repo.URI)
-	if err != nil {
-		return err
-	}
-
-	var updates []*sqlf.Query
-	if ghrepo.Description != repo.Description {
-		updates = append(updates, sqlf.Sprintf("description=%s", ghrepo.Description))
-	}
-	if ghrepo.Private != repo.Private {
-		updates = append(updates, sqlf.Sprintf("private=%v", ghrepo.Private))
-	}
-
-	if !timestampEqual(repo.UpdatedAt, ghrepo.UpdatedAt) {
-		updates = append(updates, sqlf.Sprintf("updated_at=%s", ghrepo.UpdatedAt))
-	}
-	if !timestampEqual(repo.PushedAt, ghrepo.PushedAt) {
-		updates = append(updates, sqlf.Sprintf("pushed_at=%s", ghrepo.PushedAt))
-	}
-
-	if len(updates) > 0 {
-		q := sqlf.Sprintf("UPDATE repo SET %s WHERE id=%d", sqlf.Join(updates, ","), repo.ID)
-		if _, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (s *repos) UpdateLanguage(ctx context.Context, repoID int32, language string) error {
 	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repoID)
 	return err
@@ -640,7 +593,7 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repoID int32, rev str
 
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
-func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork, private, enabled bool) error {
+func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork, enabled bool) error {
 	// Avoid logspam in postgres for violating the constraint. So we first
 	// check if the repo exists.
 	if _, err := s.getByURI(ctx, uri); err == nil {
@@ -649,7 +602,7 @@ func (s *repos) TryInsertNew(ctx context.Context, uri string, description string
 		return err
 	}
 
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, private, language, created_at, enabled) VALUES ($1, $2, $3, $4, '', now(), $5)", uri, description, fork, private, enabled)
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, language, created_at, enabled) VALUES ($1, $2, $3, '', now(), $4)", uri, description, fork, enabled)
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {

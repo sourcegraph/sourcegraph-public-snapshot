@@ -22,7 +22,7 @@ func TestPkgs_update_delete(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false, true); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true); err != nil {
 		t.Fatal(err)
 	}
 	rp, err := Repos.GetByURI(ctx, "myrepo")
@@ -90,7 +90,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, false, true); err != nil {
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true); err != nil {
 		t.Fatal(err)
 	}
 	rp, err := Repos.GetByURI(ctx, "myrepo")
@@ -134,11 +134,11 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*api.Repo, error) {
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*types.Repo, error) {
 		calledReposGetByURI = true
 		switch repo {
 		case "github.com/my/repo":
-			return &api.Repo{ID: rp.ID, URI: repo}, nil
+			return &types.Repo{ID: rp.ID, URI: repo}, nil
 		default:
 			return nil, errors.New("not found")
 		}

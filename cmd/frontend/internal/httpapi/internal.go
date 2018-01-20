@@ -75,7 +75,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	for _, uri := range whitelist {
-		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, false, true)
+		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, true)
 		if err != nil {
 			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)
 		}
@@ -112,7 +112,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Repos.TryInsertNew(r.Context(), repo.URI, repo.Description, repo.Fork, repo.Private, repo.Enabled)
+	err = backend.Repos.TryInsertNew(r.Context(), repo.URI, repo.Description, repo.Fork, repo.Enabled)
 	if err != nil {
 		return err
 	}
@@ -195,12 +195,12 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 }
 
 func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
-	var revSpec types.RepoRevSpec
-	err := json.NewDecoder(r.Body).Decode(&revSpec)
+	var req api.ReposGetInventoryUncachedRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return err
 	}
-	inv, err := backend.Repos.GetInventoryUncached(r.Context(), &revSpec)
+	inv, err := backend.Repos.GetInventoryUncached(r.Context(), &types.RepoRevSpec{Repo: req.Repo, CommitID: req.CommitID})
 	if err != nil {
 		return err
 	}
@@ -275,7 +275,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Repo = repo
+	cmd.Repo = &api.Repo{URI: repo.URI}
 	refs, err := cmd.Output(r.Context())
 	if err != nil {
 		return err

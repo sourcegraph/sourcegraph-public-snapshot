@@ -14,7 +14,6 @@ type RepoCreateOrUpdateRequest struct {
 	URI         string `json:"uri"`
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
-	Private     bool   `json:"private"`
 	Enabled     bool   `json:"enabled"`
 }
 

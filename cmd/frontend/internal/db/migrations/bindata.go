@@ -126,6 +126,8 @@
 // ../../../../../migrations/1515125883_repo_blocked_to_enabled.up.sql
 // ../../../../../migrations/1515651962_drop_has_subject_constraint.down.sql
 // ../../../../../migrations/1515651962_drop_has_subject_constraint.up.sql
+// ../../../../../migrations/1516491388_remove_repo_private.down.sql
+// ../../../../../migrations/1516491388_remove_repo_private.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2713,6 +2715,46 @@ func _1515651962_drop_has_subject_constraintUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1516491388_remove_repo_privateDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x28\xca\x2c\x4b\x2c\x49\x55\x48\xca\xcf\xcf\x49\x4d\xcc\xb3\x06\x04\x00\x00\xff\xff\x56\xc0\x37\x36\x2c\x00\x00\x00")
+
+func _1516491388_remove_repo_privateDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1516491388_remove_repo_privateDownSql,
+		"1516491388_remove_repo_private.down.sql",
+	)
+}
+
+func _1516491388_remove_repo_privateDownSql() (*asset, error) {
+	bytes, err := _1516491388_remove_repo_privateDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1516491388_remove_repo_private.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1516491388_remove_repo_privateUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x28\xca\x2c\x4b\x2c\x49\xb5\x06\x04\x00\x00\xff\xff\x76\x37\x96\xc1\x25\x00\x00\x00")
+
+func _1516491388_remove_repo_privateUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1516491388_remove_repo_privateUpSql,
+		"1516491388_remove_repo_private.up.sql",
+	)
+}
+
+func _1516491388_remove_repo_privateUpSql() (*asset, error) {
+	bytes, err := _1516491388_remove_repo_privateUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1516491388_remove_repo_private.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2891,6 +2933,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1515125883_repo_blocked_to_enabled.up.sql":                   _1515125883_repo_blocked_to_enabledUpSql,
 	"1515651962_drop_has_subject_constraint.down.sql":             _1515651962_drop_has_subject_constraintDownSql,
 	"1515651962_drop_has_subject_constraint.up.sql":               _1515651962_drop_has_subject_constraintUpSql,
+	"1516491388_remove_repo_private.down.sql":                     _1516491388_remove_repo_privateDownSql,
+	"1516491388_remove_repo_private.up.sql":                       _1516491388_remove_repo_privateUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3060,6 +3104,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1515125883_repo_blocked_to_enabled.up.sql":                   &bintree{_1515125883_repo_blocked_to_enabledUpSql, map[string]*bintree{}},
 	"1515651962_drop_has_subject_constraint.down.sql":             &bintree{_1515651962_drop_has_subject_constraintDownSql, map[string]*bintree{}},
 	"1515651962_drop_has_subject_constraint.up.sql":               &bintree{_1515651962_drop_has_subject_constraintUpSql, map[string]*bintree{}},
+	"1516491388_remove_repo_private.down.sql":                     &bintree{_1516491388_remove_repo_privateDownSql, map[string]*bintree{}},
+	"1516491388_remove_repo_private.up.sql":                       &bintree{_1516491388_remove_repo_privateUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

@@ -13,7 +13,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -25,7 +24,7 @@ var Repos = &repos{}
 
 type repos struct{}
 
-func (s *repos) Get(ctx context.Context, repoSpec *types.RepoSpec) (res *api.Repo, err error) {
+func (s *repos) Get(ctx context.Context, repoSpec *types.RepoSpec) (res *types.Repo, err error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, repoSpec)
 	}
@@ -36,7 +35,7 @@ func (s *repos) Get(ctx context.Context, repoSpec *types.RepoSpec) (res *api.Rep
 	return db.Repos.Get(ctx, repoSpec.ID)
 }
 
-func (s *repos) GetByURI(ctx context.Context, uri string) (res *api.Repo, err error) {
+func (s *repos) GetByURI(ctx context.Context, uri string) (res *types.Repo, err error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
 	}
@@ -47,11 +46,11 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *api.Repo, err er
 	return db.Repos.GetByURI(ctx, uri)
 }
 
-func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork bool, private, enabled bool) error {
-	return db.Repos.TryInsertNew(ctx, uri, description, fork, private, enabled)
+func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork, enabled bool) error {
+	return db.Repos.TryInsertNew(ctx, uri, description, fork, enabled)
 }
 
-func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*api.Repo, err error) {
+func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*types.Repo, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}

@@ -201,7 +201,6 @@ Foreign-key constraints:
  language                | text                     | 
  blocked                 | boolean                  | 
  fork                    | boolean                  | 
- private                 | boolean                  | 
  created_at              | timestamp with time zone | 
  updated_at              | timestamp with time zone | 
  pushed_at               | timestamp with time zone | 

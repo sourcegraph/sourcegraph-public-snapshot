@@ -9,7 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -53,15 +53,15 @@ func TestSearchSuggestions(t *testing.T) {
 
 	t.Run("single term", func(t *testing.T) {
 		var calledReposListAll, calledReposListFoo bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*api.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
 			wantAll := db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
-				return []*api.Repo{{URI: "bar-repo"}}, nil
+				return []*types.Repo{{URI: "bar-repo"}}, nil
 			} else if reflect.DeepEqual(op, wantFoo) {
 				calledReposListFoo = true
-				return []*api.Repo{{URI: "foo-repo"}}, nil
+				return []*types.Repo{{URI: "foo-repo"}}, nil
 			} else {
 				t.Errorf("got %+v, want %+v or %+v", op, wantFoo, wantAll)
 			}
@@ -105,17 +105,17 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repogroup: and single term", func(t *testing.T) {
 		var mu sync.Mutex
 		var calledReposListReposInGroup, calledReposListFooRepo3 bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*api.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			wantReposInGroup := db.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, Enabled: true, LimitOffset: limitOffset}    // when treating term as repo: field
 			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListReposInGroup = true
-				return []*api.Repo{{URI: "foo-repo1"}, {URI: "repo3"}}, nil
+				return []*types.Repo{{URI: "foo-repo1"}, {URI: "repo3"}}, nil
 			} else if reflect.DeepEqual(op, wantFooRepo3) {
 				calledReposListFooRepo3 = true
-				return []*api.Repo{{URI: "foo-repo1"}}, nil
+				return []*types.Repo{{URI: "foo-repo1"}}, nil
 			}
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
@@ -159,12 +159,12 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockSearchFilesForRepo = nil }()
 		calledResolveRepoGroups := false
 		defer func() { mockResolveRepoGroups = nil }()
-		mockResolveRepoGroups = func() (map[string][]*api.Repo, error) {
+		mockResolveRepoGroups = func() (map[string][]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
-			return map[string][]*api.Repo{
-				"sample": []*api.Repo{{URI: "foo-repo1"}, {URI: "repo3"}},
+			return map[string][]*types.Repo{
+				"sample": []*types.Repo{{URI: "foo-repo1"}, {URI: "repo3"}},
 			}, nil
 		}
 		testSuggestions(t, "foo", "repogroup:sample", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
@@ -191,14 +191,14 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repo: field", func(t *testing.T) {
 		var mu sync.Mutex
 		calledReposList := false
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*api.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
 			if want := (db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
-			return []*api.Repo{{URI: "foo-repo"}}, nil
+			return []*types.Repo{{URI: "foo-repo"}}, nil
 		}
 		calledSearchFiles := false
 		mockSearchFilesForRepo = func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchResultResolver, error) {
@@ -226,14 +226,14 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repo: and file: field", func(t *testing.T) {
 		var mu sync.Mutex
 		calledReposList := false
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*api.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
 			if want := (db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
-			return []*api.Repo{{URI: "foo-repo"}}, nil
+			return []*types.Repo{{URI: "foo-repo"}}, nil
 		}
 		calledSearchFiles := false
 		mockSearchFilesForRepo = func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchResultResolver, error) {

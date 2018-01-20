@@ -156,7 +156,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err
 	}
 
 	// Global refs & packages indexing. Neither index forks.
-	if !repo.Fork && LSPEnabled {
+	if !repo.Fork() && LSPEnabled {
 		// Global refs stores and queries private repository data separately,
 		// so it is fine to index private repositories.
 		defErr := api.InternalClient.DefsRefreshIndex(ctx, repo.URI, commit)

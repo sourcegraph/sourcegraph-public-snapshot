@@ -389,7 +389,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]in
 	return results, nil
 }
 
-func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *api.Repo, commitID string) (err error) {
+func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID string) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -399,7 +399,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 		span.Finish()
 	}()
 
-	vcs := "git" // TODO: store VCS type in *api.Repo object.
+	vcs := "git" // TODO: store VCS type in *types.Repo object.
 
 	// Query all external dependencies for the repository. We do this using the
 	// "<language>_bg" mode which runs this request on a separate language
@@ -413,16 +413,11 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 		return errors.Wrap(err, "LSP Call workspace/xdependencies")
 	}
 
-	table := "global_dep"
-	if repo.Private {
-		table = "global_dep_private"
-	}
-
 	err = Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		// Update the table.
-		err = g.update(ctx, tx, table, language, deps, repo.ID)
+		err = g.update(ctx, tx, "global_dep", language, deps, repo.ID)
 		if err != nil {
-			return errors.Wrap(err, "update "+table)
+			return errors.Wrap(err, "update global_dep")
 		}
 		return nil
 	})
