@@ -107,11 +107,11 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID})
+			rev, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+repoURI+"?"+rev.CommitID))
+			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+repoURI+"?"+string(rev)))
 		} else { // if we can't extract the repository URL directly, we have to consult the pkgs database
 			pkgDescriptor, ok := xlang.SymbolPackageDescriptor(sym.Symbol, c.mode)
 			if !ok {
@@ -133,11 +133,11 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 				if repo.IndexedRevision != nil {
 					commit = *repo.IndexedRevision
 				} else {
-					rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID})
+					rev, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
 					if err != nil {
 						return nil, errors.Wrap(err, "resolve revision for package repo")
 					}
-					commit = rev.CommitID
+					commit = string(rev)
 				}
 				// TODO: store VCS type in *sourcegraph.Repo object.
 				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+repo.URI+"?"+commit))

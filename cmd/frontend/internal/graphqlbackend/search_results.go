@@ -124,7 +124,7 @@ type blameFileMatchCache struct {
 	cachedRepos   map[string]*sourcegraph.Repo
 
 	cachedRevsMu sync.RWMutex
-	cachedRevs   map[string]*sourcegraph.ResolvedRev
+	cachedRevs   map[string]vcs.CommitID
 
 	cachedVCSReposMu sync.RWMutex
 	cachedVCSRepos   map[string]vcs.Repository
@@ -149,7 +149,7 @@ func (b *blameFileMatchCache) reposGetByURI(ctx context.Context, repoURI string)
 }
 
 // repoVCSOpen is like localstore.Repos.ResolveRev except it is cached by b.
-func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID int32, revStr string) (*sourcegraph.ResolvedRev, error) {
+func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID int32, revStr string) (vcs.CommitID, error) {
 	cacheKey := fmt.Sprint(repoID, revStr)
 	b.cachedRevsMu.RLock()
 	rev, ok := b.cachedRevs[cacheKey]
@@ -157,12 +157,9 @@ func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID int32,
 	if ok {
 		return rev, nil
 	}
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repoID,
-		Rev:  revStr,
-	})
+	rev, err := backend.Repos.ResolveRev(ctx, repoID, revStr)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	b.cachedRevsMu.Lock()
 	b.cachedRevs[cacheKey] = rev
@@ -228,7 +225,7 @@ func (sr *searchResults) blameFileMatch(ctx context.Context, fm *fileMatch, cach
 	// Blame the first line match.
 	lm := fm.LineMatches()[0]
 	hunks, err := vcsrepo.BlameFile(ctx, u.Fragment, &vcs.BlameOptions{
-		NewestCommit: vcs.CommitID(rev.CommitID),
+		NewestCommit: rev,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
 	})
@@ -251,7 +248,7 @@ func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err 
 		blameOps    = 0
 		cache       = &blameFileMatchCache{
 			cachedRepos:    map[string]*sourcegraph.Repo{},
-			cachedRevs:     map[string]*sourcegraph.ResolvedRev{},
+			cachedRevs:     map[string]vcs.CommitID{},
 			cachedVCSRepos: map[string]vcs.Repository{},
 		}
 	)

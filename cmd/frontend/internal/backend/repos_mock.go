@@ -18,7 +18,7 @@ type MockRepos struct {
 	GetByURI             func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*sourcegraph.Repo, error)
 	GetCommit            func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
-	ResolveRev           func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
+	ResolveRev           func(v0 context.Context, repo int32, rev string) (vcs.CommitID, error)
 	ListDeps             func(v0 context.Context, v1 []string) ([]string, error)
 	GetInventory         func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
@@ -80,23 +80,26 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID vcs.CommitID) (called *bool) {
 	var once sync.Once
 	called = new(bool)
-	s.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+	s.ResolveRev = func(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
 		once.Do(func() {
 			*called = true
 		})
-		return &sourcegraph.ResolvedRev{CommitID: string(commitID)}, nil
+		return commitID, nil
 	}
 	return
 }
 
-func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, repo int32, rev string) (called *bool) {
+func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo int32, wantRev string) (called *bool) {
 	called = new(bool)
-	s.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
+	s.ResolveRev = func(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
 		*called = true
-		if op.Repo != repo || op.Rev != rev {
-			t.Errorf("got %+v, want %+v", op, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: rev})
+		if repo != wantRepo {
+			t.Errorf("got repo %v, want %v", repo, wantRepo)
 		}
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "revision not found")
+		if rev != wantRev {
+			t.Errorf("got rev %v, want %v", rev, wantRev)
+		}
+		return "", legacyerr.Errorf(legacyerr.NotFound, "revision not found")
 	}
 	return
 }

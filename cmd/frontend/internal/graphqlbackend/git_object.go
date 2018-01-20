@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type gitObjectID string
@@ -46,9 +45,9 @@ type gitObjectResolver struct {
 }
 
 func (o *gitObjectResolver) OID(ctx context.Context) (gitObjectID, error) {
-	resolvedRev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: o.repo.repo.ID, Rev: o.revspec})
+	resolvedRev, err := backend.Repos.ResolveRev(ctx, o.repo.repo.ID, o.revspec)
 	if err != nil {
 		return "", err
 	}
-	return gitObjectID(resolvedRev.CommitID), nil
+	return gitObjectID(resolvedRev), nil
 }

@@ -89,10 +89,7 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: r.repo.ID,
-		Rev:  args.Rev,
-	})
+	rev, err := backend.Repos.ResolveRev(ctx, r.repo.ID, args.Rev)
 	if err != nil {
 		if err == vcs.ErrRevisionNotFound {
 			return nil, nil
@@ -102,7 +99,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	commit, err := backend.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{Repo: r.repo.ID, CommitID: rev.CommitID})
+	commit, err := backend.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{Repo: r.repo.ID, CommitID: string(rev)})
 	if err != nil {
 		return nil, err
 	}

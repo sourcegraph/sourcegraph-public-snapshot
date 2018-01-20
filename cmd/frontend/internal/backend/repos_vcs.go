@@ -18,34 +18,19 @@ import (
 // * Empty repository: vcs.ErrRevisionNotFound
 // * The user does not have permission: db.ErrRepoNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (res *sourcegraph.ResolvedRev, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo int32, rev string) (commitID vcs.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
-		return Mocks.Repos.ResolveRev(ctx, op)
+		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := trace(ctx, "Repos", "ResolveRev", op, &err)
+	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo, "rev": rev}, &err)
 	defer done()
 
-	commitID, err := resolveRepoRev(ctx, op.Repo, op.Rev)
-	if err != nil {
-		return nil, err
-	}
-	return &sourcegraph.ResolvedRev{CommitID: string(commitID)}, nil
-}
-
-// resolveRepoRev resolves the repo's rev to an absolute commit ID (by
-// consulting its VCS data). If no rev is specified, the repo's
-// default branch is used.
-func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
 	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
 	if err != nil {
 		return "", err
 	}
-	commitID, err := vcsrepo.ResolveRevision(ctx, rev)
-	if err != nil {
-		return "", err
-	}
-	return commitID, nil
+	return vcsrepo.ResolveRevision(ctx, rev)
 }
 
 func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *vcs.Commit, err error) {

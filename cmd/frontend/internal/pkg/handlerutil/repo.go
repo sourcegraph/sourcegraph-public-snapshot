@@ -33,15 +33,12 @@ func GetRepo(ctx context.Context, vars map[string]string) (*sourcegraph.Repo, er
 // route vars.
 func getRepoRev(ctx context.Context, vars map[string]string, repoID int32) (sourcegraph.RepoRevSpec, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repoID,
-		Rev:  repoRev.Rev,
-	})
+	commitID, err := backend.Repos.ResolveRev(ctx, repoID, repoRev.Rev)
 	if err != nil {
 		return sourcegraph.RepoRevSpec{}, err
 	}
 
-	return sourcegraph.RepoRevSpec{Repo: repoID, CommitID: res.CommitID}, nil
+	return sourcegraph.RepoRevSpec{Repo: repoID, CommitID: string(commitID)}, nil
 }
 
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may

@@ -70,11 +70,11 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	if err != nil {
 		return 0, err
 	}
-	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID})
+	rev, err := Repos.ResolveRev(ctx, rp.ID, "")
 	if err != nil {
 		return 0, err
 	}
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: rev.CommitID})
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
 	if err != nil {
 		return 0, err
 	}
@@ -125,11 +125,11 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []sourcegr
 	if err != nil {
 		return nil, err
 	}
-	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID})
+	rev, err := Repos.ResolveRev(ctx, rp.ID, "")
 	if err != nil {
 		return nil, err
 	}
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: rev.CommitID})
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
 	if err != nil {
 		return nil, err
 	}

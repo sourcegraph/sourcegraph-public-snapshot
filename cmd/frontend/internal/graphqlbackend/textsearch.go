@@ -340,10 +340,7 @@ func searchRepo(ctx context.Context, repo *sourcegraph.Repo, rev string, info *p
 		return mockSearchRepo(ctx, repo, rev, info)
 	}
 
-	commit, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  rev,
-	})
+	commit, err := backend.Repos.ResolveRev(ctx, repo.ID, rev)
 	if err != nil {
 		return nil, false, err
 	}
@@ -352,7 +349,7 @@ func searchRepo(ctx context.Context, repo *sourcegraph.Repo, rev string, info *p
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	matches, limitHit, err = textSearch(ctx, repo.URI, commit.CommitID, info)
+	matches, limitHit, err = textSearch(ctx, repo.URI, string(commit), info)
 
 	var workspace string
 	if rev != "" {

@@ -71,22 +71,6 @@ type RepoSpec struct {
 	ID int32 `json:"ID,omitempty"`
 }
 
-// ReposResolveRevOp specifies a Repos.ResolveRev operation.
-type ReposResolveRevOp struct {
-	Repo int32 `json:"repo,omitempty"`
-	// Rev is a VCS revision specifier, such as a branch or
-	// "master~7". If empty, the default branch is resolved.
-	Rev string `json:"rev,omitempty"`
-}
-
-// ResolvedRev is the result of resolving a VCS revision specifier to
-// an absolute commit ID.
-type ResolvedRev struct {
-	// CommitID is the 40-character absolute SHA-1 hex digest of the
-	// commit's Git oid.
-	CommitID string `json:"CommitID,omitempty"`
-}
-
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
 	Language        string // e.g. "go"

@@ -8,6 +8,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestRepoShieldFmt(t *testing.T) {
@@ -44,13 +45,11 @@ func TestRepoShield(t *testing.T) {
 			panic("wrong path")
 		}
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
-		if op.Repo != 2 || op.Rev != "master" {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
+		if repo != 2 || rev != "master" {
 			t.Error("wrong arguments to ResolveRev")
 		}
-		return &sourcegraph.ResolvedRev{
-			CommitID: "aed",
-		}, nil
+		return "aed", nil
 	}
 	backend.Mocks.Defs.TotalRefs = func(ctx context.Context, source string) (int, error) {
 		if source != "github.com/gorilla/mux" {

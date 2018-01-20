@@ -263,10 +263,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  "",
-	})
+	rev, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +271,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 	var symbols []lsp.SymbolInformation
 	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}
 
-	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, lsp.DocumentURI("git://"+repoURI+"?"+rev.CommitID), "workspace/symbol", params, &symbols)
+	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, lsp.DocumentURI("git://"+repoURI+"?"+string(rev)), "workspace/symbol", params, &symbols)
 	if err != nil {
 		return nil, err
 	}

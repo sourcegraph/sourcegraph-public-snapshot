@@ -13,7 +13,7 @@ import (
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
 
-func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
+func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	ctx := testContext()
 
 	want := strings.Repeat("a", 40)
@@ -27,7 +27,7 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 	})
 
 	// (no rev/branch specified)
-	commitID, err := resolveRepoRev(ctx, 1, "")
+	commitID, err := Repos.ResolveRev(ctx, 1, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 	}
 }
 
-func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
+func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	ctx := testContext()
 
 	want := strings.Repeat("a", 40)
@@ -52,7 +52,7 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 		},
 	})
 
-	commitID, err := resolveRepoRev(ctx, 1, "b")
+	commitID, err := Repos.ResolveRev(ctx, 1, "b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	}
 }
 
-func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
+func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	ctx := testContext()
 
 	want := strings.Repeat("a", 40)
@@ -77,7 +77,7 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 		},
 	})
 
-	commitID, err := resolveRepoRev(ctx, 1, strings.Repeat("a", 40))
+	commitID, err := Repos.ResolveRev(ctx, 1, strings.Repeat("a", 40))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 	}
 }
 
-func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
+func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	ctx := testContext()
 
 	want := errors.New("x")
@@ -102,7 +102,7 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 		},
 	})
 
-	_, err := resolveRepoRev(ctx, 1, strings.Repeat("a", 40))
+	_, err := Repos.ResolveRev(ctx, 1, strings.Repeat("a", 40))
 	if !reflect.DeepEqual(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
