@@ -191,21 +191,23 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         this.setState({ isSubmitting: true })
 
-        this.props
-            .onSubmit(this.state.values)
-            .pipe(
-                catchError(error => {
-                    console.error(error)
-                    this.setState({ error })
-                    if (!(error instanceof Error)) {
-                        return [new Error(error)]
-                    }
+        this.subscriptions.add(
+            this.props
+                .onSubmit(this.state.values)
+                .pipe(
+                    catchError(error => {
+                        console.error(error)
+                        this.setState({ error })
+                        if (!(error instanceof Error)) {
+                            return [new Error(error)]
+                        }
 
-                    return [error]
-                }),
-                filter(v => !(v instanceof Error))
-            )
-            .subscribe(this.props.onDidCommit)
+                        return [error]
+                    }),
+                    filter(v => !(v instanceof Error))
+                )
+                .subscribe(this.props.onDidCommit)
+        )
     }
 
     /**
