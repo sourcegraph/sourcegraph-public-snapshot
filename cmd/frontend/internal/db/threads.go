@@ -243,7 +243,7 @@ func (t *threads) CountByFile(ctx context.Context, orgID *int32, repoIDs []int32
 }
 
 type ThreadsListOptions struct {
-	sourcegraph.ListOptions
+	*LimitOffset
 }
 
 func (t *threads) List(ctx context.Context, opt *ThreadsListOptions) ([]*sourcegraph.Thread, error) {
@@ -256,10 +256,7 @@ func (t *threads) List(ctx context.Context, opt *ThreadsListOptions) ([]*sourceg
 	}
 	conds := t.listSQL(*opt)
 
-	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
-		sqlf.Join(conds, "AND"),
-		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
-	)
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 

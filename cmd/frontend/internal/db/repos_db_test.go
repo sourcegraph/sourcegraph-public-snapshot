@@ -112,23 +112,23 @@ func TestRepos_List_pagination(t *testing.T) {
 	}
 
 	type testcase struct {
-		perPage int32
-		page    int32
-		exp     []string
+		limit  int
+		offset int
+		exp    []string
 	}
 	tests := []testcase{
-		{perPage: 1, page: 1, exp: []string{"r1"}},
-		{perPage: 1, page: 2, exp: []string{"r2"}},
-		{perPage: 1, page: 3, exp: []string{"r3"}},
-		{perPage: 2, page: 1, exp: []string{"r1", "r2"}},
-		{perPage: 2, page: 2, exp: []string{"r3"}},
-		{perPage: 3, page: 1, exp: []string{"r1", "r2", "r3"}},
-		{perPage: 3, page: 2, exp: nil},
-		{perPage: 4, page: 1, exp: []string{"r1", "r2", "r3"}},
-		{perPage: 4, page: 2, exp: nil},
+		{limit: 1, offset: 0, exp: []string{"r1"}},
+		{limit: 1, offset: 1, exp: []string{"r2"}},
+		{limit: 1, offset: 2, exp: []string{"r3"}},
+		{limit: 2, offset: 0, exp: []string{"r1", "r2"}},
+		{limit: 2, offset: 2, exp: []string{"r3"}},
+		{limit: 3, offset: 0, exp: []string{"r1", "r2", "r3"}},
+		{limit: 3, offset: 3, exp: nil},
+		{limit: 4, offset: 0, exp: []string{"r1", "r2", "r3"}},
+		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
+		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}

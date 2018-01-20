@@ -306,7 +306,7 @@ type ReposListOptions struct {
 	// Disabled includes disabled repositories in the list.
 	Disabled bool
 
-	sourcegraph.ListOptions
+	*LimitOffset
 }
 
 // List lists repositories in the Sourcegraph repository
@@ -335,10 +335,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*sour
 	}
 
 	// fetch matching repos
-	fetchSQL := sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
-		sqlf.Join(conds, "AND"),
-		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
-	)
+	fetchSQL := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
 	rawRepos, err := s.getBySQL(ctx, fetchSQL)
 	if err != nil {

@@ -7,12 +7,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 )
 
-// ListOptions specifies general pagination options for fetching a list of results.
-type ListOptions struct {
-	PerPage int32 `json:"PerPage,omitempty" url:",omitempty"`
-	Page    int32 `json:"Page,omitempty" url:",omitempty"`
-}
-
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.

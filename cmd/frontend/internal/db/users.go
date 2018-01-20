@@ -401,7 +401,7 @@ type UsersListOptions struct {
 	// Query specifies a search query for users.
 	Query string
 
-	sourcegraph.ListOptions
+	*LimitOffset
 }
 
 func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*sourcegraph.User, error) {
@@ -414,10 +414,7 @@ func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*sourcegraph
 	}
 	conds := u.listSQL(*opt)
 
-	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
-		sqlf.Join(conds, "AND"),
-		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
-	)
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 

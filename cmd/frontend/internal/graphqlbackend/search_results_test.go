@@ -11,7 +11,7 @@ import (
 )
 
 func TestSearchResults(t *testing.T) {
-	listOpts := sourcegraph.ListOptions{PerPage: int32(maxReposToSearch + 1)}
+	limitOffset := &db.LimitOffset{Limit: maxReposToSearch + 1}
 
 	createSearchResolver := func(t *testing.T, query string) *searchResolver {
 		args := &searchArgs{Query: query}
@@ -46,7 +46,7 @@ func TestSearchResults(t *testing.T) {
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*sourcegraph.Repo, error) {
 			calledReposList = true
-			if want := (db.ReposListOptions{Enabled: true, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
+			if want := (db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
 			return []*sourcegraph.Repo{{URI: "repo"}}, nil

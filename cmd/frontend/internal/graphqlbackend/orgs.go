@@ -15,7 +15,7 @@ func (r *siteResolver) Orgs(args *struct {
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
-	args.connectionArgs.set(&opt.ListOptions)
+	args.connectionArgs.set(&opt.LimitOffset)
 	return &orgConnectionResolver{opt: opt}
 }
 

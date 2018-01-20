@@ -89,7 +89,7 @@ type OrgsListOptions struct {
 	// Query specifies a search query for organizations.
 	Query string
 
-	sourcegraph.ListOptions
+	*LimitOffset
 }
 
 func (o *orgs) List(ctx context.Context, opt *OrgsListOptions) ([]*sourcegraph.Org, error) {
@@ -102,10 +102,7 @@ func (o *orgs) List(ctx context.Context, opt *OrgsListOptions) ([]*sourcegraph.O
 	}
 	conds := o.listSQL(*opt)
 
-	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC LIMIT %d OFFSET %d",
-		sqlf.Join(conds, "AND"),
-		opt.ListOptions.Limit(), opt.ListOptions.Offset(),
-	)
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	return o.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 

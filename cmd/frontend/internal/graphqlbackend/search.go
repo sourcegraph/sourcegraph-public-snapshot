@@ -299,7 +299,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		ExcludePattern:  unionRegExps(excludePatterns),
 		Enabled:         true,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		ListOptions: sourcegraph.ListOptions{PerPage: int32(maxRepoListSize + 1)},
+		LimitOffset: &db.LimitOffset{Limit: maxRepoListSize + 1},
 	})
 	tr.LazyPrintf("Repos.List - done")
 	if err != nil {
