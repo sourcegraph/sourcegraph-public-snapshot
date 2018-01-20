@@ -134,13 +134,6 @@ type ResolvedRev struct {
 	CommitID string `json:"CommitID,omitempty"`
 }
 
-// UserSpec specifies a user. At least one of Login and UID must be
-// nonempty.
-type UserSpec struct {
-	// UID is a user's UID.
-	UID string `json:"UID,omitempty"`
-}
-
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
 	Language        string // e.g. "go"
