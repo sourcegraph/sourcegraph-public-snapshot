@@ -16,6 +16,7 @@ import (
 	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -99,7 +100,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	commit, err := backend.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{Repo: r.repo.ID, CommitID: string(rev)})
+	commit, err := backend.Repos.GetCommit(ctx, &types.RepoRevSpec{Repo: r.repo.ID, CommitID: string(rev)})
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +246,7 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 	)
 	for _, repoSpec := range totalRefs {
 		run.Acquire()
-		go func(repoSpec sourcegraph.RepoSpec) {
+		go func(repoSpec types.RepoSpec) {
 			defer func() {
 				if r := recover(); r != nil {
 					run.Error(fmt.Errorf("recover: %v", r))
@@ -290,7 +291,7 @@ func (t *totalRefListResolver) Total() int32 {
 	return t.total
 }
 
-type sortByRepoSpecID []sourcegraph.RepoSpec
+type sortByRepoSpecID []types.RepoSpec
 
 func (s sortByRepoSpecID) Len() int      { return len(s) }
 func (s sortByRepoSpecID) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

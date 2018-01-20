@@ -3,20 +3,20 @@ package db
 import (
 	"testing"
 
-	"context"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"context"
 )
 
 type MockOrgs struct {
-	GetByID func(ctx context.Context, id int32) (*sourcegraph.Org, error)
+	GetByID func(ctx context.Context, id int32) (*types.Org, error)
 	Count   func(ctx context.Context, opt OrgsListOptions) (int, error)
-	List    func(ctx context.Context, opt *OrgsListOptions) ([]*sourcegraph.Org, error)
+	List    func(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, error)
 }
 
-func (s *MockOrgs) MockGetByID_Return(t *testing.T, returns *sourcegraph.Org, returnsErr error) (called *bool) {
+func (s *MockOrgs) MockGetByID_Return(t *testing.T, returns *types.Org, returnsErr error) (called *bool) {
 	called = new(bool)
-	s.GetByID = func(ctx context.Context, id int32) (*sourcegraph.Org, error) {
+	s.GetByID = func(ctx context.Context, id int32) (*types.Org, error) {
 		*called = true
 		return returns, returnsErr
 	}

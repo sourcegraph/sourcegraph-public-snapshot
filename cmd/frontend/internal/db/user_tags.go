@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 type userTags struct{}
@@ -17,8 +17,8 @@ func (err ErrUserTagNotFound) Error() string {
 	return fmt.Sprintf("tag not found: %v", err.args)
 }
 
-func (*userTags) Create(ctx context.Context, userID int32, name string) (*sourcegraph.UserTag, error) {
-	t := &sourcegraph.UserTag{
+func (*userTags) Create(ctx context.Context, userID int32, name string) (*types.UserTag, error) {
+	t := &types.UserTag{
 		UserID: userID,
 		Name:   name,
 	}
@@ -33,7 +33,7 @@ func (*userTags) Create(ctx context.Context, userID int32, name string) (*source
 }
 
 // Create a tag for the user if the user does not already have the tag
-func (t *userTags) CreateIfNotExists(ctx context.Context, userID int32, name string) (*sourcegraph.UserTag, error) {
+func (t *userTags) CreateIfNotExists(ctx context.Context, userID int32, name string) (*types.UserTag, error) {
 	tag, err := t.GetByUserIDAndTagName(ctx, userID, name)
 	if err != nil {
 		if _, ok := err.(ErrUserTagNotFound); !ok {
@@ -45,15 +45,15 @@ func (t *userTags) CreateIfNotExists(ctx context.Context, userID int32, name str
 	return tag, nil
 }
 
-func (*userTags) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.UserTag, error) {
+func (*userTags) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.UserTag, error) {
 	rows, err := globalDB.QueryContext(ctx, "SELECT id, user_id, name FROM user_tags "+query, args...)
 	if err != nil {
 		return nil, err
 	}
-	tags := []*sourcegraph.UserTag{}
+	tags := []*types.UserTag{}
 	defer rows.Close()
 	for rows.Next() {
-		t := sourcegraph.UserTag{}
+		t := types.UserTag{}
 		err := rows.Scan(&t.ID, &t.UserID, &t.Name)
 		if err != nil {
 			return nil, err
@@ -66,7 +66,7 @@ func (*userTags) getBySQL(ctx context.Context, query string, args ...interface{}
 	return tags, nil
 }
 
-func (t *userTags) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.UserTag, error) {
+func (t *userTags) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.UserTag, error) {
 	rows, err := t.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -77,10 +77,10 @@ func (t *userTags) getOneBySQL(ctx context.Context, query string, args ...interf
 	return rows[0], nil
 }
 
-func (t *userTags) GetByUserID(ctx context.Context, userID int32) ([]*sourcegraph.UserTag, error) {
+func (t *userTags) GetByUserID(ctx context.Context, userID int32) ([]*types.UserTag, error) {
 	return t.getBySQL(ctx, "WHERE user_id=$1 AND deleted_at IS NULL", userID)
 }
 
-func (t *userTags) GetByUserIDAndTagName(ctx context.Context, userID int32, name string) (*sourcegraph.UserTag, error) {
+func (t *userTags) GetByUserIDAndTagName(ctx context.Context, userID int32, name string) (*types.UserTag, error) {
 	return t.getOneBySQL(ctx, "WHERE user_id=$1 AND name=$2 AND deleted_at IS NULL LIMIT 1", userID, name)
 }

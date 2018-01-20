@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
@@ -31,20 +32,20 @@ func GetRepo(ctx context.Context, vars map[string]string) (*sourcegraph.Repo, er
 
 // getRepoRev resolves the RepoRevSpec and commit specified in the
 // route vars.
-func getRepoRev(ctx context.Context, vars map[string]string, repoID int32) (sourcegraph.RepoRevSpec, error) {
+func getRepoRev(ctx context.Context, vars map[string]string, repoID int32) (types.RepoRevSpec, error) {
 	repoRev := routevar.ToRepoRev(vars)
 	commitID, err := backend.Repos.ResolveRev(ctx, repoID, repoRev.Rev)
 	if err != nil {
-		return sourcegraph.RepoRevSpec{}, err
+		return types.RepoRevSpec{}, err
 	}
 
-	return sourcegraph.RepoRevSpec{Repo: repoID, CommitID: string(commitID)}, nil
+	return types.RepoRevSpec{Repo: repoID, CommitID: string(commitID)}, nil
 }
 
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
 // also return custom error URLMovedError to allow special handling of this case,
 // such as for example redirecting the user.
-func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoRevSpec sourcegraph.RepoRevSpec, err error) {
+func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, repoRevSpec types.RepoRevSpec, err error) {
 	repo, err = GetRepo(ctx, vars)
 	if err != nil {
 		return repo, repoRevSpec, err

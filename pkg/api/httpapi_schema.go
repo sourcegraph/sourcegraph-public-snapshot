@@ -29,6 +29,11 @@ type RepoUnindexedDependenciesRequest struct {
 	Language string `json:"language"`
 }
 
+type ReposGetInventoryUncachedRequest struct {
+	Repo     int32
+	CommitID string
+}
+
 type PhabricatorRepoCreateRequest struct {
 	URI      string `json:"uri"`
 	Callsign string `json:"callsign"`

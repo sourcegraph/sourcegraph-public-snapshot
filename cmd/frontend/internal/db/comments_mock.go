@@ -3,26 +3,26 @@ package db
 import (
 	"testing"
 
-	"context"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"context"
 )
 
 type MockComments struct {
-	Create          func(ctx context.Context, threadID int32, contents string, authorUserID int32) (*sourcegraph.Comment, error)
-	GetAllForThread func(ctx context.Context, threadID int32) ([]*sourcegraph.Comment, error)
+	Create          func(ctx context.Context, threadID int32, contents string, authorUserID int32) (*types.Comment, error)
+	GetAllForThread func(ctx context.Context, threadID int32) ([]*types.Comment, error)
 }
 
-func (s *MockComments) MockCreate(t *testing.T) (called *bool, calledWith *sourcegraph.Comment) {
+func (s *MockComments) MockCreate(t *testing.T) (called *bool, calledWith *types.Comment) {
 	called = new(bool)
-	calledWith = &sourcegraph.Comment{}
-	s.Create = func(ctx context.Context, threadID int32, contents string, authorUserID int32) (*sourcegraph.Comment, error) {
-		*called, *calledWith = true, sourcegraph.Comment{
+	calledWith = &types.Comment{}
+	s.Create = func(ctx context.Context, threadID int32, contents string, authorUserID int32) (*types.Comment, error) {
+		*called, *calledWith = true, types.Comment{
 			ThreadID:     threadID,
 			Contents:     contents,
 			AuthorUserID: authorUserID,
 		}
-		return &sourcegraph.Comment{
+		return &types.Comment{
 			ID:           1,
 			ThreadID:     threadID,
 			Contents:     contents,

@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func TestLocalRepos_Validate(t *testing.T) {
-	testRepo := &sourcegraph.OrgRepo{
+	testRepo := &types.OrgRepo{
 		ID:        1,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

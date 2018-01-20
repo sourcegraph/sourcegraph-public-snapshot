@@ -25,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/eventlogger"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
@@ -66,8 +67,8 @@ type Common struct {
 
 	// The fields below have zero values when not on a repo page.
 	Repo    *sourcegraph.Repo
-	Rev     string                  // unresolved / user-specified revision (e.x.: "@master")
-	RevSpec sourcegraph.RepoRevSpec // resolved SHA1 revision
+	Rev     string            // unresolved / user-specified revision (e.x.: "@master")
+	RevSpec types.RepoRevSpec // resolved SHA1 revision
 }
 
 // repoShortName trims the first path element of the given repo uri if it has

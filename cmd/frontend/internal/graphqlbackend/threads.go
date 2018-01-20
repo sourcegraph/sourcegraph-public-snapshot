@@ -14,16 +14,16 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type threadConnectionResolver struct {
-	org                *sourcegraph.Org
-	repos              []*sourcegraph.OrgRepo
+	org                *types.Org
+	repos              []*types.OrgRepo
 	canonicalRemoteIDs []string
 	file               *string
 	branch             *string
@@ -61,7 +61,7 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 	if err != nil {
 		return nil, err
 	}
-	repos := make(map[int32]*sourcegraph.OrgRepo)
+	repos := make(map[int32]*types.OrgRepo)
 	for _, repo := range t.repos {
 		repos[repo.ID] = repo
 	}
@@ -80,9 +80,9 @@ func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error
 }
 
 type threadResolver struct {
-	org    *sourcegraph.Org
-	repo   *sourcegraph.OrgRepo
-	thread *sourcegraph.Thread
+	org    *types.Org
+	repo   *types.OrgRepo
+	thread *types.Thread
 }
 
 func (t *threadResolver) Repo(ctx context.Context) (*orgRepoResolver, error) {
@@ -161,7 +161,7 @@ func (t *threadResolver) Lines() *threadLineResolver {
 }
 
 type threadLineResolver struct {
-	*sourcegraph.ThreadLines
+	*types.ThreadLines
 }
 
 func (t *threadLineResolver) HTMLBefore(args *struct {
@@ -388,7 +388,7 @@ func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThre
 
 	repo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, args.CanonicalRemoteID)
 	if err == db.ErrRepoNotFound {
-		repo, err = db.OrgRepos.Create(ctx, &sourcegraph.OrgRepo{
+		repo, err = db.OrgRepos.Create(ctx, &types.OrgRepo{
 			CanonicalRemoteID: args.CanonicalRemoteID,
 			CloneURL:          args.CloneURL,
 			OrgID:             args.OrgID.int32Value,
@@ -404,7 +404,7 @@ func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThre
 	}
 
 	// TODO(nick): transaction
-	thread := &sourcegraph.Thread{
+	thread := &types.Thread{
 		OrgRepoID:         repo.ID,
 		RepoRevisionPath:  args.RepoRevisionPath,
 		LinesRevisionPath: args.LinesRevisionPath,
@@ -419,7 +419,7 @@ func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThre
 		AuthorUserID:      currentUser.SourcegraphID(),
 	}
 	if args.Lines != nil {
-		thread.Lines = &sourcegraph.ThreadLines{
+		thread.Lines = &types.ThreadLines{
 			HTMLBefore:               args.Lines.HTMLBefore,
 			HTML:                     args.Lines.HTML,
 			HTMLAfter:                args.Lines.HTMLAfter,
@@ -554,17 +554,17 @@ func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, 
 		return nil, err
 	}
 
-	return db.SharedItems.Create(ctx, &sourcegraph.SharedItem{
+	return db.SharedItems.Create(ctx, &types.SharedItem{
 		AuthorUserID: currentUser.ID,
 		Public:       public,
 		ThreadID:     &threadID,
 	})
 }
 
-func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, archiver sourcegraph.User) error {
+func (s *schemaResolver) utilNotifyThreadArchived(ctx context.Context, repo types.OrgRepo, thread types.Thread, previousComments []*types.Comment, archiver types.User) error {
 	url := threadURL(thread.ID, nil, "email")
 
-	var first *sourcegraph.Comment
+	var first *types.Comment
 	if len(previousComments) > 0 {
 		first = previousComments[0]
 	}

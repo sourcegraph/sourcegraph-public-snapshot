@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -74,7 +75,7 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	if err != nil {
 		return 0, err
 	}
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
+	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
 	if err != nil {
 		return 0, err
 	}
@@ -93,15 +94,15 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	return res, nil
 }
 
-func intsToRepoSpecs(v []int32) (r []sourcegraph.RepoSpec) {
-	r = make([]sourcegraph.RepoSpec, len(v))
+func intsToRepoSpecs(v []int32) (r []types.RepoSpec) {
+	r = make([]types.RepoSpec, len(v))
 	for i, v := range v {
-		r[i] = sourcegraph.RepoSpec{ID: v}
+		r[i] = types.RepoSpec{ID: v}
 	}
 	return
 }
 
-func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []sourcegraph.RepoSpec, err error) {
+func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []types.RepoSpec, err error) {
 	if Mocks.Defs.ListTotalRefs != nil {
 		return Mocks.Defs.ListTotalRefs(ctx, source)
 	}
@@ -129,7 +130,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []sourcegr
 	if err != nil {
 		return nil, err
 	}
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
+	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func (s *defs) Dependencies(ctx context.Context, repoID int32) ([]*sourcegraph.D
 	})
 }
 
-func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error) {
+func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error) {
 	if Mocks.Defs.DependencyReferences != nil {
 		return Mocks.Defs.DependencyReferences(ctx, op)
 	}
@@ -176,7 +177,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	span.SetTag("line", op.Line)
 	span.SetTag("character", op.Character)
 
-	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.RepoID})
+	repo, err := Repos.Get(ctx, &types.RepoSpec{ID: op.RepoID})
 	if err != nil {
 		return nil, err
 	}
@@ -247,8 +248,8 @@ func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err 
 
 type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
-	ListTotalRefs        func(ctx context.Context, source string) (res []sourcegraph.RepoSpec, err error)
-	DependencyReferences func(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
+	ListTotalRefs        func(ctx context.Context, source string) (res []types.RepoSpec, err error)
+	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
 	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
 	Dependencies         func(ctx context.Context, repoID int32) ([]*sourcegraph.DependencyReference, error)
 }

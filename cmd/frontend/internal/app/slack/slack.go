@@ -12,7 +12,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/pkg/errors"
@@ -108,10 +108,10 @@ func Post(payload *Payload, webhookURL *string) error {
 func (c *Client) NotifyOnComment(
 	user User,
 	userEmail string,
-	org *sourcegraph.Org,
-	orgRepo *sourcegraph.OrgRepo,
-	thread *sourcegraph.Thread,
-	comment *sourcegraph.Comment,
+	org *types.Org,
+	orgRepo *types.OrgRepo,
+	thread *types.Thread,
+	comment *types.Comment,
 	recipients []string,
 	deepURL string,
 	threadTitle string,
@@ -138,10 +138,10 @@ func (c *Client) NotifyOnComment(
 func (c *Client) NotifyOnThread(
 	user User,
 	userEmail string,
-	org *sourcegraph.Org,
-	orgRepo *sourcegraph.OrgRepo,
-	thread *sourcegraph.Thread,
-	comment *sourcegraph.Comment,
+	org *types.Org,
+	orgRepo *types.OrgRepo,
+	thread *types.Thread,
+	comment *types.Comment,
 	recipients []string,
 	deepURL string,
 ) {
@@ -166,10 +166,10 @@ func (c *Client) notifyOnComments(
 	isNewThread bool,
 	user User,
 	userEmail string,
-	org *sourcegraph.Org,
-	orgRepo *sourcegraph.OrgRepo,
-	thread *sourcegraph.Thread,
-	comment *sourcegraph.Comment,
+	org *types.Org,
+	orgRepo *types.OrgRepo,
+	thread *types.Thread,
+	comment *types.Comment,
 	recipients []string,
 	deepURL string,
 	threadTitle string,
@@ -254,7 +254,7 @@ func (c *Client) notifyOnComments(
 
 // NotifyOnInvite posts a message to the defined Slack channel
 // when a user invites another user to join their org
-func (c *Client) NotifyOnInvite(user User, userEmail string, org *sourcegraph.Org, inviteEmail string) {
+func (c *Client) NotifyOnInvite(user User, userEmail string, org *types.Org, inviteEmail string) {
 	displayNameText := userEmail
 	if user.DisplayName() != nil {
 		displayNameText = *user.DisplayName()
@@ -299,7 +299,7 @@ func (c *Client) NotifyOnInvite(user User, userEmail string, org *sourcegraph.Or
 
 // NotifyOnAcceptedInvite posts a message to the defined Slack channel
 // when an invited user accepts their invite to join an org
-func (c *Client) NotifyOnAcceptedInvite(user User, userEmail string, org *sourcegraph.Org) {
+func (c *Client) NotifyOnAcceptedInvite(user User, userEmail string, org *types.Org) {
 	displayNameText := userEmail
 	if user.DisplayName() != nil {
 		displayNameText = *user.DisplayName()

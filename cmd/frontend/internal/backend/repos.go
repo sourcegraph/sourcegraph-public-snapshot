@@ -12,6 +12,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
@@ -24,7 +25,7 @@ var Repos = &repos{}
 
 type repos struct{}
 
-func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *sourcegraph.Repo, err error) {
+func (s *repos) Get(ctx context.Context, repoSpec *types.RepoSpec) (res *sourcegraph.Repo, err error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, repoSpec)
 	}
@@ -71,7 +72,7 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*sou
 
 var inventoryCache = rcache.New("inv")
 
-func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repoRev *types.RepoRevSpec) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repoRev)
 	}
@@ -113,7 +114,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	return inv, nil
 }
 
-func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *types.RepoRevSpec) (*inventory.Inventory, error) {
 	if Mocks.Repos.GetInventoryUncached != nil {
 		return Mocks.Repos.GetInventoryUncached(ctx, repoRev)
 	}

@@ -8,16 +8,16 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/keegancsmith/sqlf"
 )
 
 // validCanonicalRemoteID matches a relative path, with the first component being a
 // valid domain, e.g. "github.com/gorilla/mux".
 var validCanonicalRemoteID = regexp.MustCompile(`^[^/@]+(\.[^/]+)+(:\d+)?(/[^/]+)+$`)
 
-func validateRepo(repo *sourcegraph.OrgRepo) error {
+func validateRepo(repo *types.OrgRepo) error {
 	if repo.CanonicalRemoteID == "" {
 		return errors.New("error creating local repo: CanonicalRemoteID required")
 	}
@@ -33,18 +33,18 @@ func validateRepo(repo *sourcegraph.OrgRepo) error {
 
 type orgRepos struct{}
 
-func (r *orgRepos) GetByID(ctx context.Context, id int32) (*sourcegraph.OrgRepo, error) {
+func (r *orgRepos) GetByID(ctx context.Context, id int32) (*types.OrgRepo, error) {
 	if Mocks.OrgRepos.GetByID != nil {
 		return Mocks.OrgRepos.GetByID(ctx, id)
 	}
 	return expectOne(r.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL", id))
 }
 
-func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*sourcegraph.OrgRepo, error) {
+func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*types.OrgRepo, error) {
 	return r.getBySQL(ctx, "WHERE org_id=$1 AND deleted_at IS NULL", orgID)
 }
 
-func (r *orgRepos) GetByCanonicalRemoteID(ctx context.Context, orgID int32, canonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
+func (r *orgRepos) GetByCanonicalRemoteID(ctx context.Context, orgID int32, canonicalRemoteID string) (*types.OrgRepo, error) {
 	if Mocks.OrgRepos.GetByCanonicalRemoteID != nil {
 		return Mocks.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
 	}
@@ -52,7 +52,7 @@ func (r *orgRepos) GetByCanonicalRemoteID(ctx context.Context, orgID int32, cano
 	return expectOne(r.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-func (r *orgRepos) GetByCanonicalRemoteIDs(ctx context.Context, orgID int32, canonicalRemoteIDs []string) ([]*sourcegraph.OrgRepo, error) {
+func (r *orgRepos) GetByCanonicalRemoteIDs(ctx context.Context, orgID int32, canonicalRemoteIDs []string) ([]*types.OrgRepo, error) {
 	q := r.listQuery(orgID, canonicalRemoteIDs)
 	return r.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
@@ -71,7 +71,7 @@ func (r *orgRepos) listQuery(orgID int32, canonicalRemoteIDs []string) *sqlf.Que
 	return sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "AND"))
 }
 
-func expectOne(repos []*sourcegraph.OrgRepo, err error) (*sourcegraph.OrgRepo, error) {
+func expectOne(repos []*types.OrgRepo, err error) (*types.OrgRepo, error) {
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func expectOne(repos []*sourcegraph.OrgRepo, err error) (*sourcegraph.OrgRepo, e
 	return repos[0], nil
 }
 
-func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sourcegraph.OrgRepo, error) {
+func (*orgRepos) Create(ctx context.Context, newRepo *types.OrgRepo) (*types.OrgRepo, error) {
 	if Mocks.OrgRepos.Create != nil {
 		return Mocks.OrgRepos.Create(ctx, newRepo)
 	}
@@ -108,16 +108,16 @@ func (*orgRepos) Create(ctx context.Context, newRepo *sourcegraph.OrgRepo) (*sou
 }
 
 // getBySQL returns org repos matching the SQL query, if any exist.
-func (*orgRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgRepo, error) {
+func (*orgRepos) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.OrgRepo, error) {
 	rows, err := globalDB.QueryContext(ctx, "SELECT id, canonical_remote_id, clone_url, org_id, created_at, updated_at FROM org_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	repos := []*sourcegraph.OrgRepo{}
+	repos := []*types.OrgRepo{}
 	defer rows.Close()
 	for rows.Next() {
-		var repo sourcegraph.OrgRepo
+		var repo types.OrgRepo
 		// orgID is temporarily nullable while we support both orgs and access tokens.
 		// TODO(nick): make org_id non-null when dropping support for access tokens.
 		var orgID sql.NullInt64

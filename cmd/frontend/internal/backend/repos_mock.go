@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -14,20 +15,20 @@ import (
 )
 
 type MockRepos struct {
-	Get                  func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	Get                  func(v0 context.Context, v1 *types.RepoSpec) (*sourcegraph.Repo, error)
 	GetByURI             func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*sourcegraph.Repo, error)
-	GetCommit            func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	GetCommit            func(v0 context.Context, v1 *types.RepoRevSpec) (*vcs.Commit, error)
 	ResolveRev           func(v0 context.Context, repo int32, rev string) (vcs.CommitID, error)
 	ListDeps             func(v0 context.Context, v1 []string) ([]string, error)
-	GetInventory         func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
-	GetInventoryUncached func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+	GetInventory         func(v0 context.Context, v1 *types.RepoRevSpec) (*inventory.Inventory, error)
+	GetInventoryUncached func(ctx context.Context, repoRev *types.RepoRevSpec) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo string) (err error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 	called = new(bool)
-	s.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	s.Get = func(ctx context.Context, repo *types.RepoSpec) (*sourcegraph.Repo, error) {
 		*called = true
 		if repo.ID != wantRepo {
 			t.Errorf("got repo %d, want %d", repo.ID, wantRepo)
@@ -53,7 +54,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, wantURI string, repoID int32) (ca
 
 func (s *MockRepos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (called *bool) {
 	called = new(bool)
-	s.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	s.Get = func(ctx context.Context, repo *types.RepoSpec) (*sourcegraph.Repo, error) {
 		*called = true
 		if repo.ID != returns.ID {
 			t.Errorf("got repo %d, want %d", repo.ID, returns.ID)
@@ -106,7 +107,7 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo int32, wantRe
 
 func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commit) (called *bool) {
 	called = new(bool)
-	s.GetCommit = func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
+	s.GetCommit = func(ctx context.Context, repoRev *types.RepoRevSpec) (*vcs.Commit, error) {
 		*called = true
 		return commit, nil
 	}

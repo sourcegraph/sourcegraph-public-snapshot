@@ -9,13 +9,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type settingsResolver struct {
 	subject  *configurationSubject
 	settings *types.Settings
-	user     *sourcegraph.User
+	user     *types.User
 }
 
 func (o *settingsResolver) ID() int32 {

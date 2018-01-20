@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 type orgRepoResolver struct {
-	org  *sourcegraph.Org
-	repo *sourcegraph.OrgRepo
+	org  *types.Org
+	repo *types.OrgRepo
 }
 
 func (o *orgRepoResolver) ID() int32 {
@@ -47,7 +47,7 @@ func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
 	Branch *string
 	Limit  *int32
 }) *threadConnectionResolver {
-	return &threadConnectionResolver{o.org, []*sourcegraph.OrgRepo{o.repo}, []string{o.repo.CanonicalRemoteID}, args.File, args.Branch, args.Limit}
+	return &threadConnectionResolver{o.org, []*types.OrgRepo{o.repo}, []string{o.repo.CanonicalRemoteID}, args.File, args.Branch, args.Limit}
 }
 
 func (o *orgRepoResolver) Repository(ctx context.Context) (*repositoryResolver, error) {

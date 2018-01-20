@@ -150,10 +150,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err
 		log15.Info("Indexing finished", "repo", repoName, "rev", rev, "commit", commit, "duration", time.Since(start))
 	}(time.Now())
 
-	inv, err := sourcegraph.InternalClient.ReposGetInventoryUncached(ctx, sourcegraph.RepoRevSpec{
-		Repo:     repo.ID,
-		CommitID: commit,
-	})
+	inv, err := sourcegraph.InternalClient.ReposGetInventoryUncached(ctx, repo.ID, commit)
 	if err != nil {
 		return fmt.Errorf("Repos.GetInventory failed: %s", err)
 	}

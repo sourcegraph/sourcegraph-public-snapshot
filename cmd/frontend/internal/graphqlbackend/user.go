@@ -10,13 +10,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // userResolver resolves a Sourcegraph user.
 type userResolver struct {
-	user *sourcegraph.User
+	user *types.User
 }
 
 func userByID(ctx context.Context, id graphql.ID) (*userResolver, error) {

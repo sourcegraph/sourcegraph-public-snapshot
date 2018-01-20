@@ -6,12 +6,12 @@ import (
 	"fmt"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type userActivityResolver struct {
-	userActivity *sourcegraph.UserActivity
+	userActivity *types.UserActivity
 }
 
 func (s *userActivityResolver) PageViews() int32 { return s.userActivity.PageViews }

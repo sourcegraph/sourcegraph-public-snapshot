@@ -17,11 +17,10 @@ import (
 
 	"github.com/lib/pq"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
-
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // UserNamePattern represents the limitations on Sourcegraph usernames. It is
@@ -84,7 +83,7 @@ type NewUser struct {
 //
 // Builtin users must also specify a password and email verification code upon creation. When the user's email is
 // verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
-func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.User, err error) {
+func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
 	}
@@ -192,7 +191,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *sourcegraph.Us
 		}
 	}
 
-	return &sourcegraph.User{
+	return &types.User{
 		ID:               id,
 		ExternalID:       &info.ExternalID,
 		Username:         info.Username,
@@ -219,7 +218,7 @@ func orgsForAllUsersToJoin(userOrgMap map[string][]string) ([]string, []error) {
 	return nil, errors
 }
 
-func (u *users) Update(ctx context.Context, id int32, username *string, displayName *string, avatarURL *string) (*sourcegraph.User, error) {
+func (u *users) Update(ctx context.Context, id int32, username *string, displayName *string, avatarURL *string) (*types.User, error) {
 	if username == nil && displayName == nil && avatarURL == nil {
 		return nil, errors.New("no update values provided")
 	}
@@ -305,7 +304,7 @@ func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) 
 // and may not send any more invites.
 var ErrInviteQuotaExceeded = errors.New("invite quota exceeded")
 
-func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error) {
+func (u *users) GetByID(ctx context.Context, id int32) (*types.User, error) {
 	if Mocks.Users.GetByID != nil {
 		return Mocks.Users.GetByID(ctx, id)
 	}
@@ -314,7 +313,7 @@ func (u *users) GetByID(ctx context.Context, id int32) (*sourcegraph.User, error
 
 // GetByExternalID gets the user (if any) from the database that is associated with an external
 // user account, based on the given provider and ID on the provider.
-func (u *users) GetByExternalID(ctx context.Context, provider, id string) (*sourcegraph.User, error) {
+func (u *users) GetByExternalID(ctx context.Context, provider, id string) (*types.User, error) {
 	if provider == "" || id == "" {
 		panic(fmt.Sprintf("GetByExternalID: both provider (%q) and id (%q) must be nonempty", provider, id))
 	}
@@ -324,11 +323,11 @@ func (u *users) GetByExternalID(ctx context.Context, provider, id string) (*sour
 	return u.getOneBySQL(ctx, "WHERE external_provider=$1 AND external_id=$2 AND deleted_at IS NULL LIMIT 1", provider, id)
 }
 
-func (u *users) GetByEmail(ctx context.Context, email string) (*sourcegraph.User, error) {
+func (u *users) GetByEmail(ctx context.Context, email string) (*types.User, error) {
 	return u.getOneBySQL(ctx, "WHERE id=(SELECT user_id FROM user_emails WHERE email=$1) AND deleted_at IS NULL LIMIT 1", email)
 }
 
-func (u *users) GetByUsername(ctx context.Context, username string) (*sourcegraph.User, error) {
+func (u *users) GetByUsername(ctx context.Context, username string) (*types.User, error) {
 	if Mocks.Users.GetByUsername != nil {
 		return Mocks.Users.GetByUsername(ctx, username)
 	}
@@ -338,7 +337,7 @@ func (u *users) GetByUsername(ctx context.Context, username string) (*sourcegrap
 
 var ErrNoCurrentUser = errors.New("no current user")
 
-func (u *users) GetByCurrentAuthUser(ctx context.Context) (*sourcegraph.User, error) {
+func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	if Mocks.Users.GetByCurrentAuthUser != nil {
 		return Mocks.Users.GetByCurrentAuthUser(ctx)
 	}
@@ -368,7 +367,7 @@ func (u *users) Count(ctx context.Context, opt UsersListOptions) (int, error) {
 
 // ListByOrg returns users for a given org. It can also query a list of specific
 // users by either user IDs or usernames.
-func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error) {
+func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*types.User, error) {
 	if Mocks.Users.ListByOrg != nil {
 		return Mocks.Users.ListByOrg(ctx, orgID, userIDs, usernames)
 	}
@@ -404,7 +403,7 @@ type UsersListOptions struct {
 	*LimitOffset
 }
 
-func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*sourcegraph.User, error) {
+func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*types.User, error) {
 	if Mocks.Users.List != nil {
 		return Mocks.Users.List(ctx, opt)
 	}
@@ -428,7 +427,7 @@ func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	return conds
 }
 
-func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.User, error) {
+func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.User, error) {
 	users, err := u.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -440,16 +439,16 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 }
 
 // getBySQL returns users matching the SQL query, if any exist.
-func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.User, error) {
+func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.User, error) {
 	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.external_id, u.username, u.display_name, u.external_provider, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	users := []*sourcegraph.User{}
+	users := []*types.User{}
 	defer rows.Close()
 	for rows.Next() {
-		var u sourcegraph.User
+		var u types.User
 		var dbExternalID, dbExternalProvider, avatarURL sql.NullString
 		err := rows.Scan(&u.ID, &dbExternalID, &u.Username, &u.DisplayName, &dbExternalProvider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {

@@ -15,6 +15,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -194,7 +195,7 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 }
 
 func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
-	var revSpec sourcegraph.RepoRevSpec
+	var revSpec types.RepoRevSpec
 	err := json.NewDecoder(r.Body).Decode(&revSpec)
 	if err != nil {
 		return err

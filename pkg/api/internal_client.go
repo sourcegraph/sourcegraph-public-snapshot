@@ -162,8 +162,8 @@ func (c *internalClient) ReposGetByURI(ctx context.Context, uri string) (*Repo, 
 	return &repo, nil
 }
 
-func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, revSpec RepoRevSpec) (*inventory.Inventory, error) {
-	req, err := json.Marshal(revSpec)
+func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo int32, commitID string) (*inventory.Inventory, error) {
+	req, err := json.Marshal(ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID})
 	if err != nil {
 		return nil, err
 	}

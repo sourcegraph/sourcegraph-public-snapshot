@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
@@ -26,7 +27,7 @@ func TestReposService_Get(t *testing.T) {
 
 	calledGet := db.Mocks.Repos.MockGet_Return(t, wantRepo)
 
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: 1})
+	repo, err := s.Get(ctx, &types.RepoSpec{ID: 1})
 	if err != nil {
 		t.Fatal(err)
 	}

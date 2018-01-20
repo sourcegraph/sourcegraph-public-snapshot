@@ -1,11 +1,9 @@
 package graphqlbackend
 
-import (
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-)
+import "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 type orgTagResolver struct {
-	orgTag *sourcegraph.OrgTag
+	orgTag *types.OrgTag
 }
 
 func (o *orgTagResolver) ID() int32 {

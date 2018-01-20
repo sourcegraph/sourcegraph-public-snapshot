@@ -312,7 +312,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		return nil, err
 	}
 
-	return actor.FromUser(usr), nil
+	return actor.FromUser(usr.ID), nil
 }
 
 func ssoErrMsg(err string, description interface{}) string {

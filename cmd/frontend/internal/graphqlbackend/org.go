@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -49,7 +48,7 @@ func orgByIDInt32(ctx context.Context, orgID int32) (*orgResolver, error) {
 }
 
 type orgResolver struct {
-	org *sourcegraph.Org
+	org *types.Org
 }
 
 func (o *orgResolver) ID() graphql.ID { return marshalOrgID(o.org.ID) }
@@ -118,7 +117,7 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	if args.RepoCanonicalRemoteID != nil {
 		canonicalRemoteIDs = append(canonicalRemoteIDs, *args.RepoCanonicalRemoteID)
 	}
-	var repos []*sourcegraph.OrgRepo
+	var repos []*types.OrgRepo
 	if len(canonicalRemoteIDs) > 0 {
 		var err error
 		repos, err = db.OrgRepos.GetByCanonicalRemoteIDs(ctx, o.org.ID, canonicalRemoteIDs)
@@ -151,7 +150,7 @@ func (o *orgResolver) Repo(ctx context.Context, args *struct {
 	return &orgRepoResolver{o.org, orgRepo}, nil
 }
 
-func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID string) (*sourcegraph.OrgRepo, error) {
+func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID string) (*types.OrgRepo, error) {
 	orgRepo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
 	if err == db.ErrRepoNotFound {
 		// We don't want to create org repos just because an org member queried for threads

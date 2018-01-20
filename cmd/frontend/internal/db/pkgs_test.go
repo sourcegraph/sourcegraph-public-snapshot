@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -143,7 +144,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		}
 	}
 
-	reposGetInventory := func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	reposGetInventory := func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error) {
 		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
 	}
 

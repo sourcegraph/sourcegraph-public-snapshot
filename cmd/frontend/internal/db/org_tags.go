@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 type orgTags struct{}
@@ -17,8 +17,8 @@ func (err ErrOrgTagNotFound) Error() string {
 	return fmt.Sprintf("tag not found: %v", err.args)
 }
 
-func (*orgTags) Create(ctx context.Context, orgID int32, name string) (*sourcegraph.OrgTag, error) {
-	t := &sourcegraph.OrgTag{
+func (*orgTags) Create(ctx context.Context, orgID int32, name string) (*types.OrgTag, error) {
+	t := &types.OrgTag{
 		OrgID: orgID,
 		Name:  name,
 	}
@@ -32,7 +32,7 @@ func (*orgTags) Create(ctx context.Context, orgID int32, name string) (*sourcegr
 	return t, nil
 }
 
-func (t *orgTags) CreateIfNotExists(ctx context.Context, orgID int32, name string) (*sourcegraph.OrgTag, error) {
+func (t *orgTags) CreateIfNotExists(ctx context.Context, orgID int32, name string) (*types.OrgTag, error) {
 	tag, err := t.GetByOrgIDAndTagName(ctx, orgID, name)
 	if err != nil {
 		if _, ok := err.(ErrOrgTagNotFound); !ok {
@@ -44,16 +44,16 @@ func (t *orgTags) CreateIfNotExists(ctx context.Context, orgID int32, name strin
 	return tag, nil
 }
 
-func (*orgTags) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgTag, error) {
+func (*orgTags) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.OrgTag, error) {
 	rows, err := globalDB.QueryContext(ctx, "SELECT id, org_id, name FROM org_tags "+query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	tags := []*sourcegraph.OrgTag{}
+	tags := []*types.OrgTag{}
 	defer rows.Close()
 	for rows.Next() {
-		t := sourcegraph.OrgTag{}
+		t := types.OrgTag{}
 		err := rows.Scan(&t.ID, &t.OrgID, &t.Name)
 		if err != nil {
 			return nil, err
@@ -66,7 +66,7 @@ func (*orgTags) getBySQL(ctx context.Context, query string, args ...interface{})
 	return tags, nil
 }
 
-func (t *orgTags) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgTag, error) {
+func (t *orgTags) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.OrgTag, error) {
 	rows, err := t.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -77,10 +77,10 @@ func (t *orgTags) getOneBySQL(ctx context.Context, query string, args ...interfa
 	return rows[0], nil
 }
 
-func (t *orgTags) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.OrgTag, error) {
+func (t *orgTags) GetByOrgID(ctx context.Context, orgID int32) ([]*types.OrgTag, error) {
 	return t.getBySQL(ctx, "WHERE org_id=$1 AND deleted_at IS NULL", orgID)
 }
 
-func (t *orgTags) GetByOrgIDAndTagName(ctx context.Context, orgID int32, name string) (*sourcegraph.OrgTag, error) {
+func (t *orgTags) GetByOrgIDAndTagName(ctx context.Context, orgID int32, name string) (*types.OrgTag, error) {
 	return t.getOneBySQL(ctx, "WHERE org_id=$1 AND name=$2 AND deleted_at IS NULL LIMIT 1", orgID, name)
 }

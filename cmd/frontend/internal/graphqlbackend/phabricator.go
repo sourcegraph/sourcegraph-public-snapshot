@@ -1,11 +1,9 @@
 package graphqlbackend
 
-import (
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-)
+import "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 type phabricatorRepoResolver struct {
-	*sourcegraph.PhabricatorRepo
+	*types.PhabricatorRepo
 }
 
 func (p *phabricatorRepoResolver) Callsign() string {

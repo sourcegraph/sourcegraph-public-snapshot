@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	store "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 var errMustBeSiteAdmin = errors.New("must be site admin")
@@ -42,7 +42,7 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	return nil
 }
 
-func currentUser(ctx context.Context) (*sourcegraph.User, error) {
+func currentUser(ctx context.Context) (*types.User, error) {
 	user, err := store.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if _, ok := err.(store.ErrUserNotFound); ok {

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
@@ -62,7 +62,7 @@ func ParseToken(tokenString string) (*TokenPayload, error) {
 	return &TokenPayload{OrgID: int32(orgID), OrgName: orgName, Email: email}, nil
 }
 
-func CreateOrgToken(email string, org *sourcegraph.Org) (string, error) {
+func CreateOrgToken(email string, org *types.Org) (string, error) {
 	payload := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email":   email,
 		"orgID":   org.ID,

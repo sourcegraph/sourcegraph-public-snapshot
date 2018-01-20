@@ -3,20 +3,20 @@ package db
 import (
 	"context"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 type userActivity struct{}
 
-func (*userActivity) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.UserActivity, error) {
+func (*userActivity) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.UserActivity, error) {
 	rows, err := globalDB.QueryContext(ctx, "SELECT id, page_views, search_queries FROM users "+query, args...)
 	if err != nil {
 		return nil, err
 	}
-	events := []*sourcegraph.UserActivity{}
+	events := []*types.UserActivity{}
 	defer rows.Close()
 	for rows.Next() {
-		e := sourcegraph.UserActivity{}
+		e := types.UserActivity{}
 		err := rows.Scan(&e.UserID, &e.PageViews, &e.SearchQueries)
 		if err != nil {
 			return nil, err
@@ -29,7 +29,7 @@ func (*userActivity) getBySQL(ctx context.Context, query string, args ...interfa
 	return events, nil
 }
 
-func (s *userActivity) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.UserActivity, error) {
+func (s *userActivity) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.UserActivity, error) {
 	rows, err := s.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (s *userActivity) getOneBySQL(ctx context.Context, query string, args ...in
 	return rows[0], nil
 }
 
-func (s *userActivity) GetByUserID(ctx context.Context, userID int32) (*sourcegraph.UserActivity, error) {
+func (s *userActivity) GetByUserID(ctx context.Context, userID int32) (*types.UserActivity, error) {
 	return s.getOneBySQL(ctx, "WHERE id=$1", userID)
 }
 

@@ -10,7 +10,6 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestSavedQueries(t *testing.T) {
@@ -24,7 +23,7 @@ func TestSavedQueries(t *testing.T) {
 	}
 
 	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
-		return []*configurationSubject{{user: &userResolver{user: &sourcegraph.User{ID: uid}}}}, nil
+		return []*configurationSubject{{user: &userResolver{user: &types.User{ID: uid}}}}, nil
 	}
 	defer func() { mockConfigurationCascadeSubjects = nil }()
 
@@ -35,7 +34,7 @@ func TestSavedQueries(t *testing.T) {
 	want := []*savedQueryResolver{
 		{
 			key:            "a",
-			subject:        &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}},
+			subject:        &configurationSubject{user: &userResolver{user: &types.User{ID: uid}}},
 			index:          0,
 			description:    "d",
 			query:          searchQuery{query: "q"},
@@ -53,10 +52,10 @@ func TestCreateSavedQuery(t *testing.T) {
 	uid := int32(1)
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}}
+	subject := &configurationSubject{user: &userResolver{user: &types.User{ID: uid}}}
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid}, nil)
+	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsCreateIfUpToDate := false
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
 		return &types.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
@@ -114,11 +113,11 @@ func TestUpdateSavedQuery(t *testing.T) {
 	uid := int32(1)
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}}
+	subject := &configurationSubject{user: &userResolver{user: &types.User{ID: uid}}}
 	newDescription := "d2"
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid}, nil)
+	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsGetLatest := false
 	calledSettingsCreateIfUpToDate := false
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {

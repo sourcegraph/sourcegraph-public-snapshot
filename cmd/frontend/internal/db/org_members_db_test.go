@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
@@ -57,7 +57,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 			"org3": []int32{1, 2},
 		}
 		got := map[string][]int32{}
-		for _, org := range []*sourcegraph.Org{org1, org2, org3} {
+		for _, org := range []*types.Org{org1, org2, org3} {
 			members, err := OrgMembers.GetByOrgID(ctx, org.ID)
 			if err != nil {
 				return err

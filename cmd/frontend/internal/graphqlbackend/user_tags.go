@@ -1,11 +1,9 @@
 package graphqlbackend
 
-import (
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-)
+import "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 type userTagResolver struct {
-	userTag *sourcegraph.UserTag
+	userTag *types.UserTag
 }
 
 func (u *userTagResolver) ID() int32 {

@@ -17,7 +17,7 @@ import (
 	gfm "github.com/shurcooL/github_flavored_markdown"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -325,7 +325,7 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 	Line      int32
 	Character int32
 }) (*dependencyReferencesResolver, error) {
-	depRefs, err := backend.Defs.DependencyReferences(ctx, sourcegraph.DependencyReferencesOptions{
+	depRefs, err := backend.Defs.DependencyReferences(ctx, types.DependencyReferencesOptions{
 		RepoID:    r.commit.repositoryIDInt32(),
 		CommitID:  string(r.commit.oid),
 		Language:  args.Language,

@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -33,7 +33,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo int32, rev string) (commitI
 	return vcsrepo.ResolveRevision(ctx, rev)
 }
 
-func (s *repos) GetCommit(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *vcs.Commit, err error) {
+func (s *repos) GetCommit(ctx context.Context, repoRev *types.RepoRevSpec) (res *vcs.Commit, err error) {
 	if Mocks.Repos.GetCommit != nil {
 		return Mocks.Repos.GetCommit(ctx, repoRev)
 	}

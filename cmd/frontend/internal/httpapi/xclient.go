@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -125,7 +126,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			}
 			span.LogEvent("listed repository packages")
 			for _, pkg := range pkgs {
-				repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: pkg.RepoID})
+				repo, err := backend.Repos.Get(ctx, &types.RepoSpec{ID: pkg.RepoID})
 				if err != nil {
 					return nil, errors.Wrap(err, "fetch repo for package")
 				}

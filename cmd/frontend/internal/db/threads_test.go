@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func TestThreads_Count(t *testing.T) {
@@ -24,7 +24,7 @@ func TestThreads_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	thread, err := Threads.Create(ctx, &sourcegraph.Thread{AuthorUserID: user.ID})
+	thread, err := Threads.Create(ctx, &types.Thread{AuthorUserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestThreads_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	thread, err := Threads.Create(ctx, &sourcegraph.Thread{AuthorUserID: user.ID})
+	thread, err := Threads.Create(ctx, &types.Thread{AuthorUserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}

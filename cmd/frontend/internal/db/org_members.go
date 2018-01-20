@@ -6,16 +6,17 @@ import (
 	"errors"
 	"fmt"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/lib/pq"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type orgMembers struct{}
 
-func (*orgMembers) Create(ctx context.Context, orgID, userID int32) (*sourcegraph.OrgMember, error) {
-	m := sourcegraph.OrgMember{
+func (*orgMembers) Create(ctx context.Context, orgID, userID int32) (*types.OrgMember, error) {
+	m := types.OrgMember{
 		OrgID:  orgID,
 		UserID: userID,
 	}
@@ -34,11 +35,11 @@ func (*orgMembers) Create(ctx context.Context, orgID, userID int32) (*sourcegrap
 	return &m, nil
 }
 
-func (m *orgMembers) GetByUserID(ctx context.Context, userID int32) ([]*sourcegraph.OrgMember, error) {
+func (m *orgMembers) GetByUserID(ctx context.Context, userID int32) ([]*types.OrgMember, error) {
 	return m.getBySQL(ctx, "WHERE user_id=$1", userID)
 }
 
-func (m *orgMembers) GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*sourcegraph.OrgMember, error) {
+func (m *orgMembers) GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*types.OrgMember, error) {
 	if Mocks.OrgMembers.GetByOrgIDAndUserID != nil {
 		return Mocks.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
 	}
@@ -51,7 +52,7 @@ func (*orgMembers) Remove(ctx context.Context, orgID, userID int32) error {
 }
 
 // GetByOrgID returns a list of all members of a given organization.
-func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*sourcegraph.OrgMember, error) {
+func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*types.OrgMember, error) {
 	org, err := Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
@@ -69,7 +70,7 @@ func (err ErrOrgMemberNotFound) Error() string {
 	return fmt.Sprintf("org member not found: %v", err.args)
 }
 
-func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.OrgMember, error) {
+func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.OrgMember, error) {
 	members, err := m.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -80,16 +81,16 @@ func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...inte
 	return members[0], nil
 }
 
-func (*orgMembers) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.OrgMember, error) {
+func (*orgMembers) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.OrgMember, error) {
 	rows, err := globalDB.QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	members := []*sourcegraph.OrgMember{}
+	members := []*types.OrgMember{}
 	defer rows.Close()
 	for rows.Next() {
-		m := sourcegraph.OrgMember{}
+		m := types.OrgMember{}
 		err := rows.Scan(&m.ID, &m.OrgID, &m.UserID, &m.CreatedAt, &m.UpdatedAt)
 		if err != nil {
 			return nil, err

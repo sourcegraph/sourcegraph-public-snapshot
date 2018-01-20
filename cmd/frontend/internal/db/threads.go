@@ -11,7 +11,7 @@ import (
 
 	"github.com/lib/pq"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 // threads provides access to the `threads` table.
@@ -19,7 +19,7 @@ import (
 // For a detailed overview of the schema, see schema.txt.
 type threads struct{}
 
-func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sourcegraph.Thread, error) {
+func (*threads) Create(ctx context.Context, newThread *types.Thread) (*types.Thread, error) {
 	if Mocks.Threads.Create != nil {
 		return Mocks.Threads.Create(ctx, newThread)
 	}
@@ -160,7 +160,7 @@ func (*threads) Create(ctx context.Context, newThread *sourcegraph.Thread) (*sou
 	return newThread, nil
 }
 
-func (t *threads) Get(ctx context.Context, id int32) (*sourcegraph.Thread, error) {
+func (t *threads) Get(ctx context.Context, id int32) (*types.Thread, error) {
 	if Mocks.Threads.Get != nil {
 		return Mocks.Threads.Get(ctx, id)
 	}
@@ -175,7 +175,7 @@ func (t *threads) Get(ctx context.Context, id int32) (*sourcegraph.Thread, error
 	return threads[0], nil
 }
 
-func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (*sourcegraph.Thread, error) {
+func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (*types.Thread, error) {
 	if Mocks.Threads.Update != nil {
 		return Mocks.Threads.Update(ctx, id, repoID, archive)
 	}
@@ -232,7 +232,7 @@ func (t *threads) listByFileQuery(orgID *int32, repoIDs []int32, branch, file *s
 	return sqlf.Sprintf(join+"WHERE %s", sqlf.Join(conds, "AND"))
 }
 
-func (t *threads) ListByFile(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string, limit int32) ([]*sourcegraph.Thread, error) {
+func (t *threads) ListByFile(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string, limit int32) ([]*types.Thread, error) {
 	q := sqlf.Sprintf("%s LIMIT %d", t.listByFileQuery(orgID, repoIDs, branch, file), limit)
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
@@ -246,7 +246,7 @@ type ThreadsListOptions struct {
 	*LimitOffset
 }
 
-func (t *threads) List(ctx context.Context, opt *ThreadsListOptions) ([]*sourcegraph.Thread, error) {
+func (t *threads) List(ctx context.Context, opt *ThreadsListOptions) ([]*types.Thread, error) {
 	if Mocks.Threads.List != nil {
 		return Mocks.Threads.List(ctx, opt)
 	}
@@ -284,7 +284,7 @@ func (t *threads) getCountBySQL(ctx context.Context, query string, args ...inter
 }
 
 // getBySQL returns threads matching the SQL query, if any exist.
-func (*threads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*sourcegraph.Thread, error) {
+func (*threads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Thread, error) {
 	rows, err := globalDB.QueryContext(ctx, `
 		SELECT
 			t.id,
@@ -316,10 +316,10 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 		return nil, err
 	}
 
-	threads := []*sourcegraph.Thread{}
+	threads := []*types.Thread{}
 	defer rows.Close()
 	for rows.Next() {
-		var t sourcegraph.Thread
+		var t types.Thread
 		var archivedAt pq.NullTime
 		var rangeLength sql.NullInt64
 		var htmlBefore, html, htmlAfter, textBefore, text, textAfter sql.NullString
@@ -364,7 +364,7 @@ func (*threads) getBySQL(ctx context.Context, query string, args ...interface{})
 			t.ArchivedAt = nil
 		}
 		if htmlBefore.Valid && html.Valid && htmlAfter.Valid && textBefore.Valid && text.Valid && textAfter.Valid && textSelectionRangeStart.Valid && textSelectionRangeLength.Valid {
-			t.Lines = &sourcegraph.ThreadLines{
+			t.Lines = &types.ThreadLines{
 				HTMLBefore:               htmlBefore.String,
 				HTML:                     html.String,
 				HTMLAfter:                htmlAfter.String,

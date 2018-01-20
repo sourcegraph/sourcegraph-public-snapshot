@@ -10,8 +10,9 @@ import (
 	"path"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+
 	"github.com/oklog/ulid"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // AppURL is the base URL relative to which share links will be resolved.
@@ -39,7 +40,7 @@ func (err ErrSharedItemNotFound) Error() string {
 // For a detailed overview of the schema, see schema.md.
 type sharedItems struct{}
 
-func (s *sharedItems) Create(ctx context.Context, item *sourcegraph.SharedItem) (*url.URL, error) {
+func (s *sharedItems) Create(ctx context.Context, item *types.SharedItem) (*url.URL, error) {
 	if item.ULID != "" {
 		return nil, errors.New("SharedItems.Create: cannot specify ULID when creating shared item")
 	}
@@ -78,12 +79,12 @@ func (s *sharedItems) Create(ctx context.Context, item *sourcegraph.SharedItem) 
 	return s.ulidToURL(ulid.String(), item.CommentID)
 }
 
-func (s *sharedItems) Get(ctx context.Context, ulid string) (*sourcegraph.SharedItem, error) {
+func (s *sharedItems) Get(ctx context.Context, ulid string) (*types.SharedItem, error) {
 	if Mocks.SharedItems.Get != nil {
 		return Mocks.SharedItems.Get(ctx, ulid)
 	}
 
-	item := &sourcegraph.SharedItem{ULID: ulid}
+	item := &types.SharedItem{ULID: ulid}
 	err := globalDB.QueryRowContext(ctx, "SELECT author_user_id, thread_id, comment_id, public FROM shared_items WHERE ulid=$1 AND deleted_at IS NULL", ulid).Scan(
 		&item.AuthorUserID,
 		&item.ThreadID,
