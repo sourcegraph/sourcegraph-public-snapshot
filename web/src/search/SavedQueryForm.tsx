@@ -62,17 +62,15 @@ export class SavedQueryForm extends React.Component<Props, State> {
             configurationCascade
                 .pipe(map(({ subjects }) => subjects), filter(subjects => !!subjects))
                 .subscribe(subjects => {
-                    if (subjects && subjects.length) {
-                        const subject = subjects.find(s => !!s.id)
+                    const subject = subjects.find(s => !!s.id)
 
-                        this.setState(state => ({
-                            subjectOptions: subjects,
-                            values: {
-                                ...state.values,
-                                subject: state.values.subject || (subject && subject.id) || '',
-                            },
-                        }))
-                    }
+                    this.setState(state => ({
+                        subjectOptions: subjects,
+                        values: {
+                            ...state.values,
+                            subject: state.values.subject || (subject && subject.id) || '',
+                        },
+                    }))
                 })
         )
 
