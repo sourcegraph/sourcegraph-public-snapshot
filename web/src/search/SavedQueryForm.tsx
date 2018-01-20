@@ -65,20 +65,20 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     if (subjects && subjects.length) {
                         const subject = subjects.find(s => !!s.id)
 
-                        this.setState({
+                        this.setState(state => ({
                             subjectOptions: subjects,
                             values: {
-                                ...this.state.values,
-                                subject: this.state.values.subject || (subject && subject.id) || '',
+                                ...state.values,
+                                subject: state.values.subject || (subject && subject.id) || '',
                             },
-                        })
+                        }))
                     }
                 })
         )
 
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter((e: KeyboardEvent) => e.key === 'Escape' && !this.state.isSubmitting))
+                .pipe(filter(event => event.key === 'Escape' && !this.state.isSubmitting))
                 .subscribe(() => this.props.onDidCancel())
         )
     }
@@ -186,8 +186,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
         )
     }
 
-    private handleSubmit = (evt: React.FormEvent<HTMLFormElement>) => {
-        evt.preventDefault()
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
 
         this.setState({ isSubmitting: true })
 
