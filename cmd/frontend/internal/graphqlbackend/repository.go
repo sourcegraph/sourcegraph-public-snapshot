@@ -4,24 +4,24 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"github.com/neelance/parallel"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type repositoryResolver struct {
-	repo        *sourcegraph.Repo
+	repo        *types.Repo
 	redirectURL *string
 }
 
@@ -89,10 +89,7 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: r.repo.ID,
-		Rev:  args.Rev,
-	})
+	rev, err := backend.Repos.ResolveRev(ctx, r.repo.ID, args.Rev)
 	if err != nil {
 		if err == vcs.ErrRevisionNotFound {
 			return nil, nil
@@ -102,7 +99,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	commit, err := backend.Repos.GetCommit(ctx, &sourcegraph.RepoRevSpec{Repo: r.repo.ID, CommitID: rev.CommitID})
+	commit, err := backend.Repos.GetCommit(ctx, &types.RepoRevSpec{Repo: r.repo.ID, CommitID: string(rev)})
 	if err != nil {
 		return nil, err
 	}
@@ -135,48 +132,22 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error)
 	return &t, nil
 }
 
-func (r *repositoryResolver) Private() bool {
-	return r.repo.Private
-}
-
 func (r *repositoryResolver) Language() string {
 	return r.repo.Language
 }
 
 func (r *repositoryResolver) Enabled() bool { return r.repo.Enabled }
 
-func (r *repositoryResolver) Fork() bool {
-	return r.repo.Fork
-}
-
-func (r *repositoryResolver) StarsCount() *int32 {
-	return uintPtrToInt32Ptr(r.repo.StarsCount)
-}
-
-func (r *repositoryResolver) ForksCount() *int32 {
-	return uintPtrToInt32Ptr(r.repo.ForksCount)
-}
-
-func uintPtrToInt32Ptr(v *uint) *int32 {
-	if v == nil || *v > math.MaxInt32 {
-		return nil
-	}
-	v32 := int32(*v)
-	return &v32
-}
-
-func (r *repositoryResolver) PushedAt() string {
-	if r.repo.PushedAt != nil {
-		return r.repo.PushedAt.String()
-	}
-	return ""
-}
-
 func (r *repositoryResolver) CreatedAt() string {
-	if r.repo.CreatedAt != nil {
-		return r.repo.CreatedAt.String()
+	return r.repo.CreatedAt.Format(time.RFC3339)
+}
+
+func (r *repositoryResolver) UpdatedAt() *string {
+	if r.repo.UpdatedAt != nil {
+		t := r.repo.UpdatedAt.Format(time.RFC3339)
+		return &t
 	}
-	return ""
+	return nil
 }
 
 func (r *repositoryResolver) URL() *string {
@@ -248,7 +219,7 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 	)
 	for _, repoSpec := range totalRefs {
 		run.Acquire()
-		go func(repoSpec sourcegraph.RepoSpec) {
+		go func(repoSpec types.RepoSpec) {
 			defer func() {
 				if r := recover(); r != nil {
 					run.Error(fmt.Errorf("recover: %v", r))
@@ -293,7 +264,7 @@ func (t *totalRefListResolver) Total() int32 {
 	return t.total
 }
 
-type sortByRepoSpecID []sourcegraph.RepoSpec
+type sortByRepoSpecID []types.RepoSpec
 
 func (s sortByRepoSpecID) Len() int      { return len(s) }
 func (s sortByRepoSpecID) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

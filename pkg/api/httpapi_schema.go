@@ -1,6 +1,11 @@
-package sourcegraph
+package api
 
 type DefsRefreshIndexRequest struct {
+	URI      string `json:"uri"`
+	Revision string `json:"revision"`
+}
+
+type PkgsRefreshIndexRequest struct {
 	URI      string `json:"uri"`
 	Revision string `json:"revision"`
 }
@@ -9,7 +14,6 @@ type RepoCreateOrUpdateRequest struct {
 	URI         string `json:"uri"`
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
-	Private     bool   `json:"private"`
 	Enabled     bool   `json:"enabled"`
 }
 
@@ -22,6 +26,11 @@ type RepoUpdateIndexRequest struct {
 type RepoUnindexedDependenciesRequest struct {
 	RepoID   int32  `json:"repoID"`
 	Language string `json:"language"`
+}
+
+type ReposGetInventoryUncachedRequest struct {
+	Repo     int32
+	CommitID string
 }
 
 type PhabricatorRepoCreateRequest struct {

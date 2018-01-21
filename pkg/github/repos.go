@@ -2,14 +2,12 @@ package github
 
 import (
 	"encoding/json"
-	"math"
 	"net/http"
 
 	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -30,22 +28,22 @@ func init() {
 }
 
 type cachedRepo struct {
-	sourcegraph.Repo
+	github.Repository
 
 	// NotFound indicates that the GitHub API returned a 404 when
 	// using an Unauthed or Authed request (repo may be exist privately for another authed user).
 	NotFound bool
 }
 
-var GetRepoMock func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+var GetRepoMock func(ctx context.Context, repo string) (*github.Repository, error)
 
-func MockGetRepo_Return(returns *sourcegraph.Repo) {
-	GetRepoMock = func(context.Context, string) (*sourcegraph.Repo, error) {
+func MockGetRepo_Return(returns *github.Repository) {
+	GetRepoMock = func(context.Context, string) (*github.Repository, error) {
 		return returns, nil
 	}
 }
 
-func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+func GetRepo(ctx context.Context, repo string) (*github.Repository, error) {
 	if GetRepoMock != nil {
 		return GetRepoMock(ctx, repo)
 	}
@@ -69,10 +67,10 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		if cached.NotFound {
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 		}
-		return &cached.Repo, nil
+		return &cached.Repository, nil
 	}
 
-	remoteRepo, err := getFromAPI(ctx, owner, repoName)
+	ghrepo, err := getFromAPI(ctx, owner, repoName)
 	if legacyerr.ErrCode(err) == legacyerr.NotFound {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
@@ -84,11 +82,11 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		return nil, err
 	}
 
-	remoteRepoCopy := *remoteRepo
-	addToPublicCache(repo, &cachedRepo{Repo: remoteRepoCopy})
+	ghrepoCopy := *ghrepo
+	addToPublicCache(repo, &cachedRepo{Repository: ghrepoCopy})
 	reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
 
-	return remoteRepo, nil
+	return ghrepo, nil
 }
 
 // getFromPublicCache attempts to get a response from the redis cache.
@@ -120,54 +118,13 @@ var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
 
 // getFromAPI attempts to fetch a public or private repo from the GitHub API
 // without use of the redis cache.
-func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
+func getFromAPI(ctx context.Context, owner, repoName string) (*github.Repository, error) {
 	ghrepo, resp, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
 	if err == nil {
-		return ToRepo(ghrepo), nil
+		return ghrepo, nil
 	}
 	if resp != nil && resp.StatusCode == http.StatusNotFound {
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
 	}
 	return nil, err
-}
-
-func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
-	strv := func(s *string) string {
-		if s == nil {
-			return ""
-		}
-		return *s
-	}
-	boolv := func(b *bool) bool {
-		if b == nil {
-			return false
-		}
-		return *b
-	}
-	uintv := func(v *int) *uint {
-		if v == nil || *v > math.MaxUint32 {
-			return nil
-		}
-		u := uint(*v)
-		return &u
-	}
-	repo := sourcegraph.Repo{
-		URI:         "github.com/" + *ghrepo.FullName,
-		Description: strv(ghrepo.Description),
-		Language:    strv(ghrepo.Language),
-		Private:     boolv(ghrepo.Private),
-		Fork:        boolv(ghrepo.Fork),
-		StarsCount:  uintv(ghrepo.StargazersCount),
-		ForksCount:  uintv(ghrepo.ForksCount),
-	}
-	if ghrepo.CreatedAt != nil {
-		repo.CreatedAt = &ghrepo.CreatedAt.Time
-	}
-	if ghrepo.UpdatedAt != nil {
-		repo.UpdatedAt = &ghrepo.UpdatedAt.Time
-	}
-	if ghrepo.PushedAt != nil {
-		repo.PushedAt = &ghrepo.PushedAt.Time
-	}
-	return &repo
 }

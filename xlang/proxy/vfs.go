@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/ctxvfs"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -29,7 +29,7 @@ var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) 
 	// later process to fail (since ArchiveFS fetches lazily). So we check
 	// existance first.
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", rev+"^0")
-	cmd.Repo = &sourcegraph.Repo{URI: repo}
+	cmd.Repo = &api.Repo{URI: repo}
 	cmd.EnsureRevision = rev
 	err := cmd.Run(ctx)
 	if err != nil {

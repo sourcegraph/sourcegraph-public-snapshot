@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 // MigrateAdminUsernames updates the DB rows for the usernames listed in the adminUsernames

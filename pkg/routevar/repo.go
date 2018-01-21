@@ -6,7 +6,7 @@ import (
 )
 
 // A RepoRev specifies a repo at a revision. Unlike
-// sourcegraph.RepoRevSpec, the revision need not be an absolute
+// api.RepoRevSpec, the revision need not be an absolute
 // commit ID. This RepoRev type is appropriate for user input (e.g.,
 // from a URL), where it is convenient to allow users to specify
 // non-absolute commit IDs that the server can resolve.

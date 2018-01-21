@@ -583,23 +583,10 @@ type Repository implements Node {
     # NOTE: Disabling a repository does not provide any additional security. This field is merely a
     # guideline to UI implementations.
     enabled: Boolean!
-    # Whether the repository is a fork (of another repository). This field is not guaranteed to be
-    # set correctly and up-to-date with the repository's origin code host.
-    fork: Boolean!
-    # The number of stars on this repository on its origin code host. This field is not guaranteed to be
-    # set correctly and up-to-date with the repository's origin code host.
-    starsCount: Int
-    # The number of forks of this repository on its origin code host. This field is not guaranteed to be
-    # set correctly and up-to-date with the repository's origin code host.
-    forksCount: Int
-    # Whether the repository is private on its origin code host. This field is not guaranteed to be
-    # set correctly and up-to-date with the repository's origin code host.
-    private: Boolean!
     # The date when this repository was created on Sourcegraph.
     createdAt: String!
-    # The date when this repository was last pushed to on its origin code host. This field is not guaranteed to be
-    # set correctly and up-to-date with the repository's origin code host.
-    pushedAt: String!
+    # The date when this repository's metadata was last updated on Sourcegraph.
+    updatedAt: String
     # Returns information about the given commit in the repository.
     commit(rev: String!): GitCommit
     # Information and status related to mirroring, if this repository is a mirror of another repository (e.g., on

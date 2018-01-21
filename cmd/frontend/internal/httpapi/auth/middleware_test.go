@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 func init() {
@@ -46,13 +46,13 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			rr := httptest.NewRecorder()
 			req.Header.Set(ssoUserHeader, "alice")
 			var calledGetByUsername, calledCreate bool
-			db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*sourcegraph.User, error) {
+			db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
 				calledGetByUsername = true
 				return nil, db.ErrUserNotFound{}
 			}
-			db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*sourcegraph.User, error) {
+			db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*types.User, error) {
 				calledCreate = true
-				return &sourcegraph.User{ID: 1, ExternalID: &info.ExternalID, Username: info.Username}, nil
+				return &types.User{ID: 1, ExternalID: &info.ExternalID, Username: info.Username}, nil
 			}
 			defer func() { db.Mocks = db.MockStores{} }()
 			handler.ServeHTTP(rr, req)
@@ -83,10 +83,10 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			rr := httptest.NewRecorder()
 			req.Header.Set(ssoUserHeader, "bob")
 			var calledGetByUsername bool
-			db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*sourcegraph.User, error) {
+			db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
 				calledGetByUsername = true
 				extID := "http-header:" + username
-				return &sourcegraph.User{ID: 1, ExternalID: &extID, Username: username}, nil
+				return &types.User{ID: 1, ExternalID: &extID, Username: username}, nil
 			}
 			defer func() { db.Mocks = db.MockStores{} }()
 			handler.ServeHTTP(rr, req)

@@ -6,16 +6,17 @@ import (
 
 	"github.com/neelance/graphql-go/gqltesting"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestDeps(t *testing.T) {
 	resetMocks()
 
-	db.Mocks.GlobalDeps.Dependencies = func(ctx context.Context, op db.DependenciesOptions) ([]*sourcegraph.DependencyReference, error) {
+	db.Mocks.GlobalDeps.Dependencies = func(ctx context.Context, op db.DependenciesOptions) ([]*api.DependencyReference, error) {
 		if op.Language == "python" && op.DepData["name"] == "wwerkzeug" {
-			return []*sourcegraph.DependencyReference{{
+			return []*api.DependencyReference{{
 				RepoID: 1,
 				DepData: map[string]interface{}{
 					"name": "wwerkzeug",
@@ -24,7 +25,7 @@ func TestDeps(t *testing.T) {
 		}
 		return nil, nil
 	}
-	db.Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "github.com/pallets/fflask"})
+	db.Mocks.Repos.MockGet_Return(t, &types.Repo{ID: 1, URI: "github.com/pallets/fflask"})
 
 	gqltesting.RunTests(t, []*gqltesting.Test{{
 		Schema: GraphQLSchema,

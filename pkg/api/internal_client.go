@@ -1,4 +1,4 @@
-package sourcegraph
+package api
 
 import (
 	"bytes"
@@ -74,24 +74,27 @@ func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri, revision str
 	if err != nil {
 		return err
 	}
-	resp, err := c.post("defs/refresh-index", req)
-	if err != nil {
-		return err
-	}
-	var inv inventory.Inventory
-	err = json.NewDecoder(resp.Body).Decode(&inv)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = c.post("defs/refresh-index", req)
+	return err
 }
 
-func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, private, enabled bool) (*Repo, error) {
+func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri, revision string) error {
+	req, err := json.Marshal(&PkgsRefreshIndexRequest{
+		URI:      uri,
+		Revision: revision,
+	})
+	if err != nil {
+		return err
+	}
+	_, err = c.post("pkgs/refresh-index", req)
+	return err
+}
+
+func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, enabled bool) (*Repo, error) {
 	req, err := json.Marshal(RepoCreateOrUpdateRequest{
 		URI:         uri,
 		Description: description,
 		Fork:        fork,
-		Private:     private,
 		Enabled:     enabled,
 	})
 	if err != nil {
@@ -158,8 +161,8 @@ func (c *internalClient) ReposGetByURI(ctx context.Context, uri string) (*Repo, 
 	return &repo, nil
 }
 
-func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, revSpec RepoRevSpec) (*inventory.Inventory, error) {
-	req, err := json.Marshal(revSpec)
+func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo int32, commitID string) (*inventory.Inventory, error) {
+	req, err := json.Marshal(ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID})
 	if err != nil {
 		return nil, err
 	}

@@ -10,9 +10,8 @@ import (
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	"github.com/neelance/parallel"
@@ -112,14 +111,11 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if err != nil {
 				return repoCommitSpec{}, err
 			}
-			rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-				Repo: repo.ID,
-				Rev:  u.RawQuery,
-			})
+			rev, err := backend.Repos.ResolveRev(ctx, repo.ID, u.RawQuery)
 			if err != nil {
 				return repoCommitSpec{}, err
 			}
-			spec := repoCommitSpec{repo: repo.ID, commitID: rev.CommitID}
+			spec := repoCommitSpec{repo: repo.ID, commitID: string(rev)}
 			cache[key] = spec
 			return spec, nil
 		}

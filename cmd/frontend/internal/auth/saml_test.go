@@ -23,8 +23,8 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 	"github.com/crewjam/saml/samlidp"
 )
@@ -154,9 +154,9 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	mockedProvider := idpHTTPServer.URL + "/metadata"
 	mockedExternalID := samlToExternalID(mockedProvider, "testuser_id")
 	const mockedUserID = 123
-	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*sourcegraph.User, error) {
+	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
 		if provider == mockedProvider && id == mockedExternalID {
-			return &sourcegraph.User{ID: mockedUserID, ExternalID: &id, Username: id}, nil
+			return &types.User{ID: mockedUserID, ExternalID: &id, Username: id}, nil
 		}
 		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
 	}

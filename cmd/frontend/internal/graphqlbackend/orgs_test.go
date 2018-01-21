@@ -5,17 +5,17 @@ import (
 	"testing"
 
 	"github.com/neelance/graphql-go/gqltesting"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func TestOrgs(t *testing.T) {
 	resetMocks()
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*sourcegraph.User, error) {
-		return &sourcegraph.User{SiteAdmin: true}, nil
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
 	}
-	db.Mocks.Orgs.List = func(ctx context.Context, opt *db.OrgsListOptions) ([]*sourcegraph.Org, error) {
-		return []*sourcegraph.Org{{Name: "org1"}, {Name: "org2"}}, nil
+	db.Mocks.Orgs.List = func(ctx context.Context, opt *db.OrgsListOptions) ([]*types.Org, error) {
+		return []*types.Org{{Name: "org1"}, {Name: "org2"}}, nil
 	}
 	db.Mocks.Orgs.Count = func(context.Context, db.OrgsListOptions) (int, error) { return 2, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{

@@ -5,16 +5,16 @@ import (
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type settingsResolver struct {
 	subject  *configurationSubject
-	settings *sourcegraph.Settings
-	user     *sourcegraph.User
+	settings *types.Settings
+	user     *types.User
 }
 
 func (o *settingsResolver) ID() int32 {
@@ -56,7 +56,7 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := db.Settings.CreateIfUpToDate(ctx, types.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := db.Settings.CreateIfUpToDate(ctx, types.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 }
 
 func currentSiteSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := db.Settings.GetLatest(ctx, sourcegraph.ConfigurationSubject{})
+	settings, err := db.Settings.GetLatest(ctx, types.ConfigurationSubject{})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := db.Settings.CreateIfUpToDate(ctx, sourcegraph.ConfigurationSubject{}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := db.Settings.CreateIfUpToDate(ctx, types.ConfigurationSubject{}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}

@@ -6,8 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestRepoShieldFmt(t *testing.T) {
@@ -36,21 +37,19 @@ func TestRepoShield(t *testing.T) {
 		"value": " 200 projects",
 	}
 
-	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*types.Repo, error) {
 		switch uri {
 		case "github.com/gorilla/mux":
-			return &sourcegraph.Repo{ID: 2, URI: uri}, nil
+			return &types.Repo{ID: 2, URI: uri}, nil
 		default:
 			panic("wrong path")
 		}
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
-		if op.Repo != 2 || op.Rev != "master" {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
+		if repo != 2 || rev != "master" {
 			t.Error("wrong arguments to ResolveRev")
 		}
-		return &sourcegraph.ResolvedRev{
-			CommitID: "aed",
-		}, nil
+		return "aed", nil
 	}
 	backend.Mocks.Defs.TotalRefs = func(ctx context.Context, source string) (int, error) {
 		if source != "github.com/gorilla/mux" {

@@ -6,11 +6,10 @@ import (
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 var ssoUserHeader = conf.AuthHTTPHeader()
@@ -50,6 +49,11 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+const (
+	// UserProviderHTTPHeader is the http-header auth provider.
+	UserProviderHTTPHeader = "http-header"
+)
+
 func getUserFromSSOHeaderUsername(ctx context.Context, username string) (userID int32, err error) {
 	user, err := db.Users.GetByUsername(ctx, username)
 	if err == nil {
@@ -61,9 +65,9 @@ func getUserFromSSOHeaderUsername(ctx context.Context, username string) (userID 
 
 	// User does not exist, so we need to create it.
 	user, err = db.Users.Create(ctx, db.NewUser{
-		ExternalID:       sourcegraph.UserProviderHTTPHeader + ":" + username,
+		ExternalID:       UserProviderHTTPHeader + ":" + username,
 		Username:         username,
-		ExternalProvider: sourcegraph.UserProviderHTTPHeader,
+		ExternalProvider: UserProviderHTTPHeader,
 	})
 	// Handle the race condition where the new user performs two requests
 	// and both try to create the user.

@@ -5,14 +5,14 @@ import (
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 type orgMemberResolver struct {
-	org    *sourcegraph.Org
-	member *sourcegraph.OrgMember
-	user   *sourcegraph.User
+	org    *types.Org
+	member *types.OrgMember
+	user   *types.User
 }
 
 func (m *orgMemberResolver) ID() int32 {

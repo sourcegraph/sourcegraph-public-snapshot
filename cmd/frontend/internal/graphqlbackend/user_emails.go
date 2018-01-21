@@ -5,8 +5,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )
 
 func (u *userResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {

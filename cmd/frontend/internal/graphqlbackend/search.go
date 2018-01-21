@@ -17,13 +17,13 @@ import (
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
+	searchquerytypes "sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -65,7 +65,7 @@ func (r *schemaResolver) Search(args *searchArgs) (*searchResolver, error) {
 	}, nil
 }
 
-func asString(v *types.Value) string {
+func asString(v *searchquerytypes.Value) string {
 	switch {
 	case v.String != nil:
 		return *v.String
@@ -91,14 +91,14 @@ type searchResolver struct {
 	repoErr                   error
 }
 
-var mockResolveRepoGroups func() (map[string][]*sourcegraph.Repo, error)
+var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
 
-func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, error) {
+func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	if mockResolveRepoGroups != nil {
 		return mockResolveRepoGroups()
 	}
 
-	groups := map[string][]*sourcegraph.Repo{}
+	groups := map[string][]*types.Repo{}
 
 	// Repo groups can be defined in the search.repoGroups settings field.
 	merged, err := (&configurationCascadeResolver{}).Merged(ctx)
@@ -110,9 +110,9 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 		return nil, err
 	}
 	for name, repoPaths := range settings.SearchRepositoryGroups {
-		repos := make([]*sourcegraph.Repo, len(repoPaths))
+		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &sourcegraph.Repo{URI: repoPath}
+			repos[i] = &types.Repo{URI: repoPath}
 		}
 		groups[name] = repos
 	}
@@ -130,10 +130,10 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*sourcegraph.Repo, err
 
 var (
 	sampleReposMu sync.Mutex
-	sampleRepos   []*sourcegraph.Repo
+	sampleRepos   []*types.Repo
 )
 
-func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
+func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 	sampleReposMu.Lock()
 	defer sampleReposMu.Unlock()
 	if sampleRepos == nil {
@@ -146,7 +146,7 @@ func getSampleRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 			"github.com/golang/oauth2",
 			"github.com/pallets/flask",
 		}
-		repos := make([]*sourcegraph.Repo, len(sampleRepoPaths))
+		repos := make([]*types.Repo, len(sampleRepoPaths))
 		for i, path := range sampleRepoPaths {
 			repo, err := backend.Repos.GetByURI(ctx, path)
 			if err != nil {
@@ -299,18 +299,18 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		ExcludePattern:  unionRegExps(excludePatterns),
 		Enabled:         true,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		ListOptions: sourcegraph.ListOptions{PerPage: int32(maxRepoListSize + 1)},
+		LimitOffset: &db.LimitOffset{Limit: maxRepoListSize + 1},
 	})
 	tr.LazyPrintf("Repos.List - done")
 	if err != nil {
 		return nil, nil, nil, false, err
 	}
-	overLimit = len(repos.Repos) >= maxRepoListSize
+	overLimit = len(repos) >= maxRepoListSize
 
-	repoRevisions = make([]*repositoryRevisions, 0, len(repos.Repos))
-	repoResolvers = make([]*searchResultResolver, 0, len(repos.Repos))
+	repoRevisions = make([]*repositoryRevisions, 0, len(repos))
+	repoResolvers = make([]*searchResultResolver, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
-	for _, repo := range repos.Repos {
+	for _, repo := range repos {
 		repoRev := &repositoryRevisions{
 			repo: repo,
 			revs: getRevsForMatchedRepo(repo.URI),

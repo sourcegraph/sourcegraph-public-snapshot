@@ -7,25 +7,25 @@ import (
 	"testing"
 	"time"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 func TestThreads_Create(t *testing.T) {
 	ctx := context.Background()
 
-	wantRepo := sourcegraph.OrgRepo{
+	wantRepo := types.OrgRepo{
 		CanonicalRemoteID: "test",
 		CloneURL:          "https://test.com/test",
 	}
-	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) { return &sourcegraph.User{}, nil }
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{}, nil }
 	db.Mocks.UserEmails.GetEmail = func(ctx context.Context, id int32) (string, bool, error) {
 		return "alice@example.com", true, nil
 	}
-	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
+	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMember{}, nil)
 	db.Mocks.OrgRepos.MockGetByCanonicalRemoteID_Return(t, nil, db.ErrRepoNotFound)
-	repoCreateCalled, repoCreateCalledWith := db.Mocks.OrgRepos.MockCreate_Return(t, &sourcegraph.OrgRepo{
+	repoCreateCalled, repoCreateCalledWith := db.Mocks.OrgRepos.MockCreate_Return(t, &types.OrgRepo{
 		ID:                1,
 		CanonicalRemoteID: wantRepo.CanonicalRemoteID,
 		CreatedAt:         time.Now(),
@@ -33,9 +33,9 @@ func TestThreads_Create(t *testing.T) {
 	}, nil)
 	txemail.MockSend = func(context.Context, txemail.Message) error { return nil }
 
-	db.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
+	db.Mocks.Orgs.MockGetByID_Return(t, &types.Org{}, nil)
 	repoRev, lineRev := "abcd", "dcba"
-	threadCreateCalled, _ := db.Mocks.Threads.MockCreate_Return(t, &sourcegraph.Thread{
+	threadCreateCalled, _ := db.Mocks.Threads.MockCreate_Return(t, &types.Thread{
 		ID:                1,
 		OrgRepoID:         wantRepo.ID,
 		RepoRevisionPath:  "foo.go",
@@ -78,25 +78,25 @@ func TestThreads_Create(t *testing.T) {
 }
 
 func TestThreads_Update(t *testing.T) {
-	wantRepo := sourcegraph.OrgRepo{
+	wantRepo := types.OrgRepo{
 		CanonicalRemoteID: "test",
 	}
 
-	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) { return &sourcegraph.User{ID: 1}, nil }
-	db.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1, AuthorUserID: 1}, nil)
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{ID: 1}, nil }
+	db.Mocks.Threads.MockGet_Return(t, &types.Thread{OrgRepoID: 1, AuthorUserID: 1}, nil)
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &wantRepo, nil)
-	called := db.Mocks.Threads.MockUpdate_Return(t, &sourcegraph.Thread{OrgRepoID: 1, ArchivedAt: &time.Time{}}, nil)
-	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
-	db.Mocks.Comments.GetAllForThread = func(ctx context.Context, threadID int32) ([]*sourcegraph.Comment, error) {
-		return []*sourcegraph.Comment{
+	called := db.Mocks.Threads.MockUpdate_Return(t, &types.Thread{OrgRepoID: 1, ArchivedAt: &time.Time{}}, nil)
+	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMember{}, nil)
+	db.Mocks.Comments.GetAllForThread = func(ctx context.Context, threadID int32) ([]*types.Comment, error) {
+		return []*types.Comment{
 			{AuthorUserID: 2},
 		}, nil
 	}
-	mockEmailsToNotify = func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
+	mockEmailsToNotify = func(ctx context.Context, comments []*types.Comment, author types.User, org types.Org) ([]string, error) {
 		return []string{"a@example.com"}, nil
 	}
 	defer func() { mockEmailsToNotify = nil }()
-	db.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
+	db.Mocks.Orgs.MockGetByID_Return(t, &types.Org{}, nil)
 	txemail.MockSend = func(context.Context, txemail.Message) error { return nil }
 
 	r := &schemaResolver{}
@@ -172,7 +172,7 @@ func TestSanitize(t *testing.T) {
 			input: `<div><span style="color: #2b8a3e;">// sharedItems provides access to the 'shared_items' table.</span></div>
 				<div><span style="color: #2b8a3e;">//</span></div><div><span style="color: #2b8a3e;">// For a detailed overview of the schema, see schema.md.</span></div>
 				<div><span style="color: #329af0;">type</span> <span style="color: #4ec9b0;">sharedItems</span> <span style="color: #329af0;">struct</span>{}</div><br>
-				<div><span style="color: #329af0;">func</span> (s <span style="color: #d4d4d4;">*</span>sharedItems) <span style="color: #fff3bf;">Create</span>(ctx context.Context, item <span style="color: #d4d4d4;">*</span>sourcegraph.SharedItem) (<span style="color: #329af0;">string</span>, <span style="color: #329af0;">error</span>) {</div>
+				<div><span style="color: #329af0;">func</span> (s <span style="color: #d4d4d4;">*</span>sharedItems) <span style="color: #fff3bf;">Create</span>(ctx context.Context, item <span style="color: #d4d4d4;">*</span>types.SharedItem) (<span style="color: #329af0;">string</span>, <span style="color: #329af0;">error</span>) {</div>
 				<div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #c586c0;">if</span> item.ULID <span style="color: #d4d4d4;">!=</span> <span style="color: #ffa8a8;">""</span> {</div>
 				<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #c586c0;">return</span> <span style="color: #ffa8a8;">""</span>, errors.<span style="color: #fff3bf;">New</span>(<span style="color: #ffa8a8;">"SharedItems.Create: cannot specify ULID when creating shared item"</span>)</div>
 				<div>&nbsp;&nbsp;&nbsp;&nbsp;}</div>
@@ -180,7 +180,7 @@ func TestSanitize(t *testing.T) {
 			want: `<div><span style="color: #2b8a3e;">// sharedItems provides access to the &#39;shared_items&#39; table.</span></div>
 				<div><span style="color: #2b8a3e;">//</span></div><div><span style="color: #2b8a3e;">// For a detailed overview of the schema, see schema.md.</span></div>
 				<div><span style="color: #329af0;">type</span> <span style="color: #4ec9b0;">sharedItems</span> <span style="color: #329af0;">struct</span>{}</div><br>
-				<div><span style="color: #329af0;">func</span> (s <span style="color: #d4d4d4;">*</span>sharedItems) <span style="color: #fff3bf;">Create</span>(ctx context.Context, item <span style="color: #d4d4d4;">*</span>sourcegraph.SharedItem) (<span style="color: #329af0;">string</span>, <span style="color: #329af0;">error</span>) {</div>
+				<div><span style="color: #329af0;">func</span> (s <span style="color: #d4d4d4;">*</span>sharedItems) <span style="color: #fff3bf;">Create</span>(ctx context.Context, item <span style="color: #d4d4d4;">*</span>types.SharedItem) (<span style="color: #329af0;">string</span>, <span style="color: #329af0;">error</span>) {</div>
 				<div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #c586c0;">if</span> item.ULID <span style="color: #d4d4d4;">!=</span> <span style="color: #ffa8a8;">&#34;&#34;</span> {</div>
 				<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #c586c0;">return</span> <span style="color: #ffa8a8;">&#34;&#34;</span>, errors.<span style="color: #fff3bf;">New</span>(<span style="color: #ffa8a8;">&#34;SharedItems.Create: cannot specify ULID when creating shared item&#34;</span>)</div>
 				<div>&nbsp;&nbsp;&nbsp;&nbsp;}</div>

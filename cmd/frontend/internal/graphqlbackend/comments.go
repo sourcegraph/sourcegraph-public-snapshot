@@ -16,20 +16,20 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 type commentResolver struct {
-	org     *sourcegraph.Org
-	repo    *sourcegraph.OrgRepo
-	thread  *sourcegraph.Thread
-	comment *sourcegraph.Comment
+	org     *types.Org
+	repo    *types.OrgRepo
+	thread  *types.Thread
+	comment *types.Comment
 }
 
 func (c *commentResolver) Title(ctx context.Context) string {
@@ -250,7 +250,7 @@ func (*schemaResolver) shareCommentInternal(ctx context.Context, commentID int32
 		return nil, err
 	}
 
-	return db.SharedItems.Create(ctx, &sourcegraph.SharedItem{
+	return db.SharedItems.Create(ctx, &types.SharedItem{
 		AuthorUserID: currentUser.ID,
 		Public:       public,
 		ThreadID:     &thread.ID,
@@ -265,7 +265,7 @@ type commentResults struct {
 
 var mockNotifyNewComment func() (*commentResults, error)
 
-func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.OrgRepo, thread sourcegraph.Thread, previousComments []*sourcegraph.Comment, comment sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) (*commentResults, error) {
+func (s *schemaResolver) notifyNewComment(ctx context.Context, repo types.OrgRepo, thread types.Thread, previousComments []*types.Comment, comment types.Comment, author types.User, org types.Org) (*commentResults, error) {
 	if mockNotifyNewComment != nil {
 		return mockNotifyNewComment()
 	}
@@ -275,7 +275,7 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo sourcegraph.
 		return &commentResults{emails: []string{}, commentURL: commentURL.String()}, nil
 	}
 
-	var first sourcegraph.Comment
+	var first types.Comment
 	if len(previousComments) > 0 {
 		first = *previousComments[0]
 	} else {
@@ -363,10 +363,10 @@ View discussion on Sourcegraph: {{.URL}}
 	})
 )
 
-var mockEmailsToNotify func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error)
+var mockEmailsToNotify func(ctx context.Context, comments []*types.Comment, author types.User, org types.Org) ([]string, error)
 
 // emailsToNotify returns all emails that should be notified of activity given a list of comments.
-func emailsToNotify(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
+func emailsToNotify(ctx context.Context, comments []*types.Comment, author types.User, org types.Org) ([]string, error) {
 	if mockEmailsToNotify != nil {
 		return mockEmailsToNotify(ctx, comments, author, org)
 	}

@@ -15,7 +15,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -55,7 +55,7 @@ var (
 )
 
 type Repository struct {
-	// repoURI is the sourcegraph.Repo.URI. eg "github.com/gorilla/mux"
+	// repoURI is the api.Repo.URI. eg "github.com/gorilla/mux"
 	repoURI string
 }
 
@@ -80,7 +80,7 @@ func checkSpecArgSafety(spec string) error {
 // name must be 'git', otherwise it panics.
 func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 	cmd := gitserver.DefaultClient.Command(name, arg...)
-	cmd.Repo = &sourcegraph.Repo{URI: r.repoURI}
+	cmd.Repo = &api.Repo{URI: r.repoURI}
 	return cmd
 }
 

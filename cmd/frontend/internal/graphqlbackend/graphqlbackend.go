@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -19,11 +18,12 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -191,7 +191,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 	repo, err := db.Repos.GetByURI(ctx, args.URI)
 	if err != nil {
 		if err, ok := err.(db.ErrRepoSeeOther); ok {
-			return &repositoryResolver{repo: &sourcegraph.Repo{}, redirectURL: &err.RedirectURL}, nil
+			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
 			return nil, nil
@@ -216,17 +216,10 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI 
 
 var skipRefresh = false // set by tests
 
-func refreshRepo(ctx context.Context, repo *sourcegraph.Repo) error {
+func refreshRepo(ctx context.Context, repo *types.Repo) error {
 	if skipRefresh {
 		return nil
 	}
-
-	go func() {
-		if err := db.Repos.UpdateRepoFieldsFromRemote(context.Background(), repo.ID); err != nil {
-			log.Printf("failed to update repo %s from remote: %s", repo.URI, err)
-		}
-	}()
-
 	return backend.Repos.RefreshIndex(ctx, repo.URI)
 }
 
@@ -262,10 +255,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  "",
-	})
+	rev, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +263,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 	var symbols []lsp.SymbolInformation
 	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}
 
-	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, lsp.DocumentURI("git://"+repoURI+"?"+rev.CommitID), "workspace/symbol", params, &symbols)
+	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, lsp.DocumentURI("git://"+repoURI+"?"+string(rev)), "workspace/symbol", params, &symbols)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +319,7 @@ func (r *schemaResolver) Packages(ctx context.Context, args *struct {
 		version: args.Version,
 	}.toPkgQuery()
 
-	pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: args.Lang, PkgQuery: pkgQuery, Limit: int(limit)})
+	pkgs, err := backend.Pkgs.ListPackages(ctx, &api.ListPackagesOp{Lang: args.Lang, PkgQuery: pkgQuery, Limit: int(limit)})
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +378,7 @@ func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args
 	Email           string
 	EnableTelemetry bool
 }) (*EmptyResponse, error) {
-	configuration := &sourcegraph.SiteConfig{
+	configuration := &types.SiteConfig{
 		Email:            args.Email,
 		TelemetryEnabled: args.EnableTelemetry,
 	}

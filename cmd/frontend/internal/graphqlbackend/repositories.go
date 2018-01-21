@@ -7,9 +7,9 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func (r *siteResolver) Repositories(args *struct {
@@ -25,7 +25,7 @@ func (r *siteResolver) Repositories(args *struct {
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
-	args.connectionArgs.set(&opt.ListOptions)
+	args.connectionArgs.set(&opt.LimitOffset)
 	return &repositoryConnectionResolver{
 		opt: opt,
 	}, nil
@@ -36,19 +36,15 @@ type repositoryConnectionResolver struct {
 
 	// cache results because they is used by multiple fields
 	once  sync.Once
-	repos []*sourcegraph.Repo
+	repos []*types.Repo
 	err   error
 }
 
-func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*sourcegraph.Repo, error) {
+func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
-		opt2.PerPage++ // so we can detect if there is a next page
-		repos, err := backend.Repos.List(ctx, opt2)
-		r.err = err
-		if repos != nil {
-			r.repos = repos.Repos
-		}
+		opt2.Limit++ // so we can detect if there is a next page
+		r.repos, r.err = backend.Repos.List(ctx, opt2)
 	})
 	return r.repos, r.err
 }
@@ -60,7 +56,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 	}
 	resolvers := make([]*repositoryResolver, 0, len(repos))
 	for i, repo := range repos {
-		if i == r.opt.PerPageOrDefault() {
+		if i == r.opt.Limit {
 			break
 		}
 		resolvers = append(resolvers, &repositoryResolver{repo: repo})
@@ -108,7 +104,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*pageInfo,
 	if err != nil {
 		return nil, err
 	}
-	return &pageInfo{hasNextPage: len(repos) > r.opt.PerPageOrDefault()}, nil
+	return &pageInfo{hasNextPage: len(repos) > r.opt.Limit}, nil
 }
 
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {

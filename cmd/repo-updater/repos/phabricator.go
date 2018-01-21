@@ -11,7 +11,7 @@ import (
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -155,7 +155,7 @@ func updatePhabRepos(ctx context.Context, cfg *schema.Phabricator, repos []*phab
 			return nil
 		}
 
-		err := sourcegraph.InternalClient.PhabricatorRepoCreate(ctx, uri, repo.Fields.Callsign, cfg.Url)
+		err := api.InternalClient.PhabricatorRepoCreate(ctx, uri, repo.Fields.Callsign, cfg.Url)
 		if err != nil {
 			return err
 		}

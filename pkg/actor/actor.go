@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -17,7 +16,7 @@ type Actor struct {
 }
 
 // FromUser returns an actor corresponding to a user
-func FromUser(usr *sourcegraph.User) *Actor { return &Actor{UID: usr.ID} }
+func FromUser(uid int32) *Actor { return &Actor{UID: uid} }
 
 // UIDString is a helper method that returns the UID as a string.
 func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }

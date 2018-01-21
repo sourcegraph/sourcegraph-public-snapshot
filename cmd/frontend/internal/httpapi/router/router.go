@@ -15,6 +15,7 @@ const (
 	Telemetry  = "telemetry"
 
 	DefsRefreshIndex           = "internal.defs.refresh-index"
+	PkgsRefreshIndex           = "internal.pkgs.refresh-index"
 	GitInfoRefs                = "internal.git.info-refs"
 	GitUploadPack              = "internal.git.upload-pack"
 	GitoliteUpdateRepos        = "internal.gitolite.update-repos"
@@ -61,6 +62,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
 	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
+	base.Path("/pkgs/refresh-index").Methods("POST").Name(PkgsRefreshIndex)
 	base.Path("/gitolite/update-repos").Methods("POST").Name(GitoliteUpdateRepos)
 	base.Path("/git/{RepoURI:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoURI:.*}/git-upload-pack").Methods("POST").Name(GitUploadPack)

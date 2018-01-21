@@ -22,9 +22,9 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"github.com/neelance/parallel"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -333,17 +333,14 @@ func isErrorPredicate(err error, p func(err error) bool) bool {
 	return false
 }
 
-var mockSearchRepo func(ctx context.Context, repo *sourcegraph.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+var mockSearchRepo func(ctx context.Context, repo *types.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
 
-func searchRepo(ctx context.Context, repo *sourcegraph.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func searchRepo(ctx context.Context, repo *types.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if mockSearchRepo != nil {
 		return mockSearchRepo(ctx, repo, rev, info)
 	}
 
-	commit, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  rev,
-	})
+	commit, err := backend.Repos.ResolveRev(ctx, repo.ID, rev)
 	if err != nil {
 		return nil, false, err
 	}
@@ -352,7 +349,7 @@ func searchRepo(ctx context.Context, repo *sourcegraph.Repo, rev string, info *p
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	matches, limitHit, err = textSearch(ctx, repo.URI, commit.CommitID, info)
+	matches, limitHit, err = textSearch(ctx, repo.URI, string(commit), info)
 
 	var workspace string
 	if rev != "" {

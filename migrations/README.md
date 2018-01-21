@@ -31,8 +31,8 @@ After adding SQL statements to those files, embed them into the Go code and upda
 or, to only run the DB generate scripts (subset of the command above):
 
 ```
-go generate ./pkg/db/migrations/
-go generate ./pkg/db/
+go generate ./cmd/frontend/internal/db/migrations/
+go generate ./cmd/frontend/internal/db/
 ```
 
 ### Migrating up/down

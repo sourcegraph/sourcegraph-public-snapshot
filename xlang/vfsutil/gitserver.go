@@ -9,7 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
@@ -64,7 +64,7 @@ func gitserverFetch(ctx context.Context, repo, commit string) (r io.ReadCloser, 
 	// best overall on fast network links, but this has not been tuned
 	// thoroughly.
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", commit)
-	cmd.Repo = &sourcegraph.Repo{URI: repo}
+	cmd.Repo = &api.Repo{URI: repo}
 	cmd.EnsureRevision = commit
 	r, err = gitserver.StdoutReader(ctx, cmd)
 	if err != nil {

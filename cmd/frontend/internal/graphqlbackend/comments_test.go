@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
@@ -46,35 +46,35 @@ func TestComments_appendUniqueEmailsFromMentions(t *testing.T) {
 }
 
 func TestComments_emailsToNotify(t *testing.T) {
-	testOrg := sourcegraph.Org{
+	testOrg := types.Org{
 		ID:   42,
 		Name: "sgtest",
 	}
 
 	// Mock users
-	nick := sourcegraph.User{
+	nick := types.User{
 		ID:       1,
 		Username: "nick",
 	}
-	renfred := sourcegraph.User{
+	renfred := types.User{
 		ID:       2,
 		Username: "renfred",
 	}
-	john := sourcegraph.User{
+	john := types.User{
 		ID:       3,
 		Username: "john",
 	}
-	sqs := sourcegraph.User{
+	sqs := types.User{
 		ID:       4,
 		Username: "sqs",
 	}
-	kingy := sourcegraph.User{
+	kingy := types.User{
 		ID:       5,
 		Username: "kingy",
 	}
-	testUsers := []sourcegraph.User{nick, renfred, sqs, john, kingy}
+	testUsers := []types.User{nick, renfred, sqs, john, kingy}
 
-	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*sourcegraph.User, error) {
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		for _, u := range testUsers {
 			if u.ID == id {
 				return &u, nil
@@ -93,13 +93,13 @@ func TestComments_emailsToNotify(t *testing.T) {
 	}
 
 	// Mock Users.ListByOrg
-	db.Mocks.Users.ListByOrg = func(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*sourcegraph.User, error) {
+	db.Mocks.Users.ListByOrg = func(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*types.User, error) {
 		if orgID != testOrg.ID {
 			return nil, fmt.Errorf(`expected to be called with testOrg ID "%d", got "%d"`, testOrg.ID, orgID)
 		}
-		var users []*sourcegraph.User
+		var users []*types.User
 		for _, id := range userIDs {
-			u, ok := map[int32]sourcegraph.User{
+			u, ok := map[int32]types.User{
 				nick.ID:    nick,
 				renfred.ID: renfred,
 				sqs.ID:     sqs,
@@ -111,7 +111,7 @@ func TestComments_emailsToNotify(t *testing.T) {
 			}
 		}
 		for _, n := range usernames {
-			u, ok := map[string]sourcegraph.User{
+			u, ok := map[string]types.User{
 				nick.Username:    nick,
 				renfred.Username: renfred,
 				sqs.Username:     sqs,
@@ -141,89 +141,89 @@ func TestComments_emailsToNotify(t *testing.T) {
 	}
 
 	// Mock comments
-	one := &sourcegraph.Comment{
+	one := &types.Comment{
 		Contents:     "Yo @renfred",
 		AuthorUserID: nick.ID,
 	}
-	two := &sourcegraph.Comment{
+	two := &types.Comment{
 		Contents:     "Did you see this comment?",
 		AuthorUserID: nick.ID,
 	}
-	three := &sourcegraph.Comment{
+	three := &types.Comment{
 		Contents:     "Going to mention myself to test notifications @nick",
 		AuthorUserID: nick.ID,
 	}
-	four := &sourcegraph.Comment{
+	four := &types.Comment{
 		Contents:     "Dude, I am on vacation. Ask @sqs or @John",
 		AuthorUserID: renfred.ID,
 	}
-	five := &sourcegraph.Comment{
+	five := &types.Comment{
 		Contents:     "Stop bothering Renfred!",
 		AuthorUserID: sqs.ID,
 	}
-	six := &sourcegraph.Comment{
+	six := &types.Comment{
 		Contents:     "Maybe @linus could take a look?",
 		AuthorUserID: nick.ID,
 	}
-	seven := &sourcegraph.Comment{
+	seven := &types.Comment{
 		Contents:     "Feels like yelling into @the-void",
 		AuthorUserID: nick.ID,
 	}
-	eight := &sourcegraph.Comment{
+	eight := &types.Comment{
 		Contents:     "Nevermind. Just going to ask the whole @org",
 		AuthorUserID: nick.ID,
 	}
 
 	tests := []struct {
-		previousComments []*sourcegraph.Comment
-		newComment       *sourcegraph.Comment
-		author           sourcegraph.User
+		previousComments []*types.Comment
+		newComment       *types.Comment
+		author           types.User
 		expected         []string
 	}{
 		{
-			[]*sourcegraph.Comment{},
+			[]*types.Comment{},
 			one,
 			nick,
 			[]string{renfred.Username + "@sourcegraph.com"},
 		},
 		{
-			[]*sourcegraph.Comment{one},
+			[]*types.Comment{one},
 			two,
 			nick,
 			[]string{renfred.Username + "@sourcegraph.com"},
 		},
 		{
-			[]*sourcegraph.Comment{one, two},
+			[]*types.Comment{one, two},
 			three,
 			nick,
 			[]string{renfred.Username + "@sourcegraph.com", nick.Username + "@sourcegraph.com"},
 		},
 		{
-			[]*sourcegraph.Comment{one, two, three},
+			[]*types.Comment{one, two, three},
 			four,
 			renfred,
 			[]string{nick.Username + "@sourcegraph.com", sqs.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com"},
 		},
 		{
-			[]*sourcegraph.Comment{one, two, three, four},
+			[]*types.Comment{one, two, three, four},
 			five,
 			sqs,
 			[]string{nick.Username + "@sourcegraph.com", renfred.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com"},
 		},
 		{
-			[]*sourcegraph.Comment{one, two, three, four, five},
+			[]*types.Comment{one, two, three, four, five},
 			six,
 			nick,
 			[]string{renfred.Username + "@sourcegraph.com", sqs.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com"},
 		},
 		{
-			[]*sourcegraph.Comment{one, two, three, four, five, six},
+			[]*types.Comment{one, two, three, four, five, six},
 			seven,
 			nick,
 			[]string{renfred.Username + "@sourcegraph.com", sqs.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com"},
 		},
 		{
-			[]*sourcegraph.Comment{one, two, three, four, five, six, seven, eight},
+			[]*types.Comment{one, two, three, four, five, six, seven, eight},
 			eight,
 			nick,
 			[]string{renfred.Username + "@sourcegraph.com", sqs.Username + "@sourcegraph.com", john.Username + "@sourcegraph.com", kingy.Username + "@sourcegraph.com"},
@@ -244,11 +244,11 @@ func TestComments_emailsToNotify(t *testing.T) {
 func TestComments_Create(t *testing.T) {
 	ctx := context.Background()
 
-	repo := sourcegraph.OrgRepo{
+	repo := types.OrgRepo{
 		ID:                1,
 		CanonicalRemoteID: "github.com/foo/bar",
 	}
-	thread := sourcegraph.Thread{
+	thread := types.Thread{
 		ID:               1,
 		OrgRepoID:        1,
 		RepoRevisionPath: "foo.go",
@@ -259,23 +259,23 @@ func TestComments_Create(t *testing.T) {
 		StartCharacter:   3,
 		EndCharacter:     4,
 	}
-	wantComment := sourcegraph.Comment{
+	wantComment := types.Comment{
 		ThreadID:     1,
 		Contents:     "Hello",
 		AuthorUserID: 1,
 	}
 
-	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*sourcegraph.User, error) {
-		return &sourcegraph.User{ID: 1, DisplayName: "Alice"}, nil
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{ID: 1, DisplayName: "Alice"}, nil
 	}
-	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &sourcegraph.OrgMember{}, nil)
-	mockEmailsToNotify = func(ctx context.Context, comments []*sourcegraph.Comment, author sourcegraph.User, org sourcegraph.Org) ([]string, error) {
+	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMember{}, nil)
+	mockEmailsToNotify = func(ctx context.Context, comments []*types.Comment, author types.User, org types.Org) ([]string, error) {
 		return []string{"a@example.com"}, nil
 	}
 	defer func() { mockEmailsToNotify = nil }()
 	db.Mocks.UserEmails.GetEmail = func(ctx context.Context, id int32) (string, bool, error) { return "b@example.com", true, nil }
-	db.Mocks.Orgs.MockGetByID_Return(t, &sourcegraph.Org{}, nil)
-	db.Mocks.Comments.GetAllForThread = func(context.Context, int32) ([]*sourcegraph.Comment, error) { return nil, nil }
+	db.Mocks.Orgs.MockGetByID_Return(t, &types.Org{}, nil)
+	db.Mocks.Comments.GetAllForThread = func(context.Context, int32) ([]*types.Comment, error) { return nil, nil }
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &repo, nil)
 	db.Mocks.Threads.MockGet_Return(t, &thread, nil)
 	called, calledWith := db.Mocks.Comments.MockCreate(t)
@@ -301,7 +301,7 @@ func TestComments_Create(t *testing.T) {
 func TestComments_CreateAccessDenied(t *testing.T) {
 	ctx := context.Background()
 
-	db.Mocks.Threads.MockGet_Return(t, &sourcegraph.Thread{OrgRepoID: 1}, nil)
+	db.Mocks.Threads.MockGet_Return(t, &types.Thread{OrgRepoID: 1}, nil)
 	db.Mocks.OrgRepos.MockGetByID_Return(t, nil, db.ErrRepoNotFound)
 	called, calledWith := db.Mocks.Comments.MockCreate(t)
 

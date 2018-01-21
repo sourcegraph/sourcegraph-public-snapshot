@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"testing"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestSearchRepos(t *testing.T) {
-	mockSearchRepo = func(ctx context.Context, repo *sourcegraph.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+	mockSearchRepo = func(ctx context.Context, repo *types.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 		repoName := repo.URI
 		switch repoName {
 		case "foo/one":
@@ -63,7 +63,7 @@ func TestSearchRepos(t *testing.T) {
 func makeRepositoryRevisions(repos ...string) []*repositoryRevisions {
 	r := make([]*repositoryRevisions, len(repos))
 	for i, uri := range repos {
-		r[i] = &repositoryRevisions{repo: &sourcegraph.Repo{URI: uri}}
+		r[i] = &repositoryRevisions{repo: &types.Repo{URI: uri}}
 	}
 	return r
 }

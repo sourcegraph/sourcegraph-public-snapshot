@@ -8,7 +8,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -55,7 +55,7 @@ func main() {
 func waitForFrontend(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if err := sourcegraph.InternalClient.RetryPingUntilAvailable(ctx); err != nil {
+	if err := api.InternalClient.RetryPingUntilAvailable(ctx); err != nil {
 		log15.Warn("frontend not available at startup (will periodically try to reconnect)", "err", err)
 	}
 }

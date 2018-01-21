@@ -5,7 +5,7 @@ import (
 
 	"github.com/neelance/graphql-go/gqltesting"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )
 
 func TestRepository(t *testing.T) {

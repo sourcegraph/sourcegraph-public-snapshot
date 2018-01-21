@@ -3,8 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )
 
 func (r *siteResolver) Users(args *struct {
@@ -15,7 +15,7 @@ func (r *siteResolver) Users(args *struct {
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
-	args.connectionArgs.set(&opt.ListOptions)
+	args.connectionArgs.set(&opt.LimitOffset)
 	return &userConnectionResolver{opt: opt}
 }
 

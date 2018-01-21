@@ -3,15 +3,15 @@ package graphqlbackend
 import (
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )
 
 func (r *siteResolver) Threads(args *struct {
 	connectionArgs
 }) *siteThreadConnectionResolver {
 	var opt db.ThreadsListOptions
-	args.connectionArgs.set(&opt.ListOptions)
+	args.connectionArgs.set(&opt.LimitOffset)
 	return &siteThreadConnectionResolver{opt: opt}
 }
 

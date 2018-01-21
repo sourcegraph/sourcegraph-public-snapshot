@@ -16,9 +16,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 
 	"github.com/crewjam/saml/samlsp"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 var (
@@ -156,7 +156,7 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 	} else if err != nil {
 		return nil, fmt.Errorf("could not get user with externalID %q: %s", externalID, err)
 	}
-	return actor.FromUser(usr), nil
+	return actor.FromUser(usr.ID), nil
 }
 
 func samlToExternalID(idpID, subject string) string {

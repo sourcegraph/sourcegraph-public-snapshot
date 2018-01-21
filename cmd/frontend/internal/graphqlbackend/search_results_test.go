@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"testing"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func TestSearchResults(t *testing.T) {
-	listOpts := sourcegraph.ListOptions{PerPage: int32(maxReposToSearch + 1)}
+	limitOffset := &db.LimitOffset{Limit: maxReposToSearch + 1}
 
 	createSearchResolver := func(t *testing.T, query string) *searchResolver {
 		args := &searchArgs{Query: query}
@@ -44,12 +44,12 @@ func TestSearchResults(t *testing.T) {
 
 	t.Run("multiple terms", func(t *testing.T) {
 		var calledReposList bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*sourcegraph.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
-			if want := (db.ReposListOptions{Enabled: true, ListOptions: listOpts}); !reflect.DeepEqual(op, want) {
+			if want := (db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*sourcegraph.Repo{{URI: "repo"}}, nil
+			return []*types.Repo{{URI: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		calledSearchRepos := false

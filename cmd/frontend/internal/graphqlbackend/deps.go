@@ -3,13 +3,13 @@ package graphqlbackend
 import (
 	"context"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type dependencyResolver struct {
-	dep *sourcegraph.DependencyReference
+	dep *api.DependencyReference
 }
 
 func (r *dependencyResolver) Name() *string {

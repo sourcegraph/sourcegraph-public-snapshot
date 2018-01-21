@@ -5,12 +5,12 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func gitCommitByID(ctx context.Context, id graphql.ID) (*gitCommitResolver, error) {
@@ -113,7 +113,7 @@ func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{
+	inventory, err := backend.Repos.GetInventory(ctx, &types.RepoRevSpec{
 		Repo:     r.repo.repo.ID,
 		CommitID: string(r.oid),
 	})

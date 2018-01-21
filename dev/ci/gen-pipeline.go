@@ -79,7 +79,7 @@ var golangPlugin = map[string]interface{}{
 }
 
 func pkgs() []string {
-	pkgs := []string{"xlang", "pkg/db"} // put slow tests first
+	pkgs := []string{"xlang", "cmd/frontend/internal/db"} // put slow tests first
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			panic(err)
@@ -92,7 +92,7 @@ func pkgs() []string {
 			return filepath.SkipDir
 		}
 
-		if path == "xlang" || path == "pkg/db" {
+		if path == "xlang" || path == "cmd/frontend/internal/db" {
 			return nil // already first entry
 		}
 

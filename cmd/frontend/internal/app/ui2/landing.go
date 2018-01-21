@@ -13,8 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")

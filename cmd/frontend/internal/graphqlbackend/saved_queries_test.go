@@ -8,8 +8,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 
 	graphql "github.com/neelance/graphql-go"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func TestSavedQueries(t *testing.T) {
@@ -18,12 +18,12 @@ func TestSavedQueries(t *testing.T) {
 	uid := int32(1)
 
 	defer resetMocks()
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
-		return &sourcegraph.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
+		return &types.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
 
 	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
-		return []*configurationSubject{{user: &userResolver{user: &sourcegraph.User{ID: uid}}}}, nil
+		return []*configurationSubject{{user: &userResolver{user: &types.User{ID: uid}}}}, nil
 	}
 	defer func() { mockConfigurationCascadeSubjects = nil }()
 
@@ -34,7 +34,7 @@ func TestSavedQueries(t *testing.T) {
 	want := []*savedQueryResolver{
 		{
 			key:            "a",
-			subject:        &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}},
+			subject:        &configurationSubject{user: &userResolver{user: &types.User{ID: uid}}},
 			index:          0,
 			description:    "d",
 			query:          searchQuery{query: "q"},
@@ -52,17 +52,17 @@ func TestCreateSavedQuery(t *testing.T) {
 	uid := int32(1)
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}}
+	subject := &configurationSubject{user: &userResolver{user: &types.User{ID: uid}}}
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid}, nil)
+	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsCreateIfUpToDate := false
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
-		return &sourcegraph.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
+		return &types.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *sourcegraph.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject types.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
-		return &sourcegraph.Settings{ID: lastID + 1, Contents: `not used`}, nil
+		return &types.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
 
 	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
@@ -113,23 +113,23 @@ func TestUpdateSavedQuery(t *testing.T) {
 	uid := int32(1)
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 	lastID := int32(5)
-	subject := &configurationSubject{user: &userResolver{user: &sourcegraph.User{ID: uid}}}
+	subject := &configurationSubject{user: &userResolver{user: &types.User{ID: uid}}}
 	newDescription := "d2"
 
 	defer resetMocks()
-	db.Mocks.Users.MockGetByID_Return(t, &sourcegraph.User{ID: uid}, nil)
+	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsGetLatest := false
 	calledSettingsCreateIfUpToDate := false
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject sourcegraph.ConfigurationSubject) (*sourcegraph.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
 		calledSettingsGetLatest = true
 		if calledSettingsCreateIfUpToDate {
-			return &sourcegraph.Settings{ID: lastID + 1, Contents: `{"search.savedQueries":[{"key":"a","description":"d2","query":"q"}]}`}, nil
+			return &types.Settings{ID: lastID + 1, Contents: `{"search.savedQueries":[{"key":"a","description":"d2","query":"q"}]}`}, nil
 		}
-		return &sourcegraph.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
+		return &types.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject sourcegraph.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *sourcegraph.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject types.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
-		return &sourcegraph.Settings{ID: lastID + 1, Contents: `not used`}, nil
+		return &types.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
 
 	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {

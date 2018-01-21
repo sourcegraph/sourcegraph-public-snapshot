@@ -10,10 +10,10 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/sourcegraph/jsonx"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 )
 
 type configurationSubject struct {
@@ -58,7 +58,7 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 
 }
 
-func configurationSubjectID(subject sourcegraph.ConfigurationSubject) (graphql.ID, error) {
+func configurationSubjectID(subject types.ConfigurationSubject) (graphql.ID, error) {
 	switch {
 	case subject.Site != nil:
 		return marshalSiteGQLID(*subject.Site), nil
@@ -71,7 +71,7 @@ func configurationSubjectID(subject sourcegraph.ConfigurationSubject) (graphql.I
 	}
 }
 
-func configurationSubjectsEqual(a, b sourcegraph.ConfigurationSubject) bool {
+func configurationSubjectsEqual(a, b types.ConfigurationSubject) bool {
 	switch {
 	case a.Site != nil && b.Site != nil:
 		return *a.Site == *b.Site
@@ -91,7 +91,7 @@ func configurationSubjectsEqual(a, b sourcegraph.ConfigurationSubject) bool {
 // ID field that encodes the configuration subject. In that case, it's important to check that the
 // subjects are equal to prevent a user from bypassing the permission check to write to the
 // configuration of the second ID's subject.
-func (r *configurationMutationResolver) checkArgHasSameSubject(argSubject sourcegraph.ConfigurationSubject) error {
+func (r *configurationMutationResolver) checkArgHasSameSubject(argSubject types.ConfigurationSubject) error {
 	if !configurationSubjectsEqual(r.subject.toSubject(), argSubject) {
 		return fmt.Errorf("configuration subject mismatch: %s != %s", r.subject.toSubject(), argSubject)
 	}
@@ -104,16 +104,16 @@ func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.or
 
 func (s *configurationSubject) ToUser() (*userResolver, bool) { return s.user, s.user != nil }
 
-func (s *configurationSubject) toSubject() sourcegraph.ConfigurationSubject {
+func (s *configurationSubject) toSubject() types.ConfigurationSubject {
 	switch {
 	case s.site != nil:
-		return sourcegraph.ConfigurationSubject{Site: &s.site.gqlID}
+		return types.ConfigurationSubject{Site: &s.site.gqlID}
 	case s.org != nil:
-		return sourcegraph.ConfigurationSubject{Org: &s.org.org.ID}
+		return types.ConfigurationSubject{Org: &s.org.org.ID}
 	case s.user != nil:
-		return sourcegraph.ConfigurationSubject{User: &s.user.user.ID}
+		return types.ConfigurationSubject{User: &s.user.user.ID}
 	default:
-		return sourcegraph.ConfigurationSubject{}
+		return types.ConfigurationSubject{}
 	}
 }
 

@@ -13,10 +13,11 @@ import (
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
@@ -74,7 +75,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	for _, uri := range whitelist {
-		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, false, true)
+		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, true)
 		if err != nil {
 			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)
 		}
@@ -106,12 +107,12 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
-	var repo sourcegraph.RepoCreateOrUpdateRequest
+	var repo api.RepoCreateOrUpdateRequest
 	err := json.NewDecoder(r.Body).Decode(&repo)
 	if err != nil {
 		return err
 	}
-	err = backend.Repos.TryInsertNew(r.Context(), repo.URI, repo.Description, repo.Fork, repo.Private, repo.Enabled)
+	err = backend.Repos.TryInsertNew(r.Context(), repo.URI, repo.Description, repo.Fork, repo.Enabled)
 	if err != nil {
 		return err
 	}
@@ -129,7 +130,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveReposUpdateIndex(w http.ResponseWriter, r *http.Request) error {
-	var repo sourcegraph.RepoUpdateIndexRequest
+	var repo api.RepoUpdateIndexRequest
 	err := json.NewDecoder(r.Body).Decode(&repo)
 	if err != nil {
 		return err
@@ -144,7 +145,7 @@ func serveReposUpdateIndex(w http.ResponseWriter, r *http.Request) error {
 }
 
 func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	var repo sourcegraph.PhabricatorRepoCreateRequest
+	var repo api.PhabricatorRepoCreateRequest
 	err := json.NewDecoder(r.Body).Decode(&repo)
 	if err != nil {
 		return err
@@ -163,7 +164,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) error {
-	var args sourcegraph.RepoUnindexedDependenciesRequest
+	var args api.RepoUnindexedDependenciesRequest
 	err := json.NewDecoder(r.Body).Decode(&args)
 	if err != nil {
 		return err
@@ -174,9 +175,9 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 	}
 
 	// Filter out already-indexed dependencies
-	var unfetchedDeps []*sourcegraph.DependencyReference
+	var unfetchedDeps []*api.DependencyReference
 	for _, dep := range deps {
-		pkgs, err := backend.Pkgs.ListPackages(r.Context(), &sourcegraph.ListPackagesOp{Lang: args.Language, PkgQuery: depReferenceToPkgQuery(args.Language, dep), Limit: 1})
+		pkgs, err := backend.Pkgs.ListPackages(r.Context(), &api.ListPackagesOp{Lang: args.Language, PkgQuery: depReferenceToPkgQuery(args.Language, dep), Limit: 1})
 		if err != nil {
 			return err
 		}
@@ -194,12 +195,12 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 }
 
 func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
-	var revSpec sourcegraph.RepoRevSpec
-	err := json.NewDecoder(r.Body).Decode(&revSpec)
+	var req api.ReposGetInventoryUncachedRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return err
 	}
-	inv, err := backend.Repos.GetInventoryUncached(r.Context(), &revSpec)
+	inv, err := backend.Repos.GetInventoryUncached(r.Context(), &types.RepoRevSpec{Repo: req.Repo, CommitID: req.CommitID})
 	if err != nil {
 		return err
 	}
@@ -232,12 +233,27 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
-	var args sourcegraph.DefsRefreshIndexRequest
+	var args api.DefsRefreshIndexRequest
 	err := json.NewDecoder(r.Body).Decode(&args)
 	if err != nil {
 		return err
 	}
 	err = backend.Defs.RefreshIndex(r.Context(), args.URI, args.Revision)
+	if err != nil {
+		return nil
+	}
+	w.WriteHeader(http.StatusNoContent)
+	w.Write([]byte("OK"))
+	return nil
+}
+
+func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
+	var args api.PkgsRefreshIndexRequest
+	err := json.NewDecoder(r.Body).Decode(&args)
+	if err != nil {
+		return err
+	}
+	err = backend.Pkgs.RefreshIndex(r.Context(), args.URI, args.Revision)
 	if err != nil {
 		return nil
 	}
@@ -259,7 +275,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Repo = repo
+	cmd.Repo = &api.Repo{URI: repo.URI}
 	refs, err := cmd.Output(r.Context())
 	if err != nil {
 		return err
@@ -294,7 +310,7 @@ func packetWrite(str string) []byte {
 // depReferenceToPkgQuery maps from a DependencyReference to a package descriptor query that
 // uniquely identifies the dependency package (typically discarding version information).  The
 // mapping can be different for different languages, so languages are handled case-by-case.
-func depReferenceToPkgQuery(lang string, dep *sourcegraph.DependencyReference) map[string]interface{} {
+func depReferenceToPkgQuery(lang string, dep *api.DependencyReference) map[string]interface{} {
 	switch lang {
 	case "Java":
 		return map[string]interface{}{"id": dep.DepData["id"]}
