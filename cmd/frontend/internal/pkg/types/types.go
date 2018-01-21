@@ -52,9 +52,9 @@ type RepoRevSpec struct {
 
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
-	Language        string // e.g. "go"
-	api.RepoID             // repository whose file:line:character describe the symbol of interest
-	CommitID        string
+	Language   string // e.g. "go"
+	api.RepoID        // repository whose file:line:character describe the symbol of interest
+	api.CommitID
 	File            string
 	Line, Character int
 

@@ -328,7 +328,7 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 }) (*dependencyReferencesResolver, error) {
 	depRefs, err := backend.Defs.DependencyReferences(ctx, types.DependencyReferencesOptions{
 		RepoID:    r.commit.repositoryDatabaseID(),
-		CommitID:  string(r.commit.oid),
+		CommitID:  api.CommitID(r.commit.oid),
 		Language:  args.Language,
 		File:      r.path,
 		Line:      int(args.Line),
