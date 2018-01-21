@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type treeResolver struct {
@@ -32,7 +32,7 @@ func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path strin
 		return nil, errors.New("not implemented")
 	}
 
-	entries, err := vcsrepo.ReadDir(ctx, vcs.CommitID(commit.oid), path, recursive)
+	entries, err := vcsrepo.ReadDir(ctx, api.CommitID(commit.oid), path, recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error

@@ -125,7 +125,7 @@ type blameFileMatchCache struct {
 	cachedRepos   map[string]*types.Repo
 
 	cachedRevsMu sync.RWMutex
-	cachedRevs   map[string]vcs.CommitID
+	cachedRevs   map[string]api.CommitID
 
 	cachedVCSReposMu sync.RWMutex
 	cachedVCSRepos   map[string]vcs.Repository
@@ -150,7 +150,7 @@ func (b *blameFileMatchCache) reposGetByURI(ctx context.Context, repoURI string)
 }
 
 // repoVCSOpen is like localstore.Repos.ResolveRev except it is cached by b.
-func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repo api.RepoID, revStr string) (vcs.CommitID, error) {
+func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repo api.RepoID, revStr string) (api.CommitID, error) {
 	cacheKey := fmt.Sprint(repo, revStr)
 	b.cachedRevsMu.RLock()
 	rev, ok := b.cachedRevs[cacheKey]
@@ -249,7 +249,7 @@ func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err 
 		blameOps    = 0
 		cache       = &blameFileMatchCache{
 			cachedRepos:    map[string]*types.Repo{},
-			cachedRevs:     map[string]vcs.CommitID{},
+			cachedRevs:     map[string]api.CommitID{},
 			cachedVCSRepos: map[string]vcs.Repository{},
 		}
 	)

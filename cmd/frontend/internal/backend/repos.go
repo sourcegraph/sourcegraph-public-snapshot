@@ -18,7 +18,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 var Repos = &repos{}
@@ -124,7 +123,7 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *types.RepoRev
 		return nil, err
 	}
 
-	files, err := vcsrepo.ReadDir(ctx, vcs.CommitID(repoRev.CommitID), "", true)
+	files, err := vcsrepo.ReadDir(ctx, api.CommitID(repoRev.CommitID), "", true)
 	if err != nil {
 		return nil, err
 	}

@@ -66,10 +66,10 @@ func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
 	return nil
 }
 
-func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri, revision string) error {
+func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri string, commitID CommitID) error {
 	req, err := json.Marshal(&DefsRefreshIndexRequest{
 		URI:      uri,
-		Revision: revision,
+		CommitID: commitID,
 	})
 	if err != nil {
 		return err
@@ -78,10 +78,10 @@ func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri, revision str
 	return err
 }
 
-func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri, revision string) error {
+func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri string, commitID CommitID) error {
 	req, err := json.Marshal(&PkgsRefreshIndexRequest{
 		URI:      uri,
-		Revision: revision,
+		CommitID: commitID,
 	})
 	if err != nil {
 		return err
@@ -132,10 +132,10 @@ func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo Re
 	return unfetchedDeps, nil
 }
 
-func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, revision, lang string) error {
+func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, commitID CommitID, lang string) error {
 	req, err := json.Marshal(RepoUpdateIndexRequest{
 		RepoID:   repo,
-		Revision: revision,
+		CommitID: commitID,
 		Language: lang,
 	})
 	if err != nil {
@@ -161,7 +161,7 @@ func (c *internalClient) ReposGetByURI(ctx context.Context, uri string) (*Repo, 
 	return &repo, nil
 }
 
-func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID string) (*inventory.Inventory, error) {
+func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
 	req, err := json.Marshal(ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID})
 	if err != nil {
 		return nil, err

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -284,7 +285,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// Do this check early in case the rev does not exist / the repo is no
 		// longer cloneable.
 		var err error
-		c.rootFS, err = NewRemoteRepoVFS(ctx, id.rootURI.CloneURL(), id.rootURI.Rev())
+		c.rootFS, err = NewRemoteRepoVFS(ctx, id.rootURI.CloneURL(), api.CommitID(id.rootURI.Rev()))
 		if err != nil {
 			c.initErr = err
 			return

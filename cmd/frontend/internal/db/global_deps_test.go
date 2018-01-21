@@ -211,7 +211,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "Go"}}}, nil
 	}
 
-	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	if err := GlobalDeps.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
 	}

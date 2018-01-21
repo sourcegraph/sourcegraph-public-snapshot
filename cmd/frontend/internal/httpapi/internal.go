@@ -135,7 +135,7 @@ func serveReposUpdateIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := db.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.Revision); err != nil {
+	if err := db.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.CommitID); err != nil {
 		return errors.Wrap(err, "Repos.UpdateIndexedRevision failed")
 	}
 	if err := db.Repos.UpdateLanguage(r.Context(), repo.RepoID, repo.Language); err != nil {
@@ -238,7 +238,7 @@ func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Defs.RefreshIndex(r.Context(), args.URI, args.Revision)
+	err = backend.Defs.RefreshIndex(r.Context(), args.URI, args.CommitID)
 	if err != nil {
 		return nil
 	}
@@ -253,7 +253,7 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Pkgs.RefreshIndex(r.Context(), args.URI, args.Revision)
+	err = backend.Pkgs.RefreshIndex(r.Context(), args.URI, args.CommitID)
 	if err != nil {
 		return nil
 	}

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -38,7 +39,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commi
 			query = *r.query
 		}
 		return vcsrepo.Commits(ctx, vcs.CommitsOptions{
-			Head:         vcs.CommitID(r.headCommitID),
+			Head:         api.CommitID(r.headCommitID),
 			N:            uint(n),
 			MessageQuery: query,
 		})

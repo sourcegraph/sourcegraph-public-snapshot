@@ -10,6 +10,9 @@ import (
 // RepoID is the unique identifier for a repository.
 type RepoID int32
 
+// CommitID is the 40-character SHA-1 hash for a Git commit.
+type CommitID string
+
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
@@ -20,7 +23,7 @@ type Repo struct {
 	// IndexedRevision is the revision that the global index is currently based on. It is only used
 	// by the indexer to determine if reindexing is necessary. Setting it to nil/null will cause
 	// the indexer to reindex the next time it gets triggered for this repository.
-	IndexedRevision *string
+	IndexedRevision *CommitID
 	// FreezeIndexedRevision, when true, tells the indexer not to
 	// update the indexed revision if it is already set. This is a
 	// kludge that lets us freeze the indexed repository revision for

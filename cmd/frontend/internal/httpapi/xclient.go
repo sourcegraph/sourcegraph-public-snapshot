@@ -129,18 +129,18 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 				if err != nil {
 					return nil, errors.Wrap(err, "fetch repo for package")
 				}
-				var commit string
+				var commit api.CommitID
 				if repo.IndexedRevision != nil {
 					commit = *repo.IndexedRevision
 				} else {
-					rev, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
+					var err error
+					commit, err = backend.Repos.ResolveRev(ctx, repo.ID, "")
 					if err != nil {
 						return nil, errors.Wrap(err, "resolve revision for package repo")
 					}
-					commit = string(rev)
 				}
 				// TODO: store VCS type in *types.Repo object.
-				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+repo.URI+"?"+commit))
+				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+repo.URI+"?"+string(commit)))
 			}
 			span.LogEvent("resolved rootURIs")
 		}

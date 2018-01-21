@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -43,12 +44,12 @@ func parseCommitFromLog(forLogFormatFlag string, data []byte) (commit *vcs.Commi
 		return nil, nil, nil, fmt.Errorf("parsing git commit committer time: %s", err)
 	}
 
-	var parents []vcs.CommitID
+	var parents []api.CommitID
 	if parentPart := parts[9]; len(parentPart) > 0 {
 		parentIDs := bytes.Split(parentPart, []byte{' '})
-		parents = make([]vcs.CommitID, len(parentIDs))
+		parents = make([]api.CommitID, len(parentIDs))
 		for i, id := range parentIDs {
-			parents[i] = vcs.CommitID(id)
+			parents[i] = api.CommitID(id)
 		}
 	}
 
@@ -57,7 +58,7 @@ func parseCommitFromLog(forLogFormatFlag string, data []byte) (commit *vcs.Commi
 	}
 
 	commit = &vcs.Commit{
-		ID:        vcs.CommitID(parts[0]),
+		ID:        api.CommitID(parts[0]),
 		Author:    vcs.Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
 		Committer: &vcs.Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
 		Message:   string(bytes.TrimSuffix(parts[8], []byte{'\n'})),

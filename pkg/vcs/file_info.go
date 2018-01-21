@@ -1,5 +1,7 @@
 package vcs
 
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+
 // ModeSubmodule is an os.FileMode mask indicating that the file is a
 // VCS submodule (e.g., a git submodule).
 const ModeSubmodule = 0160000
@@ -12,5 +14,5 @@ type SubmoduleInfo struct {
 
 	// CommitID is the pinned commit ID of the submodule (in the
 	// submodule repository's commit ID space).
-	CommitID
+	CommitID api.CommitID
 }

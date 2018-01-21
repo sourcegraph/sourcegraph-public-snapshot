@@ -31,7 +31,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
-	http.Redirect(w, r, approuter.Rel.URLToRepoRev(repo.URI, rev.CommitID).String(), http.StatusMovedPermanently)
+	http.Redirect(w, r, approuter.Rel.URLToRepoRev(repo.URI, string(rev.CommitID)).String(), http.StatusMovedPermanently)
 	return nil
 }
 

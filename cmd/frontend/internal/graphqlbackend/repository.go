@@ -90,7 +90,7 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
-	rev, err := backend.Repos.ResolveRev(ctx, r.repo.ID, args.Rev)
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo.ID, args.Rev)
 	if err != nil {
 		if err == vcs.ErrRevisionNotFound {
 			return nil, nil
@@ -100,7 +100,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	commit, err := backend.Repos.GetCommit(ctx, &types.RepoRevSpec{Repo: r.repo.ID, CommitID: string(rev)})
+	commit, err := backend.Repos.GetCommit(ctx, &types.RepoRevSpec{Repo: r.repo.ID, CommitID: commitID})
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 	// This method is a stopgap until we no longer require git:// URIs on the client which include rev data.
 	// THIS RESOLVER WILL BE REMOVED SOON, DO NOT USE IT!!!
 	if r.repo.IndexedRevision != nil && *r.repo.IndexedRevision != "" {
-		return r.Commit(ctx, &struct{ Rev string }{Rev: *r.repo.IndexedRevision})
+		return r.Commit(ctx, &struct{ Rev string }{Rev: string(*r.repo.IndexedRevision)})
 	}
 	return r.Commit(ctx, &struct{ Rev string }{Rev: "HEAD"})
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -19,12 +20,13 @@ func TestPrepareZip(t *testing.T) {
 	defer cleanup()
 
 	wantRepo := "foo"
-	wantCommit := "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+	wantCommit := api.CommitID("deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 
 	returnFetch := make(chan struct{})
-	var gotRepo, gotCommit string
+	var gotRepo string
+	var gotCommit api.CommitID
 	var fetchZipCalled int64
-	s.FetchTar = func(ctx context.Context, repo, commit string) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo string, commit api.CommitID) (io.ReadCloser, error) {
 		<-returnFetch
 		atomic.AddInt64(&fetchZipCalled, 1)
 		gotRepo = repo
@@ -83,7 +85,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
 	s, cleanup := tmpStore(t)
 	defer cleanup()
-	s.FetchTar = func(ctx context.Context, repo, commit string) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo string, commit api.CommitID) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
 	_, err := s.prepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")

@@ -94,7 +94,7 @@ func shutdownOnSIGINT(s *http.Server) {
 	}
 }
 
-func fetchTar(ctx context.Context, repo, commit string) (r io.ReadCloser, err error) {
+func fetchTar(ctx context.Context, repo string, commit api.CommitID) (r io.ReadCloser, err error) {
 	// gitcmd.Repository.Archive returns a zip file read into
 	// memory. However, we do not need to read into memory and we want a
 	// tar, so we directly run the gitserver Command.
@@ -110,13 +110,13 @@ func fetchTar(ctx context.Context, repo, commit string) (r io.ReadCloser, err er
 		span.Finish()
 	}()
 
-	if strings.HasPrefix(commit, "-") {
+	if strings.HasPrefix(string(commit), "-") {
 		return nil, badRequestError{("invalid git revision spec (begins with '-')")}
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=tar", commit)
+	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=tar", string(commit))
 	cmd.Repo = &api.Repo{URI: repo}
-	cmd.EnsureRevision = commit
+	cmd.EnsureRevision = string(commit)
 	r, err = gitserver.StdoutReader(ctx, cmd)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) || err == vcs.ErrRevisionNotFound {

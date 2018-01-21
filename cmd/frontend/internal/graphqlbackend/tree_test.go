@@ -18,7 +18,7 @@ import (
 func TestTree(t *testing.T) {
 	resetMocks()
 	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (vcs.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (api.CommitID, error) {
 		if repo != 2 || rev != exampleCommitSHA1 {
 			t.Error("wrong arguments to Repos.ResolveRev")
 		}
@@ -27,7 +27,7 @@ func TestTree(t *testing.T) {
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{ID: exampleCommitSHA1})
 
 	mockRepo := vcstest.MockRepository{}
-	mockRepo.ReadDir_ = func(ctx context.Context, commit vcs.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
+	mockRepo.ReadDir_ = func(ctx context.Context, commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
 		if string(commit) != exampleCommitSHA1 || name != "/foo" {
 			t.Error("wrong arguments to RepoTree.Get")
 		}

@@ -148,7 +148,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
 	}
 
-	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	if err := Pkgs.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
 	}

@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 )
 
@@ -281,7 +282,7 @@ func TestSearch_badrequest(t *testing.T) {
 func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	form := url.Values{
 		"Repo":            []string{p.Repo},
-		"Commit":          []string{p.Commit},
+		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
 		"IncludePatterns": p.IncludePatterns,
 		"IncludePattern":  []string{p.IncludePattern},
@@ -361,7 +362,7 @@ func newStore(files map[string]string) (*search.Store, func(), error) {
 		return nil, nil, err
 	}
 	return &search.Store{
-		FetchTar: func(ctx context.Context, repo, commit string) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo string, commit api.CommitID) (io.ReadCloser, error) {
 			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
 		Path: d,

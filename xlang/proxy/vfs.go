@@ -21,22 +21,22 @@ import (
 // be performed by the caller to the LSP client proxy.
 //
 // It is a var so that it can be mocked in tests.
-var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (FileSystem, error) {
+var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (FileSystem, error) {
 	repo := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git")
 
 	// We can get to this point without checking if (repo, commit) actually
 	// exists. Its better to fail sooner, otherwise the error can cause a
 	// later process to fail (since ArchiveFS fetches lazily). So we check
 	// existance first.
-	cmd := gitserver.DefaultClient.Command("git", "rev-parse", rev+"^0")
+	cmd := gitserver.DefaultClient.Command("git", "rev-parse", string(commitID)+"^0")
 	cmd.Repo = &api.Repo{URI: repo}
-	cmd.EnsureRevision = rev
+	cmd.EnsureRevision = string(commitID)
 	err := cmd.Run(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	key := sharedFSKey{repo: repo, rev: rev}
+	key := sharedFSKey{repo: repo, commitID: commitID}
 
 	// Share an open archive amongst clients. It is common to open a repo
 	// more than once, since we open it up per mode.
@@ -48,7 +48,7 @@ var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) 
 		// Close when all readers are done. When that happens
 		// we likely won't open the archive again soon, so we
 		// can reclaim the disk space it uses.
-		archiveFS := vfsutil.NewGitServer(repo, rev)
+		archiveFS := vfsutil.NewGitServer(repo, commitID)
 		archiveFS.EvictOnClose = true
 		fs = &sharedFS{
 			FileSystem: archiveFS,
@@ -75,7 +75,8 @@ func init() {
 }
 
 type sharedFSKey struct {
-	repo, rev string
+	repo     string
+	commitID api.CommitID
 }
 
 // sharedFS tracks multiple readers to a FileSystem. This allows us to not

@@ -24,6 +24,7 @@ import (
 	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -153,7 +154,7 @@ func (lm *lineMatch) LimitHit() bool {
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func textSearch(ctx context.Context, repo string, commit api.CommitID, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
@@ -189,7 +190,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	}
 	q := url.Values{
 		"Repo":            []string{repo},
-		"Commit":          []string{commit},
+		"Commit":          []string{string(commit)},
 		"Pattern":         []string{p.Pattern},
 		"ExcludePattern":  []string{*p.ExcludePattern},
 		"IncludePatterns": includePatterns,
@@ -215,7 +216,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) (match
 	// these fields from old frontends that do not (and provide a default in the latter case).
 	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
 	q.Set("PatternMatchesPath", strconv.FormatBool(p.PatternMatchesPath))
-	searcherURL, err := searcherURLs.Get(repo + "@" + commit)
+	searcherURL, err := searcherURLs.Get(repo + "@" + string(commit))
 	if err != nil {
 		return nil, false, err
 	}
@@ -349,7 +350,7 @@ func searchRepo(ctx context.Context, repo *types.Repo, rev string, info *pattern
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	matches, limitHit, err = textSearch(ctx, repo.URI, string(commit), info)
+	matches, limitHit, err = textSearch(ctx, repo.URI, commit, info)
 
 	var workspace string
 	if rev != "" {

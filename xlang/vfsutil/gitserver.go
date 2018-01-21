@@ -15,7 +15,7 @@ import (
 
 // NewGitServer returns a VFS to repo at commit. It is backed by an archive
 // fetched from gitserver.
-func NewGitServer(repo, commit string) *ArchiveFS {
+func NewGitServer(repo string, commit api.CommitID) *ArchiveFS {
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
 		span, ctx := opentracing.StartSpanFromContext(ctx, "Archive Fetch")
 		ext.Component.Set(span, "gitserver")
@@ -29,11 +29,11 @@ func NewGitServer(repo, commit string) *ArchiveFS {
 			span.Finish()
 		}()
 
-		if strings.HasPrefix(commit, "-") {
+		if strings.HasPrefix(string(commit), "-") {
 			return nil, errors.New("invalid git revision spec (begins with '-')")
 		}
 
-		ff, err := cachedFetch(ctx, "gitserver", repo+"@"+commit, func(ctx context.Context) (io.ReadCloser, error) {
+		ff, err := cachedFetch(ctx, "gitserver", repo+"@"+string(commit), func(ctx context.Context) (io.ReadCloser, error) {
 			gitserverFetchTotal.Inc()
 			return gitserverFetch(ctx, repo, commit)
 		})
@@ -59,13 +59,13 @@ func NewGitServer(repo, commit string) *ArchiveFS {
 }
 
 // gitserverFetch returns a reader of a zip archive of repo at commit.
-func gitserverFetch(ctx context.Context, repo, commit string) (r io.ReadCloser, err error) {
+func gitserverFetch(ctx context.Context, repo string, commit api.CommitID) (r io.ReadCloser, err error) {
 	// Compression level of 0 (no compression) seems to perform the
 	// best overall on fast network links, but this has not been tuned
 	// thoroughly.
-	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", commit)
+	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", string(commit))
 	cmd.Repo = &api.Repo{URI: repo}
-	cmd.EnsureRevision = commit
+	cmd.EnsureRevision = string(commit)
 	r, err = gitserver.StdoutReader(ctx, cmd)
 	if err != nil {
 		return nil, err

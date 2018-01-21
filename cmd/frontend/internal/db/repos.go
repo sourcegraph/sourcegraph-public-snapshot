@@ -587,8 +587,8 @@ func (s *repos) UpdateLanguage(ctx context.Context, repo api.RepoID, language st
 	return err
 }
 
-func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, rev string) error {
-	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET indexed_revision=$1 WHERE id=$2", rev, repo)
+func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, commitID api.CommitID) error {
+	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET indexed_revision=$1 WHERE id=$2", commitID, repo)
 	return err
 }
 

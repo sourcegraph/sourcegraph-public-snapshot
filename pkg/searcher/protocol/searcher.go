@@ -1,6 +1,8 @@
 // Package protocol contains structures used by the searcher API.
 package protocol
 
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+
 // Request represents a request to searcher
 type Request struct {
 	// Repo is which repository to search. eg "github.com/gorilla/mux"
@@ -9,7 +11,7 @@ type Request struct {
 	// Commit is which commit to search. It is required to be resolved,
 	// not a ref like HEAD or master. eg
 	// "599cba5e7b6137d46ddf58fb1765f5d928e69604"
-	Commit string
+	Commit api.CommitID
 
 	PatternInfo
 }

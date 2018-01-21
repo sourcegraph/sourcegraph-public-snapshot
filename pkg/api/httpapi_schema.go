@@ -2,12 +2,12 @@ package api
 
 type DefsRefreshIndexRequest struct {
 	URI      string `json:"uri"`
-	Revision string `json:"revision"`
+	CommitID `json:"revision"`
 }
 
 type PkgsRefreshIndexRequest struct {
 	URI      string `json:"uri"`
-	Revision string `json:"revision"`
+	CommitID `json:"revision"`
 }
 
 type RepoCreateOrUpdateRequest struct {
@@ -19,7 +19,7 @@ type RepoCreateOrUpdateRequest struct {
 
 type RepoUpdateIndexRequest struct {
 	RepoID   `json:"repoID"`
-	Revision string `json:"revision"`
+	CommitID `json:"revision"`
 	Language string `json:"language"`
 }
 
@@ -29,8 +29,8 @@ type RepoUnindexedDependenciesRequest struct {
 }
 
 type ReposGetInventoryUncachedRequest struct {
-	Repo     RepoID
-	CommitID string
+	Repo RepoID
+	CommitID
 }
 
 type PhabricatorRepoCreateRequest struct {

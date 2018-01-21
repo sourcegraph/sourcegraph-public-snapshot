@@ -71,11 +71,11 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	if err != nil {
 		return 0, err
 	}
-	rev, err := Repos.ResolveRev(ctx, rp.ID, "")
+	commitID, err := Repos.ResolveRev(ctx, rp.ID, "")
 	if err != nil {
 		return 0, err
 	}
-	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
+	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: commitID})
 	if err != nil {
 		return 0, err
 	}
@@ -117,11 +117,11 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (repos []api.Re
 	if err != nil {
 		return nil, err
 	}
-	rev, err := Repos.ResolveRev(ctx, rp.ID, "")
+	commitID, err := Repos.ResolveRev(ctx, rp.ID, "")
 	if err != nil {
 		return nil, err
 	}
-	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
+	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: commitID})
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 
 // RefreshIndex refreshes the global deps index for the specified
 // repository.
-func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err error) {
+func (s *defs) RefreshIndex(ctx context.Context, repoURI string, commitID api.CommitID) (err error) {
 	if Mocks.Defs.RefreshIndex != nil {
 		return Mocks.Defs.RefreshIndex(ctx, repoURI, commitID)
 	}
@@ -241,6 +241,6 @@ type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
 	ListTotalRefs        func(ctx context.Context, source string) (repos []api.RepoID, err error)
 	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error)
-	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
+	RefreshIndex         func(ctx context.Context, repoURI string, commitID api.CommitID) error
 	Dependencies         func(ctx context.Context, repo api.RepoID) ([]*api.DependencyReference, error)
 }

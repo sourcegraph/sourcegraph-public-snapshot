@@ -53,7 +53,7 @@ var globalDepEnabledLangs = map[string]struct{}{
 }
 
 // RefreshIndex refreshes the global deps index for the specified repo@commit.
-func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error)) error {
+func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI string, commitID api.CommitID, reposGetInventory func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error)) error {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByURI")
@@ -390,7 +390,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]ap
 	return repos, nil
 }
 
-func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID string) (err error) {
+func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -407,7 +407,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 	// server explicitly for background tasks such as workspace/xdependencies.
 	// This makes it such that indexing repositories does not interfere in
 	// terms of resource usage with real user requests.
-	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + commitID)
+	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + string(commitID))
 	var deps []lspext.DependencyReference
 	err = unsafeXLangCall(ctx, language+"_bg", rootURI, "workspace/xdependencies", map[string]string{}, &deps)
 	if err != nil {

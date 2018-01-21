@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
@@ -518,7 +519,7 @@ func (v testRequests) Less(i, j int) bool {
 
 func useMapFS(m map[string]string) func() {
 	orig := proxy.NewRemoteRepoVFS
-	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (proxy.FileSystem, error) {
+	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (proxy.FileSystem, error) {
 		return mapFS(m), nil
 	}
 	return func() { proxy.NewRemoteRepoVFS = orig }

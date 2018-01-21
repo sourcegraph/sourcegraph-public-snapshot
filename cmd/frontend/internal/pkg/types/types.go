@@ -31,7 +31,7 @@ type Repo struct {
 	// IndexedRevision is the revision that the global index is currently based on. It is only used by the indexer
 	// to determine if reindexing is necessary. Setting it to nil/null will cause the indexer to reindex the next
 	// time it gets triggered for this repository.
-	IndexedRevision *string
+	IndexedRevision *api.CommitID
 	// FreezeIndexedRevision, when true, tells the indexer not to update the indexed revision if it is already set.
 	// This is a kludge that lets us freeze the indexed repository revision for specific deployments
 	FreezeIndexedRevision bool
@@ -47,7 +47,7 @@ type RepoRevSpec struct {
 	// Revision specifiers are not allowed here. To resolve a revision
 	// specifier (such as a branch name or "master~7"), call
 	// Repos.GetCommit.
-	CommitID string
+	CommitID api.CommitID
 }
 
 // DependencyReferencesOptions specifies options for querying dependency references.

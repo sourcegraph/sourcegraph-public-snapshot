@@ -53,7 +53,7 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	contents, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.oid), r.path)
+	contents, err := vcsrepo.ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +75,7 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	stat, err := vcsrepo.Stat(ctx, vcs.CommitID(r.commit.oid), r.path)
+	stat, err := vcsrepo.Stat(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return false, err
 	}
@@ -221,7 +221,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	code, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.oid), r.path)
+	code, err := vcsrepo.ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitRes
 	}
 
 	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head: vcs.CommitID(r.commit.oid),
+		Head: api.CommitID(r.commit.oid),
 		N:    limit,
 		Path: r.path,
 	})
@@ -281,7 +281,7 @@ func (r *fileResolver) BlameRaw(ctx context.Context, args *struct {
 	}
 
 	rawBlame, err := vcsrepo.BlameFileRaw(ctx, r.path, &vcs.BlameOptions{
-		NewestCommit: vcs.CommitID(r.commit.oid),
+		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
 	})
@@ -303,7 +303,7 @@ func (r *fileResolver) Blame(ctx context.Context,
 	}
 
 	hunks, err := vcsrepo.BlameFile(ctx, r.path, &vcs.BlameOptions{
-		NewestCommit: vcs.CommitID(r.commit.oid),
+		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
 	})

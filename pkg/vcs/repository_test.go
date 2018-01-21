@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -24,7 +25,7 @@ var times = []string{
 	appleTime("2014-05-06T19:20:21Z"),
 }
 
-var nonexistentCommitID = vcs.CommitID(strings.Repeat("a", 40))
+var nonexistentCommitID = api.CommitID(strings.Repeat("a", 40))
 
 var ctx = context.Background()
 
@@ -37,7 +38,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	tests := map[string]struct {
 		repo         vcs.Repository
 		branch       string
-		wantCommitID vcs.CommitID
+		wantCommitID api.CommitID
 	}{
 		"git cmd": {
 			repo:         makeGitRepositoryCmd(t, gitCommands...),
@@ -140,7 +141,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	tests := map[string]struct {
 		repo         vcs.Repository
 		tag          string
-		wantCommitID vcs.CommitID
+		wantCommitID api.CommitID
 	}{
 		"git cmd": {
 			repo:         makeGitRepositoryCmd(t, gitCommands...),
@@ -393,7 +394,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 				Author:    vcs.Signature{Name: "b", Email: "b@b.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Committer: &vcs.Signature{Name: "b", Email: "b@b.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "foo1",
-				Parents:   []vcs.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
+				Parents:   []api.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
 			},
 		},
 		{
@@ -481,13 +482,13 @@ func TestRepository_GetCommit(t *testing.T) {
 		Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 		Committer: &vcs.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 		Message:   "bar",
-		Parents:   []vcs.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
 	tests := map[string]struct {
 		repo interface {
-			GetCommit(context.Context, vcs.CommitID) (*vcs.Commit, error)
+			GetCommit(context.Context, api.CommitID) (*vcs.Commit, error)
 		}
-		id         vcs.CommitID
+		id         api.CommitID
 		wantCommit *vcs.Commit
 	}{
 		"git cmd": {
@@ -530,7 +531,7 @@ func TestRepository_Commits(t *testing.T) {
 			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 			Committer: &vcs.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
-			Parents:   []vcs.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
 		{
 			ID:        "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
@@ -545,7 +546,7 @@ func TestRepository_Commits(t *testing.T) {
 			Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error)
 			CommitCount(ctx context.Context, opt vcs.CommitsOptions) (uint, error)
 		}
-		id          vcs.CommitID
+		id          api.CommitID
 		wantCommits []*vcs.Commit
 		wantTotal   uint
 	}{
@@ -612,7 +613,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 			Committer: &vcs.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
-			Parents:   []vcs.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
 	}
 	wantGitCommits2 := []*vcs.Commit{
@@ -621,7 +622,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
 			Committer: &vcs.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
 			Message:   "qux",
-			Parents:   []vcs.CommitID{"b266c7e3ca00b1a17ad0b1449825d0854225c007"},
+			Parents:   []api.CommitID{"b266c7e3ca00b1a17ad0b1449825d0854225c007"},
 		},
 	}
 	tests := map[string]struct {
@@ -703,7 +704,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 			Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "commit2",
-			Parents:   []vcs.CommitID{"a04652fa1998a0a7d2f2f77ecb7021de943d3aab"},
+			Parents:   []api.CommitID{"a04652fa1998a0a7d2f2f77ecb7021de943d3aab"},
 		},
 	}
 	tests := map[string]struct {
@@ -783,7 +784,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 
-	var gitCommitID vcs.CommitID
+	var gitCommitID api.CommitID
 
 	if runtime.GOOS == "windows" {
 		gitCommitID = ""
@@ -793,7 +794,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	tests := map[string]struct {
 		repo     *gitRepository
-		commitID vcs.CommitID
+		commitID api.CommitID
 	}{
 		// TODO(sqs): implement Lstat and symlink handling for git, git
 		// cmd, and hg cmd.
@@ -812,7 +813,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		} else {
 			commitID = string(test.commitID)
 		}
-		fs := vcs.FileSystem(test.repo, vcs.CommitID(commitID))
+		fs := vcs.FileSystem(test.repo, api.CommitID(commitID))
 
 		// file1 should be a file.
 		file1Info, err := fs.Stat(ctx, "file1")
@@ -902,7 +903,7 @@ func TestRepository_FileSystem(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo          vcs.Repository
-		first, second vcs.CommitID
+		first, second api.CommitID
 	}{
 		"git cmd": {
 			repo:   makeGitRepositoryCmd(t, gitCommands...),
@@ -1217,7 +1218,7 @@ func TestRepository_Archive(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			Archive(ctx context.Context, commitID vcs.CommitID) ([]byte, error)
+			Archive(ctx context.Context, commitID api.CommitID) ([]byte, error)
 		}
 		want map[string]string
 	}{

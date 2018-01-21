@@ -39,7 +39,7 @@ func getRepoRev(ctx context.Context, vars map[string]string, repo api.RepoID) (t
 		return types.RepoRevSpec{}, err
 	}
 
-	return types.RepoRevSpec{Repo: repo, CommitID: string(commitID)}, nil
+	return types.RepoRevSpec{Repo: repo, CommitID: commitID}, nil
 }
 
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may

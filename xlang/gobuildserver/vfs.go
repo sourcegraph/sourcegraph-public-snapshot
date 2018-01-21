@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -34,7 +35,7 @@ func remoteFS(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI lsp.Documen
 	if u.Rev() == "" {
 		return nil, errors.Errorf("rev is required in uri: %s", workspaceURI)
 	}
-	archiveFS := vfsutil.NewGitServer(u.Repo(), u.Rev())
+	archiveFS := vfsutil.NewGitServer(u.Repo(), api.CommitID(u.Rev()))
 	archiveFS.EvictOnClose = true
 	return archiveFS, nil
 }

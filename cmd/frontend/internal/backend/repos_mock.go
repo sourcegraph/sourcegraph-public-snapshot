@@ -19,7 +19,7 @@ type MockRepos struct {
 	GetByURI             func(v0 context.Context, v1 string) (*types.Repo, error)
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 	GetCommit            func(v0 context.Context, v1 *types.RepoRevSpec) (*vcs.Commit, error)
-	ResolveRev           func(v0 context.Context, repo api.RepoID, rev string) (vcs.CommitID, error)
+	ResolveRev           func(v0 context.Context, repo api.RepoID, rev string) (api.CommitID, error)
 	ListDeps             func(v0 context.Context, v1 []string) ([]string, error)
 	GetInventory         func(v0 context.Context, v1 *types.RepoRevSpec) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repoRev *types.RepoRevSpec) (*inventory.Inventory, error)
@@ -78,10 +78,10 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	return
 }
 
-func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID vcs.CommitID) (called *bool) {
+func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID api.CommitID) (called *bool) {
 	var once sync.Once
 	called = new(bool)
-	s.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (vcs.CommitID, error) {
+	s.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (api.CommitID, error) {
 		once.Do(func() {
 			*called = true
 		})
@@ -92,7 +92,7 @@ func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID vcs.CommitID) 
 
 func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, wantRev string) (called *bool) {
 	called = new(bool)
-	s.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (vcs.CommitID, error) {
+	s.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (api.CommitID, error) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %v, want %v", repo, wantRepo)

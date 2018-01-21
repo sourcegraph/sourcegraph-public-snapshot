@@ -19,7 +19,7 @@ import (
 // * Empty repository: vcs.ErrRevisionNotFound
 // * The user does not have permission: db.ErrRepoNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo api.RepoID, rev string) (commitID vcs.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo api.RepoID, rev string) (commitID api.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
@@ -53,10 +53,10 @@ func (s *repos) GetCommit(ctx context.Context, repoRev *types.RepoRevSpec) (res 
 		return nil, err
 	}
 
-	return vcsrepo.GetCommit(ctx, vcs.CommitID(repoRev.CommitID))
+	return vcsrepo.GetCommit(ctx, api.CommitID(repoRev.CommitID))
 }
 
-func isAbsCommitID(commitID string) bool { return len(commitID) == 40 }
+func isAbsCommitID(commitID api.CommitID) bool { return len(commitID) == 40 }
 
 func makeErrNotAbsCommitID(prefix string) error {
 	str := "absolute commit ID required (40 hex chars)"

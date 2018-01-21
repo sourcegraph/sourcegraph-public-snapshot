@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
@@ -262,9 +263,9 @@ func TestIntegration(t *testing.T) {
 // test.
 func useGithubForVFS() func() {
 	orig := proxy.NewRemoteRepoVFS
-	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (proxy.FileSystem, error) {
+	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (proxy.FileSystem, error) {
 		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
-		return vfsutil.NewGitHubRepoVFS(fullName, rev)
+		return vfsutil.NewGitHubRepoVFS(fullName, string(commitID))
 	}
 	return func() {
 		proxy.NewRemoteRepoVFS = orig

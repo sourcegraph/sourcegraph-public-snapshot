@@ -29,7 +29,7 @@ import (
 type pkgs struct{}
 
 // RefreshIndex refreshes the packages index for the specified repo@commit.
-func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error)) error {
+func (p *pkgs) RefreshIndex(ctx context.Context, repoURI string, commitID api.CommitID, reposGetInventory func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error)) error {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByURI")
@@ -59,7 +59,7 @@ func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, repos
 	return nil
 }
 
-func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID string) (err error) {
+func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -81,7 +81,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		// perform.
 		return nil
 	}
-	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + commitID)
+	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + string(commitID))
 	var allPks []lspext.PackageInformation
 	err = unsafeXLangCall(ctx, language+"_bg", rootURI, "workspace/xpackages", map[string]string{}, &allPks)
 	if err != nil {

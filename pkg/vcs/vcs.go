@@ -1,14 +1,18 @@
 package vcs
 
-import "time"
+import (
+	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+)
 
 type Commit struct {
-	ID        CommitID   `json:"ID,omitempty"`
-	Author    Signature  `json:"Author"`
-	Committer *Signature `json:"Committer,omitempty"`
-	Message   string     `json:"Message,omitempty"`
+	ID        api.CommitID `json:"ID,omitempty"`
+	Author    Signature    `json:"Author"`
+	Committer *Signature   `json:"Committer,omitempty"`
+	Message   string       `json:"Message,omitempty"`
 	// Parents are the commit IDs of this commit's parent commits.
-	Parents []CommitID `json:"Parents,omitempty"`
+	Parents []api.CommitID `json:"Parents,omitempty"`
 }
 
 type Signature struct {
@@ -22,7 +26,7 @@ type Branch struct {
 	// Name is the name of this branch.
 	Name string `json:"Name,omitempty"`
 	// Head is the commit ID of this branch's head commit.
-	Head CommitID `json:"Head,omitempty"`
+	Head api.CommitID `json:"Head,omitempty"`
 	// Commit optionally contains commit information for this branch's head commit.
 	// It is populated if IncludeCommit option is set.
 	Commit *Commit `json:"Commit,omitempty"`
@@ -56,8 +60,8 @@ type BranchesOptions struct {
 
 // A Tag is a VCS tag.
 type Tag struct {
-	Name     string   `json:"Name,omitempty"`
-	CommitID CommitID `json:"CommitID,omitempty"`
+	Name         string `json:"Name,omitempty"`
+	api.CommitID `json:"CommitID,omitempty"`
 }
 
 // SearchOptions specifies options for a repository search.

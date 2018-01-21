@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -46,7 +47,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 							Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 							Message:   "branch1",
-							Parents:   []vcs.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
+							Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 						},
 						Refs:       []string{"refs/heads/branch1"},
 						SourceRefs: []string{"refs/heads/branch2"},
@@ -76,7 +77,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 							Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 							Message:   "branch1",
-							Parents:   []vcs.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
+							Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 						},
 						Refs:       []string{"refs/heads/branch1"},
 						SourceRefs: []string{"refs/heads/branch2"},
