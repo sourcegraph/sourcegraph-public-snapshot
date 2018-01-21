@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
 	"github.com/keegancsmith/sqlf"
 )
@@ -33,11 +34,11 @@ func validateRepo(repo *types.OrgRepo) error {
 
 type orgRepos struct{}
 
-func (r *orgRepos) GetByID(ctx context.Context, id int32) (*types.OrgRepo, error) {
+func (r *orgRepos) GetByID(ctx context.Context, repo api.RepoID) (*types.OrgRepo, error) {
 	if Mocks.OrgRepos.GetByID != nil {
-		return Mocks.OrgRepos.GetByID(ctx, id)
+		return Mocks.OrgRepos.GetByID(ctx, repo)
 	}
-	return expectOne(r.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL", id))
+	return expectOne(r.getBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL", repo))
 }
 
 func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*types.OrgRepo, error) {

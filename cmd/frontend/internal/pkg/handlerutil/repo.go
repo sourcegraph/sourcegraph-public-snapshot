@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
@@ -31,14 +32,14 @@ func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 
 // getRepoRev resolves the RepoRevSpec and commit specified in the
 // route vars.
-func getRepoRev(ctx context.Context, vars map[string]string, repoID int32) (types.RepoRevSpec, error) {
+func getRepoRev(ctx context.Context, vars map[string]string, repo api.RepoID) (types.RepoRevSpec, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	commitID, err := backend.Repos.ResolveRev(ctx, repoID, repoRev.Rev)
+	commitID, err := backend.Repos.ResolveRev(ctx, repo, repoRev.Rev)
 	if err != nil {
 		return types.RepoRevSpec{}, err
 	}
 
-	return types.RepoRevSpec{Repo: repoID, CommitID: string(commitID)}, nil
+	return types.RepoRevSpec{Repo: repo, CommitID: string(commitID)}, nil
 }
 
 // GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may

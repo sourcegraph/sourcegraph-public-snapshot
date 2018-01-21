@@ -14,7 +14,7 @@ type orgRepoResolver struct {
 }
 
 func (o *orgRepoResolver) ID() int32 {
-	return o.repo.ID
+	return int32(o.repo.ID)
 }
 
 func (o *orgRepoResolver) Org() *orgResolver {

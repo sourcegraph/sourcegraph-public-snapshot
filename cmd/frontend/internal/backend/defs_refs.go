@@ -94,7 +94,7 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	return res, nil
 }
 
-func (s *defs) ListTotalRefs(ctx context.Context, source string) (repos []int32, err error) {
+func (s *defs) ListTotalRefs(ctx context.Context, source string) (repos []api.RepoID, err error) {
 	if Mocks.Defs.ListTotalRefs != nil {
 		return Mocks.Defs.ListTotalRefs(ctx, source)
 	}
@@ -132,7 +132,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (repos []int32,
 	}
 
 	// Store value in the cache.
-	_ = []int32(repos) // important so that we don't accidentally change encoding type
+	_ = []api.RepoID(repos) // important so that we don't accidentally change encoding type
 	jsonRes, err = json.Marshal(repos)
 	if err != nil {
 		return nil, err
@@ -141,14 +141,14 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (repos []int32,
 	return repos, nil
 }
 
-// Dependencies returns the dependency references for the given repoID. I.e., the repo's dependencies.
-func (s *defs) Dependencies(ctx context.Context, repoID int32) ([]*api.DependencyReference, error) {
+// Dependencies returns the dependency references for the given repo. I.e., the repo's dependencies.
+func (s *defs) Dependencies(ctx context.Context, repo api.RepoID) ([]*api.DependencyReference, error) {
 	if Mocks.Defs.Dependencies != nil {
-		return Mocks.Defs.Dependencies(ctx, repoID)
+		return Mocks.Defs.Dependencies(ctx, repo)
 	}
 
 	return db.GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
-		Repo: repoID,
+		Repo: repo,
 	})
 }
 
@@ -239,8 +239,8 @@ func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err 
 
 type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
-	ListTotalRefs        func(ctx context.Context, source string) (repos []int32, err error)
+	ListTotalRefs        func(ctx context.Context, source string) (repos []api.RepoID, err error)
 	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error)
 	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
-	Dependencies         func(ctx context.Context, repoID int32) ([]*api.DependencyReference, error)
+	Dependencies         func(ctx context.Context, repo api.RepoID) ([]*api.DependencyReference, error)
 }

@@ -4,12 +4,14 @@ package types
 import (
 	"fmt"
 	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
-	ID int32
+	ID api.RepoID
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
 	URI string
@@ -38,7 +40,7 @@ type Repo struct {
 // RepoRevSpec specifies a repository at a specific commit.
 type RepoRevSpec struct {
 	// Repo is the ID of the repository.
-	Repo int32
+	Repo api.RepoID
 
 	// CommitID is the 40-character SHA-1 of the Git commit ID.
 	//
@@ -51,7 +53,7 @@ type RepoRevSpec struct {
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
 	Language        string // e.g. "go"
-	RepoID          int32  // repository whose file:line:character describe the symbol of interest
+	api.RepoID             // repository whose file:line:character describe the symbol of interest
 	CommitID        string
 	File            string
 	Line, Character int
@@ -113,7 +115,7 @@ type User struct {
 // OrgRepo represents a repo that exists on a native client's filesystem, but
 // does not necessarily have its contents cloned to a remote Sourcegraph server.
 type OrgRepo struct {
-	ID                int32
+	ID                api.RepoID
 	CanonicalRemoteID string
 	CloneURL          string
 	OrgID             int32
@@ -139,7 +141,7 @@ type ThreadLines struct {
 
 type Thread struct {
 	ID                int32
-	OrgRepoID         int32
+	OrgRepoID         api.RepoID
 	RepoRevisionPath  string
 	LinesRevisionPath string
 	RepoRevision      string

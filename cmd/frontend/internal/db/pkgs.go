@@ -117,7 +117,7 @@ type dbQueryer interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language string, pks []lspext.PackageInformation) (err error) {
+func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo api.RepoID, language string, pks []lspext.PackageInformation) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.update "+language)
 	defer func() {
 		if err != nil {
@@ -250,13 +250,13 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []
 	for rows.Next() {
 		var (
 			pkg, lang string
-			repoID    int32
+			repo      api.RepoID
 		)
-		if err := rows.Scan(&repoID, &lang, &pkg); err != nil {
+		if err := rows.Scan(&repo, &lang, &pkg); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
 		r := api.PackageInfo{
-			RepoID: repoID,
+			RepoID: repo,
 			Lang:   lang,
 		}
 		if err := json.Unmarshal([]byte(pkg), &r.Pkg); err != nil {
@@ -271,7 +271,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []
 	return rawPkgs, nil
 }
 
-func (p *pkgs) Delete(ctx context.Context, repo int32) error {
+func (p *pkgs) Delete(ctx context.Context, repo api.RepoID) error {
 	_, err := globalDB.ExecContext(ctx, `DELETE FROM pkgs WHERE repo_id=$1`, repo)
 	return err
 }

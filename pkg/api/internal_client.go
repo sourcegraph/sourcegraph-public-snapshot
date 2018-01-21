@@ -112,9 +112,9 @@ func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, descri
 	return &repo, nil
 }
 
-func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repoID int32, lang string) ([]*DependencyReference, error) {
+func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo RepoID, lang string) ([]*DependencyReference, error) {
 	req, err := json.Marshal(RepoUnindexedDependenciesRequest{
-		RepoID:   repoID,
+		RepoID:   repo,
 		Language: lang,
 	})
 	if err != nil {
@@ -132,9 +132,9 @@ func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repoID 
 	return unfetchedDeps, nil
 }
 
-func (c *internalClient) ReposUpdateIndex(ctx context.Context, repoID int32, revision, lang string) error {
+func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, revision, lang string) error {
 	req, err := json.Marshal(RepoUpdateIndexRequest{
-		RepoID:   repoID,
+		RepoID:   repo,
 		Revision: revision,
 		Language: lang,
 	})
@@ -161,7 +161,7 @@ func (c *internalClient) ReposGetByURI(ctx context.Context, uri string) (*Repo, 
 	return &repo, nil
 }
 
-func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo int32, commitID string) (*inventory.Inventory, error) {
+func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID string) (*inventory.Inventory, error) {
 	req, err := json.Marshal(ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID})
 	if err != nil {
 		return nil, err

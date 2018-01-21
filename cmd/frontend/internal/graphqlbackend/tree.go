@@ -23,7 +23,7 @@ func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path strin
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, commit.repositoryIDInt32())
+	vcsrepo, err := db.RepoVCS.Open(ctx, commit.repositoryDatabaseID())
 	if err != nil {
 		return nil, err
 	}

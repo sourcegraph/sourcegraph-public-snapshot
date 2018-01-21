@@ -91,13 +91,13 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoID := rp.ID
+	repo := rp.ID
 
 	inputRefs := []lspext.DependencyReference{{
 		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
 	}}
 	if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-		return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repoID)
+		return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repo)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	t.Log("update")
 	wantRefs := []*api.DependencyReference{{
 		DepData: map[string]interface{}{"name": "dep1", "vendor": true},
-		RepoID:  repoID,
+		RepoID:  repo,
 	}}
 	gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 		Language: "go",
@@ -140,7 +140,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	}
 
 	t.Log("delete")
-	if err := GlobalDeps.Delete(ctx, repoID); err != nil {
+	if err := GlobalDeps.Delete(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	gotRefs, err = GlobalDeps.Dependencies(ctx, DependenciesOptions{
@@ -165,11 +165,10 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true); err != nil {
 		t.Fatal(err)
 	}
-	rp, err := Repos.GetByURI(ctx, "myrepo")
+	repo, err := Repos.GetByURI(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoID := rp.ID
 
 	xlangDone := mockXLang(func(ctx context.Context, mode string, rootPath lsp.DocumentURI, method string, params, results interface{}) error {
 		switch method {
@@ -198,11 +197,11 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*types.Repo, error) {
+	Mocks.Repos.GetByURI = func(ctx context.Context, repoURI string) (*types.Repo, error) {
 		calledReposGetByURI = true
-		switch repo {
+		switch repoURI {
 		case "github.com/my/repo":
-			return &types.Repo{ID: repoID, URI: repo}, nil
+			return &types.Repo{ID: repo.ID, URI: repoURI}, nil
 		default:
 			return nil, errors.New("not found")
 		}
@@ -222,7 +221,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 
 	wantRefs := []*api.DependencyReference{{
 		DepData: map[string]interface{}{"name": "github.com/gorilla/dep", "vendor": true},
-		RepoID:  repoID,
+		RepoID:  repo.ID,
 	}}
 	gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 		Language: "go",
@@ -245,7 +244,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 	ctx := testContext()
 
-	repoIDs := make([]int32, 5)
+	repos := make([]api.RepoID, 5)
 	for i := 0; i < 5; i++ {
 		uri := fmt.Sprintf("myrepo-%d", i)
 		if err := Repos.TryInsertNew(ctx, uri, "", false, true); err != nil {
@@ -255,20 +254,20 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		repoIDs[i] = rp.ID
+		repos[i] = rp.ID
 	}
 
-	inputRefs := map[int32][]lspext.DependencyReference{
-		repoIDs[0]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true}}},
-		repoIDs[1]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true}}},
-		repoIDs[2]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
-		repoIDs[3]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
-		repoIDs[4]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
+	inputRefs := map[api.RepoID][]lspext.DependencyReference{
+		repos[0]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true}}},
+		repos[1]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true}}},
+		repos[2]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
+		repos[3]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
+		repos[4]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
 	}
 
-	for repoID, inputRefs := range inputRefs {
+	for repo, inputRefs := range inputRefs {
 		if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-			return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repoID)
+			return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repo)
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -277,7 +276,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	{ // Test case 1
 		wantRefs := []*api.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true},
-			RepoID:  repoIDs[0],
+			RepoID:  repos[0],
 		}}
 		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 			Language: "go",
@@ -296,7 +295,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	{ // Test case 2
 		wantRefs := []*api.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true},
-			RepoID:  repoIDs[1],
+			RepoID:  repos[1],
 		}}
 		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 			Language: "go",
@@ -315,14 +314,14 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	{ // Test case 3
 		wantRefs := []*api.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
-			RepoID:  repoIDs[2],
+			RepoID:  repos[2],
 		}, {
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
-			RepoID:  repoIDs[3],
+			RepoID:  repos[3],
 		},
 			{
 				DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
-				RepoID:  repoIDs[4],
+				RepoID:  repos[4],
 			},
 		}
 		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{

@@ -18,6 +18,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
@@ -30,23 +31,23 @@ type threadConnectionResolver struct {
 	limit              *int32
 }
 
-func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repoIDs []int32) {
+func (t *threadConnectionResolver) orgRepoArgs() (orgID *int32, repos []api.RepoID) {
 	if t.org != nil {
 		orgID = &t.org.ID
 	}
 	if len(t.repos) > 0 {
 		for _, repo := range t.repos {
-			repoIDs = append(repoIDs, repo.ID)
+			repos = append(repos, repo.ID)
 		}
-		// repoIDs imply an orgID, avoid unnecessary join.
+		// repos imply an orgID, avoid unnecessary join.
 		orgID = nil
 	} else if len(t.canonicalRemoteIDs) > 0 {
 		// The query is for some repos but none of them exist.
 		// This is not an error condition because we lazily populate org_repos.
-		// Set an invalid repoID so no results are returned.
-		repoIDs = []int32{-1}
+		// Set an invalid repo so no results are returned.
+		repos = []api.RepoID{-1}
 	}
-	return orgID, repoIDs
+	return orgID, repos
 }
 
 const maxLimit = 1000
@@ -61,7 +62,7 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 	if err != nil {
 		return nil, err
 	}
-	repos := make(map[int32]*types.OrgRepo)
+	repos := make(map[api.RepoID]*types.OrgRepo)
 	for _, repo := range t.repos {
 		repos[repo.ID] = repo
 	}
@@ -74,8 +75,8 @@ func (t *threadConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver
 }
 
 func (t *threadConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	orgID, repoIDs := t.orgRepoArgs()
-	count, err := db.Threads.CountByFile(ctx, orgID, repoIDs, t.branch, t.file)
+	orgID, repos := t.orgRepoArgs()
+	count, err := db.Threads.CountByFile(ctx, orgID, repos, t.branch, t.file)
 	return int32(count), err
 }
 

@@ -6,6 +6,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -18,7 +19,7 @@ import (
 // * Empty repository: vcs.ErrRevisionNotFound
 // * The user does not have permission: db.ErrRepoNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo int32, rev string) (commitID vcs.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo api.RepoID, rev string) (commitID vcs.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}

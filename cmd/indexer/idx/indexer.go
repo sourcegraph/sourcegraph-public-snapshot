@@ -188,18 +188,18 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err
 }
 
 // enqueueDependencies makes a best effort to enqueue dependencies of the specified repository
-// (repoID) for certain languages. The languages covered are languages where the language server
+// (repo) for certain languages. The languages covered are languages where the language server
 // itself cannot resolve dependencies to source repository URLs. For those languages, dependency
 // repositories must be indexed before cross-repo jump-to-def can work. enqueueDependencies tries to
 // best-effort determine what those dependencies are and enqueue them.
-func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID int32) error {
+func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repo api.RepoID) error {
 	// do nothing if this is not a language that requires heuristic dependency resolution
 	if lang != "Java" {
 		return nil
 	}
-	log15.Info("Enqueuing dependencies for repo", "repo", repoID, "lang", lang)
+	log15.Info("Enqueuing dependencies for repo", "repo", repo, "lang", lang)
 
-	unfetchedDeps, err := api.InternalClient.ReposUnindexedDependencies(ctx, repoID, lang)
+	unfetchedDeps, err := api.InternalClient.ReposUnindexedDependencies(ctx, repo, lang)
 	if err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID
 		wq.Enqueue(repo.URI, "")
 		resolvedDepsList = append(resolvedDepsList, repo.URI)
 	}
-	log15.Info("Enqueued dependencies for repo", "repo", repoID, "lang", lang, "num", len(resolvedDeps), "dependencies", resolvedDepsList)
+	log15.Info("Enqueued dependencies for repo", "repo", repo, "lang", lang, "num", len(resolvedDeps), "dependencies", resolvedDepsList)
 	return nil
 }
 

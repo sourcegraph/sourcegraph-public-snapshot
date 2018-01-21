@@ -7,6 +7,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	graphql "github.com/neelance/graphql-go"
@@ -27,7 +28,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*gitCommitResolver, erro
 
 type gitCommitResolver struct {
 	// Either repoID or repo must be set.
-	repoID int32
+	repoID api.RepoID
 	repo   *repositoryResolver
 
 	oid       gitObjectID
@@ -73,14 +74,14 @@ func (r *gitCommitResolver) Repository(ctx context.Context) (*repositoryResolver
 	return repositoryByIDInt32(ctx, r.repoID)
 }
 
-func (r *gitCommitResolver) repositoryID() graphql.ID {
+func (r *gitCommitResolver) repositoryGraphQLID() graphql.ID {
 	if r.repo != nil {
 		return r.repo.ID()
 	}
 	return marshalRepositoryID(r.repoID)
 }
 
-func (r *gitCommitResolver) repositoryIDInt32() int32 {
+func (r *gitCommitResolver) repositoryDatabaseID() api.RepoID {
 	if r.repo != nil {
 		return r.repo.repo.ID
 	}

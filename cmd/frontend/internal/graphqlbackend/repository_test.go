@@ -8,6 +8,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -16,7 +17,7 @@ const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
 func TestRepository_Commit(t *testing.T) {
 	resetMocks()
 	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (vcs.CommitID, error) {
 		if repo != 2 || rev != "abc" {
 			t.Error("wrong arguments to ResolveRev")
 		}

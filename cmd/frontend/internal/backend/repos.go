@@ -13,6 +13,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -24,18 +25,18 @@ var Repos = &repos{}
 
 type repos struct{}
 
-func (s *repos) Get(ctx context.Context, id int32) (repo *types.Repo, err error) {
+func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
 	if Mocks.Repos.Get != nil {
-		return Mocks.Repos.Get(ctx, id)
+		return Mocks.Repos.Get(ctx, repo)
 	}
 
-	ctx, done := trace(ctx, "Repos", "Get", id, &err)
+	ctx, done := trace(ctx, "Repos", "Get", repo, &err)
 	defer done()
 
-	return db.Repos.Get(ctx, id)
+	return db.Repos.Get(ctx, repo)
 }
 
-func (s *repos) GetByURI(ctx context.Context, uri string) (res *types.Repo, err error) {
+func (s *repos) GetByURI(ctx context.Context, uri string) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
 	}

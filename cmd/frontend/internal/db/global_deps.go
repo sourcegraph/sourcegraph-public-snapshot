@@ -114,13 +114,13 @@ func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, langs []*inv
 // ListTotalRefs is like TotalRefs, except it returns a list of repo IDs
 // instead of just the length of that list. Obviously, this is less efficient
 // if you just need the count, however.
-func (g *globalDeps) ListTotalRefs(ctx context.Context, repoURI string, langs []*inventory.Lang) ([]int32, error) {
+func (g *globalDeps) ListTotalRefs(ctx context.Context, repoURI string, langs []*inventory.Lang) ([]api.RepoID, error) {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "Repos.GetByURI")
 	}
 
-	var results []int32
+	var repos []api.RepoID
 	for _, lang := range langs {
 		switch lang.Name {
 		case inventory.LangGo:
@@ -129,17 +129,17 @@ func (g *globalDeps) ListTotalRefs(ctx context.Context, repoURI string, langs []
 				if err != nil {
 					return nil, errors.Wrap(err, "doListTotalRefsGo")
 				}
-				results = append(results, refs...)
+				repos = append(repos, refs...)
 			}
 		case inventory.LangJava:
 			refs, err := g.doListTotalRefs(ctx, repo.ID, "java")
 			if err != nil {
 				return nil, errors.Wrap(err, "doListTotalRefs")
 			}
-			results = append(results, refs...)
+			repos = append(repos, refs...)
 		}
 	}
-	return results, nil
+	return repos, nil
 }
 
 // repoURIToGoPathPrefixes translates a repository URI like
@@ -233,7 +233,7 @@ func repoURIToGoPathPrefixes(repoURI string) []string {
 }
 
 // doTotalRefs is the generic implementation of total references, using the `pkgs` table.
-func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (sum int, err error) {
+func (g *globalDeps) doTotalRefs(ctx context.Context, repo api.RepoID, lang string) (sum int, err error) {
 	// Get packages contained in the repo
 	packages, err := (&pkgs{}).ListPackages(ctx, &api.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
 	if err != nil {
@@ -281,7 +281,7 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 
 // doListTotalRefs is the generic implementation of list total references,
 // using the `pkgs` table.
-func (g *globalDeps) doListTotalRefs(ctx context.Context, repo int32, lang string) (results []int32, err error) {
+func (g *globalDeps) doListTotalRefs(ctx context.Context, repo api.RepoID, lang string) ([]api.RepoID, error) {
 	// Get packages contained in the repo
 	packages, err := (&pkgs{}).ListPackages(ctx, &api.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
 	if err != nil {
@@ -318,14 +318,15 @@ func (g *globalDeps) doListTotalRefs(ctx context.Context, repo int32, lang strin
 		return nil, errors.Wrap(err, "Query")
 	}
 	defer rows.Close()
+	var repos []api.RepoID
 	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
+		var repo api.RepoID
+		if err := rows.Scan(&repo); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		results = append(results, int32(id))
+		repos = append(repos, repo)
 	}
-	return results, nil
+	return repos, nil
 }
 
 // doTotalRefsGo is the Go-specific implementation of total references, since we can extract package metadata directly
@@ -360,7 +361,7 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 // doListTotalRefsGo is the Go-specific implementation of list total
 // references, since we can extract package metadata directly from Go
 // repository URLs, without going through the `pkgs` table.
-func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]int32, error) {
+func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]api.RepoID, error) {
 	// TODO(sqs): also query global_dep_private table
 
 	// Because global_dep only store Go package paths, not repository URIs, we
@@ -377,16 +378,16 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]in
 		return nil, errors.Wrap(err, "Query")
 	}
 	defer rows.Close()
-	var results []int32
+	var repos []api.RepoID
 	for rows.Next() {
-		var id int64
-		err := rows.Scan(&id)
+		var repo api.RepoID
+		err := rows.Scan(&repo)
 		if err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		results = append(results, int32(id))
+		repos = append(repos, repo)
 	}
-	return results, nil
+	return repos, nil
 }
 
 func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID string) (err error) {
@@ -440,7 +441,7 @@ type DependenciesOptions struct {
 
 	// Repo filters the returned list of DependencyReference instances
 	// by repo. It should be used mutually exclusively with DepData.
-	Repo int32
+	Repo api.RepoID
 
 	// Limit limits the number of returned dependency references to the
 	// specified number.
@@ -525,13 +526,13 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	for rows.Next() {
 		var (
 			depData, hints string
-			repoID         int32
+			repo           api.RepoID
 		)
-		if err := rows.Scan(&depData, &repoID, &hints); err != nil {
+		if err := rows.Scan(&depData, &repo, &hints); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
 		r := &api.DependencyReference{
-			RepoID: repoID,
+			RepoID: repo,
 		}
 		if err := json.Unmarshal([]byte(depData), &r.DepData); err != nil {
 			return nil, errors.Wrap(err, "unmarshaling xdependencies metadata from sql scan")
@@ -548,7 +549,7 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 }
 
 // updateGlobalDep updates the global_dep table.
-func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language string, deps []lspext.DependencyReference, indexRepo int32) (err error) {
+func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language string, deps []lspext.DependencyReference, indexRepo api.RepoID) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "updateGlobalDep "+language)
 	defer func() {
 		if err != nil {
@@ -633,7 +634,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 	return nil
 }
 
-func (g *globalDeps) Delete(ctx context.Context, repo int32) error {
+func (g *globalDeps) Delete(ctx context.Context, repo api.RepoID) error {
 	if _, err := globalDB.ExecContext(ctx, `DELETE FROM global_dep WHERE repo_id=$1`, repo); err != nil {
 		return err
 	}

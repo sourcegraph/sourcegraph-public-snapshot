@@ -22,6 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -149,15 +150,15 @@ func (b *blameFileMatchCache) reposGetByURI(ctx context.Context, repoURI string)
 }
 
 // repoVCSOpen is like localstore.Repos.ResolveRev except it is cached by b.
-func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID int32, revStr string) (vcs.CommitID, error) {
-	cacheKey := fmt.Sprint(repoID, revStr)
+func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repo api.RepoID, revStr string) (vcs.CommitID, error) {
+	cacheKey := fmt.Sprint(repo, revStr)
 	b.cachedRevsMu.RLock()
 	rev, ok := b.cachedRevs[cacheKey]
 	b.cachedRevsMu.RUnlock()
 	if ok {
 		return rev, nil
 	}
-	rev, err := backend.Repos.ResolveRev(ctx, repoID, revStr)
+	rev, err := backend.Repos.ResolveRev(ctx, repo, revStr)
 	if err != nil {
 		return "", err
 	}
@@ -168,14 +169,14 @@ func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID int32,
 }
 
 // repoVCSOpen is like localstore.RepoVCS.Open except it is cached by b.
-func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID int32) (vcs.Repository, error) {
+func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
 	b.cachedVCSReposMu.RLock()
-	vcsrepo, ok := b.cachedVCSRepos[fmt.Sprint(repoID)]
+	vcsrepo, ok := b.cachedVCSRepos[fmt.Sprint(repo)]
 	b.cachedVCSReposMu.RUnlock()
 	if ok {
 		return vcsrepo, nil
 	}
-	vcsrepo, err := db.RepoVCS.Open(ctx, repoID)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +184,7 @@ func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID int32) (vc
 		return nil, err
 	}
 	b.cachedVCSReposMu.Lock()
-	b.cachedVCSRepos[fmt.Sprint(repoID)] = vcsrepo
+	b.cachedVCSRepos[fmt.Sprint(repo)] = vcsrepo
 	b.cachedVCSReposMu.Unlock()
 	return vcsrepo, nil
 }

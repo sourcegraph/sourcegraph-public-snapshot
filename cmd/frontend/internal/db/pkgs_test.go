@@ -179,7 +179,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 	ctx := testContext()
 
-	repoToPkgs := map[int32][]lspext.PackageInformation{
+	repoToPkgs := map[api.RepoID][]lspext.PackageInformation{
 		1: []lspext.PackageInformation{{
 			Package: map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 			Dependencies: []lspext.DependencyReference{{
@@ -323,15 +323,15 @@ func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []api.Package
 
 	for rows.Next() {
 		var (
-			repoID   int32
+			repo     api.RepoID
 			language string
 			pkg      string
 		)
-		if err := rows.Scan(&repoID, &language, &pkg); err != nil {
+		if err := rows.Scan(&repo, &language, &pkg); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
 		p := api.PackageInfo{
-			RepoID: repoID,
+			RepoID: repo,
 			Lang:   language,
 		}
 		if err := json.Unmarshal([]byte(pkg), &p.Pkg); err != nil {

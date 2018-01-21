@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -26,7 +27,7 @@ type repositoryResolver struct {
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
-	var repoID int32
+	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
@@ -40,8 +41,8 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	return &repositoryResolver{repo: repo}, nil
 }
 
-func repositoryByIDInt32(ctx context.Context, id int32) (*repositoryResolver, error) {
-	repo, err := db.Repos.Get(ctx, id)
+func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryResolver, error) {
+	repo, err := db.Repos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,10 +56,10 @@ func (r *repositoryResolver) ID() graphql.ID {
 	return marshalRepositoryID(r.repo.ID)
 }
 
-func marshalRepositoryID(id int32) graphql.ID { return relay.MarshalID("Repository", id) }
+func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 
-func unmarshalRepositoryID(id graphql.ID) (repositoryID int32, err error) {
-	err = relay.UnmarshalSpec(id, &repositoryID)
+func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
 
@@ -221,7 +222,7 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 	)
 	for _, refRepo := range totalRefs {
 		run.Acquire()
-		go func(refRepo int32) {
+		go func(refRepo api.RepoID) {
 			defer func() {
 				if r := recover(); r != nil {
 					run.Error(fmt.Errorf("recover: %v", r))

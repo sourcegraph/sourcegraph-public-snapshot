@@ -17,6 +17,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -52,7 +53,7 @@ type repos struct{}
 // caller is concerned the copy of the data in the database might be
 // stale, the caller is responsible for fetching data from any
 // external services.
-func (s *repos) Get(ctx context.Context, id int32) (*types.Repo, error) {
+func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, id)
 	}
@@ -72,7 +73,7 @@ func (s *repos) Get(ctx context.Context, id int32) (*types.Repo, error) {
 // from the database and NOT from any external sources. It is a more
 // specialized and optimized version of Get, since many callers of Get only
 // want the Repository.URI field.
-func (s *repos) GetURI(ctx context.Context, id int32) (string, error) {
+func (s *repos) GetURI(ctx context.Context, id api.RepoID) (string, error) {
 	if Mocks.Repos.GetURI != nil {
 		return Mocks.Repos.GetURI(ctx, id)
 	}
@@ -547,7 +548,7 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 
 // Delete deletes the repository row from the repo table. It will also delete any rows in the GlobalDeps and Pkgs stores
 // that reference the deleted repository row.
-func (s *repos) Delete(ctx context.Context, repo int32) error {
+func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 	if Mocks.Repos.Delete != nil {
 		return Mocks.Repos.Delete(ctx, repo)
 	}
@@ -565,7 +566,7 @@ func (s *repos) Delete(ctx context.Context, repo int32) error {
 	return err
 }
 
-func (s *repos) SetEnabled(ctx context.Context, id int32, enabled bool) error {
+func (s *repos) SetEnabled(ctx context.Context, id api.RepoID, enabled bool) error {
 	q := sqlf.Sprintf("UPDATE repo SET enabled=%t WHERE id=%d", enabled, id)
 	res, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -581,13 +582,13 @@ func (s *repos) SetEnabled(ctx context.Context, id int32, enabled bool) error {
 	return nil
 }
 
-func (s *repos) UpdateLanguage(ctx context.Context, repoID int32, language string) error {
-	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repoID)
+func (s *repos) UpdateLanguage(ctx context.Context, repo api.RepoID, language string) error {
+	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repo)
 	return err
 }
 
-func (s *repos) UpdateIndexedRevision(ctx context.Context, repoID int32, rev string) error {
-	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET indexed_revision=$1 WHERE id=$2", rev, repoID)
+func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, rev string) error {
+	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET indexed_revision=$1 WHERE id=$2", rev, repo)
 	return err
 }
 

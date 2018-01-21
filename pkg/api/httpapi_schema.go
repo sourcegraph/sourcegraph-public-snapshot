@@ -18,18 +18,18 @@ type RepoCreateOrUpdateRequest struct {
 }
 
 type RepoUpdateIndexRequest struct {
-	RepoID   int32  `json:"repoID"`
+	RepoID   `json:"repoID"`
 	Revision string `json:"revision"`
 	Language string `json:"language"`
 }
 
 type RepoUnindexedDependenciesRequest struct {
-	RepoID   int32  `json:"repoID"`
+	RepoID   `json:"repoID"`
 	Language string `json:"language"`
 }
 
 type ReposGetInventoryUncachedRequest struct {
-	Repo     int32
+	Repo     RepoID
 	CommitID string
 }
 
