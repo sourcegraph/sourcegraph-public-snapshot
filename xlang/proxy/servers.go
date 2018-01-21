@@ -82,7 +82,7 @@ func registerServersFromEnv() error {
 		if prefix := "LANGSERVER_"; strings.HasPrefix(name, prefix) && !strings.HasSuffix(name, "_ARGS_JSON") {
 			mode := strings.ToLower(strings.TrimPrefix(name, prefix))
 			if strings.HasPrefix(val, "tcp://") {
-				err := registerTCPServer(name, mode)
+				err := registerTCPServer(mode, val)
 				if err != nil {
 					return err
 				}
