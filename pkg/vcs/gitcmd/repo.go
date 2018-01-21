@@ -56,14 +56,14 @@ var (
 
 type Repository struct {
 	// repoURI is the api.Repo.URI. eg "github.com/gorilla/mux"
-	repoURI string
+	repoURI api.RepoURI
 }
 
 func (r *Repository) String() string {
 	return fmt.Sprintf("git repo %s", r.repoURI)
 }
 
-func Open(repoURI string) *Repository {
+func Open(repoURI api.RepoURI) *Repository {
 	return &Repository{repoURI: repoURI}
 }
 
@@ -91,7 +91,7 @@ func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 // * Commit does not exist: vcs.ErrRevisionNotFound
 // * Empty repository: vcs.ErrRevisionNotFound
 // * Other unexpected errors.
-func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.CommitID, error) {
+func (r *Repository) ResolveRevision(ctx context.Context, spec string) (api.CommitID, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
 	defer span.Finish()
@@ -122,7 +122,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 		}
 		return "", fmt.Errorf("exec `git rev-parse` failed: %s. Stderr was:\n\n%s", err, stderr)
 	}
-	commit := vcs.CommitID(bytes.TrimSpace(stdout))
+	commit := api.CommitID(bytes.TrimSpace(stdout))
 	if len(commit) != 40 {
 		if commit == "HEAD" {
 			// We don't verify the existance of HEAD (see above comments), but
@@ -187,7 +187,7 @@ func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*
 	var branches []*vcs.Branch
 	for _, ref := range refs {
 		name := strings.TrimPrefix(ref[1], "refs/heads/")
-		id := vcs.CommitID(ref[0])
+		id := api.CommitID(ref[0])
 		if !f.allows(name) {
 			continue
 		}
@@ -266,7 +266,7 @@ func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
 	for i, ref := range refs {
 		tags[i] = &vcs.Tag{
 			Name:     strings.TrimPrefix(ref[1], "refs/tags/"),
-			CommitID: vcs.CommitID(ref[0]),
+			CommitID: api.CommitID(ref[0]),
 		}
 	}
 	return tags, nil
@@ -309,7 +309,7 @@ func (r *Repository) showRef(ctx context.Context, arg string) ([][2]string, erro
 }
 
 // getCommit returns the commit with the given id.
-func (r *Repository) getCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commit, error) {
+func (r *Repository) getCommit(ctx context.Context, id api.CommitID) (*vcs.Commit, error) {
 	if err := checkSpecArgSafety(string(id)); err != nil {
 		return nil, err
 	}
@@ -326,7 +326,7 @@ func (r *Repository) getCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commi
 	return commits[0], nil
 }
 
-func (r *Repository) GetCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commit, error) {
+func (r *Repository) GetCommit(ctx context.Context, id api.CommitID) (*vcs.Commit, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
@@ -457,7 +457,7 @@ func parseUint(s string) (uint, error) {
 	return uint(n), err
 }
 
-func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
+func (r *Repository) Diff(ctx context.Context, base, head api.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
 	r.ensureAbsCommit(base)
 	r.ensureAbsCommit(head)
 	if opt == nil {
@@ -656,7 +656,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 		lineNoCur, _ := strconv.Atoi(hunkHeader[2])
 		nLines, _ := strconv.Atoi(hunkHeader[3])
 		hunk := &vcs.Hunk{
-			CommitID:  vcs.CommitID(commitID),
+			CommitID:  api.CommitID(commitID),
 			StartLine: int(lineNoCur),
 			EndLine:   int(lineNoCur + nLines),
 			StartByte: byteOffset,
@@ -679,7 +679,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 			}
 			summary := strings.Join(strings.Split(remainingLines[9], " ")[1:], " ")
 			commit := vcs.Commit{
-				ID:      vcs.CommitID(commitID),
+				ID:      api.CommitID(commitID),
 				Message: summary,
 				Author: vcs.Signature{
 					Name:  author,
@@ -729,7 +729,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 	return hunks, nil
 }
 
-func (r *Repository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.CommitID, error) {
+func (r *Repository) MergeBase(ctx context.Context, a, b api.CommitID) (api.CommitID, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: MergeBase")
 	span.SetTag("A", a)
 	span.SetTag("B", b)
@@ -740,7 +740,7 @@ func (r *Repository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.Comm
 	if err != nil {
 		return "", fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
 	}
-	return vcs.CommitID(bytes.TrimSpace(out)), nil
+	return api.CommitID(bytes.TrimSpace(out)), nil
 }
 
 func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
@@ -782,7 +782,7 @@ func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) 
 	return committers, nil
 }
 
-func (r *Repository) ReadFile(ctx context.Context, commit vcs.CommitID, name string) ([]byte, error) {
+func (r *Repository) ReadFile(ctx context.Context, commit api.CommitID, name string) ([]byte, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
@@ -799,7 +799,7 @@ func (r *Repository) ReadFile(ctx context.Context, commit vcs.CommitID, name str
 	return b, nil
 }
 
-func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, name string) ([]byte, error) {
+func (r *Repository) readFileBytes(ctx context.Context, commit api.CommitID, name string) ([]byte, error) {
 	r.ensureAbsCommit(commit)
 
 	cmd := r.command("git", "show", string(commit)+":"+name)
@@ -826,7 +826,7 @@ func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, nam
 	return out, nil
 }
 
-func (r *Repository) Lstat(ctx context.Context, commit vcs.CommitID, path string) (os.FileInfo, error) {
+func (r *Repository) Lstat(ctx context.Context, commit api.CommitID, path string) (os.FileInfo, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Lstat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -854,7 +854,7 @@ func (r *Repository) Lstat(ctx context.Context, commit vcs.CommitID, path string
 	return fis[0], nil
 }
 
-func (r *Repository) Stat(ctx context.Context, commit vcs.CommitID, path string) (os.FileInfo, error) {
+func (r *Repository) Stat(ctx context.Context, commit api.CommitID, path string) (os.FileInfo, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -888,7 +888,7 @@ func (r *Repository) Stat(ctx context.Context, commit vcs.CommitID, path string)
 	return fi, nil
 }
 
-func (r *Repository) ReadDir(ctx context.Context, commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+func (r *Repository) ReadDir(ctx context.Context, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -905,7 +905,7 @@ func (r *Repository) ReadDir(ctx context.Context, commit vcs.CommitID, path stri
 }
 
 // lsTree returns ls of tree at path.
-func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	r.ensureAbsCommit(commit)
 
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
@@ -998,7 +998,7 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 			}
 			sys = vcs.SubmoduleInfo{
 				URL:      url,
-				CommitID: vcs.CommitID(oid),
+				CommitID: api.CommitID(oid),
 			}
 		case "tree":
 			mode = mode | int64(os.ModeDir)
@@ -1016,7 +1016,7 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 	return fis, nil
 }
 
-func (r *Repository) ensureAbsCommit(commitID vcs.CommitID) {
+func (r *Repository) ensureAbsCommit(commitID api.CommitID) {
 	// We don't want to even be running commands on non-absolute
 	// commit IDs if we can avoid it, because we can't cache the
 	// expensive part of those computations.

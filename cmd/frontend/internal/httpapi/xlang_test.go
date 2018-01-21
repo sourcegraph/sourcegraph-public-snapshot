@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 )
 
@@ -20,7 +21,7 @@ func TestXLang(t *testing.T) {
 
 	calledValid := false
 	calledUnauthed := false
-	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*types.Repo, error) {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 		switch uri {
 		case "my/repo":
 			calledValid = true

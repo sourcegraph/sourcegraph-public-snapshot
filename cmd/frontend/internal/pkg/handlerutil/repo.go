@@ -8,11 +8,12 @@ import (
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
-// RepoSpec route param. Callers should ideally check for a return error of type
+// Repo route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
 func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
@@ -29,39 +30,37 @@ func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	return repo, nil
 }
 
-// getRepoRev resolves the RepoRevSpec and commit specified in the
-// route vars.
-func getRepoRev(ctx context.Context, vars map[string]string, repoID int32) (types.RepoRevSpec, error) {
+// getRepoRev resolves the repository and commit specified in the route vars.
+func getRepoRev(ctx context.Context, vars map[string]string, repo api.RepoID) (api.RepoID, api.CommitID, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	commitID, err := backend.Repos.ResolveRev(ctx, repoID, repoRev.Rev)
+	commitID, err := backend.Repos.ResolveRev(ctx, repo, repoRev.Rev)
 	if err != nil {
-		return types.RepoRevSpec{}, err
+		return 0, "", err
 	}
 
-	return types.RepoRevSpec{Repo: repoID, CommitID: string(commitID)}, nil
+	return repo, commitID, nil
 }
 
-// GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
+// GetRepoAndRev returns the repo object and the commit ID for a repository. It may
 // also return custom error URLMovedError to allow special handling of this case,
 // such as for example redirecting the user.
-func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *types.Repo, repoRevSpec types.RepoRevSpec, err error) {
-	repo, err = GetRepo(ctx, vars)
+func GetRepoAndRev(ctx context.Context, vars map[string]string) (*types.Repo, api.CommitID, error) {
+	repo, err := GetRepo(ctx, vars)
 	if err != nil {
-		return repo, repoRevSpec, err
+		return repo, "", err
 	}
-	repoRevSpec.Repo = repo.ID
 
-	repoRevSpec, err = getRepoRev(ctx, vars, repo.ID)
-	return repo, repoRevSpec, err
+	_, commitID, err := getRepoRev(ctx, vars, repo.ID)
+	return repo, commitID, err
 }
 
 // RedirectToNewRepoURI writes an HTTP redirect response with a
 // Location that matches the request's location except with the
-// RepoSpec route var updated to refer to newRepoURI (instead of the
+// Repo route var updated to refer to newRepoURI (instead of the
 // originally requested repo URI).
-func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI string) error {
+func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI api.RepoURI) error {
 	origVars := mux.Vars(r)
-	origVars["Repo"] = newRepoURI
+	origVars["Repo"] = string(newRepoURI)
 
 	var pairs []string
 	for k, v := range origVars {

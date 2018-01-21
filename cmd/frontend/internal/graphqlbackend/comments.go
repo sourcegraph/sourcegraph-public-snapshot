@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
@@ -449,10 +450,10 @@ func usernamesFromMentions(contents string) []string {
 	return usernames
 }
 
-func repoNameFromRemoteID(canonicalRemoteID string) string {
-	m := strings.SplitN(canonicalRemoteID, "/", 2)
+func repoNameFromRemoteID(canonicalRemoteID api.RepoURI) string {
+	m := strings.SplitN(string(canonicalRemoteID), "/", 2)
 	if len(m) < 2 {
-		return canonicalRemoteID
+		return string(canonicalRemoteID)
 	}
 	return m[1]
 }

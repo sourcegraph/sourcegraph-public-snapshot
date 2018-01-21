@@ -24,7 +24,7 @@ func TestReposService_Get(t *testing.T) {
 
 	calledGet := db.Mocks.Repos.MockGet_Return(t, wantRepo)
 
-	repo, err := s.Get(ctx, &types.RepoSpec{ID: 1})
+	repo, err := s.Get(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}

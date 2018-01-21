@@ -1,5 +1,7 @@
 package graphqlbackend
 
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+
 type dependencyReferencesResolver struct {
 	dependencyReferenceData *dependencyReferencesDataResolver
 	repoData                *repoDataMapResolver
@@ -12,7 +14,7 @@ type dependencyReferencesDataResolver struct {
 
 type dependencyReferenceResolver struct {
 	dependencyData string
-	repoID         int32
+	repo           api.RepoID
 	hints          string
 }
 
@@ -23,7 +25,7 @@ type dependencyLocationResolver struct {
 
 type repoDataMapResolver struct {
 	repos   []*repositoryResolver
-	repoIDs []int32
+	repoIDs []api.RepoID
 }
 
 func (r *repoDataMapResolver) Repos() []*repositoryResolver {
@@ -31,7 +33,7 @@ func (r *repoDataMapResolver) Repos() []*repositoryResolver {
 }
 
 func (r *repoDataMapResolver) RepoIDs() []int32 {
-	return r.repoIDs
+	return repoIDsToInt32s(r.repoIDs)
 }
 
 func (r *dependencyReferencesResolver) DependencyReferenceData() *dependencyReferencesDataResolver {
@@ -55,7 +57,7 @@ func (r *dependencyReferenceResolver) DependencyData() string {
 }
 
 func (r *dependencyReferenceResolver) RepoID() int32 {
-	return r.repoID
+	return int32(r.repo)
 }
 
 func (r *dependencyReferenceResolver) Hints() string {

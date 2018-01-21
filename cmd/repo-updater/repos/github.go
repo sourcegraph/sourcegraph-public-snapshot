@@ -159,7 +159,7 @@ func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*gith
 		if hostPart == "api.github.com" {
 			hostPart = "github.com"
 		}
-		uri := fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName())
+		uri := api.RepoURI(fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName()))
 
 		repo, err := api.InternalClient.ReposCreateIfNotExists(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), initialEnablement)
 		if err != nil {

@@ -3,12 +3,13 @@ package protocol
 import (
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // ExecRequest is a request to execute a command inside a git repository.
 type ExecRequest struct {
-	Repo           string          `json:"repo"`
+	Repo           api.RepoURI     `json:"repo"`
 	EnsureRevision string          `json:"ensureRevision"`
 	Args           []string        `json:"args"`
 	Opt            *vcs.RemoteOpts `json:"opt"`
@@ -16,7 +17,7 @@ type ExecRequest struct {
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo string `json:"repo"`
+	Repo api.RepoURI `json:"repo"`
 }
 
 type NotFoundPayload struct {
@@ -26,7 +27,7 @@ type NotFoundPayload struct {
 // IsRepoCloneableRequest is a request to determine if a repo is cloneable.
 type IsRepoCloneableRequest struct {
 	// Repo is the repository to check.
-	Repo string
+	Repo api.RepoURI
 }
 
 // IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
@@ -38,13 +39,13 @@ type IsRepoCloneableResponse struct {
 // IsRepoClonedRequest is a request to determine if a repo currently exists on gitserver.
 type IsRepoClonedRequest struct {
 	// Repo is the repository to check.
-	Repo string
+	Repo api.RepoURI
 }
 
 // RepoInfoRequest is a request for information about a repository on gitserver.
 type RepoInfoRequest struct {
 	// Repo is the repository to get information about.
-	Repo string
+	Repo api.RepoURI
 }
 
 // RepoInfoResponse is the response to a repository information request (RepoInfoRequest).

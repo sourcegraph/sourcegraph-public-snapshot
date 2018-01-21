@@ -3,11 +3,13 @@ package graphqlbackend
 import (
 	"reflect"
 	"testing"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestParseRepositoryRevisions(t *testing.T) {
 	tests := map[string]struct {
-		repo string
+		repo api.RepoURI
 		revs []revspecOrRefGlob
 	}{
 		"repo":           {repo: "repo"},

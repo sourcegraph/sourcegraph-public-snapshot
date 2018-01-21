@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -93,7 +94,7 @@ func (s *Server) CleanupRepos() {
 		initTime := cfg.ModTime()
 		if time.Since(initTime) > repoTTL {
 			log15.Info("recloning expired repo", "repo", repoRoot)
-			uri := protocol.NormalizeRepo(strings.TrimPrefix(repoRoot, s.ReposDir+"/"))
+			uri := protocol.NormalizeRepo(api.RepoURI(strings.TrimPrefix(repoRoot, s.ReposDir+"/")))
 			tmp, err := ioutil.TempDir(s.ReposDir, "tmp-clone-")
 			tmpCloneRoot := path.Join(tmp, path.Base(repoRoot))
 			if err != nil {

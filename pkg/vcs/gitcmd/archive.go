@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // Archive implements vcs.Archiver.
-func (r *Repository) Archive(ctx context.Context, commitID vcs.CommitID) (zipData []byte, err error) {
+func (r *Repository) Archive(ctx context.Context, commitID api.CommitID) (zipData []byte, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("URL", r.repoURI)
 	span.SetTag("Commit", commitID)

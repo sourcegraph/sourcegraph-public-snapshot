@@ -66,10 +66,10 @@ func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
 	return nil
 }
 
-func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri, revision string) error {
+func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
 	req, err := json.Marshal(&DefsRefreshIndexRequest{
-		URI:      uri,
-		Revision: revision,
+		RepoURI:  uri,
+		CommitID: commitID,
 	})
 	if err != nil {
 		return err
@@ -78,10 +78,10 @@ func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri, revision str
 	return err
 }
 
-func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri, revision string) error {
+func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
 	req, err := json.Marshal(&PkgsRefreshIndexRequest{
-		URI:      uri,
-		Revision: revision,
+		RepoURI:  uri,
+		CommitID: commitID,
 	})
 	if err != nil {
 		return err
@@ -90,9 +90,9 @@ func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri, revision str
 	return err
 }
 
-func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, enabled bool) (*Repo, error) {
+func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri RepoURI, description string, fork, enabled bool) (*Repo, error) {
 	req, err := json.Marshal(RepoCreateOrUpdateRequest{
-		URI:         uri,
+		RepoURI:     uri,
 		Description: description,
 		Fork:        fork,
 		Enabled:     enabled,
@@ -112,9 +112,9 @@ func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, descri
 	return &repo, nil
 }
 
-func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repoID int32, lang string) ([]*DependencyReference, error) {
+func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo RepoID, lang string) ([]*DependencyReference, error) {
 	req, err := json.Marshal(RepoUnindexedDependenciesRequest{
-		RepoID:   repoID,
+		RepoID:   repo,
 		Language: lang,
 	})
 	if err != nil {
@@ -132,10 +132,10 @@ func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repoID 
 	return unfetchedDeps, nil
 }
 
-func (c *internalClient) ReposUpdateIndex(ctx context.Context, repoID int32, revision, lang string) error {
+func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, commitID CommitID, lang string) error {
 	req, err := json.Marshal(RepoUpdateIndexRequest{
-		RepoID:   repoID,
-		Revision: revision,
+		RepoID:   repo,
+		CommitID: commitID,
 		Language: lang,
 	})
 	if err != nil {
@@ -148,8 +148,8 @@ func (c *internalClient) ReposUpdateIndex(ctx context.Context, repoID int32, rev
 	return nil
 }
 
-func (c *internalClient) ReposGetByURI(ctx context.Context, uri string) (*Repo, error) {
-	resp, err := c.get("repos/" + uri)
+func (c *internalClient) ReposGetByURI(ctx context.Context, uri RepoURI) (*Repo, error) {
+	resp, err := c.get("repos/" + string(uri))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (c *internalClient) ReposGetByURI(ctx context.Context, uri string) (*Repo, 
 	return &repo, nil
 }
 
-func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo int32, commitID string) (*inventory.Inventory, error) {
+func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
 	req, err := json.Marshal(ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID})
 	if err != nil {
 		return nil, err
@@ -186,9 +186,9 @@ func (c *internalClient) GitoliteUpdateRepos(ctx context.Context) error {
 	return nil
 }
 
-func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri, callsign, url string) error {
+func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri RepoURI, callsign, url string) error {
 	req, err := json.Marshal(PhabricatorRepoCreateRequest{
-		URI:      uri,
+		RepoURI:  uri,
 		Callsign: callsign,
 		URL:      url,
 	})
@@ -232,9 +232,8 @@ func checkAPIResponse(resp *http.Response) error {
 		errString := string(b)
 		if errString != "" {
 			return fmt.Errorf("sourcegraph API response status %d: %s", resp.StatusCode, errString)
-		} else {
-			return fmt.Errorf("sourcegraph API response status %d", resp.StatusCode)
 		}
+		return fmt.Errorf("sourcegraph API response status %d", resp.StatusCode)
 	}
 	return nil
 }

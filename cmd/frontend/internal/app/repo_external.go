@@ -12,13 +12,14 @@ import (
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
 // This is used for the purposes of generating external GitHub enterprise links.
 var githubEnterpriseURLs = make(map[string]string)
-var reposListURLs = make(map[string]string)
+var reposListURLs = make(map[api.RepoURI]string)
 
 func init() {
 	githubConf := conf.Get().Github
@@ -32,7 +33,7 @@ func init() {
 	reposList := conf.Get().ReposList
 	for _, r := range reposList {
 		if r.Links != nil && r.Links.Commit != "" {
-			reposListURLs[r.Path] = r.Links.Commit
+			reposListURLs[api.RepoURI(r.Path)] = r.Links.Commit
 		}
 	}
 }
@@ -59,14 +60,14 @@ func serveRepoExternalCommit(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	if strings.HasPrefix(repo.URI, "github.com/") {
+	if strings.HasPrefix(string(repo.URI), "github.com/") {
 		http.Redirect(w, r, fmt.Sprintf("https://%s/commit/%s", repo.URI, commitID), http.StatusFound)
 		return nil
 	}
 
-	host := strings.Split(repo.URI, "/")[0]
+	host := strings.Split(string(repo.URI), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
-		http.Redirect(w, r, fmt.Sprintf("%s%s/commit/%s", gheURL, strings.TrimPrefix(repo.URI, host), commitID), http.StatusFound)
+		http.Redirect(w, r, fmt.Sprintf("%s%s/commit/%s", gheURL, strings.TrimPrefix(string(repo.URI), host), commitID), http.StatusFound)
 		return nil
 	}
 

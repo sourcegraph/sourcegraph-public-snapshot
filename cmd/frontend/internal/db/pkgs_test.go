@@ -134,7 +134,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*types.Repo, error) {
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo api.RepoURI) (*types.Repo, error) {
 		calledReposGetByURI = true
 		switch repo {
 		case "github.com/my/repo":
@@ -144,11 +144,11 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		}
 	}
 
-	reposGetInventory := func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error) {
+	reposGetInventory := func(context.Context, api.RepoID, api.CommitID) (*inventory.Inventory, error) {
 		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
 	}
 
-	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	if err := Pkgs.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +179,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 	ctx := testContext()
 
-	repoToPkgs := map[int32][]lspext.PackageInformation{
+	repoToPkgs := map[api.RepoID][]lspext.PackageInformation{
 		1: []lspext.PackageInformation{{
 			Package: map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 			Dependencies: []lspext.DependencyReference{{
@@ -323,15 +323,15 @@ func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []api.Package
 
 	for rows.Next() {
 		var (
-			repoID   int32
+			repo     api.RepoID
 			language string
 			pkg      string
 		)
-		if err := rows.Scan(&repoID, &language, &pkg); err != nil {
+		if err := rows.Scan(&repo, &language, &pkg); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
 		p := api.PackageInfo{
-			RepoID: repoID,
+			RepoID: repo,
 			Lang:   language,
 		}
 		if err := json.Unmarshal([]byte(pkg), &p.Pkg); err != nil {

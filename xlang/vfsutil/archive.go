@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
@@ -22,7 +22,7 @@ import (
 // itself at a given commit ID.
 type Archiver interface {
 	// Archive returns a .zip archive of the repo at the given commit ID.
-	Archive(context.Context, vcs.CommitID) ([]byte, error)
+	Archive(context.Context, api.CommitID) ([]byte, error)
 }
 
 // ArchiveFileSystem returns a virtual file system backed by a .zip
@@ -38,7 +38,7 @@ type Archiver interface {
 // memory.
 func ArchiveFileSystem(repo Archiver, treeish string) *ArchiveFS {
 	fetch := func(ctx context.Context) (*archiveReader, error) {
-		data, err := repo.Archive(ctx, vcs.CommitID(treeish))
+		data, err := repo.Archive(ctx, api.CommitID(treeish))
 		if err != nil {
 			return nil, err
 		}

@@ -11,7 +11,7 @@ func (p *phabricatorRepoResolver) Callsign() string {
 }
 
 func (p *phabricatorRepoResolver) URI() string {
-	return p.PhabricatorRepo.URI
+	return string(p.PhabricatorRepo.URI)
 }
 
 func (p *phabricatorRepoResolver) URL() string {

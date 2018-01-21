@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -18,7 +18,7 @@ import (
 // * Empty repository: vcs.ErrRevisionNotFound
 // * The user does not have permission: db.ErrRepoNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo int32, rev string) (commitID vcs.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo api.RepoID, rev string) (commitID api.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
@@ -33,29 +33,29 @@ func (s *repos) ResolveRev(ctx context.Context, repo int32, rev string) (commitI
 	return vcsrepo.ResolveRevision(ctx, rev)
 }
 
-func (s *repos) GetCommit(ctx context.Context, repoRev *types.RepoRevSpec) (res *vcs.Commit, err error) {
+func (s *repos) GetCommit(ctx context.Context, repo api.RepoID, commitID api.CommitID) (res *vcs.Commit, err error) {
 	if Mocks.Repos.GetCommit != nil {
-		return Mocks.Repos.GetCommit(ctx, repoRev)
+		return Mocks.Repos.GetCommit(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetCommit", repoRev, &err)
+	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
-	log15.Debug("svc.local.repos.GetCommit", "repo-rev", repoRev)
+	log15.Debug("svc.local.repos.GetCommit", "repo", repo, "commitID", commitID)
 
-	if !isAbsCommitID(repoRev.CommitID) {
+	if !isAbsCommitID(commitID) {
 		return nil, errNotAbsCommitID
 	}
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, repoRev.Repo)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	return vcsrepo.GetCommit(ctx, vcs.CommitID(repoRev.CommitID))
+	return vcsrepo.GetCommit(ctx, commitID)
 }
 
-func isAbsCommitID(commitID string) bool { return len(commitID) == 40 }
+func isAbsCommitID(commitID api.CommitID) bool { return len(commitID) == 40 }
 
 func makeErrNotAbsCommitID(prefix string) error {
 	str := "absolute commit ID required (40 hex chars)"

@@ -24,7 +24,7 @@ func init() {
 }
 
 type qitem struct {
-	repo string
+	repo api.RepoURI
 	rev  string
 }
 
@@ -38,7 +38,7 @@ func NewQueue(lengthGauge prometheus.Gauge) *workQueue {
 	return &workQueue{enqueue: enqueue, dequeue: dequeue}
 }
 
-func (w *workQueue) Enqueue(repo string, rev string) {
+func (w *workQueue) Enqueue(repo api.RepoURI, rev string) {
 	w.enqueue <- qitem{repo: repo, rev: rev}
 }
 
@@ -120,7 +120,7 @@ func Work(ctx context.Context, w *workQueue) {
 	}
 }
 
-func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err error) {
+func index(ctx context.Context, wq *workQueue, repoName api.RepoURI, rev string) (err error) {
 	repo, commit, err := resolveRevision(ctx, repoName, rev)
 	if err != nil {
 		if repo != nil && repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
@@ -188,26 +188,26 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err
 }
 
 // enqueueDependencies makes a best effort to enqueue dependencies of the specified repository
-// (repoID) for certain languages. The languages covered are languages where the language server
+// (repo) for certain languages. The languages covered are languages where the language server
 // itself cannot resolve dependencies to source repository URLs. For those languages, dependency
 // repositories must be indexed before cross-repo jump-to-def can work. enqueueDependencies tries to
 // best-effort determine what those dependencies are and enqueue them.
-func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID int32) error {
+func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repo api.RepoID) error {
 	// do nothing if this is not a language that requires heuristic dependency resolution
 	if lang != "Java" {
 		return nil
 	}
-	log15.Info("Enqueuing dependencies for repo", "repo", repoID, "lang", lang)
+	log15.Info("Enqueuing dependencies for repo", "repo", repo, "lang", lang)
 
-	unfetchedDeps, err := api.InternalClient.ReposUnindexedDependencies(ctx, repoID, lang)
+	unfetchedDeps, err := api.InternalClient.ReposUnindexedDependencies(ctx, repo, lang)
 	if err != nil {
 		return err
 	}
 
 	// Resolve and enqueue unindexed dependencies for indexing
 	resolvedDeps := resolveDependencies(ctx, lang, unfetchedDeps)
-	resolvedDepsList := make([]string, 0, len(resolvedDeps))
-	for rawDepRepo, _ := range resolvedDeps {
+	resolvedDepsList := make([]api.RepoURI, 0, len(resolvedDeps))
+	for rawDepRepo := range resolvedDeps {
 		repo, err := api.InternalClient.ReposGetByURI(ctx, rawDepRepo)
 		if err != nil {
 			log15.Warn("Could not resolve repository, skipping", "repo", rawDepRepo, "error", err)
@@ -216,14 +216,14 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID
 		wq.Enqueue(repo.URI, "")
 		resolvedDepsList = append(resolvedDepsList, repo.URI)
 	}
-	log15.Info("Enqueued dependencies for repo", "repo", repoID, "lang", lang, "num", len(resolvedDeps), "dependencies", resolvedDepsList)
+	log15.Info("Enqueued dependencies for repo", "repo", repo, "lang", lang, "num", len(resolvedDeps), "dependencies", resolvedDepsList)
 	return nil
 }
 
-// resolveDependencies resolves a list of DependencyReferences to a set of source repository URLs.
+// resolveDependencies resolves a list of DependencyReferences to a set of source repository URIs.
 // This mapping is different from language to language and is often heuristic, so different
 // languages are handled case-by-case.
-func resolveDependencies(ctx context.Context, lang string, deps []*api.DependencyReference) map[string]struct{} {
+func resolveDependencies(ctx context.Context, lang string, deps []*api.DependencyReference) map[api.RepoURI]struct{} {
 	switch lang {
 	case "Java":
 		if !Google.Enabled() {
@@ -242,8 +242,8 @@ func resolveDependencies(ctx context.Context, lang string, deps []*api.Dependenc
 			}
 			depQueries[id] = struct{}{}
 		}
-		resolvedDeps := map[string]struct{}{}
-		for depQuery, _ := range depQueries {
+		resolvedDeps := map[api.RepoURI]struct{}{}
+		for depQuery := range depQueries {
 			depRepoURI, err := Google.Search(depQuery)
 			if err != nil {
 				log15.Warn("Could not resolve dependency to repository via Google, skipping", "query", depQuery, "error", err)

@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"golang.org/x/net/trace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 
 	"github.com/felixfbecker/stringscore"
@@ -112,7 +113,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	for name, repoPaths := range settings.SearchRepositoryGroups {
 		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &types.Repo{URI: repoPath}
+			repos[i] = &types.Repo{URI: api.RepoURI(repoPath)}
 		}
 		groups[name] = repos
 	}
@@ -137,7 +138,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 	sampleReposMu.Lock()
 	defer sampleReposMu.Unlock()
 	if sampleRepos == nil {
-		sampleRepoPaths := []string{
+		sampleRepoPaths := []api.RepoURI{
 			"github.com/sourcegraph/jsonrpc2",
 			"github.com/sourcegraph/javascript-typescript-langserver",
 			"github.com/gorilla/mux",
@@ -232,7 +233,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		var patterns []string
 		for _, groupName := range groupNames {
 			for _, repo := range groups[groupName] {
-				patterns = append(patterns, "^"+regexp.QuoteMeta(repo.URI)+"$")
+				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.URI))+"$")
 			}
 		}
 		includePatterns = append(includePatterns, unionRegExps(patterns))
@@ -251,16 +252,16 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		repoPattern, revs := parseRepositoryRevisions(includePattern)
 		// Validate pattern now so the error message is more recognizable to the
 		// user
-		if _, err := regexp.Compile(repoPattern); err != nil {
+		if _, err := regexp.Compile(string(repoPattern)); err != nil {
 			return nil, nil, nil, false, &badRequestError{err}
 		}
 		// Optimization: make the "." in "github.com" a literal dot
 		// so that the regexp can be optimized more effectively.
-		if strings.HasPrefix(repoPattern, "github.com") {
+		if strings.HasPrefix(string(repoPattern), "github.com") {
 			repoPattern = "^" + repoPattern
 		}
-		repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
-		includePatterns[i] = repoPattern
+		repoPattern = api.RepoURI(strings.Replace(string(repoPattern), "github.com", `github\.com`, -1))
+		includePatterns[i] = string(repoPattern)
 		includePatternHasRev[i] = len(revs) > 0
 		if len(revs) > 0 {
 			includePatternRevs = append(includePatternRevs, revs)
@@ -284,9 +285,9 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		compiledIncludePatterns = append(compiledIncludePatterns, p)
 	}
-	getRevsForMatchedRepo := func(repo string) []revspecOrRefGlob {
+	getRevsForMatchedRepo := func(repo api.RepoURI) []revspecOrRefGlob {
 		for i, pat := range compiledIncludePatterns {
-			if pat.MatchString(repo) {
+			if pat.MatchString(string(repo)) {
 				return includePatternRevs[i]
 			}
 		}
@@ -571,7 +572,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 func newSearchResultResolver(result interface{}, score int) *searchResultResolver {
 	switch r := result.(type) {
 	case *repositoryResolver:
-		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI), label: r.repo.URI}
+		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI), label: string(r.repo.URI)}
 
 	case *fileResolver:
 		return &searchResultResolver{result: r, score: score, length: len(r.name), label: r.name}
@@ -623,7 +624,7 @@ func (s *scorer) calcScore(result interface{}) int {
 	switch r := result.(type) {
 	case *repositoryResolver:
 		if !s.queryEmpty {
-			score = postfixFuzzyAlignScore(splitNoEmpty(r.repo.URI, "/"), s.queryParts)
+			score = postfixFuzzyAlignScore(splitNoEmpty(string(r.repo.URI), "/"), s.queryParts)
 		}
 		// Push forks down
 		if r.repo.Fork {

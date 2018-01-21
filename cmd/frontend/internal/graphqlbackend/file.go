@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -47,12 +48,12 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryDatabaseID())
 	if err != nil {
 		return "", err
 	}
 
-	contents, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.oid), r.path)
+	contents, err := vcsrepo.ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return "", err
 	}
@@ -69,12 +70,12 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryDatabaseID())
 	if err != nil {
 		return false, err
 	}
 
-	stat, err := vcsrepo.Stat(ctx, vcs.CommitID(r.commit.oid), r.path)
+	stat, err := vcsrepo.Stat(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return false, err
 	}
@@ -103,21 +104,21 @@ func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	uri, rev := repo.URI(), string(r.commit.oid)
+	uri, rev := repo.repo.URI, string(r.commit.oid)
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Tree != "" {
 		url := strings.Replace(strings.Replace(rc.Links.Tree, "{rev}", rev, 1), "{path}", r.path, 1)
 		return &url, nil
 	}
 
-	if strings.HasPrefix(uri, "github.com/") {
+	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s/tree/%s/%s", uri, rev, r.path)
 		return &url, nil
 	}
 
-	host := strings.Split(uri, "/")[0]
+	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
-		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(uri, host), rev, r.path)
+		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
 		return &url, nil
 	}
 
@@ -135,21 +136,21 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	uri, rev := repo.URI(), string(r.commit.oid)
+	uri, rev := repo.repo.URI, string(r.commit.oid)
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Tree != "" {
 		url := strings.Replace(strings.Replace(rc.Links.Blob, "{rev}", rev, 1), "{path}", r.path, 1)
 		return &url, nil
 	}
 
-	if strings.HasPrefix(uri, "github.com/") {
+	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s/blob/%s/%s", uri, rev, r.path)
 		return &url, nil
 	}
 
-	host := strings.Split(uri, "/")[0]
+	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
-		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(uri, host), rev, r.path)
+		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
 		return &url, nil
 	}
 
@@ -215,12 +216,12 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryDatabaseID())
 	if err != nil {
 		return nil, err
 	}
 
-	code, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.oid), r.path)
+	code, err := vcsrepo.ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return nil, err
 	}
@@ -248,13 +249,13 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error
 }
 
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryDatabaseID())
 	if err != nil {
 		return nil, err
 	}
 
 	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head: vcs.CommitID(r.commit.oid),
+		Head: api.CommitID(r.commit.oid),
 		N:    limit,
 		Path: r.path,
 	})
@@ -264,7 +265,7 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitRes
 	resolvers := make([]*gitCommitResolver, len(commits))
 	for i, commit := range commits {
 		resolvers[i] = toGitCommitResolver(nil, commit)
-		resolvers[i].repoID = r.commit.repositoryIDInt32()
+		resolvers[i].repoID = r.commit.repositoryDatabaseID()
 	}
 
 	return resolvers, nil
@@ -274,13 +275,13 @@ func (r *fileResolver) BlameRaw(ctx context.Context, args *struct {
 	StartLine int32
 	EndLine   int32
 }) (string, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryDatabaseID())
 	if err != nil {
 		return "", err
 	}
 
 	rawBlame, err := vcsrepo.BlameFileRaw(ctx, r.path, &vcs.BlameOptions{
-		NewestCommit: vcs.CommitID(r.commit.oid),
+		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
 	})
@@ -296,13 +297,13 @@ func (r *fileResolver) Blame(ctx context.Context,
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryIDInt32())
+	vcsrepo, err := db.RepoVCS.Open(ctx, r.commit.repositoryDatabaseID())
 	if err != nil {
 		return nil, err
 	}
 
 	hunks, err := vcsrepo.BlameFile(ctx, r.path, &vcs.BlameOptions{
-		NewestCommit: vcs.CommitID(r.commit.oid),
+		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
 	})
@@ -326,8 +327,8 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 	Character int32
 }) (*dependencyReferencesResolver, error) {
 	depRefs, err := backend.Defs.DependencyReferences(ctx, types.DependencyReferencesOptions{
-		RepoID:    r.commit.repositoryIDInt32(),
-		CommitID:  string(r.commit.oid),
+		RepoID:    r.commit.repositoryDatabaseID(),
+		CommitID:  api.CommitID(r.commit.oid),
 		Language:  args.Language,
 		File:      r.path,
 		Line:      int(args.Line),
@@ -340,9 +341,9 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 
 	var referenceResolver []*dependencyReferenceResolver
 	var repos []*repositoryResolver
-	var repoIDs []int32
+	var repoIDs []api.RepoID
 	for _, ref := range depRefs.References {
-		if ref.RepoID == r.commit.repositoryIDInt32() {
+		if ref.RepoID == r.commit.repositoryDatabaseID() {
 			continue
 		}
 
@@ -366,7 +367,7 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 
 		referenceResolver = append(referenceResolver, &dependencyReferenceResolver{
 			dependencyData: string(depData[:]),
-			repoID:         ref.RepoID,
+			repo:           ref.RepoID,
 			hints:          string(hints)[:],
 		})
 	}

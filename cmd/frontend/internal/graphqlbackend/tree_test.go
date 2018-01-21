@@ -9,6 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -17,7 +18,7 @@ import (
 func TestTree(t *testing.T) {
 	resetMocks()
 	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (api.CommitID, error) {
 		if repo != 2 || rev != exampleCommitSHA1 {
 			t.Error("wrong arguments to Repos.ResolveRev")
 		}
@@ -26,7 +27,7 @@ func TestTree(t *testing.T) {
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{ID: exampleCommitSHA1})
 
 	mockRepo := vcstest.MockRepository{}
-	mockRepo.ReadDir_ = func(ctx context.Context, commit vcs.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
+	mockRepo.ReadDir_ = func(ctx context.Context, commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
 		if string(commit) != exampleCommitSHA1 || name != "/foo" {
 			t.Error("wrong arguments to RepoTree.Get")
 		}
@@ -35,7 +36,7 @@ func TestTree(t *testing.T) {
 			&util.FileInfo{Name_: "testFile", Mode_: 0},
 		}, nil
 	}
-	db.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	db.Mocks.RepoVCS.Open = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
 		return mockRepo, nil
 	}
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -89,7 +90,7 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 		}, nil
 	})
 
-	nonexistentRepo := "github.com/owner/repo"
+	nonexistentRepo := api.RepoURI("github.com/owner/repo")
 	repo, err := GetRepo(context.Background(), nonexistentRepo)
 	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
@@ -116,7 +117,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 		}, nil
 	})
 
-	privateRepo := "github.com/owner/repo"
+	privateRepo := api.RepoURI("github.com/owner/repo")
 
 	// An unauthed user won't be able to see the repo
 	MockRoundTripper = mockGetMissing
@@ -174,7 +175,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 		}, nil
 	})
 
-	repo := "github.com/owner/repo"
+	repo := api.RepoURI("github.com/owner/repo")
 
 	authedGet := func() bool {
 		calledGet = false

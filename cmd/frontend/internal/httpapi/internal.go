@@ -15,7 +15,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -37,7 +36,7 @@ func compileGitoliteRepoBlacklist() *regexp.Regexp {
 }
 
 func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
-	uri, _ := mux.Vars(r)["RepoURI"]
+	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
 	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err
@@ -74,7 +73,8 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	for _, uri := range whitelist {
+	for _, entry := range whitelist {
+		uri := api.RepoURI(entry)
 		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, true)
 		if err != nil {
 			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)
@@ -112,11 +112,11 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Repos.TryInsertNew(r.Context(), repo.URI, repo.Description, repo.Fork, repo.Enabled)
+	err = backend.Repos.TryInsertNew(r.Context(), repo.RepoURI, repo.Description, repo.Fork, repo.Enabled)
 	if err != nil {
 		return err
 	}
-	sgRepo, err := backend.Repos.GetByURI(r.Context(), repo.URI)
+	sgRepo, err := backend.Repos.GetByURI(r.Context(), repo.RepoURI)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func serveReposUpdateIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := db.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.Revision); err != nil {
+	if err := db.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.CommitID); err != nil {
 		return errors.Wrap(err, "Repos.UpdateIndexedRevision failed")
 	}
 	if err := db.Repos.UpdateLanguage(r.Context(), repo.RepoID, repo.Language); err != nil {
@@ -150,7 +150,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	phabRepo, err := db.Phabricator.CreateIfNotExists(r.Context(), repo.Callsign, repo.URI, repo.URL)
+	phabRepo, err := db.Phabricator.CreateIfNotExists(r.Context(), repo.Callsign, repo.RepoURI, repo.URL)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	inv, err := backend.Repos.GetInventoryUncached(r.Context(), &types.RepoRevSpec{Repo: req.Repo, CommitID: req.CommitID})
+	inv, err := backend.Repos.GetInventoryUncached(r.Context(), req.Repo, req.CommitID)
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Defs.RefreshIndex(r.Context(), args.URI, args.Revision)
+	err = backend.Defs.RefreshIndex(r.Context(), args.RepoURI, args.CommitID)
 	if err != nil {
 		return nil
 	}
@@ -253,7 +253,7 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Pkgs.RefreshIndex(r.Context(), args.URI, args.Revision)
+	err = backend.Pkgs.RefreshIndex(r.Context(), args.RepoURI, args.CommitID)
 	if err != nil {
 		return nil
 	}
@@ -268,7 +268,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("only support service git-upload-pack")
 	}
 
-	uri, _ := mux.Vars(r)["RepoURI"]
+	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
 	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err
@@ -289,7 +289,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
-	uri, _ := mux.Vars(r)["RepoURI"]
+	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
 	repo, err := backend.Repos.GetByURI(r.Context(), uri)
 	if err != nil {
 		return err

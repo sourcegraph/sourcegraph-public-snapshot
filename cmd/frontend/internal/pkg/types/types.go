@@ -4,15 +4,17 @@ package types
 import (
 	"fmt"
 	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
-	ID int32
+	ID api.RepoID
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
-	URI string
+	URI api.RepoURI
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.
@@ -29,36 +31,17 @@ type Repo struct {
 	// IndexedRevision is the revision that the global index is currently based on. It is only used by the indexer
 	// to determine if reindexing is necessary. Setting it to nil/null will cause the indexer to reindex the next
 	// time it gets triggered for this repository.
-	IndexedRevision *string
+	IndexedRevision *api.CommitID
 	// FreezeIndexedRevision, when true, tells the indexer not to update the indexed revision if it is already set.
 	// This is a kludge that lets us freeze the indexed repository revision for specific deployments
 	FreezeIndexedRevision bool
 }
 
-// RepoRevSpec specifies a repository at a specific commit.
-type RepoRevSpec struct {
-	// Repo is the ID of the repository.
-	Repo int32
-
-	// CommitID is the 40-character SHA-1 of the Git commit ID.
-	//
-	// Revision specifiers are not allowed here. To resolve a revision
-	// specifier (such as a branch name or "master~7"), call
-	// Repos.GetCommit.
-	CommitID string
-}
-
-// RepoSpec specifies a repository.
-type RepoSpec struct {
-	// Repo is the ID of the repository.
-	ID int32
-}
-
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
-	Language        string // e.g. "go"
-	RepoID          int32  // repository whose file:line:character describe the symbol of interest
-	CommitID        string
+	Language   string // e.g. "go"
+	api.RepoID        // repository whose file:line:character describe the symbol of interest
+	api.CommitID
 	File            string
 	Line, Character int
 
@@ -119,8 +102,8 @@ type User struct {
 // OrgRepo represents a repo that exists on a native client's filesystem, but
 // does not necessarily have its contents cloned to a remote Sourcegraph server.
 type OrgRepo struct {
-	ID                int32
-	CanonicalRemoteID string
+	ID                api.RepoID
+	CanonicalRemoteID api.RepoURI
 	CloneURL          string
 	OrgID             int32
 	CreatedAt         time.Time
@@ -145,7 +128,7 @@ type ThreadLines struct {
 
 type Thread struct {
 	ID                int32
-	OrgRepoID         int32
+	OrgRepoID         api.RepoID
 	RepoRevisionPath  string
 	LinesRevisionPath string
 	RepoRevision      string
@@ -213,7 +196,7 @@ type OrgTag struct {
 
 type PhabricatorRepo struct {
 	ID       int32
-	URI      string
+	URI      api.RepoURI
 	URL      string
 	Callsign string
 }

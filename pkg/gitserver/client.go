@@ -57,7 +57,7 @@ type Client struct {
 }
 
 // addrForRepo returns the gitserver address to use for the given repo URI.
-func (c *Client) addrForRepo(repo string) string {
+func (c *Client) addrForRepo(repo api.RepoURI) string {
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	sum := md5.Sum([]byte(repo))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.Addrs))
@@ -252,7 +252,7 @@ func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, er
 	return list, err
 }
 
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo string) error {
+func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoURI) error {
 	req := &protocol.RepoUpdateRequest{
 		Repo: repo,
 	}
@@ -264,7 +264,7 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo string) error {
 }
 
 // IsRepoCloneable returns nil if the repository is cloneable.
-func (c *Client) IsRepoCloneable(ctx context.Context, repo string) error {
+func (c *Client) IsRepoCloneable(ctx context.Context, repo api.RepoURI) error {
 	req := &protocol.IsRepoCloneableRequest{
 		Repo: repo,
 	}
@@ -300,7 +300,7 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo string) error {
 	return errors.New("repository is not cloneable (no reason given)")
 }
 
-func (c *Client) IsRepoCloned(ctx context.Context, repo string) (bool, error) {
+func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoURI) (bool, error) {
 	req := &protocol.IsRepoClonedRequest{
 		Repo: repo,
 	}
@@ -319,7 +319,7 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo string) (bool, error) {
 //
 // The repository not existing is not an error; in that case, RepoInfoResponse.Cloned will be false
 // and the error will be nil.
-func (c *Client) RepoInfo(ctx context.Context, repo string) (*protocol.RepoInfoResponse, error) {
+func (c *Client) RepoInfo(ctx context.Context, repo api.RepoURI) (*protocol.RepoInfoResponse, error) {
 	req := &protocol.RepoInfoRequest{
 		Repo: repo,
 	}
@@ -337,7 +337,7 @@ func (c *Client) RepoInfo(ctx context.Context, repo string) (*protocol.RepoInfoR
 	return info, err
 }
 
-func (c *Client) httpPost(ctx context.Context, repo, method string, payload interface{}) (resp *http.Response, err error) {
+func (c *Client) httpPost(ctx context.Context, repo api.RepoURI, method string, payload interface{}) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
 	defer func() {
 		if err != nil {
@@ -380,11 +380,11 @@ func (c *Client) httpPost(ctx context.Context, repo, method string, payload inte
 	}
 }
 
-func (c *Client) UploadPack(repoURI string, w http.ResponseWriter, r *http.Request) {
+func (c *Client) UploadPack(repoURI api.RepoURI, w http.ResponseWriter, r *http.Request) {
 	repoURI = protocol.NormalizeRepo(repoURI)
 	addr := c.addrForRepo(repoURI)
 
-	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(repoURI))
+	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(string(repoURI)))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

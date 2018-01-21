@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 )
 
@@ -41,7 +42,7 @@ type Repository interface {
 	// cases where the revision is not found, or more specific errors
 	// (such as ErrCommitNotFound) if spec can be partially resolved
 	// or determined to be a certain kind of revision specifier.
-	ResolveRevision(ctx context.Context, spec string) (CommitID, error)
+	ResolveRevision(ctx context.Context, spec string) (api.CommitID, error)
 
 	// Branches returns a list of all branches in the repository.
 	Branches(context.Context, BranchesOptions) ([]*Branch, error)
@@ -51,7 +52,7 @@ type Repository interface {
 
 	// GetCommit returns the commit with the given commit ID, or
 	// ErrCommitNotFound if no such commit exists.
-	GetCommit(context.Context, CommitID) (*Commit, error)
+	GetCommit(context.Context, api.CommitID) (*Commit, error)
 
 	// Commits returns all commits matching the options.
 	Commits(context.Context, CommitsOptions) ([]*Commit, error)
@@ -65,16 +66,16 @@ type Repository interface {
 	// Stat returns a FileInfo describing the named file at commit. If the file
 	// is a symbolic link, the returned FileInfo describes the symbolic link.
 	// Lstat makes no attempt to follow the link.
-	Lstat(ctx context.Context, commit CommitID, name string) (os.FileInfo, error)
+	Lstat(ctx context.Context, commit api.CommitID, name string) (os.FileInfo, error)
 
 	// Stat returns a FileInfo describing the named file at commit.
-	Stat(ctx context.Context, commit CommitID, name string) (os.FileInfo, error)
+	Stat(ctx context.Context, commit api.CommitID, name string) (os.FileInfo, error)
 
 	// ReadFile returns the content of the named file at commit.
-	ReadFile(ctx context.Context, commit CommitID, name string) ([]byte, error)
+	ReadFile(ctx context.Context, commit api.CommitID, name string) ([]byte, error)
 
 	// Readdir reads the contents of the named directory at commit.
-	ReadDir(ctx context.Context, commit CommitID, name string, recurse bool) ([]os.FileInfo, error)
+	ReadDir(ctx context.Context, commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error)
 
 	BlameFile(ctx context.Context, path string, opt *BlameOptions) ([]*Hunk, error)
 
@@ -86,11 +87,11 @@ type Repository interface {
 
 	// Diff shows changes between two commits. If base or head do not
 	// exist, an error is returned.
-	Diff(ctx context.Context, base, head CommitID, opt *DiffOptions) (*Diff, error)
+	Diff(ctx context.Context, base, head api.CommitID, opt *DiffOptions) (*Diff, error)
 
 	// MergeBase returns the merge base commit for the specified
 	// commits.
-	MergeBase(context.Context, CommitID, CommitID) (CommitID, error)
+	MergeBase(context.Context, api.CommitID, api.CommitID) (api.CommitID, error)
 
 	// RawLogDiffSearch runs a raw `git log` command that is expected to return
 	// logs with patches. It returns a subset of the output, including only hunks
@@ -104,8 +105,8 @@ type Repository interface {
 
 // BlameOptions configures a blame.
 type BlameOptions struct {
-	NewestCommit CommitID `json:",omitempty" url:",omitempty"`
-	OldestCommit CommitID `json:",omitempty" url:",omitempty"` // or "" for the root commit
+	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
+	OldestCommit api.CommitID `json:",omitempty" url:",omitempty"` // or "" for the root commit
 
 	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start byte (or 0 for beginning of file)
 	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end byte (or 0 for end of file)
@@ -117,7 +118,7 @@ type Hunk struct {
 	EndLine   int // 1-indexed end line number
 	StartByte int // 0-indexed start byte position (inclusive)
 	EndByte   int // 0-indexed end byte position (exclusive)
-	CommitID
+	api.CommitID
 	Author  Signature
 	Message string
 }
@@ -126,23 +127,10 @@ var (
 	ErrRevisionNotFound = errors.New("revision not found")
 )
 
-type CommitID string
-
-// Marshal implements proto.Marshaler.
-func (c CommitID) Marshal() ([]byte, error) {
-	return []byte(c), nil
-}
-
-// Unmarshal implements proto.Unmarshaler.
-func (c *CommitID) Unmarshal(data []byte) error {
-	*c = CommitID(data)
-	return nil
-}
-
 // CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
 type CommitsOptions struct {
-	Head CommitID // include all commits reachable from this commit (required)
-	Base CommitID // exlude all commits reachable from this commit (optional, like `git log Base..Head`)
+	Head api.CommitID // include all commits reachable from this commit (required)
+	Base api.CommitID // exlude all commits reachable from this commit (optional, like `git log Base..Head`)
 
 	N    uint // limit the number of returned commits to this many (0 means no limit)
 	Skip uint // skip this many commits at the beginning

@@ -12,6 +12,7 @@ import (
 	"github.com/lib/pq"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // threads provides access to the `threads` table.
@@ -175,9 +176,9 @@ func (t *threads) Get(ctx context.Context, id int32) (*types.Thread, error) {
 	return threads[0], nil
 }
 
-func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (*types.Thread, error) {
+func (t *threads) Update(ctx context.Context, id int32, repo api.RepoID, archive *bool) (*types.Thread, error) {
 	if Mocks.Threads.Update != nil {
-		return Mocks.Threads.Update(ctx, id, repoID, archive)
+		return Mocks.Threads.Update(ctx, id, repo, archive)
 	}
 
 	now := time.Now()
@@ -208,12 +209,12 @@ func (t *threads) Update(ctx context.Context, id, repoID int32, archive *bool) (
 	return thread, nil
 }
 
-func (t *threads) listByFileQuery(orgID *int32, repoIDs []int32, branch, file *string) *sqlf.Query {
+func (t *threads) listByFileQuery(orgID *int32, repos []api.RepoID, branch, file *string) *sqlf.Query {
 	var join string
 	conds := []*sqlf.Query{}
-	if len(repoIDs) > 0 {
+	if len(repos) > 0 {
 		ids := []*sqlf.Query{}
-		for _, id := range repoIDs {
+		for _, id := range repos {
 			ids = append(ids, sqlf.Sprintf("%d", id))
 		}
 		conds = append(conds, sqlf.Sprintf("t.org_repo_id IN (%s)", sqlf.Join(ids, ",")))
@@ -232,13 +233,13 @@ func (t *threads) listByFileQuery(orgID *int32, repoIDs []int32, branch, file *s
 	return sqlf.Sprintf(join+"WHERE %s", sqlf.Join(conds, "AND"))
 }
 
-func (t *threads) ListByFile(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string, limit int32) ([]*types.Thread, error) {
-	q := sqlf.Sprintf("%s LIMIT %d", t.listByFileQuery(orgID, repoIDs, branch, file), limit)
+func (t *threads) ListByFile(ctx context.Context, orgID *int32, repos []api.RepoID, branch, file *string, limit int32) ([]*types.Thread, error) {
+	q := sqlf.Sprintf("%s LIMIT %d", t.listByFileQuery(orgID, repos, branch, file), limit)
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (t *threads) CountByFile(ctx context.Context, orgID *int32, repoIDs []int32, branch, file *string) (int, error) {
-	q := t.listByFileQuery(orgID, repoIDs, branch, file)
+func (t *threads) CountByFile(ctx context.Context, orgID *int32, repos []api.RepoID, branch, file *string) (int, error) {
+	q := t.listByFileQuery(orgID, repos, branch, file)
 	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 

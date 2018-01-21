@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -104,13 +105,13 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
-	RepoCanonicalRemoteID *string // TODO(nick): deprecated
-	CanonicalRemoteIDs    *[]string
+	RepoCanonicalRemoteID *api.RepoURI // TODO(nick): deprecated
+	CanonicalRemoteIDs    *[]api.RepoURI
 	Branch                *string
 	File                  *string
 	Limit                 *int32
 }) (*threadConnectionResolver, error) {
-	var canonicalRemoteIDs []string
+	var canonicalRemoteIDs []api.RepoURI
 	if args.CanonicalRemoteIDs != nil {
 		canonicalRemoteIDs = append(canonicalRemoteIDs, *args.CanonicalRemoteIDs...)
 	}
@@ -141,7 +142,7 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
 }
 
 func (o *orgResolver) Repo(ctx context.Context, args *struct {
-	CanonicalRemoteID string
+	CanonicalRemoteID api.RepoURI
 }) (*orgRepoResolver, error) {
 	orgRepo, err := getOrgRepo(ctx, o.org.ID, args.CanonicalRemoteID)
 	if err != nil {
@@ -150,7 +151,7 @@ func (o *orgResolver) Repo(ctx context.Context, args *struct {
 	return &orgRepoResolver{o.org, orgRepo}, nil
 }
 
-func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID string) (*types.OrgRepo, error) {
+func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID api.RepoURI) (*types.OrgRepo, error) {
 	orgRepo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
 	if err == db.ErrRepoNotFound {
 		// We don't want to create org repos just because an org member queried for threads

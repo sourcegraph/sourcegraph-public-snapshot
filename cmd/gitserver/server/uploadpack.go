@@ -6,11 +6,12 @@ import (
 	"os/exec"
 	"path"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 )
 
 func (s *Server) handleUploadPack(w http.ResponseWriter, r *http.Request) {
-	repo := protocol.NormalizeRepo(r.URL.Query().Get("repo"))
+	repo := protocol.NormalizeRepo(api.RepoURI(r.URL.Query().Get("repo")))
 	if repo == "" {
 		http.Error(w, "repo missing", http.StatusBadRequest)
 		return
@@ -34,7 +35,7 @@ func (s *Server) handleUploadPack(w http.ResponseWriter, r *http.Request) {
 	defer body.Close()
 
 	cmd := exec.CommandContext(r.Context(), "git", "upload-pack", "--stateless-rpc", ".")
-	cmd.Dir = path.Join(s.ReposDir, repo)
+	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	cmd.Stdout = w
 	cmd.Stdin = body
 	if err := cmd.Run(); err != nil {

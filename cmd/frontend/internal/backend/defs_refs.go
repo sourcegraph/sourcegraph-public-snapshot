@@ -48,7 +48,7 @@ func init() {
 	prometheus.MustRegister(listTotalRefsCacheCounter)
 }
 
-func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
+func (s *defs) TotalRefs(ctx context.Context, source api.RepoURI) (res int, err error) {
 	if Mocks.Defs.TotalRefs != nil {
 		return Mocks.Defs.TotalRefs(ctx, source)
 	}
@@ -57,7 +57,7 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	defer done()
 
 	// Check if value is in the cache.
-	jsonRes, ok := totalRefsCache.Get(source)
+	jsonRes, ok := totalRefsCache.Get(string(source))
 	if ok {
 		totalRefsCacheCounter.WithLabelValues("hit").Inc()
 		if err := json.Unmarshal(jsonRes, &res); err != nil {
@@ -71,11 +71,11 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	if err != nil {
 		return 0, err
 	}
-	rev, err := Repos.ResolveRev(ctx, rp.ID, "")
+	commitID, err := Repos.ResolveRev(ctx, rp.ID, "")
 	if err != nil {
 		return 0, err
 	}
-	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
+	inv, err := Repos.GetInventory(ctx, rp.ID, commitID)
 	if err != nil {
 		return 0, err
 	}
@@ -90,19 +90,11 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	if err != nil {
 		return 0, err
 	}
-	totalRefsCache.Set(source, jsonRes)
+	totalRefsCache.Set(string(source), jsonRes)
 	return res, nil
 }
 
-func intsToRepoSpecs(v []int32) (r []types.RepoSpec) {
-	r = make([]types.RepoSpec, len(v))
-	for i, v := range v {
-		r[i] = types.RepoSpec{ID: v}
-	}
-	return
-}
-
-func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []types.RepoSpec, err error) {
+func (s *defs) ListTotalRefs(ctx context.Context, source api.RepoURI) (repos []api.RepoID, err error) {
 	if Mocks.Defs.ListTotalRefs != nil {
 		return Mocks.Defs.ListTotalRefs(ctx, source)
 	}
@@ -111,14 +103,13 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []types.Re
 	defer done()
 
 	// Check if value is in the cache.
-	jsonRes, ok := listTotalRefsCache.Get(source)
+	jsonRes, ok := listTotalRefsCache.Get(string(source))
 	if ok {
 		listTotalRefsCacheCounter.WithLabelValues("hit").Inc()
-		var ints []int32
-		if err := json.Unmarshal(jsonRes, &ints); err != nil {
+		if err := json.Unmarshal(jsonRes, &repos); err != nil {
 			return nil, err
 		}
-		return intsToRepoSpecs(ints), nil
+		return repos, nil
 	}
 
 	// Query value from the database.
@@ -126,38 +117,38 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (res []types.Re
 	if err != nil {
 		return nil, err
 	}
-	rev, err := Repos.ResolveRev(ctx, rp.ID, "")
+	commitID, err := Repos.ResolveRev(ctx, rp.ID, "")
 	if err != nil {
 		return nil, err
 	}
-	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: string(rev)})
+	inv, err := Repos.GetInventory(ctx, rp.ID, commitID)
 	if err != nil {
 		return nil, err
 	}
 	listTotalRefsCacheCounter.WithLabelValues("miss").Inc()
-	ints, err := db.GlobalDeps.ListTotalRefs(ctx, source, inv.Languages)
+	repos, err = db.GlobalDeps.ListTotalRefs(ctx, source, inv.Languages)
 	if err != nil {
 		return nil, err
 	}
 
 	// Store value in the cache.
-	_ = []int32(ints) // important so that we don't accidentally change encoding type
-	jsonRes, err = json.Marshal(ints)
+	_ = []api.RepoID(repos) // important so that we don't accidentally change encoding type
+	jsonRes, err = json.Marshal(repos)
 	if err != nil {
 		return nil, err
 	}
-	listTotalRefsCache.Set(source, jsonRes)
-	return intsToRepoSpecs(ints), nil
+	listTotalRefsCache.Set(string(source), jsonRes)
+	return repos, nil
 }
 
-// Dependencies returns the dependency references for the given repoID. I.e., the repo's dependencies.
-func (s *defs) Dependencies(ctx context.Context, repoID int32) ([]*api.DependencyReference, error) {
+// Dependencies returns the dependency references for the given repo. I.e., the repo's dependencies.
+func (s *defs) Dependencies(ctx context.Context, repo api.RepoID) ([]*api.DependencyReference, error) {
 	if Mocks.Defs.Dependencies != nil {
-		return Mocks.Defs.Dependencies(ctx, repoID)
+		return Mocks.Defs.Dependencies(ctx, repo)
 	}
 
 	return db.GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
-		Repo: repoID,
+		Repo: repo,
 	})
 }
 
@@ -177,7 +168,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 	span.SetTag("line", op.Line)
 	span.SetTag("character", op.Character)
 
-	repo, err := Repos.Get(ctx, &types.RepoSpec{ID: op.RepoID})
+	repo, err := Repos.Get(ctx, op.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +176,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 	span.SetTag("repo", repo.URI)
 
 	// Determine the rootURI.
-	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + op.CommitID)
+	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(op.CommitID))
 
 	// Find the metadata for the definition specified by op, such that we can
 	// perform the DB query using that metadata.
@@ -236,7 +227,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 
 // RefreshIndex refreshes the global deps index for the specified
 // repository.
-func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err error) {
+func (s *defs) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID) (err error) {
 	if Mocks.Defs.RefreshIndex != nil {
 		return Mocks.Defs.RefreshIndex(ctx, repoURI, commitID)
 	}
@@ -247,9 +238,9 @@ func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err 
 }
 
 type MockDefs struct {
-	TotalRefs            func(ctx context.Context, source string) (res int, err error)
-	ListTotalRefs        func(ctx context.Context, source string) (res []types.RepoSpec, err error)
+	TotalRefs            func(ctx context.Context, source api.RepoURI) (res int, err error)
+	ListTotalRefs        func(ctx context.Context, source api.RepoURI) (repos []api.RepoID, err error)
 	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error)
-	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
-	Dependencies         func(ctx context.Context, repoID int32) ([]*api.DependencyReference, error)
+	RefreshIndex         func(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID) error
+	Dependencies         func(ctx context.Context, repo api.RepoID) ([]*api.DependencyReference, error)
 }

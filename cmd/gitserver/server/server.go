@@ -27,6 +27,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
@@ -90,7 +91,7 @@ type Server struct {
 
 	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
-	repoUpdateLocks   map[string]*locks
+	repoUpdateLocks   map[api.RepoURI]*locks
 }
 
 type locks struct {
@@ -99,7 +100,7 @@ type locks struct {
 }
 
 type updateRepoRequest struct {
-	repo string
+	repo api.RepoURI
 }
 
 // shortGitCommandTimeout returns the timeout for git commands that should not
@@ -133,7 +134,7 @@ var longGitCommandTimeout = time.Hour
 func (s *Server) Handler() http.Handler {
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
-	s.repoUpdateLocks = make(map[string]*locks)
+	s.repoUpdateLocks = make(map[api.RepoURI]*locks)
 	if s.MaxConcurrentClones == 0 {
 		s.MaxConcurrentClones = 100
 	}
@@ -195,7 +196,7 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	dir := path.Join(s.ReposDir, req.Repo)
+	dir := path.Join(s.ReposDir, string(req.Repo))
 	if repoCloned(dir) {
 		w.WriteHeader(http.StatusOK)
 	} else {
@@ -210,7 +211,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	req.Repo = protocol.NormalizeRepo(req.Repo)
-	dir := path.Join(s.ReposDir, req.Repo)
+	dir := path.Join(s.ReposDir, string(req.Repo))
 	if !repoCloned(dir) && !skipCloneForTests {
 		err := s.cloneRepo(r.Context(), req.Repo, dir)
 		if err != nil {
@@ -251,7 +252,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		}
 		args := strings.Join(req.Args, " ")
 
-		tr := trace.New("exec."+cmd, req.Repo)
+		tr := trace.New("exec."+cmd, string(req.Repo))
 		tr.LazyPrintf("args: %s", args)
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
@@ -286,11 +287,11 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 
-	dir := path.Join(s.ReposDir, req.Repo)
+	dir := path.Join(s.ReposDir, string(req.Repo))
 	s.cloningMu.Lock()
 	_, cloneInProgress := s.cloning[dir]
 	s.cloningMu.Unlock()
-	if cloneInProgress || strings.ToLower(req.Repo) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if cloneInProgress || strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
@@ -361,7 +362,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 
 // cloneRepo issues a non-blocking git clone command for the given repo to the given directory.
 // The repository will be cloned to ${dir}/.git.
-func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
+func (s *Server) cloneRepo(ctx context.Context, repoPath api.RepoURI, dir string) error {
 	origin := OriginMap(repoPath)
 	if origin == "" {
 		return fmt.Errorf("error cloning repo: no origin map entry found for %s", repoPath)
@@ -412,14 +413,14 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath, dir string) error {
 
 // testRepoExists is a test fixture that overrides the return value
 // for isCloneable when it is set.
-var testRepoExists func(ctx context.Context, origin string, repoURI string) error
+var testRepoExists func(ctx context.Context, origin string, repoURI api.RepoURI) error
 
 // isCloneable checks to see if the repo is cloneable.
-func (s *Server) isCloneable(ctx context.Context, repo string) error {
+func (s *Server) isCloneable(ctx context.Context, repo api.RepoURI) error {
 	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(nil))
 	defer cancel()
 
-	if strings.ToLower(repo) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return nil
 	}
 
@@ -464,7 +465,7 @@ func init() {
 
 func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 	updateRepo := make(chan updateRepoRequest, 10)
-	lastCheckAt := make(map[string]time.Time)
+	lastCheckAt := make(map[api.RepoURI]time.Time)
 
 	go func() {
 		for req := range updateRepo {
@@ -487,7 +488,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 
 var headBranchPattern = regexp.MustCompile("HEAD branch: (.+?)\\n")
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo string) {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	defer span.Finish()
@@ -517,9 +518,9 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo string) {
 	})
 }
 
-func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
+func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI) {
 	cmd := exec.CommandContext(ctx, "git", "remote", "update", "--prune")
-	cmd.Dir = path.Join(s.ReposDir, repo)
+	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	if output, err := s.runWithRemoteOpts(ctx, cmd); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return
@@ -529,7 +530,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 
 	// try to fetch HEAD from origin
 	cmd = exec.CommandContext(ctx, "git", "remote", "show", "origin")
-	cmd.Dir = path.Join(s.ReposDir, repo)
+	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	output, err := s.runWithRemoteOpts(ctx, cmd)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
@@ -545,11 +546,11 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 
 	// check if branch pointed to by HEAD exists
 	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch, "--")
-	cmd.Dir = path.Join(s.ReposDir, repo)
+	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	if err := cmd.Run(); err != nil {
 		// branch does not exist, pick first branch
 		cmd := exec.CommandContext(ctx, "git", "branch")
-		cmd.Dir = path.Join(s.ReposDir, repo)
+		cmd.Dir = path.Join(s.ReposDir, string(repo))
 		list, err := cmd.Output()
 		if err != nil {
 			log15.Error("Failed to list branches", "repo", repo, "error", err, "output", string(output))
@@ -564,14 +565,14 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo string) {
 
 	// set HEAD
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
-	cmd.Dir = path.Join(s.ReposDir, repo)
+	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	if output, err := cmd.CombinedOutput(); err != nil {
 		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
 		return
 	}
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo string, rev string, repoDir string) {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, rev string, repoDir string) {
 	if rev == "" {
 		return
 	}

@@ -4,7 +4,7 @@ import "fmt"
 
 // InvalidError occurs when a spec string is invalid.
 type InvalidError struct {
-	Type  string // RepoSpec, etc.
+	Type  string // Repo, etc.
 	Input string // the original string input
 	Err   error  // underlying error (nil for routine regexp match failures)
 }

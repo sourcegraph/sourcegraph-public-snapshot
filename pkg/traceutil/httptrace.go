@@ -14,6 +14,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 )
 
@@ -82,7 +83,7 @@ func Middleware(next http.Handler) http.Handler {
 			"route":  routeName,
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(m.Code),
-			"repo":   repotrackutil.GetTrackedRepo(r.URL.Path),
+			"repo":   repotrackutil.GetTrackedRepo(api.RepoURI(r.URL.Path)),
 		}
 		requestDuration.With(labels).Observe(m.Duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))

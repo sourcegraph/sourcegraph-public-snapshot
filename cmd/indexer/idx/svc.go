@@ -7,7 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
 
-func resolveRevision(ctx context.Context, repoURI string, spec string) (*api.Repo, string, error) {
+func resolveRevision(ctx context.Context, repoURI api.RepoURI, spec string) (*api.Repo, api.CommitID, error) {
 	if spec == "" {
 		spec = "HEAD"
 	}
@@ -19,5 +19,5 @@ func resolveRevision(ctx context.Context, repoURI string, spec string) (*api.Rep
 	if err != nil {
 		return nil, "", err
 	}
-	return repo, string(commit), nil
+	return repo, commit, nil
 }

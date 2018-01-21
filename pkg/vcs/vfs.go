@@ -8,15 +8,16 @@ import (
 	"os"
 
 	"github.com/sourcegraph/ctxvfs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type fileSystem struct {
 	repo   Repository
-	commit CommitID
+	commit api.CommitID
 }
 
 // FileSystem returns a vfs.FileSystem for repo at commit.
-func FileSystem(repo Repository, commit CommitID) ctxvfs.FileSystem {
+func FileSystem(repo Repository, commit api.CommitID) ctxvfs.FileSystem {
 	return fileSystem{repo: repo, commit: commit}
 }
 

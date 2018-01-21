@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -26,7 +27,7 @@ type repositoryResolver struct {
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
-	var repoID int32
+	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
@@ -40,8 +41,8 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	return &repositoryResolver{repo: repo}, nil
 }
 
-func repositoryByIDInt32(ctx context.Context, id int32) (*repositoryResolver, error) {
-	repo, err := db.Repos.Get(ctx, id)
+func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryResolver, error) {
+	repo, err := db.Repos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,15 +56,15 @@ func (r *repositoryResolver) ID() graphql.ID {
 	return marshalRepositoryID(r.repo.ID)
 }
 
-func marshalRepositoryID(id int32) graphql.ID { return relay.MarshalID("Repository", id) }
+func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 
-func unmarshalRepositoryID(id graphql.ID) (repositoryID int32, err error) {
-	err = relay.UnmarshalSpec(id, &repositoryID)
+func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
 
 func (r *repositoryResolver) URI() string {
-	return r.repo.URI
+	return string(r.repo.URI)
 }
 
 func (r *repositoryResolver) Description() string {
@@ -89,7 +90,7 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
-	rev, err := backend.Repos.ResolveRev(ctx, r.repo.ID, args.Rev)
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo.ID, args.Rev)
 	if err != nil {
 		if err == vcs.ErrRevisionNotFound {
 			return nil, nil
@@ -99,7 +100,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	commit, err := backend.Repos.GetCommit(ctx, &types.RepoRevSpec{Repo: r.repo.ID, CommitID: string(rev)})
+	commit, err := backend.Repos.GetCommit(ctx, r.repo.ID, commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +111,7 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 	// This method is a stopgap until we no longer require git:// URIs on the client which include rev data.
 	// THIS RESOLVER WILL BE REMOVED SOON, DO NOT USE IT!!!
 	if r.repo.IndexedRevision != nil && *r.repo.IndexedRevision != "" {
-		return r.Commit(ctx, &struct{ Rev string }{Rev: *r.repo.IndexedRevision})
+		return r.Commit(ctx, &struct{ Rev string }{Rev: string(*r.repo.IndexedRevision)})
 	}
 	return r.Commit(ctx, &struct{ Rev string }{Rev: "HEAD"})
 }
@@ -157,14 +158,14 @@ func (r *repositoryResolver) URL() *string {
 		return &rc.Links.Repository
 	}
 
-	if strings.HasPrefix(uri, "github.com/") {
+	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s", uri)
 		return &url
 	}
 
-	host := strings.Split(uri, "/")[0]
+	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
-		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(uri, host))
+		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(string(uri), host))
 		return &url
 	}
 
@@ -179,11 +180,11 @@ func (r *repositoryResolver) URL() *string {
 
 func (r *repositoryResolver) HostType() *string {
 	uri := r.repo.URI
-	if strings.HasPrefix(uri, "github.com/") {
+	if strings.HasPrefix(string(uri), "github.com/") {
 		host := "GitHub"
 		return &host
 	}
-	host := strings.Split(uri, "/")[0]
+	host := strings.Split(string(uri), "/")[0]
 	if _, ok := githubEnterpriseURLs[host]; ok {
 		host := "GitHub Enterprise"
 		return &host
@@ -205,7 +206,9 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 
 	// Limit total references to 250 to prevent the many db.Repos.Get
 	// operations from taking too long.
-	sort.Sort(sortByRepoSpecID(totalRefs))
+	sort.Slice(totalRefs, func(i, j int) bool {
+		return totalRefs[i] < totalRefs[j]
+	})
 	if limit := 250; len(totalRefs) > limit {
 		totalRefs = totalRefs[:limit]
 	}
@@ -217,16 +220,16 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 		resolvers   = make([]*repositoryResolver, 0, len(totalRefs))
 		run         = parallel.NewRun(par)
 	)
-	for _, repoSpec := range totalRefs {
+	for _, refRepo := range totalRefs {
 		run.Acquire()
-		go func(repoSpec types.RepoSpec) {
+		go func(refRepo api.RepoID) {
 			defer func() {
 				if r := recover(); r != nil {
 					run.Error(fmt.Errorf("recover: %v", r))
 				}
 				run.Release()
 			}()
-			resolver, err := repositoryByIDInt32(ctx, repoSpec.ID)
+			resolver, err := repositoryByIDInt32(ctx, refRepo)
 			if err != nil {
 				run.Error(err)
 				return
@@ -234,7 +237,7 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 			resolversMu.Lock()
 			resolvers = append(resolvers, resolver)
 			resolversMu.Unlock()
-		}(repoSpec)
+		}(refRepo)
 	}
 	if err := run.Wait(); err != nil {
 		// Log the error if we still have good results; otherwise return just
@@ -264,20 +267,12 @@ func (t *totalRefListResolver) Total() int32 {
 	return t.total
 }
 
-type sortByRepoSpecID []types.RepoSpec
-
-func (s sortByRepoSpecID) Len() int      { return len(s) }
-func (s sortByRepoSpecID) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s sortByRepoSpecID) Less(i, j int) bool {
-	return s[i].ID < s[j].ID
-}
-
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	URI      string
 	URL      string
 }) (*EmptyResponse, error) {
-	_, err := db.Phabricator.CreateIfNotExists(ctx, args.Callsign, args.URI, args.URL)
+	_, err := db.Phabricator.CreateIfNotExists(ctx, args.Callsign, api.RepoURI(args.URI), args.URL)
 	if err != nil {
 		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI, "url", args.URL)
 	}

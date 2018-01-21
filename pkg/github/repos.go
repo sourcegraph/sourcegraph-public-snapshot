@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -35,15 +36,15 @@ type cachedRepo struct {
 	NotFound bool
 }
 
-var GetRepoMock func(ctx context.Context, repo string) (*github.Repository, error)
+var GetRepoMock func(ctx context.Context, repo api.RepoURI) (*github.Repository, error)
 
 func MockGetRepo_Return(returns *github.Repository) {
-	GetRepoMock = func(context.Context, string) (*github.Repository, error) {
+	GetRepoMock = func(context.Context, api.RepoURI) (*github.Repository, error) {
 		return returns, nil
 	}
 }
 
-func GetRepo(ctx context.Context, repo string) (*github.Repository, error) {
+func GetRepo(ctx context.Context, repo api.RepoURI) (*github.Repository, error) {
 	if GetRepoMock != nil {
 		return GetRepoMock(ctx, repo)
 	}
@@ -91,8 +92,8 @@ func GetRepo(ctx context.Context, repo string) (*github.Repository, error) {
 
 // getFromPublicCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func getFromPublicCache(ctx context.Context, repo string) *cachedRepo {
-	b, ok := reposGithubPublicCache.Get(repo)
+func getFromPublicCache(ctx context.Context, repo api.RepoURI) *cachedRepo {
+	b, ok := reposGithubPublicCache.Get(string(repo))
 	if !ok {
 		return nil
 	}
@@ -106,12 +107,12 @@ func getFromPublicCache(ctx context.Context, repo string) *cachedRepo {
 }
 
 // addToPublicCache will cache the value for repo.
-func addToPublicCache(repo string, c *cachedRepo) {
+func addToPublicCache(repo api.RepoURI, c *cachedRepo) {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return
 	}
-	reposGithubPublicCache.Set(repo, b)
+	reposGithubPublicCache.Set(string(repo), b)
 }
 
 var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}

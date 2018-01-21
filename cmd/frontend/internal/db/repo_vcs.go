@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
@@ -14,7 +15,7 @@ import (
 // store interface.
 type repoVCS struct{}
 
-func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) {
+func (s *repoVCS) Open(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
 	if Mocks.RepoVCS.Open != nil {
 		return Mocks.RepoVCS.Open(ctx, repo)
 	}
@@ -28,12 +29,12 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 }
 
 type MockRepoVCS struct {
-	Open func(ctx context.Context, repo int32) (vcs.Repository, error)
+	Open func(ctx context.Context, repo api.RepoID) (vcs.Repository, error)
 }
 
-func (s *MockRepoVCS) MockOpen(t *testing.T, wantRepo int32, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+func (s *MockRepoVCS) MockOpen(t *testing.T, wantRepo api.RepoID, mockVCSRepo vcstesting.MockRepository) (called *bool) {
 	called = new(bool)
-	s.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	s.Open = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
@@ -46,7 +47,7 @@ func (s *MockRepoVCS) MockOpen(t *testing.T, wantRepo int32, mockVCSRepo vcstest
 
 func (s *MockRepoVCS) MockOpen_NoCheck(t *testing.T, mockVCSRepo vcstesting.MockRepository) (called *bool) {
 	called = new(bool)
-	s.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+	s.Open = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
 		*called = true
 		return mockVCSRepo, nil
 	}

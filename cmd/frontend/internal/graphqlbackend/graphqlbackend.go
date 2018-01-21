@@ -46,7 +46,7 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 // githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
 // This is used for the purposes of generating external GitHub enterprise links.
 var githubEnterpriseURLs = make(map[string]string)
-var repoListConfigs = make(map[string]schema.Repository)
+var repoListConfigs = make(map[api.RepoURI]schema.Repository)
 
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
@@ -60,7 +60,7 @@ func init() {
 	}
 	reposList := conf.Get().ReposList
 	for _, r := range reposList {
-		repoListConfigs[r.Path] = r
+		repoListConfigs[api.RepoURI(r.Path)] = r
 	}
 }
 
@@ -188,7 +188,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 		return nil, nil
 	}
 
-	repo, err := db.Repos.GetByURI(ctx, args.URI)
+	repo, err := db.Repos.GetByURI(ctx, api.RepoURI(args.URI))
 	if err != nil {
 		if err, ok := err.(db.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
@@ -207,7 +207,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI string }) (*phabricatorRepoResolver, error) {
-	repo, err := db.Phabricator.GetByURI(ctx, args.URI)
+	repo, err := db.Phabricator.GetByURI(ctx, api.RepoURI(args.URI))
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 		return nil, fmt.Errorf("non-github clone URL resolved for import path %s", importPath)
 	}
 
-	repoURI := strings.TrimPrefix(cloneURL, "https://")
+	repoURI := api.RepoURI(strings.TrimPrefix(cloneURL, "https://"))
 	repo, err := db.Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
@@ -263,7 +263,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 	var symbols []lsp.SymbolInformation
 	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}
 
-	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, lsp.DocumentURI("git://"+repoURI+"?"+string(rev)), "workspace/symbol", params, &symbols)
+	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, lsp.DocumentURI("git://"+string(repoURI)+"?"+string(rev)), "workspace/symbol", params, &symbols)
 	if err != nil {
 		return nil, err
 	}

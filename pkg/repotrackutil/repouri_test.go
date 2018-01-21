@@ -1,10 +1,14 @@
 package repotrackutil
 
-import "testing"
+import (
+	"testing"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+)
 
 func TestGetTrackedRepo(t *testing.T) {
 	cases := []struct {
-		Path        string
+		Path        api.RepoURI
 		TrackedRepo string
 	}{
 		// Top-level view
@@ -30,7 +34,7 @@ func TestGetTrackedRepo(t *testing.T) {
 	}
 	// a trackedRepo must always be tracked
 	for _, r := range trackedRepo {
-		if GetTrackedRepo(r) != r {
+		if GetTrackedRepo(api.RepoURI(r)) != string(r) {
 			t.Errorf("Repo should be tracked: %v", r)
 		}
 	}

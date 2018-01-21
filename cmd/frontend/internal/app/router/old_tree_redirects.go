@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 
 	"github.com/gorilla/mux"
@@ -22,6 +23,6 @@ func addOldTreeRedirectRoute(genURLRouter *Router, matchRouter *mux.Router) {
 			path = "/" + path
 		}
 
-		http.Redirect(w, r, genURLRouter.URLToRepoTreeEntry(v["Repo"], v["Rev"], path).String(), http.StatusMovedPermanently)
+		http.Redirect(w, r, genURLRouter.URLToRepoTreeEntry(api.RepoURI(v["Repo"]), v["Rev"], path).String(), http.StatusMovedPermanently)
 	})
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -101,7 +100,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			repoURI := string(repoInfo.RepoHost) + "/" + repoInfo.FullName
+			repoURI := api.RepoURI(string(repoInfo.RepoHost) + "/" + repoInfo.FullName)
 			// SECURITY NOTE: The LSP proxy DOES NOT check permissions, so this line is a necessary
 			// security check
 			repo, err := backend.Repos.GetByURI(ctx, repoURI)
@@ -112,7 +111,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+repoURI+"?"+string(rev)))
+			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+string(repoURI)+"?"+string(rev)))
 		} else { // if we can't extract the repository URL directly, we have to consult the pkgs database
 			pkgDescriptor, ok := xlang.SymbolPackageDescriptor(sym.Symbol, c.mode)
 			if !ok {
@@ -126,22 +125,22 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			}
 			span.LogEvent("listed repository packages")
 			for _, pkg := range pkgs {
-				repo, err := backend.Repos.Get(ctx, &types.RepoSpec{ID: pkg.RepoID})
+				repo, err := backend.Repos.Get(ctx, pkg.RepoID)
 				if err != nil {
 					return nil, errors.Wrap(err, "fetch repo for package")
 				}
-				var commit string
+				var commit api.CommitID
 				if repo.IndexedRevision != nil {
 					commit = *repo.IndexedRevision
 				} else {
-					rev, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
+					var err error
+					commit, err = backend.Repos.ResolveRev(ctx, repo.ID, "")
 					if err != nil {
 						return nil, errors.Wrap(err, "resolve revision for package repo")
 					}
-					commit = string(rev)
 				}
 				// TODO: store VCS type in *types.Repo object.
-				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+repo.URI+"?"+commit))
+				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+string(repo.URI)+"?"+string(commit)))
 			}
 			span.LogEvent("resolved rootURIs")
 		}

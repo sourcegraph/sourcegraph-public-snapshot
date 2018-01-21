@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -32,11 +33,11 @@ import (
 
 // repoBlacklist contains repos which we have blacklisted. It is set via the
 // environment variable REPO_BLACKLIST.
-var repoBlacklist = make(map[string]bool)
+var repoBlacklist = make(map[api.RepoURI]bool)
 
 // repoBlacklistXReferences contains repos which we have blacklisted only on
 // workspace/xreferences. It is set via the environment variable REPO_BLACKLIST_XREFERENCES.
-var repoBlacklistXReferences = make(map[string]bool)
+var repoBlacklistXReferences = make(map[api.RepoURI]bool)
 
 var (
 	clientLimitReqSec      float64
@@ -46,12 +47,12 @@ var (
 func init() {
 	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Seperated by whitespace"))
 	for _, r := range repos {
-		repoBlacklist[r] = true
+		repoBlacklist[api.RepoURI(r)] = true
 	}
 
 	repos = strings.Fields(env.Get("REPO_BLACKLIST_XREFERENCES", "", "repos which we should not serve workspace/xreferences requests for. Seperated by whitespace"))
 	for _, r := range repos {
-		repoBlacklistXReferences[r] = true
+		repoBlacklistXReferences[api.RepoURI(r)] = true
 	}
 
 	var err error

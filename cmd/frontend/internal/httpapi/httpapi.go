@@ -135,9 +135,9 @@ func init() {
 func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
 	// Handle custom errors
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
-		err := handlerutil.RedirectToNewRepoURI(w, r, ee.NewURL)
+		err := handlerutil.RedirectToNewRepoURI(w, r, ee.NewRepo)
 		if err != nil {
-			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewURL)
+			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewRepo)
 		}
 		return
 	}

@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func (r *siteResolver) Repositories(args *struct {
@@ -117,11 +118,11 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	id, err := unmarshalRepositoryID(args.Repository)
+	repo, err := unmarshalRepositoryID(args.Repository)
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Repos.SetEnabled(ctx, id, args.Enabled); err != nil {
+	if err := db.Repos.SetEnabled(ctx, repo, args.Enabled); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -144,4 +145,20 @@ func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
+}
+
+func repoIDsToInt32s(repoIDs []api.RepoID) []int32 {
+	int32s := make([]int32, len(repoIDs))
+	for i, repoID := range repoIDs {
+		int32s[i] = int32(repoID)
+	}
+	return int32s
+}
+
+func repoURIsToStrings(repoURIs []api.RepoURI) []string {
+	strings := make([]string, len(repoURIs))
+	for i, repoURI := range repoURIs {
+		strings[i] = string(repoURI)
+	}
+	return strings
 }

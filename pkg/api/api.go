@@ -7,17 +7,27 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 )
 
+// RepoID is the unique identifier for a repository.
+type RepoID int32
+
+// RepoURI is the name of a repository, consisting of one or more "/"-separated path components. It is a misnomer;
+// it's not a valid URI because it conventionally does not have a scheme.
+type RepoURI string
+
+// CommitID is the 40-character SHA-1 hash for a Git commit.
+type CommitID string
+
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
-	ID int32
+	ID RepoID
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
-	URI string
+	URI RepoURI
 	// IndexedRevision is the revision that the global index is currently based on. It is only used
 	// by the indexer to determine if reindexing is necessary. Setting it to nil/null will cause
 	// the indexer to reindex the next time it gets triggered for this repository.
-	IndexedRevision *string
+	IndexedRevision *CommitID
 	// FreezeIndexedRevision, when true, tells the indexer not to
 	// update the indexed revision if it is already set. This is a
 	// kludge that lets us freeze the indexed repository revision for
@@ -39,7 +49,7 @@ type DependencyReferences struct {
 // dependency.
 type DependencyReference struct {
 	DepData map[string]interface{} // includes additional information about the dependency, e.g. whether or not it is vendored for Go
-	RepoID  int32                  // the repository who made the reference to the dependency.
+	RepoID                         // the repository who made the reference to the dependency.
 	Hints   map[string]interface{} // hints which should be passed to workspace/xreferences in order to more quickly find the definition.
 }
 
@@ -52,7 +62,7 @@ func (d *DependencyReference) String() string {
 // identified by the value of the RepoID field.
 type PackageInfo struct {
 	// RepoID is the id of the repository that defines the package
-	RepoID int32
+	RepoID
 
 	// Lang is the programming language of the package
 	Lang string
@@ -68,7 +78,7 @@ type ListPackagesOp struct {
 
 	// RepoID, if non-zero, is the repository to which the set of
 	// returned packages should be restricted.
-	RepoID int32
+	RepoID
 
 	// PkgQuery is the JSON containment query. It matches all packages
 	// that have the same values for keys defined in PkgQuery.

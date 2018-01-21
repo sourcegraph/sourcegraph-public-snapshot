@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -112,7 +113,7 @@ func BenchmarkIntegration(b *testing.B) {
 		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
 		b.Run(label, func(b *testing.B) {
-			fs, err := proxy.NewRemoteRepoVFS(context.Background(), root.CloneURL(), root.Rev())
+			fs, err := proxy.NewRemoteRepoVFS(context.Background(), root.CloneURL(), api.CommitID(root.Rev()))
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -255,11 +256,11 @@ func BenchmarkIntegrationShared(b *testing.B) {
 				b.Fatal(err)
 			}
 
-			oldfs, err := proxy.NewRemoteRepoVFS(ctx, old.CloneURL(), old.Rev())
+			oldfs, err := proxy.NewRemoteRepoVFS(ctx, old.CloneURL(), api.CommitID(old.Rev()))
 			if err != nil {
 				b.Fatal(err)
 			}
-			fs, err := proxy.NewRemoteRepoVFS(ctx, root.CloneURL(), root.Rev())
+			fs, err := proxy.NewRemoteRepoVFS(ctx, root.CloneURL(), api.CommitID(root.Rev()))
 			if err != nil {
 				b.Fatal(err)
 			}

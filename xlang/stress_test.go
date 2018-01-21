@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -65,7 +66,7 @@ func BenchmarkStress(b *testing.B) {
 		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
 		b.Run(label, func(b *testing.B) {
-			fs, err := proxy.NewRemoteRepoVFS(context.Background(), root.CloneURL(), root.Rev())
+			fs, err := proxy.NewRemoteRepoVFS(context.Background(), root.CloneURL(), api.CommitID(root.Rev()))
 			if err != nil {
 				b.Fatal(err)
 			}

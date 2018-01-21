@@ -155,7 +155,7 @@ func updatePhabRepos(ctx context.Context, cfg *schema.Phabricator, repos []*phab
 			return nil
 		}
 
-		err := api.InternalClient.PhabricatorRepoCreate(ctx, uri, repo.Fields.Callsign, cfg.Url)
+		err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoURI(uri), repo.Fields.Callsign, cfg.Url)
 		if err != nil {
 			return err
 		}

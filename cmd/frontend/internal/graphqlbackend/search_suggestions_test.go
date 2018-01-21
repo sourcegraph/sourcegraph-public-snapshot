@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestSearchSuggestions(t *testing.T) {
@@ -68,7 +68,7 @@ func TestSearchSuggestions(t *testing.T) {
 			return nil, nil
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
-		backend.Mocks.Repos.MockResolveRev_NoCheck(t, vcs.CommitID("deadbeef"))
+		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			calledSearchRepos = true
@@ -121,7 +121,7 @@ func TestSearchSuggestions(t *testing.T) {
 			return nil, nil
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
-		backend.Mocks.Repos.MockResolveRev_NoCheck(t, vcs.CommitID("deadbeef"))
+		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 		calledSearchRepos := false
 		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			mu.Lock()
@@ -206,7 +206,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
 			}
-			if want := "foo-repo"; repoRevs.repo.URI != want {
+			if want := api.RepoURI("foo-repo"); repoRevs.repo.URI != want {
 				t.Errorf("got %q, want %q", repoRevs.repo.URI, want)
 			}
 			return []*searchResultResolver{
@@ -241,7 +241,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
 			}
-			if want := "foo-repo"; repoRevs.repo.URI != want {
+			if want := api.RepoURI("foo-repo"); repoRevs.repo.URI != want {
 				t.Errorf("got %q, want %q", repoRevs.repo.URI, want)
 			}
 			return []*searchResultResolver{

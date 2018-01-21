@@ -12,6 +12,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	"github.com/neelance/parallel"
@@ -94,7 +95,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
 		type repoCommitSpec struct {
-			repo     int32
+			repo     api.RepoID
 			commitID string
 		}
 		cache := map[string]repoCommitSpec{}
@@ -107,7 +108,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if spec, ok := cache[key]; ok {
 				return spec, nil
 			}
-			repo, err := db.Repos.GetByURI(ctx, u.Host+u.Path)
+			repo, err := db.Repos.GetByURI(ctx, api.RepoURI(u.Host+u.Path))
 			if err != nil {
 				return repoCommitSpec{}, err
 			}
@@ -203,8 +204,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	// Eliminate duplicates.
 	type key struct {
-		repoURI string
-		repoID  int32
+		repoURI api.RepoURI
+		repoID  api.RepoID
 		repoRev string
 		file    string
 	}
@@ -214,9 +215,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		var k key
 		switch s := s.result.(type) {
 		case *repositoryResolver:
-			k.repoURI = s.URI()
+			k.repoURI = s.repo.URI
 		case *fileResolver:
-			k.repoID = s.commit.repositoryIDInt32()
+			k.repoID = s.commit.repositoryDatabaseID()
 			k.repoRev = string(s.commit.oid)
 			k.file = s.path
 		default:

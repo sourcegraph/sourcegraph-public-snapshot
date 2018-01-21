@@ -29,12 +29,12 @@ import (
 type pkgs struct{}
 
 // RefreshIndex refreshes the packages index for the specified repo@commit.
-func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error)) error {
+func (p *pkgs) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID, reposGetInventory func(context.Context, api.RepoID, api.CommitID) (*inventory.Inventory, error)) error {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByURI")
 	}
-	inv, err := reposGetInventory(ctx, &types.RepoRevSpec{Repo: repo.ID, CommitID: commitID})
+	inv, err := reposGetInventory(ctx, repo.ID, commitID)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetInventory")
 	}
@@ -59,7 +59,7 @@ func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, repos
 	return nil
 }
 
-func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID string) (err error) {
+func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -81,7 +81,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		// perform.
 		return nil
 	}
-	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + commitID)
+	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
 	var allPks []lspext.PackageInformation
 	err = unsafeXLangCall(ctx, language+"_bg", rootURI, "workspace/xpackages", map[string]string{}, &allPks)
 	if err != nil {
@@ -117,7 +117,7 @@ type dbQueryer interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language string, pks []lspext.PackageInformation) (err error) {
+func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo api.RepoID, language string, pks []lspext.PackageInformation) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.update "+language)
 	defer func() {
 		if err != nil {
@@ -250,13 +250,13 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []
 	for rows.Next() {
 		var (
 			pkg, lang string
-			repoID    int32
+			repo      api.RepoID
 		)
-		if err := rows.Scan(&repoID, &lang, &pkg); err != nil {
+		if err := rows.Scan(&repo, &lang, &pkg); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
 		r := api.PackageInfo{
-			RepoID: repoID,
+			RepoID: repo,
 			Lang:   lang,
 		}
 		if err := json.Unmarshal([]byte(pkg), &r.Pkg); err != nil {
@@ -271,7 +271,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []
 	return rawPkgs, nil
 }
 
-func (p *pkgs) Delete(ctx context.Context, repo int32) error {
+func (p *pkgs) Delete(ctx context.Context, repo api.RepoID) error {
 	_, err := globalDB.ExecContext(ctx, `DELETE FROM pkgs WHERE repo_id=$1`, repo)
 	return err
 }

@@ -18,6 +18,7 @@ import (
 	"testing/iotest"
 	"testing/quick"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 )
 
@@ -475,9 +476,9 @@ func init() {
 	os.RemoveAll(githubStore.Path)
 }
 
-func fetchTarFromGithub(ctx context.Context, repo, rev string) (io.ReadCloser, error) {
+func fetchTarFromGithub(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error) {
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(repo + " " + rev))
+	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
 	key := hex.EncodeToString(h[:])
 	path := filepath.Join("/tmp/search_test/codeload/", key+".tar.gz")
 
@@ -493,7 +494,7 @@ func fetchTarFromGithub(ctx context.Context, repo, rev string) (io.ReadCloser, e
 
 	// Fetch archive to a temporary path
 	tmpPath := path + ".part"
-	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", repo, rev)
+	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", string(repo), string(commit))
 	fmt.Println("fetching", url)
 	resp, err := http.Get(url)
 	if err != nil {
