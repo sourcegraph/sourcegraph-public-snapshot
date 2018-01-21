@@ -114,8 +114,6 @@ func addToPublicCache(repo api.RepoURI, c *cachedRepo) {
 	reposGithubPublicCache.Set(string(repo), b)
 }
 
-var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
-
 // getFromAPI attempts to fetch a public or private repo from the GitHub API
 // without use of the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*github.Repository, error) {

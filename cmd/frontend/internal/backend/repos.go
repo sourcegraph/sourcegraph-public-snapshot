@@ -90,7 +90,6 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 
 func (s *repos) addFromGitHubAPI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 	// Repo does not exist in DB, create new entry.
-	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
 	ghRepo, err := github.GetRepo(ctx, uri)
 	if err != nil {
 		return nil, err
@@ -128,8 +127,6 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 		}
 		done()
 	}()
-
-	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.List")
 
 	return db.Repos.List(ctx, opt)
 }
