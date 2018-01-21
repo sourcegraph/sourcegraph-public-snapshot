@@ -232,9 +232,8 @@ func checkAPIResponse(resp *http.Response) error {
 		errString := string(b)
 		if errString != "" {
 			return fmt.Errorf("sourcegraph API response status %d: %s", resp.StatusCode, errString)
-		} else {
-			return fmt.Errorf("sourcegraph API response status %d", resp.StatusCode)
 		}
+		return fmt.Errorf("sourcegraph API response status %d", resp.StatusCode)
 	}
 	return nil
 }
