@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -14,11 +15,24 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
+
+// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
+// server.
+type ErrRepoSeeOther struct {
+	// RedirectURL is the base URL for the repository at an external location.
+	RedirectURL string
+}
+
+func (e ErrRepoSeeOther) Error() string {
+	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
+}
 
 var Repos = &repos{}
 
@@ -35,6 +49,9 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
+// GetByURI retrieves the repository with the given URI. If the URI refers to a repository on a known external
+// service (such as a code host) that is not yet present in the database, it will automatically look up the
+// repository externally and add it to the database before returning it.
 func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
@@ -42,6 +59,54 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 
 	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
 	defer done()
+
+	repo, err := db.Repos.GetByURI(ctx, uri)
+	if err != nil && conf.Get().AutoRepoAdd {
+		if strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
+			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
+				return ghRepo, nil
+			} else if err == context.DeadlineExceeded || err == context.Canceled {
+				return nil, err
+			}
+		}
+
+		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, uri); err != nil {
+			return nil, db.ErrRepoNotFound
+		}
+		if err := s.TryInsertNew(ctx, uri, "", false, true); err != nil {
+			return nil, err
+		}
+		return db.Repos.GetByURI(ctx, uri)
+	} else if err != nil {
+
+		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
+			return nil, ErrRepoSeeOther{RedirectURL: fmt.Sprintf("https://sourcegraph.com/%s", uri)}
+		}
+		return nil, err
+	}
+
+	return repo, nil
+}
+
+func (s *repos) addFromGitHubAPI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
+	// Repo does not exist in DB, create new entry.
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
+	ghRepo, err := github.GetRepo(ctx, uri)
+	if err != nil {
+		return nil, err
+	}
+
+	if actualURI := api.RepoURI("github.com/" + ghRepo.GetFullName()); actualURI != uri {
+		// not canonical name (the GitHub api will redirect from the old name to
+		// the results for the new name if the repo got renamed on GitHub)
+		if repo, err := db.Repos.GetByURI(ctx, actualURI); err == nil {
+			return repo, nil
+		}
+	}
+
+	if err := s.TryInsertNew(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), true); err != nil {
+		return nil, err
+	}
 
 	return db.Repos.GetByURI(ctx, uri)
 }
