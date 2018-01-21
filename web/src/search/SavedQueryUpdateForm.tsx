@@ -23,7 +23,6 @@ export const SavedQueryUpdateForm: React.StatelessComponent<Props> = props => (
         onDidCommit={props.onDidUpdate}
         onDidCancel={props.onDidCancel}
         submitLabel="Save"
-        cancelLabel="Discard"
         // tslint:disable-next-line:jsx-no-lambda
         onSubmit={fields => updateSavedQueryFromForm(props, fields)}
     />

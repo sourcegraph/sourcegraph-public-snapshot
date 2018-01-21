@@ -28,7 +28,6 @@ interface Props {
     onDidCancel: () => void
     title?: string
     submitLabel: string
-    cancelLabel: string
     onSubmit: (fields: SavedQueryFields) => Observable<void>
 }
 
@@ -37,7 +36,6 @@ interface State extends SavedQueryFields {
     onDidCancel: () => void
     title?: string
     submitLabel: string
-    cancelLabel: string
     submitting: boolean
     canSubmit: boolean
     error?: any
@@ -128,12 +126,11 @@ export const SavedQueryForm = reactive<Props>(props => {
         ),
 
         props.pipe(
-            map(({ onDidCancel, title, submitLabel, cancelLabel }): Update => state => ({
+            map(({ onDidCancel, title, submitLabel }): Update => state => ({
                 ...state,
                 onDidCancel,
                 title,
                 submitLabel,
-                cancelLabel,
             }))
         ),
 
@@ -174,7 +171,6 @@ export const SavedQueryForm = reactive<Props>(props => {
                 onDidCancel,
                 title,
                 submitLabel,
-                cancelLabel,
                 submitting,
                 error,
             }: State): JSX.Element | null => (
@@ -256,7 +252,7 @@ export const SavedQueryForm = reactive<Props>(props => {
                             disabled={submitting}
                             onClick={onDidCancel}
                         >
-                            {cancelLabel}
+                            Cancel
                         </button>
                     </div>
                     {error &&
