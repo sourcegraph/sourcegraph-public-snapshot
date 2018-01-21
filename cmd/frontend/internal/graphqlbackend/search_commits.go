@@ -96,7 +96,6 @@ type commitSearchOp struct {
 	diff               bool
 	textSearchOptions  vcs.TextSearchOptions
 	extraMessageValues []string
-	since              time.Time
 }
 
 func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResult, limitHit bool, err error) {
@@ -151,6 +150,10 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	afterValues, _ := op.combinedQuery.StringValues(searchquery.FieldAfter)
 	for _, s := range afterValues {
 		args = append(args, "--since="+s)
+	}
+	// Default to searching back 1 month
+	if len(beforeValues) == 0 && len(afterValues) == 0 {
+		args = append(args, "--since='1 month ago'")
 	}
 
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
