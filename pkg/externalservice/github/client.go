@@ -1,4 +1,4 @@
-package githubutil
+package github
 
 import (
 	"crypto/sha256"
@@ -24,10 +24,6 @@ import (
 
 var gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degredation"))
 
-func init() {
-	prometheus.MustRegister(reposGitHubHTTPCacheCounter)
-}
-
 // Config specifies configuration options for a GitHub API client used
 // by Sourcegraph code.
 type Config struct {
@@ -38,42 +34,10 @@ type Config struct {
 	Transport    http.RoundTripper // base HTTP transport (if nil, uses http.DefaultTransport)
 }
 
-var reposGitHubHTTPCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "repos",
-	Name:      "github_api_cache_hit",
-	Help:      "Counts cache hits and misses for the github API HTTP cache.",
-}, []string{"type"})
-
-// cacheWithMetrics tracks the number of cache hits and misses returned from an
-// httpcache.Cache in prometheus.
-type cacheWithMetrics struct {
-	cache   httpcache.Cache
-	counter *prometheus.CounterVec
-}
-
-func (c *cacheWithMetrics) Get(key string) ([]byte, bool) {
-	resp, ok := c.cache.Get(key)
-	if ok {
-		c.counter.WithLabelValues("hit").Inc()
-	} else {
-		c.counter.WithLabelValues("miss").Inc()
-	}
-	return resp, ok
-}
-
-func (c *cacheWithMetrics) Set(key string, resp []byte) {
-	c.cache.Set(key, resp)
-}
-
-func (c *cacheWithMetrics) Delete(key string) {
-	c.cache.Delete(key)
-}
-
 // UnauthedClient is a GitHub API client using the config's OAuth2
 // client ID and secret, but not using any specific user's access
 // token. It enables a higher rate limit (5000 per hour instead of 60
-// per hour, as of Nov 2014).
+// per hour, as of Jan 2018).
 func (c *Config) UnauthedClient() *github.Client {
 	var t http.RoundTripper = baseTransport(c.Transport)
 	if c.Cache != nil {
@@ -186,6 +150,17 @@ func (t disabledTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return nil, errors.New("http: github communication disabled")
 }
 
+var reposGitHubHTTPCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "repos",
+	Name:      "github_api_cache_hit",
+	Help:      "Counts cache hits and misses for the github API HTTP cache.",
+}, []string{"type"})
+
+func init() {
+	prometheus.MustRegister(reposGitHubHTTPCacheCounter)
+}
+
 // Default is the default configuration for the GitHub API client, with auth and token URLs for github.com.
 var Default = &Config{
 	Cache: &cacheWithMetrics{
@@ -202,4 +177,29 @@ func init() {
 		log.Fatal(err)
 	}
 	Default.BaseURL = url
+}
+
+var MockRoundTripper http.RoundTripper
+
+func githubConf(ctx context.Context) Config {
+	conf := *Default
+	conf.Context = ctx
+	return conf
+}
+
+// Client returns the context's GitHub API client.
+func Client(ctx context.Context) *github.Client {
+	return UnauthedClient(ctx)
+}
+
+// UnauthedClient returns a github.Client that is unauthenticated
+func UnauthedClient(ctx context.Context) *github.Client {
+	if MockRoundTripper != nil {
+		return github.NewClient(&http.Client{
+			Transport: MockRoundTripper,
+		})
+	}
+
+	conf := githubConf(ctx)
+	return conf.UnauthedClient()
 }

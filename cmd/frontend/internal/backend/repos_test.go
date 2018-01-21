@@ -7,7 +7,7 @@ import (
 	githubpkg "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/externalservice/github"
 )
 
 func TestReposService_Get(t *testing.T) {

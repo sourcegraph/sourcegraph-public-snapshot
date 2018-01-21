@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
@@ -57,7 +56,7 @@ func GetRepo(ctx context.Context, repo api.RepoURI) (*github.Repository, error) 
 	//
 	// First parse the repo url before even trying (redis) cache, since this can
 	// invalide the request more quickly and cheaply.
-	owner, repoName, err := githubutil.SplitRepoURI(repo)
+	owner, repoName, err := SplitRepoURI(repo)
 	if err != nil {
 		reposGithubPublicCacheCounter.WithLabelValues("local-error").Inc()
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)

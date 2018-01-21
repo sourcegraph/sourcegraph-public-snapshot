@@ -16,7 +16,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
+	githubservice "sourcegraph.com/sourcegraph/sourcegraph/pkg/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -43,7 +43,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 		}
 		if u.Hostname() == "github.com" {
 			cfg := githubConfig{conn: c}
-			clientConf := &githubutil.Config{Context: ctx}
+			clientConf := &githubservice.Config{Context: ctx}
 			if c.Token != "" {
 				cfg.client = clientConf.AuthedClient(c.Token)
 			} else {
@@ -94,7 +94,7 @@ func githubEnterpriseClient(ctx context.Context, gheURL, cert, accessToken strin
 		}
 	}
 
-	config := &githubutil.Config{
+	config := &githubservice.Config{
 		BaseURL:   baseURL,
 		Context:   ctx,
 		Transport: transport,

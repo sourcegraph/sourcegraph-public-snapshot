@@ -1,4 +1,4 @@
-package githubutil
+package github
 
 import (
 	"fmt"
