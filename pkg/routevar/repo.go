@@ -3,6 +3,8 @@ package routevar
 import (
 	"regexp"
 	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // A RepoRev specifies a repo at a revision. Unlike
@@ -11,8 +13,8 @@ import (
 // from a URL), where it is convenient to allow users to specify
 // non-absolute commit IDs that the server can resolve.
 type RepoRev struct {
-	Repo string // a repo path
-	Rev  string // a VCS revision specifier (branch, "master~7", commit ID, etc.)
+	Repo api.RepoURI // a repo path
+	Rev  string      // a VCS revision specifier (branch, "master~7", commit ID, etc.)
 }
 
 var (
@@ -40,9 +42,9 @@ var repoPattern = regexp.MustCompile("^" + RepoPattern + "$")
 
 // ParseRepo parses a repo path string. If spec is invalid, an
 // InvalidError is returned.
-func ParseRepo(spec string) (repo string, err error) {
+func ParseRepo(spec string) (repo api.RepoURI, err error) {
 	if m := repoPattern.FindStringSubmatch(spec); len(m) > 0 {
-		repo = m[0]
+		repo = api.RepoURI(m[0])
 		return
 	}
 	return "", InvalidError{"Repo", spec, nil}
@@ -50,8 +52,8 @@ func ParseRepo(spec string) (repo string, err error) {
 
 // RepoRouteVars returns route variables for constructing repository
 // routes.
-func RepoRouteVars(repo string) map[string]string {
-	return map[string]string{"Repo": repo}
+func RepoRouteVars(repo api.RepoURI) map[string]string {
+	return map[string]string{"Repo": string(repo)}
 }
 
 // ToRepoRev marshals a map containing route variables
@@ -72,8 +74,8 @@ func ToRepoRev(routeVars map[string]string) RepoRev {
 }
 
 // ToRepo returns the repo path string from a map containing route variables.
-func ToRepo(routeVars map[string]string) string {
-	return routeVars["Repo"]
+func ToRepo(routeVars map[string]string) api.RepoURI {
+	return api.RepoURI(routeVars["Repo"])
 }
 
 // RepoRevRouteVars returns route variables for constructing routes to a

@@ -108,7 +108,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if spec, ok := cache[key]; ok {
 				return spec, nil
 			}
-			repo, err := db.Repos.GetByURI(ctx, u.Host+u.Path)
+			repo, err := db.Repos.GetByURI(ctx, api.RepoURI(u.Host+u.Path))
 			if err != nil {
 				return repoCommitSpec{}, err
 			}
@@ -204,7 +204,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	// Eliminate duplicates.
 	type key struct {
-		repoURI string
+		repoURI api.RepoURI
 		repoID  api.RepoID
 		repoRev string
 		file    string
@@ -215,7 +215,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		var k key
 		switch s := s.result.(type) {
 		case *repositoryResolver:
-			k.repoURI = s.URI()
+			k.repoURI = s.repo.URI
 		case *fileResolver:
 			k.repoID = s.commit.repositoryDatabaseID()
 			k.repoRev = string(s.commit.oid)

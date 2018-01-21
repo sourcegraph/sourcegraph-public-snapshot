@@ -8,6 +8,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
@@ -321,7 +322,7 @@ func TestComments_CreateAccessDenied(t *testing.T) {
 
 func TestRepoNameFromRemoteID(t *testing.T) {
 	tests := []struct {
-		In  string
+		In  api.RepoURI
 		Out string
 	}{
 		{In: "github.com/gorilla/mux", Out: "gorilla/mux"},

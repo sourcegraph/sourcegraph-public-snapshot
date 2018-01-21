@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 )
 
@@ -17,7 +18,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 	h := s.Handler()
 	s.setCloneLock("/testroot/a")
 
-	getRepoInfo := func(t *testing.T, repo string) (resp protocol.RepoInfoResponse) {
+	getRepoInfo := func(t *testing.T, repo api.RepoURI) (resp protocol.RepoInfoResponse) {
 		rr := httptest.NewRecorder()
 		body, err := json.Marshal(protocol.RepoInfoRequest{Repo: repo})
 		if err != nil {

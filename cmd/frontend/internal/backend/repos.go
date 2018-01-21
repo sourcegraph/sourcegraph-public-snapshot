@@ -35,7 +35,7 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
-func (s *repos) GetByURI(ctx context.Context, uri string) (_ *types.Repo, err error) {
+func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
 	}
@@ -46,7 +46,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (_ *types.Repo, err er
 	return db.Repos.GetByURI(ctx, uri)
 }
 
-func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork, enabled bool) error {
+func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description string, fork, enabled bool) error {
 	return db.Repos.TryInsertNew(ctx, uri, description, fork, enabled)
 }
 
@@ -132,13 +132,13 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *types.RepoRev
 
 var indexerAddr = env.Get("SRC_INDEXER", "indexer:3179", "The address of the indexer service.")
 
-func (s *repos) RefreshIndex(ctx context.Context, repo string) (err error) {
+func (s *repos) RefreshIndex(ctx context.Context, repo api.RepoURI) (err error) {
 	if Mocks.Repos.RefreshIndex != nil {
 		return Mocks.Repos.RefreshIndex(ctx, repo)
 	}
 
 	go func() {
-		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + repo)
+		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo))
 		if err != nil {
 			log15.Error("RefreshIndex failed", "error", err)
 			return

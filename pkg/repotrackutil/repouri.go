@@ -3,6 +3,8 @@ package repotrackutil
 import (
 	"regexp"
 	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 var trackedRepo = []string{
@@ -15,8 +17,8 @@ var trackedRepoRe = regexp.MustCompile(`\b(` + strings.Join(trackedRepo, "|") + 
 
 // GetTrackedRepo guesses which repo a request URL path is for. It only looks
 // at a certain subset of repos for its guess.
-func GetTrackedRepo(repoPath string) string {
-	m := trackedRepoRe.FindStringSubmatch(repoPath)
+func GetTrackedRepo(repoPath api.RepoURI) string {
+	m := trackedRepoRe.FindStringSubmatch(string(repoPath))
 	if len(m) == 0 {
 		return "unknown"
 	}

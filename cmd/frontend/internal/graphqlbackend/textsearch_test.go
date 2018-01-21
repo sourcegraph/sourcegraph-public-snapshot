@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -17,13 +18,13 @@ func TestSearchRepos(t *testing.T) {
 		case "foo/one":
 			return []*fileMatch{
 				{
-					uri: "git://" + repoName + "?" + rev + "#" + "main.go",
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/two":
 			return []*fileMatch{
 				{
-					uri: "git://" + repoName + "?" + rev + "#" + "main.go",
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/empty":
@@ -52,15 +53,15 @@ func TestSearchRepos(t *testing.T) {
 	if len(results) != 2 {
 		t.Errorf("expected two results, got %d", len(results))
 	}
-	if !reflect.DeepEqual(common.cloning, []string{"foo/cloning"}) {
+	if !reflect.DeepEqual(common.cloning, []api.RepoURI{"foo/cloning"}) {
 		t.Errorf("unexpected missing: %v", common.cloning)
 	}
-	if !reflect.DeepEqual(common.missing, []string{"foo/missing"}) {
+	if !reflect.DeepEqual(common.missing, []api.RepoURI{"foo/missing"}) {
 		t.Errorf("unexpected missing: %v", common.missing)
 	}
 }
 
-func makeRepositoryRevisions(repos ...string) []*repositoryRevisions {
+func makeRepositoryRevisions(repos ...api.RepoURI) []*repositoryRevisions {
 	r := make([]*repositoryRevisions, len(repos))
 	for i, uri := range repos {
 		r[i] = &repositoryRevisions{repo: &types.Repo{URI: uri}}

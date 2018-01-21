@@ -11,9 +11,10 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func editorBranch(ctx context.Context, repoURI, branchName string) (string, error) {
+func editorBranch(ctx context.Context, repoURI api.RepoURI, branchName string) (string, error) {
 	if branchName == "HEAD" {
 		return "", nil // Detached head state
 	}
@@ -109,7 +110,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	u := &url.URL{Path: path.Join("/", repoURI+branch, "/-/blob/", file)}
+	u := &url.URL{Path: path.Join("/", string(repoURI)+branch, "/-/blob/", file)}
 	q = u.Query()
 	q.Add("utm_source", editor+"-"+version)
 	if utmProductName != "" {
@@ -130,7 +131,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 
 // guessRepoURIFromRemoteURL return a guess at the repo URI for the given remote URL. For example, given
 // "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
-func guessRepoURIFromRemoteURL(urlStr string) string {
+func guessRepoURIFromRemoteURL(urlStr string) api.RepoURI {
 	if strings.HasPrefix(urlStr, "git@") {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
@@ -138,7 +139,7 @@ func guessRepoURIFromRemoteURL(urlStr string) string {
 
 	u, _ := url.Parse(urlStr)
 	if u != nil {
-		return u.Hostname() + u.Path
+		return api.RepoURI(u.Hostname() + u.Path)
 	}
 	return ""
 }

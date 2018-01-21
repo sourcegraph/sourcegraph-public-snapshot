@@ -134,7 +134,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*types.Repo, error) {
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo api.RepoURI) (*types.Repo, error) {
 		calledReposGetByURI = true
 		switch repo {
 		case "github.com/my/repo":

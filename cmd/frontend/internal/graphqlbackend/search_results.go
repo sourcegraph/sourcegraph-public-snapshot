@@ -32,14 +32,14 @@ import (
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
-	limitHit bool     // whether the limit on results was hit
-	cloning  []string // repos that could not be searched because they were still being cloned
-	missing  []string // repos that could not be searched because they do not exist
+	limitHit bool          // whether the limit on results was hit
+	cloning  []api.RepoURI // repos that could not be searched because they were still being cloned
+	missing  []api.RepoURI // repos that could not be searched because they do not exist
 
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
 	// purged.
-	timedout []string
+	timedout []api.RepoURI
 }
 
 func (c *searchResultsCommon) LimitHit() bool {
@@ -50,21 +50,21 @@ func (c *searchResultsCommon) Cloning() []string {
 	if c.cloning == nil {
 		return []string{}
 	}
-	return c.cloning
+	return repoURIsToStrings(c.cloning)
 }
 
 func (c *searchResultsCommon) Missing() []string {
 	if c.missing == nil {
 		return []string{}
 	}
-	return c.missing
+	return repoURIsToStrings(c.missing)
 }
 
 func (c *searchResultsCommon) Timedout() []string {
 	if c.timedout == nil {
 		return []string{}
 	}
-	return c.timedout
+	return repoURIsToStrings(c.timedout)
 }
 
 // update updates c with the other data, deduping as necessary. It modifies c but
@@ -72,8 +72,8 @@ func (c *searchResultsCommon) Timedout() []string {
 func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.limitHit = c.limitHit || other.limitHit
 
-	appendUnique := func(dst *[]string, src []string) {
-		dstSet := make(map[string]struct{}, len(*dst))
+	appendUnique := func(dst *[]api.RepoURI, src []api.RepoURI) {
+		dstSet := make(map[api.RepoURI]struct{}, len(*dst))
 		for _, s := range *dst {
 			dstSet[s] = struct{}{}
 		}
@@ -122,7 +122,7 @@ func (sr *searchResults) Alert() *searchAlert { return sr.alert }
 // operations.
 type blameFileMatchCache struct {
 	cachedReposMu sync.RWMutex
-	cachedRepos   map[string]*types.Repo
+	cachedRepos   map[api.RepoURI]*types.Repo
 
 	cachedRevsMu sync.RWMutex
 	cachedRevs   map[string]api.CommitID
@@ -132,7 +132,7 @@ type blameFileMatchCache struct {
 }
 
 // repoVCSOpen is like localstore.Repos.GetByURI except it is cached by b.
-func (b *blameFileMatchCache) reposGetByURI(ctx context.Context, repoURI string) (*types.Repo, error) {
+func (b *blameFileMatchCache) reposGetByURI(ctx context.Context, repoURI api.RepoURI) (*types.Repo, error) {
 	b.cachedReposMu.RLock()
 	repo, ok := b.cachedRepos[repoURI]
 	b.cachedReposMu.RUnlock()
@@ -205,7 +205,7 @@ func (sr *searchResults) blameFileMatch(ctx context.Context, fm *fileMatch, cach
 	if err != nil {
 		return time.Time{}, err
 	}
-	repoURI := u.Host + u.Path
+	repoURI := api.RepoURI(u.Host + u.Path)
 	revStr := u.RawQuery
 
 	repo, err := cache.reposGetByURI(ctx, repoURI)
@@ -248,7 +248,7 @@ func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err 
 		sparklineMu sync.Mutex
 		blameOps    = 0
 		cache       = &blameFileMatchCache{
-			cachedRepos:    map[string]*types.Repo{},
+			cachedRepos:    map[api.RepoURI]*types.Repo{},
 			cachedRevs:     map[string]api.CommitID{},
 			cachedVCSRepos: map[string]vcs.Repository{},
 		}

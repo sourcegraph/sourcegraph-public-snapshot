@@ -64,7 +64,7 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 }
 
 func (r *repositoryResolver) URI() string {
-	return r.repo.URI
+	return string(r.repo.URI)
 }
 
 func (r *repositoryResolver) Description() string {
@@ -158,14 +158,14 @@ func (r *repositoryResolver) URL() *string {
 		return &rc.Links.Repository
 	}
 
-	if strings.HasPrefix(uri, "github.com/") {
+	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s", uri)
 		return &url
 	}
 
-	host := strings.Split(uri, "/")[0]
+	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
-		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(uri, host))
+		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(string(uri), host))
 		return &url
 	}
 
@@ -180,11 +180,11 @@ func (r *repositoryResolver) URL() *string {
 
 func (r *repositoryResolver) HostType() *string {
 	uri := r.repo.URI
-	if strings.HasPrefix(uri, "github.com/") {
+	if strings.HasPrefix(string(uri), "github.com/") {
 		host := "GitHub"
 		return &host
 	}
-	host := strings.Split(uri, "/")[0]
+	host := strings.Split(string(uri), "/")[0]
 	if _, ok := githubEnterpriseURLs[host]; ok {
 		host := "GitHub Enterprise"
 		return &host
@@ -272,7 +272,7 @@ func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	URI      string
 	URL      string
 }) (*EmptyResponse, error) {
-	_, err := db.Phabricator.CreateIfNotExists(ctx, args.Callsign, args.URI, args.URL)
+	_, err := db.Phabricator.CreateIfNotExists(ctx, args.Callsign, api.RepoURI(args.URI), args.URL)
 	if err != nil {
 		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI, "url", args.URL)
 	}

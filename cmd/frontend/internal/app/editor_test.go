@@ -1,9 +1,13 @@
 package app
 
-import "testing"
+import (
+	"testing"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+)
 
 func TestGuessRepoURIFromRemoteURL(t *testing.T) {
-	tests := map[string]string{
+	tests := map[string]api.RepoURI{
 		"git@github.com:a/b.git":          "github.com/a/b",
 		"ssh://git@github.com/a/b.git":    "github.com/a/b",
 		"ssh://github.com/a/b.git":        "github.com/a/b",

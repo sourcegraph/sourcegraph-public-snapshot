@@ -10,20 +10,21 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 /*
  * Helpers
  */
 
-func sortedRepoURIs(repos []*types.Repo) []string {
+func sortedRepoURIs(repos []*types.Repo) []api.RepoURI {
 	uris := repoURIs(repos)
-	sort.Strings(uris)
+	sort.Slice(uris, func(i, j int) bool { return uris[i] < uris[j] })
 	return uris
 }
 
-func repoURIs(repos []*types.Repo) []string {
-	var uris []string
+func repoURIs(repos []*types.Repo) []api.RepoURI {
+	var uris []api.RepoURI
 	for _, repo := range repos {
 		uris = append(uris, repo.URI)
 	}
@@ -112,17 +113,17 @@ func TestRepos_List_pagination(t *testing.T) {
 	type testcase struct {
 		limit  int
 		offset int
-		exp    []string
+		exp    []api.RepoURI
 	}
 	tests := []testcase{
-		{limit: 1, offset: 0, exp: []string{"r1"}},
-		{limit: 1, offset: 1, exp: []string{"r2"}},
-		{limit: 1, offset: 2, exp: []string{"r3"}},
-		{limit: 2, offset: 0, exp: []string{"r1", "r2"}},
-		{limit: 2, offset: 2, exp: []string{"r3"}},
-		{limit: 3, offset: 0, exp: []string{"r1", "r2", "r3"}},
+		{limit: 1, offset: 0, exp: []api.RepoURI{"r1"}},
+		{limit: 1, offset: 1, exp: []api.RepoURI{"r2"}},
+		{limit: 1, offset: 2, exp: []api.RepoURI{"r3"}},
+		{limit: 2, offset: 0, exp: []api.RepoURI{"r1", "r2"}},
+		{limit: 2, offset: 2, exp: []api.RepoURI{"r3"}},
+		{limit: 3, offset: 0, exp: []api.RepoURI{"r1", "r2", "r3"}},
 		{limit: 3, offset: 3, exp: nil},
-		{limit: 4, offset: 0, exp: []string{"r1", "r2", "r3"}},
+		{limit: 4, offset: 0, exp: []api.RepoURI{"r1", "r2", "r3"}},
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
@@ -159,13 +160,13 @@ func TestRepos_List_query1(t *testing.T) {
 	}
 	tests := []struct {
 		query string
-		want  []string
+		want  []api.RepoURI
 	}{
-		{"def", []string{"abc/def", "def/ghi"}},
-		{"ABC/DEF", []string{"abc/def"}},
-		{"xyz", []string{"github.com/abc/xyz"}},
-		{"mno/p", []string{"jkl/mno/pqr"}},
-		{"jkl mno pqr", []string{"jkl/mno/pqr"}},
+		{"def", []api.RepoURI{"abc/def", "def/ghi"}},
+		{"ABC/DEF", []api.RepoURI{"abc/def"}},
+		{"xyz", []api.RepoURI{"github.com/abc/xyz"}},
+		{"mno/p", []api.RepoURI{"jkl/mno/pqr"}},
+		{"jkl mno pqr", []api.RepoURI{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
 		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, Enabled: true})
@@ -202,12 +203,12 @@ func TestRepos_List_query2(t *testing.T) {
 	}
 	tests := []struct {
 		query string
-		want  []string
+		want  []api.RepoURI
 	}{
-		{"def", []string{"a/def", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"}},
-		{"b/def", []string{"b/def"}},
-		{"def/", []string{"def/ghi", "def/jkl", "def/mno"}},
-		{"def/m", []string{"def/mno"}},
+		{"def", []api.RepoURI{"a/def", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"}},
+		{"b/def", []api.RepoURI{"b/def"}},
+		{"def/", []api.RepoURI{"def/ghi", "def/jkl", "def/mno"}},
+		{"def/m", []api.RepoURI{"def/mno"}},
 	}
 	for _, test := range tests {
 		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, Enabled: true})
@@ -243,24 +244,24 @@ func TestRepos_List_patterns(t *testing.T) {
 	tests := []struct {
 		includePatterns []string
 		excludePattern  string
-		want            []string
+		want            []api.RepoURI
 	}{
 		{
 			includePatterns: []string{"(a|c)"},
-			want:            []string{"a/b", "c/d"},
+			want:            []api.RepoURI{"a/b", "c/d"},
 		},
 		{
 			includePatterns: []string{"(a|c)", "b"},
-			want:            []string{"a/b"},
+			want:            []api.RepoURI{"a/b"},
 		},
 		{
 			includePatterns: []string{"(a|c)"},
 			excludePattern:  "d",
-			want:            []string{"a/b"},
+			want:            []api.RepoURI{"a/b"},
 		},
 		{
 			excludePattern: "(d|e)",
-			want:           []string{"a/b", "g/h"},
+			want:           []api.RepoURI{"a/b", "g/h"},
 		},
 	}
 	for _, test := range tests {

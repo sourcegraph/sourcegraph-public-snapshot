@@ -66,9 +66,9 @@ func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
 	return nil
 }
 
-func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri string, commitID CommitID) error {
+func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
 	req, err := json.Marshal(&DefsRefreshIndexRequest{
-		URI:      uri,
+		RepoURI:  uri,
 		CommitID: commitID,
 	})
 	if err != nil {
@@ -78,9 +78,9 @@ func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri string, commi
 	return err
 }
 
-func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri string, commitID CommitID) error {
+func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
 	req, err := json.Marshal(&PkgsRefreshIndexRequest{
-		URI:      uri,
+		RepoURI:  uri,
 		CommitID: commitID,
 	})
 	if err != nil {
@@ -90,9 +90,9 @@ func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri string, commi
 	return err
 }
 
-func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri, description string, fork, enabled bool) (*Repo, error) {
+func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, uri RepoURI, description string, fork, enabled bool) (*Repo, error) {
 	req, err := json.Marshal(RepoCreateOrUpdateRequest{
-		URI:         uri,
+		RepoURI:     uri,
 		Description: description,
 		Fork:        fork,
 		Enabled:     enabled,
@@ -148,8 +148,8 @@ func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, comm
 	return nil
 }
 
-func (c *internalClient) ReposGetByURI(ctx context.Context, uri string) (*Repo, error) {
-	resp, err := c.get("repos/" + uri)
+func (c *internalClient) ReposGetByURI(ctx context.Context, uri RepoURI) (*Repo, error) {
+	resp, err := c.get("repos/" + string(uri))
 	if err != nil {
 		return nil, err
 	}
@@ -186,9 +186,9 @@ func (c *internalClient) GitoliteUpdateRepos(ctx context.Context) error {
 	return nil
 }
 
-func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri, callsign, url string) error {
+func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri RepoURI, callsign, url string) error {
 	req, err := json.Marshal(PhabricatorRepoCreateRequest{
-		URI:      uri,
+		RepoURI:  uri,
 		Callsign: callsign,
 		URL:      url,
 	})

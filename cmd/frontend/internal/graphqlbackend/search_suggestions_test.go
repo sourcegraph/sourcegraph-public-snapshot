@@ -206,7 +206,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
 			}
-			if want := "foo-repo"; repoRevs.repo.URI != want {
+			if want := api.RepoURI("foo-repo"); repoRevs.repo.URI != want {
 				t.Errorf("got %q, want %q", repoRevs.repo.URI, want)
 			}
 			return []*searchResultResolver{
@@ -241,7 +241,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
 			}
-			if want := "foo-repo"; repoRevs.repo.URI != want {
+			if want := api.RepoURI("foo-repo"); repoRevs.repo.URI != want {
 				t.Errorf("got %q, want %q", repoRevs.repo.URI, want)
 			}
 			return []*searchResultResolver{

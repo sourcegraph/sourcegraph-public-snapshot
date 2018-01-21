@@ -12,7 +12,7 @@ var Pkgs = &pkgs{}
 type pkgs struct{}
 
 // RefreshIndex refreshes the package index for the specified repository.
-func (p *pkgs) RefreshIndex(ctx context.Context, repoURI string, commitID api.CommitID) (err error) {
+func (p *pkgs) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID) (err error) {
 	if Mocks.Pkgs.RefreshIndex != nil {
 		return Mocks.Pkgs.RefreshIndex(ctx, repoURI, commitID)
 	}
@@ -30,6 +30,6 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pkgs [
 }
 
 type MockPkgs struct {
-	RefreshIndex func(ctx context.Context, repoURI string, commitID api.CommitID) error
+	RefreshIndex func(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID) error
 	ListPackages func(ctx context.Context, op *api.ListPackagesOp) (pkgs []api.PackageInfo, err error)
 }

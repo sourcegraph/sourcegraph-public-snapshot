@@ -14,7 +14,7 @@ type Repo struct {
 	ID api.RepoID
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
-	URI string
+	URI api.RepoURI
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.
@@ -116,7 +116,7 @@ type User struct {
 // does not necessarily have its contents cloned to a remote Sourcegraph server.
 type OrgRepo struct {
 	ID                api.RepoID
-	CanonicalRemoteID string
+	CanonicalRemoteID api.RepoURI
 	CloneURL          string
 	OrgID             int32
 	CreatedAt         time.Time
@@ -209,7 +209,7 @@ type OrgTag struct {
 
 type PhabricatorRepo struct {
 	ID       int32
-	URI      string
+	URI      api.RepoURI
 	URL      string
 	Callsign string
 }

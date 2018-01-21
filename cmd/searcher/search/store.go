@@ -41,7 +41,7 @@ type Store struct {
 	// FetchTar returns an io.ReadCloser to a tar archive. If the error
 	// implements "BadRequest() bool", it will be used to determine if the
 	// error is a bad request (eg invalid repo).
-	FetchTar func(ctx context.Context, repo string, commit api.CommitID) (io.ReadCloser, error)
+	FetchTar func(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error)
 
 	// Path is the directory to store the cache
 	Path string
@@ -92,7 +92,7 @@ func (s *Store) Start() {
 
 // prepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) prepareZip(ctx context.Context, repo string, commit api.CommitID) (path string, err error) {
+func (s *Store) prepareZip(ctx context.Context, repo api.RepoURI, commit api.CommitID) (path string, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	defer func() {
@@ -113,7 +113,7 @@ func (s *Store) prepareZip(ctx context.Context, repo string, commit api.CommitID
 	}
 
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(repo + " " + string(commit)))
+	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
 	key := hex.EncodeToString(h[:])
 	span.LogKV("key", key)
 
@@ -156,7 +156,7 @@ func (s *Store) prepareZip(ctx context.Context, repo string, commit api.CommitID
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
-func (s *Store) fetch(ctx context.Context, repo string, commit api.CommitID) (rc io.ReadCloser, err error) {
+func (s *Store) fetch(ctx context.Context, repo api.RepoURI, commit api.CommitID) (rc io.ReadCloser, err error) {
 	fetchQueueSize.Inc()
 	s.fetchSem <- 1 // Acquire concurrent fetches semaphore
 	fetchQueueSize.Dec()

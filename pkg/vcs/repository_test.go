@@ -1270,7 +1270,7 @@ func TestOpen(t *testing.T) {
 	t.Parallel()
 
 	dir := initGitRepository(t)
-	gitcmd.Open(dir)
+	gitcmd.Open(api.RepoURI(dir))
 }
 
 // initGitRepository initializes a new Git repository and runs cmds in a new
@@ -1324,7 +1324,7 @@ type gitRepository struct {
 func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitRepository {
 	dir := initGitRepository(t, cmds...)
 	return &gitRepository{
-		Repository: *gitcmd.Open(dir),
+		Repository: *gitcmd.Open(api.RepoURI(dir)),
 		Dir:        dir,
 	}
 }

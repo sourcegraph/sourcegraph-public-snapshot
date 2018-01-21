@@ -476,9 +476,9 @@ func init() {
 	os.RemoveAll(githubStore.Path)
 }
 
-func fetchTarFromGithub(ctx context.Context, repo string, commit api.CommitID) (io.ReadCloser, error) {
+func fetchTarFromGithub(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error) {
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(repo + " " + string(commit)))
+	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
 	key := hex.EncodeToString(h[:])
 	path := filepath.Join("/tmp/search_test/codeload/", key+".tar.gz")
 
@@ -494,7 +494,7 @@ func fetchTarFromGithub(ctx context.Context, repo string, commit api.CommitID) (
 
 	// Fetch archive to a temporary path
 	tmpPath := path + ".part"
-	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", repo, string(commit))
+	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", string(repo), string(commit))
 	fmt.Println("fetching", url)
 	resp, err := http.Get(url)
 	if err != nil {

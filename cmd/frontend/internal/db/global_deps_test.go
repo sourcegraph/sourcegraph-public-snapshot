@@ -20,7 +20,7 @@ import (
 )
 
 func TestGlobalDeps_TotalRefsExpansion(t *testing.T) {
-	tests := map[string][]string{
+	tests := map[api.RepoURI][]string{
 		// azul3d.org
 		"github.com/azul3d/engine": []string{"azul3d.org/engine"},
 
@@ -197,7 +197,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repoURI string) (*types.Repo, error) {
+	Mocks.Repos.GetByURI = func(ctx context.Context, repoURI api.RepoURI) (*types.Repo, error) {
 		calledReposGetByURI = true
 		switch repoURI {
 		case "github.com/my/repo":
@@ -246,7 +246,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 
 	repos := make([]api.RepoID, 5)
 	for i := 0; i < 5; i++ {
-		uri := fmt.Sprintf("myrepo-%d", i)
+		uri := api.RepoURI(fmt.Sprintf("myrepo-%d", i))
 		if err := Repos.TryInsertNew(ctx, uri, "", false, true); err != nil {
 			t.Fatal(err)
 		}

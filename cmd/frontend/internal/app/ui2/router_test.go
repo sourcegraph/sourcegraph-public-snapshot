@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 
 	"github.com/gorilla/mux"
@@ -209,7 +210,7 @@ func TestRouter(t *testing.T) {
 
 func TestRouter_RootPath(t *testing.T) {
 	tests := []struct {
-		repo   string
+		repo   api.RepoURI
 		exists bool
 	}{
 		{
@@ -232,7 +233,7 @@ func TestRouter_RootPath(t *testing.T) {
 			}
 
 			// Mock GetByURI to return the proper repo not found error type.
-			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*types.Repo, error) {
+			backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 				if uri != tst.repo {
 					panic("unexpected")
 				}
@@ -243,14 +244,14 @@ func TestRouter_RootPath(t *testing.T) {
 			}
 			// Perform a request that we expect to redirect to the about subdomain.
 			rec := httptest.NewRecorder()
-			req := &http.Request{Method: "GET", URL: &url.URL{Path: "/" + tst.repo}}
+			req := &http.Request{Method: "GET", URL: &url.URL{Path: "/" + string(tst.repo)}}
 			Router().ServeHTTP(rec, req)
 			if !tst.exists {
 				// expecting redirect
 				if rec.Code != http.StatusTemporaryRedirect {
 					t.Fatalf("got code %v want %v", rec.Code, http.StatusTemporaryRedirect)
 				}
-				wantLoc := "https://about.sourcegraph.com/" + tst.repo
+				wantLoc := "https://about.sourcegraph.com/" + string(tst.repo)
 				if got := rec.Header().Get("Location"); got != wantLoc {
 					t.Fatalf("got location %q want location %q", got, wantLoc)
 				}

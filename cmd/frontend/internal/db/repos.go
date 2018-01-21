@@ -73,14 +73,14 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 // from the database and NOT from any external sources. It is a more
 // specialized and optimized version of Get, since many callers of Get only
 // want the Repository.URI field.
-func (s *repos) GetURI(ctx context.Context, id api.RepoID) (string, error) {
+func (s *repos) GetURI(ctx context.Context, id api.RepoID) (api.RepoURI, error) {
 	if Mocks.Repos.GetURI != nil {
 		return Mocks.Repos.GetURI(ctx, id)
 	}
 
 	uri, err := repoURICache.GetInt(int64(id))
 	if err == nil {
-		return string(uri), nil
+		return api.RepoURI(uri), nil
 	} else if err != freecache.ErrNotFound {
 		return "", err
 	}
@@ -101,14 +101,14 @@ func (s *repos) GetURI(ctx context.Context, id api.RepoID) (string, error) {
 //
 // If the repository already exists in the db, that information is returned
 // and no effort is made to detect if the repo is cloned or cloning.
-func (s *repos) GetByURI(ctx context.Context, uri string) (*types.Repo, error) {
+func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
 	}
 
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil && autoRepoAdd {
-		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
+		if strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
 			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
 				return ghRepo, nil
 			} else if err == context.DeadlineExceeded || err == context.Canceled {
@@ -124,7 +124,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*types.Repo, error) {
 		}
 		return s.getByURI(ctx, uri)
 	} else if err != nil {
-		if publicRepoRedirectEnabled && strings.HasPrefix(strings.ToLower(uri), "github.com/") {
+		if publicRepoRedirectEnabled && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
 			return nil, ErrRepoSeeOther{RedirectURL: fmt.Sprintf("https://sourcegraph.com/%s", uri)}
 		}
 		return nil, err
@@ -133,7 +133,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*types.Repo, error) {
 	return repo, nil
 }
 
-func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*types.Repo, error) {
+func (s *repos) addFromGitHubAPI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 	// Repo does not exist in DB, create new entry.
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
 	ghRepo, err := github.GetRepo(ctx, uri)
@@ -141,7 +141,7 @@ func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*types.Repo, 
 		return nil, err
 	}
 
-	if actualURI := "github.com/" + ghRepo.GetFullName(); actualURI != uri {
+	if actualURI := api.RepoURI("github.com/" + ghRepo.GetFullName()); actualURI != uri {
 		// not canonical name (the GitHub api will redirect from the old name to
 		// the results for the new name if the repo got renamed on GitHub)
 		if repo, err := s.getByURI(ctx, actualURI); err == nil {
@@ -156,7 +156,7 @@ func (s *repos) addFromGitHubAPI(ctx context.Context, uri string) (*types.Repo, 
 	return s.getByURI(ctx, uri)
 }
 
-func (s *repos) getByURI(ctx context.Context, uri string) (*types.Repo, error) {
+func (s *repos) getByURI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 	repos, err := s.getBySQL(ctx, sqlf.Sprintf("WHERE uri=%s LIMIT 1", uri))
 	if err != nil {
 		return nil, err
@@ -594,7 +594,7 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
-func (s *repos) TryInsertNew(ctx context.Context, uri string, description string, fork, enabled bool) error {
+func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description string, fork, enabled bool) error {
 	// Avoid logspam in postgres for violating the constraint. So we first
 	// check if the repo exists.
 	if _, err := s.getByURI(ctx, uri); err == nil {

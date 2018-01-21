@@ -1,17 +1,17 @@
 package api
 
 type DefsRefreshIndexRequest struct {
-	URI      string `json:"uri"`
+	RepoURI  `json:"uri"`
 	CommitID `json:"revision"`
 }
 
 type PkgsRefreshIndexRequest struct {
-	URI      string `json:"uri"`
+	RepoURI  `json:"uri"`
 	CommitID `json:"revision"`
 }
 
 type RepoCreateOrUpdateRequest struct {
-	URI         string `json:"uri"`
+	RepoURI     `json:"uri"`
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
 	Enabled     bool   `json:"enabled"`
@@ -34,7 +34,7 @@ type ReposGetInventoryUncachedRequest struct {
 }
 
 type PhabricatorRepoCreateRequest struct {
-	URI      string `json:"uri"`
+	RepoURI  `json:"uri"`
 	Callsign string `json:"callsign"`
 	URL      string `json:"url"`
 }

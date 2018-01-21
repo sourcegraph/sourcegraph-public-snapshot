@@ -94,7 +94,7 @@ func shutdownOnSIGINT(s *http.Server) {
 	}
 }
 
-func fetchTar(ctx context.Context, repo string, commit api.CommitID) (r io.ReadCloser, err error) {
+func fetchTar(ctx context.Context, repo api.RepoURI, commit api.CommitID) (r io.ReadCloser, err error) {
 	// gitcmd.Repository.Archive returns a zip file read into
 	// memory. However, we do not need to read into memory and we want a
 	// tar, so we directly run the gitserver Command.

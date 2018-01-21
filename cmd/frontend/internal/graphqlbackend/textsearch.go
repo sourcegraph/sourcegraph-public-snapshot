@@ -154,7 +154,7 @@ func (lm *lineMatch) LimitHit() bool {
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, repo string, commit api.CommitID, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func textSearch(ctx context.Context, repo api.RepoURI, commit api.CommitID, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
@@ -189,7 +189,7 @@ func textSearch(ctx context.Context, repo string, commit api.CommitID, p *patter
 		p.ExcludePattern = &s
 	}
 	q := url.Values{
-		"Repo":            []string{repo},
+		"Repo":            []string{string(repo)},
 		"Commit":          []string{string(commit)},
 		"Pattern":         []string{p.Pattern},
 		"ExcludePattern":  []string{*p.ExcludePattern},
@@ -216,7 +216,7 @@ func textSearch(ctx context.Context, repo string, commit api.CommitID, p *patter
 	// these fields from old frontends that do not (and provide a default in the latter case).
 	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
 	q.Set("PatternMatchesPath", strconv.FormatBool(p.PatternMatchesPath))
-	searcherURL, err := searcherURLs.Get(repo + "@" + string(commit))
+	searcherURL, err := searcherURLs.Get(string(repo) + "@" + string(commit))
 	if err != nil {
 		return nil, false, err
 	}
@@ -354,9 +354,9 @@ func searchRepo(ctx context.Context, repo *types.Repo, rev string, info *pattern
 
 	var workspace string
 	if rev != "" {
-		workspace = "git://" + repo.URI + "?" + rev + "#"
+		workspace = "git://" + string(repo.URI) + "?" + rev + "#"
 	} else {
-		workspace = "git://" + repo.URI + "#"
+		workspace = "git://" + string(repo.URI) + "#"
 	}
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
@@ -439,7 +439,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	for _, repoRev := range repos {
 		// TODO Repo is a substring match, so we can match more
 		restrict = append(restrict, zoekt.SearchRequestRestriction{
-			Repo:     repoRev.repo.URI,
+			Repo:     string(repoRev.repo.URI),
 			Branches: []string{""}, // "" matches all indexed branches
 		})
 	}
@@ -536,7 +536,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 	head := indexed
 	indexed = indexed[:0]
 	for _, repoRev := range head {
-		if set[repoRev.repo.URI] {
+		if set[string(repoRev.repo.URI)] {
 			indexed = append(indexed, repoRev)
 		} else {
 			unindexed = append(unindexed, repoRev)

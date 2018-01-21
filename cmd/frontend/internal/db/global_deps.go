@@ -53,7 +53,7 @@ var globalDepEnabledLangs = map[string]struct{}{
 }
 
 // RefreshIndex refreshes the global deps index for the specified repo@commit.
-func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI string, commitID api.CommitID, reposGetInventory func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error)) error {
+func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID, reposGetInventory func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error)) error {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByURI")
@@ -83,7 +83,7 @@ func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI string, commitID 
 	return nil
 }
 
-func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, langs []*inventory.Lang) (int, error) {
+func (g *globalDeps) TotalRefs(ctx context.Context, repoURI api.RepoURI, langs []*inventory.Lang) (int, error) {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return 0, errors.Wrap(err, "Repos.GetByURI")
@@ -114,7 +114,7 @@ func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, langs []*inv
 // ListTotalRefs is like TotalRefs, except it returns a list of repo IDs
 // instead of just the length of that list. Obviously, this is less efficient
 // if you just need the count, however.
-func (g *globalDeps) ListTotalRefs(ctx context.Context, repoURI string, langs []*inventory.Lang) ([]api.RepoID, error) {
+func (g *globalDeps) ListTotalRefs(ctx context.Context, repoURI api.RepoURI, langs []*inventory.Lang) ([]api.RepoID, error) {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "Repos.GetByURI")
@@ -150,8 +150,8 @@ func (g *globalDeps) ListTotalRefs(ctx context.Context, repoURI string, langs []
 //
 // TODO(slimsag): In the future, when the pkgs index includes Go repositories,
 // use that instead of this manual mapping hack.
-func repoURIToGoPathPrefixes(repoURI string) []string {
-	manualMapping := map[string][]string{
+func repoURIToGoPathPrefixes(repoURI api.RepoURI) []string {
+	manualMapping := map[api.RepoURI][]string{
 		// stdlib hack: by returning an empty string (NOT no strings) we end up
 		// with an SQL query like `AND dep_data->>'package' LIKE '%';` which
 		// matches all Go repositories effectively. We do this for the stdlib
@@ -171,52 +171,52 @@ func repoURIToGoPathPrefixes(repoURI string) []string {
 	}
 
 	switch {
-	case strings.HasPrefix(repoURI, "github.com/azul3d"): // azul3d.org
-		split := strings.Split(repoURI, "/")
+	case strings.HasPrefix(string(repoURI), "github.com/azul3d"): // azul3d.org
+		split := strings.Split(string(repoURI), "/")
 		if len(split) >= 3 {
 			return []string{"azul3d.org/" + split[2]}
 		}
 
-	case strings.HasPrefix(repoURI, "github.com/dskinner"): // dasa.cc
-		split := strings.Split(repoURI, "/")
+	case strings.HasPrefix(string(repoURI), "github.com/dskinner"): // dasa.cc
+		split := strings.Split(string(repoURI), "/")
 		if len(split) >= 3 {
 			return []string{"dasa.cc/" + split[2]}
 		}
 
-	case strings.HasPrefix(repoURI, "github.com/kubernetes"): // k8s.io
-		split := strings.Split(repoURI, "/")
+	case strings.HasPrefix(string(repoURI), "github.com/kubernetes"): // k8s.io
+		split := strings.Split(string(repoURI), "/")
 		if len(split) >= 3 {
 			return []string{"k8s.io/" + split[2]}
 		}
 
-	case strings.HasPrefix(repoURI, "github.com/uber-go"): // go.uber.org
-		split := strings.Split(repoURI, "/")
+	case strings.HasPrefix(string(repoURI), "github.com/uber-go"): // go.uber.org
+		split := strings.Split(string(repoURI), "/")
 		if len(split) >= 3 {
 			// Uber also uses their non-canonical import paths for some repos.
 			return []string{
-				repoURI,
+				string(repoURI),
 				"go.uber.org/" + split[2],
 			}
 		}
 
-	case strings.HasPrefix(repoURI, "github.com/dominikh"): // honnef.co
-		split := strings.Split(repoURI, "/")
+	case strings.HasPrefix(string(repoURI), "github.com/dominikh"): // honnef.co
+		split := strings.Split(string(repoURI), "/")
 		if len(split) >= 3 {
 			return []string{"honnef.co/" + strings.Replace(split[2], "-", "/", -1)}
 		}
 
-	case strings.HasPrefix(repoURI, "github.com/golang") && repoURI != "github.com/golang/go": // golang.org/x
-		split := strings.Split(repoURI, "/")
+	case strings.HasPrefix(string(repoURI), "github.com/golang") && repoURI != "github.com/golang/go": // golang.org/x
+		split := strings.Split(string(repoURI), "/")
 		if len(split) >= 3 {
 			return []string{"golang.org/x/" + split[2]}
 		}
 
-	case strings.HasPrefix(repoURI, "github.com"): // gopkg.in
-		split := strings.Split(repoURI, "/")
+	case strings.HasPrefix(string(repoURI), "github.com"): // gopkg.in
+		split := strings.Split(string(repoURI), "/")
 		if len(split) >= 3 && strings.HasPrefix(split[1], "go-") {
 			// Four possibilities
 			return []string{
-				repoURI, // github.com/go-foo/foo
+				string(repoURI),                                       // github.com/go-foo/foo
 				"gopkg.in/" + strings.TrimPrefix(split[1], "go-"),     // gopkg.in/foo
 				"labix.org/v1/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v1/foo
 				"labix.org/v2/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v2/foo
@@ -224,12 +224,12 @@ func repoURIToGoPathPrefixes(repoURI string) []string {
 		} else if len(split) >= 3 {
 			// Two possibilities
 			return []string{
-				repoURI, // github.com/foo/bar
+				string(repoURI),                         // github.com/foo/bar
 				"gopkg.in/" + split[1] + "/" + split[2], // gopkg.in/foo/bar
 			}
 		}
 	}
-	return []string{repoURI}
+	return []string{string(repoURI)}
 }
 
 // doTotalRefs is the generic implementation of total references, using the `pkgs` table.
@@ -407,7 +407,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 	// server explicitly for background tasks such as workspace/xdependencies.
 	// This makes it such that indexing repositories does not interfere in
 	// terms of resource usage with real user requests.
-	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + string(commitID))
+	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
 	var deps []lspext.DependencyReference
 	err = unsafeXLangCall(ctx, language+"_bg", rootURI, "workspace/xdependencies", map[string]string{}, &deps)
 	if err != nil {

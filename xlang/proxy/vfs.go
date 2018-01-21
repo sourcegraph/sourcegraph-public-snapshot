@@ -22,7 +22,7 @@ import (
 //
 // It is a var so that it can be mocked in tests.
 var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (FileSystem, error) {
-	repo := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git")
+	repo := api.RepoURI(cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git"))
 
 	// We can get to this point without checking if (repo, commit) actually
 	// exists. Its better to fail sooner, otherwise the error can cause a
@@ -75,7 +75,7 @@ func init() {
 }
 
 type sharedFSKey struct {
-	repo     string
+	repo     api.RepoURI
 	commitID api.CommitID
 }
 

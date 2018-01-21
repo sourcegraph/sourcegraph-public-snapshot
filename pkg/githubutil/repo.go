@@ -3,11 +3,15 @@ package githubutil
 import (
 	"fmt"
 	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // SplitRepoURI splits a string like "github.com/alice/myrepo" to "alice" and
 // "myrepo".
-func SplitRepoURI(uri string) (owner, repo string, err error) {
+func SplitRepoURI(input api.RepoURI) (owner, repo string, err error) {
+	uri := string(input)
+
 	// HACK: treat sourcegraph.com/... as github.com/...
 	if strings.HasPrefix(uri, "sourcegraph.com/") {
 		uri = strings.Replace(uri, "sourcegraph.com/", "github.com/", 1)

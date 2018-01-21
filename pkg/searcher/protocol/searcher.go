@@ -6,7 +6,7 @@ import "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 // Request represents a request to searcher
 type Request struct {
 	// Repo is which repository to search. eg "github.com/gorilla/mux"
-	Repo string
+	Repo api.RepoURI
 
 	// Commit is which commit to search. It is required to be resolved,
 	// not a ref like HEAD or master. eg

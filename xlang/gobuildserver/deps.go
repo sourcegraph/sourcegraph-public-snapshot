@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
@@ -460,7 +461,7 @@ var NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, erro
 	// In enterprise deployments, all dependencies are "public", so we can
 	// use gitserver
 	if cloneFromGitserver {
-		repo := cloneURL.Host + cloneURL.Path
+		repo := api.RepoURI(cloneURL.Host + cloneURL.Path)
 		return vfsutil.ArchiveFileSystem(gitcmd.Open(repo), rev), nil
 	}
 

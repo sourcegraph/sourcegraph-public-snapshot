@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestMap(t *testing.T) {
@@ -66,8 +67,8 @@ func TestMap(t *testing.T) {
 
 		originMap = actual
 		for _, mapping := range test.mappings {
-			if gotURI := OriginMap(mapping[0]); gotURI != mapping[1] {
-				t.Errorf("on input %q, input URI %q, got %q, but expected %q", test.in, mapping[0], gotURI, mapping[1])
+			if got := OriginMap(api.RepoURI(mapping[0])); got != mapping[1] {
+				t.Errorf("on input %q, input URI %q, got %q, but expected %q", test.in, mapping[0], got, mapping[1])
 			}
 		}
 	}
@@ -75,7 +76,8 @@ func TestMap(t *testing.T) {
 
 func TestDefaults(t *testing.T) {
 	tests := []struct {
-		repo, origin string
+		repo   api.RepoURI
+		origin string
 	}{
 		{"github.com/gorilla/mux", "https://github.com/gorilla/mux.git"},
 		{"bitbucket.org/gorilla/pat", "https://bitbucket.org/gorilla/pat.git"},

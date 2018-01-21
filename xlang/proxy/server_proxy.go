@@ -295,7 +295,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		if _, hasLargeMode := ServersByMode[mode+"_large"]; hasLargeMode {
 			repo := id.rootURI.Repo()
 			for _, p := range repoLargeSubstr {
-				if strings.Contains(repo, p) {
+				if strings.Contains(string(repo), p) {
 					mode = mode + "_large"
 					break
 				}

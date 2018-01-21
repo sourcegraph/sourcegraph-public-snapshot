@@ -14,6 +14,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer/idx"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
@@ -74,7 +75,7 @@ func main() {
 	}
 
 	http.HandleFunc("/refresh", func(resp http.ResponseWriter, req *http.Request) {
-		repo := req.URL.Query().Get("repo")
+		repo := api.RepoURI(req.URL.Query().Get("repo"))
 		rev := req.URL.Query().Get("rev")
 		if repo == "" {
 			http.Error(resp, "missing repo parameter", http.StatusBadRequest)

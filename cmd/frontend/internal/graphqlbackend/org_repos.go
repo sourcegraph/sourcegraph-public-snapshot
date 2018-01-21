@@ -6,6 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type orgRepoResolver struct {
@@ -23,11 +24,11 @@ func (o *orgRepoResolver) Org() *orgResolver {
 
 // DEPRECATED: to be replaced by CanonicalRemoteID.
 func (o *orgRepoResolver) RemoteURI() string {
-	return o.repo.CanonicalRemoteID
+	return string(o.repo.CanonicalRemoteID)
 }
 
 func (o *orgRepoResolver) CanonicalRemoteID() string {
-	return o.repo.CanonicalRemoteID
+	return string(o.repo.CanonicalRemoteID)
 }
 
 func (o *orgRepoResolver) CloneURL() string {
@@ -47,12 +48,12 @@ func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
 	Branch *string
 	Limit  *int32
 }) *threadConnectionResolver {
-	return &threadConnectionResolver{o.org, []*types.OrgRepo{o.repo}, []string{o.repo.CanonicalRemoteID}, args.File, args.Branch, args.Limit}
+	return &threadConnectionResolver{o.org, []*types.OrgRepo{o.repo}, []api.RepoURI{o.repo.CanonicalRemoteID}, args.File, args.Branch, args.Limit}
 }
 
 func (o *orgRepoResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
 	// See if a repository exists whose URI matches the canonical remote ID.
-	repo, err := db.Repos.GetByURI(ctx, o.repo.CanonicalRemoteID)
+	repo, err := db.Repos.GetByURI(ctx, api.RepoURI(o.repo.CanonicalRemoteID))
 	if err == db.ErrRepoNotFound {
 		return nil, nil
 	} else if err != nil {

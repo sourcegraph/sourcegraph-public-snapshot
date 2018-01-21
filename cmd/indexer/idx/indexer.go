@@ -24,7 +24,7 @@ func init() {
 }
 
 type qitem struct {
-	repo string
+	repo api.RepoURI
 	rev  string
 }
 
@@ -38,7 +38,7 @@ func NewQueue(lengthGauge prometheus.Gauge) *workQueue {
 	return &workQueue{enqueue: enqueue, dequeue: dequeue}
 }
 
-func (w *workQueue) Enqueue(repo string, rev string) {
+func (w *workQueue) Enqueue(repo api.RepoURI, rev string) {
 	w.enqueue <- qitem{repo: repo, rev: rev}
 }
 
@@ -120,7 +120,7 @@ func Work(ctx context.Context, w *workQueue) {
 	}
 }
 
-func index(ctx context.Context, wq *workQueue, repoName string, rev string) (err error) {
+func index(ctx context.Context, wq *workQueue, repoName api.RepoURI, rev string) (err error) {
 	repo, commit, err := resolveRevision(ctx, repoName, rev)
 	if err != nil {
 		if repo != nil && repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
@@ -206,8 +206,8 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repo a
 
 	// Resolve and enqueue unindexed dependencies for indexing
 	resolvedDeps := resolveDependencies(ctx, lang, unfetchedDeps)
-	resolvedDepsList := make([]string, 0, len(resolvedDeps))
-	for rawDepRepo, _ := range resolvedDeps {
+	resolvedDepsList := make([]api.RepoURI, 0, len(resolvedDeps))
+	for rawDepRepo := range resolvedDeps {
 		repo, err := api.InternalClient.ReposGetByURI(ctx, rawDepRepo)
 		if err != nil {
 			log15.Warn("Could not resolve repository, skipping", "repo", rawDepRepo, "error", err)
@@ -220,10 +220,10 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repo a
 	return nil
 }
 
-// resolveDependencies resolves a list of DependencyReferences to a set of source repository URLs.
+// resolveDependencies resolves a list of DependencyReferences to a set of source repository URIs.
 // This mapping is different from language to language and is often heuristic, so different
 // languages are handled case-by-case.
-func resolveDependencies(ctx context.Context, lang string, deps []*api.DependencyReference) map[string]struct{} {
+func resolveDependencies(ctx context.Context, lang string, deps []*api.DependencyReference) map[api.RepoURI]struct{} {
 	switch lang {
 	case "Java":
 		if !Google.Enabled() {
@@ -242,8 +242,8 @@ func resolveDependencies(ctx context.Context, lang string, deps []*api.Dependenc
 			}
 			depQueries[id] = struct{}{}
 		}
-		resolvedDeps := map[string]struct{}{}
-		for depQuery, _ := range depQueries {
+		resolvedDeps := map[api.RepoURI]struct{}{}
+		for depQuery := range depQueries {
 			depRepoURI, err := Google.Search(depQuery)
 			if err != nil {
 				log15.Warn("Could not resolve dependency to repository via Google, skipping", "query", depQuery, "error", err)

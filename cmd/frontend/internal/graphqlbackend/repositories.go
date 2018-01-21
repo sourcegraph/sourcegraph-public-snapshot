@@ -154,3 +154,11 @@ func repoIDsToInt32s(repoIDs []api.RepoID) []int32 {
 	}
 	return int32s
 }
+
+func repoURIsToStrings(repoURIs []api.RepoURI) []string {
+	strings := make([]string, len(repoURIs))
+	for i, repoURI := range repoURIs {
+		strings[i] = string(repoURI)
+	}
+	return strings
+}

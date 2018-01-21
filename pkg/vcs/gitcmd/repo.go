@@ -56,14 +56,14 @@ var (
 
 type Repository struct {
 	// repoURI is the api.Repo.URI. eg "github.com/gorilla/mux"
-	repoURI string
+	repoURI api.RepoURI
 }
 
 func (r *Repository) String() string {
 	return fmt.Sprintf("git repo %s", r.repoURI)
 }
 
-func Open(repoURI string) *Repository {
+func Open(repoURI api.RepoURI) *Repository {
 	return &Repository{repoURI: repoURI}
 }
 

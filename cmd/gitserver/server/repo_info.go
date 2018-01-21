@@ -17,7 +17,7 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	repo := protocol.NormalizeRepo(req.Repo)
-	dir := path.Join(s.ReposDir, repo)
+	dir := path.Join(s.ReposDir, string(repo))
 
 	resp := protocol.RepoInfoResponse{
 		Cloned: repoCloned(dir),
@@ -27,7 +27,7 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		s.cloningMu.Lock()
 		_, resp.CloneInProgress = s.cloning[dir]
 		s.cloningMu.Unlock()
-		if strings.ToLower(req.Repo) == "github.com/sourcegraphtest/alwayscloningtest" {
+		if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 			resp.CloneInProgress = true
 		}
 	}

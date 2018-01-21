@@ -100,7 +100,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			repoURI := string(repoInfo.RepoHost) + "/" + repoInfo.FullName
+			repoURI := api.RepoURI(string(repoInfo.RepoHost) + "/" + repoInfo.FullName)
 			// SECURITY NOTE: The LSP proxy DOES NOT check permissions, so this line is a necessary
 			// security check
 			repo, err := backend.Repos.GetByURI(ctx, repoURI)
@@ -111,7 +111,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+repoURI+"?"+string(rev)))
+			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+string(repoURI)+"?"+string(rev)))
 		} else { // if we can't extract the repository URL directly, we have to consult the pkgs database
 			pkgDescriptor, ok := xlang.SymbolPackageDescriptor(sym.Symbol, c.mode)
 			if !ok {
@@ -140,7 +140,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 					}
 				}
 				// TODO: store VCS type in *types.Repo object.
-				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+repo.URI+"?"+string(commit)))
+				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+string(repo.URI)+"?"+string(commit)))
 			}
 			span.LogEvent("resolved rootURIs")
 		}

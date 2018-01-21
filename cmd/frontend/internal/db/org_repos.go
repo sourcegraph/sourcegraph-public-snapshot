@@ -22,7 +22,7 @@ func validateRepo(repo *types.OrgRepo) error {
 	if repo.CanonicalRemoteID == "" {
 		return errors.New("error creating local repo: CanonicalRemoteID required")
 	}
-	matched := validCanonicalRemoteID.MatchString(repo.CanonicalRemoteID)
+	matched := validCanonicalRemoteID.MatchString(string(repo.CanonicalRemoteID))
 	if !matched {
 		return fmt.Errorf("error creating local repo %s: not a valid remote uri", repo.CanonicalRemoteID)
 	}
@@ -45,20 +45,20 @@ func (r *orgRepos) GetByOrg(ctx context.Context, orgID int32) ([]*types.OrgRepo,
 	return r.getBySQL(ctx, "WHERE org_id=$1 AND deleted_at IS NULL", orgID)
 }
 
-func (r *orgRepos) GetByCanonicalRemoteID(ctx context.Context, orgID int32, canonicalRemoteID string) (*types.OrgRepo, error) {
+func (r *orgRepos) GetByCanonicalRemoteID(ctx context.Context, orgID int32, canonicalRemoteID api.RepoURI) (*types.OrgRepo, error) {
 	if Mocks.OrgRepos.GetByCanonicalRemoteID != nil {
 		return Mocks.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
 	}
-	q := r.listQuery(orgID, []string{canonicalRemoteID})
+	q := r.listQuery(orgID, []api.RepoURI{canonicalRemoteID})
 	return expectOne(r.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-func (r *orgRepos) GetByCanonicalRemoteIDs(ctx context.Context, orgID int32, canonicalRemoteIDs []string) ([]*types.OrgRepo, error) {
+func (r *orgRepos) GetByCanonicalRemoteIDs(ctx context.Context, orgID int32, canonicalRemoteIDs []api.RepoURI) ([]*types.OrgRepo, error) {
 	q := r.listQuery(orgID, canonicalRemoteIDs)
 	return r.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (r *orgRepos) listQuery(orgID int32, canonicalRemoteIDs []string) *sqlf.Query {
+func (r *orgRepos) listQuery(orgID int32, canonicalRemoteIDs []api.RepoURI) *sqlf.Query {
 	conds := []*sqlf.Query{}
 	conds = append(conds, sqlf.Sprintf("org_id=%d", orgID))
 	if len(canonicalRemoteIDs) > 0 {

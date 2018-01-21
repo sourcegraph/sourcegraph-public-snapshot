@@ -48,7 +48,7 @@ func init() {
 	prometheus.MustRegister(listTotalRefsCacheCounter)
 }
 
-func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
+func (s *defs) TotalRefs(ctx context.Context, source api.RepoURI) (res int, err error) {
 	if Mocks.Defs.TotalRefs != nil {
 		return Mocks.Defs.TotalRefs(ctx, source)
 	}
@@ -57,7 +57,7 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	defer done()
 
 	// Check if value is in the cache.
-	jsonRes, ok := totalRefsCache.Get(source)
+	jsonRes, ok := totalRefsCache.Get(string(source))
 	if ok {
 		totalRefsCacheCounter.WithLabelValues("hit").Inc()
 		if err := json.Unmarshal(jsonRes, &res); err != nil {
@@ -90,11 +90,11 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	if err != nil {
 		return 0, err
 	}
-	totalRefsCache.Set(source, jsonRes)
+	totalRefsCache.Set(string(source), jsonRes)
 	return res, nil
 }
 
-func (s *defs) ListTotalRefs(ctx context.Context, source string) (repos []api.RepoID, err error) {
+func (s *defs) ListTotalRefs(ctx context.Context, source api.RepoURI) (repos []api.RepoID, err error) {
 	if Mocks.Defs.ListTotalRefs != nil {
 		return Mocks.Defs.ListTotalRefs(ctx, source)
 	}
@@ -103,7 +103,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (repos []api.Re
 	defer done()
 
 	// Check if value is in the cache.
-	jsonRes, ok := listTotalRefsCache.Get(source)
+	jsonRes, ok := listTotalRefsCache.Get(string(source))
 	if ok {
 		listTotalRefsCacheCounter.WithLabelValues("hit").Inc()
 		if err := json.Unmarshal(jsonRes, &repos); err != nil {
@@ -137,7 +137,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source string) (repos []api.Re
 	if err != nil {
 		return nil, err
 	}
-	listTotalRefsCache.Set(source, jsonRes)
+	listTotalRefsCache.Set(string(source), jsonRes)
 	return repos, nil
 }
 
@@ -176,7 +176,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 	span.SetTag("repo", repo.URI)
 
 	// Determine the rootURI.
-	rootURI := lsp.DocumentURI(vcs + "://" + repo.URI + "?" + op.CommitID)
+	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + op.CommitID)
 
 	// Find the metadata for the definition specified by op, such that we can
 	// perform the DB query using that metadata.
@@ -227,7 +227,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 
 // RefreshIndex refreshes the global deps index for the specified
 // repository.
-func (s *defs) RefreshIndex(ctx context.Context, repoURI string, commitID api.CommitID) (err error) {
+func (s *defs) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID) (err error) {
 	if Mocks.Defs.RefreshIndex != nil {
 		return Mocks.Defs.RefreshIndex(ctx, repoURI, commitID)
 	}
@@ -238,9 +238,9 @@ func (s *defs) RefreshIndex(ctx context.Context, repoURI string, commitID api.Co
 }
 
 type MockDefs struct {
-	TotalRefs            func(ctx context.Context, source string) (res int, err error)
-	ListTotalRefs        func(ctx context.Context, source string) (repos []api.RepoID, err error)
+	TotalRefs            func(ctx context.Context, source api.RepoURI) (res int, err error)
+	ListTotalRefs        func(ctx context.Context, source api.RepoURI) (repos []api.RepoID, err error)
 	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error)
-	RefreshIndex         func(ctx context.Context, repoURI string, commitID api.CommitID) error
+	RefreshIndex         func(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID) error
 	Dependencies         func(ctx context.Context, repo api.RepoID) ([]*api.DependencyReference, error)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -16,16 +17,16 @@ type errPhabricatorRepoNotFound struct {
 
 var (
 	phabricatorConfigs = conf.Get().Phabricator
-	phabricatorRepos   map[string]*types.PhabricatorRepo
+	phabricatorRepos   map[api.RepoURI]*types.PhabricatorRepo
 )
 
 func init() {
-	phabricatorRepos = map[string]*types.PhabricatorRepo{}
+	phabricatorRepos = map[api.RepoURI]*types.PhabricatorRepo{}
 
 	for _, config := range phabricatorConfigs {
 		for _, repo := range config.Repos {
-			phabricatorRepos[repo.Path] = &types.PhabricatorRepo{
-				URI:      repo.Path,
+			phabricatorRepos[api.RepoURI(repo.Path)] = &types.PhabricatorRepo{
+				URI:      api.RepoURI(repo.Path),
 				Callsign: repo.Callsign,
 				URL:      config.Url,
 			}
@@ -37,7 +38,7 @@ func (err errPhabricatorRepoNotFound) Error() string {
 	return fmt.Sprintf("phabricator repo not found: %v", err.args)
 }
 
-func (*phabricator) Create(ctx context.Context, callsign string, uri string, phabURL string) (*types.PhabricatorRepo, error) {
+func (*phabricator) Create(ctx context.Context, callsign string, uri api.RepoURI, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		URI:      uri,
@@ -53,7 +54,7 @@ func (*phabricator) Create(ctx context.Context, callsign string, uri string, pha
 	return r, nil
 }
 
-func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, uri string, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, uri api.RepoURI, phabURL string) (*types.PhabricatorRepo, error) {
 	repo, err := p.GetByURI(ctx, uri)
 	if err != nil {
 		if _, ok := err.(errPhabricatorRepoNotFound); !ok {
@@ -97,7 +98,7 @@ func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...int
 	return rows[0], nil
 }
 
-func (p *phabricator) GetByURI(ctx context.Context, uri string) (*types.PhabricatorRepo, error) {
+func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoURI) (*types.PhabricatorRepo, error) {
 	if r := phabricatorRepos[uri]; r != nil {
 		return r, nil
 	}

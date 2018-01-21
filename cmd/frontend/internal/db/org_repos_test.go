@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestLocalRepos_Validate(t *testing.T) {
@@ -15,7 +16,7 @@ func TestLocalRepos_Validate(t *testing.T) {
 	}
 
 	tests := []struct {
-		uri     string
+		uri     api.RepoURI
 		isValid bool
 	}{
 		{"github.com/gorilla/mux", true},

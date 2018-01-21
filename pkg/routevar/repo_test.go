@@ -54,7 +54,7 @@ func TestRepoPattern(t *testing.T) {
 			t.Errorf("%q: got err == %v, want error? == %v", test.input, err, wantErr)
 		}
 		if err == nil {
-			if repo != test.input {
+			if string(repo) != test.input {
 				t.Errorf("%q: got repo == %q, want %q", test.input, repo, test.input)
 			}
 		}

@@ -10,7 +10,7 @@ import (
 
 type MockOrgRepos struct {
 	GetByID                func(ctx context.Context, repo api.RepoID) (*types.OrgRepo, error)
-	GetByCanonicalRemoteID func(ctx context.Context, orgID int32, CanonicalRemoteID string) (*types.OrgRepo, error)
+	GetByCanonicalRemoteID func(ctx context.Context, orgID int32, CanonicalRemoteID api.RepoURI) (*types.OrgRepo, error)
 	Create                 func(ctx context.Context, newRepo *types.OrgRepo) (*types.OrgRepo, error)
 }
 
@@ -25,7 +25,7 @@ func (s *MockOrgRepos) MockGetByID_Return(t *testing.T, returns *types.OrgRepo, 
 
 func (s *MockOrgRepos) MockGetByCanonicalRemoteID_Return(t *testing.T, returns *types.OrgRepo, returnsErr error) (called *bool) {
 	called = new(bool)
-	s.GetByCanonicalRemoteID = func(ctx context.Context, orgID int32, CanonicalRemoteID string) (*types.OrgRepo, error) {
+	s.GetByCanonicalRemoteID = func(ctx context.Context, orgID int32, CanonicalRemoteID api.RepoURI) (*types.OrgRepo, error) {
 		*called = true
 		return returns, returnsErr
 	}

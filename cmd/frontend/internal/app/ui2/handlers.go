@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
@@ -72,10 +73,10 @@ type Common struct {
 
 // repoShortName trims the first path element of the given repo uri if it has
 // at least two path components.
-func repoShortName(uri string) string {
-	split := strings.Split(uri, "/")
+func repoShortName(uri api.RepoURI) string {
+	split := strings.Split(string(uri), "/")
 	if len(split) < 2 {
-		return uri
+		return string(uri)
 	}
 	return strings.Join(split[1:], "/")
 }
@@ -117,7 +118,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.
-				http.Redirect(w, r, "/"+e.NewURL, http.StatusMovedPermanently)
+				http.Redirect(w, r, "/"+string(e.NewRepo), http.StatusMovedPermanently)
 				return nil, nil
 			}
 			if e, ok := err.(db.ErrRepoSeeOther); ok {
@@ -235,7 +236,7 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 			// It does not apply the file: filter because that was not the behavior of the
 			// old blob URLs with a 'q' parameter either.
 			r.URL.Path = "/search"
-			q.Set("sq", "repo:^"+regexp.QuoteMeta(common.Repo.URI)+"$")
+			q.Set("sq", "repo:^"+regexp.QuoteMeta(string(common.Repo.URI))+"$")
 			r.URL.RawQuery = q.Encode()
 			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
 			return nil

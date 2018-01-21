@@ -10,6 +10,10 @@ import (
 // RepoID is the unique identifier for a repository.
 type RepoID int32
 
+// RepoURI is the name of a repository, consisting of one or more "/"-separated path components. It is a misnomer;
+// it's not a valid URI because it conventionally does not have a scheme.
+type RepoURI string
+
 // CommitID is the 40-character SHA-1 hash for a Git commit.
 type CommitID string
 
@@ -19,7 +23,7 @@ type Repo struct {
 	ID RepoID
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
-	URI string
+	URI RepoURI
 	// IndexedRevision is the revision that the global index is currently based on. It is only used
 	// by the indexer to determine if reindexing is necessary. Setting it to nil/null will cause
 	// the indexer to reindex the next time it gets triggered for this repository.

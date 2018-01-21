@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type Test struct {
@@ -82,7 +84,7 @@ func TestRequest(t *testing.T) {
 		return dir == "/testroot/github.com/gorilla/mux"
 	}
 
-	testRepoExists = func(ctx context.Context, origin string, repo string) error {
+	testRepoExists = func(ctx context.Context, origin string, repo api.RepoURI) error {
 		if origin == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}

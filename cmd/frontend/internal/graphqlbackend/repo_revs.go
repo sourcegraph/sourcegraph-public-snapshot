@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // revpecOrRefGlob represents either a revspec or a ref glob. Exactly one field is set.
@@ -51,13 +52,13 @@ type repositoryRevisions struct {
 // - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
 //   because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
 //   section on the --glob flag)
-func parseRepositoryRevisions(repoAndOptionalRev string) (string, []revspecOrRefGlob) {
+func parseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []revspecOrRefGlob) {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
-		return repoAndOptionalRev, nil
+		return api.RepoURI(repoAndOptionalRev), nil
 	}
 
-	repo := repoAndOptionalRev[:i]
+	repo := api.RepoURI(repoAndOptionalRev[:i])
 	var revs []revspecOrRefGlob
 	for _, part := range strings.Split(repoAndOptionalRev[i+1:], ":") {
 		if part == "" {
@@ -78,14 +79,14 @@ func parseRepositoryRevisions(repoAndOptionalRev string) (string, []revspecOrRef
 
 func (r repositoryRevisions) String() string {
 	if len(r.revs) == 0 {
-		return r.repo.URI
+		return string(r.repo.URI)
 	}
 
 	parts := make([]string, len(r.revs))
 	for i, rev := range r.revs {
 		parts[i] = rev.String()
 	}
-	return r.repo.URI + "@" + strings.Join(parts, ":")
+	return string(r.repo.URI) + "@" + strings.Join(parts, ":")
 }
 
 func (r *repositoryRevisions) revspecs() []string {

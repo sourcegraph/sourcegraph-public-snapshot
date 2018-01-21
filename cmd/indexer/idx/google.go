@@ -9,6 +9,7 @@ import (
 
 	customsearch "google.golang.org/api/customsearch/v1"
 	"google.golang.org/api/googleapi/transport"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // Google is the default Google client
@@ -69,7 +70,7 @@ func (c *googleClient) SetAPIKey(apiKey string) error {
 }
 
 // Search is equivalent to issuing a Google search for "site:github.com $query".
-func (c *googleClient) Search(query string) (string, error) {
+func (c *googleClient) Search(query string) (api.RepoURI, error) {
 	if GoogleSearchMock != nil {
 		return GoogleSearchMock(query)
 	}
@@ -88,7 +89,7 @@ func (c *googleClient) Search(query string) (string, error) {
 	}
 	for _, item := range call.Items {
 		if u, err := extractResultGitHubURL(item.FormattedUrl); err == nil && u != nil {
-			return u.String(), nil
+			return api.RepoURI(u.String()), nil
 		}
 	}
 	return "", fmt.Errorf("no matching results found for %q", query)
@@ -104,4 +105,4 @@ func extractResultGitHubURL(str string) (*url.URL, error) {
 	return url.Parse(g[1])
 }
 
-var GoogleSearchMock func(query string) (string, error)
+var GoogleSearchMock func(query string) (api.RepoURI, error)

@@ -104,21 +104,21 @@ func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	uri, rev := repo.URI(), string(r.commit.oid)
+	uri, rev := repo.repo.URI, string(r.commit.oid)
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Tree != "" {
 		url := strings.Replace(strings.Replace(rc.Links.Tree, "{rev}", rev, 1), "{path}", r.path, 1)
 		return &url, nil
 	}
 
-	if strings.HasPrefix(uri, "github.com/") {
+	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s/tree/%s/%s", uri, rev, r.path)
 		return &url, nil
 	}
 
-	host := strings.Split(uri, "/")[0]
+	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
-		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(uri, host), rev, r.path)
+		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
 		return &url, nil
 	}
 
@@ -136,21 +136,21 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	uri, rev := repo.URI(), string(r.commit.oid)
+	uri, rev := repo.repo.URI, string(r.commit.oid)
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Tree != "" {
 		url := strings.Replace(strings.Replace(rc.Links.Blob, "{rev}", rev, 1), "{path}", r.path, 1)
 		return &url, nil
 	}
 
-	if strings.HasPrefix(uri, "github.com/") {
+	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s/blob/%s/%s", uri, rev, r.path)
 		return &url, nil
 	}
 
-	host := strings.Split(uri, "/")[0]
+	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
-		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(uri, host), rev, r.path)
+		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
 		return &url, nil
 	}
 

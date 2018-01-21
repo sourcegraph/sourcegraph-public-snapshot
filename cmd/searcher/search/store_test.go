@@ -19,14 +19,14 @@ func TestPrepareZip(t *testing.T) {
 	s, cleanup := tmpStore(t)
 	defer cleanup()
 
-	wantRepo := "foo"
+	wantRepo := api.RepoURI("foo")
 	wantCommit := api.CommitID("deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 
 	returnFetch := make(chan struct{})
-	var gotRepo string
+	var gotRepo api.RepoURI
 	var gotCommit api.CommitID
 	var fetchZipCalled int64
-	s.FetchTar = func(ctx context.Context, repo string, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error) {
 		<-returnFetch
 		atomic.AddInt64(&fetchZipCalled, 1)
 		gotRepo = repo
@@ -85,7 +85,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
 	s, cleanup := tmpStore(t)
 	defer cleanup()
-	s.FetchTar = func(ctx context.Context, repo string, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
 	_, err := s.prepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")

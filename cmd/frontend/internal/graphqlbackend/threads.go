@@ -25,7 +25,7 @@ import (
 type threadConnectionResolver struct {
 	org                *types.Org
 	repos              []*types.OrgRepo
-	canonicalRemoteIDs []string
+	canonicalRemoteIDs []api.RepoURI
 	file               *string
 	branch             *string
 	limit              *int32
@@ -343,7 +343,7 @@ func (v *threadID) UnmarshalGraphQL(input interface{}) error {
 
 type createThreadInput struct {
 	OrgID             orgID // accept int32 and org graphql.ID
-	CanonicalRemoteID string
+	CanonicalRemoteID api.RepoURI
 	CloneURL          string
 	RepoRevisionPath  string
 	LinesRevisionPath string

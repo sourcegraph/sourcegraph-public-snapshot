@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -90,13 +91,13 @@ func addGitHubDefaults() {
 }
 
 // OriginMap maps the repo URI to the repository origin (clone URL). Returns empty string if no mapping was found.
-func OriginMap(repoURI string) string {
-	if origin, ok := reposListOriginMap[repoURI]; ok {
+func OriginMap(repoURI api.RepoURI) string {
+	if origin, ok := reposListOriginMap[string(repoURI)]; ok {
 		return origin
 	}
 	for _, entry := range originMap {
-		if strings.HasPrefix(repoURI, entry.Prefix) {
-			return strings.Replace(entry.Origin, "%", strings.TrimPrefix(repoURI, entry.Prefix), 1)
+		if strings.HasPrefix(string(repoURI), entry.Prefix) {
+			return strings.Replace(entry.Origin, "%", strings.TrimPrefix(string(repoURI), entry.Prefix), 1)
 		}
 	}
 	return ""
