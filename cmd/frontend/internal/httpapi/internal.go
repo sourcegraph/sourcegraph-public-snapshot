@@ -15,7 +15,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -201,7 +200,7 @@ func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	inv, err := backend.Repos.GetInventoryUncached(r.Context(), &types.RepoRevSpec{Repo: req.Repo, CommitID: req.CommitID})
+	inv, err := backend.Repos.GetInventoryUncached(r.Context(), req.Repo, req.CommitID)
 	if err != nil {
 		return err
 	}

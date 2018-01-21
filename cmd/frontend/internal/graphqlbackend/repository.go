@@ -100,7 +100,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	commit, err := backend.Repos.GetCommit(ctx, &types.RepoRevSpec{Repo: r.repo.ID, CommitID: commitID})
+	commit, err := backend.Repos.GetCommit(ctx, r.repo.ID, commitID)
 	if err != nil {
 		return nil, err
 	}

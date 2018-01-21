@@ -144,7 +144,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		}
 	}
 
-	reposGetInventory := func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error) {
+	reposGetInventory := func(context.Context, api.RepoID, api.CommitID) (*inventory.Inventory, error) {
 		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
 	}
 

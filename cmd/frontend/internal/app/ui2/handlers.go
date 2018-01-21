@@ -66,9 +66,9 @@ type Common struct {
 	Error    *pageError
 
 	// The fields below have zero values when not on a repo page.
-	Repo    *types.Repo
-	Rev     string            // unresolved / user-specified revision (e.x.: "@master")
-	RevSpec types.RepoRevSpec // resolved SHA1 revision
+	Repo         *types.Repo
+	Rev          string // unresolved / user-specified revision (e.x.: "@master")
+	api.CommitID        // resolved SHA1 revision
 }
 
 // repoShortName trims the first path element of the given repo uri if it has
@@ -113,7 +113,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 	if _, ok := mux.Vars(r)["Repo"]; ok {
 		// Common repo pages (blob, tree, etc).
 		var err error
-		common.Repo, common.RevSpec, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 		if err != nil {
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"

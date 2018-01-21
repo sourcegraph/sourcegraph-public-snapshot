@@ -37,19 +37,6 @@ type Repo struct {
 	FreezeIndexedRevision bool
 }
 
-// RepoRevSpec specifies a repository at a specific commit.
-type RepoRevSpec struct {
-	// Repo is the ID of the repository.
-	Repo api.RepoID
-
-	// CommitID is the 40-character SHA-1 of the Git commit ID.
-	//
-	// Revision specifiers are not allowed here. To resolve a revision
-	// specifier (such as a branch name or "master~7"), call
-	// Repos.GetCommit.
-	CommitID api.CommitID
-}
-
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
 	Language   string // e.g. "go"

@@ -71,34 +71,34 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 
 var inventoryCache = rcache.New("inv")
 
-func (s *repos) GetInventory(ctx context.Context, repoRev *types.RepoRevSpec) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repo api.RepoID, commitID api.CommitID) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
-		return Mocks.Repos.GetInventory(ctx, repoRev)
+		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventory", repoRev, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	if !isAbsCommitID(repoRev.CommitID) {
+	if !isAbsCommitID(commitID) {
 		return nil, errNotAbsCommitID
 	}
 
 	// Try cache first
-	cacheKey := fmt.Sprintf("%d:%s", repoRev.Repo, repoRev.CommitID)
+	cacheKey := fmt.Sprintf("%d:%s", repo, commitID)
 	if b, ok := inventoryCache.Get(cacheKey); ok {
 		var inv inventory.Inventory
 		if err := json.Unmarshal(b, &inv); err == nil {
 			return &inv, nil
 		}
-		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repoRev", repoRev, "err", err)
+		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo, "commitID", commitID, "err", err)
 	}
 
 	// Not found in the cache, so compute it.
-	inv, err := s.GetInventoryUncached(ctx, repoRev)
+	inv, err := s.GetInventoryUncached(ctx, repo, commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -113,17 +113,17 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *types.RepoRevSpec) (r
 	return inv, nil
 }
 
-func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *types.RepoRevSpec) (*inventory.Inventory, error) {
+func (s *repos) GetInventoryUncached(ctx context.Context, repo api.RepoID, commitID api.CommitID) (*inventory.Inventory, error) {
 	if Mocks.Repos.GetInventoryUncached != nil {
-		return Mocks.Repos.GetInventoryUncached(ctx, repoRev)
+		return Mocks.Repos.GetInventoryUncached(ctx, repo, commitID)
 	}
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, repoRev.Repo)
+	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := vcsrepo.ReadDir(ctx, api.CommitID(repoRev.CommitID), "", true)
+	files, err := vcsrepo.ReadDir(ctx, commitID, "", true)
 	if err != nil {
 		return nil, err
 	}

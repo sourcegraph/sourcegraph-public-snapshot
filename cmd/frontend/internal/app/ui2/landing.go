@@ -24,14 +24,14 @@ var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
 func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	legacyRepoLandingCounter.Inc()
 
-	repo, rev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+	repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
 			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
 		}
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
-	http.Redirect(w, r, approuter.Rel.URLToRepoRev(repo.URI, string(rev.CommitID)).String(), http.StatusMovedPermanently)
+	http.Redirect(w, r, approuter.Rel.URLToRepoRev(repo.URI, string(commitID)).String(), http.StatusMovedPermanently)
 	return nil
 }
 

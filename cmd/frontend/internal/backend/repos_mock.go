@@ -18,11 +18,11 @@ type MockRepos struct {
 	Get                  func(v0 context.Context, id api.RepoID) (*types.Repo, error)
 	GetByURI             func(v0 context.Context, uri api.RepoURI) (*types.Repo, error)
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-	GetCommit            func(v0 context.Context, v1 *types.RepoRevSpec) (*vcs.Commit, error)
+	GetCommit            func(v0 context.Context, repo api.RepoID, commitID api.CommitID) (*vcs.Commit, error)
 	ResolveRev           func(v0 context.Context, repo api.RepoID, rev string) (api.CommitID, error)
 	ListDeps             func(v0 context.Context, v1 []api.RepoURI) ([]api.RepoURI, error)
-	GetInventory         func(v0 context.Context, v1 *types.RepoRevSpec) (*inventory.Inventory, error)
-	GetInventoryUncached func(ctx context.Context, repoRev *types.RepoRevSpec) (*inventory.Inventory, error)
+	GetInventory         func(v0 context.Context, repo api.RepoID, commitID api.CommitID) (*inventory.Inventory, error)
+	GetInventoryUncached func(ctx context.Context, repo api.RepoID, commitID api.CommitID) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo api.RepoURI) (err error)
 }
 
@@ -107,7 +107,7 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 
 func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commit) (called *bool) {
 	called = new(bool)
-	s.GetCommit = func(ctx context.Context, repoRev *types.RepoRevSpec) (*vcs.Commit, error) {
+	s.GetCommit = func(ctx context.Context, repo api.RepoID, commitID api.CommitID) (*vcs.Commit, error) {
 		*called = true
 		return commit, nil
 	}

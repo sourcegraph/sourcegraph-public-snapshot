@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
@@ -114,10 +113,7 @@ func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, &types.RepoRevSpec{
-		Repo:     r.repo.repo.ID,
-		CommitID: api.CommitID(r.oid),
-	})
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo.ID, api.CommitID(r.oid))
 	if err != nil {
 		return nil, err
 	}

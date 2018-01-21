@@ -53,12 +53,12 @@ var globalDepEnabledLangs = map[string]struct{}{
 }
 
 // RefreshIndex refreshes the global deps index for the specified repo@commit.
-func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID, reposGetInventory func(context.Context, *types.RepoRevSpec) (*inventory.Inventory, error)) error {
+func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID, reposGetInventory func(context.Context, api.RepoID, api.CommitID) (*inventory.Inventory, error)) error {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByURI")
 	}
-	inv, err := reposGetInventory(ctx, &types.RepoRevSpec{Repo: repo.ID, CommitID: commitID})
+	inv, err := reposGetInventory(ctx, repo.ID, commitID)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetInventory")
 	}

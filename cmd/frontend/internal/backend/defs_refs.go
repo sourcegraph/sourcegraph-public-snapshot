@@ -75,7 +75,7 @@ func (s *defs) TotalRefs(ctx context.Context, source api.RepoURI) (res int, err 
 	if err != nil {
 		return 0, err
 	}
-	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: commitID})
+	inv, err := Repos.GetInventory(ctx, rp.ID, commitID)
 	if err != nil {
 		return 0, err
 	}
@@ -121,7 +121,7 @@ func (s *defs) ListTotalRefs(ctx context.Context, source api.RepoURI) (repos []a
 	if err != nil {
 		return nil, err
 	}
-	inv, err := Repos.GetInventory(ctx, &types.RepoRevSpec{Repo: rp.ID, CommitID: commitID})
+	inv, err := Repos.GetInventory(ctx, rp.ID, commitID)
 	if err != nil {
 		return nil, err
 	}

@@ -30,30 +30,28 @@ func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	return repo, nil
 }
 
-// getRepoRev resolves the RepoRevSpec and commit specified in the
-// route vars.
-func getRepoRev(ctx context.Context, vars map[string]string, repo api.RepoID) (types.RepoRevSpec, error) {
+// getRepoRev resolves the repository and commit specified in the route vars.
+func getRepoRev(ctx context.Context, vars map[string]string, repo api.RepoID) (api.RepoID, api.CommitID, error) {
 	repoRev := routevar.ToRepoRev(vars)
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, repoRev.Rev)
 	if err != nil {
-		return types.RepoRevSpec{}, err
+		return 0, "", err
 	}
 
-	return types.RepoRevSpec{Repo: repo, CommitID: commitID}, nil
+	return repo, commitID, nil
 }
 
-// GetRepoAndRev returns the Repo and the RepoRevSpec for a repository. It may
+// GetRepoAndRev returns the repo object and the commit ID for a repository. It may
 // also return custom error URLMovedError to allow special handling of this case,
 // such as for example redirecting the user.
-func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *types.Repo, repoRevSpec types.RepoRevSpec, err error) {
-	repo, err = GetRepo(ctx, vars)
+func GetRepoAndRev(ctx context.Context, vars map[string]string) (*types.Repo, api.CommitID, error) {
+	repo, err := GetRepo(ctx, vars)
 	if err != nil {
-		return repo, repoRevSpec, err
+		return repo, "", err
 	}
-	repoRevSpec.Repo = repo.ID
 
-	repoRevSpec, err = getRepoRev(ctx, vars, repo.ID)
-	return repo, repoRevSpec, err
+	_, commitID, err := getRepoRev(ctx, vars, repo.ID)
+	return repo, commitID, err
 }
 
 // RedirectToNewRepoURI writes an HTTP redirect response with a
