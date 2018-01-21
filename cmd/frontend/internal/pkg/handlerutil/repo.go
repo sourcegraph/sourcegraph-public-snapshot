@@ -12,7 +12,7 @@ import (
 )
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
-// RepoSpec route param. Callers should ideally check for a return error of type
+// Repo route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
 func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
@@ -57,7 +57,7 @@ func GetRepoAndRev(ctx context.Context, vars map[string]string) (repo *types.Rep
 
 // RedirectToNewRepoURI writes an HTTP redirect response with a
 // Location that matches the request's location except with the
-// RepoSpec route var updated to refer to newRepoURI (instead of the
+// Repo route var updated to refer to newRepoURI (instead of the
 // originally requested repo URI).
 func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI string) error {
 	origVars := mux.Vars(r)

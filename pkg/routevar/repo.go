@@ -23,7 +23,7 @@ var (
 )
 
 const (
-	// RepoPattern is the regexp pattern that matches RepoSpec strings
+	// RepoPattern is the regexp pattern that matches repo path strings
 	// ("repo" or "domain.com/repo" or "domain.com/path/to/repo").
 	RepoPattern = `(?P<repo>(?:` + pathComponentNotDelim + `/)*` + pathComponentNotDelim + `)`
 
@@ -38,14 +38,14 @@ const (
 
 var repoPattern = regexp.MustCompile("^" + RepoPattern + "$")
 
-// ParseRepo parses a RepoSpec string. If spec is invalid, an
+// ParseRepo parses a repo path string. If spec is invalid, an
 // InvalidError is returned.
 func ParseRepo(spec string) (repo string, err error) {
 	if m := repoPattern.FindStringSubmatch(spec); len(m) > 0 {
 		repo = m[0]
 		return
 	}
-	return "", InvalidError{"RepoSpec", spec, nil}
+	return "", InvalidError{"Repo", spec, nil}
 }
 
 // RepoRouteVars returns route variables for constructing repository

@@ -48,12 +48,6 @@ type RepoRevSpec struct {
 	CommitID string
 }
 
-// RepoSpec specifies a repository.
-type RepoSpec struct {
-	// Repo is the ID of the repository.
-	ID int32
-}
-
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
 	Language        string // e.g. "go"

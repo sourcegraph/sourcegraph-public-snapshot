@@ -205,7 +205,9 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 
 	// Limit total references to 250 to prevent the many db.Repos.Get
 	// operations from taking too long.
-	sort.Sort(sortByRepoSpecID(totalRefs))
+	sort.Slice(totalRefs, func(i, j int) bool {
+		return totalRefs[i] < totalRefs[j]
+	})
 	if limit := 250; len(totalRefs) > limit {
 		totalRefs = totalRefs[:limit]
 	}
@@ -217,16 +219,16 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 		resolvers   = make([]*repositoryResolver, 0, len(totalRefs))
 		run         = parallel.NewRun(par)
 	)
-	for _, repoSpec := range totalRefs {
+	for _, refRepo := range totalRefs {
 		run.Acquire()
-		go func(repoSpec types.RepoSpec) {
+		go func(refRepo int32) {
 			defer func() {
 				if r := recover(); r != nil {
 					run.Error(fmt.Errorf("recover: %v", r))
 				}
 				run.Release()
 			}()
-			resolver, err := repositoryByIDInt32(ctx, repoSpec.ID)
+			resolver, err := repositoryByIDInt32(ctx, refRepo)
 			if err != nil {
 				run.Error(err)
 				return
@@ -234,7 +236,7 @@ func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListRe
 			resolversMu.Lock()
 			resolvers = append(resolvers, resolver)
 			resolversMu.Unlock()
-		}(repoSpec)
+		}(refRepo)
 	}
 	if err := run.Wait(); err != nil {
 		// Log the error if we still have good results; otherwise return just
@@ -262,14 +264,6 @@ func (t *totalRefListResolver) Repositories() []*repositoryResolver {
 
 func (t *totalRefListResolver) Total() int32 {
 	return t.total
-}
-
-type sortByRepoSpecID []types.RepoSpec
-
-func (s sortByRepoSpecID) Len() int      { return len(s) }
-func (s sortByRepoSpecID) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s sortByRepoSpecID) Less(i, j int) bool {
-	return s[i].ID < s[j].ID
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

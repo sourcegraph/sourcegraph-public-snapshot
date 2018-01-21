@@ -95,8 +95,8 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 			if k == "Repo" {
 				parts := strings.Split(v, "/")
 				if len(parts) == 3 {
-					addTag("Route RepoSpec Owner", parts[1])
-					addTag("Route RepoSpec Name", parts[2])
+					addTag("Route Repo Owner", parts[1])
+					addTag("Route Repo Name", parts[2])
 				}
 			}
 		}

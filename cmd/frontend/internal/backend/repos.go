@@ -24,15 +24,15 @@ var Repos = &repos{}
 
 type repos struct{}
 
-func (s *repos) Get(ctx context.Context, repoSpec *types.RepoSpec) (res *types.Repo, err error) {
+func (s *repos) Get(ctx context.Context, id int32) (repo *types.Repo, err error) {
 	if Mocks.Repos.Get != nil {
-		return Mocks.Repos.Get(ctx, repoSpec)
+		return Mocks.Repos.Get(ctx, id)
 	}
 
-	ctx, done := trace(ctx, "Repos", "Get", repoSpec, &err)
+	ctx, done := trace(ctx, "Repos", "Get", id, &err)
 	defer done()
 
-	return db.Repos.Get(ctx, repoSpec.ID)
+	return db.Repos.Get(ctx, id)
 }
 
 func (s *repos) GetByURI(ctx context.Context, uri string) (res *types.Repo, err error) {
