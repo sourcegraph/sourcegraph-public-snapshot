@@ -132,6 +132,8 @@
 // ../../../../../migrations/1516608575_repo_cleanup.up.sql
 // ../../../../../migrations/1516834731_add_saved_queries.down.sql
 // ../../../../../migrations/1516834731_add_saved_queries.up.sql
+// ../../../../../migrations/1517129075_repo_external.down.sql
+// ../../../../../migrations/1517129075_repo_external.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2839,6 +2841,46 @@ func _1516834731_add_saved_queriesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1517129075_repo_externalDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x90\x41\x4b\xc3\x40\x10\x85\xef\xf9\x15\xef\xd6\xab\xf7\xe0\x61\x9b\x0e\x35\x90\xec\x96\x64\x8a\x78\x5a\xd2\x74\x48\x07\xc3\x36\x6c\x37\xa2\xff\x5e\x8a\x15\xac\xe4\xa0\xd7\x37\xdf\xfb\x18\xde\x9a\xb6\xa5\xcd\x33\x53\x31\x35\x60\xb3\xae\x08\x51\xa6\x33\x36\x8d\xdb\xa1\x70\xb6\xe5\xc6\x94\x96\xd1\x9f\xa4\x7f\xf5\xf2\x9e\x24\x86\x6e\x5c\x28\x34\x64\x4d\x4d\x28\x5c\xb5\xaf\x2d\xbe\x41\xaf\x47\xb0\xc3\x39\xea\xa0\xc1\x5f\x41\xaf\xc7\xbf\xb7\x2f\x12\xdf\xb4\x17\x9f\x3e\x26\xf9\xe1\xb9\xc5\x0b\x9e\xaf\xe0\xa6\xb9\xa7\xc1\x2f\x3b\x82\x86\x24\x83\x44\xec\xdb\xd2\x6e\x51\x98\x96\xf0\xfc\x44\xbf\xd9\xc7\xd5\xa0\xe9\x34\x1f\x56\xe0\xeb\xf1\x01\x54\xb5\x84\x30\x8f\x23\xc8\x6e\xfe\xff\xff\xdd\x0a\xdd\xa4\xfe\xd0\x5d\xc4\xcf\x71\xcc\xb3\xc2\xd5\x75\xc9\x79\xf6\x19\x00\x00\xff\xff\x70\x99\xbb\x96\x89\x01\x00\x00")
+
+func _1517129075_repo_externalDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1517129075_repo_externalDownSql,
+		"1517129075_repo_external.down.sql",
+	)
+}
+
+func _1517129075_repo_externalDownSql() (*asset, error) {
+	bytes, err := _1517129075_repo_externalDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1517129075_repo_external.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1517129075_repo_externalUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x90\xc1\x6b\xc2\x30\x18\xc5\xef\xfe\x15\xef\xa6\xbd\xed\x5e\x76\x88\xe9\x87\x96\xa5\xc9\x68\x52\xc6\x4e\xa1\xd6\xa0\x61\xa5\x96\x98\x0e\xf7\xdf\x0f\x99\x63\x13\xab\xf4\xfa\x7d\xef\xf7\x83\xf7\x96\xb4\xca\x65\x3a\x63\xc2\x50\x09\xc3\x96\x82\x10\x5c\x7f\x40\x49\x92\x15\x04\xae\x44\x55\x48\x1c\x82\xdf\xf9\xce\x9e\x3f\xd6\x6f\x61\x14\xdc\x29\xba\xd0\xd5\xad\xf5\xdb\xa9\xf4\xd1\x85\x4f\xdf\xb8\x2b\xfa\x72\xb3\xf1\xab\x77\x23\x9e\x9f\xc3\x45\x33\x0a\xc1\xbc\xbf\x12\xa2\x3b\x45\x54\x3a\x97\x2b\x70\xa6\x09\x6f\x6b\xba\x93\x7f\x7e\x82\x39\x3f\xe7\x3b\x1f\xf7\xc3\x66\x0e\x12\x9a\xd0\x0d\x6d\x0b\x92\xd9\xd4\x2a\x75\xef\xed\xa6\x3e\x3a\x3b\x84\x76\xb4\xcf\xe8\x2a\x2c\xcb\xc0\x95\xd4\xa6\x64\xb9\x34\x68\xf6\xae\xf9\xb0\xbf\x28\xf8\x9a\xf8\x0b\x16\x8b\x7f\xcb\x22\xd7\x90\x95\x10\x60\x32\xbb\x53\xff\x61\xe2\xcf\x90\x40\x95\xb8\x51\x2b\x33\x45\xff\x30\x75\x6d\x4a\x92\x74\xc6\x55\x51\xe4\x26\xfd\x0e\x00\x00\xff\xff\x50\x40\xa3\xcb\x59\x02\x00\x00")
+
+func _1517129075_repo_externalUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1517129075_repo_externalUpSql,
+		"1517129075_repo_external.up.sql",
+	)
+}
+
+func _1517129075_repo_externalUpSql() (*asset, error) {
+	bytes, err := _1517129075_repo_externalUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1517129075_repo_external.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3023,6 +3065,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1516608575_repo_cleanup.up.sql":                              _1516608575_repo_cleanupUpSql,
 	"1516834731_add_saved_queries.down.sql":                       _1516834731_add_saved_queriesDownSql,
 	"1516834731_add_saved_queries.up.sql":                         _1516834731_add_saved_queriesUpSql,
+	"1517129075_repo_external.down.sql":                           _1517129075_repo_externalDownSql,
+	"1517129075_repo_external.up.sql":                             _1517129075_repo_externalUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3198,6 +3242,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1516608575_repo_cleanup.up.sql":                              &bintree{_1516608575_repo_cleanupUpSql, map[string]*bintree{}},
 	"1516834731_add_saved_queries.down.sql":                       &bintree{_1516834731_add_saved_queriesDownSql, map[string]*bintree{}},
 	"1516834731_add_saved_queries.up.sql":                         &bintree{_1516834731_add_saved_queriesUpSql, map[string]*bintree{}},
+	"1517129075_repo_external.down.sql":                           &bintree{_1517129075_repo_externalDownSql, map[string]*bintree{}},
+	"1517129075_repo_external.up.sql":                             &bintree{_1517129075_repo_externalUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
