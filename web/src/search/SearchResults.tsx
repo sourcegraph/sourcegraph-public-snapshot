@@ -302,6 +302,12 @@ export class SearchResults extends React.Component<Props, State> {
                     <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
                 ))}
                 {this.state.loading && <Loader className="icon-inline" />}
+                {this.state.results.map((result, i) => {
+                    const prevTotal = totalMatches
+                    totalMatches += resultItemsCount(result)
+                    const expanded = prevTotal <= 500
+                    return this.renderResult(i, result, expanded)
+                })}
                 {alert && (
                     <SearchAlert
                         className="search-results__alert"
@@ -311,12 +317,6 @@ export class SearchResults extends React.Component<Props, State> {
                         location={this.props.location}
                     />
                 )}
-                {this.state.results.map((result, i) => {
-                    const prevTotal = totalMatches
-                    totalMatches += resultItemsCount(result)
-                    const expanded = prevTotal <= 500
-                    return this.renderResult(i, result, expanded)
-                })}
             </div>
         )
     }

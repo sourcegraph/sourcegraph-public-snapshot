@@ -31,6 +31,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 				"--no-prefix",
 				"--regexp-ignore-case",
 				"rev",
+				"--since=1 month ago",
 			}; !reflect.DeepEqual(opt.Args, want) {
 				t.Errorf("got %v, want %v", opt.Args, want)
 			}
@@ -48,7 +49,13 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := repositoryRevisions{repo: &types.Repo{ID: 1, URI: "repo"}, revs: []revspecOrRefGlob{{revspec: "rev"}}}
-	results, limitHit, err := searchCommitsInRepo(ctx, repoRevs, &patternInfo{Pattern: "p"}, *query, true, vcs.TextSearchOptions{Pattern: "p"}, nil)
+	results, limitHit, err := searchCommitsInRepo(ctx, commitSearchOp{
+		repoRevs:          repoRevs,
+		info:              &patternInfo{Pattern: "p"},
+		combinedQuery:     *query,
+		diff:              true,
+		textSearchOptions: vcs.TextSearchOptions{Pattern: "p"},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

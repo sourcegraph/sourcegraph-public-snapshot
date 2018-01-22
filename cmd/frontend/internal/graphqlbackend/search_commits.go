@@ -59,7 +59,13 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, 
 		IsRegExp:        info.IsRegExp,
 		IsCaseSensitive: info.IsCaseSensitive,
 	}
-	return searchCommitsInRepo(ctx, repoRevs, info, combinedQuery, true, textSearchOptions, nil)
+	return searchCommitsInRepo(ctx, commitSearchOp{
+		repoRevs:          repoRevs,
+		info:              info,
+		combinedQuery:     combinedQuery,
+		diff:              true,
+		textSearchOptions: textSearchOptions,
+	})
 }
 
 var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query) (results []*commitSearchResult, limitHit bool, err error)
@@ -73,11 +79,27 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 	if info.Pattern != "" {
 		terms = append(terms, info.Pattern)
 	}
-	return searchCommitsInRepo(ctx, repoRevs, info, combinedQuery, false, vcs.TextSearchOptions{}, terms)
+	return searchCommitsInRepo(ctx, commitSearchOp{
+		repoRevs:           repoRevs,
+		info:               info,
+		combinedQuery:      combinedQuery,
+		diff:               false,
+		textSearchOptions:  vcs.TextSearchOptions{},
+		extraMessageValues: terms,
+	})
 }
 
-func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query, diff bool, textSearchOptions vcs.TextSearchOptions, extraMessageValues []string) (results []*commitSearchResult, limitHit bool, err error) {
-	repo := repoRevs.repo
+type commitSearchOp struct {
+	repoRevs           repositoryRevisions
+	info               *patternInfo
+	combinedQuery      searchquery.Query
+	diff               bool
+	textSearchOptions  vcs.TextSearchOptions
+	extraMessageValues []string
+}
+
+func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResult, limitHit bool, err error) {
+	repo := op.repoRevs.repo
 
 	vcsrepo, err := db.RepoVCS.Open(ctx, repo.ID)
 	if err != nil {
@@ -87,20 +109,20 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 	args := []string{
 		"--max-count=" + strconv.Itoa(maxGitLogSearchResults+1),
 	}
-	if diff {
+	if op.diff {
 		args = append(args,
 			"--unified=0",
 			"--no-prefix",
 		)
 	}
-	if info.IsRegExp {
+	if op.info.IsRegExp {
 		args = append(args, "--extended-regexp")
 	}
-	if !combinedQuery.IsCaseSensitive() {
+	if !op.combinedQuery.IsCaseSensitive() {
 		args = append(args, "--regexp-ignore-case")
 	}
 
-	for _, rev := range repoRevs.revs {
+	for _, rev := range op.repoRevs.revs {
 		switch {
 		case rev.revspec != "":
 			if strings.HasPrefix(rev.revspec, "-") {
@@ -121,19 +143,23 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 		}
 	}
 
-	beforeValues, _ := combinedQuery.StringValues(searchquery.FieldBefore)
+	beforeValues, _ := op.combinedQuery.StringValues(searchquery.FieldBefore)
 	for _, s := range beforeValues {
 		args = append(args, "--until="+s)
 	}
-	afterValues, _ := combinedQuery.StringValues(searchquery.FieldAfter)
+	afterValues, _ := op.combinedQuery.StringValues(searchquery.FieldAfter)
 	for _, s := range afterValues {
 		args = append(args, "--since="+s)
+	}
+	// Default to searching back 1 month
+	if len(beforeValues) == 0 && len(afterValues) == 0 {
+		args = append(args, "--since=1 month ago")
 	}
 
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
 	var hasSeenGrepLikeFields, hasSeenInvertedGrepLikeFields bool
 	addGrepLikeFlags := func(args *[]string, gitLogFlag string, field string, extraValues []string) error {
-		values, minusValues := combinedQuery.RegexpPatterns(field)
+		values, minusValues := op.combinedQuery.RegexpPatterns(field)
 		values = append(values, extraValues...)
 
 		hasSeenGrepLikeFields = hasSeenGrepLikeFields || len(values) > 0
@@ -163,7 +189,7 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 		}
 		return nil
 	}
-	if err := addGrepLikeFlags(&args, "--grep", searchquery.FieldMessage, extraMessageValues); err != nil {
+	if err := addGrepLikeFlags(&args, "--grep", searchquery.FieldMessage, op.extraMessageValues); err != nil {
 		return nil, false, err
 	}
 	if err := addGrepLikeFlags(&args, "--author", searchquery.FieldAuthor, nil); err != nil {
@@ -184,15 +210,15 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 	defer cancel()
 
 	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
-		Query: textSearchOptions,
+		Query: op.textSearchOptions,
 		Paths: vcs.PathOptions{
-			IncludePatterns: info.IncludePatterns,
-			ExcludePattern:  strv(info.ExcludePattern),
-			IsCaseSensitive: info.PathPatternsAreCaseSensitive,
-			IsRegExp:        info.PathPatternsAreRegExps,
+			IncludePatterns: op.info.IncludePatterns,
+			ExcludePattern:  strv(op.info.ExcludePattern),
+			IsCaseSensitive: op.info.PathPatternsAreCaseSensitive,
+			IsRegExp:        op.info.PathPatternsAreRegExps,
 			// TODO(sqs): use ArgsHint for better perf
 		},
-		Diff:              diff,
+		Diff:              op.diff,
 		OnlyMatchingHunks: true,
 		Args:              args,
 	})
@@ -224,11 +250,11 @@ func searchCommitsInRepo(ctx context.Context, repoRevs repositoryRevisions, info
 		addRefs(&results[i].sourceRefs, rawResult.SourceRefs)
 
 		// TODO(sqs): properly combine message: and term values for type:commit searches
-		if !diff {
+		if !op.diff {
 			var patString string
-			if len(extraMessageValues) > 0 {
-				patString = regexpPatternMatchingExprsInOrder(extraMessageValues)
-				if !combinedQuery.IsCaseSensitive() {
+			if len(op.extraMessageValues) > 0 {
+				patString = regexpPatternMatchingExprsInOrder(op.extraMessageValues)
+				if !op.combinedQuery.IsCaseSensitive() {
 					patString = "(?i:" + patString + ")"
 				}
 				pat, err := regexp.Compile(patString)

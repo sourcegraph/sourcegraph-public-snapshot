@@ -25,6 +25,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -554,6 +555,26 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results.results), results.searchResultsCommon.limitHit, len(results.searchResultsCommon.cloning), len(results.searchResultsCommon.missing), len(results.searchResultsCommon.timedout))
 
+	if _, isDiff := seenResultTypes["diff"]; isDiff && results.alert == nil && !results.limitHit && len(r.combinedQuery.Values("before")) == 0 && len(r.combinedQuery.Values("after")) == 0 {
+		results.alert = &searchAlert{
+			description: "Diff search limited to last month by default. Use after: to search older commits.",
+			proposedQueries: []*searchQueryDescription{
+				{
+					description: "commits in the last 6 months",
+					query:       searchQuery{syntax.ExprString(r.combinedQuery.Query.Syntax.Expr) + " after:\"6 months ago\""},
+				},
+				{
+					description: "commits in the last 2 years",
+					query:       searchQuery{syntax.ExprString(r.combinedQuery.Query.Syntax.Expr) + " after:\"2 years ago\""},
+				},
+			},
+		}
+		if len(results.results) == 0 {
+			results.alert.title = "No results found"
+		} else {
+			results.alert.title = "Only diff search results from last month are shown"
+		}
+	}
 	if len(missingRepoRevs) > 0 {
 		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
