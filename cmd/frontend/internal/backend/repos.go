@@ -17,10 +17,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/externalservice/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -62,19 +61,15 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 
 	repo, err := db.Repos.GetByURI(ctx, uri)
 	if err != nil && conf.Get().AutoRepoAdd {
-		if strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
-			if ghRepo, err := s.addFromGitHubAPI(ctx, uri); err == nil {
-				return ghRepo, nil
-			} else if err == context.DeadlineExceeded || err == context.Canceled {
+		// Try to look up and auto-add the repo.
+		result, err := repoupdater.DefaultClient.RepoLookup(ctx, uri)
+		if err != nil {
+			return nil, err
+		}
+		if result.Repo != nil {
+			if err := s.TryInsertNew(ctx, result.Repo.URI, result.Repo.Description, result.Repo.Fork, true); err != nil {
 				return nil, err
 			}
-		}
-
-		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, uri); err != nil {
-			return nil, db.ErrRepoNotFound
-		}
-		if err := s.TryInsertNew(ctx, uri, "", false, true); err != nil {
-			return nil, err
 		}
 		return db.Repos.GetByURI(ctx, uri)
 	} else if err != nil {
@@ -86,28 +81,6 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	}
 
 	return repo, nil
-}
-
-func (s *repos) addFromGitHubAPI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
-	// Repo does not exist in DB, create new entry.
-	ghRepo, err := github.GetRepo(ctx, uri)
-	if err != nil {
-		return nil, err
-	}
-
-	if actualURI := api.RepoURI("github.com/" + ghRepo.GetFullName()); actualURI != uri {
-		// not canonical name (the GitHub api will redirect from the old name to
-		// the results for the new name if the repo got renamed on GitHub)
-		if repo, err := db.Repos.GetByURI(ctx, actualURI); err == nil {
-			return repo, nil
-		}
-	}
-
-	if err := s.TryInsertNew(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), true); err != nil {
-		return nil, err
-	}
-
-	return db.Repos.GetByURI(ctx, uri)
 }
 
 func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description string, fork, enabled bool) error {
