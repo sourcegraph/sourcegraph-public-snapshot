@@ -14,9 +14,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-github/github"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	githubservice "sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	githubservice "sourcegraph.com/sourcegraph/sourcegraph/pkg/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
