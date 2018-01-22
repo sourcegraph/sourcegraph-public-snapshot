@@ -36,8 +36,8 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
-	repoFilters, minusRepoFilters := r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)
-	repoGroupFilters, _ := r.combinedQuery.StringValues(searchquery.FieldRepoGroup)
+	repoFilters, minusRepoFilters := r.query.RegexpPatterns(searchquery.FieldRepo)
+	repoGroupFilters, _ := r.query.StringValues(searchquery.FieldRepoGroup)
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
@@ -199,7 +199,7 @@ outer:
 			break
 		}
 		repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-		repoFieldValues, _ := r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)
+		repoFieldValues, _ := r.query.RegexpPatterns(searchquery.FieldRepo)
 
 		for _, v := range repoFieldValues {
 			if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {

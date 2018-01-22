@@ -52,7 +52,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	results, limitHit, err := searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,
 		info:              &patternInfo{Pattern: "p"},
-		combinedQuery:     *query,
+		query:             *query,
 		diff:              true,
 		textSearchOptions: vcs.TextSearchOptions{Pattern: "p"},
 	})

@@ -47,11 +47,11 @@ func (r *commitSearchResult) SourceRefs() []*gitRefResolver      { return r.sour
 func (r *commitSearchResult) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResult) DiffPreview() *highlightedString    { return r.diffPreview }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query) (results []*commitSearchResult, limitHit bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
-		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, combinedQuery)
+		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
 
 	textSearchOptions := vcs.TextSearchOptions{
@@ -62,17 +62,17 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, 
 	return searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,
 		info:              info,
-		combinedQuery:     combinedQuery,
+		query:             query,
 		diff:              true,
 		textSearchOptions: textSearchOptions,
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query) (results []*commitSearchResult, limitHit bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, combinedQuery searchquery.Query) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
-		return mockSearchCommitLogInRepo(ctx, repoRevs, info, combinedQuery)
+		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
 	}
 
 	var terms []string
@@ -82,7 +82,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 	return searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:           repoRevs,
 		info:               info,
-		combinedQuery:      combinedQuery,
+		query:              query,
 		diff:               false,
 		textSearchOptions:  vcs.TextSearchOptions{},
 		extraMessageValues: terms,
@@ -92,7 +92,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 type commitSearchOp struct {
 	repoRevs           repositoryRevisions
 	info               *patternInfo
-	combinedQuery      searchquery.Query
+	query              searchquery.Query
 	diff               bool
 	textSearchOptions  vcs.TextSearchOptions
 	extraMessageValues []string
@@ -118,7 +118,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	if op.info.IsRegExp {
 		args = append(args, "--extended-regexp")
 	}
-	if !op.combinedQuery.IsCaseSensitive() {
+	if !op.query.IsCaseSensitive() {
 		args = append(args, "--regexp-ignore-case")
 	}
 
@@ -143,11 +143,11 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 	}
 
-	beforeValues, _ := op.combinedQuery.StringValues(searchquery.FieldBefore)
+	beforeValues, _ := op.query.StringValues(searchquery.FieldBefore)
 	for _, s := range beforeValues {
 		args = append(args, "--until="+s)
 	}
-	afterValues, _ := op.combinedQuery.StringValues(searchquery.FieldAfter)
+	afterValues, _ := op.query.StringValues(searchquery.FieldAfter)
 	for _, s := range afterValues {
 		args = append(args, "--since="+s)
 	}
@@ -159,7 +159,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
 	var hasSeenGrepLikeFields, hasSeenInvertedGrepLikeFields bool
 	addGrepLikeFlags := func(args *[]string, gitLogFlag string, field string, extraValues []string) error {
-		values, minusValues := op.combinedQuery.RegexpPatterns(field)
+		values, minusValues := op.query.RegexpPatterns(field)
 		values = append(values, extraValues...)
 
 		hasSeenGrepLikeFields = hasSeenGrepLikeFields || len(values) > 0
@@ -254,7 +254,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 			var patString string
 			if len(op.extraMessageValues) > 0 {
 				patString = regexpPatternMatchingExprsInOrder(op.extraMessageValues)
-				if !op.combinedQuery.IsCaseSensitive() {
+				if !op.query.IsCaseSensitive() {
 					patString = "(?i:" + patString + ")"
 				}
 				pat, err := regexp.Compile(patString)
@@ -295,12 +295,12 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	}
 }
 
-var mockSearchCommitDiffsInRepos func(args *repoSearchArgs, combinedQuery searchquery.Query) ([]*searchResult, *searchResultsCommon, error)
+var mockSearchCommitDiffsInRepos func(args *repoSearchArgs, query searchquery.Query) ([]*searchResult, *searchResultsCommon, error)
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combinedQuery searchquery.Query) ([]*searchResult, *searchResultsCommon, error) {
+func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) ([]*searchResult, *searchResultsCommon, error) {
 	if mockSearchCommitDiffsInRepos != nil {
-		return mockSearchCommitDiffsInRepos(args, combinedQuery)
+		return mockSearchCommitDiffsInRepos(args, query)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -317,7 +317,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combine
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.query, combinedQuery)
+			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.query, query)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return
@@ -345,12 +345,12 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, combine
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-var mockSearchCommitLogInRepos func(args *repoSearchArgs, combinedQuery searchquery.Query) ([]*searchResult, *searchResultsCommon, error)
+var mockSearchCommitLogInRepos func(args *repoSearchArgs, query searchquery.Query) ([]*searchResult, *searchResultsCommon, error)
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQuery searchquery.Query) ([]*searchResult, *searchResultsCommon, error) {
+func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) ([]*searchResult, *searchResultsCommon, error) {
 	if mockSearchCommitLogInRepos != nil {
-		return mockSearchCommitLogInRepos(args, combinedQuery)
+		return mockSearchCommitLogInRepos(args, query)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -367,7 +367,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, combinedQ
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev, args.query, combinedQuery)
+			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev, args.query, query)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return

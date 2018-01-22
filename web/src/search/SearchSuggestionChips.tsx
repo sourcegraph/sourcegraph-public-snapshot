@@ -18,7 +18,7 @@ interface Props {
     location: H.Location
 
     /**
-     * The current user query.
+     * The current query.
      */
     query: string
 

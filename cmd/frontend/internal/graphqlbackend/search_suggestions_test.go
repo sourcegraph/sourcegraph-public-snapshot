@@ -16,16 +16,17 @@ import (
 func TestSearchSuggestions(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch + 1}
 
-	createSearchResolver := func(t *testing.T, query, scopeQuery string) *searchResolver {
-		args := &searchArgs{Query: query, ScopeQuery: scopeQuery}
-		r, err := (&schemaResolver{}).Search(args)
+	createSearchResolver := func(t *testing.T, query string) *searchResolver {
+		t.Helper()
+		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
 		return r
 	}
-	getSuggestions := func(t *testing.T, query, scopeQuery string) []string {
-		r := createSearchResolver(t, query, scopeQuery)
+	getSuggestions := func(t *testing.T, query string) []string {
+		t.Helper()
+		r := createSearchResolver(t, query)
 		results, err := r.Suggestions(context.Background(), &searchSuggestionsArgs{})
 		if err != nil {
 			t.Fatal("Suggestions:", err)
@@ -36,19 +37,20 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		return resultDescriptions
 	}
-	testSuggestions := func(t *testing.T, query, scopeQuery string, want []string) {
-		got := getSuggestions(t, query, scopeQuery)
+	testSuggestions := func(t *testing.T, query string, want []string) {
+		t.Helper()
+		got := getSuggestions(t, query)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got != want\ngot:  %v\nwant: %v", got, want)
 		}
 	}
 
 	t.Run("empty", func(t *testing.T) {
-		testSuggestions(t, "", "", []string{})
+		testSuggestions(t, "", []string{})
 	})
 
 	t.Run("whitespace", func(t *testing.T) {
-		testSuggestions(t, " ", " ", []string{})
+		testSuggestions(t, " ", []string{})
 	})
 
 	t.Run("single term", func(t *testing.T) {
@@ -80,7 +82,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}), &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchRepos = nil }()
-		testSuggestions(t, "foo", "", []string{"repo:foo-repo", "file:dir/file"})
+		testSuggestions(t, "foo", []string{"repo:foo-repo", "file:dir/file"})
 		if !calledReposListAll {
 			t.Error("!calledReposListAll")
 		}
@@ -93,8 +95,7 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("single term invalid regex", func(t *testing.T) {
-		args := &searchArgs{Query: "foo(", ScopeQuery: ""}
-		_, err := (&schemaResolver{}).Search(args)
+		_, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: "foo("})
 		if err == nil {
 			t.Fatal("err == nil")
 		} else if want := "error parsing regexp"; !strings.Contains(err.Error(), want) {
@@ -167,7 +168,7 @@ func TestSearchSuggestions(t *testing.T) {
 				"sample": []*types.Repo{{URI: "foo-repo1"}, {URI: "repo3"}},
 			}, nil
 		}
-		testSuggestions(t, "foo", "repogroup:sample", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
+		testSuggestions(t, "repogroup:sample foo", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
 		if !calledReposListReposInGroup {
 			t.Error("!calledReposListReposInGroup")
 		}
@@ -214,7 +215,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()
-		testSuggestions(t, "repo:foo", "", []string{"repo:foo-repo", "file:dir/file"})
+		testSuggestions(t, "repo:foo", []string{"repo:foo-repo", "file:dir/file"})
 		if !calledReposList {
 			t.Error("!calledReposList")
 		}
@@ -249,7 +250,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()
-		testSuggestions(t, "repo:foo file:bar", "", []string{"file:dir/bar-file"})
+		testSuggestions(t, "repo:foo file:bar", []string{"file:dir/bar-file"})
 		if !calledReposList {
 			t.Error("!calledReposList")
 		}

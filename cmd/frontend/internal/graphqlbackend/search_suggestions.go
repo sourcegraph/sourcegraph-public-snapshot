@@ -36,12 +36,12 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchResultResolver, error) {
 	args.applyDefaultsAndConstraints()
 
-	if len(r.combinedQuery.Syntax.Expr) == 0 {
+	if len(r.query.Syntax.Expr) == 0 {
 		return nil, nil
 	}
 
 	// Only suggest for type:file.
-	typeValues, _ := r.combinedQuery.StringValues(searchquery.FieldType)
+	typeValues, _ := r.query.StringValues(searchquery.FieldType)
 	for _, resultType := range typeValues {
 		if resultType != "file" {
 			return nil, nil
@@ -51,14 +51,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	var suggesters []func(ctx context.Context) ([]*searchResultResolver, error)
 
 	showRepoSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
-		// * If user query contains only a single term, treat it as a repo field here and ignore the other repo queries.
-		// * If only repo fields (except 1 term in user query), show repo suggestions.
+		// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
+		// * If only repo fields (except 1 term in query), show repo suggestions.
 
 		var effectiveRepoFieldValues []string
-		if len(r.query.Values(searchquery.FieldDefault)) == 1 && len(r.query.Fields) == 1 {
+		if len(r.query.Values(searchquery.FieldDefault)) == 1 && (len(r.query.Fields) == 1 || (len(r.query.Fields) == 2 && len(r.query.Values(searchquery.FieldRepoGroup)) == 1)) {
 			effectiveRepoFieldValues = append(effectiveRepoFieldValues, asString(r.query.Values(searchquery.FieldDefault)[0]))
-		} else if len(r.combinedQuery.Values(searchquery.FieldRepo)) > 0 && ((len(r.combinedQuery.Values(searchquery.FieldRepoGroup)) > 0 && len(r.combinedQuery.Fields) == 2) || (len(r.combinedQuery.Values(searchquery.FieldRepoGroup)) == 0 && len(r.combinedQuery.Fields) == 1)) {
-			effectiveRepoFieldValues, _ = r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)
+		} else if len(r.query.Values(searchquery.FieldRepo)) > 0 && ((len(r.query.Values(searchquery.FieldRepoGroup)) > 0 && len(r.query.Fields) == 2) || (len(r.query.Values(searchquery.FieldRepoGroup)) == 0 && len(r.query.Fields) == 1)) {
+			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(searchquery.FieldRepo)
 		}
 
 		// If we have a query which is not valid, just ignore it since this is for a suggestion.
@@ -81,12 +81,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	showFileSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
-		// If the user query has a file: filter AND a term, then abort; we will use showFilesWithTextMatches
+		// If the query has a file: filter AND a term, then abort; we will use showFilesWithTextMatches
 		// instead.
-		hasOnlyEmptyRepoField := len(r.combinedQuery.Values(searchquery.FieldRepo)) > 0 && allEmptyStrings(r.combinedQuery.RegexpPatterns(searchquery.FieldRepo)) && len(r.combinedQuery.Fields) == 1
-		hasRepoOrFileFields := len(r.combinedQuery.Values(searchquery.FieldRepoGroup)) > 0 || len(r.combinedQuery.Values(searchquery.FieldRepo)) > 0 || len(r.combinedQuery.Values(searchquery.FieldFile)) > 0
+		hasOnlyEmptyRepoField := len(r.query.Values(searchquery.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(searchquery.FieldRepo)) && len(r.query.Fields) == 1
+		hasRepoOrFileFields := len(r.query.Values(searchquery.FieldRepoGroup)) > 0 || len(r.query.Values(searchquery.FieldRepo)) > 0 || len(r.query.Values(searchquery.FieldFile)) > 0
 		userQueryHasFileFilterAndTerm := len(r.query.Values(searchquery.FieldFile)) > 0 && len(r.query.Values(searchquery.FieldDefault)) > 0
-		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.combinedQuery.Values(searchquery.FieldDefault)) <= 1 && !userQueryHasFileFilterAndTerm {
+		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(searchquery.FieldDefault)) <= 1 && !userQueryHasFileFilterAndTerm {
 			return r.resolveFiles(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
@@ -125,7 +125,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		if len(r.combinedQuery.Values(searchquery.FieldDefault)) > 0 {
+		if len(r.query.Values(searchquery.FieldDefault)) > 0 {
 			results, err := r.doResults(ctx, "file") // only "file" result type
 			if err != nil {
 				if err == context.DeadlineExceeded {
@@ -186,7 +186,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				mu.Unlock()
 			} else {
 				if err == context.DeadlineExceeded || err == context.Canceled {
-					log15.Warn("search suggestions exceeded deadline (skipping)", "query", r.args.Query)
+					log15.Warn("search suggestions exceeded deadline (skipping)", "query", r.rawQuery())
 				} else if !isBadRequest(err) {
 					// We exclude bad user input. Note that this means that we
 					// may have some tokens in the input that are valid, but

@@ -358,7 +358,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	ctx = context.Background()
 	ctx = opentracing.ContextWithSpan(ctx, opentracing.SpanFromContext(originalCtx))
 
-	cacheKey := r.args.Query + r.args.ScopeQuery
+	cacheKey := r.rawQuery()
 	// Check if value is in the cache.
 	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
 	if ok {
@@ -427,7 +427,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResults, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "graphql.SearchResults")
-	tr := trace.New(traceName, fmt.Sprintf("%s", r.args.Query))
+	tr := trace.New(traceName, r.rawQuery())
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)
@@ -457,7 +457,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	var patternsToCombine []string
-	for _, v := range r.combinedQuery.Values(searchquery.FieldDefault) {
+	for _, v := range r.query.Values(searchquery.FieldDefault) {
 		// Treat quoted strings as literal strings to match, not regexps.
 		var pattern string
 		switch {
@@ -471,16 +471,16 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		}
 		patternsToCombine = append(patternsToCombine, pattern)
 	}
-	includePatterns, excludePatterns := r.combinedQuery.RegexpPatterns(searchquery.FieldFile)
+	includePatterns, excludePatterns := r.query.RegexpPatterns(searchquery.FieldFile)
 	args := repoSearchArgs{
 		query: &patternInfo{
 			IsRegExp:                     true,
-			IsCaseSensitive:              r.combinedQuery.IsCaseSensitive(),
+			IsCaseSensitive:              r.query.IsCaseSensitive(),
 			FileMatchLimit:               300,
 			Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
 			IncludePatterns:              includePatterns,
 			PathPatternsAreRegExps:       true,
-			PathPatternsAreCaseSensitive: r.combinedQuery.IsCaseSensitive(),
+			PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
 		},
 		repos: repos,
 	}
@@ -495,7 +495,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
 	} else {
-		resultTypes, _ = r.combinedQuery.StringValues(searchquery.FieldType)
+		resultTypes, _ = r.query.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
 			resultTypes = []string{"file", "path"}
 		}
@@ -528,11 +528,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			})
 		case "diff":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
-				return searchCommitDiffsInRepos(ctx, &args, r.combinedQuery)
+				return searchCommitDiffsInRepos(ctx, &args, r.query)
 			})
 		case "commit":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
-				return searchCommitLogInRepos(ctx, &args, r.combinedQuery)
+				return searchCommitLogInRepos(ctx, &args, r.query)
 			})
 		}
 	}
@@ -555,17 +555,17 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results.results), results.searchResultsCommon.limitHit, len(results.searchResultsCommon.cloning), len(results.searchResultsCommon.missing), len(results.searchResultsCommon.timedout))
 
-	if _, isDiff := seenResultTypes["diff"]; isDiff && results.alert == nil && !results.limitHit && len(r.combinedQuery.Values("before")) == 0 && len(r.combinedQuery.Values("after")) == 0 {
+	if _, isDiff := seenResultTypes["diff"]; isDiff && results.alert == nil && !results.limitHit && len(r.query.Values("before")) == 0 && len(r.query.Values("after")) == 0 {
 		results.alert = &searchAlert{
 			description: "Diff search limited to last month by default. Use after: to search older commits.",
 			proposedQueries: []*searchQueryDescription{
 				{
 					description: "commits in the last 6 months",
-					query:       searchQuery{syntax.ExprString(r.combinedQuery.Query.Syntax.Expr) + " after:\"6 months ago\""},
+					query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"6 months ago\""},
 				},
 				{
 					description: "commits in the last 2 years",
-					query:       searchQuery{syntax.ExprString(r.combinedQuery.Query.Syntax.Expr) + " after:\"2 years ago\""},
+					query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"2 years ago\""},
 				},
 			},
 		}
