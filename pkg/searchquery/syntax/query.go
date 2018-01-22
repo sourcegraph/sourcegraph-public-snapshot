@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// A Query contains parse tree of a query.
+// A Query contains the parse tree of a query.
 type Query struct {
 	Input string  // the original input query string
 	Expr  []*Expr // expressions in this query

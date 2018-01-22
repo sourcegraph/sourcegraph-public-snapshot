@@ -40,7 +40,7 @@ func Parse(input string) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Query{Expr: exprs}, nil
+	return &Query{Expr: exprs, Input: input}, nil
 }
 
 // peek returns the next token without consuming it. Peeking beyond the end of
