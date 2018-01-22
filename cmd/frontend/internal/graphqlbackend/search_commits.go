@@ -153,7 +153,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	}
 	// Default to searching back 1 month
 	if len(beforeValues) == 0 && len(afterValues) == 0 {
-		args = append(args, "--since='1 month ago'")
+		args = append(args, "--since=1 month ago")
 	}
 
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
