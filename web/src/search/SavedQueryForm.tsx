@@ -29,6 +29,7 @@ interface State {
 
     subjectOptions: GQL.ConfigurationSubject[]
     isSubmitting: boolean
+    isFocused: boolean
     error?: any
 }
 
@@ -54,6 +55,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             },
             subjectOptions: [],
             isSubmitting: false,
+            isFocused: false,
         }
     }
 
@@ -76,7 +78,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.key === 'Escape' && !this.state.isSubmitting))
+                .pipe(filter(event => !this.state.isFocused && event.key === 'Escape' && !this.state.isSubmitting))
                 .subscribe(() => this.props.onDidCancel())
         )
     }
@@ -93,6 +95,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             isSubmitting,
             error,
         } = this.state
+        console.log(this.state.isFocused)
 
         return (
             <form className="saved-query-form" onSubmit={this.handleSubmit}>
@@ -109,6 +112,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     spellCheck={false}
                     autoCapitalize="off"
                     autoFocus={!query}
+                    onFocus={this.handleInputFocus}
+                    onBlur={this.handleInputBlur}
                 />
                 <span>Description</span>
                 <input
@@ -120,6 +125,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     value={description || ''}
                     required={true}
                     autoFocus={!!query && !description}
+                    onFocus={this.handleInputFocus}
+                    onBlur={this.handleInputBlur}
                 />
                 <span>Save location</span>
                 <div className="saved-query-form__save-location">
@@ -206,6 +213,14 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 )
                 .subscribe(this.props.onDidCommit)
         )
+    }
+
+    private handleInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+        this.setState(() => ({ isFocused: true }))
+    }
+
+    private handleInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+        this.setState(() => ({ isFocused: false }))
     }
 
     /**
