@@ -528,7 +528,7 @@ func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description s
 		return err
 	}
 
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, language, created_at, enabled) VALUES ($1, $2, $3, '', now(), $4)", uri, description, fork, enabled)
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, language, enabled) VALUES ($1, $2, $3, '', $4)", uri, description, fork, enabled)
 	if err != nil {
 		if isPQErrorUniqueViolation(err) {
 			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {
