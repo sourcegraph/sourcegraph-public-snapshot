@@ -203,9 +203,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         console.error(error)
                         this.setState({ error })
 
-                        return [error]
-                    }),
-                    filter(v => !(v instanceof Error))
+                        return []
+                    })
                 )
                 .subscribe(this.props.onDidCommit)
         )
