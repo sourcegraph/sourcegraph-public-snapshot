@@ -62,16 +62,17 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 	if len(configs) == 0 {
 		return nil
 	}
-	for _, c := range configs {
-		go func(c githubConfig) {
+	for i, c := range configs {
+		go func(i, n int, c githubConfig) {
 			for {
+				log15.Info("RunGitHubRepositorySyncWorker:updateForConfig", "ith", i, "total", n)
 				err := updateForConfig(ctx, c.conn, c.client)
 				if err != nil {
 					log15.Warn("error updating GitHub repos", "url", c.conn.Url, "err", err)
 				}
 				time.Sleep(updateInterval)
 			}
-		}(c)
+		}(i, len(configs), c)
 	}
 	select {}
 }

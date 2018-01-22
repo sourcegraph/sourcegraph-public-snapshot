@@ -13,6 +13,7 @@ import (
 // RunGitoliteRepositorySyncWorker runs the worker that syncs repositories from gitolite hosts to Sourcegraph
 func RunGitoliteRepositorySyncWorker(ctx context.Context) error {
 	for {
+		log15.Info("RunGitoliteRepositorySyncWorker:GitoliteUpdateRepos")
 		if err := api.InternalClient.GitoliteUpdateRepos(context.Background()); err != nil {
 			log.Println(err)
 		} else {
