@@ -343,7 +343,7 @@ func (v *threadID) UnmarshalGraphQL(input interface{}) error {
 
 type createThreadInput struct {
 	OrgID             orgID // accept int32 and org graphql.ID
-	CanonicalRemoteID api.RepoURI
+	CanonicalRemoteID string
 	CloneURL          string
 	RepoRevisionPath  string
 	LinesRevisionPath string
@@ -387,10 +387,10 @@ func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThre
 		return nil, err
 	}
 
-	repo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, args.CanonicalRemoteID)
+	repo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, api.RepoURI(args.CanonicalRemoteID))
 	if err == db.ErrRepoNotFound {
 		repo, err = db.OrgRepos.Create(ctx, &types.OrgRepo{
-			CanonicalRemoteID: args.CanonicalRemoteID,
+			CanonicalRemoteID: api.RepoURI(args.CanonicalRemoteID),
 			CloneURL:          args.CloneURL,
 			OrgID:             args.OrgID.int32Value,
 		})

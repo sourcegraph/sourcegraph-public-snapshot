@@ -53,7 +53,7 @@ func TestThreads_Create(t *testing.T) {
 		Input *createThreadInput
 	}{
 		Input: &createThreadInput{
-			CanonicalRemoteID: wantRepo.CanonicalRemoteID,
+			CanonicalRemoteID: string(wantRepo.CanonicalRemoteID),
 			CloneURL:          wantRepo.CloneURL,
 			RepoRevisionPath:  "foo.go",
 			LinesRevisionPath: "foo.go",
