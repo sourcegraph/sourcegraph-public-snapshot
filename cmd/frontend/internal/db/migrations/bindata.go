@@ -128,6 +128,8 @@
 // ../../../../../migrations/1515651962_drop_has_subject_constraint.up.sql
 // ../../../../../migrations/1516491388_remove_repo_private.down.sql
 // ../../../../../migrations/1516491388_remove_repo_private.up.sql
+// ../../../../../migrations/1516608575_repo_cleanup.down.sql
+// ../../../../../migrations/1516608575_repo_cleanup.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2755,6 +2757,46 @@ func _1516491388_remove_repo_privateUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1516608575_repo_cleanupDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x80\x08\x38\xfb\xfb\x84\xfa\xfa\x29\x24\x17\xa5\x26\x96\xa4\xa6\xc4\x27\x96\x28\xb8\x04\xf9\x07\x28\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\x58\x73\x91\xa6\xcf\xc5\xd5\xcd\x31\xd4\x27\x04\x9b\x36\x17\x17\x98\xa6\xa4\x9c\xfc\xe4\xec\xd4\x14\x85\xa4\xfc\xfc\x9c\xd4\xc4\x3c\xfc\x8a\x95\xf2\xcb\xf3\x52\x8b\x94\x14\x92\x33\x4b\x52\x2b\x4a\x08\xa8\xcd\x4b\xcc\x4d\x85\x2b\x05\x04\x00\x00\xff\xff\x66\x54\xa9\x36\xf2\x00\x00\x00")
+
+func _1516608575_repo_cleanupDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1516608575_repo_cleanupDownSql,
+		"1516608575_repo_cleanup.down.sql",
+	)
+}
+
+func _1516608575_repo_cleanupDownSql() (*asset, error) {
+	bytes, err := _1516608575_repo_cleanupDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1516608575_repo_cleanup.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1516608575_repo_cleanupUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xcd\xc1\x0a\x82\x40\x10\xc6\xf1\xbb\x4f\x31\x78\xaa\x67\x58\x3a\xac\x3a\x95\x30\xee\x8a\xce\xd2\x31\x4c\xe7\x54\xed\xc6\x22\xf8\xfa\x51\x19\x75\x08\xa4\xeb\xf0\xff\xcd\xa7\x89\xb1\x01\xd6\x19\x21\x44\xb9\x05\x78\x1d\x72\x4b\xae\x32\xd0\x47\xe9\x46\x19\x8e\xdd\x08\x2d\x32\x14\xb8\xd5\x8e\x18\x7c\x98\x56\x6b\x95\x64\xb8\x2b\x8d\x4a\x5c\x5d\x68\x9e\xf5\xa3\xfa\xa0\xcd\x33\x84\xc3\x1e\x1b\xfc\xfe\x55\xb6\x60\x1c\x91\x4a\xfe\x5a\x37\x96\x67\x96\xdb\xaa\x2a\xf9\x07\x2f\x1a\x5b\xbf\x75\x7a\xba\x84\xfe\x2c\x43\xba\xd4\x85\xc9\x4b\x5c\xac\x7c\x77\x95\x54\xdd\x03\x00\x00\xff\xff\xbb\x8e\x45\xad\x2f\x01\x00\x00")
+
+func _1516608575_repo_cleanupUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1516608575_repo_cleanupUpSql,
+		"1516608575_repo_cleanup.up.sql",
+	)
+}
+
+func _1516608575_repo_cleanupUpSql() (*asset, error) {
+	bytes, err := _1516608575_repo_cleanupUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1516608575_repo_cleanup.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2935,6 +2977,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1515651962_drop_has_subject_constraint.up.sql":               _1515651962_drop_has_subject_constraintUpSql,
 	"1516491388_remove_repo_private.down.sql":                     _1516491388_remove_repo_privateDownSql,
 	"1516491388_remove_repo_private.up.sql":                       _1516491388_remove_repo_privateUpSql,
+	"1516608575_repo_cleanup.down.sql":                            _1516608575_repo_cleanupDownSql,
+	"1516608575_repo_cleanup.up.sql":                              _1516608575_repo_cleanupUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3106,6 +3150,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1515651962_drop_has_subject_constraint.up.sql":               &bintree{_1515651962_drop_has_subject_constraintUpSql, map[string]*bintree{}},
 	"1516491388_remove_repo_private.down.sql":                     &bintree{_1516491388_remove_repo_privateDownSql, map[string]*bintree{}},
 	"1516491388_remove_repo_private.up.sql":                       &bintree{_1516491388_remove_repo_privateUpSql, map[string]*bintree{}},
+	"1516608575_repo_cleanup.down.sql":                            &bintree{_1516608575_repo_cleanupDownSql, map[string]*bintree{}},
+	"1516608575_repo_cleanup.up.sql":                              &bintree{_1516608575_repo_cleanupUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

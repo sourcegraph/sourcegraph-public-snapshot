@@ -195,13 +195,10 @@ Foreign-key constraints:
 -------------------------+--------------------------+---------------------------------------------------
  id                      | integer                  | not null default nextval('repo_id_seq'::regclass)
  uri                     | citext                   | 
- owner                   | citext                   | 
- name                    | citext                   | 
  description             | text                     | 
  language                | text                     | 
- blocked                 | boolean                  | 
  fork                    | boolean                  | 
- created_at              | timestamp with time zone | 
+ created_at              | timestamp with time zone | not null default now()
  updated_at              | timestamp with time zone | 
  pushed_at               | timestamp with time zone | 
  indexed_revision        | text                     | 
@@ -213,9 +210,6 @@ Foreign-key constraints:
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_uri_unique" UNIQUE, btree (uri)
-    "repo_name" btree (name text_pattern_ops)
-    "repo_name_ci" btree (name)
-    "repo_owner_ci" btree (owner)
     "repo_uri_trgm" gin (lower(uri::text) gin_trgm_ops)
 Referenced by:
     TABLE "global_dep" CONSTRAINT "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
