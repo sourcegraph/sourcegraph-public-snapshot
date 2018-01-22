@@ -51,10 +51,12 @@ func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
+	log15.Info("serveGitoliteUpdateRepos")
 	list, err := gitserver.DefaultClient.ListGitolite(r.Context())
 	if err != nil {
 		return err
 	}
+	log15.Info("serveGitoliteUpdateRepos:ListGitolite", "numResults", len(list))
 
 	var whitelist, blacklist []string
 	for _, uri := range list {
@@ -73,7 +75,8 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	for _, entry := range whitelist {
+	for i, entry := range whitelist {
+		log15.Info("serveGitoliteUpdateRepos:update-repo", "ith", i, "total", len(whitelist))
 		uri := api.RepoURI(entry)
 		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, true)
 		if err != nil {
@@ -92,7 +95,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			continue
 		}
 		if !conf.Get().DisableAutoGitUpdates || !cloned {
-			log15.Debug("fetching Gitolite repo", "repo", uri, "cloned", cloned)
+			log15.Info("fetching Gitolite repo", "repo", uri, "cloned", cloned)
 			err := gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), repo.URI)
 			if err != nil {
 				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
