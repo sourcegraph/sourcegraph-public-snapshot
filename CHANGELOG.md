@@ -15,6 +15,17 @@ Before cutting a new release, please:
 3. Ensure the documentation is ready
 4. Tag and push a new version. Update this document.
 
+## 2.4.3
+
+### Added
+
+* Code Intelligence support
+* Custom links to code hosts with the `links:` config options in `repos.list`
+
+### Changed
+
+* Search by file path enabled by default
+
 ## 2.4.2
 
 ### Added
