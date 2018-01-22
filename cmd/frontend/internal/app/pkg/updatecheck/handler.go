@@ -13,7 +13,7 @@ import (
 
 var (
 	latestReleaseBuild = build{
-		Timestamp:  1516655677,
+		Timestamp:  1516661735,
 		Version:    "2.4.3",
 		IsReleased: true,
 		Assets: []asset{
