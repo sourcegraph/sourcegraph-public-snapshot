@@ -203,9 +203,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     catchError(error => {
                         console.error(error)
                         this.setState({ error })
-                        if (!(error instanceof Error)) {
-                            return [new Error(error)]
-                        }
 
                         return [error]
                     }),
