@@ -22,6 +22,10 @@ const (
 	FieldAuthor    = "author"
 	FieldCommitter = "committer"
 	FieldMessage   = "message"
+
+	// Temporary experimental fields:
+	FieldExpZoektOnly    = "expzoektonly"
+	FieldExpSearcherOnly = "expsearcheronly"
 )
 
 var (
@@ -41,6 +45,10 @@ var (
 			FieldAuthor:    regexpNegatableFieldType,
 			FieldCommitter: regexpNegatableFieldType,
 			FieldMessage:   regexpNegatableFieldType,
+
+			// Experimental fields:
+			FieldExpZoektOnly:    {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
+			FieldExpSearcherOnly: {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
 		},
 		FieldAliases: map[string]string{
 			"r":     FieldRepo,

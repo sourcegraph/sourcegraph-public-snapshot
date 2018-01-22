@@ -524,7 +524,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			}
 			searchedFileContentsOrPaths = true
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
-				return searchRepos(ctx, &args)
+				return searchRepos(ctx, &args, r.query)
 			})
 		case "diff":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {

@@ -8,6 +8,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -46,7 +47,11 @@ func TestSearchRepos(t *testing.T) {
 		},
 		repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing"),
 	}
-	results, common, err := searchRepos(context.Background(), args)
+	query, err := searchquery.ParseAndCheck("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	results, common, err := searchRepos(context.Background(), args, *query)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -28,6 +28,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/zoekt"
@@ -549,7 +550,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
 // searchRepos searches a set of repos for a pattern.
-func searchRepos(ctx context.Context, args *repoSearchArgs) (res []*searchResult, resCommon *searchResultsCommon, err error) {
+func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResult, resCommon *searchResultsCommon, err error) {
 	if mockSearchRepos != nil {
 		return mockSearchRepos(args)
 	}
@@ -574,6 +575,19 @@ func searchRepos(ctx context.Context, args *repoSearchArgs) (res []*searchResult
 	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.repos)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Support expzoektonly:yes and expsearcheronly:yes in search query.
+	zoektOnly := query.BoolValue(searchquery.FieldExpZoektOnly)
+	searcherOnly := query.BoolValue(searchquery.FieldExpSearcherOnly)
+	if zoektOnly {
+		tr.LazyPrintf("expzoektonly, ignoring %d searcher-only repos (%+v)", len(searcherRepos), searcherRepos)
+		searcherRepos = nil
+	}
+	if searcherOnly {
+		tr.LazyPrintf("expsearcheronly, bypassing zoekt for %d zoekt-indexed repos (%+v)", len(zoektRepos), zoektRepos)
+		searcherRepos = append(searcherRepos, zoektRepos...)
+		zoektRepos = nil
 	}
 
 	var (
