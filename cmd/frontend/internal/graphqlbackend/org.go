@@ -105,18 +105,20 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 }
 
 func (o *orgResolver) Threads(ctx context.Context, args *struct {
-	RepoCanonicalRemoteID *api.RepoURI // TODO(nick): deprecated
-	CanonicalRemoteIDs    *[]api.RepoURI
+	RepoCanonicalRemoteID *string // TODO(nick): deprecated
+	CanonicalRemoteIDs    *[]string
 	Branch                *string
 	File                  *string
 	Limit                 *int32
 }) (*threadConnectionResolver, error) {
 	var canonicalRemoteIDs []api.RepoURI
 	if args.CanonicalRemoteIDs != nil {
-		canonicalRemoteIDs = append(canonicalRemoteIDs, *args.CanonicalRemoteIDs...)
+		for _, canonicalRemoteID := range *args.CanonicalRemoteIDs {
+			canonicalRemoteIDs = append(canonicalRemoteIDs, api.RepoURI(canonicalRemoteID))
+		}
 	}
 	if args.RepoCanonicalRemoteID != nil {
-		canonicalRemoteIDs = append(canonicalRemoteIDs, *args.RepoCanonicalRemoteID)
+		canonicalRemoteIDs = append(canonicalRemoteIDs, api.RepoURI(*args.RepoCanonicalRemoteID))
 	}
 	var repos []*types.OrgRepo
 	if len(canonicalRemoteIDs) > 0 {
@@ -142,9 +144,9 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
 }
 
 func (o *orgResolver) Repo(ctx context.Context, args *struct {
-	CanonicalRemoteID api.RepoURI
+	CanonicalRemoteID string
 }) (*orgRepoResolver, error) {
-	orgRepo, err := getOrgRepo(ctx, o.org.ID, args.CanonicalRemoteID)
+	orgRepo, err := getOrgRepo(ctx, o.org.ID, api.RepoURI(args.CanonicalRemoteID))
 	if err != nil {
 		return nil, err
 	}
