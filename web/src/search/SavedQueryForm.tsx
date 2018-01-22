@@ -95,7 +95,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
             isSubmitting,
             error,
         } = this.state
-        console.log(this.state.isFocused)
 
         return (
             <form className="saved-query-form" onSubmit={this.handleSubmit}>
