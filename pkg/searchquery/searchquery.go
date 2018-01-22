@@ -79,15 +79,22 @@ func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 	return &Query{conf: conf, Query: checkedQuery}, nil
 }
 
-// IsCaseSensitive reports whether the query's expressions are matched
-// case sensitively.
-func (q *Query) IsCaseSensitive() bool {
-	for _, v := range q.Fields[FieldCase] {
+// BoolValue returns the last boolean value (yes/no) for the field. For example, if the query is
+// "foo:yes foo:no foo:yes", then the last boolean value for the "foo" field is true ("yes"). The
+// default boolean value is false.
+func (q *Query) BoolValue(field string) bool {
+	for _, v := range q.Fields[field] {
 		if v.Bool != nil {
 			return *v.Bool
 		}
 	}
 	return false // default
+}
+
+// IsCaseSensitive reports whether the query's expressions are matched
+// case sensitively.
+func (q *Query) IsCaseSensitive() bool {
+	return q.BoolValue(FieldCase)
 }
 
 // Values returns the values for the given field.
