@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -14,11 +15,23 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
+
+// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
+// server.
+type ErrRepoSeeOther struct {
+	// RedirectURL is the base URL for the repository at an external location.
+	RedirectURL string
+}
+
+func (e ErrRepoSeeOther) Error() string {
+	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
+}
 
 var Repos = &repos{}
 
@@ -35,6 +48,9 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
+// GetByURI retrieves the repository with the given URI. If the URI refers to a repository on a known external
+// service (such as a code host) that is not yet present in the database, it will automatically look up the
+// repository externally and add it to the database before returning it.
 func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
@@ -43,7 +59,28 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
 	defer done()
 
-	return db.Repos.GetByURI(ctx, uri)
+	repo, err := db.Repos.GetByURI(ctx, uri)
+	if err != nil && conf.Get().AutoRepoAdd {
+		// Try to look up and auto-add the repo.
+		result, err := repoupdater.DefaultClient.RepoLookup(ctx, uri)
+		if err != nil {
+			return nil, err
+		}
+		if result.Repo != nil {
+			if err := s.TryInsertNew(ctx, result.Repo.URI, result.Repo.Description, result.Repo.Fork, true); err != nil {
+				return nil, err
+			}
+		}
+		return db.Repos.GetByURI(ctx, uri)
+	} else if err != nil {
+
+		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
+			return nil, ErrRepoSeeOther{RedirectURL: fmt.Sprintf("https://sourcegraph.com/%s", uri)}
+		}
+		return nil, err
+	}
+
+	return repo, nil
 }
 
 func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description string, fork, enabled bool) error {
@@ -63,8 +100,6 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 		}
 		done()
 	}()
-
-	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.List")
 
 	return db.Repos.List(ctx, opt)
 }

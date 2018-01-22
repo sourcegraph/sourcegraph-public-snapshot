@@ -1,3 +1,5 @@
+// Command repo-updater periodically updates repositories configured in site configuration and serves repository
+// metadata from multiple external code hosts.
 package main
 
 import (
@@ -6,9 +8,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	opentracing "github.com/opentracing/opentracing-go"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -66,14 +71,9 @@ func main() {
 		}
 	}()
 
-	// Listen on :3182 so that we pass k8s health checks (for forward-compat with
-	// https://github.com/sourcegraph/infrastructure/pull/416, but don't actually do anything until
-	// https://github.com/sourcegraph/sourcegraph/pull/9100 lands.
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.Error(w, "not implemented", http.StatusNotFound)
-		}
-	})
+	var repoupdater repoupdater.Server
+
+	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	log15.Info("repo-updater: listening", "addr", ":3182")
 	srv := &http.Server{Addr: ":3182", Handler: handler}
 	log.Fatal(srv.ListenAndServe())

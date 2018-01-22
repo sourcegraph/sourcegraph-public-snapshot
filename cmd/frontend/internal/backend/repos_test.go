@@ -4,10 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	githubpkg "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -19,8 +17,6 @@ func TestReposService_Get(t *testing.T) {
 		URI:     "github.com/u/r",
 		Enabled: true,
 	}
-
-	github.MockGetRepo_Return(&githubpkg.Repository{FullName: strptr("u/r")})
 
 	calledGet := db.Mocks.Repos.MockGet_Return(t, wantRepo)
 

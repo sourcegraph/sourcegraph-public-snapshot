@@ -1,4 +1,4 @@
-package githubutil
+package github
 
 import (
 	"net/http"
@@ -6,21 +6,22 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/prometheus/client_golang/prometheus"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-var requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "github",
-	Name:      "requests_total",
-	Help:      "Total number of requests sent to the GitHub API.",
-}, []string{"category", "code"})
 
 func init() {
 	prometheus.MustRegister(requestCount)
 }
+
+var (
+	requestCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "github",
+		Name:      "requests_total",
+		Help:      "Total number of requests sent to the GitHub API.",
+	}, []string{"category", "code"})
+)
 
 // metricsTransport wraps a transport for the GitHub API to export metrics to
 // prometheus

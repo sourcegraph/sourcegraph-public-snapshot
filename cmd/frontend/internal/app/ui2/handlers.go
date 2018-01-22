@@ -121,7 +121,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, "/"+string(e.NewRepo), http.StatusMovedPermanently)
 				return nil, nil
 			}
-			if e, ok := err.(db.ErrRepoSeeOther); ok {
+			if e, ok := err.(backend.ErrRepoSeeOther); ok {
 				// Repo does not exist here, redirect to the reccomended location.
 				u, err := url.Parse(e.RedirectURL)
 				if err != nil {

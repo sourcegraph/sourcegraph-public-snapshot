@@ -22,6 +22,7 @@ var defaultEnv = map[string]string{
 	// Sourcegraph services running in this container
 	"SRC_GIT_SERVERS":         "127.0.0.1:3178",
 	"SEARCHER_URL":            "http://127.0.0.1:3181",
+	"REPO_UPDATER_URL":        "http://127.0.0.1:3182",
 	"SRC_SESSION_STORE_REDIS": "127.0.0.1:6379",
 	"SRC_INDEXER":             "127.0.0.1:3179",
 	"SRC_SYNTECT_SERVER":      "http://localhost:3700",

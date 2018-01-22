@@ -190,7 +190,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 
 	repo, err := db.Repos.GetByURI(ctx, api.RepoURI(args.URI))
 	if err != nil {
-		if err, ok := err.(db.ErrRepoSeeOther); ok {
+		if err, ok := err.(backend.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {

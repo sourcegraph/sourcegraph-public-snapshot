@@ -28,8 +28,8 @@ func resetCache(t *testing.T) {
 	reposGithubPublicCache = rcache.NewWithTTL(testGHCachePrefix, 1000)
 }
 
-// TestRepos_Get_nocache tests the behavior of Repos.Get.
-func TestRepos_Get(t *testing.T) {
+// TestGetRepo_nocache tests the behavior of GetRepo.
+func TestGetRepo(t *testing.T) {
 	resetCache(t)
 
 	var calledGet bool
@@ -77,9 +77,9 @@ func TestRepos_Get(t *testing.T) {
 	}
 }
 
-// TestRepos_Get_nonexistent tests the behavior of Repos.Get when called
+// TestGetRepo_nonexistent tests the behavior of GetRepo when called
 // on a repo that does not exist.
-func TestRepos_Get_nonexistent(t *testing.T) {
+func TestGetRepo_nonexistent(t *testing.T) {
 	resetCache(t)
 
 	MockRoundTripper = RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
@@ -100,11 +100,11 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 	}
 }
 
-// TestRepos_Get_publicnotfound tests we correctly cache 404 responses. If we
+// TestGetRepo_publicnotfound tests we correctly cache 404 responses. If we
 // are not authed as a user, all private repos 404 which counts towards our
 // rate limit. This test will ensure unauthed clients cache 404, but authed
 // users do not use the cache
-func TestRepos_Get_publicnotfound(t *testing.T) {
+func TestGetRepo_publicnotfound(t *testing.T) {
 	resetCache(t)
 
 	calledGetMissing := false
@@ -150,8 +150,8 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	}
 }
 
-// TestRepos_Get_authednocache tests authed users do add public repos to the cache
-func TestRepos_Get_authednocache(t *testing.T) {
+// TestGetRepo_authednocache tests authed users do add public repos to the cache
+func TestGetRepo_authednocache(t *testing.T) {
 	resetCache(t)
 
 	calledGet := false

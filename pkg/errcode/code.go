@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/gorilla/schema"
-	"github.com/sourcegraph/go-github/github"
 )
 
 // HTTP returns the most appropriate HTTP status code that describes
@@ -47,8 +46,6 @@ func HTTP(err error) int {
 		HTTPStatusCode() int
 	}:
 		return e.HTTPStatusCode()
-	case *github.ErrorResponse:
-		return e.Response.StatusCode
 	case schema.ConversionError:
 		return http.StatusBadRequest
 	case schema.MultiError:
