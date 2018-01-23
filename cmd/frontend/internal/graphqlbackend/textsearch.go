@@ -623,9 +623,11 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 			if zoektCache == nil {
 				return nil, nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
-			common.missing = make([]api.RepoURI, len(searcherRepos))
-			for i, r := range searcherRepos {
-				common.missing[i] = r.repo.URI
+			if os.Getenv("SEARCH_UNINDEXED_NOMISSING") == "" {
+				common.missing = make([]api.RepoURI, len(searcherRepos))
+				for i, r := range searcherRepos {
+					common.missing[i] = r.repo.URI
+				}
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
