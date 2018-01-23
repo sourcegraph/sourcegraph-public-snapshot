@@ -564,6 +564,30 @@
 			"revisionTime": "2017-03-06T14:51:42Z"
 		},
 		{
+			"checksumSHA1": "5/JV3EM/ECLSB4YOSJjaPKtwLC4=",
+			"path": "github.com/google/zoekt",
+			"revision": "7b8edf6a67214df409fd0566af4a817330784e96",
+			"revisionTime": "2018-01-23T19:22:20Z"
+		},
+		{
+			"checksumSHA1": "eMz3qmu5C3XjkgYf19d6hAfVSLQ=",
+			"path": "github.com/google/zoekt/query",
+			"revision": "7b8edf6a67214df409fd0566af4a817330784e96",
+			"revisionTime": "2018-01-23T19:22:20Z"
+		},
+		{
+			"checksumSHA1": "gb8JA78JvDFVLsoBVP+OjvncV+w=",
+			"path": "github.com/google/zoekt/rpc",
+			"revision": "7b8edf6a67214df409fd0566af4a817330784e96",
+			"revisionTime": "2018-01-23T19:22:20Z"
+		},
+		{
+			"checksumSHA1": "e8D8iKclTmG+O1bOhJWptcsXsEw=",
+			"path": "github.com/google/zoekt/rpc/internal/srv",
+			"revision": "7b8edf6a67214df409fd0566af4a817330784e96",
+			"revisionTime": "2018-01-23T19:22:20Z"
+		},
+		{
 			"checksumSHA1": "V/53BpqgOkSDZCX6snQCAkdO2fM=",
 			"path": "github.com/googleapis/gax-go",
 			"revision": "da06d194a00e19ce00d9011a13931c3f6f6887c7",
