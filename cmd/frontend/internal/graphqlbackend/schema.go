@@ -333,6 +333,8 @@ type SearchResults {
     timedout: [String!]!
     # An alert message that should be displayed before any results.
     alert: SearchAlert
+    # The time it took to generate these results.
+    elapsedMilliseconds: Int!
 }
 
 type SearchResultsStats {
