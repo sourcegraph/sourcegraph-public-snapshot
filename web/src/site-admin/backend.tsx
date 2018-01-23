@@ -148,6 +148,9 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
                             }
                         }
                         totalCount(precise: true)
+                        pageInfo {
+                            hasNextPage
+                        }
                     }
                 }
             }
