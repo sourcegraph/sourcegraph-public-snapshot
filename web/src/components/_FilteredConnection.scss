@@ -15,6 +15,7 @@
 .filtered-connection-filter-control {
     display: flex;
     align-items: center;
+    font-size: 13px;
 
     // Avoid a gap between the bottom left corner of the <input> above us and our top left border corner.
     //
@@ -24,6 +25,7 @@
     &__item {
         display: flex;
         align-items: center;
+        white-space: nowrap;
     }
 
     // Hide ugly default radio button (we use Unicode circles below instead).
@@ -45,7 +47,7 @@
         user-select: none;
         cursor: pointer;
 
-        padding: 0.25rem 0.75rem;
+        padding: 0.25rem 0.5rem;
 
         border: 1px solid $color-border;
         border-top-width: 0;
