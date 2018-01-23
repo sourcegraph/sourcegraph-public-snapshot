@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -194,7 +195,7 @@ func TestRepos_TryInsertNew(t *testing.T) {
 	}
 
 	if rp.URI != "myrepo" {
-		t.Fatal("rp.URI: %s != %s", rp.URI, "myrepo")
+		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
 	}
 
 	if err := Repos.TryInsertNew(ctx, "myrepo", "asdfasdf", false, true); err != nil {
@@ -223,21 +224,21 @@ func TestRepos_TryInsertNewBatch(t *testing.T) {
 		insertBatchSize = 1000
 	}()
 
-	reposToInsert := []insertRepo{{
-		uri:         "myrepo1",
-		description: "",
-		fork:        false,
-		enabled:     true,
+	reposToInsert := []api.InsertRepoOp{{
+		URI:         "myrepo1",
+		Description: "",
+		Fork:        false,
+		Enabled:     true,
 	}, {
-		uri:         "myrepo2",
-		description: "",
-		fork:        false,
-		enabled:     true,
+		URI:         "myrepo2",
+		Description: "",
+		Fork:        false,
+		Enabled:     true,
 	}, {
-		uri:         "myrepo3",
-		description: "",
-		fork:        false,
-		enabled:     true,
+		URI:         "myrepo3",
+		Description: "",
+		Fork:        false,
+		Enabled:     true,
 	}}
 
 	for _, batchSize := range []int{1, 2, 3, 4} {
@@ -245,9 +246,9 @@ func TestRepos_TryInsertNewBatch(t *testing.T) {
 		ctx := testContext()
 
 		for _, expRP := range reposToInsert {
-			if _, err := Repos.GetByURI(ctx, expRP.uri); err != ErrRepoNotFound {
+			if _, err := Repos.GetByURI(ctx, expRP.URI); err != ErrRepoNotFound {
 				if err == nil {
-					t.Fatalf("repo %s already present", expRP.uri)
+					t.Fatalf("repo %s already present", expRP.URI)
 				} else {
 					t.Fatal(err)
 				}
@@ -259,13 +260,13 @@ func TestRepos_TryInsertNewBatch(t *testing.T) {
 		}
 
 		for _, expRP := range reposToInsert {
-			rp, err := Repos.GetByURI(ctx, expRP.uri)
+			rp, err := Repos.GetByURI(ctx, expRP.URI)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if rp.URI != expRP.uri {
-				t.Errorf("rp.URI: %s != %s", rp.URI, expRP.uri)
+			if rp.URI != expRP.URI {
+				t.Errorf("rp.URI: %s != %s", rp.URI, expRP.URI)
 			}
 		}
 	}
