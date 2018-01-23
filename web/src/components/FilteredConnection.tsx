@@ -352,6 +352,10 @@ export class FilteredConnection<
             if (typeof this.state.connection.totalCount === 'number') {
                 totalCount = this.state.connection.totalCount
             } else if (
+                // TODO(sqs): this line below is wrong because this.state.first might've just been changed and
+                // this.state.connection.nodes is still the data fetched from before this.state.first was changed.
+                // this causes the UI to incorrectly show "N items total" even when the count is indeterminate right
+                // after the user clicks "Show more" but before the new data is loaded.
                 this.state.connection.nodes.length < this.state.first ||
                 (this.state.connection.nodes.length === this.state.first &&
                     this.state.connection.pageInfo &&
