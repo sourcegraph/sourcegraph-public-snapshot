@@ -24,6 +24,7 @@ const (
 	FieldMessage   = "message"
 
 	// Temporary experimental fields:
+	FieldExpZoekt        = "expzoekt"
 	FieldExpZoektOnly    = "expzoektonly"
 	FieldExpSearcherOnly = "expsearcheronly"
 )
@@ -47,6 +48,7 @@ var (
 			FieldMessage:   regexpNegatableFieldType,
 
 			// Experimental fields:
+			FieldExpZoekt:        {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
 			FieldExpZoektOnly:    {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
 			FieldExpSearcherOnly: {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
 		},

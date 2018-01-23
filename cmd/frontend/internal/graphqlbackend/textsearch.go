@@ -572,9 +572,16 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.repos)
-	if err != nil {
-		return nil, nil, err
+	// Require opt-in to use Zoekt ("expzoekt:yes" in search query).
+	var zoektRepos, searcherRepos []*repositoryRevisions
+	if query.BoolValue(searchquery.FieldExpZoekt) {
+		var err error
+		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.repos)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		searcherRepos = args.repos
 	}
 
 	// Support expzoektonly:yes and expsearcheronly:yes in search query.
