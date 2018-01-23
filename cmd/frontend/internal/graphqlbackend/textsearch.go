@@ -610,6 +610,29 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		flattenedSize     int
 		overLimitCanceled bool // canceled because we were over the limit
 	)
+
+	// addMatches assumes the caller holds mu.
+	addMatches := func(matches []*fileMatch) {
+		if len(matches) > 0 {
+			sort.Slice(matches, func(i, j int) bool {
+				a, b := matches[i].uri, matches[j].uri
+				return a > b
+			})
+			unflattened = append(unflattened, matches)
+			flattenedSize += len(matches)
+
+			// Stop searching once we have found enough matches. This does
+			// lead to potentially unstable result ordering, but is worth
+			// it for the performance benefit.
+			if flattenedSize > int(args.query.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.query.FileMatchLimit)
+				overLimitCanceled = true
+				common.limitHit = true
+				cancel()
+			}
+		}
+	}
+
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.revs) >= 2 {
 			return nil, nil, errMultipleRevsNotSupported
@@ -637,23 +660,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 				tr.LazyPrintf("cancel due to error: %v", err)
 				cancel()
 			}
-			if len(matches) > 0 {
-				sort.Slice(matches, func(i, j int) bool {
-					a, b := matches[i].uri, matches[j].uri
-					return a > b
-				})
-				unflattened = append(unflattened, matches)
-				flattenedSize += len(matches)
-
-				// Stop searching once we have found enough matches. This does
-				// lead to potentially unstable result ordering, but is worth
-				// it for the performance benefit.
-				if flattenedSize > int(args.query.FileMatchLimit) {
-					tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.query.FileMatchLimit)
-					overLimitCanceled = true
-					cancel()
-				}
-			}
+			addMatches(matches)
 		}(*repoRev)
 	}
 
@@ -671,14 +678,10 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		}
 		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr
+			tr.LazyPrintf("cancel indexed search due to error: %v", err)
+			cancel()
 		}
-		if len(matches) > 0 {
-			sort.Slice(matches, func(i, j int) bool {
-				a, b := matches[i].uri, matches[j].uri
-				return a > b
-			})
-			unflattened = append(unflattened, matches)
-		}
+		addMatches(matches)
 	}()
 
 	wg.Wait()
