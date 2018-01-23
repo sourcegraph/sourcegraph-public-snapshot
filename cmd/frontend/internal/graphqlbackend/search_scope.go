@@ -17,20 +17,20 @@ func (s searchScope) Value() string        { return s.value }
 func (s searchScope) Description() *string { return s.description }
 
 var (
-	searchScopesList []searchScope
+	searchScopesList []*searchScope
 )
 
 func init() {
-	searchScopesList = make([]searchScope, len(conf.Get().SearchScopes))
+	searchScopesList = make([]*searchScope, len(conf.Get().SearchScopes))
 	for i, s := range conf.Get().SearchScopes {
 		if s.Id != "" {
 			searchScopesList[i].id = &s.Id
 			searchScopesList[i].description = &s.Description
 		}
-		searchScopesList[i] = searchScope{name: s.Name, value: s.Value}
+		searchScopesList[i] = &searchScope{name: s.Name, value: s.Value}
 	}
 }
 
-func (r *schemaResolver) SearchScopes() []searchScope {
+func (r *schemaResolver) SearchScopes() []*searchScope {
 	return searchScopesList
 }
