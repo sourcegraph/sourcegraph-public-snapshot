@@ -336,8 +336,13 @@ type SearchResultsStats {
 union SearchSuggestion = Repository | File
 
 type SearchScope {
+    # A unique identifier for the search scope.
+    # If set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value.
+    id: String
     name: String!
     value: String!
+    # A description for this search scope, which will appear on the scoped search page.
+    description: String
 }
 
 # A search-related alert message.

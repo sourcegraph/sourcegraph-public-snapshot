@@ -13,6 +13,7 @@ import { RepoBrowser } from './repo/RepoBrowser'
 import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
 import { SavedQueriesPage } from './search/SavedQueries'
+import { ScopePage } from './search/ScopePage'
 import { SearchPage } from './search/SearchPage'
 import { SearchResults } from './search/SearchResults'
 import { SettingsArea } from './settings/SettingsArea'
@@ -113,6 +114,11 @@ export const routes: LayoutRouteProps[] = [
         component: canListAllRepositories ? RepoBrowser : ErrorNotSupportedPage,
         exact: true,
         forceNarrowWidth: true,
+    },
+    {
+        path: '/search/scope/:id',
+        component: ScopePage,
+        exact: true,
     },
     {
         path: '/api/console',

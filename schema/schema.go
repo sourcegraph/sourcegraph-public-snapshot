@@ -128,8 +128,10 @@ type SearchSavedQueries struct {
 
 // SearchScope
 type SearchScope struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+	Description string `json:"description,omitempty"`
+	Id          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Value       string `json:"value"`
 }
 
 // Settings Configuration settings for users and organizations on Sourcegraph Server.

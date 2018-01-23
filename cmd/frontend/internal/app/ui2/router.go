@@ -25,26 +25,26 @@ import (
 )
 
 const (
-	routeHome          = "home"
-	routeSearch        = "search"
-	routeSearchBadge   = "search-badge"
-	routeSearchQueries = "search-queries"
-	routeComment       = "comment"
-	routeOpen          = "open"
-	routeRepo          = "repo"
-	routeRepoSettings  = "repo-settings"
-	routeThreads       = "threads"
-	routeTree          = "tree"
-	routeBlob          = "blob"
-	routeSignIn        = "sign-in"
-	routeSignUp        = "sign-up"
-	routeOrganizations = "org"
-	routeSettings      = "settings"
-	routeSiteAdmin     = "site-admin"
-	routePasswordReset = "password-reset"
-	routeBrowseRepos   = "browse"
-	routeAPIConsole    = "api-console"
-
+	routeHome           = "home"
+	routeSearch         = "search"
+	routeSearchBadge    = "search-badge"
+	routeSearchQueries  = "search-queries"
+	routeComment        = "comment"
+	routeOpen           = "open"
+	routeRepo           = "repo"
+	routeRepoSettings   = "repo-settings"
+	routeThreads        = "threads"
+	routeTree           = "tree"
+	routeBlob           = "blob"
+	routeSignIn         = "sign-in"
+	routeSignUp         = "sign-up"
+	routeOrganizations  = "org"
+	routeSettings       = "settings"
+	routeSiteAdmin      = "site-admin"
+	routePasswordReset  = "password-reset"
+	routeBrowseRepos    = "browse"
+	routeAPIConsole     = "api-console"
+	routeSearchScope    = "scope"
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
@@ -108,6 +108,7 @@ func newRouter() *mux.Router {
 	r.Path("/browse").Methods("GET").Name(routeBrowseRepos)
 	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
+	r.Path("/search/scope/{scope}").Methods("GET").Name(routeSearchScope)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -155,6 +156,7 @@ func initRouter() {
 	router.Get(routeBrowseRepos).Handler(handler(serveBasicPageString("Browse repositories - Sourcegraph")))
 	router.Get(routeAPIConsole).Handler(handler(serveBasicPageString("API explorer - Sourcegraph")))
 	router.Get(routeRepoSettings).Handler(handler(serveBasicPageString("Repository settings - Sourcegraph")))
+	router.Get(routeSearchScope).Handler(handler(serveBasicPageString("Search scope - Sourcegraph")))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {

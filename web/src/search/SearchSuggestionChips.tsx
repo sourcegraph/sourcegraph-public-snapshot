@@ -160,10 +160,6 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
     private getScopes(): ISearchScope[] {
         const allScopes: ISearchScope[] = []
 
-        if (this.state.remoteScopes) {
-            allScopes.push(...this.state.remoteScopes)
-        }
-
         if (this.state.configuredScopes) {
             allScopes.push(...this.state.configuredScopes)
         }

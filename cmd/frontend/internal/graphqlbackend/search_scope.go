@@ -5,24 +5,32 @@ import (
 )
 
 type searchScope struct {
-	JName  string `json:"name"`
-	JValue string `json:"value"`
+	id          *string
+	name        string
+	value       string
+	description *string
 }
 
-func (s searchScope) Name() string  { return s.JName }
-func (s searchScope) Value() string { return s.JValue }
+func (s searchScope) ID() *string          { return s.id }
+func (s searchScope) Name() string         { return s.name }
+func (s searchScope) Value() string        { return s.value }
+func (s searchScope) Description() *string { return s.description }
 
 var (
-	searchScopesList []*searchScope
+	searchScopesList []searchScope
 )
 
 func init() {
-	searchScopesList = make([]*searchScope, len(conf.Get().SearchScopes))
+	searchScopesList = make([]searchScope, len(conf.Get().SearchScopes))
 	for i, s := range conf.Get().SearchScopes {
-		searchScopesList[i] = &searchScope{JName: s.Name, JValue: s.Value}
+		if s.Id != "" {
+			searchScopesList[i].id = &s.Id
+			searchScopesList[i].description = &s.Description
+		}
+		searchScopesList[i] = searchScope{name: s.Name, value: s.Value}
 	}
 }
 
-func (r *schemaResolver) SearchScopes() []*searchScope {
+func (r *schemaResolver) SearchScopes() []searchScope {
 	return searchScopesList
 }

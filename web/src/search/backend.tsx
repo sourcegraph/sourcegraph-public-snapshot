@@ -166,6 +166,7 @@ export function fetchSearchScopes(): Observable<GQL.ISearchScope[]> {
             searchScopes {
                 name
                 value
+                description
             }
         }
     `).pipe(

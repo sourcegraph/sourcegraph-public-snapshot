@@ -70,16 +70,6 @@ func generateConfigFile(path string) (configJSON string, err error) {
 		AuthProvider:     "builtin",
 		UpdateChannel:    strptr("release"),
 		MaxReposToSearch: 50,
-		Settings: &schema.Settings{
-			SearchScopes: []schema.SearchScope{
-				{Name: "Test code", Value: "file:(test|spec)"},
-				{Name: "Non-test files", Value: "-file:(test|spec)"},
-				{Name: "JSON files", Value: `file:\.json$`},
-				{Name: "Text documents", Value: `file:\.(txt|md)$`},
-				{Name: "Non-vendor code", Value: "-file:vendor/ -file:node_modules/"},
-				{Name: "Vendored code", Value: "file:(vendor|node_modules)/"},
-			},
-		},
 	}
 
 	data, err := json.MarshalIndent(defaultSiteConfig, "", "  ")
