@@ -188,7 +188,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 		return nil, nil
 	}
 
-	repo, err := db.Repos.GetByURI(ctx, api.RepoURI(args.URI))
+	repo, err := backend.Repos.GetByURI(ctx, api.RepoURI(args.URI))
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil

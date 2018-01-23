@@ -80,15 +80,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                         tap(err => {
                                             switch (err.code) {
                                                 case ERREPOSEEOTHER:
-                                                    const externalHostURL = new URL(
-                                                        (err as RepoSeeOtherError).redirectURL
-                                                    )
-                                                    const redirectURL = new URL(window.location.href)
-                                                    // Preserve the path of the current URL and redirect to the repo on the external host.
-                                                    redirectURL.host = externalHostURL.host
-                                                    redirectURL.port = externalHostURL.port
-                                                    redirectURL.protocol = externalHostURL.protocol
-                                                    window.location.href = redirectURL.toString()
+                                                    ;(err as RepoSeeOtherError).doRedirect()
                                                 case EREPONOTFOUND:
                                                     // Display 404 to the user and do not retry
                                                     this.setState({ loading: false, error: 'repo-not-found' })

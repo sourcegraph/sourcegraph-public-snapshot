@@ -15,7 +15,7 @@ import { parseBrowserRepoURL } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchRepository } from './backend'
+import { ERREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
@@ -78,6 +78,9 @@ export class RepoContainer extends React.Component<Props, State> {
                         fetchRepository({ repoPath }).pipe(
                             catchError(error => {
                                 console.error(error)
+                                if (error.code === ERREPOSEEOTHER) {
+                                    ;(error as RepoSeeOtherError).doRedirect()
+                                }
                                 this.setState({ loading: false, error: error.message })
                                 return []
                             })
