@@ -218,7 +218,10 @@ func TestRepos_TryInsertNewBatch(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+
+	defer func() {
+		insertBatchSize = 1000
+	}()
 
 	reposToInsert := []insertRepo{{
 		uri:         "myrepo1",
@@ -230,30 +233,40 @@ func TestRepos_TryInsertNewBatch(t *testing.T) {
 		description: "",
 		fork:        false,
 		enabled:     true,
+	}, {
+		uri:         "myrepo3",
+		description: "",
+		fork:        false,
+		enabled:     true,
 	}}
 
-	for _, expRP := range reposToInsert {
-		if _, err := Repos.GetByURI(ctx, expRP.uri); err != ErrRepoNotFound {
-			if err == nil {
-				t.Fatalf("repo %s already present", expRP.uri)
-			} else {
-				t.Fatal(err)
+	for _, batchSize := range []int{1, 2, 3, 4} {
+		insertBatchSize = batchSize
+		ctx := testContext()
+
+		for _, expRP := range reposToInsert {
+			if _, err := Repos.GetByURI(ctx, expRP.uri); err != ErrRepoNotFound {
+				if err == nil {
+					t.Fatalf("repo %s already present", expRP.uri)
+				} else {
+					t.Fatal(err)
+				}
 			}
 		}
-	}
 
-	if err := Repos.TryInsertNewBatch(ctx, reposToInsert); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, expRP := range reposToInsert {
-		rp, err := Repos.GetByURI(ctx, expRP.uri)
-		if err != nil {
+		if err := Repos.TryInsertNewBatch(ctx, reposToInsert); err != nil {
 			t.Fatal(err)
 		}
 
-		if rp.URI != expRP.uri {
-			t.Errorf("rp.URI: %s != %s", rp.URI, expRP.uri)
+		for _, expRP := range reposToInsert {
+			rp, err := Repos.GetByURI(ctx, expRP.uri)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if rp.URI != expRP.uri {
+				t.Errorf("rp.URI: %s != %s", rp.URI, expRP.uri)
+			}
 		}
 	}
 }

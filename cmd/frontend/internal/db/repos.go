@@ -540,8 +540,22 @@ type insertRepo struct {
 	enabled     bool
 }
 
+var insertBatchSize = 1000
+
 func (s *repos) TryInsertNewBatch(ctx context.Context, repos []insertRepo) error {
-	return s.tryInsertNewBatch(ctx, repos)
+	if len(repos) < insertBatchSize {
+		return s.tryInsertNewBatch(ctx, repos)
+	}
+	for i := 0; i+insertBatchSize <= len(repos); i += insertBatchSize {
+		if err := s.tryInsertNewBatch(ctx, repos[i:i+insertBatchSize]); err != nil {
+			return err
+		}
+	}
+	remainder := len(repos) % insertBatchSize
+	if remainder != 0 {
+		return s.tryInsertNewBatch(ctx, repos[len(repos)-remainder:])
+	}
+	return nil
 }
 
 func (s *repos) tryInsertNewBatch(ctx context.Context, repos []insertRepo) error {
