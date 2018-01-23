@@ -164,6 +164,10 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
             allScopes.push(...this.state.configuredScopes)
         }
 
+        if (this.state.remoteScopes) {
+            allScopes.push(...this.state.remoteScopes)
+        }
+
         allScopes.push(...this.getScopesForCurrentRoute())
         return allScopes
     }
