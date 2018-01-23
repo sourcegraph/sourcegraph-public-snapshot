@@ -604,10 +604,11 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 	}
 
 	var (
-		wg            sync.WaitGroup
-		mu            sync.Mutex
-		unflattened   [][]*fileMatch
-		flattenedSize int
+		wg                sync.WaitGroup
+		mu                sync.Mutex
+		unflattened       [][]*fileMatch
+		flattenedSize     int
+		overLimitCanceled bool // canceled because we were over the limit
 	)
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.revs) >= 2 {
@@ -649,6 +650,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 				// it for the performance benefit.
 				if flattenedSize > int(args.query.FileMatchLimit) {
 					tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.query.FileMatchLimit)
+					overLimitCanceled = true
 					cancel()
 				}
 			}
@@ -667,7 +669,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 				common.searched = append(common.searched, repo.repo.URI)
 			}
 		}
-		if searchErr != nil && err == nil {
+		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr
 		}
 		if len(matches) > 0 {
