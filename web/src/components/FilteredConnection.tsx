@@ -347,19 +347,33 @@ export class FilteredConnection<
                 (typeof this.state.connection.totalCount === 'number' &&
                     this.state.connection.nodes.length < this.state.connection.totalCount))
 
+        let totalCount: number | null = null
+        if (this.state.connection) {
+            if (typeof this.state.connection.totalCount === 'number') {
+                totalCount = this.state.connection.totalCount
+            } else if (
+                this.state.connection.nodes.length < this.state.first ||
+                (this.state.connection.nodes.length === this.state.first &&
+                    this.state.connection.pageInfo &&
+                    typeof this.state.connection.pageInfo.hasNextPage === 'boolean' &&
+                    !this.state.connection.pageInfo.hasNextPage)
+            ) {
+                totalCount = this.state.connection.nodes.length
+            }
+        }
+
         let summary: React.ReactFragment | undefined
         if (
             !this.state.loading &&
             this.state.connection &&
             (!this.props.noSummaryIfAllNodesVisible || this.state.connection.nodes.length === 0 || hasNextPage)
         ) {
-            if (typeof this.state.connection.totalCount === 'number' && this.state.connection.totalCount > 0) {
+            if (totalCount !== null && totalCount > 0) {
                 summary = (
                     <p className="filtered-connection__summary">
                         <small>
                             <span>
-                                {this.state.connection.totalCount}{' '}
-                                {pluralize(this.props.noun, this.state.connection.totalCount, this.props.pluralNoun)}{' '}
+                                {totalCount} {pluralize(this.props.noun, totalCount, this.props.pluralNoun)}{' '}
                                 {this.state.connectionQuery ? (
                                     <span>
                                         {' '}
@@ -369,14 +383,14 @@ export class FilteredConnection<
                                     'total'
                                 )}
                             </span>{' '}
-                            {this.state.connection.nodes.length < this.state.connection.totalCount &&
+                            {this.state.connection.nodes.length < totalCount &&
                                 `(showing first ${this.state.connection.nodes.length})`}
                         </small>
                     </p>
                 )
             } else if (this.state.connection.pageInfo && this.state.connection.pageInfo.hasNextPage) {
                 // No total count to show, but it will show a 'Show more' button.
-            } else {
+            } else if (totalCount === 0) {
                 summary = (
                     <p className="filtered-connection__summary">
                         <small>

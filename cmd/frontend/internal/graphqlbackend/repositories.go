@@ -11,13 +11,17 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 func (r *siteResolver) Repositories(args *struct {
 	connectionArgs
-	Query    *string
-	Enabled  bool
-	Disabled bool
+	Query           *string
+	Enabled         bool
+	Disabled        bool
+	Cloned          bool
+	CloneInProgress bool
+	NotCloned       bool
 }) (*repositoryConnectionResolver, error) {
 	opt := db.ReposListOptions{
 		Enabled:  args.Enabled,
@@ -28,12 +32,18 @@ func (r *siteResolver) Repositories(args *struct {
 	}
 	args.connectionArgs.set(&opt.LimitOffset)
 	return &repositoryConnectionResolver{
-		opt: opt,
+		opt:             opt,
+		cloned:          args.Cloned,
+		cloneInProgress: args.CloneInProgress,
+		notCloned:       args.NotCloned,
 	}, nil
 }
 
 type repositoryConnectionResolver struct {
-	opt db.ReposListOptions
+	opt             db.ReposListOptions
+	cloned          bool
+	cloneInProgress bool
+	notCloned       bool
 
 	// cache results because they is used by multiple fields
 	once  sync.Once
@@ -44,8 +54,43 @@ type repositoryConnectionResolver struct {
 func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
+		if opt2.LimitOffset != nil {
+			tmp := *opt2.LimitOffset
+			opt2.LimitOffset = &tmp
+		}
 		opt2.Limit++ // so we can detect if there is a next page
-		r.repos, r.err = backend.Repos.List(ctx, opt2)
+		for {
+			repos, err := backend.Repos.List(ctx, opt2)
+			if err != nil {
+				r.err = err
+				return
+			}
+			reposFromDB := len(repos)
+
+			if !r.cloned || !r.cloneInProgress || !r.notCloned {
+				// Query gitserver to filter by repository clone status.
+				keepRepos := repos[:0]
+				for _, repo := range repos {
+					info, err := gitserver.DefaultClient.RepoInfo(ctx, repo.URI)
+					if err != nil {
+						r.err = err
+						return
+					}
+					if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
+						keepRepos = append(keepRepos, repo)
+					}
+				}
+				repos = keepRepos
+			}
+			r.repos = append(r.repos, repos...)
+			if len(r.repos) >= opt2.Limit {
+				break
+			}
+			if reposFromDB < opt2.Limit {
+				break
+			}
+			opt2.Offset += opt2.Limit
+		}
 	})
 	return r.repos, r.err
 }
@@ -70,6 +115,11 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *str
 }) (countptr *int32, err error) {
 	i32ptr := func(v int32) *int32 {
 		return &v
+	}
+
+	if !r.cloned || !r.cloneInProgress || !r.notCloned {
+		// Don't support counting if filtering by clone status.
+		return nil, nil
 	}
 
 	if args.Precise {

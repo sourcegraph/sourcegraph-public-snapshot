@@ -166,6 +166,24 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
             tooltip: 'Show access-disabled repositories only',
             args: { enabled: false, disabled: true },
         },
+        {
+            label: 'Cloned',
+            id: 'cloned',
+            tooltip: 'Show cloned repositories only',
+            args: { cloned: true, cloneInProgress: false, notCloned: false },
+        },
+        {
+            label: 'Cloning',
+            id: 'cloning',
+            tooltip: 'Show repositories that are currently being cloned',
+            args: { cloned: false, cloneInProgress: true, notCloned: false },
+        },
+        {
+            label: 'Not cloned',
+            id: 'not-cloned',
+            tooltip: 'Only show repositories that have not been cloned yet',
+            args: { cloned: false, cloneInProgress: false, notCloned: true },
+        },
     ]
 
     private repositoryUpdates = new Subject<void>()
