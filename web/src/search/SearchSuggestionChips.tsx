@@ -78,14 +78,14 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                         console.error(err)
                         return []
                     }),
-                    map((remoteScopes: GQL.ISearchScope[]) => ({ remoteScopes }))
+                    map((remoteScopes: GQL.ISearchScope[]) => ({ remoteScopes })),
                 )
                 .subscribe(
-                    newState =>
+                    newState => {
                         this.setState(newState, () => {
                             this.saveToLocalStorage()
-                        }),
-                    err => console.error(err)
+                        })
+                    }, err => console.error(err)
                 )
         )
     }
@@ -162,6 +162,10 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
 
         if (this.state.configuredScopes) {
             allScopes.push(...this.state.configuredScopes)
+        }
+
+        if (this.state.remoteScopes) {
+            allScopes.push(...this.state.remoteScopes)
         }
 
         allScopes.push(...this.getScopesForCurrentRoute())
