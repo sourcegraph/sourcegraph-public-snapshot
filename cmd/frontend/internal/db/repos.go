@@ -2,6 +2,7 @@ package db
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -517,27 +518,82 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 	return err
 }
 
+const tryInsertNewSQL = `WITH UPSERT AS (
+	UPDATE repo SET uri=$1 WHERE uri=$1 RETURNING uri
+)
+INSERT INTO repo(uri, description, fork, language, enabled) (
+	SELECT $1 AS uri, $2 AS description, $3 AS fork, '' as language, $4 AS enabled
+	WHERE $1 NOT IN (SELECT uri FROM upsert)
+)`
+
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
 func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description string, fork, enabled bool) error {
-	// Avoid logspam in postgres for violating the constraint. So we first
-	// check if the repo exists.
-	if _, err := s.GetByURI(ctx, uri); err == nil {
+	_, err := globalDB.ExecContext(ctx, tryInsertNewSQL, uri, description, fork, enabled)
+	return err
+}
+
+type insertRepo struct {
+	uri         api.RepoURI
+	description string
+	fork        bool
+	enabled     bool
+}
+
+func (s *repos) TryInsertNewBatch(ctx context.Context, repos []insertRepo) error {
+	return s.tryInsertNewBatch(ctx, repos)
+}
+
+func (s *repos) tryInsertNewBatch(ctx context.Context, repos []insertRepo) error {
+	if len(repos) == 0 {
 		return nil
-	} else if err != ErrRepoNotFound {
-		return err
 	}
 
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, language, enabled) VALUES ($1, $2, $3, '', $4)", uri, description, fork, enabled)
+	tx, err := globalDB.Begin()
 	if err != nil {
-		if isPQErrorUniqueViolation(err) {
-			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {
-				return nil // repo with given uri already exists
-			}
-		}
 		return err
 	}
-	return nil
+	return func(tx *sql.Tx) (err error) {
+		defer func() {
+			if err != nil {
+				tx.Rollback()
+			} else {
+				commitErr := tx.Commit()
+				if err != nil {
+					err = commitErr
+				}
+			}
+		}()
+
+		if _, err := tx.ExecContext(ctx, "CREATE TEMPORARY TABLE bulk_repos(uri citext, description text, fork boolean, enabled boolean)"); err != nil {
+			return err
+		}
+
+		stmt, err := tx.PrepareContext(ctx, pq.CopyIn("bulk_repos", "uri", "description", "fork", "enabled"))
+		if err != nil {
+			return err
+		}
+		for _, rp := range repos {
+			if _, err := stmt.Exec(rp.uri, rp.description, rp.fork, rp.enabled); err != nil {
+				return err
+			}
+		}
+		if _, err := stmt.Exec(); err != nil {
+			return err
+		}
+		stmt.Close()
+
+		_, err = tx.ExecContext(ctx, `INSERT INTO repo(uri, description, fork, enabled, language) (SELECT bulk_repos.*, '' AS language FROM bulk_repos WHERE URI IS NOT NULL AND URI NOT IN (SELECT uri FROM repo))`)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.ExecContext(ctx, `DROP TABLE bulk_repos`)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(tx)
 }
 
 func timestampEqual(a, b *time.Time) bool {

@@ -169,3 +169,91 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 }
+
+func TestRepos_TryInsertNew(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	if _, err := Repos.GetByURI(ctx, "myrepo"); err != ErrRepoNotFound {
+		if err == nil {
+			t.Fatal("myrepo already present")
+		} else {
+			t.Fatal(err)
+		}
+	}
+
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true); err != nil {
+		t.Fatal(err)
+	}
+
+	rp, err := Repos.GetByURI(ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if rp.URI != "myrepo" {
+		t.Fatal("rp.URI: %s != %s", rp.URI, "myrepo")
+	}
+
+	if err := Repos.TryInsertNew(ctx, "myrepo", "asdfasdf", false, true); err != nil {
+		t.Fatal(err)
+	}
+
+	rp, err = Repos.GetByURI(ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if rp.URI != "myrepo" {
+		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
+	}
+	if rp.Description != "" {
+		t.Fatalf("rp.URI: %q != %q", rp.Description, "")
+	}
+}
+
+func TestRepos_TryInsertNewBatch(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	reposToInsert := []insertRepo{{
+		uri:         "myrepo1",
+		description: "",
+		fork:        false,
+		enabled:     true,
+	}, {
+		uri:         "myrepo2",
+		description: "",
+		fork:        false,
+		enabled:     true,
+	}}
+
+	for _, expRP := range reposToInsert {
+		if _, err := Repos.GetByURI(ctx, expRP.uri); err != ErrRepoNotFound {
+			if err == nil {
+				t.Fatalf("repo %s already present", expRP.uri)
+			} else {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	if err := Repos.TryInsertNewBatch(ctx, reposToInsert); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, expRP := range reposToInsert {
+		rp, err := Repos.GetByURI(ctx, expRP.uri)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if rp.URI != expRP.uri {
+			t.Errorf("rp.URI: %s != %s", rp.URI, expRP.uri)
+		}
+	}
+}
