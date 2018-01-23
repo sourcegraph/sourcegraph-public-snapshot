@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -607,6 +608,9 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 
 	// Support expzoektonly:yes and expsearcheronly:yes in search query.
 	index, _ := query.StringValues(searchquery.FieldIndex)
+	if len(index) == 0 && os.Getenv("SEARCH10_INDEX_DEFAULT") != "" && len(args.repos) > 10 {
+		index = []string{os.Getenv("SEARCH10_INDEX_DEFAULT")}
+	}
 	if len(index) > 0 {
 		index := index[len(index)-1]
 		switch index {
