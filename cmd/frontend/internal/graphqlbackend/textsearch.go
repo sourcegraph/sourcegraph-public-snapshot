@@ -621,6 +621,9 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.repo, rev, args.query)
 			mu.Lock()
 			defer mu.Unlock()
+			if ctx.Err() == nil {
+				common.searched = append(common.searched, repoRev.repo.URI)
+			}
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
 				if ctx.Err() != nil {
 					// Our request has been canceled, we can just ignore
@@ -659,6 +662,11 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		matches, searchErr := zoektSearchHEAD(ctx, args.query, zoektRepos)
 		mu.Lock()
 		defer mu.Unlock()
+		if ctx.Err() == nil {
+			for _, repo := range zoektRepos {
+				common.searched = append(common.searched, repo.repo.URI)
+			}
+		}
 		if searchErr != nil && err == nil {
 			err = searchErr
 		}
