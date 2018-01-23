@@ -75,13 +75,12 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
+	insertRepoOps := make([]api.InsertRepoOp, len(whitelist))
 	for i, entry := range whitelist {
-		log15.Info("serveGitoliteUpdateRepos:add-repo-to-db", "ith", i, "total", len(whitelist))
-		uri := api.RepoURI(entry)
-		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, true)
-		if err != nil {
-			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)
-		}
+		insertRepoOps[i] = api.InsertRepoOp{URI: api.RepoURI(entry), Enabled: true}
+	}
+	if err := backend.Repos.TryInsertNewBatch(r.Context(), insertRepoOps); err != nil {
+		log15.Warn("TryInsertNewBatch failed", "numRepos", len(insertRepoOps), "err", err)
 	}
 
 	for i, entry := range whitelist {

@@ -86,9 +86,9 @@ func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description s
 	return db.Repos.TryInsertNew(ctx, uri, description, fork, enabled)
 }
 
-// func (s *repos) TryInsertNewBatch(ctx context.Context, repos api.NewRepoOp) error {
-// 	return db.Repos.TryInsertNewBatch(ctx, uri, description, fork, enabled)
-// }
+func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
+	return db.Repos.TryInsertNewBatch(ctx, repos)
+}
 
 func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*types.Repo, err error) {
 	if Mocks.Repos.List != nil {
