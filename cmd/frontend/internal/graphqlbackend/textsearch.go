@@ -21,6 +21,9 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
@@ -31,7 +34,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/zoekt"
+	zoektpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/zoekt"
 )
 
 var (
@@ -436,26 +439,23 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	}
 
 	// Tell zoekt which repos to search
-	var restrict []zoekt.SearchRequestRestriction
+	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool)}
 	for _, repoRev := range repos {
-		// TODO Repo is a substring match, so we can match more
-		restrict = append(restrict, zoekt.SearchRequestRestriction{
-			Repo:     string(repoRev.repo.URI),
-			Branches: []string{""}, // "" matches all indexed branches
-		})
+		repoSet.Set[string(repoRev.repo.URI)] = true
 	}
 
-	if len(restrict) == 0 {
+	if len(repoSet.Set) == 0 {
 		return nil, nil
 	}
 
-	req := zoekt.SearchRequest{
-		Query:    strings.Join(q, " "),
-		Restrict: restrict,
+	queryExceptRepos, err := zoektquery.Parse(strings.Join(q, " "))
+	if err != nil {
+		return nil, err
 	}
+	finalQuery := zoektquery.NewAnd(repoSet, queryExceptRepos)
 
 	traceName, ctx := traceutil.TraceName(ctx, "zoekt.Search")
-	tr := trace.New(traceName, fmt.Sprintf("%d %+v", len(req.Restrict), req.Query))
+	tr := trace.New(traceName, fmt.Sprintf("%d %+v", len(repoSet.Set), finalQuery.String()))
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)
@@ -467,12 +467,41 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		tr.Finish()
 	}()
 
-	resp, err := zoektCl.Search(ctx, req)
+	// Optimize search options for either a very common term or an infrequent term (or small corpus).
+	//
+	// Taken from https://github.com/google/zoekt/blob/e95175fe96696f532431e6f31832a1922458e214/web/server.go#L221-L244.
+	num := int(query.FileMatchLimit)
+	searchOpts := zoekt.SearchOptions{
+		MaxWallTime: 10 * time.Second,
+	}
+	searchOpts.SetDefaults()
+	ctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+time.Second)
+	defer cancel()
+	if result, err := zoektCl.Search(ctx, finalQuery, &zoekt.SearchOptions{EstimateDocCount: true}); err != nil {
+		return nil, err
+	} else if numdocs := result.ShardFilesConsidered; numdocs > 10000 {
+		// If the search touches many shards and many files, we
+		// have to limit the number of matches.  This setting
+		// is based on the number of documents eligible after
+		// considering reponames, so large repos (both
+		// android, chromium are about 500k files) aren't
+		// covered fairly.
+
+		searchOpts.ShardMaxMatchCount = num*2 + (2*num)/(numdocs/1000)
+		searchOpts.ShardMaxImportantMatch = num/50 + num/(numdocs/1000)
+	} else {
+		// Virtually no limits for a small corpus; important
+		// matches are just as expensive as normal matches.
+		n := numdocs + num*25
+		searchOpts.ShardMaxImportantMatch = n
+		searchOpts.ShardMaxMatchCount = n
+		searchOpts.TotalMaxMatchCount = n
+		searchOpts.TotalMaxImportantMatch = n
+	}
+
+	resp, err := zoektCl.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
 		return nil, err
-	}
-	if resp.Error != nil {
-		return nil, errors.Errorf("zoekt search failed: %s", *resp.Error)
 	}
 
 	if len(resp.Files) == 0 {
@@ -481,14 +510,14 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 
 	matches := make([]*fileMatch, len(resp.Files))
 	for i, file := range resp.Files {
-		lines := make([]*lineMatch, len(file.Lines))
-		for j, l := range file.Lines {
-			offsets := make([][]int32, len(l.Matches))
-			for k, m := range l.Matches {
-				offsets[k] = []int32{int32(m.Start), int32(m.End - m.Start)}
+		lines := make([]*lineMatch, len(file.LineMatches))
+		for j, l := range file.LineMatches {
+			offsets := make([][]int32, len(l.LineFragments))
+			for k, m := range l.LineFragments {
+				offsets[k] = []int32{int32(m.LineOffset), int32(m.MatchLength)}
 			}
 			lines[j] = &lineMatch{
-				JPreview:          l.Line,
+				JPreview:          string(l.Line),
 				JLineNumber:       int32(l.LineNumber - 1),
 				JOffsetAndLengths: offsets,
 			}
@@ -496,7 +525,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		matches[i] = &fileMatch{
 			JPath:        file.FileName,
 			JLineMatches: lines,
-			uri:          fmt.Sprintf("git://%s#%s", file.Repo, file.FileName),
+			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
 		}
 	}
 	return matches, nil
@@ -524,15 +553,12 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 	if err != nil {
 		return nil, nil, err
 	}
-	if resp.Error != nil {
-		return nil, nil, errors.Errorf("zoekt list failed: %s", *resp.Error)
-	}
 
 	// Everything currently in indexed is at HEAD. Filter out repos which
 	// zoekt hasn't indexed yet.
 	set := map[string]bool{}
 	for _, repo := range resp.Repos {
-		set[repo.Name] = true
+		set[repo.Repository.Name] = true
 	}
 	head := indexed
 	indexed = indexed[:0]
@@ -739,8 +765,8 @@ func flattenFileMatches(unflattened [][]*fileMatch, fileMatchLimit int) []*fileM
 	return flattened
 }
 
-var zoektCl *zoekt.Client
-var zoektCache *zoekt.Cache
+var zoektCl zoekt.Searcher
+var zoektCache *zoektpkg.Cache
 var searcherURLs *endpoint.Map
 
 func init() {
@@ -756,7 +782,7 @@ func init() {
 
 	zoektHost := env.Get("ZOEKT_HOST", "", "host:port of the zoekt instance")
 	if zoektHost != "" {
-		zoektCl = &zoekt.Client{Host: zoektHost}
-		zoektCache = &zoekt.Cache{Client: zoektCl}
+		zoektCl = zoektrpc.Client(zoektHost)
+		zoektCache = &zoektpkg.Cache{Client: zoektCl}
 	}
 }
