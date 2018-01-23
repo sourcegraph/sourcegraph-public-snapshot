@@ -588,11 +588,11 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 	zoektOnly := query.BoolValue(searchquery.FieldExpZoektOnly)
 	searcherOnly := query.BoolValue(searchquery.FieldExpSearcherOnly)
 	if zoektOnly {
-		tr.LazyPrintf("expzoektonly, ignoring %d searcher-only repos (%+v)", len(searcherRepos), searcherRepos)
+		tr.LazyPrintf("expzoektonly, ignoring %d searcher-only repos", len(searcherRepos))
 		searcherRepos = nil
 	}
 	if searcherOnly {
-		tr.LazyPrintf("expsearcheronly, bypassing zoekt for %d zoekt-indexed repos (%+v)", len(zoektRepos), zoektRepos)
+		tr.LazyPrintf("expsearcheronly, bypassing zoekt for %d zoekt-indexed repos", len(zoektRepos))
 		searcherRepos = append(searcherRepos, zoektRepos...)
 		zoektRepos = nil
 	}
