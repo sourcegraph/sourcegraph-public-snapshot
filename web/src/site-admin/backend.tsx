@@ -102,6 +102,9 @@ interface RepositoryArgs {
     query?: string
     enabled?: boolean
     disabled?: boolean
+    cloned?: boolean
+    cloneInProgress?: boolean
+    notCloned?: boolean
 }
 
 /**
@@ -110,12 +113,28 @@ interface RepositoryArgs {
  * @return Observable that emits the list of repositories
  */
 export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
-    args = { enabled: true, disabled: false, ...args } // apply defaults
+    args = { enabled: true, disabled: false, cloned: true, cloneInProgress: true, notCloned: true, ...args } // apply defaults
     return queryGraphQL(
         gql`
-            query Repositories($first: Int, $query: String, $enabled: Boolean, $disabled: Boolean) {
+            query Repositories(
+                $first: Int
+                $query: String
+                $enabled: Boolean
+                $disabled: Boolean
+                $cloned: Boolean
+                $cloneInProgress: Boolean
+                $notCloned: Boolean
+            ) {
                 site {
-                    repositories(first: $first, query: $query, enabled: $enabled, disabled: $disabled) {
+                    repositories(
+                        first: $first
+                        query: $query
+                        enabled: $enabled
+                        disabled: $disabled
+                        cloned: $cloned
+                        cloneInProgress: $cloneInProgress
+                        notCloned: $notCloned
+                    ) {
                         nodes {
                             id
                             uri

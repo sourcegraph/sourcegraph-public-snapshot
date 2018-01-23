@@ -1063,6 +1063,12 @@ type Site implements ConfigurationSubject {
         enabled: Boolean = true
         # Include disabled repositories.
         disabled: Boolean = false
+        # Include cloned repositories.
+        cloned: Boolean = true
+        # Include repositories that are currently being cloned.
+        cloneInProgress: Boolean = true
+        # Include repositories that are not yet cloned and for which cloning is not in progress.
+        notCloned: Boolean = true
     ): RepositoryConnection!
     # List all users.
     users(
