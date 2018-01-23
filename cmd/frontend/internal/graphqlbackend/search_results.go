@@ -34,6 +34,7 @@ import (
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
 	limitHit bool          // whether the limit on results was hit
+	searched []api.RepoURI // repos that were searched
 	cloning  []api.RepoURI // repos that could not be searched because they were still being cloned
 	missing  []api.RepoURI // repos that could not be searched because they do not exist
 
@@ -45,6 +46,13 @@ type searchResultsCommon struct {
 
 func (c *searchResultsCommon) LimitHit() bool {
 	return c.limitHit
+}
+
+func (c *searchResultsCommon) RepositoriesSearched() []string {
+	if c.searched == nil {
+		return []string{}
+	}
+	return repoURIsToStrings(c.searched)
 }
 
 func (c *searchResultsCommon) Cloning() []string {
@@ -84,6 +92,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 			}
 		}
 	}
+	appendUnique(&c.searched, other.searched)
 	appendUnique(&c.cloning, other.cloning)
 	appendUnique(&c.missing, other.missing)
 	appendUnique(&c.timedout, other.timedout)
