@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -197,9 +198,10 @@ func TestPkgs_ListPackages(t *testing.T) {
 		5: []lspext.PackageInformation{{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
 	}
 
+	createdAt := time.Now()
 	for repo, pks := range repoToPkgs {
 		if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id) VALUES ($1)`, repo); err != nil {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id, created_at) VALUES ($1, $2)`, repo, createdAt); err != nil {
 				return err
 			}
 			if err := Pkgs.update(ctx, tx, repo, "go", pks); err != nil {
