@@ -76,12 +76,17 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	for i, entry := range whitelist {
-		log15.Info("serveGitoliteUpdateRepos:update-repo", "ith", i, "total", len(whitelist))
+		log15.Info("serveGitoliteUpdateRepos:add-repo-to-db", "ith", i, "total", len(whitelist))
 		uri := api.RepoURI(entry)
 		err := backend.Repos.TryInsertNew(r.Context(), uri, "", false, true)
 		if err != nil {
 			log15.Warn("TryInsertNew failed on repos-update", "uri", uri, "err", err)
 		}
+	}
+
+	for i, entry := range whitelist {
+		uri := api.RepoURI(entry)
+		log15.Info("serveGitoliteUpdateRepos:clone-or-update-repo", "ith", i, "total", len(whitelist))
 		repo, err := backend.Repos.GetByURI(r.Context(), uri)
 		if err != nil {
 			log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
