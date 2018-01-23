@@ -40,8 +40,8 @@ interface Props {
 interface State {
     results: GQL.IFileMatch[]
     alert: GQL.ISearchAlert | null
+    elapsedMilliseconds?: number
     loading: boolean
-    searchDuration?: number
     error?: Error
     limitHit: boolean
     cloning: string[]
@@ -85,7 +85,6 @@ export class SearchResults extends React.Component<Props, State> {
                             code_search: { query_data: queryTelemetryData(searchOptions) },
                         })
 
-                        const start = Date.now()
                         return searchText(searchOptions).pipe(
                             tap(
                                 res =>
@@ -113,18 +112,17 @@ export class SearchResults extends React.Component<Props, State> {
                                 ...res,
                                 error: undefined,
                                 loading: false,
-                                searchDuration: Date.now() - start,
                             })),
                             catchError(error => [
                                 {
                                     results: [],
                                     alert: null,
+                                    elapsedMilliseconds: undefined,
                                     missing: [],
                                     cloning: [],
                                     limitHit: false,
                                     error,
                                     loading: false,
-                                    searchDuration: undefined,
                                     didSave: false,
                                     showModal: false,
                                 },
@@ -148,13 +146,13 @@ export class SearchResults extends React.Component<Props, State> {
                     map(() => ({
                         results: [],
                         alert: null,
+                        elapsedMilliseconds: undefined,
                         missing: [],
                         cloning: [],
                         timedout: [],
                         limitHit: false,
                         error: undefined,
                         loading: true,
-                        searchDuration: undefined,
                         didSave: false,
                         showModal: false,
                     }))
@@ -277,6 +275,9 @@ export class SearchResults extends React.Component<Props, State> {
                                 <span className="search-results__header-stats">
                                     {numberWithCommas(totalResults)}
                                     {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)}
+                                    {typeof this.state.elapsedMilliseconds === 'number' && (
+                                        <> in {(this.state.elapsedMilliseconds / 1000).toFixed(2)} seconds</>
+                                    )}
                                 </span>
                             )}
                             {!this.state.didSave &&

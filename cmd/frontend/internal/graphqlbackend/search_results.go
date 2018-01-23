@@ -93,6 +93,7 @@ type searchResults struct {
 	results []*searchResult
 	searchResultsCommon
 	alert *searchAlert
+	start time.Time // when the results started being computed
 }
 
 func (sr *searchResults) Results() []*searchResult {
@@ -118,6 +119,10 @@ func (sr *searchResults) ApproximateResultCount() string {
 }
 
 func (sr *searchResults) Alert() *searchAlert { return sr.alert }
+
+func (sr *searchResults) ElapsedMilliseconds() int32 {
+	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
+}
 
 // blameFileMatchCache caches Repos.GetByURI, Repos.ResolveRev, and RepoVCS.Open
 // operations.
@@ -436,6 +441,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		tr.Finish()
 	}()
 
+	start := time.Now()
+
 	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -538,7 +545,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	// Run all search funcs.
-	var results searchResults
+	results := searchResults{start: start}
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)
 		if err != nil {

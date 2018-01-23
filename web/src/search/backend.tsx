@@ -89,6 +89,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                                 }
                             }
                         }
+                        elapsedMilliseconds
                     }
                 }
             }
