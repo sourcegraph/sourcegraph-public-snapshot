@@ -533,16 +533,9 @@ func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description s
 	return err
 }
 
-type insertRepo struct {
-	uri         api.RepoURI
-	description string
-	fork        bool
-	enabled     bool
-}
-
 var insertBatchSize = 1000
 
-func (s *repos) TryInsertNewBatch(ctx context.Context, repos []insertRepo) error {
+func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
 	if len(repos) < insertBatchSize {
 		return s.tryInsertNewBatch(ctx, repos)
 	}
@@ -558,7 +551,7 @@ func (s *repos) TryInsertNewBatch(ctx context.Context, repos []insertRepo) error
 	return nil
 }
 
-func (s *repos) tryInsertNewBatch(ctx context.Context, repos []insertRepo) error {
+func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
 	if len(repos) == 0 {
 		return nil
 	}
@@ -588,7 +581,7 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []insertRepo) error
 			return err
 		}
 		for _, rp := range repos {
-			if _, err := stmt.Exec(rp.uri, rp.description, rp.fork, rp.enabled); err != nil {
+			if _, err := stmt.Exec(rp.URI, rp.Description, rp.Fork, rp.Enabled); err != nil {
 				return err
 			}
 		}
