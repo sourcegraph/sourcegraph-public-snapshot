@@ -550,7 +550,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
 // searchRepos searches a set of repos for a pattern.
-func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResult, resCommon *searchResultsCommon, err error) {
+func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResult, common *searchResultsCommon, err error) {
 	if mockSearchRepos != nil {
 		return mockSearchRepos(args)
 	}
@@ -584,10 +584,16 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		searcherRepos = args.repos
 	}
 
+	common = &searchResultsCommon{}
+
 	// Support expzoektonly:yes and expsearcheronly:yes in search query.
 	zoektOnly := query.BoolValue(searchquery.FieldExpZoektOnly)
 	searcherOnly := query.BoolValue(searchquery.FieldExpSearcherOnly)
 	if zoektOnly {
+		common.missing = make([]api.RepoURI, len(searcherRepos))
+		for i, r := range searcherRepos {
+			common.missing[i] = r.repo.URI
+		}
 		tr.LazyPrintf("expzoektonly, ignoring %d searcher-only repos", len(searcherRepos))
 		searcherRepos = nil
 	}
@@ -602,7 +608,6 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		mu            sync.Mutex
 		unflattened   [][]*fileMatch
 		flattenedSize int
-		common        = &searchResultsCommon{}
 	)
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.revs) >= 2 {
