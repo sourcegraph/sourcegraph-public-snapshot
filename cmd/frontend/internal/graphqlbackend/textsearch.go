@@ -598,35 +598,40 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Require opt-in to use Zoekt ("expzoekt:yes" in search query).
-	var zoektRepos, searcherRepos []*repositoryRevisions
-	if query.BoolValue(searchquery.FieldExpZoekt) {
-		var err error
-		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.repos)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		searcherRepos = args.repos
+	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.repos)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	common = &searchResultsCommon{}
 
 	// Support expzoektonly:yes and expsearcheronly:yes in search query.
-	zoektOnly := query.BoolValue(searchquery.FieldExpZoektOnly)
-	searcherOnly := query.BoolValue(searchquery.FieldExpSearcherOnly)
-	if zoektOnly {
-		common.missing = make([]api.RepoURI, len(searcherRepos))
-		for i, r := range searcherRepos {
-			common.missing[i] = r.repo.URI
+	index, _ := query.StringValues(searchquery.FieldIndex)
+	if len(index) > 0 {
+		index := index[len(index)-1]
+		switch index {
+		case "yes", "y", "t", "true":
+			// default
+			if zoektCache != nil {
+				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
+			}
+		case "only", "o", "force":
+			if zoektCache == nil {
+				return nil, nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
+			}
+			common.missing = make([]api.RepoURI, len(searcherRepos))
+			for i, r := range searcherRepos {
+				common.missing[i] = r.repo.URI
+			}
+			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
+			searcherRepos = nil
+		case "no", "n", "f", "false":
+			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
+			searcherRepos = append(searcherRepos, zoektRepos...)
+			zoektRepos = nil
+		default:
+			return nil, nil, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
 		}
-		tr.LazyPrintf("expzoektonly, ignoring %d searcher-only repos", len(searcherRepos))
-		searcherRepos = nil
-	}
-	if searcherOnly {
-		tr.LazyPrintf("expsearcheronly, bypassing zoekt for %d zoekt-indexed repos", len(zoektRepos))
-		searcherRepos = append(searcherRepos, zoektRepos...)
-		zoektRepos = nil
 	}
 
 	var (
