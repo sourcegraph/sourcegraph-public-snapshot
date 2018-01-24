@@ -406,9 +406,9 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 	return nil
 }
 
-func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) (fm []*fileMatch, err error) {
+func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) (fm []*fileMatch, limitHit bool, err error) {
 	if len(repos) == 0 {
-		return nil, nil
+		return nil, false, nil
 	}
 
 	// Convert sourcegraph pattern into zoekt query
@@ -430,7 +430,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	// TODO PathPatternsAreCaseSensitive
 	// TODO whitespace in file path patterns?
 	if !query.PathPatternsAreRegExps {
-		return nil, errors.New("zoekt only supports regex path patterns")
+		return nil, false, errors.New("zoekt only supports regex path patterns")
 	}
 	for _, p := range query.IncludePatterns {
 		q = append(q, "f:"+p)
@@ -446,12 +446,12 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	}
 
 	if len(repoSet.Set) == 0 {
-		return nil, nil
+		return nil, false, nil
 	}
 
 	queryExceptRepos, err := zoektquery.Parse(strings.Join(q, " "))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	finalQuery := zoektquery.NewAnd(repoSet, queryExceptRepos)
 
@@ -479,8 +479,8 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	ctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+time.Second)
 	defer cancel()
 	if result, err := zoektCl.Search(ctx, finalQuery, &zoekt.SearchOptions{EstimateDocCount: true}); err != nil {
-		return nil, err
-	} else if numdocs := result.ShardFilesConsidered; numdocs > 10000 {
+		return nil, false, err
+	} else if numdocs := result.ShardFilesConsidered; numdocs > 5000 {
 		// If the search touches many shards and many files, we
 		// have to limit the number of matches.  This setting
 		// is based on the number of documents eligible after
@@ -488,12 +488,12 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		// android, chromium are about 500k files) aren't
 		// covered fairly.
 
-		searchOpts.ShardMaxMatchCount = num*2 + (2*num)/(numdocs/1000)
-		searchOpts.ShardMaxImportantMatch = num/50 + num/(numdocs/1000)
+		searchOpts.ShardMaxMatchCount = 2*num + (2*num)/(numdocs/2000)
+		searchOpts.ShardMaxImportantMatch = num/50 + num/(numdocs/2000)
 	} else {
 		// Virtually no limits for a small corpus; important
 		// matches are just as expensive as normal matches.
-		n := numdocs + num*25
+		n := numdocs + num*5
 		searchOpts.ShardMaxImportantMatch = n
 		searchOpts.ShardMaxMatchCount = n
 		searchOpts.TotalMaxMatchCount = n
@@ -502,17 +502,29 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 
 	resp, err := zoektCl.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if len(resp.Files) == 0 {
-		return nil, nil
+		return nil, false, nil
 	}
+	limitHit = resp.FilesSkipped > 0
 
+	const maxLineMatches = 25
+	const maxLineFragmentMatches = 3
+	if len(resp.Files) > int(query.FileMatchLimit) {
+		resp.Files = resp.Files[:int(query.FileMatchLimit)]
+	}
 	matches := make([]*fileMatch, len(resp.Files))
 	for i, file := range resp.Files {
+		if len(file.LineMatches) > maxLineMatches {
+			file.LineMatches = file.LineMatches[:maxLineMatches]
+		}
 		lines := make([]*lineMatch, len(file.LineMatches))
 		for j, l := range file.LineMatches {
+			if len(l.LineFragments) > maxLineFragmentMatches {
+				l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
+			}
 			offsets := make([][]int32, len(l.LineFragments))
 			for k, m := range l.LineFragments {
 				offsets[k] = []int32{int32(m.LineOffset), int32(m.MatchLength)}
@@ -529,7 +541,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
 		}
 	}
-	return matches, nil
+	return matches, limitHit, nil
 }
 
 func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (indexed, unindexed []*repositoryRevisions, err error) {
@@ -705,13 +717,16 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
-		matches, searchErr := zoektSearchHEAD(ctx, args.query, zoektRepos)
+		matches, limitHit, searchErr := zoektSearchHEAD(ctx, args.query, zoektRepos)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
 			for _, repo := range zoektRepos {
 				common.searched = append(common.searched, repo.repo.URI)
 			}
+		}
+		if limitHit {
+			common.limitHit = true
 		}
 		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr
