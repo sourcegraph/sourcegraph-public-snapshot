@@ -580,7 +580,13 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp)
 		if err != nil {
 			return err
 		}
+		seenURIs := make(map[api.RepoURI]struct{})
 		for _, rp := range repos {
+			if _, seen := seenURIs[rp.URI]; seen {
+				continue
+			}
+			seenURIs[rp.URI] = struct{}{}
+
 			if _, err := stmt.Exec(rp.URI, rp.Description, rp.Fork, rp.Enabled); err != nil {
 				return err
 			}

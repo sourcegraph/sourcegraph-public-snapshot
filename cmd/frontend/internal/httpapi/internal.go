@@ -73,6 +73,8 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
+	log15.Info("serveGitoliteUpdateRepos", "totalCount", len(list), "whitelistCount", len(whitelist))
+
 	insertRepoOps := make([]api.InsertRepoOp, len(whitelist))
 	for i, entry := range whitelist {
 		insertRepoOps[i] = api.InsertRepoOp{URI: api.RepoURI(entry), Enabled: true}
