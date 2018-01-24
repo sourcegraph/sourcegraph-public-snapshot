@@ -82,6 +82,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                             switch (err.code) {
                                                 case ERREPOSEEOTHER:
                                                     redirectToExternalHost((err as RepoSeeOtherError).redirectURL)
+                                                    this.setState({ error: undefined })
+                                                    return
                                                 case EREPONOTFOUND:
                                                     // Display 404 to the user and do not retry
                                                     this.setState({ loading: false, error: 'repo-not-found' })

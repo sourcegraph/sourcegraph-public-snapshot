@@ -80,6 +80,8 @@ export class RepoContainer extends React.Component<Props, State> {
                                 console.error(error)
                                 if (error.code === ERREPOSEEOTHER) {
                                     redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
+                                    this.setState({ error: undefined })
+                                    return []
                                 }
                                 this.setState({ loading: false, error: error.message })
                                 return []

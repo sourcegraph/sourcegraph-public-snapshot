@@ -309,5 +309,5 @@ export function redirectToExternalHost(externalRedirectURL: string): void {
     redirectURL.host = externalHostURL.host
     redirectURL.port = externalHostURL.port
     redirectURL.protocol = externalHostURL.protocol
-    window.location.href = redirectURL.toString()
+    window.location.replace(redirectURL.toString())
 }
