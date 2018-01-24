@@ -1118,6 +1118,10 @@ type Site implements ConfigurationSubject {
         cloneInProgress: Boolean = true
         # Include repositories that are not yet cloned and for which cloning is not in progress.
         notCloned: Boolean = true
+        # Include repositories that have a text search index.
+        indexed: Boolean = true
+        # Include repositories that do not have a text search index.
+        notIndexed: Boolean = true
     ): RepositoryConnection!
     # List all users.
     users(

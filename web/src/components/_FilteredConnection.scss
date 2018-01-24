@@ -15,14 +15,13 @@
 .filtered-connection-filter-control {
     display: flex;
     align-items: center;
-    font-size: 13px;
+    flex-wrap: wrap;
+    font-size: 12px;
 
-    // Avoid a gap between the bottom left corner of the <input> above us and our top left border corner.
-    //
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    padding-left: 2px;
-
+    margin: 0 -0.25rem;
     &__item {
+        margin: 0.25rem;
+        flex: 0 1 auto;
         display: flex;
         align-items: center;
         white-space: nowrap;
@@ -48,15 +47,12 @@
         cursor: pointer;
 
         padding: 0.25rem 0.5rem;
-
         border: 1px solid $color-border;
-        border-top-width: 0;
-        border-left-width: 0;
 
         &::before {
             padding-right: 0.325rem;
             vertical-align: 1.5px;
-            font-size: 12px;
+            font-size: 10px;
         }
     }
 

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +23,8 @@ func (r *siteResolver) Repositories(args *struct {
 	Cloned          bool
 	CloneInProgress bool
 	NotCloned       bool
+	Indexed         bool
+	NotIndexed      bool
 }) (*repositoryConnectionResolver, error) {
 	opt := db.ReposListOptions{
 		Enabled:  args.Enabled,
@@ -36,6 +39,8 @@ func (r *siteResolver) Repositories(args *struct {
 		cloned:          args.Cloned,
 		cloneInProgress: args.CloneInProgress,
 		notCloned:       args.NotCloned,
+		indexed:         args.Indexed,
+		notIndexed:      args.NotIndexed,
 	}, nil
 }
 
@@ -44,6 +49,8 @@ type repositoryConnectionResolver struct {
 	cloned          bool
 	cloneInProgress bool
 	notCloned       bool
+	indexed         bool
+	notIndexed      bool
 
 	// cache results because they is used by multiple fields
 	once  sync.Once
@@ -59,6 +66,26 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			opt2.LimitOffset = &tmp
 		}
 		opt2.Limit++ // so we can detect if there is a next page
+
+		var indexed map[api.RepoURI]bool
+		isIndexed := func(repo api.RepoURI) bool {
+			if zoektCache == nil {
+				return true // do not need index
+			}
+			return indexed[api.RepoURI(strings.ToLower(string(repo)))]
+		}
+		if !r.indexed || !r.notIndexed {
+			indexedRepos, err := zoektCache.ListAll(ctx)
+			if err != nil {
+				r.err = err
+				return
+			}
+			indexed = make(map[api.RepoURI]bool, len(indexedRepos.Repos))
+			for _, repo := range indexedRepos.Repos {
+				indexed[api.RepoURI(strings.ToLower(string(repo.Repository.Name)))] = true
+			}
+		}
+
 		for {
 			repos, err := backend.Repos.List(ctx, opt2)
 			if err != nil {
@@ -82,6 +109,18 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				}
 				repos = keepRepos
 			}
+
+			if !r.indexed || !r.notIndexed {
+				keepRepos := repos[:0]
+				for _, repo := range repos {
+					indexed := isIndexed(repo.URI)
+					if (r.indexed && indexed) || (r.notIndexed && !indexed) {
+						keepRepos = append(keepRepos, repo)
+					}
+				}
+				repos = keepRepos
+			}
+
 			r.repos = append(r.repos, repos...)
 			if len(r.repos) >= opt2.Limit {
 				break
@@ -119,6 +158,10 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *str
 
 	if !r.cloned || !r.cloneInProgress || !r.notCloned {
 		// Don't support counting if filtering by clone status.
+		return nil, nil
+	}
+	if !r.indexed || !r.notIndexed {
+		// Don't support counting if filtering by index status.
 		return nil, nil
 	}
 

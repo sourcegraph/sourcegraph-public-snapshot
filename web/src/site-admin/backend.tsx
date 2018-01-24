@@ -105,6 +105,8 @@ interface RepositoryArgs {
     cloned?: boolean
     cloneInProgress?: boolean
     notCloned?: boolean
+    indexed?: boolean
+    notIndexed?: boolean
 }
 
 /**
@@ -113,7 +115,16 @@ interface RepositoryArgs {
  * @return Observable that emits the list of repositories
  */
 export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
-    args = { enabled: true, disabled: false, cloned: true, cloneInProgress: true, notCloned: true, ...args } // apply defaults
+    args = {
+        enabled: true,
+        disabled: false,
+        cloned: true,
+        cloneInProgress: true,
+        notCloned: true,
+        indexed: true,
+        notIndexed: true,
+        ...args,
+    } // apply defaults
     return queryGraphQL(
         gql`
             query Repositories(
@@ -124,6 +135,8 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
                 $cloned: Boolean
                 $cloneInProgress: Boolean
                 $notCloned: Boolean
+                $indexed: Boolean
+                $notIndexed: Boolean
             ) {
                 site {
                     repositories(
@@ -134,6 +147,8 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
                         cloned: $cloned
                         cloneInProgress: $cloneInProgress
                         notCloned: $notCloned
+                        indexed: $indexed
+                        notIndexed: $notIndexed
                     ) {
                         nodes {
                             id
