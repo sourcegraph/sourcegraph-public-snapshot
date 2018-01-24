@@ -151,7 +151,11 @@ export class QueryInput extends React.Component<Props, State> {
                             })),
                             catchError((err: Error) => {
                                 console.error(err)
-                                return []
+                                this.setState({ loading: false })
+                                // HACK: if we catchError before 100ms, then the loader will display over us.
+                                // This is not a good fix.
+                                setTimeout(() => this.setState({ loading: false }), 120)
+                                return [{}]
                             }),
                             publishReplay(),
                             refCount()
@@ -172,6 +176,7 @@ export class QueryInput extends React.Component<Props, State> {
                         this.setState(state as State)
                     },
                     err => {
+                        this.setState({ loading: false })
                         console.error(err)
                     }
                 )
@@ -360,7 +365,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     private onInputBlur: React.FocusEventHandler<HTMLInputElement> = event => {
         this.suggestionsHidden.next()
-        this.setState({ inputFocused: false, hideSuggestions: true })
+        this.setState({ inputFocused: false, loading: false, hideSuggestions: true })
     }
 
     private onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
@@ -369,7 +374,7 @@ export class QueryInput extends React.Component<Props, State> {
         switch (event.key) {
             case 'Escape': {
                 this.suggestionsHidden.next()
-                this.setState({ hideSuggestions: true })
+                this.setState({ loading: false, hideSuggestions: true })
                 break
             }
             case 'ArrowDown': {
