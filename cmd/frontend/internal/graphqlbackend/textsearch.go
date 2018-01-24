@@ -623,6 +623,11 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		common.repos[i] = repo.repo.URI
 	}
 
+	if args.query.Pattern == "" {
+		// Empty query isn't an error, but it has no results.
+		return nil, common, nil
+	}
+
 	// Support expzoektonly:yes and expsearcheronly:yes in search query.
 	index, _ := query.StringValues(searchquery.FieldIndex)
 	if len(index) == 0 && os.Getenv("SEARCH10_INDEX_DEFAULT") != "" && len(args.repos) > 10 {
@@ -638,7 +643,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 			}
 		case "only", "o", "force":
 			if zoektCache == nil {
-				return nil, nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
+				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
 			if os.Getenv("SEARCH_UNINDEXED_NOMISSING") == "" {
 				common.missing = make([]api.RepoURI, len(searcherRepos))
@@ -653,7 +658,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 			searcherRepos = append(searcherRepos, zoektRepos...)
 			zoektRepos = nil
 		default:
-			return nil, nil, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
+			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
 		}
 	}
 
@@ -689,7 +694,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.revs) >= 2 {
-			return nil, nil, errMultipleRevsNotSupported
+			return nil, common, errMultipleRevsNotSupported
 		}
 
 		wg.Add(1)
@@ -743,7 +748,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 
 	wg.Wait()
 	if err != nil {
-		return nil, nil, err
+		return nil, common, err
 	}
 
 	flattened := flattenFileMatches(unflattened, int(args.query.FileMatchLimit))

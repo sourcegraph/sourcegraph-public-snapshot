@@ -127,41 +127,40 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		defer cancel()
 		if len(r.query.Values(searchquery.FieldDefault)) > 0 {
 			results, err := r.doResults(ctx, "file") // only "file" result type
-			if err != nil {
-				if err == context.DeadlineExceeded {
-					return nil, nil // don't log as error below
-				}
-				return nil, err
-			}
-			if len(results.results) > *args.First {
-				results.results = results.results[:*args.First]
+			if err == context.DeadlineExceeded {
+				err = nil // don't log as error below
 			}
 			var suggestions []*searchResultResolver
-			for i, res := range results.results {
-				// TODO(sqs): should parallelize, or reuse data fetched elsewhere
-				commit, err := getCommitSpec(ctx, res.fileMatch)
-				if err != nil {
-					if err == context.DeadlineExceeded {
-						err = nil // don't log as error below
+			if results != nil {
+				if len(results.results) > *args.First {
+					results.results = results.results[:*args.First]
+				}
+				for i, res := range results.results {
+					// TODO(sqs): should parallelize, or reuse data fetched elsewhere
+					commit, err := getCommitSpec(ctx, res.fileMatch)
+					if err != nil {
+						if err == context.DeadlineExceeded {
+							err = nil // don't log as error below
+						}
+						return nil, err
 					}
-					return nil, err
-				}
 
-				path := res.fileMatch.JPath
-				fileResolver := &fileResolver{
-					path: path,
-					name: path,
-					commit: &gitCommitResolver{
-						// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
-						// (which would make it slow). This gitCommitResolver will return empty
-						// values for all other fields.
-						repoID: commit.repo,
-					},
-					stat: createFileInfo(path, false),
+					path := res.fileMatch.JPath
+					fileResolver := &fileResolver{
+						path: path,
+						name: path,
+						commit: &gitCommitResolver{
+							// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
+							// (which would make it slow). This gitCommitResolver will return empty
+							// values for all other fields.
+							repoID: commit.repo,
+						},
+						stat: createFileInfo(path, false),
+					}
+					suggestions = append(suggestions, newSearchResultResolver(fileResolver, len(results.results)-i))
 				}
-				suggestions = append(suggestions, newSearchResultResolver(fileResolver, len(results.results)-i))
 			}
-			return suggestions, nil
+			return suggestions, err
 		}
 		return nil, nil
 	}
