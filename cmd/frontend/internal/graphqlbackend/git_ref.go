@@ -104,6 +104,7 @@ func (r *gitRefResolver) Prefix() string      { return gitRefPrefix(r.name) }
 func (r *gitRefResolver) Type() string        { return gitRefType(r.name) }
 func (r *gitRefResolver) Target() interface {
 	OID(context.Context) (gitObjectID, error)
+	AbbreviatedOID(context.Context) (string, error)
 } {
 	if r.target != "" {
 		return &gitObject{oid: r.target}

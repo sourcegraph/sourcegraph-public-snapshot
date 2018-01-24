@@ -184,6 +184,12 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
             tooltip: 'Only show repositories that have not been cloned yet',
             args: { cloned: false, cloneInProgress: false, notCloned: true },
         },
+        {
+            label: 'Needs index',
+            id: 'needs-index',
+            tooltip: 'Show repositories that need to be indexed',
+            args: { indexed: false },
+        },
     ]
 
     private repositoryUpdates = new Subject<void>()

@@ -29,6 +29,16 @@ export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
                 </li>
                 <li className="sidebar__item">
                     <NavLink
+                        to={`/${props.repo.uri}/-/settings/index`}
+                        exact={true}
+                        className="sidebar__item-link"
+                        activeClassName="sidebar__item--active"
+                    >
+                        Indexing
+                    </NavLink>
+                </li>
+                <li className="sidebar__item">
+                    <NavLink
                         to={`/${props.repo.uri}/-/settings/mirror`}
                         exact={true}
                         className="sidebar__item-link"
