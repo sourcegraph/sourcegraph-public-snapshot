@@ -711,6 +711,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		if ctx.Err() == nil {
 			for _, repo := range zoektRepos {
 				common.searched = append(common.searched, repo.repo.URI)
+				common.indexed = append(common.indexed, repo.repo.URI)
 			}
 		}
 		if limitHit {

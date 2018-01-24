@@ -330,6 +330,8 @@ type SearchResults {
     # because a timeout or error occurred while performing the search, or because the result limit was already
     # reached.
     repositoriesSearched: [String!]!
+    # Indexed repositories searched. This is a subset of repositoriesSearched.
+    indexedRepositoriesSearched: [String!]!
     # Repositories that are busy cloning onto gitserver.
     cloning: [String!]!
     # Repositories or commits that do not exist.

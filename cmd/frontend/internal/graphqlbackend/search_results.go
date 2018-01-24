@@ -36,6 +36,7 @@ type searchResultsCommon struct {
 	limitHit bool          // whether the limit on results was hit
 	repos    []api.RepoURI // repos that were matched by the repo-related filters
 	searched []api.RepoURI // repos that were searched
+	indexed  []api.RepoURI // repos that were searched using an index
 	cloning  []api.RepoURI // repos that could not be searched because they were still being cloned
 	missing  []api.RepoURI // repos that could not be searched because they do not exist
 
@@ -61,6 +62,13 @@ func (c *searchResultsCommon) RepositoriesSearched() []string {
 		return []string{}
 	}
 	return repoURIsToStrings(c.searched)
+}
+
+func (c *searchResultsCommon) IndexedRepositoriesSearched() []string {
+	if c.indexed == nil {
+		return []string{}
+	}
+	return repoURIsToStrings(c.indexed)
 }
 
 func (c *searchResultsCommon) Cloning() []string {
@@ -102,6 +110,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	}
 	appendUnique(&c.repos, other.repos)
 	appendUnique(&c.searched, other.searched)
+	appendUnique(&c.indexed, other.indexed)
 	appendUnique(&c.cloning, other.cloning)
 	appendUnique(&c.missing, other.missing)
 	appendUnique(&c.timedout, other.timedout)
