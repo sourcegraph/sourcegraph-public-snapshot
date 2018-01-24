@@ -468,14 +468,32 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		tr.Finish()
 	}()
 
+	// If we're only searching a small number of repositories, return more comprehensive results. This is
+	// arbitrary.
+	k := 1
+	switch {
+	case len(repos) <= 500:
+		k = 2
+	case len(repos) <= 100:
+		k = 3
+	case len(repos) <= 50:
+		k = 5
+	case len(repos) <= 25:
+		k = 8
+	case len(repos) <= 10:
+		k = 10
+	case len(repos) <= 5:
+		k = 100
+	}
+
 	searchOpts := zoekt.SearchOptions{
 		MaxWallTime:            10 * time.Second,
-		ShardMaxMatchCount:     int(query.FileMatchLimit) * 2,
-		TotalMaxMatchCount:     int(query.FileMatchLimit) * 2,
-		ShardMaxImportantMatch: 100,
-		TotalMaxImportantMatch: int(query.FileMatchLimit) * 2,
+		ShardMaxMatchCount:     100 * k,
+		TotalMaxMatchCount:     100 * k,
+		ShardMaxImportantMatch: 15 * k,
+		TotalMaxImportantMatch: 25 * k,
 	}
-	ctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+time.Second)
+	ctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+3*time.Second)
 	defer cancel()
 
 	resp, err := zoektCl.Search(ctx, finalQuery, &searchOpts)
