@@ -415,6 +415,7 @@ func (m *methodType) NumCalls() (n uint) {
 func (s *service) call(server *Server, sending *sync.Mutex, pending *pending, mtype *methodType, req *Request, argv, replyv reflect.Value, codec ServerCodec) {
 	if s == cancelService {
 		pending.Cancel(argv.Interface().(uint64))
+		server.sendResponse(sending, req, nil, codec, context.Canceled.Error())
 		server.freeRequest(req)
 		return
 	}

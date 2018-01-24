@@ -340,7 +340,7 @@ func (client *Client) Call(ctx context.Context, serviceMethod string, args inter
 		}
 		client.mutex.Unlock()
 
-		// Cancel on the running request on the server
+		// Cancel running request on the server
 		if seq != 0 && ok {
 			client.Go(cancelServiceMethod, seq, nil, make(chan *Call, 1))
 		}
