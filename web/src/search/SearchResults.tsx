@@ -53,6 +53,8 @@ interface State {
 }
 
 export class SearchResults extends React.Component<Props, State> {
+    private static SHOW_MISSING = false
+
     public state: State = {
         results: [],
         alert: null,
@@ -299,9 +301,10 @@ export class SearchResults extends React.Component<Props, State> {
                         showDotComMarketing && <ServerBanner />}
                 </div>
                 {this.state.results.length > 0 && <div className="search-results__header-border-bottom" />}
-                {this.state.missing.map((repoPath, i) => (
-                    <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
-                ))}
+                {SearchResults.SHOW_MISSING &&
+                    this.state.missing.map((repoPath, i) => (
+                        <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
+                    ))}
                 {this.state.loading && <Loader className="icon-inline" />}
                 {this.state.results.map((result, i) => {
                     const prevTotal = totalMatches
