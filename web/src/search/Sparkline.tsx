@@ -48,7 +48,7 @@ export class Sparkline extends React.PureComponent<Props, State> {
             .attr('stroke-width', 2)
             .attr('d', chartLine(data as any) as any)
             .attr('width', width)
-            .attr('height', height)
+            .attr('height', height / 2)
             .attr('overflow', 'visible')
         svg
             .append('circle')
@@ -59,8 +59,13 @@ export class Sparkline extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { width, height } = this.props
+        const { width, data, height } = this.props
+        // To center the sparkline in the SVG we need to check if the data points are all zeros.
+        // If they are all zeros we need to calculate the midpoint otherwise we set the viewport min to be 1/4 the
+        // height so the sparkline is centered and has proper vertical padding.
+        const max = Math.max(...data)
+        const minY = max > 0 ? -height / 4 : height / 2
 
-        return <svg viewBox={`0 0 200 20`} width={width} height={height} ref={this.drawSparkline} />
+        return <svg viewBox={`0 ${minY} ${width} ${height}`} width={width} height={height} ref={this.drawSparkline} />
     }
 }
