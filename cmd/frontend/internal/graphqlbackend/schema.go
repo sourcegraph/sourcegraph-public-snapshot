@@ -616,6 +616,9 @@ type Repository implements Node {
     # The repository's default Git branch. If the repository is currently being cloned or is empty,
     # this field will be null.
     defaultBranch: String
+    # Information about the text search index for this repository, or null if text search indexing
+    # is not enabled or supported for this repository.
+    textSearchIndex: RepositoryTextSearchIndex
     # URL specifying where to view the repository at an external location.
     url: String
     # The type of code host that hosts this repository at its external url (e.g. GitHub, Phabricator).
@@ -667,6 +670,45 @@ type MirrorRepositoryInfo {
     updatedAt: String
 }
 
+# Information about a repository's text search index.
+type RepositoryTextSearchIndex {
+    # The indexed repository.
+    repository: Repository!
+    # The status of the text search index, if available.
+    status: RepositoryTextSearchIndexStatus
+    # Git refs in the repository that are configured for text search indexing.
+    refs: [RepositoryTextSearchIndexedRef!]!
+}
+
+# The status of a repository's text search index.
+type RepositoryTextSearchIndexStatus {
+    # The date that the index was last updated.
+    updatedAt: String!
+    # The byte size of the original content.
+    contentByteSize: Int!
+    # The number of files in the original content.
+    contentFilesCount: Int!
+    # The byte size of the index.
+    indexByteSize: Int!
+    # The number of index shards.
+    indexShardsCount: Int!
+}
+
+# A Git ref (usually a branch) in a repository that is configured to be indexed for text search.
+type RepositoryTextSearchIndexedRef {
+    # The Git ref (usually a branch) that is configured to be indexed for text search. To find the specific commit
+    # SHA that was indexed, use RepositoryTextSearchIndexedRef.indexedCommit; this field's ref target resolves to
+    # the current target, not the target at the time of indexing.
+    ref: GitRef!
+    # Whether a text search index exists for this ref.
+    indexed: Boolean!
+    # Whether the text search index is of the current commit for the Git ref. If false, the index is stale.
+    current: Boolean!
+    # The indexed Git commit (which may differ from the ref's current target if the index is out of date). If
+    # indexed is false, this field's value is null.
+    indexedCommit: GitObject
+}
+
 # A list of Git refs.
 type GitRefConnection {
     # A list of Git refs.
@@ -716,7 +758,10 @@ enum GitRefType {
 
 # A Git object.
 type GitObject {
+    # This object's OID.
     oid: GitObjectID!
+    # The abbreviated form of this object's OID.
+    abbreviatedOID: String!
 }
 
 # A Git revspec expression that (possibly) evaluates to a Git revision.
