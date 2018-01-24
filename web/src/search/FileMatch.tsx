@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
+import { displayRepoPath, splitPath } from '../components/Breadcrumb'
 import { CodeExcerpt } from '../components/CodeExcerpt'
 import { pluralize } from '../util/strings'
 import { toPrettyBlobURL } from '../util/url'
@@ -65,7 +65,16 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
         repoURI: repoPath,
     }))
 
-    const title: React.ReactChild = <RepoBreadcrumb repoPath={repoPath} rev={rev} filePath={filePath} />
+    const [fileBase, fileName] = splitPath(filePath)
+    const title: React.ReactChild = (
+        <>
+            <Link to={`/${repoPath}${rev ? `@${rev}` : ''}`}>{displayRepoPath(repoPath)}</Link> ›{' '}
+            <Link to={`/${repoPath}${rev ? `@${rev}` : ''}/-/blob/${filePath}`}>
+                {fileBase && `${fileBase}/`}
+                <strong>{fileName}</strong>
+            </Link>
+        </>
+    )
 
     const getChildren = (allMatches: boolean) => (
         <div className="file-match__list">
