@@ -58,7 +58,7 @@ export class UserSettingsEmailsPage extends React.Component<Props, State> {
 function fetchUserEmails(): Observable<GQL.IUserEmail[]> {
     return queryGraphQL(
         gql`
-            query CurrentUserEmails() {
+            query CurrentUserEmails {
                 currentUser {
                     emails {
                         email
@@ -66,7 +66,8 @@ function fetchUserEmails(): Observable<GQL.IUserEmail[]> {
                         verificationPending
                     }
                 }
-            }        `
+            }
+        `
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.currentUser || !data.currentUser.emails) {
