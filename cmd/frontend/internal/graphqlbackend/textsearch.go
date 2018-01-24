@@ -510,10 +510,21 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	}
 	limitHit = resp.FilesSkipped > 0
 
+	const maxLineMatches = 25
+	const maxLineFragmentMatches = 3
+	if len(resp.Files) > int(query.FileMatchLimit) {
+		resp.Files = resp.Files[:int(query.FileMatchLimit)]
+	}
 	matches := make([]*fileMatch, len(resp.Files))
 	for i, file := range resp.Files {
+		if len(file.LineMatches) > maxLineMatches {
+			file.LineMatches = file.LineMatches[:maxLineMatches]
+		}
 		lines := make([]*lineMatch, len(file.LineMatches))
 		for j, l := range file.LineMatches {
+			if len(l.LineFragments) > maxLineFragmentMatches {
+				l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
+			}
 			offsets := make([][]int32, len(l.LineFragments))
 			for k, m := range l.LineFragments {
 				offsets[k] = []int32{int32(m.LineOffset), int32(m.MatchLength)}
