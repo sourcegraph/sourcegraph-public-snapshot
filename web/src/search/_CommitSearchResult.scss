@@ -1,6 +1,7 @@
 .commit-search-result {
     &__title {
         display: flex;
+        align-items: center;
 
         .breadcrumb {
             flex: 0 0 auto;

@@ -3,9 +3,9 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { RepoFileLink } from '../components/RepoFileLink'
 import { fetchAllRepositoriesAndPollIfAnyCloning } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -17,7 +17,7 @@ export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) =
     <li key={repo.id} className="repo-browser__item">
         <div className="repo-browser__item-header">
             <Link to={`/${repo.uri}`} className="repo-browser__item-path">
-                <RepoBreadcrumb repoPath={repo.uri} disableLinks={true} />
+                <RepoFileLink repoPath={repo.uri} disableLinks={true} />
             </Link>
             {repo.mirrorInfo.cloneInProgress && (
                 <span className="repo-browser__item-cloning">

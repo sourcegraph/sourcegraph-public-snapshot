@@ -6,13 +6,13 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
-import { displayRepoPath, splitPath } from '../components/Breadcrumb'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArgs,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled, updateMirrorRepository } from './backend'

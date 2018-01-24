@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, queryGraphQL } from '../backend/graphql'
-import { displayRepoPath } from '../components/Breadcrumb'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
+import { displayRepoPath } from '../components/RepoFileLink'
 import { eventLogger } from '../tracking/eventLogger'
 
 function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
