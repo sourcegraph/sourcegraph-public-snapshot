@@ -34,6 +34,7 @@ import (
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
 	limitHit bool          // whether the limit on results was hit
+	repos    []api.RepoURI // repos that were matched by the repo-related filters
 	searched []api.RepoURI // repos that were searched
 	cloning  []api.RepoURI // repos that could not be searched because they were still being cloned
 	missing  []api.RepoURI // repos that could not be searched because they do not exist
@@ -46,6 +47,13 @@ type searchResultsCommon struct {
 
 func (c *searchResultsCommon) LimitHit() bool {
 	return c.limitHit
+}
+
+func (c *searchResultsCommon) Repositories() []string {
+	if c.repos == nil {
+		return []string{}
+	}
+	return repoURIsToStrings(c.repos)
 }
 
 func (c *searchResultsCommon) RepositoriesSearched() []string {
@@ -92,6 +100,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 			}
 		}
 	}
+	appendUnique(&c.repos, other.repos)
 	appendUnique(&c.searched, other.searched)
 	appendUnique(&c.cloning, other.cloning)
 	appendUnique(&c.missing, other.missing)
@@ -557,16 +566,18 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	results := searchResults{start: start}
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)
+		if results1 != nil {
+			results.results = append(results.results, results1...)
+			// TODO(sqs): combine diff and commit results that refer to the same underlying
+			// commit (and match on the commit's diff and message, respectively).
+		}
+		if common1 != nil {
+			results.searchResultsCommon.update(*common1)
+		}
 		if err != nil {
-			return nil, err
+			// Return partial results if an error occurs.
+			return &results, err
 		}
-		if results1 == nil && common1 == nil {
-			continue
-		}
-		results.results = append(results.results, results1...)
-		// TODO(sqs): combine diff and commit results that refer to the same underlying
-		// commit (and match on the commit's diff and message, respectively).
-		results.searchResultsCommon.update(*common1)
 	}
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results.results), results.searchResultsCommon.limitHit, len(results.searchResultsCommon.cloning), len(results.searchResultsCommon.missing), len(results.searchResultsCommon.timedout))
@@ -589,6 +600,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			results.alert.title = "No results found"
 		} else {
 			results.alert.title = "Only diff search results from last month are shown"
+		}
+	}
+	if results.alert == nil && args.query.Pattern == "" {
+		results.alert = &searchAlert{
+			title:       "Type a query",
+			description: "What do you want to search for?",
+			proposedQueries: []*searchQueryDescription{
+				{
+					description: "Files containing the string \"func\"",
+					query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " func"},
+				},
+				{
+					description: "Files containing the string \"open(\"",
+					query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " \"open(\""},
+				},
+			},
 		}
 	}
 	if len(missingRepoRevs) > 0 {
