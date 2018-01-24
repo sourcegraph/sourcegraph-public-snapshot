@@ -25,6 +25,7 @@ const (
 
 	// Temporary experimental fields:
 	FieldIndex = "index"
+	FieldMax   = "max" // maximum number of search results
 )
 
 var (
@@ -47,6 +48,7 @@ var (
 
 			// Experimental fields:
 			FieldIndex: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldMax:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 		},
 		FieldAliases: map[string]string{
 			"r":     FieldRepo,

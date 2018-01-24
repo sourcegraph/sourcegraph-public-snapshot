@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
+import { RepoFileLink } from '../components/RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 
 interface Props {
@@ -15,5 +15,5 @@ interface Props {
 }
 
 export const RepoSearchResult: React.StatelessComponent<Props> = (props: Props) => (
-    <ResultContainer collapsible={false} icon={props.icon} title={<RepoBreadcrumb repoPath={props.repoPath} />} />
+    <ResultContainer collapsible={false} icon={props.icon} title={<RepoFileLink repoPath={props.repoPath} />} />
 )

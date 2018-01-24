@@ -7,9 +7,9 @@ import { combineLatest } from 'rxjs/observable/combineLatest'
 import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { RepoFileLink } from '../components/RepoFileLink'
 import { SearchScope } from '../schema/settings.schema'
 import { fetchRepoGroups } from '../search/backend'
 import { submitSearch } from '../search/helpers'
@@ -143,7 +143,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                         <div key={i} className="scope-page__row">
                                             <Link to={`/${repo}`} className="scope-page__link">
                                                 <RepositoryIcon className="icon-inline scope-page__link-icon" />
-                                                <RepoBreadcrumb repoPath={repo} disableLinks={true} />
+                                                <RepoFileLink repoPath={repo} disableLinks={true} />
                                             </Link>
                                         </div>
                                     ))

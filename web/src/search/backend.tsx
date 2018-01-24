@@ -15,6 +15,8 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                 search(query: $query) {
                     results {
                         limitHit
+                        resultCount
+                        approximateResultCount
                         missing
                         cloning
                         timedout

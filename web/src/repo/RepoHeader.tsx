@@ -5,8 +5,8 @@ import * as React from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
 import { AnonymousSubscription, Subscription } from 'rxjs/Subscription'
-import { displayRepoPath, splitPath } from '../components/Breadcrumb'
 import { PopoverButton } from '../components/PopoverButton'
+import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { RepositoriesPopover } from './RepositoriesPopover'
 
 /**

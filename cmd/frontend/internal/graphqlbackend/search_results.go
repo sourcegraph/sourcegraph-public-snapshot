@@ -119,8 +119,9 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 type searchResults struct {
 	results []*searchResult
 	searchResultsCommon
-	alert *searchAlert
-	start time.Time // when the results started being computed
+	alert           *searchAlert
+	start           time.Time // when the results started being computed
+	maxResultsCount int32
 }
 
 func (sr *searchResults) Results() []*searchResult {
@@ -139,10 +140,11 @@ func (sr *searchResults) ApproximateResultCount() string {
 	if sr.alert != nil {
 		return "?"
 	}
-	if sr.limitHit || len(sr.missing) > 0 || len(sr.cloning) > 0 {
-		return fmt.Sprintf("%d+", sr.ResultCount())
+	count := sr.ResultCount()
+	if sr.limitHit || len(sr.missing) > 0 || len(sr.cloning) > 0 || len(sr.timedout) > 0 || count > sr.maxResultsCount {
+		return fmt.Sprintf("%d+", count)
 	}
-	return strconv.Itoa(int(sr.ResultCount()))
+	return strconv.Itoa(int(count))
 }
 
 func (sr *searchResults) Alert() *searchAlert { return sr.alert }
@@ -510,7 +512,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		query: &patternInfo{
 			IsRegExp:                     true,
 			IsCaseSensitive:              r.query.IsCaseSensitive(),
-			FileMatchLimit:               300,
+			FileMatchLimit:               r.maxResults(),
 			Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
 			IncludePatterns:              includePatterns,
 			PathPatternsAreRegExps:       true,
@@ -572,7 +574,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	// Run all search funcs.
-	results := searchResults{start: start}
+	results := searchResults{
+		maxResultsCount: r.maxResults(),
+		start:           start,
+	}
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)
 		if results1 != nil {

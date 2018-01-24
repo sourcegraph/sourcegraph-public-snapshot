@@ -1,9 +1,10 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { CodeExcerpt } from '../components/CodeExcerpt'
+import { RepoFileLink } from '../components/RepoFileLink'
 import { pluralize } from '../util/strings'
 import { toPrettyBlobURL } from '../util/url'
+import { CodeExcerpt2 } from './CodeExcerpt2'
 import { ResultContainer } from './ResultContainer'
 
 export interface IFileMatch {
@@ -50,6 +51,9 @@ interface Props {
 
 const subsetMatches = 2
 
+// Dev flag for disabling syntax highlighting on search results pages.
+const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
+
 export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
     const parsed = new URL(props.result.resource)
     const repoPath = parsed.hostname + parsed.pathname
@@ -60,33 +64,46 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
             start: offsetAndLength[0],
             highlightLength: offsetAndLength[1],
         })),
+        preview: match.preview,
         line: match.lineNumber,
         uri: props.result.resource,
         repoURI: repoPath,
     }))
 
-    const title: React.ReactChild = <RepoBreadcrumb repoPath={repoPath} rev={rev} filePath={filePath} />
+    const title = <RepoFileLink repoPath={repoPath} filePath={filePath} />
 
-    const getChildren = (allMatches: boolean) => (
-        <div className="file-match__list">
-            {items
-                .sort((a, b) => {
-                    if (a.line < b.line) {
+    const getChildren = (allMatches: boolean) => {
+        const showItems = items
+            .sort((a, b) => {
+                if (a.line < b.line) {
+                    return -1
+                }
+                if (a.line === b.line) {
+                    if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
                         return -1
                     }
-                    if (a.line === b.line) {
-                        if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
-                            return -1
-                        }
-                        if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
-                            return 0
-                        }
-                        return 1
+                    if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+                        return 0
                     }
                     return 1
-                })
-                .filter((item, i) => allMatches || i < subsetMatches)
-                .map((item, i) => {
+                }
+                return 1
+            })
+            .filter((item, i) => allMatches || i < subsetMatches)
+
+        if (NO_SEARCH_HIGHLIGHTING) {
+            return (
+                <CodeExcerpt2
+                    urlWithoutPosition={toPrettyBlobURL({ repoPath, rev, filePath })}
+                    items={showItems}
+                    onSelect={props.onSelect}
+                />
+            )
+        }
+
+        return (
+            <div className="file-match__list">
+                {showItems.map((item, i) => {
                     const uri = new URL(item.uri)
                     const position = { line: item.line + 1, character: item.highlightRanges[0].start + 1 }
                     return (
@@ -113,8 +130,9 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                         </Link>
                     )
                 })}
-        </div>
-    )
+            </div>
+        )
+    }
 
     if (props.showAllMatches) {
         return (

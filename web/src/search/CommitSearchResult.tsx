@@ -2,8 +2,8 @@ import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import formatDistance from 'date-fns/formatDistance'
 import * as H from 'history'
 import * as React from 'react'
-import { RepoBreadcrumb } from '../components/Breadcrumb'
 import { DecoratedTextLines } from '../components/DecoratedTextLines'
+import { RepoFileLink } from '../components/RepoFileLink'
 import { GitRefTag } from '../repo/GitRefTag'
 import { AbsoluteRepoFilePosition, RepoSpec } from '../repo/index'
 import { eventLogger } from '../tracking/eventLogger'
@@ -61,7 +61,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
     const commitURL = externalCommitURL(props.result.commit.repository.uri, props.result.commit.oid)
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
-            <RepoBreadcrumb repoPath={props.result.commit.repository.uri} rev={props.result.commit.oid} filePath={''} />
+            <RepoFileLink repoPath={props.result.commit.repository.uri} rev={props.result.commit.oid} filePath={''} />
             <a
                 href={commitURL}
                 className="commit-search-result__title-person"
