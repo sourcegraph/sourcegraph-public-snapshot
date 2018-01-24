@@ -37,6 +37,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commi
 		var query string
 		if r.query != nil {
 			query = *r.query
+			n++
 		}
 		return vcsrepo.Commits(ctx, vcs.CommitsOptions{
 			Head:         api.CommitID(r.headCommitID),
@@ -55,6 +56,11 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitRe
 		return nil, err
 	}
 
+	if r.query != nil && r.first != nil && len(commits) > int(*r.first) {
+		// Don't return +1 results, which is used to determine if next page exists.
+		commits = commits[:*r.first]
+	}
+
 	resolvers := make([]*gitCommitResolver, len(commits))
 	for i, commit := range commits {
 		resolvers[i] = toGitCommitResolver(r.repo, commit)
@@ -67,6 +73,14 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, 
 	commits, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	if r.query != nil && r.first != nil {
+		// We have a query and a limit, so we rely on +1 result in our limit to
+		// indicate whether or not a next page exists.
+		return &pageInfo{
+			hasNextPage: len(commits) > 0 && len(commits) > int(*r.first),
+		}, nil
 	}
 
 	// If the last commit in the list has parents, then there is another page.
