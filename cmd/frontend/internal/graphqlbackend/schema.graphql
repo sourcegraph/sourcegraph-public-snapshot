@@ -317,7 +317,11 @@ type SearchResults {
     limitHit: Boolean!
     # Integers representing the sparkline for the search results.
     sparkline: [Int!]!
-    # Repositories that were searched.
+    # Repositories that were eligible to be searched.
+    repositories: [String!]!
+    # Repositories that were actually searched. Excludes repositories that would have been searched but were not
+    # because a timeout or error occurred while performing the search, or because the result limit was already
+    # reached.
     repositoriesSearched: [String!]!
     # Repositories that are busy cloning onto gitserver.
     cloning: [String!]!

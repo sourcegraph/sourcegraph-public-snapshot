@@ -618,6 +618,11 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 
 	common = &searchResultsCommon{}
 
+	common.repos = make([]api.RepoURI, len(args.repos))
+	for i, repo := range args.repos {
+		common.repos[i] = repo.repo.URI
+	}
+
 	// Support expzoektonly:yes and expsearcheronly:yes in search query.
 	index, _ := query.StringValues(searchquery.FieldIndex)
 	if len(index) == 0 && os.Getenv("SEARCH10_INDEX_DEFAULT") != "" && len(args.repos) > 10 {
