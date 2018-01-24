@@ -490,12 +490,18 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	}
 
 	searchOpts := zoekt.SearchOptions{
-		MaxWallTime:            10 * time.Second,
+		MaxWallTime:            1500 * time.Millisecond,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
 		ShardMaxImportantMatch: 15 * k,
 		TotalMaxImportantMatch: 25 * k,
 	}
+
+	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+		tr.LazyPrintf("maxwalltime %s", searchOpts.MaxWallTime)
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+3*time.Second)
 	defer cancel()
 
