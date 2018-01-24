@@ -485,6 +485,9 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	case len(repos) <= 5:
 		k = 100
 	}
+	if query.FileMatchLimit > defaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	}
 
 	searchOpts := zoekt.SearchOptions{
 		MaxWallTime:            10 * time.Second,
@@ -500,11 +503,11 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	if err != nil {
 		return nil, false, err
 	}
+	limitHit = resp.FilesSkipped > 0
 
 	if len(resp.Files) == 0 {
 		return nil, false, nil
 	}
-	limitHit = resp.FilesSkipped > 0
 
 	const maxLineMatches = 25
 	const maxLineFragmentMatches = 3

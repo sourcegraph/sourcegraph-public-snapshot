@@ -21,7 +21,7 @@ import { currentUser } from '../auth'
 import { ServerBanner } from '../marketing/ServerBanner'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
-import { numberWithCommas, pluralize } from '../util/strings'
+import { pluralize } from '../util/strings'
 import { searchText } from './backend'
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileMatch } from './FileMatch'
@@ -34,11 +34,14 @@ import { SearchAlert } from './SearchAlert'
 
 interface Props {
     location: H.Location
+    history: H.History
     isLightTheme: boolean
 }
 
 interface State {
     results: GQL.IFileMatch[]
+    resultCount?: number
+    approximateResultCount?: string
     alert: GQL.ISearchAlert | null
     elapsedMilliseconds?: number
     loading: boolean
@@ -118,6 +121,8 @@ export class SearchResults extends React.Component<Props, State> {
                             catchError(error => [
                                 {
                                     results: [],
+                                    resultCount: undefined,
+                                    approximateResultCount: undefined,
                                     alert: null,
                                     elapsedMilliseconds: undefined,
                                     missing: [],
@@ -147,6 +152,8 @@ export class SearchResults extends React.Component<Props, State> {
                     }),
                     map(() => ({
                         results: [],
+                        resultCount: undefined,
+                        approximateResultCount: undefined,
                         alert: null,
                         elapsedMilliseconds: undefined,
                         missing: [],
@@ -225,12 +232,6 @@ export class SearchResults extends React.Component<Props, State> {
             }
         }
 
-        let totalMatches = 0
-        let totalResults = 0
-        for (const result of this.state.results) {
-            totalResults += resultItemsCount(result) || 1 // 1 to count "empty" results like type:path results
-        }
-
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
         return (
@@ -273,15 +274,16 @@ export class SearchResults extends React.Component<Props, State> {
                                     &nbsp;(reload to try again)
                                 </span>
                             )}
-                            {this.state.results.length > 0 && (
-                                <span className="search-results__header-stats">
-                                    {numberWithCommas(totalResults)}
-                                    {this.state.limitHit ? '+' : ''} {pluralize('result', totalResults)}
-                                    {typeof this.state.elapsedMilliseconds === 'number' && (
-                                        <> in {(this.state.elapsedMilliseconds / 1000).toFixed(2)} seconds</>
-                                    )}
-                                </span>
-                            )}
+                            {typeof this.state.approximateResultCount === 'string' &&
+                                typeof this.state.resultCount === 'number' && (
+                                    <span className="search-results__header-stats">
+                                        {this.state.approximateResultCount}{' '}
+                                        {pluralize('result', this.state.resultCount)}
+                                        {typeof this.state.elapsedMilliseconds === 'number' && (
+                                            <> in {(this.state.elapsedMilliseconds / 1000).toFixed(2)} seconds</>
+                                        )}
+                                    </span>
+                                )}
                             {!this.state.didSave &&
                                 this.state.user && (
                                     <button onClick={this.showSaveQueryModal} className="btn btn-link">
@@ -306,12 +308,12 @@ export class SearchResults extends React.Component<Props, State> {
                         <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
                     ))}
                 {this.state.loading && <Loader className="icon-inline" />}
-                {this.state.results.map((result, i) => {
-                    const prevTotal = totalMatches
-                    totalMatches += resultItemsCount(result)
-                    const expanded = prevTotal <= 500
-                    return this.renderResult(i, result, expanded)
-                })}
+                {this.state.results.map((result, i) => this.renderResult(i, result, i <= 15))}
+                {this.state.limitHit && (
+                    <button className="btn btn-link search-results__more" onClick={this.showMoreResults}>
+                        Show more
+                    </button>
+                )}
                 {alert && (
                     <SearchAlert
                         className="search-results__alert"
@@ -353,6 +355,27 @@ export class SearchResults extends React.Component<Props, State> {
                 )
         }
         return undefined
+    }
+
+    private showMoreResults = () => {
+        // this.showMoreClicks.next()
+        const params = new URLSearchParams(this.props.location.search)
+        let query = params.get('q') || ''
+
+        const defaultMaxSearchResults = Math.max(this.state.resultCount || 0, 30)
+
+        const m = query.match(/max:(\d+)/)
+        if (m) {
+            let n = parseInt(m[1], 10)
+            if (!(n >= 1)) {
+                n = defaultMaxSearchResults
+            }
+            query = query.replace(/max:\d+/g, '').trim() + ` max:${n * 2}`
+        } else {
+            query = `${query} max:${defaultMaxSearchResults}`
+        }
+        params.set('q', query)
+        this.props.history.replace({ search: params.toString() })
     }
 }
 

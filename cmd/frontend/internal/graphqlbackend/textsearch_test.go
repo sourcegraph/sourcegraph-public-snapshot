@@ -42,7 +42,7 @@ func TestSearchRepos(t *testing.T) {
 
 	args := &repoSearchArgs{
 		query: &patternInfo{
-			FileMatchLimit: 300,
+			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
 		repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing"),

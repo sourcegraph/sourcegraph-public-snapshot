@@ -7,6 +7,7 @@ import (
 	"math"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -81,6 +82,19 @@ type searchResolver struct {
 // rawQuery returns the original query string input.
 func (r *searchResolver) rawQuery() string {
 	return r.query.Syntax.Input
+}
+
+const defaultMaxSearchResults = 30
+
+func (r *searchResolver) maxResults() int32 {
+	values, _ := r.query.StringValues(searchquery.FieldMax)
+	if len(values) > 0 {
+		n, _ := strconv.Atoi(values[0])
+		if n > 0 {
+			return int32(n)
+		}
+	}
+	return defaultMaxSearchResults
 }
 
 var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
