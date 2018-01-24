@@ -107,8 +107,8 @@ interface FilteredConnectionProps<C extends Connection<N>, N extends GQL.Node, N
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
 
-    /** Do not update the URL query string to reflect the filter and pagination state. */
-    noUpdateURLQuery?: boolean
+    /** Whether we will update the URL query string to reflect the filter and pagination state or not. */
+    shouldUpdateURLQuery?: boolean
 
     /** Do not show a "Show more" button. */
     noShowMore?: boolean
@@ -192,6 +192,8 @@ interface Connection<N> {
     pageInfo?: { hasNextPage: boolean }
 }
 
+const QUERY_KEY = 'query'
+
 /**
  * Displays a collection of items with filtering and pagination. It is called
  * "connection" because it is intended for use with GraphQL, which calls it that
@@ -208,6 +210,7 @@ export class FilteredConnection<
 > extends React.PureComponent<FilteredConnectionProps<C, N, NP>, State<C, N>> {
     public static defaultProps: Partial<FilteredConnectionProps<any, any>> = {
         defaultFirst: 20,
+        shouldUpdateURLQuery: true,
     }
 
     private queryInputChanges = new Subject<string>()
@@ -224,7 +227,7 @@ export class FilteredConnection<
         const q = new URLSearchParams(this.props.location.search)
         this.state = {
             loading: true,
-            query: q.get('q') || '',
+            query: q.get(QUERY_KEY) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
         }
@@ -254,7 +257,7 @@ export class FilteredConnection<
             combineLatest(queryChanges, activeFilterChanges, refreshRequests)
                 .pipe(
                     tap(([query, filter]) => {
-                        if (!this.props.noUpdateURLQuery) {
+                        if (this.props.shouldUpdateURLQuery) {
                             this.props.history.replace({ search: this.urlQuery({ query, filter }) })
                         }
                     }),
@@ -319,7 +322,7 @@ export class FilteredConnection<
         }
         const q = new URLSearchParams()
         if (arg.query) {
-            q.set('q', arg.query)
+            q.set(QUERY_KEY, arg.query)
         }
         if (arg.first !== this.props.defaultFirst) {
             q.set('first', String(arg.first))
