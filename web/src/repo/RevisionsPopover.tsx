@@ -277,8 +277,8 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                         autoFocus={true}
                         history={this.props.history}
                         location={this.props.location}
-                        noUpdateURLQuery={true}
                         noSummaryIfAllNodesVisible={true}
+                        shouldUpdateURLQuery={false}
                     />
                 ) : (
                     <FilteredGitCommitConnection
@@ -306,8 +306,8 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                         autoFocus={true}
                         history={this.props.history}
                         location={this.props.location}
-                        noUpdateURLQuery={true}
                         noSummaryIfAllNodesVisible={true}
+                        shouldUpdateURLQuery={false}
                     />
                 )}
             </div>
