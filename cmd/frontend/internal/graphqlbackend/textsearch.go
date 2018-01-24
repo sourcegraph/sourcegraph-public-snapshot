@@ -509,10 +509,11 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		return nil, false, nil
 	}
 
-	const maxLineMatches = 25
-	const maxLineFragmentMatches = 3
+	maxLineMatches := 25 + k
+	maxLineFragmentMatches := 3 + k
 	if len(resp.Files) > int(query.FileMatchLimit) {
 		resp.Files = resp.Files[:int(query.FileMatchLimit)]
+		limitHit = true
 	}
 	matches := make([]*fileMatch, len(resp.Files))
 	for i, file := range resp.Files {
@@ -672,6 +673,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 	// addMatches assumes the caller holds mu.
 	addMatches := func(matches []*fileMatch) {
 		if len(matches) > 0 {
+			common.resultCount += int32(len(matches))
 			sort.Slice(matches, func(i, j int) bool {
 				a, b := matches[i].uri, matches[j].uri
 				return a > b

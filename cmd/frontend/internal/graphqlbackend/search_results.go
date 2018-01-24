@@ -40,6 +40,8 @@ type searchResultsCommon struct {
 	cloning  []api.RepoURI // repos that could not be searched because they were still being cloned
 	missing  []api.RepoURI // repos that could not be searched because they do not exist
 
+	maxResultsCount, resultCount int32
+
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
 	// purged.
@@ -47,7 +49,7 @@ type searchResultsCommon struct {
 }
 
 func (c *searchResultsCommon) LimitHit() bool {
-	return c.limitHit
+	return c.limitHit || c.resultCount > c.maxResultsCount
 }
 
 func (c *searchResultsCommon) Repositories() []string {
@@ -114,6 +116,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	appendUnique(&c.cloning, other.cloning)
 	appendUnique(&c.missing, other.missing)
 	appendUnique(&c.timedout, other.timedout)
+	c.resultCount += other.resultCount
 }
 
 type searchResults struct {
@@ -141,7 +144,7 @@ func (sr *searchResults) ApproximateResultCount() string {
 		return "?"
 	}
 	count := sr.ResultCount()
-	if sr.limitHit || len(sr.missing) > 0 || len(sr.cloning) > 0 || len(sr.timedout) > 0 || count > sr.maxResultsCount {
+	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
 		return fmt.Sprintf("%d+", count)
 	}
 	return strconv.Itoa(int(count))
@@ -575,8 +578,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// Run all search funcs.
 	results := searchResults{
-		maxResultsCount: r.maxResults(),
-		start:           start,
+		maxResultsCount:     r.maxResults(),
+		start:               start,
+		searchResultsCommon: searchResultsCommon{maxResultsCount: r.maxResults()},
 	}
 	for _, searchFunc := range searchFuncs {
 		results1, common1, err := searchFunc(ctx)
