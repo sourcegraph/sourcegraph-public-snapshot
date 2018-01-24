@@ -6,12 +6,12 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net/http"
-	"net/rpc"
 	"sync"
 	"time"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"github.com/google/zoekt/rpc/internal/rpc"
 	"github.com/google/zoekt/rpc/internal/srv"
 )
 
@@ -60,28 +60,19 @@ func (c *client) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
 	return reply.List, err
 }
 
-func (c *client) call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) (err error) {
-	ctxDone := ctx.Done()
-	callDone := make(chan *rpc.Call, 1)
-
+func (c *client) call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
 	// We try twice. If we fail to dial or fail to call the function we try
 	// again after 100ms. Unrolled to make logic clear
 	cl, gen, err := c.getRPCClient(0)
 	if err == nil {
-		call := cl.Go(serviceMethod, args, reply, callDone)
-		select {
-		case <-ctxDone:
-			return ctx.Err()
-		case <-callDone:
-			if call.Error == rpc.ErrShutdown {
-				break
-			}
-			return call.Error
+		err = cl.Call(ctx, serviceMethod, args, reply)
+		if err != rpc.ErrShutdown {
+			return err
 		}
 	}
 
 	select {
-	case <-ctxDone:
+	case <-ctx.Done():
 		return ctx.Err()
 	case <-time.After(100 * time.Millisecond):
 	}
@@ -90,13 +81,7 @@ func (c *client) call(ctx context.Context, serviceMethod string, args interface{
 	if err != nil {
 		return err
 	}
-	call := cl.Go(serviceMethod, args, reply, callDone)
-	select {
-	case <-ctxDone:
-		return ctx.Err()
-	case <-callDone:
-		return call.Error
-	}
+	return cl.Call(ctx, serviceMethod, args, reply)
 }
 
 // getRPCClient gets the rpc client. If gen matches the current generation, we

@@ -566,26 +566,32 @@
 		{
 			"checksumSHA1": "5/JV3EM/ECLSB4YOSJjaPKtwLC4=",
 			"path": "github.com/google/zoekt",
-			"revision": "7b8edf6a67214df409fd0566af4a817330784e96",
-			"revisionTime": "2018-01-23T19:22:20Z"
+			"revision": "ec76756924476b6f7c46c86d6a3aaec9f97f9cfa",
+			"revisionTime": "2018-01-24T18:38:40Z"
 		},
 		{
 			"checksumSHA1": "eMz3qmu5C3XjkgYf19d6hAfVSLQ=",
 			"path": "github.com/google/zoekt/query",
-			"revision": "7b8edf6a67214df409fd0566af4a817330784e96",
-			"revisionTime": "2018-01-23T19:22:20Z"
+			"revision": "ec76756924476b6f7c46c86d6a3aaec9f97f9cfa",
+			"revisionTime": "2018-01-24T18:38:40Z"
 		},
 		{
-			"checksumSHA1": "gb8JA78JvDFVLsoBVP+OjvncV+w=",
+			"checksumSHA1": "9gPv4FU9gEhiLlqPACdTITnJxsc=",
 			"path": "github.com/google/zoekt/rpc",
-			"revision": "7b8edf6a67214df409fd0566af4a817330784e96",
-			"revisionTime": "2018-01-23T19:22:20Z"
+			"revision": "ec76756924476b6f7c46c86d6a3aaec9f97f9cfa",
+			"revisionTime": "2018-01-24T18:38:40Z"
 		},
 		{
-			"checksumSHA1": "e8D8iKclTmG+O1bOhJWptcsXsEw=",
+			"checksumSHA1": "TojyPjALDCs8vQOUa18q/HR2nmw=",
+			"path": "github.com/google/zoekt/rpc/internal/rpc",
+			"revision": "ec76756924476b6f7c46c86d6a3aaec9f97f9cfa",
+			"revisionTime": "2018-01-24T18:38:40Z"
+		},
+		{
+			"checksumSHA1": "hd5JRPTAk3WJYUJX/VHASf3LI5U=",
 			"path": "github.com/google/zoekt/rpc/internal/srv",
-			"revision": "7b8edf6a67214df409fd0566af4a817330784e96",
-			"revisionTime": "2018-01-23T19:22:20Z"
+			"revision": "ec76756924476b6f7c46c86d6a3aaec9f97f9cfa",
+			"revisionTime": "2018-01-24T18:38:40Z"
 		},
 		{
 			"checksumSHA1": "V/53BpqgOkSDZCX6snQCAkdO2fM=",

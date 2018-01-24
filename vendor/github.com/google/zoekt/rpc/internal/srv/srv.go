@@ -26,11 +26,11 @@ type ListReply struct {
 }
 
 type Searcher struct {
-	zoekt.Searcher
+	Searcher zoekt.Searcher
 }
 
-func (s *Searcher) Search(args *SearchArgs, reply *SearchReply) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (s *Searcher) Search(ctx context.Context, args *SearchArgs, reply *SearchReply) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	r, err := s.Searcher.Search(ctx, args.Q, args.Opts)
 	if err != nil {
@@ -40,8 +40,8 @@ func (s *Searcher) Search(args *SearchArgs, reply *SearchReply) error {
 	return nil
 }
 
-func (s *Searcher) List(args *ListArgs, reply *ListReply) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (s *Searcher) List(ctx context.Context, args *ListArgs, reply *ListReply) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	r, err := s.Searcher.List(ctx, args.Q)
 	if err != nil {
