@@ -65,13 +65,14 @@ var (
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context) error {
 	for {
-		for _, c := range phabConf {
+		for i, c := range phabConf {
 			if c.Token == "" {
 				continue
 			}
 
 			after := ""
 			for {
+				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(phabConf))
 				res, err := fetchPhabRepos(ctx, c, after)
 				if err != nil {
 					log15.Error("Error fetching Phabricator repos", "err", err)

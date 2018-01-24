@@ -2,11 +2,14 @@ package db
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	regexpsyntax "regexp/syntax"
 	"strings"
 	"time"
 	"unicode"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"context"
 
@@ -517,27 +520,101 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 	return err
 }
 
+const tryInsertNewSQL = `WITH UPSERT AS (
+	UPDATE repo SET uri=$1 WHERE uri=$1 RETURNING uri
+)
+INSERT INTO repo(uri, description, fork, language, enabled) (
+	SELECT $1 AS uri, $2 AS description, $3 AS fork, '' as language, $4 AS enabled
+	WHERE $1 NOT IN (SELECT uri FROM upsert)
+)`
+
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
 func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description string, fork, enabled bool) error {
-	// Avoid logspam in postgres for violating the constraint. So we first
-	// check if the repo exists.
-	if _, err := s.GetByURI(ctx, uri); err == nil {
-		return nil
-	} else if err != ErrRepoNotFound {
-		return err
-	}
+	_, err := globalDB.ExecContext(ctx, tryInsertNewSQL, uri, description, fork, enabled)
+	return err
+}
 
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO repo (uri, description, fork, language, enabled) VALUES ($1, $2, $3, '', $4)", uri, description, fork, enabled)
-	if err != nil {
-		if isPQErrorUniqueViolation(err) {
-			if c := err.(*pq.Error).Constraint; c == "repo_uri_unique" {
-				return nil // repo with given uri already exists
-			}
+var insertBatchSize = 100
+
+func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
+	if len(repos) < insertBatchSize {
+		return s.tryInsertNewBatch(ctx, repos)
+	}
+	for i := 0; i+insertBatchSize <= len(repos); i += insertBatchSize {
+		log15.Info("TryInsertNewBatch:batch-start", "i", i, "j", i+insertBatchSize)
+		if err := s.tryInsertNewBatch(ctx, repos[i:i+insertBatchSize]); err != nil {
+			return err
 		}
-		return err
+		log15.Info("TryInsertNewBatch:batch-end", "i", i, "j", i+insertBatchSize)
+	}
+	remainder := len(repos) % insertBatchSize
+	if remainder != 0 {
+		log15.Info("TryInsertNewBatch:batch-start", "i", len(repos)-remainder, "j", len(repos))
+		if err := s.tryInsertNewBatch(ctx, repos[len(repos)-remainder:]); err != nil {
+			return err
+		}
+		log15.Info("TryInsertNewBatch:batch-end", "i", len(repos)-remainder, "j", len(repos))
 	}
 	return nil
+}
+
+func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
+	if len(repos) == 0 {
+		return nil
+	}
+
+	tx, err := globalDB.Begin()
+	if err != nil {
+		return err
+	}
+	return func(tx *sql.Tx) (err error) {
+		defer func() {
+			if err != nil {
+				tx.Rollback()
+			} else {
+				commitErr := tx.Commit()
+				if err != nil {
+					err = commitErr
+				}
+			}
+		}()
+
+		if _, err := tx.ExecContext(ctx, "CREATE TEMPORARY TABLE bulk_repos(uri citext, description text, fork boolean, enabled boolean)"); err != nil {
+			return err
+		}
+
+		stmt, err := tx.PrepareContext(ctx, pq.CopyIn("bulk_repos", "uri", "description", "fork", "enabled"))
+		if err != nil {
+			return err
+		}
+		seenURIs := make(map[string]struct{})
+		for _, rp := range repos {
+			if _, seen := seenURIs[strings.ToLower(string(rp.URI))]; seen {
+				continue
+			}
+			seenURIs[strings.ToLower(string(rp.URI))] = struct{}{}
+
+			if _, err := stmt.Exec(rp.URI, rp.Description, rp.Fork, rp.Enabled); err != nil {
+				return err
+			}
+		}
+		if _, err := stmt.Exec(); err != nil {
+			return err
+		}
+		stmt.Close()
+
+		_, err = tx.ExecContext(ctx, `INSERT INTO repo(uri, description, fork, enabled, language) (SELECT bulk_repos.*, '' AS language FROM bulk_repos WHERE uri IS NOT NULL AND uri NOT IN (SELECT uri FROM repo))`)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.ExecContext(ctx, `DROP TABLE bulk_repos`)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(tx)
 }
 
 func timestampEqual(a, b *time.Time) bool {

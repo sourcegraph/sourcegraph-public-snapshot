@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -167,5 +168,106 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
+	}
+}
+
+func TestRepos_TryInsertNew(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	if _, err := Repos.GetByURI(ctx, "myrepo"); err != ErrRepoNotFound {
+		if err == nil {
+			t.Fatal("myrepo already present")
+		} else {
+			t.Fatal(err)
+		}
+	}
+
+	if err := Repos.TryInsertNew(ctx, "myrepo", "", false, true); err != nil {
+		t.Fatal(err)
+	}
+
+	rp, err := Repos.GetByURI(ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if rp.URI != "myrepo" {
+		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
+	}
+
+	if err := Repos.TryInsertNew(ctx, "myrepo", "asdfasdf", false, true); err != nil {
+		t.Fatal(err)
+	}
+
+	rp, err = Repos.GetByURI(ctx, "myrepo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if rp.URI != "myrepo" {
+		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
+	}
+	if rp.Description != "" {
+		t.Fatalf("rp.URI: %q != %q", rp.Description, "")
+	}
+}
+
+func TestRepos_TryInsertNewBatch(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	defer func() {
+		insertBatchSize = 1000
+	}()
+
+	reposToInsert := []api.InsertRepoOp{{
+		URI:         "myrepo1",
+		Description: "",
+		Fork:        false,
+		Enabled:     true,
+	}, {
+		URI:         "myrepo2",
+		Description: "",
+		Fork:        false,
+		Enabled:     true,
+	}, {
+		URI:         "myrepo3",
+		Description: "",
+		Fork:        false,
+		Enabled:     true,
+	}}
+
+	for _, batchSize := range []int{1, 2, 3, 4} {
+		insertBatchSize = batchSize
+		ctx := testContext()
+
+		for _, expRP := range reposToInsert {
+			if _, err := Repos.GetByURI(ctx, expRP.URI); err != ErrRepoNotFound {
+				if err == nil {
+					t.Fatalf("repo %s already present", expRP.URI)
+				} else {
+					t.Fatal(err)
+				}
+			}
+		}
+
+		if err := Repos.TryInsertNewBatch(ctx, reposToInsert); err != nil {
+			t.Fatal(err)
+		}
+
+		for _, expRP := range reposToInsert {
+			rp, err := Repos.GetByURI(ctx, expRP.URI)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if rp.URI != expRP.URI {
+				t.Errorf("rp.URI: %s != %s", rp.URI, expRP.URI)
+			}
+		}
 	}
 }
