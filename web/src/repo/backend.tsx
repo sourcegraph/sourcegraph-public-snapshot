@@ -31,21 +31,22 @@ class RevNotFoundError extends Error {
 export const ERREPOSEEOTHER = 'ERREPOSEEOTHER'
 export interface RepoSeeOtherError {
     redirectURL: string
-    doRedirect(): void
 }
+
+export function doRepoSeeOtherRedirect(err: RepoSeeOtherError): void {
+    const externalHostURL = new URL(err.redirectURL)
+    const redirectURL = new URL(window.location.href)
+    // Preserve the path of the current URL and redirect to the repo on the external host.
+    redirectURL.host = externalHostURL.host
+    redirectURL.port = externalHostURL.port
+    redirectURL.protocol = externalHostURL.protocol
+    window.location.href = redirectURL.toString()
+}
+
 class RepoSeeOtherErrorImpl extends Error implements RepoSeeOtherErrorImpl {
     public readonly code = ERREPOSEEOTHER
     constructor(public redirectURL: string) {
         super(`repo not found at this location, but might exist at ${redirectURL}`)
-    }
-    public doRedirect(): void {
-        const externalHostURL = new URL(this.redirectURL)
-        const redirectURL = new URL(window.location.href)
-        // Preserve the path of the current URL and redirect to the repo on the external host.
-        redirectURL.host = externalHostURL.host
-        redirectURL.port = externalHostURL.port
-        redirectURL.protocol = externalHostURL.protocol
-        window.location.href = redirectURL.toString()
     }
 }
 

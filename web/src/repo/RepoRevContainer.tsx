@@ -10,6 +10,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { redirectToExternalHost } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
@@ -80,7 +81,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                         tap(err => {
                                             switch (err.code) {
                                                 case ERREPOSEEOTHER:
-                                                    ;(err as RepoSeeOtherError).doRedirect()
+                                                    redirectToExternalHost((err as RepoSeeOtherError).redirectURL)
                                                 case EREPONOTFOUND:
                                                     // Display 404 to the user and do not retry
                                                     this.setState({ loading: false, error: 'repo-not-found' })

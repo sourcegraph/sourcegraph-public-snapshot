@@ -10,7 +10,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { parseRepoRev } from '.'
+import { parseRepoRev, redirectToExternalHost } from '.'
 import { parseBrowserRepoURL } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
@@ -79,7 +79,7 @@ export class RepoContainer extends React.Component<Props, State> {
                             catchError(error => {
                                 console.error(error)
                                 if (error.code === ERREPOSEEOTHER) {
-                                    ;(error as RepoSeeOtherError).doRedirect()
+                                    redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
                                 }
                                 this.setState({ loading: false, error: error.message })
                                 return []
