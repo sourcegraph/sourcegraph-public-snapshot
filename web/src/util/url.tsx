@@ -87,7 +87,7 @@ function parseLineOrPosition(
     return { line, character }
 }
 
-function toPositionOrRangeHash(ctx: Partial<PositionSpec> & Partial<RangeSpec>): string {
+export function toPositionOrRangeHash(ctx: Partial<PositionSpec> & Partial<RangeSpec>): string {
     if (ctx.range) {
         const emptyRange =
             ctx.range.start.line === ctx.range.end.line && ctx.range.start.character === ctx.range.end.character
