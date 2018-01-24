@@ -308,7 +308,7 @@ export class SearchResults extends React.Component<Props, State> {
                         <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
                     ))}
                 {this.state.loading && <Loader className="icon-inline" />}
-                {this.state.results.map((result, i) => this.renderResult(i, result, i <= 15))}
+                {this.state.results.slice(0, 75).map((result, i) => this.renderResult(i, result, i <= 15))}
                 {this.state.limitHit && (
                     <button className="btn btn-link search-results__more" onClick={this.showMoreResults}>
                         Show more
@@ -358,7 +358,6 @@ export class SearchResults extends React.Component<Props, State> {
     }
 
     private showMoreResults = () => {
-        // this.showMoreClicks.next()
         const params = new URLSearchParams(this.props.location.search)
         let query = params.get('q') || ''
 
