@@ -9,6 +9,8 @@ import (
 	"time"
 	"unicode"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"context"
 
 	"golang.org/x/net/trace"
@@ -533,20 +535,26 @@ func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description s
 	return err
 }
 
-var insertBatchSize = 1000
+var insertBatchSize = 100
 
 func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
 	if len(repos) < insertBatchSize {
 		return s.tryInsertNewBatch(ctx, repos)
 	}
 	for i := 0; i+insertBatchSize <= len(repos); i += insertBatchSize {
+		log15.Info("TryInsertNewBatch:batch-start", "i", i, "j", i+insertBatchSize)
 		if err := s.tryInsertNewBatch(ctx, repos[i:i+insertBatchSize]); err != nil {
 			return err
 		}
+		log15.Info("TryInsertNewBatch:batch-end", "i", i, "j", i+insertBatchSize)
 	}
 	remainder := len(repos) % insertBatchSize
 	if remainder != 0 {
-		return s.tryInsertNewBatch(ctx, repos[len(repos)-remainder:])
+		log15.Info("TryInsertNewBatch:batch-start", "i", len(repos)-remainder, "j", len(repos))
+		if err := s.tryInsertNewBatch(ctx, repos[len(repos)-remainder:]); err != nil {
+			return err
+		}
+		log15.Info("TryInsertNewBatch:batch-end", "i", len(repos)-remainder, "j", len(repos))
 	}
 	return nil
 }
@@ -580,12 +588,12 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp)
 		if err != nil {
 			return err
 		}
-		seenURIs := make(map[api.RepoURI]struct{})
+		seenURIs := make(map[string]struct{})
 		for _, rp := range repos {
-			if _, seen := seenURIs[rp.URI]; seen {
+			if _, seen := seenURIs[strings.ToLower(string(rp.URI))]; seen {
 				continue
 			}
-			seenURIs[rp.URI] = struct{}{}
+			seenURIs[strings.ToLower(string(rp.URI))] = struct{}{}
 
 			if _, err := stmt.Exec(rp.URI, rp.Description, rp.Fork, rp.Enabled); err != nil {
 				return err
@@ -596,7 +604,7 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp)
 		}
 		stmt.Close()
 
-		_, err = tx.ExecContext(ctx, `INSERT INTO repo(uri, description, fork, enabled, language) (SELECT bulk_repos.*, '' AS language FROM bulk_repos WHERE URI IS NOT NULL AND URI NOT IN (SELECT uri FROM repo))`)
+		_, err = tx.ExecContext(ctx, `INSERT INTO repo(uri, description, fork, enabled, language) (SELECT bulk_repos.*, '' AS language FROM bulk_repos WHERE uri IS NOT NULL AND uri NOT IN (SELECT uri FROM repo))`)
 		if err != nil {
 			return err
 		}
