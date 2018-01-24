@@ -468,37 +468,15 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		tr.Finish()
 	}()
 
-	// Optimize search options for either a very common term or an infrequent term (or small corpus).
-	//
-	// Taken from https://github.com/google/zoekt/blob/e95175fe96696f532431e6f31832a1922458e214/web/server.go#L221-L244.
-	num := int(query.FileMatchLimit)
 	searchOpts := zoekt.SearchOptions{
-		MaxWallTime: 10 * time.Second,
+		MaxWallTime:            10 * time.Second,
+		ShardMaxMatchCount:     int(query.FileMatchLimit) * 2,
+		TotalMaxMatchCount:     int(query.FileMatchLimit) * 2,
+		ShardMaxImportantMatch: 100,
+		TotalMaxImportantMatch: int(query.FileMatchLimit) * 2,
 	}
-	searchOpts.SetDefaults()
 	ctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+time.Second)
 	defer cancel()
-	if result, err := zoektCl.Search(ctx, finalQuery, &zoekt.SearchOptions{EstimateDocCount: true}); err != nil {
-		return nil, false, err
-	} else if numdocs := result.ShardFilesConsidered; numdocs > 5000 {
-		// If the search touches many shards and many files, we
-		// have to limit the number of matches.  This setting
-		// is based on the number of documents eligible after
-		// considering reponames, so large repos (both
-		// android, chromium are about 500k files) aren't
-		// covered fairly.
-
-		searchOpts.ShardMaxMatchCount = 2*num + (2*num)/(numdocs/2000)
-		searchOpts.ShardMaxImportantMatch = num/50 + num/(numdocs/2000)
-	} else {
-		// Virtually no limits for a small corpus; important
-		// matches are just as expensive as normal matches.
-		n := numdocs + num*5
-		searchOpts.ShardMaxImportantMatch = n
-		searchOpts.ShardMaxMatchCount = n
-		searchOpts.TotalMaxMatchCount = n
-		searchOpts.TotalMaxImportantMatch = n
-	}
 
 	resp, err := zoektCl.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
