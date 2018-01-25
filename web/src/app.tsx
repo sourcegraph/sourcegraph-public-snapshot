@@ -1,6 +1,7 @@
 // Polyfill URL because Chrome and Firefox are not spec-compliant
 // Hostnames of URIs with custom schemes (e.g. git) are not parsed out
-import './util/polyfill'
+import { URL, URLSearchParams } from 'whatwg-url'
+Object.assign(window, { URL, URLSearchParams })
 
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'

@@ -1,10 +1,10 @@
-import * as CopyWebpackPlugin from 'copy-webpack-plugin'
-import * as ExtractTextPlugin from 'extract-text-webpack-plugin'
+import CopyWebpackPlugin from 'copy-webpack-plugin'
+import ExtractTextPlugin from 'extract-text-webpack-plugin'
+import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 import * as Tapable from 'tapable'
 import * as webpack from 'webpack'
-import * as WriteFilePlugin from 'write-file-webpack-plugin'
-const sassImportOnce = require('node-sass-import-once')
+import WriteFilePlugin from 'write-file-webpack-plugin'
 // const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
 const plugins: webpack.Plugin[] = [

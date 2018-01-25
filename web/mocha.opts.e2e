@@ -1,1 +1,0 @@
---timeout 300000 out/**/*.test.e2e.js

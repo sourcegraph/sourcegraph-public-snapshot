@@ -20,7 +20,7 @@ export function isMouseEventWithModifierKey(e: MouseEvent): boolean {
  * @param start the current character position (starts at 0).
  * @param lenght the number of characters to highlight.
  */
-export function highlightNode(node: HTMLElement, start: number, length: number, w: Window = window): void {
+export function highlightNode(node: HTMLElement, start: number, length: number): void {
     if (start < 0 || length <= 0 || start >= node.textContent!.length) {
         return
     }
@@ -31,7 +31,7 @@ export function highlightNode(node: HTMLElement, start: number, length: number, 
     }
 
     node.classList.add('annotated-selection-match')
-    highlightNodeHelper(node, 0, start, length, w)
+    highlightNodeHelper(node, 0, start, length)
 }
 
 interface HighlightResult {
@@ -52,12 +52,8 @@ function highlightNodeHelper(
     currNode: HTMLElement,
     currOffset: number,
     start: number,
-    length: number,
-    w: Window
+    length: number
 ): HighlightResult {
-    // typescript doesn't define Node on the Window, although it exists (and must be used e.g. when we are passed a Window from jsdom)
-    const Node = (w as any).Node as Node
-
     if (length === 0) {
         return { highlightingCompleted: true, charsConsumed: 0, charsHighlighted: 0 }
     }
@@ -85,22 +81,22 @@ function highlightNodeHelper(
                     // The characters beginning at the start of highlighting and extending to the end of the node.
                     const rest = nodeText.substr(start - currOffset)
 
-                    const containerNode = w.document.createElement('span')
+                    const containerNode = document.createElement('span')
                     if (nodeText.substr(0, start - currOffset) !== '') {
                         // If characters were consumed leading up to the start of highlighting, add them to the parent.
-                        containerNode.appendChild(w.document.createTextNode(nodeText.substr(0, start - currOffset)))
+                        containerNode.appendChild(document.createTextNode(nodeText.substr(0, start - currOffset)))
                     }
 
                     if (rest.length >= length) {
                         // The highligted range is fully contained within the node.
                         const text = rest.substr(0, length)
-                        const highlight = w.document.createElement('span')
+                        const highlight = document.createElement('span')
                         highlight.className = 'selection-highlight'
-                        highlight.appendChild(w.document.createTextNode(text))
+                        highlight.appendChild(document.createTextNode(text))
                         containerNode.appendChild(highlight)
                         if (rest.length > length) {
                             // There is more in the span than the highlighted chars.
-                            containerNode.appendChild(w.document.createTextNode(rest.substr(length)))
+                            containerNode.appendChild(document.createTextNode(rest.substr(length)))
                         }
 
                         if (currNode.childNodes.length === 0 || isLastNode) {
@@ -115,9 +111,9 @@ function highlightNodeHelper(
                     // Else the highlighted range spans multiple nodes.
                     charsHighlighted += rest.length
 
-                    const highlight = w.document.createElement('span')
+                    const highlight = document.createElement('span')
                     highlight.className = 'selection-highlight'
-                    highlight.appendChild(w.document.createTextNode(rest))
+                    highlight.appendChild(document.createTextNode(rest))
                     containerNode.appendChild(highlight)
 
                     if (currNode.childNodes.length === 0 || isLastNode) {
@@ -137,8 +133,7 @@ function highlightNodeHelper(
                     elementNode,
                     currOffset,
                     start + charsHighlighted,
-                    length - charsHighlighted,
-                    w
+                    length - charsHighlighted
                 )
                 if (res.highlightingCompleted) {
                     return res

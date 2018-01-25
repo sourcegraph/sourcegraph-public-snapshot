@@ -2,6 +2,16 @@
   "version": "0.1.0",
   "configurations": [
     {
+      "type": "node",
+      "request": "launch",
+      "name": "Mocha Tests",
+      "cwd": "${workspaceFolder}/web",
+      "runtimeExecutable": "${workspaceFolder}/web/node_modules/.bin/ts-node",
+      "program": "${workspaceFolder}/web/node_modules/mocha/bin/_mocha",
+      "args": ["--colors", "--no-timeouts", "src/**/*.test.ts?(x)"],
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
       "name": "ui",
       "type": "chrome",
       "request": "attach",

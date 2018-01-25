@@ -1,11 +1,6 @@
 import * as assert from 'assert'
 import { Chromeless } from 'chromeless'
-import * as p_retry from 'p-retry'
-
-function retry(f: () => Promise<void>): Promise<void> {
-    // wrap and set 5 retries (instead of infinite)
-    return p_retry(f, { retries: 5 })
-}
+import retry from 'p-retry'
 
 const chromeLauncher = require('chrome-launcher')
 
