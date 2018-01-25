@@ -1,5 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
+import marked from 'marked'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -11,14 +12,15 @@ import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { MarkedString } from 'vscode-languageserver-types'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoFileLink } from '../components/RepoFileLink'
 import { SearchScope } from '../schema/settings.schema'
 import { fetchReposByQuery } from '../search/backend'
 import { submitSearch } from '../search/helpers'
-import { queryUpdates } from '../search/QueryInput'
 import { QueryInput } from '../search/QueryInput'
+import { queryUpdates } from '../search/QueryInput'
 import { SearchButton } from '../search/SearchButton'
 import { currentConfiguration } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
@@ -116,13 +118,14 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         if (!this.state.searchScopes.some((element: SearchScope) => element.id === this.props.match.params.id)) {
             return <ScopeNotFound />
         }
-
+        const mkd: MarkedString = { language: 'markdown', value: this.state.description || '' }
+        const sanitizedMarkdown = marked(mkd.value, { gfm: true, breaks: true, sanitize: true })
         return (
             <div className="scope-page">
                 <div className="scope-page__container">
                     <header>
                         <h1 className="scope-page__title">{this.state.name}</h1>
-                        {this.state.description && <p>{this.state.description}</p>}
+                        {this.state.description && <div dangerouslySetInnerHTML={{ __html: sanitizedMarkdown }} />}
                     </header>
                     <section className="">
                         <form className="scope-page__section-search" onSubmit={this.onSubmit}>
