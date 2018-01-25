@@ -76,7 +76,7 @@ func configureAppURL() (*url.URL, error) {
 	var hostPort string
 	if strings.HasPrefix(httpAddr, ":") {
 		// Prepend localhost if HTTP listen addr is just a port.
-		hostPort = "localhost" + httpAddr
+		hostPort = "127.0.0.1" + httpAddr
 	} else {
 		hostPort = httpAddr
 	}

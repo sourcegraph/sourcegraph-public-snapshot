@@ -54,7 +54,7 @@ func maybePostgresProcFile() (string, error) {
 		// initdb --nosync saves ~3-15s on macOS during initial startup. By the time actual data lives in the
 		// DB, the OS should have had time to fsync.
 		e.Command("su-exec", "postgres", "initdb", "-D", path, "--nosync")
-		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-o -c listen_addresses=localhost", "-l", "/tmp/pgsql.log", "-w", "start")
+		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-o -c listen_addresses=127.0.0.1", "-l", "/tmp/pgsql.log", "-w", "start")
 		e.Command("su-exec", "postgres", "createdb", "sourcegraph")
 		e.Command("su-exec", "postgres", "pg_ctl", "-D", path, "-m", "fast", "-l", "/tmp/pgsql.log", "-w", "stop")
 		if err := e.Error(); err != nil {
@@ -74,6 +74,9 @@ func maybePostgresProcFile() (string, error) {
 		}
 	}
 
+	// Set PGHOST to default to 127.0.0.1, NOT localhost, as localhost does not correctly resolve in some environments
+	// (see https://github.com/sourcegraph/issues/issues/34 and https://github.com/sourcegraph/sourcegraph/issues/9129).
+	setDefaultEnv("PGHOST", "127.0.0.1")
 	setDefaultEnv("PGUSER", "postgres")
 	setDefaultEnv("PGDATABASE", "sourcegraph")
 	setDefaultEnv("PGSSLMODE", "disable")

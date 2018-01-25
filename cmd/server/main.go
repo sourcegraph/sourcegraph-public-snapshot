@@ -26,7 +26,7 @@ var defaultEnv = map[string]string{
 	"SRC_SESSION_STORE_REDIS": "127.0.0.1:6379",
 	"SRC_INDEXER":             "127.0.0.1:3179",
 	"QUERY_RUNNER_URL":        "http://127.0.0.1:3183",
-	"SRC_SYNTECT_SERVER":      "http://localhost:3700",
+	"SRC_SYNTECT_SERVER":      "http://127.0.0.1:3700",
 	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_HTTPS_ADDR":          ":7443",
 	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
@@ -125,7 +125,7 @@ func main() {
 		procfile = append(procfile, line)
 	}
 
-	const goremanAddr = "localhost:5005"
+	const goremanAddr = "127.0.0.1:5005"
 	if err := os.Setenv("GOREMAN_RPC_ADDR", goremanAddr); err != nil {
 		log.Fatal(err)
 	}
