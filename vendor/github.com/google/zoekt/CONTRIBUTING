@@ -6,6 +6,10 @@ using the following form:
 
 For submitting patches, please use gerrit:
 
+* Make sure all tests pass:
+
+    go test github.com/google/zoekt/...
+
 * Add the following to your .git/config:
 
     [remote "gerrit"]

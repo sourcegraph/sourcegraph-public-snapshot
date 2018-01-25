@@ -142,13 +142,14 @@ import (
 	"sync"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/google/zoekt/rpc/internal/rpc/internal/svc"
 )
 
 const (
 	// Defaults used by HandleHTTP
-	DefaultRPCPath      = "/_goRPC_"
-	DefaultDebugPath    = "/debug/rpc"
-	cancelServiceMethod = "_goRPC_.cancel"
+	DefaultRPCPath   = "/_goRPC_"
+	DefaultDebugPath = "/debug/rpc"
 )
 
 // Precompute the reflect type for error. Can't use error directly
@@ -164,40 +165,12 @@ type methodType struct {
 	numCalls   uint
 }
 
-type pending struct {
-	mu sync.Mutex
-	m  map[uint64]context.CancelFunc // seq -> cancel
-}
-
-func (s *pending) Start(seq uint64) context.Context {
-	ctx, cancel := context.WithCancel(context.Background())
-	s.mu.Lock()
-	// we assume seq is not already in map. If not, the client is broken.
-	s.m[seq] = cancel
-	s.mu.Unlock()
-	return ctx
-}
-
-func (s *pending) Cancel(seq uint64) {
-	s.mu.Lock()
-	cancel, ok := s.m[seq]
-	if ok {
-		delete(s.m, seq)
-	}
-	s.mu.Unlock()
-	if ok {
-		cancel()
-	}
-}
-
 type service struct {
 	name   string                 // name of service
 	rcvr   reflect.Value          // receiver of methods for the service
 	typ    reflect.Type           // type of the receiver
 	method map[string]*methodType // registered methods
 }
-
-var cancelService = &service{}
 
 // Request is a header written before every RPC call. It is used internally
 // but documented here as an aid to debugging, such as when analyzing
@@ -229,7 +202,9 @@ type Server struct {
 
 // NewServer returns a new Server.
 func NewServer() *Server {
-	return &Server{}
+	s := &Server{}
+	s.RegisterName("_goRPC_", &svc.GoRPC{})
+	return s
 }
 
 // DefaultServer is the default instance of *Server.
@@ -329,14 +304,14 @@ func suitableMethods(typ reflect.Type, reportErr bool) map[string]*methodType {
 		// Method needs four ins: receiver, ctx, *args, *reply.
 		if mtype.NumIn() != 4 {
 			if reportErr {
-				log.Println("method", mname, "has wrong number of ins:", mtype.NumIn())
+				log.Printf("rpc.Register: method %q has %d input parameters; needs exactly three\n", mname, mtype.NumIn())
 			}
 			continue
 		}
-		// First arg must be context.Context
+		// First arg must be context.Context.
 		if ctxType := mtype.In(1); ctxType != typeOfCtx {
 			if reportErr {
-				log.Println("method", mname, "first argument is", ctxType.String(), "not context.Context")
+				log.Printf("rpc.Register: ctx type of method %q is %q, must be context.Context\n", mname, ctxType)
 			}
 			continue
 		}
@@ -344,7 +319,7 @@ func suitableMethods(typ reflect.Type, reportErr bool) map[string]*methodType {
 		argType := mtype.In(2)
 		if !isExportedOrBuiltinType(argType) {
 			if reportErr {
-				log.Println(mname, "argument type not exported:", argType)
+				log.Printf("rpc.Register: argument type of method %q is not exported: %q\n", mname, argType)
 			}
 			continue
 		}
@@ -352,28 +327,28 @@ func suitableMethods(typ reflect.Type, reportErr bool) map[string]*methodType {
 		replyType := mtype.In(3)
 		if replyType.Kind() != reflect.Ptr {
 			if reportErr {
-				log.Println("method", mname, "reply type not a pointer:", replyType)
+				log.Printf("rpc.Register: reply type of method %q is not a pointer: %q\n", mname, replyType)
 			}
 			continue
 		}
 		// Reply type must be exported.
 		if !isExportedOrBuiltinType(replyType) {
 			if reportErr {
-				log.Println("method", mname, "reply type not exported:", replyType)
+				log.Printf("rpc.Register: reply type of method %q is not exported: %q\n", mname, replyType)
 			}
 			continue
 		}
 		// Method needs one out.
 		if mtype.NumOut() != 1 {
 			if reportErr {
-				log.Println("method", mname, "has wrong number of outs:", mtype.NumOut())
+				log.Printf("rpc.Register: method %q has %d output parameters; needs exactly one\n", mname, mtype.NumOut())
 			}
 			continue
 		}
 		// The return type of the method must be error.
 		if returnType := mtype.Out(0); returnType != typeOfError {
 			if reportErr {
-				log.Println("method", mname, "returns", returnType.String(), "not error")
+				log.Printf("rpc.Register: return type of method %q is %q, must be error\n", mname, returnType)
 			}
 			continue
 		}
@@ -412,13 +387,19 @@ func (m *methodType) NumCalls() (n uint) {
 	return n
 }
 
-func (s *service) call(server *Server, sending *sync.Mutex, pending *pending, mtype *methodType, req *Request, argv, replyv reflect.Value, codec ServerCodec) {
-	if s == cancelService {
-		pending.Cancel(argv.Interface().(uint64))
-		server.sendResponse(sending, req, nil, codec, context.Canceled.Error())
-		server.freeRequest(req)
-		return
+func (s *service) call(server *Server, sending *sync.Mutex, pending *svc.Pending, wg *sync.WaitGroup, mtype *methodType, req *Request, argv, replyv reflect.Value, codec ServerCodec) {
+	if wg != nil {
+		defer wg.Done()
 	}
+
+	// _goRPC_ service calls require internal state.
+	if s.name == "_goRPC_" {
+		switch v := argv.Interface().(type) {
+		case *svc.CancelArgs:
+			v.Pending = pending
+		}
+	}
+
 	mtype.Lock()
 	mtype.numCalls++
 	mtype.Unlock()
@@ -504,7 +485,8 @@ func (server *Server) ServeConn(conn io.ReadWriteCloser) {
 // decode requests and encode responses.
 func (server *Server) ServeCodec(codec ServerCodec) {
 	sending := new(sync.Mutex)
-	pending := &pending{m: make(map[uint64]context.CancelFunc)}
+	pending := svc.NewPending()
+	wg := new(sync.WaitGroup)
 	for {
 		service, mtype, req, argv, replyv, keepReading, err := server.readRequest(codec)
 		if err != nil {
@@ -521,8 +503,12 @@ func (server *Server) ServeCodec(codec ServerCodec) {
 			}
 			continue
 		}
-		go service.call(server, sending, pending, mtype, req, argv, replyv, codec)
+		wg.Add(1)
+		go service.call(server, sending, pending, wg, mtype, req, argv, replyv, codec)
 	}
+	// We've seen that there are no more requests.
+	// Wait for responses to be sent before closing codec.
+	wg.Wait()
 	codec.Close()
 }
 
@@ -530,7 +516,7 @@ func (server *Server) ServeCodec(codec ServerCodec) {
 // It does not close the codec upon completion.
 func (server *Server) ServeRequest(codec ServerCodec) error {
 	sending := new(sync.Mutex)
-	pending := &pending{m: make(map[uint64]context.CancelFunc)}
+	pending := svc.NewPending()
 	service, mtype, req, argv, replyv, keepReading, err := server.readRequest(codec)
 	if err != nil {
 		if !keepReading {
@@ -543,7 +529,7 @@ func (server *Server) ServeRequest(codec ServerCodec) error {
 		}
 		return err
 	}
-	service.call(server, sending, pending, mtype, req, argv, replyv, codec)
+	service.call(server, sending, pending, nil, mtype, req, argv, replyv, codec)
 	return nil
 }
 
@@ -598,15 +584,6 @@ func (server *Server) readRequest(codec ServerCodec) (service *service, mtype *m
 		return
 	}
 
-	if service == cancelService {
-		var seq uint64
-		if err = codec.ReadRequestBody(&seq); err != nil {
-			return
-		}
-		argv = reflect.ValueOf(seq)
-		return
-	}
-
 	// Decode the argument value.
 	argIsValue := false // if true, need to indirect before calling.
 	if mtype.ArgType.Kind() == reflect.Ptr {
@@ -650,11 +627,6 @@ func (server *Server) readRequestHeader(codec ServerCodec) (svc *service, mtype 
 	// We read the header successfully. If we see an error now,
 	// we can still recover and move on to the next request.
 	keepReading = true
-
-	if req.ServiceMethod == cancelServiceMethod {
-		svc = cancelService
-		return
-	}
 
 	dot := strings.LastIndex(req.ServiceMethod, ".")
 	if dot < 0 {

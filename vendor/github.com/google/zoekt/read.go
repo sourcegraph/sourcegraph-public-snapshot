@@ -176,6 +176,7 @@ func (r *reader) readIndexData(toc *indexTOC) (*indexData, error) {
 	d.newlinesIndex = toc.newlines.relativeIndex()
 	d.docSectionsStart = toc.fileSections.data.off
 	d.docSectionsIndex = toc.fileSections.relativeIndex()
+
 	d.checksums, err = d.readSectionBlob(toc.contentChecksums)
 	if err != nil {
 		return nil, err
@@ -238,6 +239,12 @@ func (r *reader) readIndexData(toc *indexTOC) (*indexData, error) {
 		d.branchIDs[br.Name] = id
 		d.branchNames[id] = br.Name
 	}
+
+	blob, err = d.readSectionBlob(toc.runeDocSections)
+	if err != nil {
+		return nil, err
+	}
+	d.runeDocSections = unmarshalDocSections(blob, nil)
 
 	for sect, dest := range map[simpleSection]*[]uint32{
 		toc.subRepos:        &d.subRepos,

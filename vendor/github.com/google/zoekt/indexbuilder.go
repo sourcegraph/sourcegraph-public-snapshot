@@ -30,7 +30,6 @@ var _ = log.Println
 const ngramSize = 3
 
 type searchableString struct {
-	// lower cased data.
 	data []byte
 }
 
@@ -62,7 +61,7 @@ func newPostingsBuilder() *postingsBuilder {
 	}
 }
 
-func (s *postingsBuilder) newSearchableString(data []byte) *searchableString {
+func (s *postingsBuilder) newSearchableString(data []byte, byteSections []DocumentSection) (*searchableString, []DocumentSection) {
 	dest := searchableString{
 		data: data,
 	}
@@ -70,9 +69,14 @@ func (s *postingsBuilder) newSearchableString(data []byte) *searchableString {
 	var runeGram [3]rune
 
 	runeIndex := -1
-
+	byteCount := 0
 	dataSz := uint32(len(data))
-	i := 0
+
+	byteSectionBoundaries := make([]uint32, 0, 2*len(byteSections))
+	for _, s := range byteSections {
+		byteSectionBoundaries = append(byteSectionBoundaries, s.Start, s.End)
+	}
+	var runeSectionBoundaries []uint32
 
 	endRune := s.runeCount
 	for len(data) > 0 {
@@ -87,9 +91,15 @@ func (s *postingsBuilder) newSearchableString(data []byte) *searchableString {
 
 		s.runeCount++
 		if idx := s.runeCount - 1; idx%runeOffsetFrequency == 0 {
-			s.runeOffsets = append(s.runeOffsets, s.endByte+uint32(i))
+			s.runeOffsets = append(s.runeOffsets, s.endByte+uint32(byteCount))
 		}
-		i += sz
+		for len(byteSectionBoundaries) > 0 && byteSectionBoundaries[0] == uint32(byteCount) {
+			runeSectionBoundaries = append(runeSectionBoundaries,
+				endRune+uint32(runeIndex))
+			byteSectionBoundaries = byteSectionBoundaries[1:]
+		}
+
+		byteCount += sz
 
 		if runeIndex < 2 {
 			continue
@@ -104,17 +114,27 @@ func (s *postingsBuilder) newSearchableString(data []byte) *searchableString {
 		s.lastOffsets[ng] = newOff
 	}
 
+	runeSecs := make([]DocumentSection, 0, len(byteSections))
+	for i := 0; i < len(byteSections); i++ {
+		runeSecs = append(runeSecs, DocumentSection{
+			Start: runeSectionBoundaries[2*i],
+			End:   runeSectionBoundaries[2*i+1],
+		})
+	}
+
 	s.endRunes = append(s.endRunes, s.runeCount)
 	s.endByte += dataSz
-	return &dest
+	return &dest, runeSecs
 }
 
 // IndexBuilder builds a single index shard.
 type IndexBuilder struct {
-	contentStrings []*searchableString
-	nameStrings    []*searchableString
-	docSections    [][]DocumentSection
-	checksums      []byte
+	contentStrings  []*searchableString
+	nameStrings     []*searchableString
+	docSections     [][]DocumentSection
+	runeDocSections []DocumentSection
+
+	checksums []byte
 
 	branchMasks []uint64
 	subRepos    []uint32
@@ -333,10 +353,11 @@ func (b *IndexBuilder) Add(doc Document) error {
 	b.subRepos = append(b.subRepos, subRepoIdx)
 
 	hasher.Write(doc.Content)
-	docStr := b.contentPostings.newSearchableString(doc.Content)
+	docStr, runeSecs := b.contentPostings.newSearchableString(doc.Content, doc.Symbols)
 	b.contentStrings = append(b.contentStrings, docStr)
+	b.runeDocSections = append(b.runeDocSections, runeSecs...)
 
-	nameStr := b.namePostings.newSearchableString([]byte(doc.Name))
+	nameStr, _ := b.namePostings.newSearchableString([]byte(doc.Name), nil)
 	b.nameStrings = append(b.nameStrings, nameStr)
 	b.docSections = append(b.docSections, doc.Symbols)
 	b.branchMasks = append(b.branchMasks, mask)

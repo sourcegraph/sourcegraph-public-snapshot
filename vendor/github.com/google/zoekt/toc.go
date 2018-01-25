@@ -26,7 +26,8 @@ package zoekt
 // 12: 64-bit branchmasks.
 // 13: content checksums
 // 14: languages
-const IndexFormatVersion = 14
+// 15: rune based symbol sections
+const IndexFormatVersion = 15
 
 // FeatureVersion is increased if a feature is added that requires reindexing data.
 const FeatureVersion = 1
@@ -52,6 +53,7 @@ type indexTOC struct {
 	repoMetaData     simpleSection
 	nameEndRunes     simpleSection
 	contentChecksums simpleSection
+	runeDocSections  simpleSection
 }
 
 func (t *indexTOC) sections() []section {
@@ -76,5 +78,6 @@ func (t *indexTOC) sections() []section {
 		&t.nameEndRunes,
 		&t.contentChecksums,
 		&t.languages,
+		&t.runeDocSections,
 	}
 }

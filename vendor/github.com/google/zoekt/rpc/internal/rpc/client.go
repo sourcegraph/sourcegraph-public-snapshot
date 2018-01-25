@@ -14,6 +14,8 @@ import (
 	"net"
 	"net/http"
 	"sync"
+
+	"github.com/google/zoekt/rpc/internal/rpc/internal/svc"
 )
 
 // ServerError represents an error that has been returned from
@@ -324,7 +326,8 @@ func (client *Client) Go(serviceMethod string, args interface{}, reply interface
 
 // Call invokes the named function, waits for it to complete, and returns its error status.
 func (client *Client) Call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
-	call := client.Go(serviceMethod, args, reply, make(chan *Call, 1))
+	ch := make(chan *Call, 2) // 2 for this call and cancel
+	call := client.Go(serviceMethod, args, reply, ch)
 	select {
 	case <-call.Done:
 		return call.Error
@@ -342,7 +345,7 @@ func (client *Client) Call(ctx context.Context, serviceMethod string, args inter
 
 		// Cancel running request on the server
 		if seq != 0 && ok {
-			client.Go(cancelServiceMethod, seq, nil, make(chan *Call, 1))
+			client.Go("_goRPC_.Cancel", &svc.CancelArgs{Seq: seq}, nil, ch)
 		}
 
 		return ctx.Err()

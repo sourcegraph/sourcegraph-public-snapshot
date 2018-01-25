@@ -36,6 +36,8 @@ type indexData struct {
 	docSectionsStart uint32
 	docSectionsIndex []uint32
 
+	runeDocSections []DocumentSection
+
 	// rune offset=>byte offset mapping, relative to the start of the content corpus
 	runeOffsets []uint32
 
@@ -124,6 +126,7 @@ func (d *indexData) memoryUse() int {
 	} {
 		sz += 4 * len(a)
 	}
+	sz += 8 * len(d.runeDocSections)
 	sz += 8 * len(d.fileBranchMasks)
 	sz += 12 * len(d.ngrams)
 	for _, v := range d.fileNameNgrams {

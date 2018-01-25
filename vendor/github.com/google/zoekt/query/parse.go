@@ -188,6 +188,12 @@ func parseExpr(in []byte) (Q, int, error) {
 	case tokLang:
 		expr = &Language{Language: text}
 
+	case tokSym:
+		if text == "" {
+			return nil, 0, fmt.Errorf("the sym: atom must have an argument")
+		}
+		expr = &Symbol{&Substring{Pattern: text}}
+
 	case tokParenClose:
 		// Caller must consume paren.
 		expr = nil
@@ -322,27 +328,8 @@ func parseExprList(in []byte) ([]Q, int, error) {
 	}
 	qs = newQS
 	for _, q := range qs {
-		if sq, ok := q.(*Substring); ok {
-			switch setCase {
-			case "yes":
-				sq.CaseSensitive = true
-			case "no":
-				sq.CaseSensitive = false
-			case "auto":
-				sq.CaseSensitive = (sq.Pattern != string(toLower([]byte(sq.Pattern))))
-			}
-		}
-
-		if sq, ok := q.(*Regexp); ok && setCase != "" {
-			switch setCase {
-
-			case "yes":
-				sq.CaseSensitive = true
-			case "no":
-				sq.CaseSensitive = false
-			case "auto":
-				sq.CaseSensitive = (sq.Regexp.String() != LowerRegexp(sq.Regexp).String())
-			}
+		if sc, ok := q.(setCaser); ok {
+			sc.setCase(setCase)
 		}
 	}
 	return qs, len(in) - len(b), nil
@@ -376,6 +363,7 @@ const (
 	tokOr         = 10
 	tokContent    = 11
 	tokLang       = 12
+	tokSym        = 13
 )
 
 var tokNames = map[int]string{
@@ -391,6 +379,7 @@ var tokNames = map[int]string{
 	tokRepo:       "Repo",
 	tokText:       "Text",
 	tokLang:       "Language",
+	tokSym:        "Symbol",
 }
 
 var prefixes = map[string]int{
@@ -405,6 +394,7 @@ var prefixes = map[string]int{
 	"regex:":   tokRegex,
 	"repo:":    tokRepo,
 	"lang:":    tokLang,
+	"sym:":     tokSym,
 }
 
 var reservedWords = map[string]int{

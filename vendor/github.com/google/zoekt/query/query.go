@@ -39,6 +39,15 @@ type Regexp struct {
 	CaseSensitive bool
 }
 
+// Symbol finds a string that is a symbol.
+type Symbol struct {
+	Atom *Substring
+}
+
+func (s *Symbol) String() string {
+	return fmt.Sprintf("sym:%s", s.Atom)
+}
+
 func (q *Regexp) String() string {
 	pref := ""
 	if q.FileName {
@@ -174,6 +183,37 @@ func (q *Substring) String() string {
 		s = "case_" + s
 	}
 	return s
+}
+
+type setCaser interface {
+	setCase(string)
+}
+
+func (q *Substring) setCase(k string) {
+	switch k {
+	case "yes":
+		q.CaseSensitive = true
+	case "no":
+		q.CaseSensitive = false
+	case "auto":
+		// TODO - unicode
+		q.CaseSensitive = (q.Pattern != string(toLower([]byte(q.Pattern))))
+	}
+}
+
+func (q *Symbol) setCase(k string) {
+	q.Atom.setCase(k)
+}
+
+func (q *Regexp) setCase(k string) {
+	switch k {
+	case "yes":
+		q.CaseSensitive = true
+	case "no":
+		q.CaseSensitive = false
+	case "auto":
+		q.CaseSensitive = (q.Regexp.String() != LowerRegexp(q.Regexp).String())
+	}
 }
 
 // Or is matched when any of its children is matched.
