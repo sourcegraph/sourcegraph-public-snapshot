@@ -505,6 +505,15 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri lsp.DocumentURI) (lsp.Docume
 				if i >= 0 {
 					repo := d.cloneURL[i+len("://"):]
 					path := strings.TrimPrefix(strings.TrimPrefix(p, d.projectRoot), "/")
+
+					// HACK
+					// In some cases, we see import paths of the form "blah/blah.git" or "blah/blah.git/blah/blah".
+					// The URI for the repository containing such a package is "blah/blah", so we strip the ".git"
+					// from the location URI here. In addition, we strip any leading ".git/" from the path that
+					// might get added as a side-effect of stripping the suffix.
+					repo = strings.TrimSuffix(repo, ".git")
+					path = strings.TrimPrefix(path, ".git/")
+
 					return lsp.DocumentURI(fmt.Sprintf("%s://%s?%s#%s", d.vcs, repo, rev, path)), nil
 				}
 			}
