@@ -107,6 +107,8 @@ func (r *Cache) rkeyPrefix() string {
 // SetupForTest adjusts the globalPrefix and clears it out. You will have
 // conflicts if you do `t.Parallel()`
 func SetupForTest(name string) {
+	redisMasterEndpoint = "localhost:6379"
+
 	globalPrefix = "__test__" + name
 	// Make mutex fails faster
 	mutexTries = 1
