@@ -162,7 +162,7 @@ func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*gith
 		}
 		uri := api.RepoURI(fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName()))
 
-		repo, err := api.InternalClient.ReposCreateIfNotExists(ctx, uri, ghRepo.GetDescription(), ghRepo.GetFork(), initialEnablement)
+		repo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoURI: uri, Description: ghRepo.GetDescription(), Fork: ghRepo.GetFork(), Enabled: initialEnablement})
 		if err != nil {
 			log15.Warn("Could not ensure repository exists", "uri", uri, "error", err)
 			continue

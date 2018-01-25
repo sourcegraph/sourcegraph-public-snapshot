@@ -67,7 +67,12 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 			return nil, err
 		}
 		if result.Repo != nil {
-			if err := s.TryInsertNew(ctx, result.Repo.URI, result.Repo.Description, result.Repo.Fork, true); err != nil {
+			if err := s.TryInsertNew(ctx, api.InsertRepoOp{
+				URI:         result.Repo.URI,
+				Description: result.Repo.Description,
+				Fork:        result.Repo.Fork,
+				Enabled:     true,
+			}); err != nil {
 				return nil, err
 			}
 		}
@@ -82,8 +87,8 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	return repo, nil
 }
 
-func (s *repos) TryInsertNew(ctx context.Context, uri api.RepoURI, description string, fork, enabled bool) error {
-	return db.Repos.TryInsertNew(ctx, uri, description, fork, enabled)
+func (s *repos) TryInsertNew(ctx context.Context, op api.InsertRepoOp) error {
+	return db.Repos.TryInsertNew(ctx, op)
 }
 
 func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
