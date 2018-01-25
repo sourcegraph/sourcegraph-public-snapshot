@@ -6,6 +6,7 @@ import { take } from 'rxjs/operators/take'
 import { currentUser, refreshCurrentUser } from '../auth'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
+import { settingsFragment } from '../user/settings/backend'
 
 /**
  * Fetches an org by ID
@@ -287,9 +288,10 @@ export function updateOrgSettings(id: string, lastKnownSettingsID: number | null
         gql`
             mutation UpdateOrgSettings($id: ID!, $lastKnownSettingsID: Int, $contents: String!) {
                 updateOrgSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
-                    alwaysNil
+                    ...SettingsFields
                 }
             }
+            ${settingsFragment}
         `,
         { id, lastKnownSettingsID, contents }
     ).pipe(

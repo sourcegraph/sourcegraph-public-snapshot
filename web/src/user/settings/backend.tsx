@@ -67,7 +67,7 @@ function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
     )
 }
 
-const settingsFragment = gql`
+export const settingsFragment = gql`
     fragment SettingsFields on Settings {
         id
         configuration {
