@@ -2,10 +2,7 @@ package repos
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"net/http"
 	"net/url"
 	"sort"
 	"strings"
@@ -17,7 +14,6 @@ import (
 	githubservice "sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -84,15 +80,9 @@ func githubEnterpriseClient(ctx context.Context, gheURL, cert, accessToken strin
 		return nil, err
 	}
 
-	var transport http.RoundTripper
-	if cert != "" {
-		certPool := x509.NewCertPool()
-		if ok := certPool.AppendCertsFromPEM([]byte(cert)); !ok {
-			return nil, errors.New("Invalid certificate value")
-		}
-		transport = &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: certPool},
-		}
+	transport, err := transportWithCertTrusted(cert)
+	if err != nil {
+		return nil, err
 	}
 
 	config := &githubservice.Config{
@@ -147,52 +137,27 @@ func updateForConfig(ctx context.Context, conn schema.GitHubConnection, client *
 // update ensures that all provided repositories exist in the repository table.
 // It adds each repository with a URI of the form
 // "${GITHUB_CLIENT_HOSTNAME}/${GITHUB_REPO_FULL_NAME}".
-func updateGitHubRepos(ctx context.Context, client *github.Client, repos []*github.Repository, initialEnablement bool) {
+func updateGitHubRepos(ctx context.Context, client *github.Client, ghRepos []*github.Repository, initialEnablement bool) {
 	// Sort repos by most recently pushed, so we prioritize adding (and possibly enabling/cloning) repos first that
 	// are more likely to be important.
-	sort.Slice(repos, func(i, j int) bool {
-		return repos[i].GetPushedAt().Time.After(repos[j].GetPushedAt().Time)
+	sort.Slice(ghRepos, func(i, j int) bool {
+		return ghRepos[i].GetPushedAt().Time.After(ghRepos[j].GetPushedAt().Time)
 	})
 
-	cloned := 0
-	for _, ghRepo := range repos {
+	repos := make([]api.RepoCreateOrUpdateRequest, len(ghRepos))
+	for i, ghRepo := range ghRepos {
 		hostPart := client.BaseURL.Host
 		if hostPart == "api.github.com" {
 			hostPart = "github.com"
 		}
-		uri := api.RepoURI(fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName()))
-
-		repo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoURI: uri, Description: ghRepo.GetDescription(), Fork: ghRepo.GetFork(), Enabled: initialEnablement})
-		if err != nil {
-			log15.Warn("Could not ensure repository exists", "uri", uri, "error", err)
-			continue
-		}
-
-		if initialEnablement {
-			// If newly added, the repository will have been set to enabled upon creation above. Explicitly enqueue a
-			// clone/update now so that those occur in order of most recently pushed.
-			isCloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, repo.URI)
-			if err != nil {
-				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
-				continue
-			}
-			if !isCloned {
-				cloned++
-				log15.Debug("fetching GitHub repo", "repo", repo.URI, "cloned", isCloned)
-				err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.URI)
-				if err != nil {
-					log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
-					continue
-				}
-
-				// Every 100 repos we clone, wait a bit to prevent overloading gitserver.
-				if cloned > 0 && cloned%100 == 0 {
-					log15.Info(fmt.Sprintf("%d repositories cloned so far (out of %d repositories total, not all of which need cloning). Waiting for a moment.", cloned, len(repos)))
-					time.Sleep(1 * time.Minute)
-				}
-			}
+		repos[i] = api.RepoCreateOrUpdateRequest{
+			RepoURI:     api.RepoURI(fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName())),
+			Description: ghRepo.GetDescription(),
+			Fork:        ghRepo.GetFork(),
+			Enabled:     initialEnablement,
 		}
 	}
+	createEnableUpdateRepos(ctx, repos, nil)
 }
 
 // fetchAllGitHubRepos returns all repos that belong to the org of the provided client's authenticated user.
