@@ -1167,6 +1167,8 @@ type Site implements ConfigurationSubject {
     # more about the code intelligence available (languages supported, etc.). It is subject to
     # change without notice.
     hasCodeIntelligence: Boolean!
+    # Whether the site is using an external authentication service such as oidc or saml.
+    externalAuthEnabled: Boolean!
 }
 
 # The configuration for a site.

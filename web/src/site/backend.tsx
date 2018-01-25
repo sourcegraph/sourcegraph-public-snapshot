@@ -21,6 +21,7 @@ export function refreshSiteFlags(): Observable<never> {
                 needsRepositoryConfiguration
                 noRepositoriesEnabled
                 hasCodeIntelligence
+                externalAuthEnabled
             }
         }
     `).pipe(

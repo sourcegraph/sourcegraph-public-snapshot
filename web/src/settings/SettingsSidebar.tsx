@@ -21,6 +21,7 @@ interface Props {
     className: string
     user: GQL.IUser | null
     isLightTheme: boolean
+    externalAuthEnabled: boolean
     onThemeChange: () => void
 }
 
@@ -74,7 +75,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         <NavLink
                             to="/settings/profile"
                             exact={true}
-                            className={`sidebar__item-link`}
+                            className="sidebar__item-link"
                             activeClassName="sidebar__item--active"
                         >
                             Profile
@@ -84,27 +85,29 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         <NavLink
                             to="/settings/configuration"
                             exact={true}
-                            className={`sidebar__item-link`}
+                            className="sidebar__item-link"
                             activeClassName="sidebar__item--active"
                         >
                             Configuration
                         </NavLink>
                     </li>
-                    <li className="sidebar__item">
-                        <NavLink
-                            to="/settings/account"
-                            exact={true}
-                            className={`sidebar__item-link`}
-                            activeClassName="sidebar__item--active"
-                        >
-                            Password
-                        </NavLink>
-                    </li>
+                    {!this.props.externalAuthEnabled && (
+                        <li className="sidebar__item">
+                            <NavLink
+                                to="/settings/account"
+                                exact={true}
+                                className="sidebar__item-link"
+                                activeClassName="sidebar__item--active"
+                            >
+                                Password
+                            </NavLink>
+                        </li>
+                    )}
                     <li className="sidebar__item">
                         <NavLink
                             to="/settings/emails"
                             exact={true}
-                            className={`sidebar__item-link`}
+                            className="sidebar__item-link"
                             activeClassName="sidebar__item--active"
                         >
                             Emails

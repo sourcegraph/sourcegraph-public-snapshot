@@ -51,3 +51,19 @@ func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) 
 	}
 	return len(repos) == 0, nil
 }
+
+var isExternalAuthEnabled = func() bool {
+	oidcProvider := conf.AuthOpenIDConnect()
+	if oidcProvider != nil && oidcProvider.ClientID != "" && oidcProvider.ClientSecret != "" {
+		return true
+	}
+
+	samlProvider := conf.AuthSAML()
+	if samlProvider != nil && samlProvider.IdentityProviderMetadataURL != "" && samlProvider.ServiceProviderCertificate == "" && samlProvider.ServiceProviderPrivateKey == "" {
+		return true
+	}
+
+	return false
+}()
+
+func (*siteResolver) ExternalAuthEnabled() bool { return isExternalAuthEnabled }

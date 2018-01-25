@@ -2,8 +2,11 @@ import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
+import { map } from 'rxjs/operators/map'
+import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/AcceptInvitePage'
+import { siteFlags } from '../site/backend'
 import { EditorAuthPage } from '../user/settings/EditorAuthPage'
 import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPage'
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
@@ -25,10 +28,29 @@ interface Props extends RouteComponentProps<{}> {
     onThemeChange: () => void
 }
 
+interface State {
+    externalAuthEnabled: boolean
+}
+
 /**
  * Renders a layout of a sidebar and a content area to display settings.
  */
-export class SettingsArea extends React.Component<Props> {
+export class SettingsArea extends React.Component<Props, State> {
+    public state: State = { externalAuthEnabled: false }
+    private subscriptions = new Subscription()
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            siteFlags.pipe(map(({ externalAuthEnabled }) => externalAuthEnabled)).subscribe(externalAuthEnabled => {
+                this.setState({ externalAuthEnabled })
+            })
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): JSX.Element | null {
         // If not logged in, redirect to sign in
         if (!this.props.user) {
@@ -49,7 +71,11 @@ export class SettingsArea extends React.Component<Props> {
 
         return (
             <div className="settings-area area">
-                <SettingsSidebar className="area__sidebar" {...transferProps} />
+                <SettingsSidebar
+                    externalAuthEnabled={this.state.externalAuthEnabled}
+                    className="area__sidebar"
+                    {...transferProps}
+                />
                 <div className="area__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}
@@ -71,15 +97,17 @@ export class SettingsArea extends React.Component<Props> {
                                 <UserSettingsConfigurationPage {...routeComponentProps} {...transferProps} />
                             )}
                         />
-                        <Route
-                            path={`${this.props.match.url}/account`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <UserSettingsAccountPage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
+                        {!this.state.externalAuthEnabled && (
+                            <Route
+                                path={`${this.props.match.url}/account`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <UserSettingsAccountPage {...routeComponentProps} {...transferProps} />
+                                )}
+                            />
+                        )}
                         <Route
                             path={`${this.props.match.url}/emails`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
