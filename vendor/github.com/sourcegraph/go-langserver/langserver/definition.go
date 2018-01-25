@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"log"
 	"path/filepath"
+	"strings"
 
 	"github.com/sourcegraph/go-langserver/langserver/internal/godef"
 	"github.com/sourcegraph/go-langserver/langserver/internal/refs"
@@ -147,5 +148,17 @@ func (h *LangHandler) handleXDefinition(ctx context.Context, conn jsonrpc2.JSONR
 		}
 		locs = append(locs, l)
 	}
+
+	// In some cases, you'll see import paths that end in ".git", even though the canonical
+	// package name does not include the suffix.
+	for i, loc := range locs {
+		if oldPackage := loc.Symbol.Package; strings.HasSuffix(oldPackage, ".git") {
+			newPackage := strings.TrimSuffix(oldPackage, ".git")
+			locs[i].Symbol.Package = newPackage
+			locs[i].Symbol.ID = strings.Replace(loc.Symbol.ID, oldPackage, newPackage, 1)
+			locs[i].Location.URI = lsp.DocumentURI(strings.Replace(string(loc.Location.URI), oldPackage, newPackage, 1))
+		}
+	}
+
 	return locs, nil
 }
