@@ -3,6 +3,7 @@ import * as ExtractTextPlugin from 'extract-text-webpack-plugin'
 import * as path from 'path'
 import * as Tapable from 'tapable'
 import * as webpack from 'webpack'
+import * as WriteFilePlugin from 'write-file-webpack-plugin'
 const sassImportOnce = require('node-sass-import-once')
 // const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
@@ -54,6 +55,13 @@ plugins.push(
             to: 'scripts/vs',
         },
     ])
+)
+
+plugins.push(
+    new WriteFilePlugin({
+        test: /scripts\/vs\//,
+        useHashIndex: true,
+    })
 )
 
 plugins.push(new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/))

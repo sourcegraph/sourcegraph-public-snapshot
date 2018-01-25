@@ -102,7 +102,8 @@
     "typescript": "~2.7.0-rc",
     "webpack": "^3.10.0",
     "webpack-bundle-analyzer": "^2.9.1",
-    "webpack-dev-server": "^2.10.0"
+    "webpack-dev-server": "^2.10.0",
+    "write-file-webpack-plugin": "^4.2.0"
   },
   "dependencies": {
     "@sourcegraph/icons": "^1.10.1",
