@@ -200,6 +200,28 @@ export function fetchRepoGroups(): Observable<GQL.IRepoGroup[]> {
     )
 }
 
+export function fetchReposByQuery(query: string): Observable<string[]> {
+    return queryGraphQL(
+        gql`
+            query ReposByQuery($query: String!) {
+                search(query: $query) {
+                    results {
+                        repositories
+                    }
+                }
+            }
+        `,
+        { query }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.search || !data.search.results || !data.search.results.repositories) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.search.results.repositories
+        })
+    )
+}
+
 const savedQueryFragment = gql`
     fragment SavedQueryFields on SavedQuery {
         id

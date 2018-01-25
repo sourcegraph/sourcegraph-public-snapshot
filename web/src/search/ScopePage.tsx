@@ -4,14 +4,18 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { combineLatest } from 'rxjs/observable/combineLatest'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
+import { concat } from 'rxjs/operators/concat'
 import { map } from 'rxjs/operators/map'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoFileLink } from '../components/RepoFileLink'
 import { SearchScope } from '../schema/settings.schema'
-import { fetchRepoGroups } from '../search/backend'
+import { fetchReposByQuery } from '../search/backend'
 import { submitSearch } from '../search/helpers'
 import { queryUpdates } from '../search/QueryInput'
 import { QueryInput } from '../search/QueryInput'
@@ -34,9 +38,10 @@ interface State {
     repoList?: string[]
     searchScopes?: SearchScope[]
     id?: string
-    name: string
+    name?: string
     value: string
     description?: string
+    errorMessage?: string
 }
 
 export class ScopePage extends React.Component<ScopePageProps, State> {
@@ -45,7 +50,6 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
     public state: State = {
         query: '',
         repoList: [],
-        name: '',
         value: '',
     }
 
@@ -54,38 +58,43 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
 
         this.subscriptions.add(
             combineLatest(
-                fetchRepoGroups(),
                 this.propUpdates,
                 currentConfiguration.pipe(map((config): SearchScope[] => config['search.scopes'] || []))
-            ).subscribe(([groups, props, searchScopes]) => {
-                this.setState({ searchScopes })
-                const matchedScope = searchScopes.find(o => o.id === props.match.params.id)
-                if (matchedScope) {
-                    this.setState({
-                        id: matchedScope.id,
-                        name: matchedScope.name,
-                        value: matchedScope.value,
-                        description: matchedScope.description,
+            )
+                .pipe(
+                    switchMap(([props, searchScopes]) => {
+                        this.setState({ searchScopes })
+                        const matchedScope = searchScopes.find(o => o.id === props.match.params.id)
+                        if (matchedScope) {
+                            queryUpdates.next(this.state.value)
+                            if (matchedScope.value.includes('repo:') || matchedScope.value.includes('repogroup:')) {
+                                return of(matchedScope).pipe(
+                                    concat(
+                                        fetchReposByQuery(matchedScope.value).pipe(
+                                            map(repoList => ({ repoList, errorMessage: undefined })),
+                                            catchError(err => {
+                                                console.error(err)
+                                                return [{ errorMessage: err.message, repoList: [] }]
+                                            })
+                                        )
+                                    )
+                                )
+                            }
+                            return [{ ...matchedScope, repoList: [], errorMessage: undefined }]
+                        }
+                        return [
+                            {
+                                id: undefined,
+                                name: undefined,
+                                value: '',
+                                description: undefined,
+                                repoList: [],
+                                errorMessage: undefined,
+                            },
+                        ]
                     })
-                    const [, repoGroup] = matchedScope.value.split('repogroup:')
-                    if (matchedScope.value && repoGroup) {
-                        const repogroup = repoGroup.split(/\s/, 1)[0]
-                        const scope = groups.find(o => o.name === repogroup)
-                        this.setState({ repoList: scope ? scope.repositories : [] })
-                    } else {
-                        this.setState({ repoList: [] })
-                    }
-                    queryUpdates.next(this.state.value)
-                } else {
-                    this.setState({
-                        id: undefined,
-                        name: '',
-                        value: '',
-                        description: undefined,
-                        repoList: [],
-                    })
-                }
-            })
+                )
+                .subscribe(state => this.setState(state as State))
         )
 
         this.propUpdates.next(this.props)
@@ -134,29 +143,41 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                     </section>
                     <PageTitle title={this.state.name} />
                     <section className="scope-page__repos">
-                        {this.state.repoList &&
-                            this.state.repoList.length > 0 && <p>Repositories included in this scope:</p>}
                         <div>
                             <div>
-                                {this.state.repoList && this.state.repoList.length > 0 ? (
-                                    this.state.repoList.slice(0, 50).map((repo, i) => (
-                                        <div key={i} className="scope-page__row">
-                                            <Link to={`/${repo}`} className="scope-page__link">
-                                                <RepositoryIcon className="icon-inline scope-page__link-icon" />
-                                                <RepoFileLink repoPath={repo} disableLinks={true} />
-                                            </Link>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p>All repositories included in this scope</p>
+                                {this.state.errorMessage && (
+                                    <p className="alert alert-danger">{this.state.errorMessage}</p>
                                 )}
+                                {!this.state.errorMessage &&
+                                    (this.state.repoList && this.state.repoList.length > 0 ? (
+                                        <div>
+                                            <p>Repositories included in this scope:</p>
+                                            <div>
+                                                {this.state.repoList.slice(0, 50).map((repo, i) => (
+                                                    <div key={i} className="scope-page__row">
+                                                        <Link to={`/${repo}`} className="scope-page__link">
+                                                            <RepositoryIcon className="icon-inline scope-page__link-icon" />
+                                                            <RepoFileLink repoPath={repo} disableLinks={true} />
+                                                        </Link>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="scope-page__count">
+                                                {this.state.repoList.length}{' '}
+                                                {this.state.repoList.length > 1 ? 'repositories ' : 'repository '} total{' '}
+                                                {this.state.repoList.length > 50 ? '(showing first 50)' : ''}{' '}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p>All repositories included in this scope</p>
+                                    ))}
                             </div>
-                            {this.state.repoList &&
-                                this.state.repoList.length > 0 && (
-                                    <p className="scope-page__count">
-                                        {this.state.repoList.length} repositories total{' '}
-                                        {this.state.repoList.length > 50 ? '(showing first 50)' : ''}{' '}
-                                    </p>
+                            {window.context.sourcegraphDotComMode &&
+                                !window.context.user && (
+                                    <small>
+                                        Have an idea for a search scope for your community, or want to add a repository
+                                        to this scope? Tweet us <a href="https://twitter.com/srcgraph">@srcgraph</a>.
+                                    </small>
                                 )}
                         </div>
                     </section>
