@@ -13,6 +13,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/context/ctxhttp"
@@ -43,6 +44,12 @@ type Client struct {
 	httpClient *http.Client // the HTTP client to use
 
 	repoCache *rcache.Cache
+
+	mu                 sync.Mutex
+	rateLimitKnown     bool
+	rateLimit          int       // last X-RateLimit-Limit HTTP response header value
+	rateLimitRemaining int       // last X-RateLimit-Remaining HTTP response header value
+	rateLimitReset     time.Time // last X-RateLimit-Remaining HTTP response header value
 }
 
 // NewClient creates a new GitHub API client with an optional personal access token to authenticate requests.
@@ -79,6 +86,93 @@ func NewClient(baseURL *url.URL, token string, transport http.RoundTripper) *Cli
 		httpClient: &http.Client{Transport: transport},
 		repoCache:  repoCache,
 	}
+}
+
+// RateLimit reports the client's GitHub rate limit (as of the last API response it received).
+func (c *Client) RateLimit() (remaining int, reset time.Duration, ok bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.rateLimitKnown {
+		return 0, 0, false
+	}
+	return c.rateLimitRemaining, c.rateLimitReset.Sub(time.Now()), false
+}
+
+// RecommendedRateLimitWaitForBackgroundOp returns the recommended wait time before performing a periodic
+// background operation with the given rate limit cost. It takes the rate limit information from the last API
+// request into account.
+//
+// For example, suppose the rate limit resets to 5,000 points in 30 minutes and currently 1,500 points remain. You
+// want to perform a cost-500 operation. Only 4 more cost-500 operations are allowed in the next 30 minutes (per
+// the rate limit), so a recommended wait time would be N.
+//
+//                          -500         -500         -500
+//         Now   |------------*------------*------------*------------| 30 min from now
+//   Remaining  1500         1000         500           0           5000 (reset)
+//
+// Assuming no other operations are being performed (that count against the rate limit), the recommended wait would
+// be 7.5 minutes (30 minutes / 4), so that the operations are evenly spaced out.
+//
+// A small constant additional wait is added to account for other simultaneous operations and clock
+// out-of-synchronization with GitHub.
+//
+// See https://developer.github.com/v4/guides/resource-limitations/#rate-limit.
+func (c *Client) RecommendedRateLimitWaitForBackgroundOp(cost int) time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.rateLimitKnown {
+		return 0
+	}
+
+	// If our rate limit info is out of date, assume it was reset.
+	limitRemaining := float64(c.rateLimitRemaining)
+	resetAt := c.rateLimitReset
+	if time.Now().Before(c.rateLimitReset) {
+		limitRemaining = float64(c.rateLimit)
+		resetAt = time.Now().Add(1 * time.Hour)
+	}
+
+	// Be conservative.
+	limitRemaining = float64(limitRemaining)*0.8 - 150
+	timeRemaining := resetAt.Sub(time.Now()) + 3*time.Minute
+
+	n := limitRemaining / float64(cost) // number of times this op can run before exhausting rate limit
+	if n < 1 {
+		n = 1 // no point in waiting beyond the reset
+	}
+	if n > 500 {
+		return 0
+	}
+	if n > 250 {
+		return 200 * time.Millisecond
+	}
+	return (timeRemaining / time.Duration(n)).Round(time.Second)
+}
+
+func (c *Client) recordRateLimitHeaders(h http.Header) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// See https://developer.github.com/v3/#rate-limiting.
+	limit, err := strconv.Atoi(h.Get("X-RateLimit-Limit"))
+	if err != nil {
+		c.rateLimitKnown = false
+		return
+	}
+	remaining, err := strconv.Atoi(h.Get("X-RateLimit-Remaining"))
+	if err != nil {
+		c.rateLimitKnown = false
+		return
+	}
+	resetAtSeconds, err := strconv.ParseInt(h.Get("X-RateLimit-Reset"), 10, 64)
+	if err != nil {
+		c.rateLimitKnown = false
+		return
+	}
+	c.rateLimitKnown = true
+	c.rateLimit = limit
+	c.rateLimitRemaining = remaining
+	c.rateLimitReset = time.Unix(resetAtSeconds, 0)
 }
 
 func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
@@ -121,6 +215,7 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 		return err
 	}
 	defer resp.Body.Close()
+	c.recordRateLimitHeaders(resp.Header)
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected HTTP error status %d from GitHub GraphQL endpoint (%s)", resp.StatusCode, req.URL)
 	}

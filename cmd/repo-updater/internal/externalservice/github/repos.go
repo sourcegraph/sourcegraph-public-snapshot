@@ -175,7 +175,7 @@ query Repository($owner: String!, $name: String!) {
 // ListViewerRepositories lists GitHub repositories affiliated with the viewer (the currently authenticated user).
 // The nextPageCursor is the ID value to pass back to this method (in the "after" parameter) to retrieve the next
 // page of repositories.
-func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *string) (repos []*Repository, nextPageCursor *string, err error) {
+func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *string) (repos []*Repository, nextPageCursor *string, rateLimitCost int, err error) {
 	var result struct {
 		Viewer struct {
 			Repositories struct {
@@ -185,6 +185,9 @@ func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *s
 					EndCursor   *string
 				}
 			}
+		}
+		RateLimit struct {
+			Cost int
 		}
 	}
 	if err := c.requestGraphQL(ctx, `
@@ -204,12 +207,15 @@ func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *s
 					endCursor
 				}
 			}
-		}	
+		}
+		rateLimit {
+			cost
+		}
 	}`+(Repository{}).RepositoryFieldsGraphQLFragment(),
 		map[string]interface{}{"first": first, "after": after},
 		&result,
 	); err != nil {
-		return nil, nil, err
+		return nil, nil, 0, err
 	}
 
 	// Add to cache.
@@ -221,5 +227,5 @@ func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *s
 	if !result.Viewer.Repositories.PageInfo.HasNextPage {
 		nextPageCursor = nil
 	}
-	return result.Viewer.Repositories.Nodes, nextPageCursor, nil
+	return result.Viewer.Repositories.Nodes, nextPageCursor, result.RateLimit.Cost, nil
 }
