@@ -35,16 +35,17 @@ type Repo struct {
 	FreezeIndexedRevision bool
 }
 
+func (Repo) Fork() bool {
+	// TODO(sqs): update callers
+	return false
+}
+
+// InsertRepoOp represents an operation to insert a repository.
 type InsertRepoOp struct {
 	URI         RepoURI
 	Description string
 	Fork        bool
 	Enabled     bool
-}
-
-func (Repo) Fork() bool {
-	// TODO(sqs): update callers
-	return false
 }
 
 type DependencyReferences struct {
