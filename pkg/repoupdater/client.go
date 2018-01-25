@@ -43,7 +43,20 @@ type Client struct {
 }
 
 // RepoLookup retrieves information about the repository on repoupdater.
-func (c *Client) RepoLookup(ctx context.Context, repo api.RepoURI) (*protocol.RepoLookupResult, error) {
+func (c *Client) RepoLookup(ctx context.Context, repo api.RepoURI) (result *protocol.RepoLookupResult, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.RepoLookup")
+	defer func() {
+		if result != nil {
+			span.SetTag("found", result.Repo != nil)
+		}
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+	span.SetTag("Repo", string(repo))
+
 	resp, err := c.httpPost(ctx, "repo-lookup", protocol.RepoLookupArgs{Repo: repo})
 	if err != nil {
 		return nil, err
@@ -53,9 +66,8 @@ func (c *Client) RepoLookup(ctx context.Context, repo api.RepoURI) (*protocol.Re
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoLookup", Err: fmt.Errorf("RepoLookup: http status %d", resp.StatusCode)}
 	}
 
-	var response *protocol.RepoLookupResult
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return result, err
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
