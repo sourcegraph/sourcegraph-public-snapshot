@@ -14,7 +14,7 @@ type RepoCreateOrUpdateRequest struct {
 	RepoURI     `json:"uri"`
 	Description string `json:"description"`
 	Fork        bool   `json:"fork"`
-	Enabled     bool   `json:"enabled"`
+	Enabled     bool   `json:"enabled"` // only used when creating the repository, does not update an existing repository's enablement
 }
 
 type RepoUpdateIndexRequest struct {
