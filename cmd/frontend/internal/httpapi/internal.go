@@ -51,7 +51,7 @@ func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
-	log15.Info("serveGitoliteUpdateRepos")
+	log15.Debug("serveGitoliteUpdateRepos")
 	list, err := gitserver.DefaultClient.ListGitolite(r.Context())
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	log15.Info("serveGitoliteUpdateRepos", "totalCount", len(list), "whitelistCount", len(whitelist))
+	log15.Debug("serveGitoliteUpdateRepos", "totalCount", len(list), "whitelistCount", len(whitelist))
 
 	insertRepoOps := make([]api.InsertRepoOp, len(whitelist))
 	for i, entry := range whitelist {
