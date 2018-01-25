@@ -82,6 +82,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                     )
                                 )
                             }
+                            queryUpdates.next(this.state.value)
                             return [{ ...matchedScope, repoList: [], errorMessage: undefined }]
                         }
                         return [
@@ -98,7 +99,6 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                 )
                 .subscribe(state => this.setState(state as State))
         )
-
         this.propUpdates.next(this.props)
     }
 
@@ -118,16 +118,20 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         if (!this.state.searchScopes.some((element: SearchScope) => element.id === this.props.match.params.id)) {
             return <ScopeNotFound />
         }
-        const mkd: MarkedString = { language: 'markdown', value: this.state.description || '' }
-        const sanitizedMarkdown = marked(mkd.value, { gfm: true, breaks: true, sanitize: true })
+        const sanitizedMarkdown = marked(this.state.description || '', { gfm: true, breaks: true, sanitize: true })
         return (
             <div className="scope-page">
                 <div className="scope-page__container">
                     <header>
                         <h1 className="scope-page__title">{this.state.name}</h1>
-                        {this.state.description && <div dangerouslySetInnerHTML={{ __html: sanitizedMarkdown }} />}
+                        {this.state.description && (
+                            <div
+                                className="scope-page__section"
+                                dangerouslySetInnerHTML={{ __html: sanitizedMarkdown }}
+                            />
+                        )}
                     </header>
-                    <section className="">
+                    <section>
                         <form className="scope-page__section-search" onSubmit={this.onSubmit}>
                             <div className="scope-page__input-scope">
                                 <span className="scope-page__input-scope-text">{this.state.value}</span>
