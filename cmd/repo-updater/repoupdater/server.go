@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
@@ -42,19 +42,30 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var githubdotcomClient = github.NewClient(
+	&url.URL{Scheme: "https", Host: "api.github.com"},
+	"", // TODO!(sqs): use token
+	nil,
+)
+
 func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 	var result protocol.RepoLookupResult
 
 	switch {
 	case strings.HasPrefix(strings.ToLower(string(args.Repo)), "github.com/"):
-		ghRepo, err := github.GetRepo(ctx, args.Repo)
+		nameWithOwner := string(args.Repo[len("github.com/"):])
+		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+		if err != nil {
+			return nil, err
+		}
+		repo, err := githubdotcomClient.GetRepository(ctx, owner, name)
 		if err == nil {
 			result.Repo = &protocol.RepoInfo{
-				URI:         api.RepoURI("github.com/" + ghRepo.GetFullName()),
-				Description: ghRepo.GetDescription(),
-				Fork:        ghRepo.GetFork(),
+				URI:         api.RepoURI("github.com/" + repo.NameWithOwner),
+				Description: repo.Description,
+				Fork:        repo.IsFork,
 			}
-		} else if err != nil && legacyerr.ErrCode(err) != legacyerr.NotFound {
+		} else if err != nil && !github.IsNotFound(err) {
 			return nil, err
 		}
 

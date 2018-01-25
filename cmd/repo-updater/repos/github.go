@@ -3,234 +3,184 @@ package repos
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
-	"sort"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-github/github"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	githubservice "sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
-// githubConfig binds together a GitHub connection and the authenticated
-// GitHub client created from that config. This enables reuse of a single client
-// for a given config.
-type githubConfig struct {
-	conn   schema.GitHubConnection
-	client *github.Client
-}
-
-var (
-	githubConns = conf.Get().Github
-)
-
-// RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the GitHub Enterprise instance to Sourcegraph
+// RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
+// Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) error {
-	var configs []githubConfig
-	for _, c := range githubConns {
-		u, err := url.Parse(c.Url)
+	var clients []*githubClient
+	for _, c := range conf.Get().Github {
+		client, err := newGitHubClient(c)
 		if err != nil {
-			return fmt.Errorf("error processing GitHub config URL %s: %s", c.Url, err)
+			return fmt.Errorf("error processing GitHub config %s: %s", c.Url, err)
 		}
-		if u.Hostname() == "github.com" {
-			cfg := githubConfig{conn: c}
-			clientConf := &githubservice.Config{Context: ctx}
-			if c.Token != "" {
-				cfg.client = clientConf.AuthedClient(c.Token)
-			} else {
-				cfg.client = clientConf.UnauthedClient()
-			}
-			configs = append(configs, cfg)
-		} else {
-			cl, err := githubEnterpriseClient(ctx, c.Url, c.Certificate, c.Token)
-			if err != nil {
-				return err
-			}
-			configs = append(configs, githubConfig{conn: c, client: cl})
-		}
+		clients = append(clients, client)
 	}
 
-	if len(configs) == 0 {
+	if len(clients) == 0 {
 		return nil
 	}
-	for i, c := range configs {
-		go func(i, n int, c githubConfig) {
+	for _, c := range clients {
+		go func(c *githubClient) {
 			for {
-				log15.Info("RunGitHubRepositorySyncWorker:updateForConfig", "ith", i, "total", n)
-				err := updateForConfig(ctx, c.conn, c.client)
-				if err != nil {
-					log15.Warn("error updating GitHub repos", "url", c.conn.Url, "err", err)
-				}
+				updateGitHubRepositories(ctx, c)
 				time.Sleep(updateInterval)
 			}
-		}(i, len(configs), c)
+		}(c)
 	}
 	select {}
 }
 
-func githubEnterpriseClient(ctx context.Context, gheURL, cert, accessToken string) (*github.Client, error) {
-	gheAPIURL := fmt.Sprintf("%s/api/v3/", gheURL)
-	baseURL, err := url.Parse(gheAPIURL)
-	if err != nil {
-		return nil, err
+// updateGitHubRepositories ensures that all provided repositories have been added and updated on Sourcegraph.
+func updateGitHubRepositories(ctx context.Context, client *githubClient) {
+	repos := client.listAllRepositories(ctx)
+
+	githubRepositoryToRepoPath := func(repositoryPathPattern string, repo *github.Repository) api.RepoURI {
+		if repositoryPathPattern == "" {
+			repositoryPathPattern = "{host}/{nameWithOwner}"
+		}
+		return api.RepoURI(strings.NewReplacer(
+			"{host}", client.originalHostname,
+			"{nameWithOwner}", repo.NameWithOwner,
+		).Replace(repositoryPathPattern))
 	}
 
-	transport, err := transportWithCertTrusted(cert)
-	if err != nil {
-		return nil, err
+	repoChan := make(chan api.RepoCreateOrUpdateRequest)
+	go createEnableUpdateRepos(ctx, nil, repoChan)
+	for repo := range repos {
+		log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
+		repoChan <- api.RepoCreateOrUpdateRequest{
+			RepoURI:     githubRepositoryToRepoPath(client.config.RepositoryPathPattern, repo),
+			Description: repo.Description,
+			Fork:        repo.IsFork,
+			Enabled:     client.config.InitialRepositoryEnablement,
+		}
 	}
-
-	config := &githubservice.Config{
-		BaseURL:   baseURL,
-		Context:   ctx,
-		Transport: transport,
-	}
-
-	return config.AuthedClient(accessToken), nil
+	close(repoChan)
 }
 
-// updateForConfig ensures that all public and private repositories listed by the given config
-func updateForConfig(ctx context.Context, conn schema.GitHubConnection, client *github.Client) error {
-	initialEnablement := conn.InitialRepositoryEnablement || conn.PreemptivelyClone
-	if conn.PreemptivelyClone {
-		log15.Info("The site config element github[].preemptivelyClone is deprecated. Use initialRepositoryEnablement instead.")
+func newGitHubClient(config schema.GitHubConnection) (*githubClient, error) {
+	baseURL, err := url.Parse(config.Url)
+	if err != nil {
+		return nil, err
+	}
+	originalHostname := baseURL.Hostname()
+
+	// GitHub.com's API is hosted on api.github.com.
+	if hostname := strings.ToLower(baseURL.Hostname()); hostname == "github.com" || hostname == "www.github.com" {
+		baseURL.Scheme = "https"
+		baseURL.Host = "api.github.com" // might even be changed to http://github-proxy, but the github pkg handles that
 	}
 
-	// update explicitly listed repositories
-	var explicitRepos []*github.Repository
-	for _, ownerAndRepoString := range conn.Repos {
-		ownerAndRepo := strings.Split(ownerAndRepoString, "/")
-		if len(ownerAndRepo) != 2 {
-			log15.Error("Could not update public GitHub repository, name must be owner/repo format", "repo", ownerAndRepoString)
-			continue
-		}
-		repo, _, err := client.Repositories.Get(ctx, ownerAndRepo[0], ownerAndRepo[1])
+	var transport http.RoundTripper
+	if config.Certificate != "" {
+		var err error
+		transport, err = transportWithCertTrusted(config.Certificate)
 		if err != nil {
-			log15.Error("Could not update public GitHub repository", "error", err)
-			continue
+			return nil, err
 		}
-		explicitRepos = append(explicitRepos, repo)
 	}
-	updateGitHubRepos(ctx, client, explicitRepos, initialEnablement)
 
-	// update implicit repositories (repositories owned by an organization to which the user who created
-	// the personal access token belongs)
-	var repos []*github.Repository
-	var err error
-	if client.BaseURL.Host == "api.github.com" {
-		repos, err = fetchAllGitHubRepos(ctx, client)
-	} else {
-		repos, err = fetchAllGitHubEnterpriseRepos(ctx, client)
-	}
-	if err != nil {
-		return fmt.Errorf("could not list repositories: %s", err)
-	}
-	updateGitHubRepos(ctx, client, repos, initialEnablement)
-	return nil
+	return &githubClient{
+		config:           config,
+		originalHostname: originalHostname,
+		client:           github.NewClient(baseURL, config.Token, transport),
+	}, nil
 }
 
-// update ensures that all provided repositories exist in the repository table.
-// It adds each repository with a URI of the form
-// "${GITHUB_CLIENT_HOSTNAME}/${GITHUB_REPO_FULL_NAME}".
-func updateGitHubRepos(ctx context.Context, client *github.Client, ghRepos []*github.Repository, initialEnablement bool) {
-	// Sort repos by most recently pushed, so we prioritize adding (and possibly enabling/cloning) repos first that
-	// are more likely to be important.
-	sort.Slice(ghRepos, func(i, j int) bool {
-		return ghRepos[i].GetPushedAt().Time.After(ghRepos[j].GetPushedAt().Time)
-	})
+type githubClient struct {
+	config schema.GitHubConnection
+	client *github.Client
 
-	repos := make([]api.RepoCreateOrUpdateRequest, len(ghRepos))
-	for i, ghRepo := range ghRepos {
-		hostPart := client.BaseURL.Host
-		if hostPart == "api.github.com" {
-			hostPart = "github.com"
-		}
-		repos[i] = api.RepoCreateOrUpdateRequest{
-			RepoURI:     api.RepoURI(fmt.Sprintf("%s/%s", hostPart, ghRepo.GetFullName())),
-			Description: ghRepo.GetDescription(),
-			Fork:        ghRepo.GetFork(),
-			Enabled:     initialEnablement,
-		}
-	}
-	createEnableUpdateRepos(ctx, repos, nil)
+	// originalHostname is the hostname of config.Url (differs from client baseURL, whose host is api.github.com
+	// for an originalHostname of github.com).
+	originalHostname string
 }
 
-// fetchAllGitHubRepos returns all repos that belong to the org of the provided client's authenticated user.
-func fetchAllGitHubRepos(ctx context.Context, client *github.Client) ([]*github.Repository, error) {
-	var allRepos []*github.Repository
-	orgs, _, err := client.Organizations.List(ctx, "", nil)
-	if err != nil {
-		return nil, err
-	}
-	for _, org := range orgs {
-		if org.Login == nil {
-			return nil, errors.New("org login required")
+func (c *githubClient) listAllRepositories(ctx context.Context) <-chan *github.Repository {
+	const first = 100 // max GitHub API "first" parameter
+	ch := make(chan *github.Repository, first)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if len(c.config.RepositoryQuery) == 0 {
+			// Users need to specify ["none"] to disable affiliated default.
+			c.config.RepositoryQuery = []string{"affiliated"}
 		}
-		var resp *github.Response
-		for page := 1; page != 0; page = resp.NextPage {
-			var repos []*github.Repository
-			var err error
-			repos, resp, err = client.Repositories.ListByOrg(ctx, *org.Login, &github.RepositoryListByOrgOptions{
-				ListOptions: github.ListOptions{Page: page, PerPage: 100},
-			})
+		for _, repositoryQuery := range c.config.RepositoryQuery {
+			switch repositoryQuery {
+			case "affiliated":
+				// Avoid overloading the GitHub API. Even if the client has its own rate limiter, the sync worker
+				// here should use an even more conservative rate limiter because it is a background job.
+				rateLimiter := time.NewTicker(5 * time.Second)
+				defer rateLimiter.Stop()
+
+				var endCursor *string // GraphQL pagination cursor
+				for {
+					var repos []*github.Repository
+					var err error
+					repos, endCursor, err = c.client.ListViewerRepositories(ctx, first, endCursor)
+					if err != nil {
+						log15.Error("Error listing viewer's affiliated GitHub repositories", "endCursor", endCursor, "error", err)
+						break
+					}
+					log15.Debug("github sync: ListViewerRepositories", "repos", len(repos))
+					for _, r := range repos {
+						log15.Debug("github sync: ListViewerRepositories: repo", "repo", r.NameWithOwner)
+						ch <- r
+					}
+					if endCursor == nil {
+						break
+					}
+					<-rateLimiter.C
+				}
+
+			case "none":
+				// nothing to do
+
+			default:
+				log15.Error("Skipping unrecognized GitHub configuration repositoryQuery", "repositoryQuery", repositoryQuery)
+			}
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _, nameWithOwner := range c.config.Repos {
+			owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 			if err != nil {
-				return nil, err
-			}
-			allRepos = append(allRepos, repos...)
-		}
-	}
-	return allRepos, nil
-}
-
-// fetchAllGitHubEnterpriseRepos returns all repos that exists on a GitHub instance and
-// all of the private repositories for the provided client's authenticated user.
-func fetchAllGitHubEnterpriseRepos(ctx context.Context, client *github.Client) (allRepos []*github.Repository, err error) {
-	repoMap := make(map[string]*github.Repository)
-	// Add all public repositories
-	since := 0
-	for {
-		repos, _, err := client.Repositories.ListAll(ctx, &github.RepositoryListAllOptions{Since: since})
-		if err != nil {
-			return nil, err
-		}
-		if len(repos) == 0 {
-			break
-		}
-		for _, repo := range repos {
-			if repo.FullName == nil {
+				log15.Error("Invalid GitHub repository", "nameWithOwner", nameWithOwner)
 				continue
 			}
-			repoMap[*repo.FullName] = repo
-		}
-		since = *repos[len(repos)-1].ID
-	}
-	// Add all private repositories corresponding to the access token user
-	for page := 1; ; {
-		repos, resp, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{
-			ListOptions: github.ListOptions{Page: page, PerPage: 100},
-		})
-		if err != nil {
-			return nil, err
-		}
-		for _, repo := range repos {
-			if repo.FullName == nil {
+			repo, err := c.client.GetRepository(ctx, owner, name)
+			if err != nil {
+				log15.Error("Error getting GitHub repository", "nameWithOwner", nameWithOwner, "error", err)
 				continue
 			}
-			repoMap[*repo.FullName] = repo
+			log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
+			ch <- repo
 		}
-		page = resp.NextPage
-		if page == 0 {
-			break
-		}
-	}
+	}()
 
-	for _, repo := range repoMap {
-		allRepos = append(allRepos, repo)
-	}
-	return allRepos, nil
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	return ch
 }

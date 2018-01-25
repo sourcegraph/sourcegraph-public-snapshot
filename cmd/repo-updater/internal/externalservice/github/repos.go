@@ -2,97 +2,133 @@ package github
 
 import (
 	"encoding/json"
-	"net/http"
+	"errors"
+	"fmt"
+	"strings"
 
 	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
-var (
-	reposGithubPublicCache        = rcache.NewWithTTL("gh_pub", 600)
-	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repos",
-		Name:      "github_cache_hit",
-		Help:      "Counts cache hits and misses for public github repo metadata.",
-	}, []string{"type"})
-)
-
-func init() {
-	prometheus.MustRegister(reposGithubPublicCacheCounter)
+// SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
+// validation.
+func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err error) {
+	parts := strings.SplitN(nameWithOwner, "/", 2)
+	if len(parts) != 2 || strings.Contains(parts[1], "/") || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("invalid GitHub repository \"owner/name\" string: %q", nameWithOwner)
+	}
+	return parts[0], parts[1], nil
 }
 
-type cachedRepo struct {
-	github.Repository
-
-	// NotFound indicates that the GitHub API returned a 404 when
-	// using an Unauthed or Authed request (repo may be exist privately for another authed user).
-	NotFound bool
+// Repository is a GitHub repository.
+type Repository struct {
+	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
+	NameWithOwner string // full name of repository ("owner/name")
+	Description   string // description of repository
+	IsFork        bool   // whether the repository is a fork of another repository
 }
 
-var GetRepoMock func(ctx context.Context, repo api.RepoURI) (*github.Repository, error)
+// RepositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
+// Repository struct.
+func (Repository) RepositoryFieldsGraphQLFragment() string {
+	return `
+fragment RepositoryFields on Repository {
+	id
+	nameWithOwner
+	description
+	isFork
+}
+	`
+}
 
-func MockGetRepo_Return(returns *github.Repository) {
-	GetRepoMock = func(context.Context, api.RepoURI) (*github.Repository, error) {
+// GetRepositoryMock is set by tests to mock (*Client).GetRepository.
+var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
+
+// MockGetRepository_Return is called by tests to mock (*Client).GetRepository.
+func MockGetRepository_Return(returns *Repository) {
+	GetRepositoryMock = func(context.Context, string, string) (*Repository, error) {
 		return returns, nil
 	}
 }
 
-func GetRepo(ctx context.Context, repo api.RepoURI) (*github.Repository, error) {
-	if GetRepoMock != nil {
-		return GetRepoMock(ctx, repo)
+// GetRepository gets a repository from GitHub by owner and repository name.
+func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
+	if GetRepositoryMock != nil {
+		return GetRepositoryMock(ctx, owner, name)
 	}
 
-	// This function is called a lot, especially on popular public
-	// repos. For public repos we have the same result for everyone, so it
-	// is cacheable. (Permissions can change, but we no longer store that.) But
-	// for the purpose of avoiding rate limits, we set all public repos to
-	// read-only permissions.
-	//
-	// First parse the repo url before even trying (redis) cache, since this can
-	// invalide the request more quickly and cheaply.
-	owner, repoName, err := SplitRepoURI(repo)
-	if err != nil {
-		reposGithubPublicCacheCounter.WithLabelValues("local-error").Inc()
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
-	}
+	key := owner + "/" + name
 
-	if cached := getFromPublicCache(ctx, repo); cached != nil {
-		reposGithubPublicCacheCounter.WithLabelValues("hit").Inc()
+	if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
+		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
 		if cached.NotFound {
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
+			return nil, errNotFound
 		}
 		return &cached.Repository, nil
 	}
 
-	ghrepo, err := getFromAPI(ctx, owner, repoName)
-	if legacyerr.ErrCode(err) == legacyerr.NotFound {
+	repo, err := c.getRepositoryFromAPI(ctx, owner, name)
+	if IsNotFound(err) {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-		addToPublicCache(repo, &cachedRepo{NotFound: true})
-		reposGithubPublicCacheCounter.WithLabelValues("public-notfound").Inc()
+		c.addRepositoryToCache(key, &cachedRepo{NotFound: true})
+		reposGitHubCacheCounter.WithLabelValues("notfound").Inc()
 	}
 	if err != nil {
-		reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
+		reposGitHubCacheCounter.WithLabelValues("error").Inc()
 		return nil, err
 	}
 
-	ghrepoCopy := *ghrepo
-	addToPublicCache(repo, &cachedRepo{Repository: ghrepoCopy})
-	reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
+	c.addRepositoryToCache(key, &cachedRepo{Repository: *repo})
+	reposGitHubCacheCounter.WithLabelValues("miss").Inc()
 
-	return ghrepo, nil
+	return repo, nil
 }
 
-// getFromPublicCache attempts to get a response from the redis cache.
+var errNotFound = errors.New("GitHub repository not found")
+
+// IsNotFound reports whether err is a GitHub API error of type NOT_FOUND or the equivalent cached response error.
+func IsNotFound(err error) bool {
+	if err == errNotFound {
+		return true
+	}
+	errs, ok := err.(graphqlErrors)
+	if !ok {
+		return false
+	}
+	for _, err := range errs {
+		if err.Type == "NOT_FOUND" {
+			return true
+		}
+	}
+	return false
+}
+
+var (
+	reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repos",
+		Name:      "github_cache_hit",
+		Help:      "Counts cache hits and misses for GitHub repo metadata.",
+	}, []string{"type"})
+)
+
+func init() {
+	prometheus.MustRegister(reposGitHubCacheCounter)
+}
+
+type cachedRepo struct {
+	Repository
+
+	// NotFound indicates that the GitHub API reported that the repository was not found.
+	NotFound bool
+}
+
+// getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func getFromPublicCache(ctx context.Context, repo api.RepoURI) *cachedRepo {
-	b, ok := reposGithubPublicCache.Get(string(repo))
+func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
+	b, ok := c.repoCache.Get(strings.ToLower(key))
 	if !ok {
 		return nil
 	}
@@ -105,24 +141,85 @@ func getFromPublicCache(ctx context.Context, repo api.RepoURI) *cachedRepo {
 	return &cached
 }
 
-// addToPublicCache will cache the value for repo.
-func addToPublicCache(repo api.RepoURI, c *cachedRepo) {
-	b, err := json.Marshal(c)
+// addRepositoryToCache will cache the value for repo.
+func (c *Client) addRepositoryToCache(key string, repo *cachedRepo) {
+	b, err := json.Marshal(repo)
 	if err != nil {
 		return
 	}
-	reposGithubPublicCache.Set(string(repo), b)
+	c.repoCache.Set(strings.ToLower(key), b)
 }
 
-// getFromAPI attempts to fetch a public or private repo from the GitHub API
-// without use of the redis cache.
-func getFromAPI(ctx context.Context, owner, repoName string) (*github.Repository, error) {
-	ghrepo, resp, err := UnauthedClient(ctx).Repositories.Get(ctx, owner, repoName)
-	if err == nil {
-		return ghrepo, nil
+// getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
+func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
+	var result struct {
+		Repository *Repository `json:"repository"`
 	}
-	if resp != nil && resp.StatusCode == http.StatusNotFound {
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repoName)
+	if err := c.requestGraphQL(ctx, `
+query Repository($owner: String!, $name: String!) {
+	repository(owner: $owner, name: $name) {
+		...RepositoryFields
 	}
-	return nil, err
+}`+(Repository{}).RepositoryFieldsGraphQLFragment(),
+		map[string]interface{}{"owner": owner, "name": name},
+		&result,
+	); err != nil {
+		return nil, err
+	}
+	if result.Repository == nil {
+		return nil, errors.New("repository not found")
+	}
+	return result.Repository, nil
+}
+
+// ListViewerRepositories lists GitHub repositories affiliated with the viewer (the currently authenticated user).
+// The nextPageCursor is the ID value to pass back to this method (in the "after" parameter) to retrieve the next
+// page of repositories.
+func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *string) (repos []*Repository, nextPageCursor *string, err error) {
+	var result struct {
+		Viewer struct {
+			Repositories struct {
+				Nodes    []*Repository
+				PageInfo struct {
+					HasNextPage bool
+					EndCursor   *string
+				}
+			}
+		}
+	}
+	if err := c.requestGraphQL(ctx, `
+	query AffiliatedRepositories($first: Int!, $after: String) {
+		viewer {
+			repositories(
+				first: $first
+				after: $after
+				affiliations: [OWNER, ORGANIZATION_MEMBER, COLLABORATOR]
+				orderBy:{ field: PUSHED_AT, direction: DESC }
+			) {
+				nodes {
+					...RepositoryFields
+				}
+				pageInfo {
+					hasNextPage
+					endCursor
+				}
+			}
+		}	
+	}`+(Repository{}).RepositoryFieldsGraphQLFragment(),
+		map[string]interface{}{"first": first, "after": after},
+		&result,
+	); err != nil {
+		return nil, nil, err
+	}
+
+	// Add to cache.
+	for _, repo := range result.Viewer.Repositories.Nodes {
+		c.addRepositoryToCache(repo.NameWithOwner, &cachedRepo{Repository: *repo})
+	}
+
+	nextPageCursor = result.Viewer.Repositories.PageInfo.EndCursor
+	if !result.Viewer.Repositories.PageInfo.HasNextPage {
+		nextPageCursor = nil
+	}
+	return result.Viewer.Repositories.Nodes, nextPageCursor, nil
 }

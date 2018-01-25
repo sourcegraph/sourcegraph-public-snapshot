@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -39,7 +37,7 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []api.RepoCreateOrUp
 	do := func(op api.RepoCreateOrUpdateRequest) {
 		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op)
 		if err != nil {
-			log15.Warn("Could not ensure repository exists", "repo", op.RepoURI, "error", err)
+			log15.Warn("Error creating or updating repository", "repo", op.RepoURI, "error", err)
 			return
 		}
 
@@ -58,12 +56,6 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []api.RepoCreateOrUp
 				if err != nil {
 					log15.Warn("Error enqueueing Git clone/update for repository", "repo", op.RepoURI, "error", err)
 					return
-				}
-
-				// Every 100 repos we clone, wait a bit to prevent overloading gitserver.
-				if cloned > 0 && cloned%100 == 0 {
-					log15.Info(fmt.Sprintf("%d repositories cloned so far. Waiting for a moment.", cloned))
-					time.Sleep(1 * time.Minute)
 				}
 			}
 		}

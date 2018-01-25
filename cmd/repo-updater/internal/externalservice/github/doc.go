@@ -1,2 +1,2 @@
-// Package github implements GitHub integration (for access to repositories, etc.).
+// Package github implements a GitHub API client.
 package github
