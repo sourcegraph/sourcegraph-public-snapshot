@@ -2,7 +2,6 @@ package github
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -86,25 +85,6 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 	return repo, nil
 }
 
-var errNotFound = errors.New("GitHub repository not found")
-
-// IsNotFound reports whether err is a GitHub API error of type NOT_FOUND or the equivalent cached response error.
-func IsNotFound(err error) bool {
-	if err == errNotFound {
-		return true
-	}
-	errs, ok := err.(graphqlErrors)
-	if !ok {
-		return false
-	}
-	for _, err := range errs {
-		if err.Type == "NOT_FOUND" {
-			return true
-		}
-	}
-	return false
-}
-
 var (
 	reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
@@ -152,24 +132,28 @@ func (c *Client) addRepositoryToCache(key string, repo *cachedRepo) {
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
 func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
+	// If no token, we must use the older REST API, not the GraphQL API. See
+	// https://platform.github.community/t/anonymous-access/2093/2. This situation occurs on (for
+	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
+	// http://[sourcegraph-hostname]/github.com/foo/bar.
+	//
+	// To avoid having 2 code paths when getting a repo (REST API and GraphQL API), we just always
+	// use the REST API.
 	var result struct {
-		Repository *Repository `json:"repository"`
+		ID          string `json:"node_id"`   // GraphQL ID
+		FullName    string `json:"full_name"` // same as nameWithOwner
+		Description string
+		Fork        bool
 	}
-	if err := c.requestGraphQL(ctx, `
-query Repository($owner: String!, $name: String!) {
-	repository(owner: $owner, name: $name) {
-		...RepositoryFields
-	}
-}`+(Repository{}).RepositoryFieldsGraphQLFragment(),
-		map[string]interface{}{"owner": owner, "name": name},
-		&result,
-	); err != nil {
+	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
 		return nil, err
 	}
-	if result.Repository == nil {
-		return nil, errors.New("repository not found")
-	}
-	return result.Repository, nil
+	return &Repository{
+		ID:            result.ID,
+		NameWithOwner: result.FullName,
+		Description:   result.Description,
+		IsFork:        result.Fork,
+	}, nil
 }
 
 // ListViewerRepositories lists GitHub repositories affiliated with the viewer (the currently authenticated user).

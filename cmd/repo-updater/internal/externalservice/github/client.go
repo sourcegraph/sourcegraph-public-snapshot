@@ -173,22 +173,8 @@ func (c *Client) recordRateLimitHeaders(h http.Header) {
 	c.rateLimitReset = time.Unix(resetAtSeconds, 0)
 }
 
-func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
-	reqBody, err := json.Marshal(struct {
-		Query     string                 `json:"query"`
-		Variables map[string]interface{} `json:"variables"`
-	}{
-		Query:     query,
-		Variables: vars,
-	})
-	if err != nil {
-		return err
-	}
-	url := c.baseURL.ResolveReference(&url.URL{Path: path.Join(c.baseURL.Path, "graphql")})
-	req, err := http.NewRequest("POST", url.String(), bytes.NewReader(reqBody))
-	if err != nil {
-		return err
-	}
+func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
+	req.URL = c.baseURL.ResolveReference(&url.URL{Path: path.Join(c.baseURL.Path, req.URL.Path)})
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if c.token != "" {
 		req.Header.Set("Authorization", "bearer "+c.token)
@@ -215,20 +201,49 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 	defer resp.Body.Close()
 	c.recordRateLimitHeaders(resp.Header)
 	if resp.StatusCode != http.StatusOK {
-		return errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitHub GraphQL endpoint %s", req.URL))
+		return errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitHub API (%s)", req.URL))
+	}
+	return json.NewDecoder(resp.Body).Decode(result)
+}
+
+func (c *Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
+	req, err := http.NewRequest("GET", requestURI, nil)
+	if err != nil {
+		return err
 	}
 
+	// Include node_id (GraphQL ID) in response. See
+	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
+	req.Header.Add("Accept", "application/vnd.github.jean-grey-preview+json")
+
+	return c.do(ctx, req, result)
+}
+
+func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
+	reqBody, err := json.Marshal(struct {
+		Query     string                 `json:"query"`
+		Variables map[string]interface{} `json:"variables"`
+	}{
+		Query:     query,
+		Variables: vars,
+	})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", "/graphql", bytes.NewReader(reqBody))
+	if err != nil {
+		return err
+	}
 	var respBody struct {
 		Data   json.RawMessage `json:"data"`
 		Errors graphqlErrors   `json:"errors"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+	if err := c.do(ctx, req, &respBody); err != nil {
 		return err
 	}
 	if len(respBody.Errors) > 0 {
 		return respBody.Errors
 	}
-
 	if result != nil {
 		if err := json.Unmarshal(respBody.Data, result); err != nil {
 			return err
@@ -256,6 +271,29 @@ func HTTPErrorCode(err error) int {
 		return int(e)
 	}
 	return 0
+}
+
+var errNotFound = errors.New("GitHub repository not found")
+
+// IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
+// response error, or HTTP 404.
+func IsNotFound(err error) bool {
+	if err == errNotFound {
+		return true
+	}
+	if HTTPErrorCode(err) == http.StatusNotFound {
+		return true
+	}
+	errs, ok := err.(graphqlErrors)
+	if !ok {
+		return false
+	}
+	for _, err := range errs {
+		if err.Type == "NOT_FOUND" {
+			return true
+		}
+	}
+	return false
 }
 
 // graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by

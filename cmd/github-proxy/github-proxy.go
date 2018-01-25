@@ -92,7 +92,9 @@ func main() {
 		h2.Set("User-Agent", r.Header.Get("User-Agent"))
 		h2.Set("Accept", r.Header.Get("Accept"))
 		h2.Set("Content-Type", r.Header.Get("Content-Type"))
-		h2.Set("Authorization", r.Header.Get("Authorization"))
+		if r.Header.Get("Authorization") != "" {
+			h2.Set("Authorization", r.Header.Get("Authorization"))
+		}
 
 		// Authenticate for higher rate limits.
 		if authenticateRequest != nil {

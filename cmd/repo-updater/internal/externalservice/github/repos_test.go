@@ -1,6 +1,7 @@
 package github
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
 	"net/http"
@@ -39,6 +40,18 @@ func (s *mockGraphQLResponse) RoundTrip(req *http.Request) (*http.Response, erro
 	}, nil
 }
 
+type mockHTTPEmptyResponse struct {
+	statusCode int
+}
+
+func (s mockHTTPEmptyResponse) RoundTrip(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		Request:    req,
+		StatusCode: s.statusCode,
+		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+	}, nil
+}
+
 func newTestClient() *Client {
 	const cachePrefix = "__test__gh_repo"
 	rcache.SetupForTest(cachePrefix)
@@ -54,14 +67,10 @@ func TestClient_GetRepository(t *testing.T) {
 	mock := mockGraphQLResponse{
 		responseBody: `
 {
-	"data": {
-		"repository": {
-			"id": "i",
-			"nameWithOwner": "o/r",
-			"description": "d",
-			"isFork": true
-		}
-	}
+	"node_id": "i",
+	"full_name": "o/r",
+	"description": "d",
+	"fork": true
 }
 `}
 	c := newTestClient()
@@ -85,7 +94,7 @@ func TestClient_GetRepository(t *testing.T) {
 		t.Errorf("mock.count == %d, expected to miss cache once", mock.count)
 	}
 	if !reflect.DeepEqual(repo, &want) {
-		t.Errorf("got repositor %+v, want %+v", repo, &want)
+		t.Errorf("got repository %+v, want %+v", repo, &want)
 	}
 
 	// Test that repo is cached (and therefore NOT fetched) from client on second request.
@@ -100,36 +109,14 @@ func TestClient_GetRepository(t *testing.T) {
 		t.Errorf("mock.count == %d, expected to hit cache", mock.count)
 	}
 	if !reflect.DeepEqual(repo, &want) {
-		t.Errorf("got repositor %+v, want %+v", repo, &want)
+		t.Errorf("got repository %+v, want %+v", repo, &want)
 	}
 }
 
 // TestClient_GetRepository_nonexistent tests the behavior of GetRepository when called
 // on a repository that does not exist.
 func TestClient_GetRepository_nonexistent(t *testing.T) {
-	mock := mockGraphQLResponse{
-		responseBody: `
-{
-	"data": {
-		"repository": null
-	},
-	"errors": [
-		{
-			"message": "Could not resolve to a Repository with the name 'name'.",
-			"type": "NOT_FOUND",
-			"path": [
-				"repository"
-			],
-			"locations": [
-				{
-					"line": 8,
-					"column": 3
-				}
-			]
-		}
-	]
-}
-`}
+	mock := mockHTTPEmptyResponse{http.StatusNotFound}
 	c := newTestClient()
 	c.httpClient.Transport = &mock
 
