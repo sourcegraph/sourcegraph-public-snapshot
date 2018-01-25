@@ -2,10 +2,10 @@ package github
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,14 +16,12 @@ import (
 	"sync"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context/ctxhttp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-
-	"context"
-
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -217,7 +215,7 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 	defer resp.Body.Close()
 	c.recordRateLimitHeaders(resp.Header)
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected HTTP error status %d from GitHub GraphQL endpoint (%s)", resp.StatusCode, req.URL)
+		return errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitHub GraphQL endpoint %s", req.URL))
 	}
 
 	var respBody struct {
@@ -237,6 +235,27 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 		}
 	}
 	return nil
+}
+
+type httpError int
+
+func (err httpError) Error() string {
+	return fmt.Sprintf("HTTP error status %d", err)
+}
+
+// HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
+// this package. Otherwise it returns 0.
+func HTTPErrorCode(err error) int {
+	e, ok := err.(httpError)
+	if !ok {
+		// Try one level deeper.
+		err = errors.Cause(err)
+		e, ok = err.(httpError)
+	}
+	if ok {
+		return int(e)
+	}
+	return 0
 }
 
 // graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by

@@ -6,17 +6,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
 var repoupdaterURL = env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL")
+
+var (
+	// ErrNotFound is when a repository is not found.
+	ErrNotFound = errors.New("repository not found")
+
+	// ErrUnauthorized is when an authorization error occurred.
+	ErrUnauthorized = errors.New("not authorized")
+)
 
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // REPO_UPDATER_URL environment variable.
@@ -63,7 +71,15 @@ func (c *Client) RepoLookup(ctx context.Context, repo api.RepoURI) (result *prot
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoLookup", Err: fmt.Errorf("RepoLookup: http status %d", resp.StatusCode)}
+		var err error
+		if resp.StatusCode == http.StatusNotFound {
+			err = ErrNotFound
+		} else if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+			err = ErrUnauthorized
+		} else {
+			err = fmt.Errorf("http status %d", resp.StatusCode)
+		}
+		return nil, errors.Wrap(err, fmt.Sprintf("RepoLookup: %s", repo))
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)

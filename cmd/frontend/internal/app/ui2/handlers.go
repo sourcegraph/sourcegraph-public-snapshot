@@ -13,6 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 
@@ -131,9 +132,14 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if legacyerr.ErrCode(err) == legacyerr.NotFound {
+			if legacyerr.ErrCode(err) == legacyerr.NotFound || errors.Cause(err) == repoupdater.ErrNotFound {
 				// Repo does not exist.
 				serveError(w, r, err, http.StatusNotFound)
+				return nil, nil
+			}
+			if errors.Cause(err) == repoupdater.ErrUnauthorized {
+				// Not authorized to access repository.
+				serveError(w, r, err, http.StatusUnauthorized)
 				return nil, nil
 			}
 			if errors.Cause(err) == vcs.ErrRevisionNotFound {

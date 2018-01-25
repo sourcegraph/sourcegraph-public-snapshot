@@ -32,7 +32,11 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 
 	result, err := repoLookup(r.Context(), args)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		code := github.HTTPErrorCode(err)
+		if code == 0 {
+			code = http.StatusInternalServerError
+		}
+		http.Error(w, err.Error(), code)
 		return
 	}
 
