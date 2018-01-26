@@ -1,0 +1,45 @@
+box: tcnksm/gox
+build:
+  steps:
+    - setup-go-workspace
+    - script:
+        name: show environments
+        code: |
+          git version
+          go version
+    - script:
+        name: go get
+        code: |
+          go get -t ./...
+    - script:
+        name: go test
+        code: |
+          go test -v ./...
+deploy:
+  steps:
+    - setup-go-workspace
+    - script:
+        name: go get
+        code: |
+          go get ./...
+    - wercker/gox:
+        os: darwin linux windows
+        arch: 386 amd64
+        output: '{{.Dir}}_{{.OS}}_{{.Arch}}/{{.Dir}}'
+        dest: $WERCKER_OUTPUT_DIR/pkg
+    - tcnksm/zip:
+        input: $WERCKER_OUTPUT_DIR/pkg
+        output: $WERCKER_OUTPUT_DIR/dist
+    - script:
+        name: set release tag
+        code: |
+          if [ -n "$GOBUMP_NEW_VERSION" ]; then
+            export RELEASE_TAG="v$GOBUMP_NEW_VERSION"
+          fi
+    - tcnksm/ghr:
+        token: $GITHUB_TOKEN
+        input: $WERCKER_OUTPUT_DIR/dist
+        replace: true
+        version: $RELEASE_TAG
+        opt: --draft
+

@@ -1,0 +1,14 @@
+Merge variable declaration and assignment
+
+**Before:**
+
+```
+var x uint
+x = 1
+```
+
+**After:**
+
+```
+var x uint = 1
+```

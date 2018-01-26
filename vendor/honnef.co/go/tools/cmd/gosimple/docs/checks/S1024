@@ -1,0 +1,16 @@
+Replace with `time.Until(x)`
+
+The `time.Until` helper has the same effect as using
+`x.Sub(time.Now())` but is easier to read.
+
+**Before:**
+
+```
+x.Sub(time.Now())
+```
+
+**After:**
+
+```
+time.Until(x)
+```

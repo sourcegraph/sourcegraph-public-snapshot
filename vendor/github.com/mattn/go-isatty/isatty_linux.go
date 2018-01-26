@@ -1,5 +1,5 @@
 // +build linux
-// +build !appengine,!ppc64,!ppc64le
+// +build !appengine
 
 package isatty
 

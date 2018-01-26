@@ -1,0 +1,20 @@
+Replace with `copy()`
+
+`copy()` permits using the same source and destination slice, even
+with overlapping ranges. This makes it ideal for sliding elements in a
+slice.
+
+**Before:**
+
+```
+for i := 0; i < n; i++ {
+  bs[i] = bs[offset+i]
+}
+
+```
+
+**After:**
+
+```
+copy(bs[:n], bs[offset:])
+```

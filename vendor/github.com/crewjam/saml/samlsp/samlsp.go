@@ -23,8 +23,12 @@ type Options struct {
 	Logger            logger.Interface
 	Certificate       *x509.Certificate
 	AllowIDPInitiated bool
-	IDPMetadata       *saml.Metadata
+	IDPMetadata       *saml.EntityDescriptor
 	IDPMetadataURL    *url.URL
+	HTTPClient        *http.Client
+	CookieMaxAge      time.Duration
+	CookieSecure      bool
+	ForceAuthn        bool
 }
 
 // New creates a new Middleware
@@ -39,6 +43,11 @@ func New(opts Options) (*Middleware, error) {
 		logr = logger.DefaultLogger
 	}
 
+	cookieMaxAge := opts.CookieMaxAge
+	if opts.CookieMaxAge == 0 {
+		cookieMaxAge = defaultCookieMaxAge
+	}
+
 	m := &Middleware{
 		ServiceProvider: saml.ServiceProvider{
 			Key:         opts.Key,
@@ -47,10 +56,13 @@ func New(opts Options) (*Middleware, error) {
 			MetadataURL: metadataURL,
 			AcsURL:      acsURL,
 			IDPMetadata: opts.IDPMetadata,
+			ForceAuthn:  &opts.ForceAuthn,
 		},
 		AllowIDPInitiated: opts.AllowIDPInitiated,
 		CookieName:        defaultCookieName,
-		CookieMaxAge:      defaultCookieMaxAge,
+		CookieMaxAge:      cookieMaxAge,
+		CookieDomain:      opts.URL.Host,
+		CookieSecure:      opts.CookieSecure,
 	}
 
 	// fetch the IDP metadata if needed.
@@ -58,7 +70,10 @@ func New(opts Options) (*Middleware, error) {
 		return m, nil
 	}
 
-	c := http.DefaultClient
+	c := opts.HTTPClient
+	if c == nil {
+		c = http.DefaultClient
+	}
 	req, err := http.NewRequest("GET", opts.IDPMetadataURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -86,8 +101,7 @@ func New(opts Options) (*Middleware, error) {
 			continue
 		}
 
-		entity := &saml.Metadata{}
-
+		entity := &saml.EntityDescriptor{}
 		err = xml.Unmarshal(data, entity)
 
 		// this comparison is ugly, but it is how the error is generated in encoding/xml
@@ -98,9 +112,9 @@ func New(opts Options) (*Middleware, error) {
 			}
 
 			err = fmt.Errorf("no entity found with IDPSSODescriptor")
-			for _, e := range entities.EntityDescriptor {
-				if e.IDPSSODescriptor != nil {
-					entity = e
+			for i, e := range entities.EntityDescriptors {
+				if len(e.IDPSSODescriptors) > 0 {
+					entity = &entities.EntityDescriptors[i]
 					err = nil
 				}
 			}

@@ -1,0 +1,20 @@
+Simplify regular expression by using raw string literal
+
+Raw string literals use `` ` `` instead of `"` and do not support any escape
+sequences. This means that the backslash (`\`) can be used freely,
+without the need of escaping.
+
+Since regular expressions have their own escape sequences, raw strings
+can improve their readability.
+
+**Before:**
+
+```
+regexp.Compile("\\A(\\w+) profile: total \\d+\\n\\z")
+```
+
+**After:**
+
+```
+regexp.Compile(`\A(\w+) profile: total \d+\n\z`)
+```

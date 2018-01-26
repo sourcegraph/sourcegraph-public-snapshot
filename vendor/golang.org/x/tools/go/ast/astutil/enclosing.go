@@ -509,10 +509,7 @@ func NodeDescription(n ast.Node) string {
 			return "fall-through statement"
 		}
 	case *ast.CallExpr:
-		if len(n.Args) == 1 && !n.Ellipsis.IsValid() {
-			return "function call (or conversion)"
-		}
-		return "function call"
+		return "function call (or conversion)"
 	case *ast.CaseClause:
 		return "case clause"
 	case *ast.ChanType:

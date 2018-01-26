@@ -1,0 +1,17 @@
+Omit redundant nil check on slices
+
+The `len` function is defined for all slices, even nil ones, which
+have a length of zero. It is not necessary to check if a slice is not
+nil before checking that its length is not zero.
+
+**Before:**
+
+```
+if x != nil && len(x) != 0 {}
+```
+
+**After:**
+
+```
+if len(x) != 0 {}
+```

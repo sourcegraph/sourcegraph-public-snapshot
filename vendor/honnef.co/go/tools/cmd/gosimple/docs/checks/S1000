@@ -1,0 +1,20 @@
+Use plain channel send or receive
+
+`select` with a single case can be replaced with a simple send or
+receive.
+
+**Before:**
+
+```
+select {
+case x := <-ch:
+  fmt.Println(x)
+}
+```
+
+**After:**
+
+```
+x := <-ch
+fmt.Println(x)
+```

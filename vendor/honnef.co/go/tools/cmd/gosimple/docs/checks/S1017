@@ -1,0 +1,21 @@
+Replace with `strings.TrimPrefix`
+
+Instead of using `strings.HasPrefix` and manual slicing, use the
+`strings.TrimPrefix` function. If the string doesn't start with the
+prefix, the original string will be returned. Using
+`strings.TrimPrefix` reduces complexity, and avoids common bugs, such
+as off-by-one mistakes.
+
+**Before:**
+
+```
+if strings.HasPrefix(str, prefix) {
+  str = str[len(prefix):]
+}
+```
+
+**After:**
+
+```
+str = strings.TrimPrefix(str, prefix)
+```

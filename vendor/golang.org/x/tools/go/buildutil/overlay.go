@@ -58,7 +58,7 @@ func OverlayContext(orig *build.Context, overlay map[string][]byte) *build.Conte
 }
 
 // ParseOverlayArchive parses an archive containing Go files and their
-// contents. The result is intended to be used with OverlayContext.
+// contents. The result is intended to be used with Overlay.
 //
 //
 // Archive format

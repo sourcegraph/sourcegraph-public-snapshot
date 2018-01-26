@@ -1,0 +1,13 @@
+Omit comparison with boolean constant
+
+**Before:**
+
+```
+if x == true {}
+```
+
+**After:**
+
+```
+if x {}
+```

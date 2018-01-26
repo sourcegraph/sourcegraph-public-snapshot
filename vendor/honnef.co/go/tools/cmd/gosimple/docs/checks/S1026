@@ -1,0 +1,5 @@
+Don't create copies of strings
+
+Strings in Go are immutable. Since they cannot be modified, there is
+no reason for creating copies of them. Avoid constructs such as
+`string([]byte(str))` and `"" + str`.

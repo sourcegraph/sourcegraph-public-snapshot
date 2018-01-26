@@ -1,0 +1,13 @@
+Replace with `bytes.Equal`
+
+**Before:**
+
+```
+if bytes.Compare(x, y) == 0 {}
+```
+
+**After:**
+
+```
+if bytes.Equal(x, y) {}
+```

@@ -1,0 +1,1 @@
+A string cutset contains duplicate characters, suggesting `TrimPrefix` or `TrimSuffix` should be used instead of `TrimLeft` or `TrimRight`

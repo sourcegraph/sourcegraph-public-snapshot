@@ -1,0 +1,1 @@
+Various methods in the `strings` package expect valid UTF-8, but invalid input is provided

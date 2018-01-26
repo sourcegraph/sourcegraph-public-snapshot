@@ -353,6 +353,9 @@ func (p ProviderConfig) Valid() error {
 	if !contains(p.IDTokenSigningAlgValues, "RS256") {
 		return errors.New("id_token_signing_alg_values_supported must include 'RS256'")
 	}
+	if contains(p.TokenEndpointAuthMethodsSupported, "none") {
+		return errors.New("token_endpoint_auth_signing_alg_values_supported cannot include 'none'")
+	}
 
 	uris := []struct {
 		val      *url.URL
@@ -564,7 +567,7 @@ func (n *pcsStepNext) step(fn pcsStepFunc) (next pcsStepper) {
 		next = &pcsStepNext{aft: ttl}
 	} else {
 		next = &pcsStepRetry{aft: time.Second}
-		log.Printf("go-oidc: provider config sync failed, retrying in %v: %v", next.after(), err)
+		log.Printf("go-oidc: provider config sync falied, retyring in %v: %v", next.after(), err)
 	}
 	return
 }
@@ -583,7 +586,7 @@ func (r *pcsStepRetry) step(fn pcsStepFunc) (next pcsStepper) {
 		next = &pcsStepNext{aft: ttl}
 	} else {
 		next = &pcsStepRetry{aft: timeutil.ExpBackoff(r.aft, time.Minute)}
-		log.Printf("go-oidc: provider config sync failed, retrying in %v: %v", next.after(), err)
+		log.Printf("go-oidc: provider config sync falied, retyring in %v: %v", next.after(), err)
 	}
 	return
 }

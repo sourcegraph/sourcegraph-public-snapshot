@@ -1,0 +1,19 @@
+Range over the string
+
+Ranging over a string will yield byte offsets and runes. If the offset
+isn't used, this is functionally equivalent to converting the string
+to a slice of runes and ranging over that. Ranging directly over the
+string will be more performant, however, as it avoids allocating a new
+slice, the size of which depends on the length of the string.
+
+**Before:**
+
+```
+for _, r := range []rune(s) {}
+```
+
+**After:**
+
+```
+for _, r := range s {}
+```

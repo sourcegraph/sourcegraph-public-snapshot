@@ -1,0 +1,1 @@
+`sync.WaitGroup.Add` called inside the goroutine, leading to a race condition

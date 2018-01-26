@@ -37,7 +37,7 @@ type Server struct {
 	http.Handler
 	idpConfigMu      sync.RWMutex // protects calls into the IDP
 	logger           logger.Interface
-	serviceProviders map[string]*saml.Metadata
+	serviceProviders map[string]*saml.EntityDescriptor
 	IDP              saml.IdentityProvider // the underlying IDP
 	Store            Store                 // the data store
 }
@@ -54,7 +54,7 @@ func New(opts Options) (*Server, error) {
 	}
 
 	s := &Server{
-		serviceProviders: map[string]*saml.Metadata{},
+		serviceProviders: map[string]*saml.EntityDescriptor{},
 		IDP: saml.IdentityProvider{
 			Key:         opts.Key,
 			Logger:      logr,

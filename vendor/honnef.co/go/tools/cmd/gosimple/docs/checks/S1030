@@ -1,0 +1,5 @@
+Use `bytes.Buffer.String` or `bytes.Buffer.Bytes`
+
+`bytes.Buffer` has both a `String` and a `Bytes` method. It is never
+necessary to use `string(buf.Bytes())` or `[]byte(buf.String())` –
+simply use the other method.

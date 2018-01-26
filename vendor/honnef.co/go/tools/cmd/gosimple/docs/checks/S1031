@@ -1,0 +1,24 @@
+Omit redundant nil check around loop
+
+You can use `range` on nil slices and maps, the loop will simply never
+execute. This makes an additional nil check around the loop
+unnecessary.
+
+**Before:**
+
+```
+if s != nil {
+  for _, x := range s {
+    ...
+  }
+}
+```
+
+
+**After:**
+
+```
+for _, x := range s {
+  ...
+}
+```

@@ -1,0 +1,1 @@
+Certain bitwise operations, such as `x ^ 0`, do not do anything useful

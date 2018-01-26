@@ -225,14 +225,11 @@ func (ns NameSpace) Open(path string) (ReadSeekCloser, error) {
 		if debugNS {
 			fmt.Printf("tx %s: %v\n", path, m.translate(path))
 		}
-		tp := m.translate(path)
-		r, err1 := m.fs.Open(tp)
+		r, err1 := m.fs.Open(m.translate(path))
 		if err1 == nil {
 			return r, nil
 		}
-		// IsNotExist errors in overlay FSes can mask real errors in
-		// the underlying FS, so ignore them if there is another error.
-		if err == nil || os.IsNotExist(err) {
+		if err == nil {
 			err = err1
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/neelance/graphql-go/internal/common"
+	"github.com/neelance/graphql-go/internal/lexer"
 	"github.com/neelance/graphql-go/internal/schema"
 )
 
@@ -226,7 +227,7 @@ func (r *Field) DeprecationReason() *string {
 	if d == nil {
 		return nil
 	}
-	reason := d.Args.MustGet("reason").Value(nil).(string)
+	reason := common.UnmarshalLiteral(d.Args.MustGet("reason").Value.(*lexer.Literal)).(string)
 	return &reason
 }
 
@@ -253,7 +254,7 @@ func (r *InputValue) DefaultValue() *string {
 	if r.value.Default == nil {
 		return nil
 	}
-	s := r.value.Default.String()
+	s := common.Stringify(r.value.Default.Value)
 	return &s
 }
 
@@ -281,7 +282,7 @@ func (r *EnumValue) DeprecationReason() *string {
 	if d == nil {
 		return nil
 	}
-	reason := d.Args.MustGet("reason").Value(nil).(string)
+	reason := common.UnmarshalLiteral(d.Args.MustGet("reason").Value.(*lexer.Literal)).(string)
 	return &reason
 }
 

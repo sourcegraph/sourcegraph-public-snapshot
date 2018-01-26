@@ -1,0 +1,8 @@
+Omit redundant control flow
+
+Functions that have no return value do not need a `return` statement
+as the final statement of the function.
+
+Switches in Go do not have automatic fallthrough, unlike languages
+like C. It is not necessary to have a `break` statement as the final
+statement in a `case` block.

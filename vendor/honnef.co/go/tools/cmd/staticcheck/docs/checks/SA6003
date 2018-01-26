@@ -1,0 +1,24 @@
+Converting a string to a slice of runes before ranging over it
+
+You may want to loop over the runes in a string. Instead of converting
+the string to a slice of runes and looping over that, you can loop
+over the string itself. That is,
+
+```
+for _, r := range s {}
+```
+
+and
+
+```
+for _, r := range []rune(s) {}
+```
+
+will yield the same values. The first version, however, will be faster
+and avoid unnecessary memory allocations.
+
+Do note that if you are interested in the indices, ranging over a
+string and over a slice of runes will yield different indices. The
+first one yields byte offsets, while the second one yields indices in
+the slice of runes.
+

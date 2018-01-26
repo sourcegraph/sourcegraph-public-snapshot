@@ -2,6 +2,7 @@ package common
 
 import (
 	"github.com/neelance/graphql-go/errors"
+	"github.com/neelance/graphql-go/internal/lexer"
 )
 
 type Type interface {
@@ -18,7 +19,7 @@ type NonNull struct {
 }
 
 type TypeName struct {
-	Ident
+	lexer.Ident
 }
 
 func (*List) Kind() string     { return "LIST" }
@@ -29,7 +30,7 @@ func (t *List) String() string    { return "[" + t.OfType.String() + "]" }
 func (t *NonNull) String() string { return t.OfType.String() + "!" }
 func (*TypeName) String() string  { panic("TypeName needs to be resolved to actual type") }
 
-func ParseType(l *Lexer) Type {
+func ParseType(l *lexer.Lexer) Type {
 	t := parseNullType(l)
 	if l.Peek() == '!' {
 		l.ConsumeToken('!')
@@ -38,7 +39,7 @@ func ParseType(l *Lexer) Type {
 	return t
 }
 
-func parseNullType(l *Lexer) Type {
+func parseNullType(l *lexer.Lexer) Type {
 	if l.Peek() == '[' {
 		l.ConsumeToken('[')
 		ofType := ParseType(l)

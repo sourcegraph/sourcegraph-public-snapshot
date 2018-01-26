@@ -24,8 +24,6 @@ package reference
 import (
 	"errors"
 	"fmt"
-	"path"
-	"strings"
 
 	"github.com/docker/distribution/digest"
 )
@@ -44,9 +42,6 @@ var (
 
 	// ErrDigestInvalidFormat represents an error while trying to parse a string as a tag.
 	ErrDigestInvalidFormat = errors.New("invalid digest format")
-
-	// ErrNameContainsUppercase is returned for invalid repository names that contain uppercase characters.
-	ErrNameContainsUppercase = errors.New("repository name must be lowercase")
 
 	// ErrNameEmpty is returned for empty, invalid repository names.
 	ErrNameEmpty = errors.New("repository name must have at least one component")
@@ -139,7 +134,7 @@ type Canonical interface {
 func SplitHostname(named Named) (string, string) {
 	name := named.Name()
 	match := anchoredNameRegexp.FindStringSubmatch(name)
-	if len(match) != 3 {
+	if match == nil || len(match) != 3 {
 		return "", name
 	}
 	return match[1], match[2]
@@ -154,9 +149,7 @@ func Parse(s string) (Reference, error) {
 		if s == "" {
 			return nil, ErrNameEmpty
 		}
-		if ReferenceRegexp.FindStringSubmatch(strings.ToLower(s)) != nil {
-			return nil, ErrNameContainsUppercase
-		}
+		// TODO(dmcgowan): Provide more specific and helpful error
 		return nil, ErrReferenceInvalidFormat
 	}
 
@@ -219,13 +212,6 @@ func WithTag(name Named, tag string) (NamedTagged, error) {
 	if !anchoredTagRegexp.MatchString(tag) {
 		return nil, ErrTagInvalidFormat
 	}
-	if canonical, ok := name.(Canonical); ok {
-		return reference{
-			name:   name.Name(),
-			tag:    tag,
-			digest: canonical.Digest(),
-		}, nil
-	}
 	return taggedReference{
 		name: name.Name(),
 		tag:  tag,
@@ -238,32 +224,10 @@ func WithDigest(name Named, digest digest.Digest) (Canonical, error) {
 	if !anchoredDigestRegexp.MatchString(digest.String()) {
 		return nil, ErrDigestInvalidFormat
 	}
-	if tagged, ok := name.(Tagged); ok {
-		return reference{
-			name:   name.Name(),
-			tag:    tagged.Tag(),
-			digest: digest,
-		}, nil
-	}
 	return canonicalReference{
 		name:   name.Name(),
 		digest: digest,
 	}, nil
-}
-
-// Match reports whether ref matches the specified pattern.
-// See https://godoc.org/path#Match for supported patterns.
-func Match(pattern string, ref Reference) (bool, error) {
-	matched, err := path.Match(pattern, ref.String())
-	if namedRef, isNamed := ref.(Named); isNamed && !matched {
-		matched, _ = path.Match(pattern, namedRef.Name())
-	}
-	return matched, err
-}
-
-// TrimNamed removes any tag or digest from the named reference.
-func TrimNamed(ref Named) Named {
-	return repository(ref.Name())
 }
 
 func getBestReferenceType(ref reference) Reference {

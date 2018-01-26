@@ -2,11 +2,12 @@ package relay
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"encoding/json"
 
 	graphql "github.com/neelance/graphql-go"
 )
@@ -65,6 +66,5 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseJSON)
 }

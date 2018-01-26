@@ -1,0 +1,13 @@
+Replace with `fmt.Errorf`
+
+**Before:**
+
+```
+errors.New(fmt.Sprintf(...))
+```
+
+**After:**
+
+```
+fmt.Errorf(...)
+```

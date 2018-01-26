@@ -1,0 +1,3 @@
+Replace with `for { ... }`
+
+For infinite loops, using `for { ... }` is the most idiomatic choice.

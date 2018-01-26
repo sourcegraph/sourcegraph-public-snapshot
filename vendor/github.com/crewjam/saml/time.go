@@ -15,7 +15,7 @@ func (m RelaxedTime) MarshalText() ([]byte, error) {
 }
 
 func (m RelaxedTime) String() string {
-	return time.Time(m).UTC().Format(timeFormat)
+	return time.Time(m).Round(time.Millisecond).UTC().Format(timeFormat)
 }
 
 func (m *RelaxedTime) UnmarshalText(text []byte) error {
@@ -25,18 +25,21 @@ func (m *RelaxedTime) UnmarshalText(text []byte) error {
 	}
 	t, err1 := time.Parse(time.RFC3339, string(text))
 	if err1 == nil {
+		t = t.Round(time.Millisecond)
 		*m = RelaxedTime(t)
 		return nil
 	}
 
 	t, err2 := time.Parse(time.RFC3339Nano, string(text))
 	if err2 == nil {
+		t = t.Round(time.Millisecond)
 		*m = RelaxedTime(t)
 		return nil
 	}
 
 	t, err2 = time.Parse("2006-01-02T15:04:05.999999999", string(text))
 	if err2 == nil {
+		t = t.Round(time.Millisecond)
 		*m = RelaxedTime(t)
 		return nil
 	}
