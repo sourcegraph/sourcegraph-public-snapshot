@@ -564,7 +564,6 @@
   revision = "68fecaef60268522d2ac3f0123cec9d3bcab7b6e"
 
 [[projects]]
-  branch = "master"
   name = "github.com/neelance/graphql-go"
   packages = [
     ".",
@@ -583,7 +582,7 @@
     "relay",
     "trace"
   ]
-  revision = "5d3b13f2e2215f7d53c88b20fd2c37f0a37b5ffd"
+  revision = "10eb949b8f4439212ef19d5d924c47c10c110cc7"
 
 [[projects]]
   branch = "master"
@@ -1280,6 +1279,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f1fdbea9de6cd44e4c6b5e42dfb5063e1440ae0edb78efa7d3a1d70eec91f6a8"
+  inputs-digest = "4f39c620a3a92daa99ca76df321161065062716c889f208943f73fc5defb2376"
   solver-name = "gps-cdcl"
   solver-version = 1
