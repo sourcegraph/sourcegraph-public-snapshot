@@ -1,7 +1,6 @@
 import * as assert from 'assert'
 import { Chromeless } from 'chromeless'
-import retry from 'p-retry'
-
+import { retry } from '../util/e2e-test-utils'
 const chromeLauncher = require('chrome-launcher')
 
 describe('e2e test suite', () => {
@@ -560,13 +559,14 @@ describe('e2e test suite', () => {
             })
             // navigate to result on click
             await chrome.click('.file-match__item')
-            await retry(async () =>
+            await retry(async () => {
                 assert.equal(
                     await chrome.evaluate(() => window.location.href),
                     baseURL +
-                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/testdata/sample_file_extended_empty_rename.diff#L1:1'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/testdata/sample_file_extended_empty_rename.diff#L1:1a',
+                    'Unexpected window.location.href after clicking result'
                 )
-            )
+            })
         })
 
         it('accepts query for sourcegraph/jsonrpc2', async () => {
