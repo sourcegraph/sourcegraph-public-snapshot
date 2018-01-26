@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-const Version = "devel"
+const Version = "2017.2.2"
 
 func Print() {
 	if Version == "devel" {

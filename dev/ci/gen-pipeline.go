@@ -88,7 +88,10 @@ func pkgs() []string {
 			return nil
 		}
 		switch path {
-		case ".git", "dev", "ui", "vendor":
+		case ".git", "dev", "ui":
+			return filepath.SkipDir
+		}
+		if filepath.Base(path) == "vendor" {
 			return filepath.SkipDir
 		}
 

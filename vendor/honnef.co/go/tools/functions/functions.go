@@ -48,6 +48,8 @@ var stdlibDescs = map[string]Description{
 type Description struct {
 	// The function is known to be pure
 	Pure bool
+	// The function is known to be a stub
+	Stub bool
 	// The function is known to never return (panics notwithstanding)
 	Infinite bool
 	// Variable ranges
@@ -90,6 +92,7 @@ func (d *Descriptions) Get(fn *ssa.Function) Description {
 		{
 			fd.result = stdlibDescs[fn.RelString(nil)]
 			fd.result.Pure = fd.result.Pure || d.IsPure(fn)
+			fd.result.Stub = fd.result.Stub || d.IsStub(fn)
 			fd.result.Infinite = fd.result.Infinite || !terminates(fn)
 			fd.result.Ranges = vrp.BuildGraph(fn).Solve()
 			fd.result.Loops = findLoops(fn)

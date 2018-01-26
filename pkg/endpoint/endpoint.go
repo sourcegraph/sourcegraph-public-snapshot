@@ -13,9 +13,10 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/pkg/fields"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
@@ -71,7 +72,7 @@ func New(rawurl string) (*Map, error) {
 	m.mu.Lock()
 	go func() {
 		defer m.mu.Unlock()
-		endpoints, err := cl.CoreV1().Endpoints(u.Namespace).List(v1.ListOptions{FieldSelector: "metadata.name=" + u.Service})
+		endpoints, err := cl.CoreV1().Endpoints(u.Namespace).List(meta_v1.ListOptions{FieldSelector: "metadata.name=" + u.Service})
 		if err != nil {
 			m.err = err
 			return

@@ -30,13 +30,13 @@ import (
 	"github.com/golang/glog"
 	"github.com/imdario/mergo"
 
-	"k8s.io/client-go/pkg/api/unversioned"
-	"k8s.io/client-go/pkg/runtime"
-	utilerrors "k8s.io/client-go/pkg/util/errors"
-	"k8s.io/client-go/pkg/util/homedir"
-	"k8s.io/client-go/rest"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	restclient "k8s.io/client-go/rest"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	clientcmdlatest "k8s.io/client-go/tools/clientcmd/api/latest"
+	"k8s.io/client-go/util/homedir"
 )
 
 const (
@@ -47,8 +47,11 @@ const (
 	RecommendedSchemaName       = "schema"
 )
 
-var RecommendedHomeFile = path.Join(homedir.HomeDir(), RecommendedHomeDir, RecommendedFileName)
-var RecommendedSchemaFile = path.Join(homedir.HomeDir(), RecommendedHomeDir, RecommendedSchemaName)
+var (
+	RecommendedConfigDir  = path.Join(homedir.HomeDir(), RecommendedHomeDir)
+	RecommendedHomeFile   = path.Join(RecommendedConfigDir, RecommendedFileName)
+	RecommendedSchemaFile = path.Join(RecommendedConfigDir, RecommendedSchemaName)
+)
 
 // currentMigrationRules returns a map that holds the history of recommended home directories used in previous versions.
 // Any future changes to RecommendedHomeFile and related are expected to add a migration rule here, in order to make
@@ -68,7 +71,7 @@ func currentMigrationRules() map[string]string {
 type ClientConfigLoader interface {
 	ConfigAccess
 	// IsDefaultConfig returns true if the returned config matches the defaults.
-	IsDefaultConfig(*rest.Config) bool
+	IsDefaultConfig(*restclient.Config) bool
 	// Load returns the latest config
 	Load() (*clientcmdapi.Config, error)
 }
@@ -101,7 +104,7 @@ func (g *ClientConfigGetter) IsExplicitFile() bool {
 func (g *ClientConfigGetter) GetExplicitFile() string {
 	return ""
 }
-func (g *ClientConfigGetter) IsDefaultConfig(config *rest.Config) bool {
+func (g *ClientConfigGetter) IsDefaultConfig(config *restclient.Config) bool {
 	return false
 }
 
@@ -330,7 +333,7 @@ func (rules *ClientConfigLoadingRules) GetExplicitFile() string {
 }
 
 // IsDefaultConfig returns true if the provided configuration matches the default
-func (rules *ClientConfigLoadingRules) IsDefaultConfig(config *rest.Config) bool {
+func (rules *ClientConfigLoadingRules) IsDefaultConfig(config *restclient.Config) bool {
 	if rules.DefaultClientConfig == nil {
 		return false
 	}
@@ -388,7 +391,7 @@ func Load(data []byte) (*clientcmdapi.Config, error) {
 	if len(data) == 0 {
 		return config, nil
 	}
-	decoded, _, err := clientcmdlatest.Codec.Decode(data, &unversioned.GroupVersionKind{Version: clientcmdlatest.Version, Kind: "Config"}, config)
+	decoded, _, err := clientcmdlatest.Codec.Decode(data, &schema.GroupVersionKind{Version: clientcmdlatest.Version, Kind: "Config"}, config)
 	if err != nil {
 		return nil, err
 	}

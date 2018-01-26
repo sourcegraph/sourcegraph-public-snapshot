@@ -1,1 +1,0 @@
-`for { select { ...` with an empty default branch spins

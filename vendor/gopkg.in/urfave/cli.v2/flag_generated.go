@@ -17,6 +17,7 @@ type BoolFlag struct {
 	Hidden      bool
 	Value       bool
 	DefaultText string
+
 	Destination *bool
 }
 
@@ -61,6 +62,7 @@ type DurationFlag struct {
 	Hidden      bool
 	Value       time.Duration
 	DefaultText string
+
 	Destination *time.Duration
 }
 
@@ -105,6 +107,7 @@ type Float64Flag struct {
 	Hidden      bool
 	Value       float64
 	DefaultText string
+
 	Destination *float64
 }
 
@@ -192,6 +195,7 @@ type Int64Flag struct {
 	Hidden      bool
 	Value       int64
 	DefaultText string
+
 	Destination *int64
 }
 
@@ -236,6 +240,7 @@ type IntFlag struct {
 	Hidden      bool
 	Value       int
 	DefaultText string
+
 	Destination *int
 }
 
@@ -409,6 +414,7 @@ type StringFlag struct {
 	Hidden      bool
 	Value       string
 	DefaultText string
+
 	Destination *string
 }
 
@@ -433,6 +439,51 @@ func (c *Context) String(name string) string {
 }
 
 func lookupString(name string, set *flag.FlagSet) string {
+	f := set.Lookup(name)
+	if f != nil {
+		parsed, err := f.Value.String(), error(nil)
+		if err != nil {
+			return ""
+		}
+		return parsed
+	}
+	return ""
+}
+
+// PathFlag is a flag with type string
+type PathFlag struct {
+	Name        string
+	Aliases     []string
+	Usage       string
+	EnvVars     []string
+	Hidden      bool
+	Value       string
+	DefaultText string
+
+	Destination *string
+}
+
+// String returns a readable representation of this value
+// (for usage defaults)
+func (f *PathFlag) String() string {
+	return FlagStringer(f)
+}
+
+// Names returns the names of the flag
+func (f *PathFlag) Names() []string {
+	return flagNames(f)
+}
+
+// Path looks up the value of a local PathFlag, returns
+// "" if not found
+func (c *Context) Path(name string) string {
+	if fs := lookupFlagSet(name, c); fs != nil {
+		return lookupPath(name, fs)
+	}
+	return ""
+}
+
+func lookupPath(name string, set *flag.FlagSet) string {
 	f := set.Lookup(name)
 	if f != nil {
 		parsed, err := f.Value.String(), error(nil)
@@ -496,6 +547,7 @@ type Uint64Flag struct {
 	Hidden      bool
 	Value       uint64
 	DefaultText string
+
 	Destination *uint64
 }
 
@@ -540,6 +592,7 @@ type UintFlag struct {
 	Hidden      bool
 	Value       uint
 	DefaultText string
+
 	Destination *uint
 }
 

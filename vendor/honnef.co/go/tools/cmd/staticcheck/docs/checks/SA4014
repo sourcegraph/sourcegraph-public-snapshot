@@ -1,1 +1,0 @@
-An if/else if chain has repeated conditions and no side-effects; if the condition didn't match the first time, it won't match the second time, either

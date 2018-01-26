@@ -1,12 +1,15 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type QueryError struct {
-	Message       string     `json:"message"`
-	Locations     []Location `json:"locations,omitempty"`
-	Rule          string     `json:"-"`
-	ResolverError error      `json:"-"`
+	Message       string        `json:"message"`
+	Locations     []Location    `json:"locations,omitempty"`
+	Path          []interface{} `json:"path,omitempty"`
+	Rule          string        `json:"-"`
+	ResolverError error         `json:"-"`
 }
 
 type Location struct {
@@ -28,11 +31,11 @@ func (err *QueryError) Error() string {
 	if err == nil {
 		return "<nil>"
 	}
-	if len(err.Locations) > 0 {
-		loc := err.Locations[0]
-		return fmt.Sprintf("graphql: %s (line %d, column %d)", err.Message, loc.Line, loc.Column)
+	str := fmt.Sprintf("graphql: %s", err.Message)
+	for _, loc := range err.Locations {
+		str += fmt.Sprintf(" (line %d, column %d)", loc.Line, loc.Column)
 	}
-	return fmt.Sprintf("graphql: %s", err.Message)
+	return str
 }
 
 var _ error = &QueryError{}

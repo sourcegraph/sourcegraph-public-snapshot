@@ -1,1 +1,0 @@
-The variable in the loop condition never changes, are you incrementing the wrong variable?

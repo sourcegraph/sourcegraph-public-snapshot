@@ -8,12 +8,15 @@
 package lintutil // import "honnef.co/go/tools/lint/lintutil"
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"go/build"
 	"go/parser"
 	"go/token"
+	"go/types"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,6 +29,49 @@ import (
 	"golang.org/x/tools/go/loader"
 )
 
+type OutputFormatter interface {
+	Format(p lint.Problem)
+}
+
+type TextOutput struct {
+	w io.Writer
+}
+
+func (o TextOutput) Format(p lint.Problem) {
+	fmt.Fprintf(o.w, "%v: %s\n", relativePositionString(p.Position), p.String())
+}
+
+type JSONOutput struct {
+	w io.Writer
+}
+
+func (o JSONOutput) Format(p lint.Problem) {
+	type location struct {
+		File   string `json:"file"`
+		Line   int    `json:"line"`
+		Column int    `json:"column"`
+	}
+	jp := struct {
+		Checker  string   `json:"checker"`
+		Code     string   `json:"code"`
+		Severity string   `json:"severity,omitempty"`
+		Location location `json:"location"`
+		Message  string   `json:"message"`
+		Ignored  bool     `json:"ignored"`
+	}{
+		p.Checker,
+		p.Check,
+		"", // TODO(dh): support severity
+		location{
+			p.Position.Filename,
+			p.Position.Line,
+			p.Position.Column,
+		},
+		p.Text,
+		p.Ignored,
+	}
+	_ = json.NewEncoder(o.w).Encode(jp)
+}
 func usage(name string, flags *flag.FlagSet) func() {
 	return func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", name)
@@ -39,13 +85,14 @@ func usage(name string, flags *flag.FlagSet) func() {
 }
 
 type runner struct {
-	checker lint.Checker
-	tags    []string
-	ignores []lint.Ignore
-	version int
+	checker       lint.Checker
+	tags          []string
+	ignores       []lint.Ignore
+	version       int
+	returnIgnored bool
 }
 
-func (runner runner) resolveRelative(importPaths []string) (goFiles bool, err error) {
+func resolveRelative(importPaths []string, tags []string) (goFiles bool, err error) {
 	if len(importPaths) == 0 {
 		return false, nil
 	}
@@ -58,7 +105,7 @@ func (runner runner) resolveRelative(importPaths []string) (goFiles bool, err er
 		return false, err
 	}
 	ctx := build.Default
-	ctx.BuildTags = runner.tags
+	ctx.BuildTags = tags
 	for i, path := range importPaths {
 		bpkg, err := ctx.Import(path, wd, build.FindOnly)
 		if err != nil {
@@ -81,7 +128,7 @@ func parseIgnore(s string) ([]lint.Ignore, error) {
 		}
 		path := p[0]
 		checks := strings.Split(p[1], ",")
-		out = append(out, lint.Ignore{Pattern: path, Checks: checks})
+		out = append(out, &lint.GlobIgnore{Pattern: path, Checks: checks})
 	}
 	return out, nil
 }
@@ -119,6 +166,8 @@ func FlagSet(name string) *flag.FlagSet {
 	flags.String("ignore", "", "Space separated list of checks to ignore, in the following format: 'import/path/file.go:Check1,Check2,...' Both the import path and file name sections support globbing, e.g. 'os/exec/*_test.go'")
 	flags.Bool("tests", true, "Include tests")
 	flags.Bool("version", false, "Print version and exit")
+	flags.Bool("show-ignored", false, "Don't filter ignored problems")
+	flags.String("f", "text", "Output `format` (valid choices are 'text' and 'json')")
 
 	tags := build.Default.ReleaseTags
 	v := tags[len(tags)-1][2:]
@@ -131,73 +180,105 @@ func FlagSet(name string) *flag.FlagSet {
 	return flags
 }
 
-func ProcessFlagSet(c lint.Checker, fs *flag.FlagSet) {
+type CheckerConfig struct {
+	Checker     lint.Checker
+	ExitNonZero bool
+}
+
+func ProcessFlagSet(confs []CheckerConfig, fs *flag.FlagSet) {
 	tags := fs.Lookup("tags").Value.(flag.Getter).Get().(string)
 	ignore := fs.Lookup("ignore").Value.(flag.Getter).Get().(string)
 	tests := fs.Lookup("tests").Value.(flag.Getter).Get().(bool)
 	goVersion := fs.Lookup("go").Value.(flag.Getter).Get().(int)
+	format := fs.Lookup("f").Value.(flag.Getter).Get().(string)
 	printVersion := fs.Lookup("version").Value.(flag.Getter).Get().(bool)
+	showIgnored := fs.Lookup("show-ignored").Value.(flag.Getter).Get().(bool)
 
 	if printVersion {
 		version.Print()
 		os.Exit(0)
 	}
 
-	ps, lprog, err := Lint(c, fs.Args(), &Options{
-		Tags:      strings.Fields(tags),
-		LintTests: tests,
-		Ignores:   ignore,
-		GoVersion: goVersion,
+	var cs []lint.Checker
+	for _, conf := range confs {
+		cs = append(cs, conf.Checker)
+	}
+	pss, err := Lint(cs, fs.Args(), &Options{
+		Tags:          strings.Fields(tags),
+		LintTests:     tests,
+		Ignores:       ignore,
+		GoVersion:     goVersion,
+		ReturnIgnored: showIgnored,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	unclean := false
-	for _, p := range ps {
-		unclean = true
-		pos := lprog.Fset.Position(p.Position)
-		fmt.Printf("%v: %s\n", relativePositionString(pos), p.Text)
+
+	var ps []lint.Problem
+	for _, p := range pss {
+		ps = append(ps, p...)
 	}
-	if unclean {
-		os.Exit(1)
+
+	var f OutputFormatter
+	switch format {
+	case "text":
+		f = TextOutput{os.Stdout}
+	case "json":
+		f = JSONOutput{os.Stdout}
+	default:
+		fmt.Fprintf(os.Stderr, "unsupported output format %q\n", format)
+		os.Exit(2)
+	}
+
+	for _, p := range ps {
+		f.Format(p)
+	}
+	for i, p := range pss {
+		if len(p) != 0 && confs[i].ExitNonZero {
+			os.Exit(1)
+		}
 	}
 }
 
 type Options struct {
-	Tags      []string
-	LintTests bool
-	Ignores   string
-	GoVersion int
+	Tags          []string
+	LintTests     bool
+	Ignores       string
+	GoVersion     int
+	ReturnIgnored bool
 }
 
-func Lint(c lint.Checker, pkgs []string, opt *Options) ([]lint.Problem, *loader.Program, error) {
-	// TODO(dh): Instead of returning the loader.Program, we should
-	// store token.Position instead of token.Pos in lint.Problem.
+func Lint(cs []lint.Checker, pkgs []string, opt *Options) ([][]lint.Problem, error) {
 	if opt == nil {
 		opt = &Options{}
 	}
 	ignores, err := parseIgnore(opt.Ignores)
 	if err != nil {
-		return nil, nil, err
-	}
-	runner := &runner{
-		checker: c,
-		tags:    opt.Tags,
-		ignores: ignores,
-		version: opt.GoVersion,
+		return nil, err
 	}
 	paths := gotool.ImportPaths(pkgs)
-	goFiles, err := runner.resolveRelative(paths)
+	goFiles, err := resolveRelative(paths, opt.Tags)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	ctx := build.Default
-	ctx.BuildTags = runner.tags
+	ctx.BuildTags = opt.Tags
+	hadError := false
 	conf := &loader.Config{
 		Build:      &ctx,
 		ParserMode: parser.ParseComments,
 		ImportPkgs: map[string]bool{},
+		TypeChecker: types.Config{
+			Error: func(err error) {
+				// Only print the first error found
+				if hadError {
+					return
+				}
+				hadError = true
+				fmt.Fprintln(os.Stderr, err)
+			},
+		},
 	}
 	if goFiles {
 		conf.CreateFromFilenames("adhoc", paths...)
@@ -208,9 +289,21 @@ func Lint(c lint.Checker, pkgs []string, opt *Options) ([]lint.Problem, *loader.
 	}
 	lprog, err := conf.Load()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return runner.lint(lprog), lprog, nil
+
+	var problems [][]lint.Problem
+	for _, c := range cs {
+		runner := &runner{
+			checker:       c,
+			tags:          opt.Tags,
+			ignores:       ignores,
+			version:       opt.GoVersion,
+			returnIgnored: opt.ReturnIgnored,
+		}
+		problems = append(problems, runner.lint(lprog, conf))
+	}
+	return problems, nil
 }
 
 func shortPath(path string) string {
@@ -238,18 +331,19 @@ func relativePositionString(pos token.Position) string {
 	return s
 }
 
-func ProcessArgs(name string, c lint.Checker, args []string) {
+func ProcessArgs(name string, cs []CheckerConfig, args []string) {
 	flags := FlagSet(name)
 	flags.Parse(args)
 
-	ProcessFlagSet(c, flags)
+	ProcessFlagSet(cs, flags)
 }
 
-func (runner *runner) lint(lprog *loader.Program) []lint.Problem {
+func (runner *runner) lint(lprog *loader.Program, conf *loader.Config) []lint.Problem {
 	l := &lint.Linter{
-		Checker:   runner.checker,
-		Ignores:   runner.ignores,
-		GoVersion: runner.version,
+		Checker:       runner.checker,
+		Ignores:       runner.ignores,
+		GoVersion:     runner.version,
+		ReturnIgnored: runner.returnIgnored,
 	}
-	return l.Lint(lprog)
+	return l.Lint(lprog, conf)
 }

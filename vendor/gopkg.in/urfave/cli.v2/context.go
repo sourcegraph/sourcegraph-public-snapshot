@@ -3,6 +3,8 @@ package cli
 import (
 	"errors"
 	"flag"
+	"os"
+	"reflect"
 	"strings"
 )
 
@@ -11,8 +13,9 @@ import (
 // can be used to retrieve context-specific args and
 // parsed command-line options.
 type Context struct {
-	App     *App
-	Command *Command
+	App           *App
+	Command       *Command
+	shellComplete bool
 
 	flagSet       *flag.FlagSet
 	parentContext *Context
@@ -20,7 +23,13 @@ type Context struct {
 
 // NewContext creates a new context. For use in when invoking an App or Command action.
 func NewContext(app *App, set *flag.FlagSet, parentCtx *Context) *Context {
-	return &Context{App: app, flagSet: set, parentContext: parentCtx}
+	c := &Context{App: app, flagSet: set, parentContext: parentCtx}
+
+	if parentCtx != nil {
+		c.shellComplete = parentCtx.shellComplete
+	}
+
+	return c
 }
 
 // NumFlags returns the number of flags set
@@ -42,8 +51,44 @@ func (c *Context) IsSet(name string) bool {
 				isSet = true
 			}
 		})
-		return isSet
+		if isSet {
+			return true
+		}
 	}
+
+	// XXX hack to support IsSet for flags with EnvVar
+	//
+	// There isn't an easy way to do this with the current implementation since
+	// whether a flag was set via an environment variable is very difficult to
+	// determine here. Instead, we intend to introduce a backwards incompatible
+	// change in version 2 to add `IsSet` to the Flag interface to push the
+	// responsibility closer to where the information required to determine
+	// whether a flag is set by non-standard means such as environment
+	// variables is avaliable.
+	//
+	// See https://github.com/urfave/cli/issues/294 for additional discussion
+	f := lookupFlag(name, c)
+	if f == nil {
+		return false
+	}
+
+	val := reflect.ValueOf(f)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	envVarValues := val.FieldByName("EnvVars")
+	if !envVarValues.IsValid() {
+		return false
+	}
+
+	for _, envVar := range envVarValues.Interface().([]string) {
+		envVar = strings.TrimSpace(envVar)
+		if envVal := os.Getenv(envVar); envVal != "" {
+			return true
+		}
+	}
+
 	return false
 }
 
@@ -76,6 +121,11 @@ func (c *Context) Lineage() []*Context {
 	return lineage
 }
 
+// value returns the value of the flag corresponding to `name`
+func (c *Context) value(name string) interface{} {
+	return c.flagSet.Lookup(name).Value.(flag.Getter).Get()
+}
+
 // Args returns the command line arguments associated with the context.
 func (c *Context) Args() Args {
 	ret := args(c.flagSet.Args())
@@ -85,6 +135,34 @@ func (c *Context) Args() Args {
 // NArg returns the number of the command line arguments.
 func (c *Context) NArg() int {
 	return c.Args().Len()
+}
+
+func lookupFlag(name string, ctx *Context) Flag {
+	for _, c := range ctx.Lineage() {
+		if c.Command == nil {
+			continue
+		}
+
+		for _, f := range c.Command.Flags {
+			for _, n := range f.Names() {
+				if n == name {
+					return f
+				}
+			}
+		}
+	}
+
+	if ctx.App != nil {
+		for _, f := range ctx.App.Flags {
+			for _, n := range f.Names() {
+				if n == name {
+					return f
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func lookupFlagSet(name string, ctx *Context) *flag.FlagSet {
