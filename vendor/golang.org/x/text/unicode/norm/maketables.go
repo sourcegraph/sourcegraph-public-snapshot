@@ -35,12 +35,9 @@ func main() {
 	computeNonStarterCounts()
 	verifyComputed()
 	printChars()
-	if *test {
-		testDerived()
-		printTestdata()
-	} else {
-		makeTables()
-	}
+	testDerived()
+	printTestdata()
+	makeTables()
 }
 
 var (
@@ -602,6 +599,7 @@ func printCharInfoTables(w io.Writer) int {
 		}
 		index := normalDecomp
 		nTrail := chars[r].nTrailingNonStarters
+		nLead := chars[r].nLeadingNonStarters
 		if tccc > 0 || lccc > 0 || nTrail > 0 {
 			tccc <<= 2
 			tccc |= nTrail
@@ -612,7 +610,7 @@ func printCharInfoTables(w io.Writer) int {
 					index = firstCCC
 				}
 			}
-			if lccc > 0 {
+			if lccc > 0 || nLead > 0 {
 				s += string([]byte{lccc})
 				if index == firstCCC {
 					log.Fatalf("%U: multi-segment decomposition not supported for decompositions with leading CCC != 0", r)
@@ -797,7 +795,7 @@ func makeTables() {
 	}
 
 	fmt.Fprintf(w, "// Total size of tables: %dKB (%d bytes)\n", (size+512)/1024, size)
-	gen.WriteGoFile("tables.go", "norm", w.Bytes())
+	gen.WriteVersionedGoFile("tables.go", "norm", w.Bytes())
 }
 
 func printChars() {
@@ -974,5 +972,5 @@ func printTestdata() {
 		}
 	}
 	fmt.Fprintln(w, "}")
-	gen.WriteGoFile("data_test.go", "norm", w.Bytes())
+	gen.WriteVersionedGoFile("data_test.go", "norm", w.Bytes())
 }

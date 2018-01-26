@@ -1,1 +1,0 @@
-`(*regexp.Regexp).FindAll` called with `n == 0`, which will always return zero results

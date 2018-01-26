@@ -52,8 +52,6 @@ type Middleware struct {
 	AllowIDPInitiated bool
 	CookieName        string
 	CookieMaxAge      time.Duration
-	CookieDomain      string
-	CookieSecure      bool
 }
 
 const defaultCookieMaxAge = time.Hour
@@ -151,8 +149,7 @@ func (m *Middleware) RequireAccount(handler http.Handler) http.Handler {
 			Name:     fmt.Sprintf("saml_%s", relayState),
 			Value:    signedState,
 			MaxAge:   int(saml.MaxIssueDelay.Seconds()),
-			HttpOnly: true,
-			Secure:   m.CookieSecure || r.URL.Scheme == "https",
+			HttpOnly: false,
 			Path:     m.ServiceProvider.AcsURL.Path,
 		})
 
@@ -163,10 +160,11 @@ func (m *Middleware) RequireAccount(handler http.Handler) http.Handler {
 			return
 		}
 		if binding == saml.HTTPPostBinding {
-			w.Header().Add("Content-Security-Policy", ""+
+			w.Header().Set("Content-Security-Policy", ""+
 				"default-src; "+
-				"script-src 'sha256-AjPdJSbZmeWHnEc5ykvJFay8FTWeTeRbs9dutfZ0HqE='; "+
-				"reflected-xss block; referrer no-referrer;")
+				"script-src 'sha256-D8xB+y+rJ90RmLdP72xBqEEc0NUatn7yuCND0orkrgk='; "+
+				"reflected-xss block; "+
+				"referrer no-referrer;")
 			w.Header().Add("Content-type", "text/html")
 			w.Write([]byte(`<!DOCTYPE html><html><body>`))
 			w.Write(req.Post(relayState))
@@ -245,7 +243,7 @@ func (m *Middleware) Authorize(w http.ResponseWriter, r *http.Request, assertion
 
 		// delete the cookie
 		stateCookie.Value = ""
-		stateCookie.Expires = time.Unix(1, 0) // past time as close to epoch as possible, but not zero time.Time{}
+		stateCookie.Expires = time.Time{}.Add(time.Second) // past time as close to epoch as possible, but not zero time.Time{}
 		http.SetCookie(w, stateCookie)
 	}
 
@@ -260,9 +258,9 @@ func (m *Middleware) Authorize(w http.ResponseWriter, r *http.Request, assertion
 			claims.StandardClaims.Subject = nameID.Value
 		}
 	}
-	for _, attributeStatement := range assertion.AttributeStatements {
+	if assertion.AttributeStatement != nil {
 		claims.Attributes = map[string][]string{}
-		for _, attr := range attributeStatement.Attributes {
+		for _, attr := range assertion.AttributeStatement.Attributes {
 			claimName := attr.FriendlyName
 			if claimName == "" {
 				claimName = attr.Name
@@ -280,11 +278,9 @@ func (m *Middleware) Authorize(w http.ResponseWriter, r *http.Request, assertion
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     m.CookieName,
-		Domain:   m.CookieDomain,
 		Value:    signedToken,
 		MaxAge:   int(m.CookieMaxAge.Seconds()),
-		HttpOnly: true,
-		Secure:   m.CookieSecure || r.URL.Scheme == "https",
+		HttpOnly: false,
 		Path:     "/",
 	})
 

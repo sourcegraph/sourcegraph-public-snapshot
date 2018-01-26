@@ -1,1 +1,0 @@
-Deferred `Lock` right after locking, likely meant to defer `Unlock` instead

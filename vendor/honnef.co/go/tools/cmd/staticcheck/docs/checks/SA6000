@@ -1,1 +1,0 @@
-Using `regexp.Match` or related in a loop, should use `regexp.Compile`

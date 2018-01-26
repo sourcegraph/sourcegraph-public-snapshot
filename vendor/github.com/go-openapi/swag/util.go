@@ -20,10 +20,13 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
+	"unicode"
 )
 
-// Taken from https://github.com/golang/lint/blob/1fab560e16097e5b69afb66eb93aab843ef77845/lint.go#L663-L698
+// Taken from https://github.com/golang/lint/blob/3390df4df2787994aea98de825b964ac7944b817/lint.go#L732-L769
 var commonInitialisms = map[string]bool{
+	"ACL":   true,
 	"API":   true,
 	"ASCII": true,
 	"CPU":   true,
@@ -38,31 +41,36 @@ var commonInitialisms = map[string]bool{
 	"IP":    true,
 	"JSON":  true,
 	"LHS":   true,
+	"OAI":   true,
 	"QPS":   true,
 	"RAM":   true,
 	"RHS":   true,
 	"RPC":   true,
 	"SLA":   true,
 	"SMTP":  true,
+	"SQL":   true,
 	"SSH":   true,
 	"TCP":   true,
 	"TLS":   true,
 	"TTL":   true,
 	"UDP":   true,
-	"UUID":  true,
-	"UID":   true,
 	"UI":    true,
+	"UID":   true,
+	"UUID":  true,
 	"URI":   true,
 	"URL":   true,
 	"UTF8":  true,
 	"VM":    true,
 	"XML":   true,
+	"XMPP":  true,
 	"XSRF":  true,
 	"XSS":   true,
 }
 var initialisms []string
 
-func init() {
+var once sync.Once
+
+func sortInitialisms() {
 	for k := range commonInitialisms {
 		initialisms = append(initialisms, k)
 	}
@@ -159,8 +167,9 @@ func split(str string) (words []string) {
 
 	// Split when uppercase is found (needed for Snake)
 	str = rex1.ReplaceAllString(str, " $1")
-	// check if consecutive single char things make up an initialism
 
+	// check if consecutive single char things make up an initialism
+	once.Do(sortInitialisms)
 	for _, k := range initialisms {
 		str = strings.Replace(str, rex1.ReplaceAllString(k, " $1"), " "+k, -1)
 	}
@@ -185,12 +194,26 @@ func lower(str string) string {
 	return strings.ToLower(trim(str))
 }
 
+// Camelize an uppercased word
+func Camelize(word string) (camelized string) {
+	for pos, ru := range word {
+		if pos > 0 {
+			camelized += string(unicode.ToLower(ru))
+		} else {
+			camelized += string(unicode.ToUpper(ru))
+		}
+	}
+	return
+}
+
 // ToFileName lowercases and underscores a go type name
 func ToFileName(name string) string {
 	var out []string
+
 	for _, w := range split(name) {
 		out = append(out, lower(w))
 	}
+
 	return strings.Join(out, "_")
 }
 
@@ -246,6 +269,9 @@ func ToJSONName(name string) string {
 // ToVarName camelcases a name which can be underscored or pascal cased
 func ToVarName(name string) string {
 	res := ToGoName(name)
+	if _, ok := commonInitialisms[res]; ok {
+		return lower(res)
+	}
 	if len(res) <= 1 {
 		return lower(res)
 	}
@@ -263,7 +289,18 @@ func ToGoName(name string) string {
 		}
 		out = append(out, uw)
 	}
-	return strings.Join(out, "")
+
+	result := strings.Join(out, "")
+	if len(result) > 0 {
+		ud := upper(result[:1])
+		ru := []rune(ud)
+		if unicode.IsUpper(ru[0]) {
+			result = ud + result[1:]
+		} else {
+			result = "X" + ud + result[1:]
+		}
+	}
+	return result
 }
 
 // ContainsStringsCI searches a slice of strings for a case-insensitive match
@@ -308,6 +345,13 @@ func IsZero(data interface{}) bool {
 		return true
 	}
 	return false
+}
+
+// AddInitialisms add additional initialisms
+func AddInitialisms(words ...string) {
+	for _, word := range words {
+		commonInitialisms[upper(word)] = true
+	}
 }
 
 // CommandLineOptionsGroup represents a group of user-defined command line options

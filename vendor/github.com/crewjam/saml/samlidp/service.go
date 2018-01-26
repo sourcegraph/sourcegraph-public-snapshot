@@ -17,14 +17,14 @@ type Service struct {
 	Name string
 
 	// Metdata is the XML metadata of the service provider.
-	Metadata saml.EntityDescriptor
+	Metadata saml.Metadata
 }
 
 // GetServiceProvider returns the Service Provider metadata for the
 // service provider ID, which is typically the service provider's
 // metadata URL. If an appropriate service provider cannot be found then
 // the returned error must be os.ErrNotExist.
-func (s *Server) GetServiceProvider(r *http.Request, serviceProviderID string) (*saml.EntityDescriptor, error) {
+func (s *Server) GetServiceProvider(r *http.Request, serviceProviderID string) (*saml.Metadata, error) {
 	s.idpConfigMu.RLock()
 	defer s.idpConfigMu.RUnlock()
 	rv, ok := s.serviceProviders[serviceProviderID]
@@ -66,17 +66,13 @@ func (s *Server) HandleGetService(c web.C, w http.ResponseWriter, r *http.Reques
 // service metadata in the request body and stores it.
 func (s *Server) HandlePutService(c web.C, w http.ResponseWriter, r *http.Request) {
 	service := Service{}
-
-	metadata, err := getSPMetadata(r.Body)
-	if err != nil {
+	if err := xml.NewDecoder(r.Body).Decode(&service.Metadata); err != nil {
 		s.logger.Printf("ERROR: %s", err)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
-	service.Metadata = *metadata
-
-	err = s.Store.Put(fmt.Sprintf("/services/%s", c.URLParams["id"]), &service)
+	err := s.Store.Put(fmt.Sprintf("/services/%s", c.URLParams["id"]), &service)
 	if err != nil {
 		s.logger.Printf("ERROR: %s", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
