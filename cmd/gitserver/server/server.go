@@ -213,10 +213,14 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	if !repoCloned(dir) && !skipCloneForTests {
-		err := s.cloneRepo(r.Context(), req.Repo, dir)
-		if err != nil {
-			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
-		}
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+			defer cancel()
+			err := s.cloneRepo(ctx, req.Repo, dir)
+			if err != nil {
+				log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
+			}
+		}()
 	} else {
 		s.updateRepo <- updateRepoRequest{req.Repo}
 	}
