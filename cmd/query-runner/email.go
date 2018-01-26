@@ -132,7 +132,7 @@ func sendEmail(ctx context.Context, userID int32, template txemail.ParsedTemplat
 		Template: template,
 		Data:     data,
 	}); err != nil {
-		log15.Error("email notify: failed to send email", "to", email, "error", err)
+		log15.Error("email notify: failed to send email", "to", *email, "error", err)
 		return
 	}
 }
