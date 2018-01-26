@@ -1,13 +1,12 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import { parse } from '@sqs/jsonc-parser/lib/main'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
-import { SiteConfiguration } from '../schema/site.schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite } from './backend'
+import { getTelemetryEnabled } from './configHelpers'
 
 class TelemetrySample extends React.PureComponent<
     { children: string; telemetryEnabled: boolean },
@@ -120,10 +119,4 @@ export class SiteAdminTelemetryPage extends React.Component<Props, State> {
             </div>
         )
     }
-}
-
-/** Parses out the 'disableTelemetry' key from the JSON site config and returns the inverse. */
-export function getTelemetryEnabled(text: string): boolean {
-    const o = parse(text, [], { allowTrailingComma: true, disallowComments: false })
-    return o && !(o as SiteConfiguration).disableTelemetry
 }

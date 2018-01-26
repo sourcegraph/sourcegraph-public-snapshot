@@ -15,7 +15,7 @@ import { isStandaloneCodeEditor, MonacoSettingsEditor } from '../settings/Monaco
 import { eventLogger } from '../tracking/eventLogger'
 import { addEditorAction } from '../util/monaco'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { siteConfigActions } from './configHelpers'
+import { getTelemetryEnabled, siteConfigActions } from './configHelpers'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -312,7 +312,11 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     }
 
     private save = () => {
-        eventLogger.log('SiteConfigurationSaved')
+        eventLogger.log('SiteConfigurationSaved', {
+            server: {
+                telemetryEnabled: getTelemetryEnabled(this.state.contents || ''),
+            },
+        })
         this.remoteUpdates.next(this.state.contents)
     }
 

@@ -1,6 +1,13 @@
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Edit, FormattingOptions } from '@sqs/jsonc-parser/lib/format'
-import { GitHubConnection, OpenIdConnectAuthProvider, Repository, SamlAuthProvider } from '../schema/site.schema'
+import { parse } from '@sqs/jsonc-parser/lib/main'
+import {
+    GitHubConnection,
+    OpenIdConnectAuthProvider,
+    Repository,
+    SamlAuthProvider,
+    SiteConfiguration,
+} from '../schema/site.schema'
 
 /**
  * A helper function that modifies site configuration to configure specific
@@ -105,3 +112,14 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },
     { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },
 ]
+
+/** Parses the JSON site configuration provided. */
+export function parseSiteConfiguration(text: string): SiteConfiguration {
+    const o = parse(text, [], { allowTrailingComma: true, disallowComments: false })
+    return o as SiteConfiguration
+}
+
+/** Parses out the 'disableTelemetry' key from the JSON site config and returns the inverse. */
+export function getTelemetryEnabled(text: string): boolean {
+    return !parseSiteConfiguration(text).disableTelemetry
+}

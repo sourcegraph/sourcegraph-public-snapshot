@@ -1,7 +1,6 @@
 import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import DownloadIcon from '@sourcegraph/icons/lib/Download'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
-import { parse } from '@sqs/jsonc-parser/lib/main'
 import formatDistance from 'date-fns/formatDistance'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -9,10 +8,9 @@ import { Link } from 'react-router-dom'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
-import { SiteConfiguration } from '../schema/site.schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
-import { getTelemetryEnabled } from './SiteAdminTelemetryPage'
+import { getTelemetryEnabled, parseSiteConfiguration } from './configHelpers'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -130,6 +128,5 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
 }
 
 function getUpdateChannel(cfgText: string): string | null {
-    const o = parse(cfgText, [], { allowTrailingComma: true, disallowComments: false })
-    return (o && (o as SiteConfiguration)['update.channel']) || null
+    return parseSiteConfiguration(cfgText)['update.channel'] || null
 }
