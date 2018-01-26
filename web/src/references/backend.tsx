@@ -20,12 +20,12 @@ export const fetchDependencyReferences = memoizeObservable(
         return queryGraphQL(
             gql`
                 query DependencyReferences(
-                    $repoPath: String
-                    $commitID: String
-                    $filePath: String
-                    $mode: String
-                    $line: Int
-                    $character: Int
+                    $repoPath: String!
+                    $commitID: String!
+                    $filePath: String!
+                    $mode: String!
+                    $line: Int!
+                    $character: Int!
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {

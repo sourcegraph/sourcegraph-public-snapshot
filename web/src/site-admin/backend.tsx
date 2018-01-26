@@ -445,7 +445,7 @@ export function reloadSite(): Observable<void> {
 export function updateDeploymentConfiguration(email: string, telemetryEnabled: boolean): Observable<void> {
     return queryGraphQL(
         gql`
-            query UpdateDeploymentConfiguration($email: String, $enableTelemetry: Boolean) {
+            query UpdateDeploymentConfiguration($email: String!, $enableTelemetry: Boolean!) {
                 updateDeploymentConfiguration(email: $email, enableTelemetry: $enableTelemetry) {
                     alwaysNil
                 }

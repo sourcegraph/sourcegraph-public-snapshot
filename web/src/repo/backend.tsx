@@ -102,7 +102,7 @@ export const resolveRev = memoizeObservable(
     (ctx: { repoPath: string; rev?: string }): Observable<ResolvedRev> =>
         queryGraphQL(
             gql`
-                query ResolveRev($repoPath: String, $rev: String) {
+                query ResolveRev($repoPath: String!, $rev: String!) {
                     repository(uri: $repoPath) {
                         mirrorInfo {
                             cloneInProgress
@@ -274,7 +274,7 @@ export const fetchBlobContent = memoizeObservable(
     (ctx: FetchFileCtx): Observable<BlobContent> =>
         queryGraphQL(
             gql`
-                query BlobContent($repoPath: String, $commitID: String, $filePath: String) {
+                query BlobContent($repoPath: String!, $commitID: String!, $filePath: String!) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
@@ -316,7 +316,7 @@ export const fetchFileMetadata = memoizeObservable(
     (ctx: FetchFileMetadataCtx): Observable<FileMetadata> =>
         queryGraphQL(
             gql`
-                query FileMetadata($repoPath: String, $rev: String, $filePath: String) {
+                query FileMetadata($repoPath: String!, $rev: String!, $filePath: String!) {
                     repository(uri: $repoPath) {
                         commit(rev: $rev) {
                             file(path: $filePath) {
@@ -347,7 +347,7 @@ export const fetchPhabricatorRepo = memoizeObservable(
     (ctx: { repoPath: string }): Observable<GQL.IPhabricatorRepo | null> =>
         queryGraphQL(
             gql`
-                query PhabricatorRepo($repoPath: String) {
+                query PhabricatorRepo($repoPath: String!) {
                     phabricatorRepo(uri: $repoPath) {
                         callsign
                         uri

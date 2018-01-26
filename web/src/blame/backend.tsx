@@ -9,11 +9,11 @@ export const fetchBlameFile = memoizeObservable(
         queryGraphQL(
             gql`
                 query BlameFile(
-                    $repoPath: String
-                    $commitID: String
-                    $filePath: String
-                    $startLine: Int
-                    $endLine: Int
+                    $repoPath: String!
+                    $commitID: String!
+                    $filePath: String!
+                    $startLine: Int!
+                    $endLine: Int!
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
