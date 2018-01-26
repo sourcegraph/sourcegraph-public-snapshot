@@ -13,6 +13,7 @@ GOBIN=$PWD/vendor/.bin go install ./vendor/github.com/sourcegraph/godockerize
 			  sourcegraph.com/sourcegraph/sourcegraph/cmd/github-proxy \
 			  sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver \
 			  sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer \
+			  sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner \
 			  sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater \
 			  sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher \
 			  sourcegraph.com/sourcegraph/sourcegraph/cmd/lsp-proxy

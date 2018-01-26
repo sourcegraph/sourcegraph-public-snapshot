@@ -130,6 +130,8 @@
 // ../../../../../migrations/1516491388_remove_repo_private.up.sql
 // ../../../../../migrations/1516608575_repo_cleanup.down.sql
 // ../../../../../migrations/1516608575_repo_cleanup.up.sql
+// ../../../../../migrations/1516834731_add_saved_queries.down.sql
+// ../../../../../migrations/1516834731_add_saved_queries.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2797,6 +2799,46 @@ func _1516608575_repo_cleanupUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1516834731_add_saved_queriesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x28\x4e\x2c\x4b\x4d\x89\x2f\x2c\x4d\x2d\xca\x4c\x2d\xb6\x06\x04\x00\x00\xff\xff\xd3\x07\x66\x66\x19\x00\x00\x00")
+
+func _1516834731_add_saved_queriesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1516834731_add_saved_queriesDownSql,
+		"1516834731_add_saved_queries.down.sql",
+	)
+}
+
+func _1516834731_add_saved_queriesDownSql() (*asset, error) {
+	bytes, err := _1516834731_add_saved_queriesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1516834731_add_saved_queries.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1516834731_add_saved_queriesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8f\xcd\x4a\xc5\x30\x10\x85\xf7\x7d\x8a\x43\x56\x57\xf0\x0d\xee\xaa\xd5\x41\x03\x4d\xe2\x4f\x8a\xe2\x26\x54\x3b\x48\xa0\x44\xda\x4c\xa4\x7d\x7b\x69\x05\xa5\xb8\x71\x35\x1c\x0e\xdf\xcc\x7c\x0d\xdd\x68\x7b\xae\xae\x1e\xa8\xf6\x04\x5f\x37\x2d\x21\xf7\x9f\x3c\x84\xa9\xf0\x1c\x39\xe3\x54\x01\x80\xda\xe2\xaa\x20\xbc\x08\xac\xf3\xb0\x5d\xdb\x5e\x7e\x57\x63\x9f\x25\xf0\xc2\x6f\x45\x78\x50\xf0\xda\xd0\xa3\xaf\xcd\x1d\x9e\xb4\xbf\xdd\x23\x5e\x9c\xa5\xbf\x98\x70\x96\x30\x73\x2e\xa3\xfc\x1f\xdb\x0e\x85\xa1\xcc\xbd\xc4\x8f\x14\x52\x56\x78\x8d\xef\x31\xfd\x7e\x55\x5d\xfc\xf8\x74\x56\xdf\x77\x04\x6d\xaf\xe9\x19\xea\xe0\xb5\xcf\x35\x94\x14\xa7\xc2\x0a\xce\x1e\xb5\x4f\x7b\xbd\x6d\x72\xc6\x68\x7f\xfe\x0a\x00\x00\xff\xff\x5f\x55\x7b\x8f\x28\x01\x00\x00")
+
+func _1516834731_add_saved_queriesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1516834731_add_saved_queriesUpSql,
+		"1516834731_add_saved_queries.up.sql",
+	)
+}
+
+func _1516834731_add_saved_queriesUpSql() (*asset, error) {
+	bytes, err := _1516834731_add_saved_queriesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1516834731_add_saved_queries.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2979,6 +3021,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1516491388_remove_repo_private.up.sql":                       _1516491388_remove_repo_privateUpSql,
 	"1516608575_repo_cleanup.down.sql":                            _1516608575_repo_cleanupDownSql,
 	"1516608575_repo_cleanup.up.sql":                              _1516608575_repo_cleanupUpSql,
+	"1516834731_add_saved_queries.down.sql":                       _1516834731_add_saved_queriesDownSql,
+	"1516834731_add_saved_queries.up.sql":                         _1516834731_add_saved_queriesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3152,6 +3196,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1516491388_remove_repo_private.up.sql":                       &bintree{_1516491388_remove_repo_privateUpSql, map[string]*bintree{}},
 	"1516608575_repo_cleanup.down.sql":                            &bintree{_1516608575_repo_cleanupDownSql, map[string]*bintree{}},
 	"1516608575_repo_cleanup.up.sql":                              &bintree{_1516608575_repo_cleanupUpSql, map[string]*bintree{}},
+	"1516834731_add_saved_queries.down.sql":                       &bintree{_1516834731_add_saved_queriesDownSql, map[string]*bintree{}},
+	"1516834731_add_saved_queries.up.sql":                         &bintree{_1516834731_add_saved_queriesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

@@ -70,6 +70,20 @@ func (o *orgs) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
 	return orgs[0], nil
 }
 
+func (o *orgs) GetByName(ctx context.Context, name string) (*types.Org, error) {
+	if Mocks.Orgs.GetByName != nil {
+		return Mocks.Orgs.GetByName(ctx, name)
+	}
+	orgs, err := o.getBySQL(ctx, "WHERE deleted_at IS NULL AND name=$1 LIMIT 1", name)
+	if err != nil {
+		return nil, err
+	}
+	if len(orgs) == 0 {
+		return nil, &OrgNotFoundError{fmt.Sprintf("name %s", name)}
+	}
+	return orgs[0], nil
+}
+
 func (o *orgs) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
 	if Mocks.Orgs.Count != nil {
 		return Mocks.Orgs.Count(ctx, opt)

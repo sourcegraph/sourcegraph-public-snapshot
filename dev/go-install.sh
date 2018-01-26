@@ -27,4 +27,4 @@ if [ "$GCFLAGS" != "$(cat $SAVED_GCFLAGS)" ]; then
 	echo $GCFLAGS > $SAVED_GCFLAGS
 fi
 
-go install -gcflags="$GCFLAGS" -tags="$TAGS" sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,xlang-go,lsp-proxy,searcher,frontend,repo-updater}
+go install -gcflags="$GCFLAGS" -tags="$TAGS" sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,query-runner,github-proxy,xlang-go,lsp-proxy,searcher,frontend,repo-updater}

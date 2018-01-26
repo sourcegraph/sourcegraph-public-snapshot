@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
@@ -80,7 +81,7 @@ func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 			ID:        1,
 			Contents:  string(siteConfigJSON),
 			CreatedAt: serverStart,
-			Subject:   types.ConfigurationSubject{Site: &r.gqlID},
+			Subject:   api.ConfigurationSubject{Site: &r.gqlID},
 		},
 	}, nil
 }

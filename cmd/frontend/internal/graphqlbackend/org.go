@@ -94,7 +94,7 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := db.Settings.GetLatest(ctx, types.ConfigurationSubject{Org: &o.org.ID})
+	settings, err := db.Settings.GetLatest(ctx, api.ConfigurationSubject{Org: &o.org.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +364,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	}
 
 	client := slack.New(org.SlackWebhookURL, true)
-	go client.NotifyOnInvite(currentUser, email, org, args.Email)
+	go slack.NotifyOnInvite(client, currentUser, email, org, args.Email)
 
 	return &inviteUserResult{acceptInviteURL: inviteURL}, nil
 }
@@ -399,7 +399,7 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	}
 
 	client := slack.New(org.SlackWebhookURL, true)
-	go client.NotifyOnAcceptedInvite(currentUser, email, org)
+	go slack.NotifyOnAcceptedInvite(client, currentUser, email, org)
 
 	return &EmptyResponse{}, nil
 }

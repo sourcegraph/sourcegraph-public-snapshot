@@ -9,14 +9,10 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"github.com/sourcegraph/jsonx"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
-
-type savedQueryIDSpec struct {
-	Subject types.ConfigurationSubject
-	Key     string
-}
 
 type savedQueryResolver struct {
 	key            string
@@ -28,7 +24,7 @@ type savedQueryResolver struct {
 }
 
 func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, error) {
-	var spec savedQueryIDSpec
+	var spec api.SavedQueryIDSpec
 	if err := relay.UnmarshalSpec(id, &spec); err != nil {
 		return nil, err
 	}
@@ -42,7 +38,7 @@ func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, er
 		return nil, err
 	}
 
-	var config partialConfigSavedQueries
+	var config api.PartialConfigSavedQueries
 	if err := subject.readConfiguration(ctx, &config); err != nil {
 		return nil, err
 	}
@@ -55,24 +51,24 @@ func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, er
 }
 
 func (r savedQueryResolver) ID() graphql.ID {
-	var subject types.ConfigurationSubject
+	var subject api.ConfigurationSubject
 	switch {
 	case r.subject.user != nil:
 		subject.User = &r.subject.user.user.ID
 	case r.subject.org != nil:
 		subject.Org = &r.subject.org.org.ID
 	}
-	return marshalSavedQueryID(savedQueryIDSpec{
+	return marshalSavedQueryID(api.SavedQueryIDSpec{
 		Subject: subject,
 		Key:     r.key,
 	})
 }
 
-func marshalSavedQueryID(spec savedQueryIDSpec) graphql.ID {
+func marshalSavedQueryID(spec api.SavedQueryIDSpec) graphql.ID {
 	return relay.MarshalID("SavedQuery", spec)
 }
 
-func unmarshalSavedQueryID(id graphql.ID) (spec savedQueryIDSpec, err error) {
+func unmarshalSavedQueryID(id graphql.ID) (spec api.SavedQueryIDSpec, err error) {
 	err = relay.UnmarshalSpec(id, &spec)
 	return
 }
@@ -96,7 +92,7 @@ func (r savedQueryResolver) Description() string { return r.description }
 
 func (r savedQueryResolver) Query() *searchQuery { return &r.query }
 
-func toSavedQueryResolver(index int, subject *configurationSubject, entry configSavedQuery) *savedQueryResolver {
+func toSavedQueryResolver(index int, subject *configurationSubject, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
 		subject:        subject,
 		key:            entry.Key,
@@ -107,22 +103,6 @@ func toSavedQueryResolver(index int, subject *configurationSubject, entry config
 	}
 }
 
-// configSavedQuery is the JSON shape of a saved query entry in the JSON configuration
-// (i.e., an entry in the {"search.savedQueries": [...]} array).
-type configSavedQuery struct {
-	Key            string `json:"key,omitempty"`
-	Description    string `json:"description"`
-	Query          string `json:"query"`
-	ScopeQuery     string `json:",omitempty"`
-	ShowOnHomepage bool   `json:"showOnHomepage"`
-}
-
-// partialConfigSavedQueries is the JSON configuration shape, including only the
-// search.savedQueries section.
-type partialConfigSavedQueries struct {
-	SavedQueries []configSavedQuery `json:"search.savedQueries"`
-}
-
 func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolver, error) {
 	configSubjects, err := r.Configuration().Subjects(ctx)
 	if err != nil {
@@ -131,7 +111,7 @@ func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolve
 
 	var savedQueries []*savedQueryResolver
 	for _, subject := range configSubjects {
-		var config partialConfigSavedQueries
+		var config api.PartialConfigSavedQueries
 		if err := subject.readConfiguration(ctx, &config); err != nil {
 			return nil, err
 		}
@@ -149,7 +129,7 @@ func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolve
 	return savedQueries, nil
 }
 
-func (r *schemaResolver) migrateSavedQueries(ctx context.Context, subject *configurationSubject, savedQueries []configSavedQuery) error {
+func (r *schemaResolver) migrateSavedQueries(ctx context.Context, subject *configurationSubject, savedQueries []api.ConfigSavedQuery) error {
 	// Return if all entries have keys.
 	needsKey := false
 	hasScopeField := false
@@ -209,14 +189,14 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 	var key string
 	_, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 		// Compute the index so we can return it to the caller.
-		var config partialConfigSavedQueries
+		var config api.PartialConfigSavedQueries
 		if err := json.Unmarshal(normalizeJSON(oldConfig), &config); err != nil {
 			return nil, err
 		}
 		index = len(config.SavedQueries)
 		key = generateUniqueSavedQueryKey(config.SavedQueries)
 
-		value := configSavedQuery{
+		value := api.ConfigSavedQuery{
 			Key:            key,
 			Description:    args.Description,
 			Query:          args.Query,
@@ -228,6 +208,14 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
+
+	// Read new configuration and inform the query-runner.
+	var config api.PartialConfigSavedQueries
+	if err := r.subject.readConfiguration(ctx, &config); err != nil {
+		return nil, err
+	}
+	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config)
+
 	return &savedQueryResolver{
 		subject:        r.subject,
 		key:            key,
@@ -241,7 +229,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 // getSavedQueryIndex returns the index within the config of the saved query with the given key,
 // or else an error.
 func (r *configurationMutationResolver) getSavedQueryIndex(ctx context.Context, key string) (int, error) {
-	var config partialConfigSavedQueries
+	var config api.PartialConfigSavedQueries
 	if err := r.subject.readConfiguration(ctx, &config); err != nil {
 		return 0, err
 	}
@@ -301,10 +289,11 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	}
 
 	// Get final saved query value to return.
-	var config partialConfigSavedQueries
+	var config api.PartialConfigSavedQueries
 	if err := r.subject.readConfiguration(ctx, &config); err != nil {
 		return nil, err
 	}
+	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), spec.Subject, config)
 	return toSavedQueryResolver(index, r.subject, config.SavedQueries[index]), nil
 }
 
@@ -334,10 +323,11 @@ func (r *configurationMutationResolver) DeleteSavedQuery(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
+	go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec)
 	return &EmptyResponse{}, nil
 }
 
-func generateUniqueSavedQueryKey(existing []configSavedQuery) string {
+func generateUniqueSavedQueryKey(existing []api.ConfigSavedQuery) string {
 	// Avoid collisions.
 	used := make(map[string]struct{}, len(existing))
 	for _, e := range existing {

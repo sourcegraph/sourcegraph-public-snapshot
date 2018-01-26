@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -12,7 +13,7 @@ import (
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject types.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorUserID, contents)
 	}
@@ -58,7 +59,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject types.Configura
 	return latestSetting, nil
 }
 
-func (o *settings) GetLatest(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
+func (o *settings) GetLatest(ctx context.Context, subject api.ConfigurationSubject) (*types.Settings, error) {
 	if Mocks.Settings.GetLatest != nil {
 		return Mocks.Settings.GetLatest(ctx, subject)
 	}
@@ -66,7 +67,26 @@ func (o *settings) GetLatest(ctx context.Context, subject types.ConfigurationSub
 	return o.getLatest(ctx, globalDB, subject)
 }
 
-func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject types.ConfigurationSubject) (*types.Settings, error) {
+// ListAll lists ALL settings (across all users, orgs, etc).
+//
+// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
+// responsible for ensuring this or that the response never makes it to a user.
+func (o *settings) ListAll(ctx context.Context) ([]*types.Settings, error) {
+	q := sqlf.Sprintf(`
+		SELECT DISTINCT
+			ON (org_id, user_id, author_user_id)
+			id, org_id, user_id, author_user_id, contents, created_at
+			FROM settings
+			ORDER BY org_id, user_id, author_user_id, id DESC
+	`)
+	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	return o.parseQueryRows(ctx, rows)
+}
+
+func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject api.ConfigurationSubject) (*types.Settings, error) {
 	var cond *sqlf.Query
 	switch {
 	case subject.Org != nil:

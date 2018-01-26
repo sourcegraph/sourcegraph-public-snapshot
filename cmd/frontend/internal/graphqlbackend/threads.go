@@ -460,7 +460,7 @@ func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThre
 			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 			client := slack.New(org.SlackWebhookURL, true)
 			commentURL := threadURL(newThread.ID, &comment.ID, "slack")
-			go client.NotifyOnThread(currentUser, email, org, repo, newThread, comment, results.emails, commentURL.String())
+			go slack.NotifyOnThread(client, currentUser, email, org, repo, newThread, comment, results.emails, commentURL.String())
 		}
 	} /* else {
 		// Creating a thread without Contents (a comment) means it is a code

@@ -10,6 +10,7 @@ var (
 	Threads      = &threads{}
 	Comments     = &comments{}
 	UserActivity = &userActivity{}
+	SavedQueries = &savedQueries{}
 	SharedItems  = &sharedItems{}
 	Orgs         = &orgs{}
 	OrgTags      = &orgTags{}

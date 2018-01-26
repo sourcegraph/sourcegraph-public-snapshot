@@ -120,10 +120,14 @@ type SMTPServerConfig struct {
 
 // SearchSavedQueries
 type SearchSavedQueries struct {
-	Description    string `json:"description"`
-	Key            string `json:"key"`
-	Query          string `json:"query"`
-	ShowOnHomepage bool   `json:"showOnHomepage,omitempty"`
+	Description         string   `json:"description"`
+	Key                 string   `json:"key"`
+	Notify              bool     `json:"notify,omitempty"`
+	NotifyOrganizations []string `json:"notifyOrganizations,omitempty"`
+	NotifySlack         bool     `json:"notifySlack,omitempty"`
+	NotifyUsers         []string `json:"notifyUsers,omitempty"`
+	Query               string   `json:"query"`
+	ShowOnHomepage      bool     `json:"showOnHomepage,omitempty"`
 }
 
 // SearchScope

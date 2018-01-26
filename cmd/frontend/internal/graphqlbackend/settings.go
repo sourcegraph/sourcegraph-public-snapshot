@@ -8,7 +8,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type settingsResolver struct {
@@ -56,7 +58,7 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := db.Settings.CreateIfUpToDate(ctx, types.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +89,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := db.Settings.CreateIfUpToDate(ctx, types.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +100,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 }
 
 func currentSiteSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := db.Settings.GetLatest(ctx, types.ConfigurationSubject{})
+	settings, err := db.Settings.GetLatest(ctx, api.ConfigurationSubject{})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +123,7 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := db.Settings.CreateIfUpToDate(ctx, types.ConfigurationSubject{}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -129,4 +131,60 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 		subject:  &configurationSubject{},
 		settings: settings,
 	}, nil
+}
+
+// like db.Settings.CreateIfUpToDate, except it handles notifying the
+// query-runner if any saved queries have changed.
+func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
+	subjectID, err := configurationSubjectID(subject)
+	if err != nil {
+		return nil, err
+	}
+	configSubject, err := configurationSubjectByID(ctx, subjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read current saved queries.
+	var oldSavedQueries api.PartialConfigSavedQueries
+	if err := configSubject.readConfiguration(ctx, &oldSavedQueries); err != nil {
+		return nil, err
+	}
+
+	// Update settings.
+	latestSettings, err := db.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorUserID, contents)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read new saved queries.
+	var newSavedQueries api.PartialConfigSavedQueries
+	if err := configSubject.readConfiguration(ctx, &newSavedQueries); err != nil {
+		return nil, err
+	}
+
+	// Notify query-runner of any changes.
+	createdOrUpdated := false
+	for i, newQuery := range newSavedQueries.SavedQueries {
+		if i > len(oldSavedQueries.SavedQueries) {
+			// Created
+			createdOrUpdated = true
+			break
+		}
+		if !newQuery.Equals(oldSavedQueries.SavedQueries[i]) {
+			// Updated or list was re-ordered.
+			createdOrUpdated = true
+			break
+		}
+	}
+	if createdOrUpdated {
+		go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), subject, newSavedQueries)
+	}
+	for _, deletedQuery := range oldSavedQueries.SavedQueries[len(newSavedQueries.SavedQueries):] {
+		// Deleted
+		spec := api.SavedQueryIDSpec{Subject: subject, Key: deletedQuery.Key}
+		go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec)
+	}
+
+	return latestSettings, nil
 }

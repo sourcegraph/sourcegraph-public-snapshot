@@ -217,6 +217,19 @@ Referenced by:
 
 ```
 
+# Table "public.saved_queries"
+```
+      Column      |           Type           | Modifiers 
+------------------+--------------------------+-----------
+ query            | text                     | not null
+ last_executed    | timestamp with time zone | not null
+ latest_result    | timestamp with time zone | not null
+ exec_duration_ns | bigint                   | not null
+Indexes:
+    "saved_queries_query_unique" UNIQUE, btree (query)
+
+```
+
 # Table "public.schema_migrations"
 ```
  Column  |  Type   | Modifiers 

@@ -11,10 +11,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/jsonx"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -236,6 +238,188 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+	return nil
+}
+
+// normalizeJSON converts JSON with comments, trailing commas, and some types of syntax errors into
+// standard JSON.
+func normalizeJSON(input string) []byte {
+	output, _ := jsonx.Parse(string(input), jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(output) == 0 {
+		return []byte("{}")
+	}
+	return output
+}
+
+func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
+	// List settings for all users, orgs, etc.
+	settings, err := db.Settings.ListAll(r.Context())
+	if err != nil {
+		return errors.Wrap(err, "db.Settings.ListAll")
+	}
+
+	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
+	for _, settings := range settings {
+		var config api.PartialConfigSavedQueries
+		_ = json.Unmarshal(normalizeJSON(settings.Contents), &config)
+		for _, query := range config.SavedQueries {
+			spec := api.SavedQueryIDSpec{Subject: settings.Subject, Key: query.Key}
+			queries = append(queries, api.SavedQuerySpecAndConfig{
+				Spec:   spec,
+				Config: query,
+			})
+		}
+	}
+
+	if err := json.NewEncoder(w).Encode(queries); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+func serveSavedQueriesGetInfo(w http.ResponseWriter, r *http.Request) error {
+	var query string
+	err := json.NewDecoder(r.Body).Decode(&query)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	info, err := db.SavedQueries.Get(r.Context(), query)
+	if err != nil {
+		return errors.Wrap(err, "SavedQueries.Get")
+	}
+	if err := json.NewEncoder(w).Encode(info); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
+	var info *api.SavedQueryInfo
+	err := json.NewDecoder(r.Body).Decode(&info)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	err = db.SavedQueries.Set(r.Context(), &db.SavedQueryInfo{
+		Query:        info.Query,
+		LastExecuted: info.LastExecuted,
+		LatestResult: info.LatestResult,
+		ExecDuration: info.ExecDuration,
+	})
+	if err != nil {
+		return errors.Wrap(err, "SavedQueries.Set")
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+	return nil
+}
+
+func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
+	var query string
+	err := json.NewDecoder(r.Body).Decode(&query)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	err = db.SavedQueries.Delete(r.Context(), query)
+	if err != nil {
+		return errors.Wrap(err, "SavedQueries.Delete")
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+	return nil
+}
+
+func serveOrgsListUsers(w http.ResponseWriter, r *http.Request) error {
+	var orgID int32
+	err := json.NewDecoder(r.Body).Decode(&orgID)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	orgMembers, err := db.OrgMembers.GetByOrgID(r.Context(), orgID)
+	if err != nil {
+		return errors.Wrap(err, "OrgMembers.GetByOrgID")
+	}
+	users := make([]int32, 0, len(orgMembers))
+	for _, member := range orgMembers {
+		users = append(users, member.UserID)
+	}
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+func serveOrgsGetByName(w http.ResponseWriter, r *http.Request) error {
+	var orgName string
+	err := json.NewDecoder(r.Body).Decode(&orgName)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	org, err := db.Orgs.GetByName(r.Context(), orgName)
+	if err != nil {
+		return errors.Wrap(err, "Orgs.GetByName")
+	}
+	if err := json.NewEncoder(w).Encode(org.ID); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+func serveOrgsGetSlackWebhooks(w http.ResponseWriter, r *http.Request) error {
+	var orgIDs []int32
+	err := json.NewDecoder(r.Body).Decode(&orgIDs)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	var webhooks []*string
+	for _, orgID := range orgIDs {
+		org, err := db.Orgs.GetByID(r.Context(), orgID)
+		if err != nil {
+			return errors.Wrap(err, "Orgs.Get")
+		}
+		webhooks = append(webhooks, org.SlackWebhookURL)
+	}
+	if err := json.NewEncoder(w).Encode(webhooks); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {
+	var username string
+	err := json.NewDecoder(r.Body).Decode(&username)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	user, err := db.Users.GetByUsername(r.Context(), username)
+	if err != nil {
+		return errors.Wrap(err, "Users.GetByUsername")
+	}
+	if err := json.NewEncoder(w).Encode(user.ID); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
+	var userID int32
+	err := json.NewDecoder(r.Body).Decode(&userID)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	email, _, err := db.UserEmails.GetEmail(r.Context(), userID)
+	if err != nil {
+		return errors.Wrap(err, "UserEmails.GetEmail")
+	}
+	if err := json.NewEncoder(w).Encode(email); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+func serveAppURL(w http.ResponseWriter, r *http.Request) error {
+	if err := json.NewEncoder(w).Encode(globals.AppURL.String()); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
 	return nil
 }
 

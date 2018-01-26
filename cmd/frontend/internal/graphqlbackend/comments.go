@@ -174,7 +174,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
 		client := slack.New(org.SlackWebhookURL, true)
 		commentURL := threadURL(thread.ID, &comment.ID, "slack")
-		go client.NotifyOnComment(user, email, org, repo, thread, comment, results.emails, commentURL.String(), title)
+		go slack.NotifyOnComment(client, user, email, org, repo, thread, comment, results.emails, commentURL.String(), title)
 	}
 
 	return t, nil

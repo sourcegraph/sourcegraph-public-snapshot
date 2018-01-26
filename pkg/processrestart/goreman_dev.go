@@ -29,6 +29,7 @@ func restartGoremanDev() error {
 	allProcessesExceptFrontend := []string{
 		"gitserver",
 		"indexer",
+		"query-runner",
 		"repo-updater",
 		"searcher",
 		"github-proxy",

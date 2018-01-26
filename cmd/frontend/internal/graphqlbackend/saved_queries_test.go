@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -18,7 +19,7 @@ func TestSavedQueries(t *testing.T) {
 	uid := int32(1)
 
 	defer resetMocks()
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*types.Settings, error) {
 		return &types.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
 
@@ -57,10 +58,10 @@ func TestCreateSavedQuery(t *testing.T) {
 	defer resetMocks()
 	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsCreateIfUpToDate := false
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*types.Settings, error) {
 		return &types.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject types.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &types.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
@@ -120,14 +121,14 @@ func TestUpdateSavedQuery(t *testing.T) {
 	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsGetLatest := false
 	calledSettingsCreateIfUpToDate := false
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject types.ConfigurationSubject) (*types.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*types.Settings, error) {
 		calledSettingsGetLatest = true
 		if calledSettingsCreateIfUpToDate {
 			return &types.Settings{ID: lastID + 1, Contents: `{"search.savedQueries":[{"key":"a","description":"d2","query":"q"}]}`}, nil
 		}
 		return &types.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject types.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &types.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
@@ -149,7 +150,7 @@ func TestUpdateSavedQuery(t *testing.T) {
 		Query          *string
 		ShowOnHomepage bool
 	}{
-		ID:             marshalSavedQueryID(savedQueryIDSpec{Subject: subject.toSubject(), Key: "a"}),
+		ID:             marshalSavedQueryID(api.SavedQueryIDSpec{Subject: subject.toSubject(), Key: "a"}),
 		Description:    &newDescription,
 		ShowOnHomepage: false,
 	})

@@ -14,6 +14,16 @@ const (
 	RepoShield = "repo.shield"
 	Telemetry  = "telemetry"
 
+	SavedQueriesListAll        = "internal.saved-queries.list-all"
+	SavedQueriesGetInfo        = "internal.saved-queries.get-info"
+	SavedQueriesSetInfo        = "internal.saved-queries.set-info"
+	SavedQueriesDeleteInfo     = "internal.saved-queries.delete-info"
+	OrgsListUsers              = "internal.orgs.list-users"
+	OrgsGetByName              = "internal.orgs.get-by-name"
+	OrgsGetSlackWebhooks       = "internal.orgs.get-slack-webhooks"
+	UsersGetByUsername         = "internal.users.get-by-username"
+	UserEmailsGetEmail         = "internal.user-emails.get-email"
+	AppURL                     = "internal.app-url"
 	DefsRefreshIndex           = "internal.defs.refresh-index"
 	PkgsRefreshIndex           = "internal.pkgs.refresh-index"
 	GitInfoRefs                = "internal.git.info-refs"
@@ -61,6 +71,16 @@ func NewInternal(base *mux.Router) *mux.Router {
 	}
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
+	base.Path("/saved-queries/list-all").Methods("POST").Name(SavedQueriesListAll)
+	base.Path("/saved-queries/get-info").Methods("POST").Name(SavedQueriesGetInfo)
+	base.Path("/saved-queries/set-info").Methods("POST").Name(SavedQueriesSetInfo)
+	base.Path("/saved-queries/delete-info").Methods("POST").Name(SavedQueriesDeleteInfo)
+	base.Path("/orgs/list-users").Methods("POST").Name(OrgsListUsers)
+	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)
+	base.Path("/orgs/get-slack-webhooks").Methods("POST").Name(OrgsGetSlackWebhooks)
+	base.Path("/users/get-by-username").Methods("POST").Name(UsersGetByUsername)
+	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
+	base.Path("/app-url").Methods("POST").Name(AppURL)
 	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
 	base.Path("/pkgs/refresh-index").Methods("POST").Name(PkgsRefreshIndex)
 	base.Path("/gitolite/update-repos").Methods("POST").Name(GitoliteUpdateRepos)
