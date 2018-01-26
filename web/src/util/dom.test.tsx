@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import * as _dom from './dom'
-import { createTestBundle, TestBundle } from './test-utils'
+import { createTestBundle, TestBundle } from './unit-test-utils'
 
 describe('util/dom', () => {
     describe('highlightNode', () => {

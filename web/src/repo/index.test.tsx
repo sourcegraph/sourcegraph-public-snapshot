@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import { pickBy } from 'lodash'
-import { createTestBundle } from '../util/test-utils'
+import { createTestBundle } from '../util/unit-test-utils'
 import * as _repo from './index'
 
 /** Remove undefined values from an object */
