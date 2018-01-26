@@ -47,9 +47,6 @@ type Policy struct {
 	// exceptions
 	initialized bool
 
-	// Allows the <!DOCTYPE > tag to exist in the sanitized document
-	allowDocType bool
-
 	// If true then we add spaces when stripping tags, specifically the closing
 	// tag is replaced by a space character.
 	addSpaces bool
@@ -369,21 +366,6 @@ func (p *Policy) AllowURLSchemeWithCustomPolicy(
 	return p
 }
 
-// AllowDocType states whether the HTML sanitised by the sanitizer is allowed to
-// contain the HTML DocType tag: <!DOCTYPE HTML> or one of it's variants.
-//
-// The HTML spec only permits one doctype per document, and as you know how you
-// are using the output of this, you know best as to whether we should ignore it
-// (default) or not.
-//
-// If you are sanitizing a HTML fragment the default (false) is fine.
-func (p *Policy) AllowDocType(allow bool) *Policy {
-
-	p.allowDocType = allow
-
-	return p
-}
-
 // AddSpaceWhenStrippingTag states whether to add a single space " " when
 // removing tags that are not whitelisted by the policy.
 //
@@ -498,6 +480,7 @@ func (p *Policy) addDefaultElementsWithoutAttrs() {
 	p.setOfElementsAllowedWithoutAttrs["ruby"] = struct{}{}
 	p.setOfElementsAllowedWithoutAttrs["s"] = struct{}{}
 	p.setOfElementsAllowedWithoutAttrs["samp"] = struct{}{}
+	p.setOfElementsAllowedWithoutAttrs["script"] = struct{}{}
 	p.setOfElementsAllowedWithoutAttrs["section"] = struct{}{}
 	p.setOfElementsAllowedWithoutAttrs["select"] = struct{}{}
 	p.setOfElementsAllowedWithoutAttrs["small"] = struct{}{}

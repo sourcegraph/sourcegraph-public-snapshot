@@ -55,10 +55,9 @@ func New(client *http.Client) (*Service, error) {
 }
 
 type Service struct {
-	client                    *http.Client
-	BasePath                  string // API endpoint base URL
-	UserAgent                 string // optional additional User-Agent fragment
-	GoogleClientHeaderElement string // client header fragment, for Google use only
+	client    *http.Client
+	BasePath  string // API endpoint base URL
+	UserAgent string // optional additional User-Agent fragment
 
 	Cse *CseService
 }
@@ -68,10 +67,6 @@ func (s *Service) userAgent() string {
 		return googleapi.UserAgent
 	}
 	return googleapi.UserAgent + " " + s.UserAgent
-}
-
-func (s *Service) clientHeader() string {
-	return gensupport.GoogleClientHeader("20170210", s.GoogleClientHeaderElement)
 }
 
 func NewCseService(s *Service) *CseService {
@@ -106,8 +101,8 @@ type Context struct {
 }
 
 func (s *Context) MarshalJSON() ([]byte, error) {
-	type noMethod Context
-	raw := noMethod(*s)
+	type NoMethod Context
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -136,8 +131,8 @@ type ContextFacetsItem struct {
 }
 
 func (s *ContextFacetsItem) MarshalJSON() ([]byte, error) {
-	type noMethod ContextFacetsItem
-	raw := noMethod(*s)
+	type NoMethod ContextFacetsItem
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -172,8 +167,8 @@ type Promotion struct {
 }
 
 func (s *Promotion) MarshalJSON() ([]byte, error) {
-	type noMethod Promotion
-	raw := noMethod(*s)
+	type NoMethod Promotion
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -204,8 +199,8 @@ type PromotionBodyLines struct {
 }
 
 func (s *PromotionBodyLines) MarshalJSON() ([]byte, error) {
-	type noMethod PromotionBodyLines
-	raw := noMethod(*s)
+	type NoMethod PromotionBodyLines
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -234,8 +229,8 @@ type PromotionImage struct {
 }
 
 func (s *PromotionImage) MarshalJSON() ([]byte, error) {
-	type noMethod PromotionImage
-	raw := noMethod(*s)
+	type NoMethod PromotionImage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -243,8 +238,6 @@ type Query struct {
 	Count int64 `json:"count,omitempty"`
 
 	Cr string `json:"cr,omitempty"`
-
-	Cref string `json:"cref,omitempty"`
 
 	Cx string `json:"cx,omitempty"`
 
@@ -332,8 +325,8 @@ type Query struct {
 }
 
 func (s *Query) MarshalJSON() ([]byte, error) {
-	type noMethod Query
-	raw := noMethod(*s)
+	type NoMethod Query
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -386,8 +379,8 @@ type Result struct {
 }
 
 func (s *Result) MarshalJSON() ([]byte, error) {
-	type noMethod Result
-	raw := noMethod(*s)
+	type NoMethod Result
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -424,8 +417,8 @@ type ResultImage struct {
 }
 
 func (s *ResultImage) MarshalJSON() ([]byte, error) {
-	type noMethod ResultImage
-	raw := noMethod(*s)
+	type NoMethod ResultImage
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -454,8 +447,8 @@ type ResultLabels struct {
 }
 
 func (s *ResultLabels) MarshalJSON() ([]byte, error) {
-	type noMethod ResultLabels
-	raw := noMethod(*s)
+	type NoMethod ResultLabels
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -498,8 +491,8 @@ type Search struct {
 }
 
 func (s *Search) MarshalJSON() ([]byte, error) {
-	type noMethod Search
-	raw := noMethod(*s)
+	type NoMethod Search
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -531,18 +524,18 @@ type SearchSearchInformation struct {
 }
 
 func (s *SearchSearchInformation) MarshalJSON() ([]byte, error) {
-	type noMethod SearchSearchInformation
-	raw := noMethod(*s)
+	type NoMethod SearchSearchInformation
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
 func (s *SearchSearchInformation) UnmarshalJSON(data []byte) error {
-	type noMethod SearchSearchInformation
+	type NoMethod SearchSearchInformation
 	var s1 struct {
 		SearchTime gensupport.JSONFloat64 `json:"searchTime"`
-		*noMethod
+		*NoMethod
 	}
-	s1.noMethod = (*noMethod)(s)
+	s1.NoMethod = (*NoMethod)(s)
 	if err := json.Unmarshal(data, &s1); err != nil {
 		return err
 	}
@@ -574,8 +567,8 @@ type SearchSpelling struct {
 }
 
 func (s *SearchSpelling) MarshalJSON() ([]byte, error) {
-	type noMethod SearchSpelling
-	raw := noMethod(*s)
+	type NoMethod SearchSpelling
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -602,8 +595,8 @@ type SearchUrl struct {
 }
 
 func (s *SearchUrl) MarshalJSON() ([]byte, error) {
-	type noMethod SearchUrl
-	raw := noMethod(*s)
+	type NoMethod SearchUrl
+	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
@@ -635,13 +628,6 @@ func (c *CseListCall) C2coff(c2coff string) *CseListCall {
 // Cr sets the optional parameter "cr": Country restrict(s).
 func (c *CseListCall) Cr(cr string) *CseListCall {
 	c.urlParams_.Set("cr", cr)
-	return c
-}
-
-// Cref sets the optional parameter "cref": The URL of a linked custom
-// search engine
-func (c *CseListCall) Cref(cref string) *CseListCall {
-	c.urlParams_.Set("cref", cref)
 	return c
 }
 
@@ -976,7 +962,6 @@ func (c *CseListCall) doRequest(alt string) (*http.Response, error) {
 		reqHeaders[k] = v
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
-	reqHeaders.Set("x-goog-api-client", c.s.clientHeader())
 	if c.ifNoneMatch_ != "" {
 		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
 	}
@@ -1022,7 +1007,7 @@ func (c *CseListCall) Do(opts ...googleapi.CallOption) (*Search, error) {
 		},
 	}
 	target := &ret
-	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+	if err := gensupport.DecodeResponse(target, res); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1041,11 +1026,6 @@ func (c *CseListCall) Do(opts ...googleapi.CallOption) (*Search, error) {
 	//     },
 	//     "cr": {
 	//       "description": "Country restrict(s).",
-	//       "location": "query",
-	//       "type": "string"
-	//     },
-	//     "cref": {
-	//       "description": "The URL of a linked custom search engine",
 	//       "location": "query",
 	//       "type": "string"
 	//     },

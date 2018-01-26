@@ -110,9 +110,8 @@ func (m *mStack) release(cs *cStack) {
 	if cs.pool != m.pool {
 		return
 	}
-	p := cs.pool
+	cs.pool.release(cs)
 	cs.pool = nil
-	p.release(cs)
 }
 
 func (m *mStack) Use(middleware interface{}) {

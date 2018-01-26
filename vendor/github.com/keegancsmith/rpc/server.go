@@ -405,7 +405,7 @@ func (s *service) call(server *Server, sending *sync.Mutex, pending *svc.Pending
 	if s.name == "_goRPC_" {
 		switch v := argv.Interface().(type) {
 		case *svc.CancelArgs:
-			v.Pending = pending
+			v.SetPending(pending)
 		}
 	}
 	mtype.Lock()

@@ -47,11 +47,6 @@ func NewTServerSocketTimeout(listenAddr string, clientTimeout time.Duration) (*T
 	return &TServerSocket{addr: addr, clientTimeout: clientTimeout}, nil
 }
 
-// Creates a TServerSocket from a net.Addr
-func NewTServerSocketFromAddrTimeout(addr net.Addr, clientTimeout time.Duration) *TServerSocket {
-	return &TServerSocket{addr: addr, clientTimeout: clientTimeout}
-}
-
 func (p *TServerSocket) Listen() error {
 	if p.IsListening() {
 		return nil

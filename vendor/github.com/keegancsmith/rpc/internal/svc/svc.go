@@ -8,9 +8,6 @@ import (
 // Pending manages a map of all pending requests to a rpc.Service for a
 // connection (an rpc.ServerCodec).
 type Pending struct {
-	// Ignore this field, it is only added to make gob happy
-	Ignore bool
-
 	mu sync.Mutex
 	m  map[uint64]context.CancelFunc // seq -> cancel
 }
@@ -44,16 +41,22 @@ type CancelArgs struct {
 	// Seq is the sequence number for the rpc.Call to cancel.
 	Seq uint64
 
-	// Pending is the DS used by rpc.Server to track the ongoing calls for
+	// pending is the DS used by rpc.Server to track the ongoing calls for
 	// this connection. It should not be set by the client, the Service will
 	// set it.
-	Pending *Pending
+	pending *Pending
+}
+
+// SetPending sets the pending map for the server to use. Do not use on the
+// client.
+func (a *CancelArgs) SetPending(p *Pending) {
+	a.pending = p
 }
 
 // GoRPC is an internal service used by rpc.
 type GoRPC struct{}
 
 func (s *GoRPC) Cancel(ctx context.Context, args *CancelArgs, reply *bool) error {
-	args.Pending.Cancel(args.Seq)
+	args.pending.Cancel(args.Seq)
 	return nil
 }

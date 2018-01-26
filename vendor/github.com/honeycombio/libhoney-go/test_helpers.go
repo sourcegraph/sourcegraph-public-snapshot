@@ -57,7 +57,7 @@ func testGetResponse(t testing.TB, ch chan Response) Response {
 	var resp Response
 	select {
 	case resp = <-ch:
-	case <-time.After(5 * time.Millisecond): // block on read but prevent deadlocking tests
+	case <-time.After(50 * time.Millisecond): // block on read but prevent deadlocking tests
 		t.Errorf("%s:%d: expected response on channel and timed out waiting for it!", filepath.Base(file), line)
 	}
 	return resp

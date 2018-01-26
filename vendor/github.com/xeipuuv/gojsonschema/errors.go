@@ -145,6 +145,16 @@ type (
 	NumberLTError struct {
 		ResultErrorFields
 	}
+
+	// ConditionThenError. ErrorDetails: -
+	ConditionThenError struct {
+		ResultErrorFields
+	}
+
+	// ConditionElseError. ErrorDetails: -
+	ConditionElseError struct {
+		ResultErrorFields
+	}
 )
 
 // newError takes a ResultError type and sets the type, context, description, details, value, and field
@@ -230,6 +240,12 @@ func newError(err ResultError, context *jsonContext, value interface{}, locale l
 	case *NumberLTError:
 		t = "number_lt"
 		d = locale.NumberLT()
+	case *ConditionThenError:
+		t = "condition_then"
+		d = locale.ConditionThen()
+	case *ConditionElseError:
+		t = "condition_else"
+		d = locale.ConditionElse()
 	}
 
 	err.SetType(t)

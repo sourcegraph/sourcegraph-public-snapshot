@@ -20,10 +20,11 @@ func (w *statusCodeTracker) WriteHeader(status int) {
 }
 
 type mwOptions struct {
-	opNameFunc func(r *http.Request) string
+	opNameFunc    func(r *http.Request) string
+	componentName string
 }
 
-// MWOption contols the behavior of the Middleware.
+// MWOption controls the behavior of the Middleware.
 type MWOption func(*mwOptions)
 
 // OperationNameFunc returns a MWOption that uses given function f
@@ -31,6 +32,14 @@ type MWOption func(*mwOptions)
 func OperationNameFunc(f func(r *http.Request) string) MWOption {
 	return func(options *mwOptions) {
 		options.opNameFunc = f
+	}
+}
+
+// MWComponentName returns a MWOption that sets the component name
+// name for the server-side span.
+func MWComponentName(componentName string) MWOption {
+	return func(options *mwOptions) {
+		options.componentName = componentName
 	}
 }
 
@@ -67,7 +76,14 @@ func Middleware(tr opentracing.Tracer, h http.Handler, options ...MWOption) http
 		sp := tr.StartSpan(opts.opNameFunc(r), ext.RPCServerOption(ctx))
 		ext.HTTPMethod.Set(sp, r.Method)
 		ext.HTTPUrl.Set(sp, r.URL.String())
-		ext.Component.Set(sp, "net/http")
+
+		// set component name, use "net/http" if caller does not specify
+		componentName := opts.componentName
+		if componentName == "" {
+			componentName = defaultComponentName
+		}
+		ext.Component.Set(sp, componentName)
+
 		w = &statusCodeTracker{w, 200}
 		r = r.WithContext(opentracing.ContextWithSpan(r.Context(), sp))
 

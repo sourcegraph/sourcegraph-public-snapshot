@@ -56,7 +56,7 @@ func (d *Decoder) IgnoreUnknownKeys(i bool) {
 
 // RegisterConverter registers a converter function for a custom type.
 func (d *Decoder) RegisterConverter(value interface{}, converterFunc Converter) {
-	d.cache.regconv[reflect.TypeOf(value)] = converterFunc
+	d.cache.registerConverter(value, converterFunc)
 }
 
 // Decode decodes a map[string][]string to a struct.
@@ -153,7 +153,6 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 		}
 		v = v.FieldByName(name)
 	}
-
 	// Don't even bother for unexported fields.
 	if !v.CanSet() {
 		return nil
@@ -185,7 +184,8 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 
 	// Get the converter early in case there is one for a slice type.
 	conv := d.cache.converter(t)
-	if conv == nil && t.Kind() == reflect.Slice {
+	m := isTextUnmarshaler(v)
+	if conv == nil && t.Kind() == reflect.Slice && m.IsSlice {
 		var items []reflect.Value
 		elemT := t.Elem()
 		isPtrElem := elemT.Kind() == reflect.Ptr
@@ -196,15 +196,38 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 		// Try to get a converter for the element type.
 		conv := d.cache.converter(elemT)
 		if conv == nil {
-			// As we are not dealing with slice of structs here, we don't need to check if the type
-			// implements TextUnmarshaler interface
-			return fmt.Errorf("schema: converter not found for %v", elemT)
+			conv = builtinConverters[elemT.Kind()]
+			if conv == nil {
+				// As we are not dealing with slice of structs here, we don't need to check if the type
+				// implements TextUnmarshaler interface
+				return fmt.Errorf("schema: converter not found for %v", elemT)
+			}
 		}
 
 		for key, value := range values {
 			if value == "" {
 				if d.zeroEmpty {
 					items = append(items, reflect.Zero(elemT))
+				}
+			} else if m.IsValid {
+				u := reflect.New(elemT)
+				if m.IsPtr {
+					u = reflect.New(reflect.PtrTo(elemT).Elem())
+				}
+				if err := u.Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(value)); err != nil {
+					return ConversionError{
+						Key:   path,
+						Type:  t,
+						Index: key,
+						Err:   err,
+					}
+				}
+				if m.IsPtr {
+					items = append(items, u.Elem().Addr())
+				} else if u.Kind() == reflect.Ptr {
+					items = append(items, u.Elem())
+				} else {
+					items = append(items, u)
 				}
 			} else if item := conv(value); item.IsValid() {
 				if isPtrElem {
@@ -274,30 +297,77 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 					Index: -1,
 				}
 			}
-		} else {
-			// When there's no registered conversion for the custom type, we will check if the type
-			// implements the TextUnmarshaler interface. As the UnmarshalText function should be applied
-			// to the pointer of the type, we convert the value to pointer.
-			if v.CanAddr() {
-				v = v.Addr()
-			}
-
-			if u, ok := v.Interface().(encoding.TextUnmarshaler); ok {
-				if err := u.UnmarshalText([]byte(val)); err != nil {
-					return ConversionError{
-						Key:   path,
-						Type:  t,
-						Index: -1,
-						Err:   err,
-					}
+		} else if m.IsValid {
+			// If the value implements the encoding.TextUnmarshaler interface
+			// apply UnmarshalText as the converter
+			if err := m.Unmarshaler.UnmarshalText([]byte(val)); err != nil {
+				return ConversionError{
+					Key:   path,
+					Type:  t,
+					Index: -1,
+					Err:   err,
 				}
-
-			} else {
-				return fmt.Errorf("schema: converter not found for %v", t)
 			}
+		} else if conv := builtinConverters[t.Kind()]; conv != nil {
+			if value := conv(val); value.IsValid() {
+				v.Set(value.Convert(t))
+			} else {
+				return ConversionError{
+					Key:   path,
+					Type:  t,
+					Index: -1,
+				}
+			}
+		} else {
+			return fmt.Errorf("schema: converter not found for %v", t)
 		}
 	}
 	return nil
+}
+
+func isTextUnmarshaler(v reflect.Value) unmarshaler {
+
+	// Create a new unmarshaller instance
+	m := unmarshaler{}
+
+	// As the UnmarshalText function should be applied
+	// to the pointer of the type, we convert the value to pointer.
+	if v.CanAddr() {
+		v = v.Addr()
+	}
+	if m.Unmarshaler, m.IsValid = v.Interface().(encoding.TextUnmarshaler); m.IsValid {
+		return m
+	}
+
+	// if v is []T or *[]T create new T
+	t := v.Type()
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() == reflect.Slice {
+		// if t is a pointer slice, check if it implements encoding.TextUnmarshaler
+		m.IsSlice = true
+		if t = t.Elem(); t.Kind() == reflect.Ptr {
+			t = reflect.PtrTo(t.Elem())
+			v = reflect.Zero(t)
+			m.IsPtr = true
+			m.Unmarshaler, m.IsValid = v.Interface().(encoding.TextUnmarshaler)
+			return m
+		}
+	}
+
+	v = reflect.New(t)
+	m.Unmarshaler, m.IsValid = v.Interface().(encoding.TextUnmarshaler)
+	return m
+}
+
+// TextUnmarshaler helpers ----------------------------------------------------
+// unmarshaller contains information about a TextUnmarshaler type
+type unmarshaler struct {
+	Unmarshaler encoding.TextUnmarshaler
+	IsSlice     bool
+	IsPtr       bool
+	IsValid     bool
 }
 
 // Errors ---------------------------------------------------------------------

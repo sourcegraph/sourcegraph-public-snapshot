@@ -28,6 +28,7 @@ package gojsonschema
 
 import (
 	"errors"
+	"math/big"
 	"reflect"
 	"regexp"
 	"text/template"
@@ -64,6 +65,13 @@ func NewSchema(l JSONLoader) (*Schema, error) {
 			return nil, err
 		}
 		doc = spd.Document
+
+		// Deal with fragment pointers
+		jsonPointer := ref.GetPointer()
+		doc, _, err = jsonPointer.Get(doc)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		// Load JSON directly
 		doc, err = l.LoadJSON()
@@ -475,7 +483,7 @@ func (d *Schema) parseSchema(documentNode interface{}, currentSchema *subSchema)
 				},
 			))
 		}
-		if *multipleOfValue <= 0 {
+		if multipleOfValue.Cmp(big.NewFloat(0)) <= 0 {
 			return errors.New(formatErrorDescription(
 				Locale.GreaterThanZero(),
 				ErrorDetails{"number": KEY_MULTIPLE_OF},
@@ -543,7 +551,7 @@ func (d *Schema) parseSchema(documentNode interface{}, currentSchema *subSchema)
 	}
 
 	if currentSchema.minimum != nil && currentSchema.maximum != nil {
-		if *currentSchema.minimum > *currentSchema.maximum {
+		if currentSchema.minimum.Cmp(currentSchema.maximum) == 1 {
 			return errors.New(formatErrorDescription(
 				Locale.CannotBeGT(),
 				ErrorDetails{"x": KEY_MINIMUM, "y": KEY_MAXIMUM},
@@ -823,6 +831,54 @@ func (d *Schema) parseSchema(documentNode interface{}, currentSchema *subSchema)
 			return errors.New(formatErrorDescription(
 				Locale.MustBeOfAn(),
 				ErrorDetails{"x": KEY_NOT, "y": TYPE_OBJECT},
+			))
+		}
+	}
+
+	if existsMapKey(m, KEY_IF) {
+		if isKind(m[KEY_IF], reflect.Map) {
+			newSchema := &subSchema{property: KEY_IF, parent: currentSchema, ref: currentSchema.ref}
+			currentSchema.SetIf(newSchema)
+			err := d.parseSchema(m[KEY_IF], newSchema)
+			if err != nil {
+				return err
+			}
+		} else {
+			return errors.New(formatErrorDescription(
+				Locale.MustBeOfAn(),
+				ErrorDetails{"x": KEY_IF, "y": TYPE_OBJECT},
+			))
+		}
+	}
+
+	if existsMapKey(m, KEY_THEN) {
+		if isKind(m[KEY_THEN], reflect.Map) {
+			newSchema := &subSchema{property: KEY_THEN, parent: currentSchema, ref: currentSchema.ref}
+			currentSchema.SetThen(newSchema)
+			err := d.parseSchema(m[KEY_THEN], newSchema)
+			if err != nil {
+				return err
+			}
+		} else {
+			return errors.New(formatErrorDescription(
+				Locale.MustBeOfAn(),
+				ErrorDetails{"x": KEY_THEN, "y": TYPE_OBJECT},
+			))
+		}
+	}
+
+	if existsMapKey(m, KEY_ELSE) {
+		if isKind(m[KEY_ELSE], reflect.Map) {
+			newSchema := &subSchema{property: KEY_ELSE, parent: currentSchema, ref: currentSchema.ref}
+			currentSchema.SetElse(newSchema)
+			err := d.parseSchema(m[KEY_ELSE], newSchema)
+			if err != nil {
+				return err
+			}
+		} else {
+			return errors.New(formatErrorDescription(
+				Locale.MustBeOfAn(),
+				ErrorDetails{"x": KEY_ELSE, "y": TYPE_OBJECT},
 			))
 		}
 	}

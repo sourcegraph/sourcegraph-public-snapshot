@@ -128,7 +128,7 @@ func (r *Request) SetMeta(v interface{}) error {
 // http://www.jsonrpc.org/specification#response_object.
 type Response struct {
 	ID     ID               `json:"id"`
-	Result *json.RawMessage `json:"result"`
+	Result *json.RawMessage `json:"result,omitempty"`
 	Error  *Error           `json:"error,omitempty"`
 
 	// Meta optionally provides metadata to include in the response.

@@ -49,10 +49,11 @@ required = [
   name = "github.com/sourcegraph/go-langserver"
   revision = "d62c2787506ccc8d2cf68eae5a892ca7130e2cbb"
 
-# Latest version of graphql-go is stricter, we need to fix our shit.
-[[constraint]]
-  name = "github.com/neelance/graphql-go"
-  revision = "10eb949b8f4439212ef19d5d924c47c10c110cc7"
+# github_flavored_markdown depends on v1 of blackfriday, which is the master
+# branch.
+[[override]]
+  branch = "master"
+  name = "github.com/russross/blackfriday"
 
 [[constraint]]
   branch = "master"

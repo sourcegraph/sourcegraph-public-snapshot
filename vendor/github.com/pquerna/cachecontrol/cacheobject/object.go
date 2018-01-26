@@ -269,7 +269,9 @@ func UsingRequestResponse(req *http.Request,
 	if respHeaders.Get("Expires") != "" {
 		expiresHeader, err = http.ParseTime(respHeaders.Get("Expires"))
 		if err != nil {
-			return nil, time.Time{}, err
+			// sometimes servers will return `Expires: 0` or `Expires: -1` to
+			// indicate expired content
+			expiresHeader = time.Time{}
 		}
 		expiresHeader = expiresHeader.UTC()
 	}

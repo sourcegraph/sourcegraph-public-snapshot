@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/shurcooL/go/reflectsource"
 )
@@ -93,10 +94,10 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 
 	// Display dereferenced value.
 	switch {
-	case nilFound == true:
+	case nilFound:
 		d.w.Write(nilBytes)
 
-	case cycleFound == true:
+	case cycleFound:
 		d.w.Write(circularBytes)
 
 	default:
@@ -140,6 +141,26 @@ func (d *dumpState) dump(v reflect.Value) {
 		shouldPrintClosingBr = true
 	}
 	d.ignoreNextType = false
+
+	if v.Type() == timeType {
+		t := v.Interface().(time.Time)
+		switch t.IsZero() {
+		case false:
+			var location string
+			switch t.Location() {
+			case time.UTC:
+				location = "time.UTC"
+			case time.Local:
+				location = "time.Local"
+			default:
+				location = fmt.Sprintf("must(time.LoadLocation(%q))", t.Location().String())
+			}
+			fmt.Fprintf(d.w, "time.Date(%d, %d, %d, %d, %d, %d, %d, %s)", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), location)
+		case true:
+			d.w.Write([]byte("time.Time{}"))
+		}
+		goto AfterKindSwitch
+	}
 
 	switch kind {
 	case reflect.Invalid:
@@ -271,11 +292,14 @@ func (d *dumpState) dump(v reflect.Value) {
 			fmt.Fprintf(d.w, "%v", v.String())
 		}
 	}
+AfterKindSwitch:
 
 	if shouldPrintClosingBr {
 		d.w.Write(closeParenBytes)
 	}
 }
+
+var timeType = reflect.TypeOf(time.Time{})
 
 func typeStringWithoutPackagePrefix(v reflect.Value) string {
 	//return v.Type().String()[len(v.Type().PkgPath())+1:]		// TODO: Error checking?
@@ -292,12 +316,8 @@ func typeStringWithoutPackagePrefix(v reflect.Value) string {
 	px := v.Type().String()
 	prefix := px[0 : len(px)-len(strings.TrimLeft(px, "*"))] // Split "**main.Lang" -> "**" and "main.Lang"
 	x := px[len(prefix):]
-	if strings.HasPrefix(x, "main.") {
-		x = x[len("main."):]
-	}
-	if strings.HasPrefix(x, "goon_test.") {
-		x = x[len("goon_test."):]
-	}
+	x = strings.TrimPrefix(x, "main.")
+	x = strings.TrimPrefix(x, "goon_test.")
 	return prefix + x
 
 	/*x = string(debug.Stack())//GetLine(string(debug.Stack()), 0)

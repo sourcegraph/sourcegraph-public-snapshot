@@ -27,6 +27,7 @@ package gojsonschema
 
 import (
 	"encoding/json"
+	"math/big"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -370,6 +371,24 @@ func (v *subSchema) validateSchema(currentSubSchema *subSchema, currentNode inte
 
 					}
 				}
+			}
+		}
+	}
+
+	if currentSubSchema._if != nil {
+		validationResultIf := currentSubSchema._if.subValidateWithContext(currentNode, context)
+		if currentSubSchema._then != nil && validationResultIf.Valid() {
+			validationResultThen := currentSubSchema._then.subValidateWithContext(currentNode, context)
+			if !validationResultThen.Valid() {
+				result.addError(new(ConditionThenError), context, currentNode, ErrorDetails{})
+				result.mergeErrors(validationResultThen)
+			}
+		}
+		if currentSubSchema._else != nil && !validationResultIf.Valid() {
+			validationResultElse := currentSubSchema._else.subValidateWithContext(currentNode, context)
+			if !validationResultElse.Valid() {
+				result.addError(new(ConditionElseError), context, currentNode, ErrorDetails{})
+				result.mergeErrors(validationResultElse)
 			}
 		}
 	}
@@ -759,17 +778,17 @@ func (v *subSchema) validateNumber(currentSubSchema *subSchema, value interface{
 	}
 
 	number := value.(json.Number)
-	float64Value, _ := number.Float64()
+	float64Value, _ := new(big.Float).SetString(string(number))
 
 	// multipleOf:
 	if currentSubSchema.multipleOf != nil {
 
-		if !isFloat64AnInteger(float64Value / *currentSubSchema.multipleOf) {
+		if q := new(big.Float).Quo(float64Value, currentSubSchema.multipleOf); !q.IsInt() {
 			result.addError(
 				new(MultipleOfError),
 				context,
 				resultErrorFormatJsonNumber(number),
-				ErrorDetails{"multiple": *currentSubSchema.multipleOf},
+				ErrorDetails{"multiple": currentSubSchema.multipleOf},
 			)
 		}
 	}
@@ -777,24 +796,24 @@ func (v *subSchema) validateNumber(currentSubSchema *subSchema, value interface{
 	//maximum & exclusiveMaximum:
 	if currentSubSchema.maximum != nil {
 		if currentSubSchema.exclusiveMaximum {
-			if float64Value >= *currentSubSchema.maximum {
+			if float64Value.Cmp(currentSubSchema.maximum) >= 0 {
 				result.addError(
 					new(NumberLTError),
 					context,
 					resultErrorFormatJsonNumber(number),
 					ErrorDetails{
-						"max": resultErrorFormatNumber(*currentSubSchema.maximum),
+						"max": currentSubSchema.maximum,
 					},
 				)
 			}
 		} else {
-			if float64Value > *currentSubSchema.maximum {
+			if float64Value.Cmp(currentSubSchema.maximum) == 1 {
 				result.addError(
 					new(NumberLTEError),
 					context,
 					resultErrorFormatJsonNumber(number),
 					ErrorDetails{
-						"max": resultErrorFormatNumber(*currentSubSchema.maximum),
+						"max": currentSubSchema.maximum,
 					},
 				)
 			}
@@ -804,24 +823,25 @@ func (v *subSchema) validateNumber(currentSubSchema *subSchema, value interface{
 	//minimum & exclusiveMinimum:
 	if currentSubSchema.minimum != nil {
 		if currentSubSchema.exclusiveMinimum {
-			if float64Value <= *currentSubSchema.minimum {
+			if float64Value.Cmp(currentSubSchema.minimum) <= 0 {
+				// if float64Value <= *currentSubSchema.minimum {
 				result.addError(
 					new(NumberGTError),
 					context,
 					resultErrorFormatJsonNumber(number),
 					ErrorDetails{
-						"min": resultErrorFormatNumber(*currentSubSchema.minimum),
+						"min": currentSubSchema.minimum,
 					},
 				)
 			}
 		} else {
-			if float64Value < *currentSubSchema.minimum {
+			if float64Value.Cmp(currentSubSchema.minimum) == -1 {
 				result.addError(
 					new(NumberGTEError),
 					context,
 					resultErrorFormatJsonNumber(number),
 					ErrorDetails{
-						"min": resultErrorFormatNumber(*currentSubSchema.minimum),
+						"min": currentSubSchema.minimum,
 					},
 				)
 			}

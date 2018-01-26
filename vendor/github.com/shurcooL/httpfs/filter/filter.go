@@ -11,8 +11,10 @@ import (
 )
 
 // Func is a selection function which is provided two arguments,
-// its '/'-separated rooted absolute path (i.e., it always begins with "/"),
+// its '/'-separated cleaned rooted absolute path (i.e., it always begins with "/"),
 // and the os.FileInfo of the considered file.
+//
+// The path is cleaned via pathpkg.Clean("/" + path).
 //
 // For example, if the considered file is named "a" and it's inside a directory "dir",
 // then the value of path will be "/dir/a".
@@ -31,16 +33,6 @@ func Skip(source http.FileSystem, skip Func) http.FileSystem {
 		return !skip(path, fi)
 	}
 	return &filterFS{source: source, keep: keep}
-}
-
-// New returns a filesystem that contains everything in source, except entries
-// for which skip returns true.
-//
-// Deprecated: Use Skip instead, it does the same thing and has a better name.
-//
-// TODO: Remove this after a few days/weeks after migrating all users of old API to new API.
-func New(source http.FileSystem, skip Func) http.FileSystem {
-	return Skip(source, skip)
 }
 
 type filterFS struct {
@@ -121,7 +113,7 @@ func (d *dir) IsDir() bool        { return true }
 func (d *dir) Sys() interface{}   { return nil }
 
 func (d *dir) Seek(offset int64, whence int) (int64, error) {
-	if offset == 0 && whence == os.SEEK_SET {
+	if offset == 0 && whence == io.SeekStart {
 		d.pos = 0
 		return 0, nil
 	}

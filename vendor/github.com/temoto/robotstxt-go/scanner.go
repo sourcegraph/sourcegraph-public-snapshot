@@ -1,6 +1,7 @@
 package robotstxt
 
 import (
+	"bytes"
 	"fmt"
 	"go/token"
 	"io"
@@ -29,7 +30,7 @@ func newByteScanner(srcname string, quiet bool) *byteScanner {
 	}
 }
 
-func (s *byteScanner) Feed(input []byte, end bool) (bool, error) {
+func (s *byteScanner) Feed(input []byte, end bool) error {
 	s.buf = input
 	s.pos.Offset = 0
 	s.pos.Line = 1
@@ -37,7 +38,9 @@ func (s *byteScanner) Feed(input []byte, end bool) (bool, error) {
 	s.lastChunk = end
 
 	// Read first char into look-ahead buffer `s.ch`.
-	s.nextChar()
+	if err := s.nextChar(); err != nil {
+		return err
+	}
 
 	// Skip UTF-8 byte order mark
 	if s.ch == 65279 {
@@ -45,7 +48,7 @@ func (s *byteScanner) Feed(input []byte, end bool) (bool, error) {
 		s.pos.Column = 1
 	}
 
-	return false, nil
+	return nil
 }
 
 func (s *byteScanner) GetPosition() token.Position {
@@ -100,7 +103,8 @@ func (s *byteScanner) Scan() (string, error) {
 	   }
 	*/
 
-	tok := string(s.ch)
+	var tok bytes.Buffer
+	tok.WriteRune(s.ch)
 	s.nextChar()
 	for s.ch != -1 && !s.isSpace() && !s.isEol() {
 		// Do not consider ":" to be a token separator if a first key token
@@ -113,10 +117,10 @@ func (s *byteScanner) Scan() (string, error) {
 			break
 		}
 
-		tok += string(s.ch)
+		tok.WriteRune(s.ch)
 		s.nextChar()
 	}
-	return tok, nil
+	return tok.String(), nil
 }
 
 func (s *byteScanner) ScanAll() ([]string, error) {
@@ -175,12 +179,12 @@ func (s *byteScanner) skipUntilEol() {
 }
 
 // Reads next Unicode char.
-func (s *byteScanner) nextChar() (rune, error) {
+func (s *byteScanner) nextChar() error {
 	//println("--- nextChar(). Offset / len(s.buf): ", s.pos.Offset, len(s.buf))
 
 	if s.pos.Offset >= len(s.buf) {
 		s.ch = -1
-		return s.ch, io.EOF
+		return io.EOF
 	}
 	s.pos.Column++
 	if s.ch == '\n' {
@@ -197,5 +201,5 @@ func (s *byteScanner) nextChar() (rune, error) {
 	s.pos.Column++
 	s.pos.Offset += w
 	s.ch = r
-	return s.ch, nil
+	return nil
 }

@@ -17,13 +17,13 @@ Getting Started
 
 To get started, you'll want to import the library:
 
-    import log "gopkg.in/inconshreveable/log15.v2"
+    import log "github.com/inconshreveable/log15"
 
 
 Now you're ready to start logging:
 
     func main() {
-        log.Info("Program starting", "args", os.Args())
+        log.Info("Program starting", "args", os.Args)
     }
 
 
@@ -69,7 +69,7 @@ The Handler interface defines where log lines are printed to and how they are fo
 single interface that is inspired by net/http's handler interface:
 
     type Handler interface {
-        Log(r *Record)
+        Log(r *Record) error
     }
 
 
@@ -97,7 +97,7 @@ context, CallerFileHandler, CallerFuncHandler and CallerStackHandler. Here's
 an example that adds the source file and line number of each logging call to
 the context.
 
-    h := log.CallerFileHandler(log.StdoutHandler())
+    h := log.CallerFileHandler(log.StdoutHandler)
     log.Root().SetHandler(h)
     ...
     log.Error("open file", "err", err)
@@ -108,7 +108,7 @@ This will output a line that looks like:
 
 Here's an example that logs the call stack rather than just the call site.
 
-    h := log.CallerStackHandler("%+v", log.StdoutHandler())
+    h := log.CallerStackHandler("%+v", log.StdoutHandler)
     log.Root().SetHandler(h)
     ...
     log.Error("open file", "err", err)
@@ -118,8 +118,8 @@ This will output a line that looks like:
     lvl=eror t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" stack="[pkg/data.go:42 pkg/cmd/main.go]"
 
 The "%+v" format instructs the handler to include the path of the source file
-relative to the compile time GOPATH. The log15/stack package documents the
-full list of formatting verbs and modifiers available.
+relative to the compile time GOPATH. The github.com/go-stack/stack package
+documents the full list of formatting verbs and modifiers available.
 
 Custom Handlers
 
@@ -224,7 +224,7 @@ by default and to provide a public Logger instance that consumers of your librar
 
     package yourlib
 
-    import "gopkg.in/inconshreveable/log15.v2"
+    import "github.com/inconshreveable/log15"
 
     var Log = log.New()
 
@@ -234,7 +234,7 @@ by default and to provide a public Logger instance that consumers of your librar
 
 Users of your library may then enable it if they like:
 
-    import "gopkg.in/inconshreveable/log15.v2"
+    import "github.com/inconshreveable/log15"
     import "example.com/yourlib"
 
     func main() {
@@ -285,7 +285,7 @@ function to let you generate what you might call "surrogate keys"
 They're just random hex identifiers to use for tracing. Back to our
 Tab example, we would prefer to set up our Logger like so:
 
-        import logext "gopkg.in/inconshreveable/log15.v2/ext"
+        import logext "github.com/inconshreveable/log15/ext"
 
         t := &Tab {
             // ...

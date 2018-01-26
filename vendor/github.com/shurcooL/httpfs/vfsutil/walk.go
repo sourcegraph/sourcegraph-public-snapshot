@@ -7,8 +7,6 @@ import (
 	pathpkg "path"
 	"path/filepath"
 	"sort"
-
-	"golang.org/x/tools/godoc/vfs"
 )
 
 // Walk walks the filesystem rooted at root, calling walkFn for each file or
@@ -76,7 +74,7 @@ func walk(fs http.FileSystem, path string, info os.FileInfo, walkFn filepath.Wal
 	return nil
 }
 
-// WalkFilesFunc is the type of the function called for each file or directory visited by Walk.
+// WalkFilesFunc is the type of the function called for each file or directory visited by WalkFiles.
 // It's like filepath.WalkFunc, except it provides an additional ReadSeeker parameter for file being visited.
 type WalkFilesFunc func(path string, info os.FileInfo, rs io.ReadSeeker, err error) error
 
@@ -92,8 +90,8 @@ func WalkFiles(fs http.FileSystem, root string, walkFn WalkFilesFunc) error {
 }
 
 // walkFiles recursively descends path, calling walkFn.
-// It's responsible for closing the input file.
-func walkFiles(fs http.FileSystem, path string, info os.FileInfo, file vfs.ReadSeekCloser, walkFn WalkFilesFunc) error {
+// It closes the input file after it's done with it, so the caller shouldn't.
+func walkFiles(fs http.FileSystem, path string, info os.FileInfo, file http.File, walkFn WalkFilesFunc) error {
 	err := walkFn(path, info, file, nil)
 	file.Close()
 	if err != nil {
@@ -121,6 +119,7 @@ func walkFiles(fs http.FileSystem, path string, info os.FileInfo, file vfs.ReadS
 			}
 		} else {
 			err = walkFiles(fs, filename, fileInfo, file, walkFn)
+			// file is closed by walkFiles, so we don't need to close it here.
 			if err != nil {
 				if !fileInfo.IsDir() || err != filepath.SkipDir {
 					return err
@@ -129,4 +128,19 @@ func walkFiles(fs http.FileSystem, path string, info os.FileInfo, file vfs.ReadS
 		}
 	}
 	return nil
+}
+
+// openStat performs Open and Stat and returns results, or first error encountered.
+// The caller is responsible for closing the returned file when done.
+func openStat(fs http.FileSystem, name string) (http.File, os.FileInfo, error) {
+	f, err := fs.Open(name)
+	if err != nil {
+		return nil, nil, err
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, nil, err
+	}
+	return f, fi, nil
 }

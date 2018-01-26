@@ -73,7 +73,7 @@ func RecoveryHandler(handler func(http.ResponseWriter, *http.Request)) func(http
 			if rval := recover(); rval != nil {
 				debug.PrintStack()
 				rvalStr := fmt.Sprint(rval)
-				packet := NewPacket(rvalStr, NewException(errors.New(rvalStr), NewStacktrace(2, 3, nil)), NewHttp(r))
+				packet := NewPacket(rvalStr, NewException(errors.New(rvalStr), GetOrNewStacktrace(rval.(error), 2, 3, nil)), NewHttp(r))
 				Capture(packet, nil)
 				w.WriteHeader(http.StatusInternalServerError)
 			}

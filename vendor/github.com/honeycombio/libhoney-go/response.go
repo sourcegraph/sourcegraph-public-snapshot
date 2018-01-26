@@ -1,12 +1,16 @@
 package libhoney
 
-import "time"
+import (
+	"encoding/json"
+	"errors"
+	"time"
+)
 
 // Response is a record of an event sent. It includes information about sending
-// the event - how long it took, whether it succeeded, and so on. It also has
-// a metadata field that is just a pass through - you add it to an Event and
-// it will be on the Response that correlates with that Event. This allows you
-// to track specific events.
+// the event - how long it took, whether it succeeded, and so on. It also has a
+// metadata field that is just a pass through - populate an Event's Metadata
+// field and what you put there will be on the Response that corresponds to
+// that Event. This allows you to track specific events.
 type Response struct {
 
 	// Err contains any error returned by the httpClient on sending or an error
@@ -29,4 +33,19 @@ type Response struct {
 	// Metadata is whatever content you put in the Metadata field of the event for
 	// which this is the response. It is passed through unmodified.
 	Metadata interface{}
+}
+
+func (r *Response) UnmarshalJSON(b []byte) error {
+	aux := struct {
+		Error  string
+		Status int
+	}{}
+	if err := json.Unmarshal(b, &aux); err != nil {
+		return err
+	}
+	r.StatusCode = aux.Status
+	if aux.Error != "" {
+		r.Err = errors.New(aux.Error)
+	}
+	return nil
 }

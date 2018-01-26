@@ -63,7 +63,7 @@ func HttpOnly(h bool) Option {
 // provide a handler that returns a static HTML file with a HTTP 403 status. By
 // default a HTTP 403 status and a plain text CSRF failure reason are served.
 //
-// Note that a custom error handler can also access the csrf.Failure(r)
+// Note that a custom error handler can also access the csrf.FailureReason(r)
 // function to retrieve the CSRF validation reason from the request context.
 func ErrorHandler(h http.Handler) Option {
 	return func(cs *csrf) {

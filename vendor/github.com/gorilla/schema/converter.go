@@ -30,7 +30,7 @@ var (
 )
 
 // Default converters for basic types.
-var converters = map[reflect.Kind]Converter{
+var builtinConverters = map[reflect.Kind]Converter{
 	boolType:    convertBool,
 	float32Type: convertFloat32,
 	float64Type: convertFloat64,

@@ -74,6 +74,8 @@ in order to protect malicious POST requests being made:
     	// Add the middleware to your router by wrapping it.
     	http.ListenAndServe(":8000",
     		csrf.Protect([]byte("32-byte-long-auth-key"))(r))
+    	// PS: Don't forget to pass csrf.Secure(false) if you're developing locally
+	    // over plain HTTP (just don't leave it on in production).
     }
 
     func ShowSignupForm(w http.ResponseWriter, r *http.Request) {

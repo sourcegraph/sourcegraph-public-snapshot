@@ -7,7 +7,6 @@ package robotstxt
 // http://en.wikipedia.org/wiki/Robots.txt
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -46,9 +45,21 @@ func newParser(tokens []string) *parser {
 	return &parser{tokens: tokens}
 }
 
-func (p *parser) parseAll() (groups []*Group, host string, sitemaps []string, errs []error) {
-	var curGroup *Group
-	var isEmptyGroup bool
+func parseGroupMap(groups map[string]*Group, agents []string, fun func(*Group)) {
+	var g *Group
+	for _, a := range agents {
+		if g = groups[a]; g == nil {
+			g = new(Group)
+			groups[a] = g
+		}
+		fun(g)
+	}
+}
+
+func (p *parser) parseAll() (groups map[string]*Group, host string, sitemaps []string, errs []error) {
+	groups = make(map[string]*Group, 16)
+	agents := make([]string, 0, 4)
+	isEmptyGroup := true
 
 	// Reset internal fields, tokens are assigned at creation time, never change
 	p.pos = 0
@@ -56,58 +67,52 @@ func (p *parser) parseAll() (groups []*Group, host string, sitemaps []string, er
 	for {
 		if li, err := p.parseLine(); err != nil {
 			if err == io.EOF {
-				// Append the current group if any
-				if curGroup != nil {
-					// Add it even if it is empty, because it may mean that an agent
-					// will match this empty (allow all) group instead of another.
-					groups = append(groups, curGroup)
-				}
 				break
 			}
 			errs = append(errs, err)
 		} else {
 			switch li.t {
 			case lUserAgent:
-				// Two successive user-agent lines are part of the same group, so a group
-				// may apply to more than one user-agent.
-				if curGroup != nil && !isEmptyGroup {
+				// Two successive user-agent lines are part of the same group.
+				if !isEmptyGroup {
 					// End previous group
-					groups = append(groups, curGroup)
-					curGroup = nil
+					agents = make([]string, 0, 4)
 				}
-				if curGroup == nil {
-					curGroup = new(Group)
+				if len(agents) == 0 {
 					isEmptyGroup = true
 				}
-				// Add the user agent
-				curGroup.agents = append(curGroup.agents, li.vs)
+				agents = append(agents, li.vs)
 
 			case lDisallow:
 				// Error if no current group
-				if curGroup == nil {
-					errs = append(errs, errors.New(fmt.Sprintf("Disallow before User-agent at token #%d.", p.pos)))
+				if len(agents) == 0 {
+					errs = append(errs, fmt.Errorf("Disallow before User-agent at token #%d.", p.pos))
 				} else {
 					isEmptyGroup = false
+					var r *rule
 					if li.vr != nil {
-						curGroup.rules = append(curGroup.rules, &rule{"", false, li.vr})
+						r = &rule{"", false, li.vr}
 					} else {
-						curGroup.rules = append(curGroup.rules, &rule{li.vs, false, nil})
+						r = &rule{li.vs, false, nil}
 					}
+					parseGroupMap(groups, agents, func(g *Group) { g.rules = append(g.rules, r) })
 				}
 
 			case lAllow:
 				// Error if no current group
-				if curGroup == nil {
-					errs = append(errs, errors.New(fmt.Sprintf("Allow before User-agent at token #%d.", p.pos)))
+				if len(agents) == 0 {
+					errs = append(errs, fmt.Errorf("Allow before User-agent at token #%d.", p.pos))
 				} else {
 					isEmptyGroup = false
+					var r *rule
 					if li.vr != nil {
-						curGroup.rules = append(curGroup.rules, &rule{"", true, li.vr})
+						r = &rule{"", true, li.vr}
 					} else {
-						curGroup.rules = append(curGroup.rules, &rule{li.vs, true, nil})
+						r = &rule{li.vs, true, nil}
 					}
+					parseGroupMap(groups, agents, func(g *Group) { g.rules = append(g.rules, r) })
 				}
-				
+
 			case lHost:
 				host = li.vs
 
@@ -115,11 +120,12 @@ func (p *parser) parseAll() (groups []*Group, host string, sitemaps []string, er
 				sitemaps = append(sitemaps, li.vs)
 
 			case lCrawlDelay:
-				if curGroup == nil {
-					errs = append(errs, errors.New(fmt.Sprintf("Crawl-delay before User-agent at token #%d.", p.pos)))
+				if len(agents) == 0 {
+					errs = append(errs, fmt.Errorf("Crawl-delay before User-agent at token #%d.", p.pos))
 				} else {
 					isEmptyGroup = false
-					curGroup.CrawlDelay = time.Duration(li.vf * float64(time.Second))
+					delay := time.Duration(li.vf * float64(time.Second))
+					parseGroupMap(groups, agents, func(g *Group) { g.CrawlDelay = delay })
 				}
 			}
 		}
@@ -218,7 +224,7 @@ func (p *parser) parseLine() (li *lineInfo, err error) {
 		return returnPathVal(lAllow)
 
 	case "host":
-		// Host directive to specify main site mirror 
+		// Host directive to specify main site mirror
 		// Read more: https://help.yandex.com/webmaster/controlling-robot/robots-txt.xml#host
 		return returnStringVal(lHost)
 

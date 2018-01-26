@@ -28,6 +28,7 @@ package gojsonschema
 
 import (
 	"errors"
+	"math/big"
 	"regexp"
 	"strings"
 
@@ -68,10 +69,12 @@ const (
 	KEY_ANY_OF                = "anyOf"
 	KEY_ALL_OF                = "allOf"
 	KEY_NOT                   = "not"
+	KEY_IF                    = "if"
+	KEY_THEN                  = "then"
+	KEY_ELSE                  = "else"
 )
 
 type subSchema struct {
-
 	// basic subSchema meta properties
 	id          *gojsonreference.JsonReference
 	title       *string
@@ -98,10 +101,10 @@ type subSchema struct {
 	propertiesChildren          []*subSchema
 
 	// validation : number / integer
-	multipleOf       *float64
-	maximum          *float64
+	multipleOf       *big.Float
+	maximum          *big.Float
 	exclusiveMaximum bool
-	minimum          *float64
+	minimum          *big.Float
 	exclusiveMinimum bool
 
 	// validation : string
@@ -134,6 +137,9 @@ type subSchema struct {
 	anyOf []*subSchema
 	allOf []*subSchema
 	not   *subSchema
+	_if   *subSchema // if/else are golang keywords
+	_then *subSchema
+	_else *subSchema
 }
 
 func (s *subSchema) AddEnum(i interface{}) error {
@@ -179,6 +185,18 @@ func (s *subSchema) AddAnyOf(subSchema *subSchema) {
 
 func (s *subSchema) SetNot(subSchema *subSchema) {
 	s.not = subSchema
+}
+
+func (s *subSchema) SetIf(subSchema *subSchema) {
+	s._if = subSchema
+}
+
+func (s *subSchema) SetThen(subSchema *subSchema) {
+	s._then = subSchema
+}
+
+func (s *subSchema) SetElse(subSchema *subSchema) {
+	s._else = subSchema
 }
 
 func (s *subSchema) AddRequired(value string) error {

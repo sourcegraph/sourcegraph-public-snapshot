@@ -8,7 +8,6 @@ import (
 // Some constants in the form of bytes to avoid string overhead.  This mirrors
 // the technique used in the fmt package.
 var (
-	panicBytes            = []byte("(PANIC=")
 	plusBytes             = []byte("+")
 	iBytes                = []byte("i")
 	trueBytes             = []byte("true")
@@ -20,28 +19,14 @@ var (
 	openBraceBytes        = []byte("{")
 	openBraceNewlineBytes = []byte("{\n")
 	closeBraceBytes       = []byte("}")
-	asteriskBytes         = []byte("*")
 	ampersandBytes        = []byte("&")
-	colonBytes            = []byte(":")
 	colonSpaceBytes       = []byte(": ")
 	openParenBytes        = []byte("(")
 	closeParenBytes       = []byte(")")
-	spaceBytes            = []byte(" ")
-	pointerChainBytes     = []byte("->")
 	nilBytes              = []byte("nil")
-	nilAngleBytes         = []byte("<nil>")
 	nilParenBytes         = []byte("(nil)")
 	circularBytes         = []byte("already_shown")
-	circularShortBytes    = []byte("<shown>")
 	invalidAngleBytes     = []byte("<invalid>")
-	openBracketBytes      = []byte("[")
-	closeBracketBytes     = []byte("]")
-	percentBytes          = []byte("%")
-	precisionBytes        = []byte(".")
-	openAngleBytes        = []byte("<")
-	closeAngleBytes       = []byte(">")
-	openMapBytes          = []byte("map[")
-	closeMapBytes         = []byte("]")
 )
 
 // hexDigits is used to map a decimal value to a hex digit.

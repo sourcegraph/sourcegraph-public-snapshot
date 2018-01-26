@@ -2,12 +2,10 @@ package lightstep
 
 import (
 	"time"
-
-	"github.com/opentracing/basictracer-go"
 )
 
 type reportBuffer struct {
-	rawSpans             []basictracer.RawSpan
+	rawSpans             []RawSpan
 	droppedSpanCount     int64
 	logEncoderErrorCount int64
 	reportStart          time.Time
@@ -15,7 +13,7 @@ type reportBuffer struct {
 }
 
 func newSpansBuffer(size int) (b reportBuffer) {
-	b.rawSpans = make([]basictracer.RawSpan, 0, size)
+	b.rawSpans = make([]RawSpan, 0, size)
 	b.reportStart = time.Time{}
 	b.reportEnd = time.Time{}
 	return
@@ -42,7 +40,7 @@ func (b *reportBuffer) clear() {
 	b.logEncoderErrorCount = 0
 }
 
-func (b *reportBuffer) addSpan(span basictracer.RawSpan) {
+func (b *reportBuffer) addSpan(span RawSpan) {
 	if len(b.rawSpans) == cap(b.rawSpans) {
 		b.droppedSpanCount++
 		return
@@ -73,7 +71,8 @@ func (into *reportBuffer) mergeFrom(from *reportBuffer) {
 		space = unreported
 	}
 
-	copy(into.rawSpans[have:], from.rawSpans[0:space])
+	into.rawSpans = append(into.rawSpans, from.rawSpans[0:space]...)
+
 	into.droppedSpanCount += int64(unreported - space)
 
 	from.clear()

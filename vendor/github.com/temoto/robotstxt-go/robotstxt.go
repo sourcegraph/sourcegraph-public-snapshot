@@ -1,5 +1,5 @@
-// The robots.txt Exclusion Protocol is implemented as specified in
-// http://www.robotstxt.org/wc/robots.html
+// Package robotstxt implements the robots.txt Exclusion Protocol
+// as specified in http://www.robotstxt.org/wc/robots.html
 // with various extensions.
 package robotstxt
 
@@ -19,7 +19,7 @@ import (
 
 type RobotsData struct {
 	// private
-	groups      []*Group
+	groups      map[string]*Group
 	allowAll    bool
 	disallowAll bool
 	Host        string
@@ -27,8 +27,8 @@ type RobotsData struct {
 }
 
 type Group struct {
-	agents     []string
 	rules      []*rule
+	Agent      string
 	CrawlDelay time.Duration
 }
 
@@ -81,7 +81,7 @@ func FromStatusAndBytes(statusCode int, body []byte) (*RobotsData, error) {
 		return disallowAll, nil
 	}
 
-	return nil, errors.New("Unexpected status: " + strconv.FormatInt(int64(statusCode), 10))
+	return nil, errors.New("Unexpected status: " + strconv.Itoa(statusCode))
 }
 
 func FromStatusAndString(statusCode int, body string) (*RobotsData, error) {
@@ -152,6 +152,7 @@ func (r *RobotsData) TestAgent(path, agent string) bool {
 	return g.Test(path)
 }
 
+// FindGroup searches block of declarations for specified user-agent.
 // From Google's spec:
 // Only one group of group-member records is valid for a particular crawler.
 // The crawler must determine the correct group of records by finding the group
@@ -162,17 +163,15 @@ func (r *RobotsData) FindGroup(agent string) (ret *Group) {
 	var prefixLen int
 
 	agent = strings.ToLower(agent)
-	for _, g := range r.groups {
-		for _, a := range g.agents {
-			if a == "*" && prefixLen == 0 {
-				// Weakest match possible
-				prefixLen = 1
+	if ret = r.groups["*"]; ret != nil {
+		// Weakest match possible
+		prefixLen = 1
+	}
+	for a, g := range r.groups {
+		if a != "*" && strings.HasPrefix(agent, a) {
+			if l := len(a); l > prefixLen {
+				prefixLen = l
 				ret = g
-			} else if strings.HasPrefix(agent, a) {
-				if l := len(a); l > prefixLen {
-					prefixLen = l
-					ret = g
-				}
 			}
 		}
 	}

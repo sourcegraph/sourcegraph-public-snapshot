@@ -508,15 +508,19 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
+		o, ok := opentracing.GlobalTracer().(basictracer.Tracer)
+		if !ok {
+			return nil, nil
+		}
+		r := o.Options().Recorder
+		if r == nil {
+			return nil, nil
+		}
 		var rawSpan basictracer.RawSpan
 		if err := json.Unmarshal(*req.Params, &rawSpan); err != nil {
 			return nil, err
 		}
-		// Recording the raw span as-is requires the lower-level impl
-		// types.
-		if o, ok := opentracing.GlobalTracer().(basictracer.Tracer); ok {
-			o.Options().Recorder.RecordSpan(rawSpan)
-		}
+		r.RecordSpan(rawSpan)
 		return nil, nil
 
 	case "fs/readFile", "fs/readDirFiles", "fs/readDir", "fs/stat", "fs/lstat":

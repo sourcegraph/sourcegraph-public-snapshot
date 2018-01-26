@@ -32,8 +32,6 @@ var drivers = make(map[string]Driver)
 //      All other functions are tested by tests in database/testing.
 //      Saves you some time and makes sure all database drivers behave the same way.
 //   5. Call Register in init().
-//   6. Create a migrate/cli/build_<driver-name>.go file
-//   7. Add driver name in 'DATABASE' variable in Makefile
 //
 // Guidelines:
 //   * Don't try to correct user input. Don't assume things.
@@ -73,7 +71,7 @@ type Driver interface {
 	// Dirty means, a previous migration failed and user interaction is required.
 	Version() (version int, dirty bool, err error)
 
-	// Drop deletes everything in the database.
+	// Drop deletes everyting in the database.
 	Drop() error
 }
 
@@ -92,7 +90,7 @@ func Open(url string) (Driver, error) {
 	d, ok := drivers[u.Scheme]
 	driversMu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("database driver: unknown driver %v (forgotten import?)", u.Scheme)
+		return nil, fmt.Errorf("database driver: unknown driver %v (forgotton import?)", u.Scheme)
 	}
 
 	return d.Open(url)

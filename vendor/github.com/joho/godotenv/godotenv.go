@@ -10,16 +10,22 @@
 //
 // 		godotenv.Load()
 //
-// and all the env vars declared in .env will be avaiable through os.Getenv("SOME_ENV_VAR")
+// and all the env vars declared in .env will be available through os.Getenv("SOME_ENV_VAR")
 package godotenv
 
 import (
 	"bufio"
 	"errors"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"regexp"
+	"sort"
 	"strings"
 )
+
+const doubleQuoteSpecialChars = "\\\n\r\"!$`"
 
 // Load will read your env file(s) and load them into ENV for this process.
 //
@@ -89,6 +95,39 @@ func Read(filenames ...string) (envMap map[string]string, err error) {
 	return
 }
 
+// Parse reads an env file from io.Reader, returning a map of keys and values.
+func Parse(r io.Reader) (envMap map[string]string, err error) {
+	envMap = make(map[string]string)
+
+	var lines []string
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err = scanner.Err(); err != nil {
+		return
+	}
+
+	for _, fullLine := range lines {
+		if !isIgnoredLine(fullLine) {
+			var key, value string
+			key, value, err = parseLine(fullLine)
+
+			if err != nil {
+				return
+			}
+			envMap[key] = value
+		}
+	}
+	return
+}
+
+//Unmarshal reads an env file from a string, returning a map of keys and values.
+func Unmarshal(str string) (envMap map[string]string, err error) {
+	return Parse(strings.NewReader(str))
+}
+
 // Exec loads env vars from the specified filenames (empty map falls back to default)
 // then executes the cmd specified.
 //
@@ -106,6 +145,31 @@ func Exec(filenames []string, cmd string, cmdArgs []string) error {
 	return command.Run()
 }
 
+// Write serializes the given environment and writes it to a file
+func Write(envMap map[string]string, filename string) error {
+	content, error := Marshal(envMap)
+	if error != nil {
+		return error
+	}
+	file, error := os.Create(filename)
+	if error != nil {
+		return error
+	}
+	_, err := file.WriteString(content)
+	return err
+}
+
+// Marshal outputs the given environment as a dotenv-formatted environment file.
+// Each line is in the format: KEY="VALUE" where VALUE is backslash-escaped.
+func Marshal(envMap map[string]string) (string, error) {
+	lines := make([]string, 0, len(envMap))
+	for k, v := range envMap {
+		lines = append(lines, fmt.Sprintf(`%s="%s"`, k, doubleQuoteEscape(v)))
+	}
+	sort.Strings(lines)
+	return strings.Join(lines, "\n"), nil
+}
+
 func filenamesOrDefault(filenames []string) []string {
 	if len(filenames) == 0 {
 		return []string{".env"}
@@ -119,8 +183,15 @@ func loadFile(filename string, overload bool) error {
 		return err
 	}
 
+	currentEnv := map[string]bool{}
+	rawEnv := os.Environ()
+	for _, rawEnvLine := range rawEnv {
+		key := strings.Split(rawEnvLine, "=")[0]
+		currentEnv[key] = true
+	}
+
 	for key, value := range envMap {
-		if os.Getenv(key) == "" || overload {
+		if !currentEnv[key] || overload {
 			os.Setenv(key, value)
 		}
 	}
@@ -135,24 +206,7 @@ func readFile(filename string) (envMap map[string]string, err error) {
 	}
 	defer file.Close()
 
-	envMap = make(map[string]string)
-
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-
-	for _, fullLine := range lines {
-		if !isIgnoredLine(fullLine) {
-			key, value, err := parseLine(fullLine)
-
-			if err == nil {
-				envMap[key] = value
-			}
-		}
-	}
-	return
+	return Parse(file)
 }
 
 func parseLine(line string) (key string, value string, err error) {
@@ -184,11 +238,11 @@ func parseLine(line string) (key string, value string, err error) {
 		line = strings.Join(segmentsToKeep, "#")
 	}
 
-	// now split key from value
+	firstEquals := strings.Index(line, "=")
+	firstColon := strings.Index(line, ":")
 	splitString := strings.SplitN(line, "=", 2)
-
-	if len(splitString) != 2 {
-		// try yaml mode!
+	if firstColon != -1 && (firstColon < firstEquals || firstEquals == -1) {
+		//this is a yaml-style line
 		splitString = strings.SplitN(line, ":", 2)
 	}
 
@@ -205,25 +259,56 @@ func parseLine(line string) (key string, value string, err error) {
 	key = strings.Trim(key, " ")
 
 	// Parse the value
-	value = splitString[1]
+	value = parseValue(splitString[1])
+	return
+}
+
+func parseValue(value string) string {
+
 	// trim
 	value = strings.Trim(value, " ")
 
-	// check if we've got quoted values
-	if strings.Count(value, "\"") == 2 || strings.Count(value, "'") == 2 {
-		// pull the quotes off the edges
-		value = strings.Trim(value, "\"'")
-
-		// expand quotes
-		value = strings.Replace(value, "\\\"", "\"", -1)
-		// expand newlines
-		value = strings.Replace(value, "\\n", "\n", -1)
+	// check if we've got quoted values or possible escapes
+	if len(value) > 1 {
+		first := string(value[0:1])
+		last := string(value[len(value)-1:])
+		if first == last && strings.ContainsAny(first, `"'`) {
+			// pull the quotes off the edges
+			value = value[1 : len(value)-1]
+			// handle escapes
+			escapeRegex := regexp.MustCompile(`\\.`)
+			value = escapeRegex.ReplaceAllStringFunc(value, func(match string) string {
+				c := strings.TrimPrefix(match, `\`)
+				switch c {
+				case "n":
+					return "\n"
+				case "r":
+					return "\r"
+				default:
+					return c
+				}
+			})
+		}
 	}
 
-	return
+	return value
 }
 
 func isIgnoredLine(line string) bool {
 	trimmedLine := strings.Trim(line, " \n\t")
 	return len(trimmedLine) == 0 || strings.HasPrefix(trimmedLine, "#")
+}
+
+func doubleQuoteEscape(line string) string {
+	for _, c := range doubleQuoteSpecialChars {
+		toReplace := "\\" + string(c)
+		if c == '\n' {
+			toReplace = `\n`
+		}
+		if c == '\r' {
+			toReplace = `\r`
+		}
+		line = strings.Replace(line, string(c), toReplace, -1)
+	}
+	return line
 }

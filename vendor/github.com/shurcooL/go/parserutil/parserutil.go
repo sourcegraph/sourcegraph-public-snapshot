@@ -2,6 +2,7 @@
 package parserutil
 
 import (
+	"errors"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -25,6 +26,9 @@ func ParseDecl(x string) (ast.Decl, error) {
 	file, err := parser.ParseFile(token.NewFileSet(), "", "package p\n//line :1\n"+x+"\n", 0)
 	if err != nil {
 		return nil, err
+	}
+	if len(file.Decls) == 0 {
+		return nil, errors.New("no declaration")
 	}
 	return file.Decls[0], nil
 }

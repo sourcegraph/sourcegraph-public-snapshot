@@ -29,6 +29,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"reflect"
 	"strconv"
 )
@@ -138,15 +139,13 @@ func mustBeInteger(what interface{}) *int {
 	return nil
 }
 
-func mustBeNumber(what interface{}) *float64 {
+func mustBeNumber(what interface{}) *big.Float {
 
 	if isJsonNumber(what) {
-
 		number := what.(json.Number)
-		float64Value, err := number.Float64()
-
-		if err == nil {
-			return &float64Value
+		float64Value, success := new(big.Float).SetString(string(number))
+		if success {
+			return float64Value
 		} else {
 			return nil
 		}

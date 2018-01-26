@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	pathpkg "path"
-	"path/filepath"
 )
 
 // OS returns an implementation of FileSystem reading from the
@@ -29,18 +27,12 @@ type osFS string
 
 func (root osFS) String() string { return "os(" + string(root) + ")" }
 
-func (root osFS) resolve(path string) string {
-	// Clean the path so that it cannot possibly begin with ../.
-	// If it did, the result of filepath.Join would be outside the
-	// tree rooted at root.  We probably won't ever see a path
-	// with .. in it, but be safe anyway.
-	path = pathpkg.Clean("/" + path)
-
-	return filepath.Join(string(root), path)
-}
-
 func (root osFS) Open(ctx context.Context, path string) (ReadSeekCloser, error) {
-	f, err := os.Open(root.resolve(path))
+	resolved, err := root.resolve(path)
+	if err != nil {
+		return nil, err
+	}
+	f, err := os.Open(resolved)
 	if err != nil {
 		return nil, err
 	}
@@ -57,13 +49,25 @@ func (root osFS) Open(ctx context.Context, path string) (ReadSeekCloser, error) 
 }
 
 func (root osFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
-	return os.Lstat(root.resolve(path))
+	resolved, err := root.resolve(path)
+	if err != nil {
+		return nil, err
+	}
+	return os.Lstat(resolved)
 }
 
 func (root osFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
-	return os.Stat(root.resolve(path))
+	resolved, err := root.resolve(path)
+	if err != nil {
+		return nil, err
+	}
+	return os.Stat(resolved)
 }
 
 func (root osFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
-	return ioutil.ReadDir(root.resolve(path)) // is sorted
+	resolved, err := root.resolve(path)
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.ReadDir(resolved) // is sorted
 }

@@ -25,11 +25,7 @@ import (
 	"sync"
 )
 
-/*
- * This is not a typical TSimpleServer as it is not blocked after accept a socket.
- * It is more like a TThreadedServer that can handle different connections in different goroutines.
- * This will work if golang user implements a conn-pool like thing in client side.
- */
+// Simple, non-concurrent server for testing.
 type TSimpleServer struct {
 	quit chan struct{}
 
@@ -39,7 +35,6 @@ type TSimpleServer struct {
 	outputTransportFactory TTransportFactory
 	inputProtocolFactory   TProtocolFactory
 	outputProtocolFactory  TProtocolFactory
-	sync.WaitGroup
 }
 
 func NewTSimpleServer2(processor TProcessor, serverTransport TServerTransport) *TSimpleServer {
@@ -136,7 +131,6 @@ func (p *TSimpleServer) AcceptLoop() error {
 			return err
 		}
 		if client != nil {
-			p.Add(1)
 			go func() {
 				if err := p.processRequests(client); err != nil {
 					log.Println("error processing request:", err)
@@ -159,26 +153,17 @@ var once sync.Once
 
 func (p *TSimpleServer) Stop() error {
 	q := func() {
-		close(p.quit)
+		p.quit <- struct{}{}
 		p.serverTransport.Interrupt()
-		p.Wait()
 	}
 	once.Do(q)
 	return nil
 }
 
 func (p *TSimpleServer) processRequests(client TTransport) error {
-	defer p.Done()
-
 	processor := p.processorFactory.GetProcessor(client)
-	inputTransport, err := p.inputTransportFactory.GetTransport(client)
-	if err != nil {
-		return err
-	}
-	outputTransport, err := p.outputTransportFactory.GetTransport(client)
-	if err != nil {
-		return err
-	}
+	inputTransport := p.inputTransportFactory.GetTransport(client)
+	outputTransport := p.outputTransportFactory.GetTransport(client)
 	inputProtocol := p.inputProtocolFactory.GetProtocol(inputTransport)
 	outputProtocol := p.outputProtocolFactory.GetProtocol(outputTransport)
 	defer func() {
@@ -186,7 +171,6 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 			log.Printf("panic in processor: %s: %s", e, debug.Stack())
 		}
 	}()
-
 	if inputTransport != nil {
 		defer inputTransport.Close()
 	}
@@ -194,22 +178,17 @@ func (p *TSimpleServer) processRequests(client TTransport) error {
 		defer outputTransport.Close()
 	}
 	for {
-		select {
-		case <-p.quit:
-			return nil
-		default:
-		}
-
 		ok, err := processor.Process(inputProtocol, outputProtocol)
 		if err, ok := err.(TTransportException); ok && err.TypeId() == END_OF_FILE {
 			return nil
 		} else if err != nil {
+			log.Printf("error processing request: %s", err)
 			return err
 		}
 		if err, ok := err.(TApplicationException); ok && err.TypeId() == UNKNOWN_METHOD {
 			continue
 		}
-		if !ok {
+ 		if !ok {
 			break
 		}
 	}

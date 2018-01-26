@@ -49,20 +49,24 @@ type THttpClientTransportFactory struct {
 	isPost  bool
 }
 
-func (p *THttpClientTransportFactory) GetTransport(trans TTransport) (TTransport, error) {
+func (p *THttpClientTransportFactory) GetTransport(trans TTransport) TTransport {
 	if trans != nil {
 		t, ok := trans.(*THttpClient)
 		if ok && t.url != nil {
 			if t.requestBuffer != nil {
-				return NewTHttpPostClientWithOptions(t.url.String(), p.options)
+				t2, _ := NewTHttpPostClientWithOptions(t.url.String(), p.options)
+				return t2
 			}
-			return NewTHttpClientWithOptions(t.url.String(), p.options)
+			t2, _ := NewTHttpClientWithOptions(t.url.String(), p.options)
+			return t2
 		}
 	}
 	if p.isPost {
-		return NewTHttpPostClientWithOptions(p.url, p.options)
+		s, _ := NewTHttpPostClientWithOptions(p.url, p.options)
+		return s
 	}
-	return NewTHttpClientWithOptions(p.url, p.options)
+	s, _ := NewTHttpClientWithOptions(p.url, p.options)
+	return s
 }
 
 type THttpClientOptions struct {
@@ -99,7 +103,7 @@ func NewTHttpClientWithOptions(urlstr string, options THttpClientOptions) (TTran
 	if client == nil {
 		client = DefaultHttpClient
 	}
-	httpHeader := map[string][]string{"Content-Type": {"application/x-thrift"}}
+	httpHeader := map[string][]string{"Content-Type": []string{"application/x-thrift"}}
 	return &THttpClient{client: client, response: response, url: parsedURL, header: httpHeader}, nil
 }
 
@@ -117,7 +121,7 @@ func NewTHttpPostClientWithOptions(urlstr string, options THttpClientOptions) (T
 	if client == nil {
 		client = DefaultHttpClient
 	}
-	httpHeader := map[string][]string{"Content-Type": {"application/x-thrift"}}
+	httpHeader := map[string][]string{"Content-Type": []string{"application/x-thrift"}}
 	return &THttpClient{client: client, url: parsedURL, requestBuffer: bytes.NewBuffer(buf), header: httpHeader}, nil
 }
 

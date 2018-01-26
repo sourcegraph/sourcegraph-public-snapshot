@@ -112,9 +112,13 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 		switch token.Type {
 		case html.DoctypeToken:
 
-			if p.allowDocType {
-				buff.WriteString(token.String())
-			}
+			// DocType is not handled as there is no safe parsing mechanism
+			// provided by golang.org/x/net/html for the content, and this can
+			// be misused to insert HTML tags that are not then sanitized
+			//
+			// One might wish to recursively sanitize here using the same policy
+			// but I will need to do some further testing before considering
+			// this.
 
 		case html.CommentToken:
 
@@ -217,7 +221,7 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 		case html.TextToken:
 
 			if !skipElementContent {
-				switch strings.ToLower(mostRecentlyStartedToken) {
+				switch mostRecentlyStartedToken {
 				case "script":
 					// not encouraged, but if a policy allows JavaScript we
 					// should not HTML escape it as that would break the output
@@ -231,7 +235,6 @@ func (p *Policy) sanitize(r io.Reader) *bytes.Buffer {
 					buff.WriteString(token.String())
 				}
 			}
-
 		default:
 			// A token that didn't exist in the html package when we wrote this
 			return &bytes.Buffer{}
@@ -490,13 +493,18 @@ func (p *Policy) allowNoAttrs(elementName string) bool {
 
 func (p *Policy) validURL(rawurl string) (string, bool) {
 	if p.requireParseableURLs {
-		// URLs do not contain whitespace
-		if strings.Contains(rawurl, " ") ||
+		// URLs are valid if when space is trimmed the URL is valid
+		rawurl = strings.TrimSpace(rawurl)
+
+		// URLs cannot contain whitespace, unless it is a data-uri
+		if (strings.Contains(rawurl, " ") ||
 			strings.Contains(rawurl, "\t") ||
-			strings.Contains(rawurl, "\n") {
+			strings.Contains(rawurl, "\n")) &&
+			!strings.HasPrefix(rawurl, `data:`) {
 			return "", false
 		}
 
+		// URLs are valid if they parse
 		u, err := url.Parse(rawurl)
 		if err != nil {
 			return "", false
