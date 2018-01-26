@@ -213,7 +213,7 @@ export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
     }
     return mutateGraphQL(
         gql`
-            mutation logUserEvent {
+            mutation logUserEvent($event: UserEvent!) {
                 logUserEvent(event: $event) {
                     alwaysNil
                 }
