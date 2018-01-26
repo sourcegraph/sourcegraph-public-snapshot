@@ -44,6 +44,11 @@ required = [
   branch = "master"
   name = "github.com/jteeuwen/go-bindata"
 
+# We don't support the godef code that is in master of go-langserver
+[[constraint]]
+  name = "github.com/sourcegraph/go-langserver"
+  revision = "d62c2787506ccc8d2cf68eae5a892ca7130e2cbb"
+
 [[constraint]]
   branch = "master"
   name = "github.com/beevik/etree"
