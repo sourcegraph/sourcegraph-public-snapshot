@@ -3,6 +3,16 @@
 // license that can be found in the LICENSE file.
 
 /*
+	Package rpc is a fork of the stdlib net/rpc which is frozen. It adds
+	support for context.Context on the client and server, including
+	propogating cancellation. See the README at
+	https://github.com/keegancsmith/rpc for motivation why this exists.
+
+	The API is exactly the same, except Client.Call takes a context.Context,
+	and Server methods are expected to take a context.Context as the first
+	argument. The following is the original rpc godoc updated to include
+	context.Context.
+
 	Package rpc provides access to the exported methods of an object across a
 	network or other I/O connection.  A server registers an object, making it visible
 	as a service with the name of the type of the object.  After registration, exported
@@ -16,8 +26,8 @@
 		- the method's type is exported.
 		- the method is exported.
 		- the method has three arguments.
-        - the method's first argument has type context.Context.
-        - the method's last two arguments are exported (or builtin) types.
+		- the method's first argument has type context.Context.
+		- the method's last two arguments are exported (or builtin) types.
 		- the method's third argument is a pointer.
 		- the method has return type error.
 
@@ -143,7 +153,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/google/zoekt/rpc/internal/rpc/internal/svc"
+	"github.com/keegancsmith/rpc/internal/svc"
 )
 
 const (
@@ -308,10 +318,10 @@ func suitableMethods(typ reflect.Type, reportErr bool) map[string]*methodType {
 			}
 			continue
 		}
-		// First arg must be context.Context.
+		// First arg must be context.Context
 		if ctxType := mtype.In(1); ctxType != typeOfCtx {
 			if reportErr {
-				log.Printf("rpc.Register: ctx type of method %q is %q, must be context.Context\n", mname, ctxType)
+				log.Printf("rpc.Register: return type of method %q is %q, must be error\n", mname, ctxType)
 			}
 			continue
 		}
@@ -391,7 +401,6 @@ func (s *service) call(server *Server, sending *sync.Mutex, pending *svc.Pending
 	if wg != nil {
 		defer wg.Done()
 	}
-
 	// _goRPC_ service calls require internal state.
 	if s.name == "_goRPC_" {
 		switch v := argv.Interface().(type) {
@@ -399,7 +408,6 @@ func (s *service) call(server *Server, sending *sync.Mutex, pending *svc.Pending
 			v.Pending = pending
 		}
 	}
-
 	mtype.Lock()
 	mtype.numCalls++
 	mtype.Unlock()

@@ -576,22 +576,10 @@
 			"revisionTime": "2018-01-25T19:28:33Z"
 		},
 		{
-			"checksumSHA1": "9gPv4FU9gEhiLlqPACdTITnJxsc=",
+			"checksumSHA1": "kGmxehK+Zghb23WtUeyURR/26/w=",
 			"path": "github.com/google/zoekt/rpc",
-			"revision": "91e5e3fbc9373fc03b18bb50cf91585d9433d9c0",
-			"revisionTime": "2018-01-25T19:28:33Z"
-		},
-		{
-			"checksumSHA1": "5j7pjnFEhHgUFEDATNros+A6wms=",
-			"path": "github.com/google/zoekt/rpc/internal/rpc",
-			"revision": "91e5e3fbc9373fc03b18bb50cf91585d9433d9c0",
-			"revisionTime": "2018-01-25T19:28:33Z"
-		},
-		{
-			"checksumSHA1": "bowaFXAbYQzeINsivQYFGaI+/MU=",
-			"path": "github.com/google/zoekt/rpc/internal/rpc/internal/svc",
-			"revision": "91e5e3fbc9373fc03b18bb50cf91585d9433d9c0",
-			"revisionTime": "2018-01-25T19:28:33Z"
+			"revision": "39a73c480e12a7063d8ea12047528fdf3afe6bdf",
+			"revisionTime": "2018-01-26T10:17:29Z"
 		},
 		{
 			"checksumSHA1": "hd5JRPTAk3WJYUJX/VHASf3LI5U=",
@@ -744,6 +732,18 @@
 			"path": "github.com/kardianos/osext",
 			"revision": "29ae4ffbc9a6fe9fb2bc5029050ce6996ea1d3bc",
 			"revisionTime": "2015-12-22T15:32:29Z"
+		},
+		{
+			"checksumSHA1": "uIFNmwB3qW4s/rWyfwKuYlpthbc=",
+			"path": "github.com/keegancsmith/rpc",
+			"revision": "db05e03bcd177a7e5cc8d767b16df19c31314738",
+			"revisionTime": "2018-01-25T20:20:47Z"
+		},
+		{
+			"checksumSHA1": "qg93WM1hps72gnU9AwHEdM+oVsY=",
+			"path": "github.com/keegancsmith/rpc/internal/svc",
+			"revision": "db05e03bcd177a7e5cc8d767b16df19c31314738",
+			"revisionTime": "2018-01-25T20:20:47Z"
 		},
 		{
 			"checksumSHA1": "RBnEeiNEXROAITMYBNng6/2dJto=",

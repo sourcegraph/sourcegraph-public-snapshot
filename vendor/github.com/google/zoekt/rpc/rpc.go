@@ -11,11 +11,11 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	"github.com/google/zoekt/rpc/internal/rpc"
 	"github.com/google/zoekt/rpc/internal/srv"
+	"github.com/keegancsmith/rpc"
 )
 
-// DefaultRPCPath is the normal path used by zoekt
+// DefaultRPCPath is the rpc path used by zoekt-webserver
 const DefaultRPCPath = "/rpc"
 
 // Server returns an http.Handler for searcher which is the server side of the
