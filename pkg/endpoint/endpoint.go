@@ -71,7 +71,7 @@ func New(rawurl string) (*Map, error) {
 	m.mu.Lock()
 	go func() {
 		defer m.mu.Unlock()
-		endpoints, err := cl.Core().Endpoints(u.Namespace).List(v1.ListOptions{FieldSelector: "metadata.name=" + u.Service})
+		endpoints, err := cl.CoreV1().Endpoints(u.Namespace).List(v1.ListOptions{FieldSelector: "metadata.name=" + u.Service})
 		if err != nil {
 			m.err = err
 			return
@@ -113,7 +113,7 @@ func inform(cl *kubernetes.Clientset, m *Map, u *k8sURL) {
 		}
 	}
 
-	lw := cache.NewListWatchFromClient(cl.Core().RESTClient(), "endpoints", u.Namespace, fields.ParseSelectorOrDie("metadata.name="+u.Service))
+	lw := cache.NewListWatchFromClient(cl.CoreV1().RESTClient(), "endpoints", u.Namespace, fields.ParseSelectorOrDie("metadata.name="+u.Service))
 	inf := cache.NewSharedInformer(lw, &v1.Endpoints{}, 5*time.Minute)
 	inf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(o interface{}) {
