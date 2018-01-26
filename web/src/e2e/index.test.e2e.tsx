@@ -549,7 +549,7 @@ describe('e2e test suite', () => {
     describe('Search component', () => {
         it('renders results for sourcegraph/go-diff (no search group)', async () => {
             await chrome.goto(
-                baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d'
+                baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
             )
             await chrome.wait('.search-results__header-stats')
             await retry(async () => {
