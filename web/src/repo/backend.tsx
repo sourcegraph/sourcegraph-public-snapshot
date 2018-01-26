@@ -164,11 +164,11 @@ export const fetchHighlightedFile = memoizeObservable(
         queryGraphQL(
             gql`
                 query HighlightedFile(
-                    $repoPath: String
-                    $commitID: String
-                    $filePath: String
-                    $disableTimeout: Boolean
-                    $isLightTheme: Boolean
+                    $repoPath: String!
+                    $commitID: String!
+                    $filePath: String!
+                    $disableTimeout: Boolean!
+                    $isLightTheme: Boolean!
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
