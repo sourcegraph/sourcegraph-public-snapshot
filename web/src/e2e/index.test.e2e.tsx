@@ -564,7 +564,7 @@ describe('e2e test suite', () => {
                 assert.equal(
                     await chrome.evaluate(() => window.location.href),
                     baseURL +
-                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/testdata/sample_multi_file_binary.diff#L1:1'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/testdata/sample_file_extended_empty_rename.diff#L1:1'
                 )
             )
         })
