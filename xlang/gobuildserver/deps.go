@@ -14,7 +14,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -95,7 +95,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI ls
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.LogEvent(fmt.Sprintf("error: %v", err))
+			span.LogFields(otlog.Error(err))
 		}
 		span.Finish()
 	}()

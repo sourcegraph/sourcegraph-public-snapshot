@@ -9,14 +9,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/pkg/errors"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
-
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // UnsafeNewDefaultClient returns a new one-shot connection to the LSP proxy server at
@@ -64,7 +64,7 @@ func (c *Client) withMeta(span opentracing.Span, opt []jsonrpc2.CallOption) []js
 func (c *Client) Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP Call "+method)
 	defer c.finishWithError(span, &err)
-	span.LogEventWithPayload("request", params)
+	span.LogFields(otlog.Object("request", params))
 
 	// Store the result into tmpResult so that we can forward it onward to the
 	// OpenTracing tracer. This doesn't support streaming, but neither does
@@ -88,16 +88,16 @@ func (c *Client) Call(ctx context.Context, method string, params, result interfa
 			// Try an array, then.
 			arr := make([]interface{}, 0)
 			if err2 := json.Unmarshal(tmpResult, &arr); err2 != nil {
-				span.LogEventWithPayload("response", string(tmpResult))
+				span.LogFields(otlog.String("response", string(tmpResult)))
 			}
-			span.LogEventWithPayload("response", arr)
+			span.LogFields(otlog.Object("response", arr))
 		} else {
-			span.LogEventWithPayload("response", obj)
+			span.LogFields(otlog.Object("response", obj))
 		}
 	} else {
 		saver := &prefixsuffixsaver.Writer{N: maxSize}
 		io.Copy(saver, bytes.NewReader(tmpResult))
-		span.LogEventWithPayload("response", string(saver.Bytes()))
+		span.LogFields(otlog.String("response", string(saver.Bytes())))
 	}
 	if tmpResult != nil {
 		if err := json.Unmarshal(tmpResult, result); err != nil {
@@ -110,7 +110,7 @@ func (c *Client) Call(ctx context.Context, method string, params, result interfa
 func (c *Client) Notify(ctx context.Context, method string, params interface{}, opt ...jsonrpc2.CallOption) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP Notify "+method)
 	defer c.finishWithError(span, &err)
-	span.LogEventWithPayload("request", params)
+	span.LogFields(otlog.Object("request", params))
 
 	return c.Conn.Notify(ctx, method, params, c.withMeta(span, opt)...)
 }

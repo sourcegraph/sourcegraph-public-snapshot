@@ -15,11 +15,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/ctxvfs"
-
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
 )
@@ -52,7 +51,7 @@ func (fs *GitRepoVFS) fetch(ctx context.Context) (err error) {
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.LogEvent(fmt.Sprintf("error: %v", err))
+			span.LogFields(otlog.Error(err))
 		}
 		span.Finish()
 	}()
@@ -60,7 +59,7 @@ func (fs *GitRepoVFS) fetch(ctx context.Context) (err error) {
 	urlMu := urlMu(fs.CloneURL)
 	urlMu.Lock()
 	defer urlMu.Unlock()
-	span.LogEvent("urlMu acquired")
+	span.LogFields(otlog.String("event", "urlMu acquired"))
 
 	h := sha256.Sum256([]byte(fs.CloneURL))
 	urlHash := hex.EncodeToString(h[:])

@@ -6,16 +6,16 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
-
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	vcsurl "github.com/sourcegraph/go-vcsurl"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // xclient is an LSP client that transparently wraps xlang.Client,
@@ -94,7 +94,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 		var rootURIs []lsp.DocumentURI
 		// If we can extract the repository URL from the symbol metadata, do so
 		if repoURL := xlang.SymbolRepoURL(sym.Symbol); repoURL != "" {
-			span.LogEvent("extracted repo directly from symbol metadata")
+			span.LogFields(otlog.String("event", "extracted repo directly from symbol metadata"))
 
 			repoInfo, err := vcsurl.Parse(repoURL)
 			if err != nil {
@@ -118,12 +118,12 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 				continue
 			}
 
-			span.LogEvent("cross-repo jump to def")
+			span.LogFields(otlog.String("event", "cross-repo jump to def"))
 			pkgs, err := backend.Pkgs.ListPackages(ctx, &api.ListPackagesOp{PkgQuery: pkgDescriptor, Lang: c.mode, Limit: 1})
 			if err != nil {
 				return nil, errors.Wrap(err, "getting repo by package db query")
 			}
-			span.LogEvent("listed repository packages")
+			span.LogFields(otlog.String("event", "listed repository packages"))
 			for _, pkg := range pkgs {
 				repo, err := backend.Repos.Get(ctx, pkg.RepoID)
 				if err != nil {
@@ -142,7 +142,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 				// TODO: store VCS type in *types.Repo object.
 				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+string(repo.URI)+"?"+string(commit)))
 			}
-			span.LogEvent("resolved rootURIs")
+			span.LogFields(otlog.String("event", "resolved rootURIs"))
 		}
 
 		// Issue a workspace/symbol for each repository that provides a definition for the symbol
@@ -154,7 +154,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			}
 			symInfos[rootURI] = repoSymInfos
 		}
-		span.LogEvent("done issuing workspace/symbol requests")
+		span.LogFields(otlog.String("event", "done issuing workspace/symbol requests"))
 	}
 	return symInfos, nil
 }

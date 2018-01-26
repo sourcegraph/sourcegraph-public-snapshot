@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"strings"
 
-	opentracing "github.com/opentracing/opentracing-go"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/lib/pq"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -571,7 +570,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 	if err != nil {
 		return errors.Wrap(err, "create temp table")
 	}
-	span.LogEvent("created temp table")
+	span.LogFields(otlog.String("event", "created temp table"))
 
 	// Copy the new deps into the temporary table.
 	copy, err := tx.Prepare(pq.CopyIn("new_"+table,
@@ -584,7 +583,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 		return errors.Wrap(err, "prepare copy in")
 	}
 	defer copy.Close()
-	span.LogEvent("prepared copy in")
+	span.LogFields(otlog.String("event", "prepared copy in"))
 
 	for _, r := range deps {
 		data, err := json.Marshal(r.Attributes)
@@ -605,16 +604,16 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 			return errors.Wrap(err, "executing ref copy")
 		}
 	}
-	span.LogEvent("executed all dep copy")
+	span.LogFields(otlog.String("event", "executed all dep copy"))
 	if _, err := copy.Exec(); err != nil {
 		return errors.Wrap(err, "executing copy")
 	}
-	span.LogEvent("executed copy")
+	span.LogFields(otlog.String("event", "executed copy"))
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
 		return errors.Wrap(err, "executing table deletion")
 	}
-	span.LogEvent("executed table deletion")
+	span.LogFields(otlog.String("event", "executed table deletion"))
 
 	// Insert from temporary table into the real table.
 	_, err = tx.ExecContext(ctx, `INSERT INTO `+table+`(
@@ -630,7 +629,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 	if err != nil {
 		return errors.Wrap(err, "executing final insertion from temp table")
 	}
-	span.LogEvent("executed final insertion from temp table")
+	span.LogFields(otlog.String("event", "executed final insertion from temp table"))
 	return nil
 }
 

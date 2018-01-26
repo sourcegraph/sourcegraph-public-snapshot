@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // Archive implements vcs.Archiver.
@@ -20,7 +20,7 @@ func (r *Repository) Archive(ctx context.Context, commitID api.CommitID) (zipDat
 			span.SetTag("byteSize", len(zipData))
 		} else {
 			ext.Error.Set(span, true)
-			span.LogEvent(fmt.Sprintf("error: %v", err))
+			span.LogFields(otlog.Error(err))
 		}
 		span.Finish()
 	}()

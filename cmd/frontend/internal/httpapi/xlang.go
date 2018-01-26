@@ -15,6 +15,7 @@ import (
 	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -264,7 +265,9 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 				// we want to record that it failed in
 				// the trace.
 				ext.Error.Set(span, true)
-				span.LogEvent(fmt.Sprintf("error: %s failed with %v", req.Method, err))
+				span.LogFields(
+					otlog.String("method", req.Method),
+					otlog.Error(err))
 				ev.AddField("lsp_error", e.Message)
 				success = false
 				resps[i].Error = e

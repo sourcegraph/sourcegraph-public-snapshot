@@ -15,8 +15,8 @@ import (
 	basictracer "github.com/opentracing/basictracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
@@ -431,7 +431,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 		}
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.LogEvent(fmt.Sprintf("error: %v", err))
+			span.LogFields(otlog.Error(err))
 			if c != nil {
 				c.incMethodErrorStat(method)
 			}
@@ -448,7 +448,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 
 	callOpts := []jsonrpc2.CallOption{addTraceMeta(ctx)}
 	if notif {
-		span.LogKV("event", "sending notification")
+		span.LogFields(otlog.String("event", "sending notification"))
 		return c.conn.Notify(ctx, method, params, callOpts...)
 	}
 	if !requestOriginatedFromProxy {
@@ -458,7 +458,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 		// client.
 		callOpts = append(callOpts, jsonrpc2.PickID(crid.ID()))
 	}
-	span.LogKV("event", "sending request")
+	span.LogFields(otlog.String("event", "sending request"))
 	return c.conn.Call(ctx, method, params, result, callOpts...)
 }
 
@@ -492,7 +492,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 				defer func() {
 					if err != nil {
 						ext.Error.Set(span, true)
-						span.LogEvent(fmt.Sprintf("error: %v", err))
+						span.LogFields(otlog.Error(err))
 					}
 					span.Finish()
 				}()
@@ -561,7 +561,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// Log to the span for the server, not for this specific
 		// request.
 		if span := opentracing.SpanFromContext(ctx); span != nil {
-			span.LogEventWithPayload("window/logMessage", m)
+			span.LogFields(otlog.Object("window/logMessage", m))
 		}
 		return nil, nil
 

@@ -13,9 +13,8 @@ import (
 	"github.com/lib/pq"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-
+	otlog "github.com/opentracing/opentracing-go/log"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -137,7 +136,7 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo api.RepoID, lan
 	if err != nil {
 		return errors.Wrap(err, "create temp table")
 	}
-	span.LogEvent("created temp table")
+	span.LogFields(otlog.String("event", "created temp table"))
 
 	// Copy the new deps into the temporary table.
 	copy, err := tx.Prepare(pq.CopyIn("new_pkgs",
@@ -149,7 +148,7 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo api.RepoID, lan
 		return errors.Wrap(err, "prepare copy in")
 	}
 	defer copy.Close()
-	span.LogEvent("prepared copy in")
+	span.LogFields(otlog.String("event", "prepared copy in"))
 
 	for _, r := range pks {
 		pkgData, err := json.Marshal(r.Package)
@@ -165,16 +164,16 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo api.RepoID, lan
 			return errors.Wrap(err, "executing pkg copy")
 		}
 	}
-	span.LogEvent("executed all pkg copy")
+	span.LogFields(otlog.String("event", "executed all pkg copy"))
 	if _, err := copy.Exec(); err != nil {
 		return errors.Wrap(err, "executing copy")
 	}
-	span.LogEvent("executed copy")
+	span.LogFields(otlog.String("event", "executed copy"))
 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM pkgs WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
 		return errors.Wrap(err, "executing pkgs deletion")
 	}
-	span.LogEvent("executed pkgs deletion")
+	span.LogFields(otlog.String("event", "executed pkgs deletion"))
 
 	// Insert from temporary table into the real table.
 	_, err = tx.ExecContext(ctx, `INSERT INTO pkgs(
@@ -190,7 +189,7 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo api.RepoID, lan
 	if err != nil {
 		return errors.Wrap(err, "executing final insertion from temp table")
 	}
-	span.LogEvent("executed final insertion from temp table")
+	span.LogFields(otlog.String("event", "executed final insertion from temp table"))
 	return nil
 }
 
