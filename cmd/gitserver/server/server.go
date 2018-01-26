@@ -37,7 +37,7 @@ import (
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
 var runCommand = func(ctx context.Context, cmd *exec.Cmd) (err error, exitCode int) { // mocked by tests
-	span, ctx := opentracing.StartSpanFromContext(ctx, "runCommand")
+	span, _ := opentracing.StartSpanFromContext(ctx, "runCommand")
 	span.SetTag("path", cmd.Path)
 	span.SetTag("args", cmd.Args)
 	span.SetTag("dir", cmd.Dir)
