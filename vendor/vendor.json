@@ -565,27 +565,31 @@
 		},
 		{
 			"checksumSHA1": "VAYBxxaLU5xoyvdnfXYj+W4qJUA=",
+			"origin": "github.com/sourcegraph/zoekt",
 			"path": "github.com/google/zoekt",
-			"revision": "91e5e3fbc9373fc03b18bb50cf91585d9433d9c0",
-			"revisionTime": "2018-01-25T19:28:33Z"
+			"revision": "39a73c480e12a7063d8ea12047528fdf3afe6bdf",
+			"revisionTime": "2018-01-26T10:17:29Z"
 		},
 		{
 			"checksumSHA1": "q0M+6l2AMaRhSA6dCrxEurRbIE8=",
+			"origin": "github.com/sourcegraph/zoekt/query",
 			"path": "github.com/google/zoekt/query",
-			"revision": "91e5e3fbc9373fc03b18bb50cf91585d9433d9c0",
-			"revisionTime": "2018-01-25T19:28:33Z"
+			"revision": "39a73c480e12a7063d8ea12047528fdf3afe6bdf",
+			"revisionTime": "2018-01-26T10:17:29Z"
 		},
 		{
 			"checksumSHA1": "kGmxehK+Zghb23WtUeyURR/26/w=",
+			"origin": "github.com/sourcegraph/zoekt/rpc",
 			"path": "github.com/google/zoekt/rpc",
 			"revision": "39a73c480e12a7063d8ea12047528fdf3afe6bdf",
 			"revisionTime": "2018-01-26T10:17:29Z"
 		},
 		{
 			"checksumSHA1": "hd5JRPTAk3WJYUJX/VHASf3LI5U=",
+			"origin": "github.com/sourcegraph/zoekt/rpc/internal/srv",
 			"path": "github.com/google/zoekt/rpc/internal/srv",
-			"revision": "91e5e3fbc9373fc03b18bb50cf91585d9433d9c0",
-			"revisionTime": "2018-01-25T19:28:33Z"
+			"revision": "39a73c480e12a7063d8ea12047528fdf3afe6bdf",
+			"revisionTime": "2018-01-26T10:17:29Z"
 		},
 		{
 			"checksumSHA1": "V/53BpqgOkSDZCX6snQCAkdO2fM=",
