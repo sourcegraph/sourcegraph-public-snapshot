@@ -3,6 +3,7 @@ import * as React from 'react'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { SaveToolbar } from '../components/SaveToolbar'
@@ -58,10 +59,23 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.state = { saving: false }
 
         // Reset state upon navigation to a different subject.
-        this.componentUpdates.pipe(map(({ settings }) => settings)).subscribe(() =>
-            this.setState({
-                contents: undefined,
+        this.componentUpdates
+            .pipe(startWith(props), map(({ settings }) => settings), distinctUntilChanged())
+            .subscribe(settings => {
+                if (this.state.contents !== undefined) {
+                    this.setState({ contents: undefined })
+                }
             })
+
+        // Saving ended (in failure) if we get a commitError.
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(({ commitError }) => commitError),
+                    distinctUntilChanged(),
+                    filter(commitError => !!commitError)
+                )
+                .subscribe(() => this.setState({ saving: false }))
         )
 
         // We are finished saving when we receive the new settings ID and it's
@@ -151,6 +165,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 <SaveToolbar
                     dirty={dirty}
                     disabled={this.state.saving || !dirty}
+                    error={this.props.commitError}
                     saving={this.state.saving}
                     onSave={this.save}
                     onDiscard={this.discard}
