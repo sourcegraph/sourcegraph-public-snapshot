@@ -43,11 +43,11 @@
     }
 
     &__label {
+        display: flex;
         user-select: none;
         cursor: pointer;
 
         padding: 0.25rem 0.5rem;
-        border: 1px solid $color-border;
 
         &::before {
             padding-right: 0.325rem;
@@ -78,12 +78,6 @@
     }
     &__item:last-child &__label {
         border-bottom-right-radius: $border-radius;
-    }
-
-    // Create the appearance of a focus ring.
-    &__input:focus + &__label {
-        outline: solid 1px $color-primary;
-        outline-offset: -1px;
     }
 }
 
