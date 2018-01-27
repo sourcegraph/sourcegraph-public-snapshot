@@ -186,4 +186,4 @@ required = [
 
 [[constraint]]
   name = "github.com/mattn/goreman"
-  version = "0.0.10"
+  revision = "d0ee41b21be92ce6fd3e55ad11c5e5c9452fe822"
