@@ -62,6 +62,16 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.setState({
                 contents: undefined,
             })
+
+        // Saving ended (in failure) if we get a commitError.
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(({ commitError }) => commitError),
+                    distinctUntilChanged(),
+                    filter(commitError => !!commitError)
+                )
+                .subscribe(() => this.setState({ saving: false }))
         )
 
         // We are finished saving when we receive the new settings ID and it's
@@ -151,6 +161,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 <SaveToolbar
                     dirty={dirty}
                     disabled={this.state.saving || !dirty}
+                    error={this.props.commitError}
                     saving={this.state.saving}
                     onSave={this.save}
                     onDiscard={this.discard}
