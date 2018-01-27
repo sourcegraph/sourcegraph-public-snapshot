@@ -61,6 +61,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 	// TODO(sqs): handle -repo:foo fields.
 
+	withoutRepoFields := omitQueryFields(r, searchquery.FieldRepo)
+
 	var a searchAlert
 	switch {
 	case len(repoGroupFilters) > 1:
@@ -89,7 +91,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			return nil, err
 		}
 		if len(repos2) > 0 {
-			query := omitQueryFields(r, searchquery.FieldRepo)
+			query := withoutRepoFields
 			query.query += fmt.Sprintf(" repo:%s", unionRepoFilter)
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
@@ -99,7 +101,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			// Fall back to removing repo filters.
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: "remove repo: filters",
-				query:       omitQueryFields(r, searchquery.FieldRepo),
+				query:       withoutRepoFields,
 			})
 		}
 
@@ -120,7 +122,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
-			query:       omitQueryFields(r, searchquery.FieldRepo),
+			query:       withoutRepoFields,
 		})
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
@@ -133,7 +135,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			return nil, err
 		}
 		if len(repos2) > 0 {
-			query := omitQueryFields(r, searchquery.FieldRepo)
+			query := withoutRepoFields
 			query.query += fmt.Sprintf(" repo:%s", unionRepoFilter)
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
@@ -143,17 +145,18 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
-			query:       omitQueryFields(r, searchquery.FieldRepo),
+			query:       withoutRepoFields,
 		})
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
 		a.title = "Change your repo: filter to see results"
 		a.description = fmt.Sprintf("No repositories satisfied your repo: filter.")
-
-		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-			description: "remove repo: filter",
-			query:       omitQueryFields(r, searchquery.FieldRepo),
-		})
+		if strings.TrimSpace(withoutRepoFields.Query()) != "" {
+			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+				description: "remove repo: filter",
+				query:       withoutRepoFields,
+			})
+		}
 	}
 
 	return &a, nil
