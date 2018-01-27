@@ -3,6 +3,7 @@ import * as React from 'react'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { SaveToolbar } from '../components/SaveToolbar'
@@ -58,9 +59,12 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.state = { saving: false }
 
         // Reset state upon navigation to a different subject.
-        this.componentUpdates.pipe(map(({ settings }) => settings)).subscribe(() =>
-            this.setState({
-                contents: undefined,
+        this.componentUpdates
+            .pipe(startWith(props), map(({ settings }) => settings), distinctUntilChanged())
+            .subscribe(settings => {
+                if (this.state.contents !== undefined) {
+                    this.setState({ contents: undefined })
+                }
             })
 
         // Saving ended (in failure) if we get a commitError.
