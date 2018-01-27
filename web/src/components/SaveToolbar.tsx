@@ -24,7 +24,14 @@ export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, 
     }
 
     return (
-        <div>
+        <>
+            {error &&
+                !saving && (
+                    <div className="save-toolbar__error">
+                        <ErrorIcon className="icon-inline save-toolbar__error-icon" />
+                        {error.message}
+                    </div>
+                )}
             <div className="save-toolbar__actions">
                 <button
                     disabled={saveDiscardDisabled}
@@ -48,12 +55,6 @@ export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, 
                     </span>
                 )}
             </div>
-            {error && (
-                <div className="save-toolbar__error">
-                    <ErrorIcon className="icon-inline save-toolbar__error-icon" />
-                    {error.message}
-                </div>
-            )}
-        </div>
+        </>
     )
 }
