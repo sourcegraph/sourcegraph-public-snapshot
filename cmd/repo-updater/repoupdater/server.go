@@ -9,6 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
@@ -46,16 +47,21 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var githubdotcomClient = github.NewClient(
-	&url.URL{Scheme: "https", Host: "api.github.com"},
-	"", // TODO!(sqs): use token
-	nil,
-)
+var githubdotcomClient *github.Client
+
+func init() {
+	var githubdotcomToken string
+	if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
+		githubdotcomToken = c.Token
+	}
+	githubdotcomClient = github.NewClient(&url.URL{Scheme: "https", Host: "api.github.com"}, githubdotcomToken, nil)
+}
 
 func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 	var result protocol.RepoLookupResult
 
 	switch {
+	// TODO(sqs): support GitHub (Enterprise) hosts other than github.com
 	case strings.HasPrefix(strings.ToLower(string(args.Repo)), "github.com/"):
 		nameWithOwner := string(args.Repo[len("github.com/"):])
 		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
