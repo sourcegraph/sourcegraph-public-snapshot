@@ -191,11 +191,11 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	// See if we can narrow it down by using filters like
 	// repo:github.com/myorg/.
 	const maxParentsToPropose = 4
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 	defer cancel()
 outer:
 	for i, repoParent := range pathParentsByFrequency(paths) {
-		if i >= maxParentsToPropose {
+		if i >= maxParentsToPropose || ctx.Err() == nil {
 			break
 		}
 		repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
@@ -208,9 +208,11 @@ outer:
 		}
 
 		repoFieldValues = append(repoFieldValues, repoParentPattern)
+		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+		defer cancel()
 		_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
-		if err == context.DeadlineExceeded {
-			break
+		if ctx.Err() != nil {
+			continue
 		} else if err != nil {
 			return nil, err
 		}
