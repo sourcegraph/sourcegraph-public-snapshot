@@ -123,7 +123,9 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := settingsCreateIfUpToDate(ctx,
+		api.ConfigurationSubject{Site: &singletonSiteResolver.gqlID},
+		args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
