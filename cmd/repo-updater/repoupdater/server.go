@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
@@ -77,13 +76,6 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 			}
 		} else if err != nil && !github.IsNotFound(err) {
 			return nil, err
-		}
-
-	default:
-		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, args.Repo); err == nil {
-			result.Repo = &protocol.RepoInfo{
-				URI: args.Repo,
-			}
 		}
 	}
 
