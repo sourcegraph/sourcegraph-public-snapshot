@@ -84,7 +84,7 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
                     settings,
                 }),
             error => {
-                this.setState({ error: undefined, commitError: error.message })
+                this.setState({ error: undefined, commitError: error })
                 console.error(error)
             }
         )
