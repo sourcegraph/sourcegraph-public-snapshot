@@ -54,7 +54,7 @@ var cfg = schema.SiteConfiguration{
 func init() {
 	// Read env vars to config
 	if err := initConfig(); err != nil {
-		log.Fatalf("failed to read configuration from environment: %s", err)
+		log.Fatalf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
 	}
 }
 
