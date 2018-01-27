@@ -418,11 +418,6 @@
   revision = "bcac9884e7502bb2b474c0339d889cb981a2f27f"
 
 [[projects]]
-  name = "github.com/jpillora/backoff"
-  packages = ["."]
-  revision = "0496a6c14df020789376f4d4a261273d5ddb36ec"
-
-[[projects]]
   name = "github.com/json-iterator/go"
   packages = ["."]
   revision = "f7279a603edee96fe7764d3de9c6ff8cf9970994"
@@ -781,11 +776,6 @@
   revision = "8de691b1d0d2eafd764a63aef324fc0a6a8f4da7"
 
 [[projects]]
-  name = "github.com/sourcegraph/go-github"
-  packages = ["github"]
-  revision = "e062a8cd852f0fb981c8c9f837c214c4d1031870"
-
-[[projects]]
   name = "github.com/sourcegraph/go-langserver"
   packages = [
     "langserver",
@@ -1024,13 +1014,10 @@
 [[projects]]
   name = "google.golang.org/appengine"
   packages = [
-    ".",
     "internal",
-    "internal/app_identity",
     "internal/base",
     "internal/datastore",
     "internal/log",
-    "internal/modules",
     "internal/remote_api",
     "internal/urlfetch",
     "urlfetch"
@@ -1278,6 +1265,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ce9342cbff90c210538a9df460b5d51e057129cfa7d619edfc993ca96de84ba3"
+  inputs-digest = "82eaea576311e3c6d2bec51de75c4c7b03fc00f1ac0d5f36365da7a24d230240"
   solver-name = "gps-cdcl"
   solver-version = 1
