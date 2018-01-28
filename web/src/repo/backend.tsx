@@ -54,7 +54,7 @@ class RepoSeeOtherErrorImpl extends Error implements RepoSeeOtherErrorImpl {
  * Fetch the repository.
  */
 export const fetchRepository = memoizeObservable(
-    (args: { repoPath: string }): Observable<GQL.IRepository | null> =>
+    (args: { repoPath: string }): Observable<GQL.IRepository> =>
         queryGraphQL(
             gql`
                 query Repository($repoPath: String!) {

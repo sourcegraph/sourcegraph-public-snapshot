@@ -1,24 +1,28 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
+import isEqual from 'lodash/isEqual'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { defer } from 'rxjs/observable/defer'
+import { catchError } from 'rxjs/operators/catchError'
 import { delay } from 'rxjs/operators/delay'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { map } from 'rxjs/operators/map'
 import { retryWhen } from 'rxjs/operators/retryWhen'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { redirectToExternalHost } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
+import { ErrorLike, isErrorLike } from '../util/errors'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ERREPOSEEOTHER, RepoSeeOtherError, resolveRev } from './backend'
+import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
 import { BlobPage } from './BlobPage'
 import { DirectoryPage } from './DirectoryPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
@@ -35,13 +39,12 @@ interface RepoRevContainerProps extends RouteComponentProps<{ filePath: string }
 }
 
 interface State {
-    loading: boolean
     showSidebar: boolean
-
-    error?: { message: string } | 'repo-not-found'
-    cloneInProgress?: boolean
-    commitID?: string
-    defaultBranch?: string
+    /**
+     * The resolved rev or an error if it could not be resolved.
+     * `undefined` while loading.
+     */
+    resolvedRevOrError?: ResolvedRev | ErrorLike
 }
 
 /**
@@ -50,86 +53,64 @@ interface State {
  */
 export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps, State> {
     public state: State = {
-        loading: true,
         showSidebar: true,
     }
 
-    private repoRevChanges = new Subject<{ repo: string; rev: string | undefined }>()
+    private propsUpdates = new Subject<RepoRevContainerProps>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         // Fetch repository revision.
         this.subscriptions.add(
-            this.repoRevChanges
+            this.propsUpdates
                 .pipe(
-                    distinctUntilChanged(),
-                    tap(() =>
-                        this.setState({
-                            loading: true,
-                            error: undefined,
-                            cloneInProgress: undefined,
-                            commitID: undefined,
-                            defaultBranch: undefined,
-                        })
-                    ),
-                    switchMap(({ repo, rev }) =>
-                        defer(() => resolveRev({ repoPath: repo, rev: rev || 'HEAD' }))
+                    // Pick repoPath and rev out of the props
+                    map(props => ({ repoPath: props.repo.uri, rev: props.rev || 'HEAD' })),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    // Reset resolved rev / error state
+                    tap(() => this.setState({ resolvedRevOrError: undefined })),
+                    switchMap(({ repoPath, rev }) =>
+                        defer(() => resolveRev({ repoPath, rev })).pipe(
                             // On a CloneInProgress error, retry after 1s
-                            .pipe(
-                                retryWhen(errors =>
-                                    errors.pipe(
-                                        tap(err => {
-                                            switch (err.code) {
-                                                case ERREPOSEEOTHER:
-                                                    redirectToExternalHost((err as RepoSeeOtherError).redirectURL)
-                                                    this.setState({ error: undefined })
-                                                    return
-                                                case EREPONOTFOUND:
-                                                    // Display 404 to the user and do not retry
-                                                    this.setState({ loading: false, error: 'repo-not-found' })
-                                                    break
-                                                case ECLONEINPROGESS:
-                                                    // Display cloning screen to the user and retry
-                                                    this.setState({
-                                                        loading: false,
-                                                        error: undefined,
-                                                        cloneInProgress: true,
-                                                    })
-                                                    return
-                                                case EREVNOTFOUND:
-                                                    // Display 404 to the user and do not retry
-                                                    this.setState({ loading: false, cloneInProgress: undefined })
-                                                    break
-                                            }
-                                            // Don't retry
-                                            throw err
-                                        }),
-                                        delay(1000)
-                                    )
+                            retryWhen(errors =>
+                                errors.pipe(
+                                    tap(error => {
+                                        switch (error.code) {
+                                            case ECLONEINPROGESS:
+                                                // Display cloning screen to the user and retry
+                                                this.setState({ resolvedRevOrError: error })
+                                                return
+                                            default:
+                                                // Display error to the user and do not retry
+                                                throw error
+                                        }
+                                    }),
+                                    delay(1000)
                                 )
-                            )
+                            ),
+                            // Save any error in the sate to display to the user
+                            catchError(error => {
+                                this.setState({ resolvedRevOrError: error })
+                                return []
+                            })
+                        )
                     )
                 )
                 .subscribe(
-                    ({ commitID, defaultBranch }) =>
-                        this.setState({
-                            loading: false,
-                            commitID,
-                            defaultBranch,
-                            error: undefined,
-                            cloneInProgress: undefined,
-                        }),
-                    err =>
-                        this.setState({ loading: false, error: { message: err.message }, cloneInProgress: undefined })
+                    resolvedRev => {
+                        this.setState({ resolvedRevOrError: resolvedRev })
+                    },
+                    error => {
+                        // Should never be reached because errors are caught above
+                        console.error(error)
+                    }
                 )
         )
-        this.repoRevChanges.next({ repo: this.props.repo.uri, rev: this.props.rev })
+        this.propsUpdates.next(this.props)
     }
 
     public componentWillReceiveProps(props: RepoRevContainerProps): void {
-        if (props.repo !== this.props.repo || props.rev !== this.props.rev) {
-            this.repoRevChanges.next({ repo: props.repo.uri, rev: props.rev })
-        }
+        this.propsUpdates.next(props)
     }
 
     public componentWillUnmount(): void {
@@ -137,42 +118,50 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
     }
 
     public render(): JSX.Element | null {
-        if (this.state.loading) {
-            return null // loading
+        if (!this.state.resolvedRevOrError) {
+            // Render nothing while loading
+            return null
         }
 
-        if (this.state.cloneInProgress) {
-            return (
-                <HeroPage
-                    icon={RepoIcon}
-                    title={this.props.repo.uri
-                        .split('/')
-                        .slice(1)
-                        .join('/')}
-                    subtitle="Cloning in progress"
-                />
-            )
-        }
-        if (this.state.error === 'repo-not-found') {
-            return (
-                <HeroPage
-                    icon={DirectionalSignIcon}
-                    title="404: Not Found"
-                    subtitle="The requested repository was not found."
-                />
-            )
-        }
-        if (!this.state.commitID) {
-            return (
-                <HeroPage
-                    icon={DirectionalSignIcon}
-                    title="404: Not Found"
-                    subtitle="The requested revision was not found."
-                />
-            )
-        }
-        if (this.state.error) {
-            return <HeroPage icon={RepoIcon} title="Error" subtitle={this.state.error.message} />
+        if (isErrorLike(this.state.resolvedRevOrError)) {
+            // Show error page
+            switch (this.state.resolvedRevOrError.code) {
+                case ECLONEINPROGESS:
+                    return (
+                        <HeroPage
+                            icon={RepoIcon}
+                            title={this.props.repo.uri
+                                .split('/')
+                                .slice(1)
+                                .join('/')}
+                            subtitle="Cloning in progress"
+                        />
+                    )
+                case EREPONOTFOUND:
+                    return (
+                        <HeroPage
+                            icon={DirectionalSignIcon}
+                            title="404: Not Found"
+                            subtitle="The requested repository was not found."
+                        />
+                    )
+                case EREVNOTFOUND:
+                    return (
+                        <HeroPage
+                            icon={DirectionalSignIcon}
+                            title="404: Not Found"
+                            subtitle="The requested revision was not found."
+                        />
+                    )
+                default:
+                    return (
+                        <HeroPage
+                            icon={RepoIcon}
+                            title="Error"
+                            subtitle={upperFirst(this.state.resolvedRevOrError.message)}
+                        />
+                    )
+            }
         }
 
         return (
@@ -190,9 +179,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
                                     repoPath={this.props.repo.uri}
-                                    defaultBranch={this.state.defaultBranch}
+                                    defaultBranch={this.state.resolvedRevOrError.defaultBranch}
                                     currentRev={this.props.rev}
-                                    currentCommitID={this.state.commitID}
+                                    currentCommitID={this.state.resolvedRevOrError.commitID}
                                     history={this.props.history}
                                     location={this.props.location}
                                 />
@@ -200,10 +189,10 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             popoverKey="repo-rev"
                             hideOnChange={`${this.props.repo}:${this.props.rev}`}
                         >
-                            {(this.props.rev && this.props.rev === this.state.commitID
-                                ? this.state.commitID.slice(0, 7)
+                            {(this.props.rev && this.props.rev === this.state.resolvedRevOrError.commitID
+                                ? this.state.resolvedRevOrError.commitID.slice(0, 7)
                                 : this.props.rev) ||
-                                this.state.defaultBranch ||
+                                this.state.resolvedRevOrError.defaultBranch ||
                                 'HEAD'}
                         </PopoverButton>
                     }
@@ -232,7 +221,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         <GoToPermalinkAction
                             key="go-to-permalink"
                             rev={this.props.rev}
-                            commitID={this.state.commitID}
+                            commitID={this.state.resolvedRevOrError.commitID}
                             location={this.props.location}
                             history={this.props.history}
                         />
@@ -242,9 +231,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     className="repo-rev-container__sidebar"
                     repoPath={this.props.repo.uri}
                     rev={this.props.rev}
-                    commitID={this.state.commitID}
+                    commitID={this.state.resolvedRevOrError.commitID}
                     filePath={this.props.match.params.filePath || ''}
-                    defaultBranch={this.state.defaultBranch || 'HEAD'}
+                    defaultBranch={this.state.resolvedRevOrError.defaultBranch || 'HEAD'}
                     history={this.props.history}
                 />
                 <div className="repo-rev-container__content">
@@ -252,7 +241,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         <DirectoryPage
                             repoPath={this.props.repo.uri}
                             repoDescription={this.props.repo.description}
-                            commitID={this.state.commitID}
+                            commitID={this.state.resolvedRevOrError.commitID}
                             rev={this.props.rev}
                             filePath={this.props.match.params.filePath || ''}
                             location={this.props.location}
@@ -262,7 +251,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     {this.props.objectType === 'blob' && (
                         <BlobPage
                             repoPath={this.props.repo.uri}
-                            commitID={this.state.commitID}
+                            commitID={this.state.resolvedRevOrError.commitID}
                             rev={this.props.rev}
                             filePath={this.props.match.params.filePath || ''}
                             location={this.props.location}

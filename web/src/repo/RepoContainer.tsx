@@ -14,8 +14,9 @@ import { parseRepoRev, redirectToExternalHost } from '.'
 import { parseBrowserRepoURL } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
+import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { ERREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
+import { EREPONOTFOUND, ERREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
@@ -36,13 +37,14 @@ interface State {
     filePath?: string
     rest?: string
 
-    loading: boolean
-
     repoHeaderLeftChildren?: React.ReactFragment | null
     repoHeaderRightChildren?: React.ReactFragment | null
 
-    repo?: GQL.IRepository | null
-    error?: string
+    /**
+     * The fetched repository or an error if occured.
+     * `undefined` while loading.
+     */
+    repoOrError?: GQL.IRepository | ErrorLike
 }
 
 /**
@@ -58,7 +60,6 @@ export class RepoContainer extends React.Component<Props, State> {
 
         this.state = {
             ...parseURLPath(props.match.params.repoRevAndRest),
-            loading: true,
         }
     }
 
@@ -73,23 +74,29 @@ export class RepoContainer extends React.Component<Props, State> {
                 .pipe(
                     map(({ repoPath }) => repoPath),
                     distinctUntilChanged(),
-                    tap(() => this.setState({ loading: true })),
+                    tap(() => this.setState({ repoOrError: undefined })),
                     switchMap(repoPath =>
                         fetchRepository({ repoPath }).pipe(
                             catchError(error => {
-                                console.error(error)
-                                if (error.code === ERREPOSEEOTHER) {
-                                    redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
-                                    this.setState({ error: undefined })
-                                    return []
+                                switch (error.code) {
+                                    case ERREPOSEEOTHER:
+                                        redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
+                                        return []
                                 }
-                                this.setState({ loading: false, error: error.message })
+                                this.setState({ repoOrError: error })
                                 return []
                             })
                         )
                     )
                 )
-                .subscribe(repo => this.setState({ repo, loading: false }), err => console.error(err))
+                .subscribe(
+                    repo => {
+                        this.setState({ repoOrError: repo })
+                    },
+                    err => {
+                        console.error(err)
+                    }
+                )
         )
 
         // Update header and other global state.
@@ -106,7 +113,7 @@ export class RepoContainer extends React.Component<Props, State> {
         // Merge in repository updates.
         this.subscriptions.add(
             this.repositoryUpdates.subscribe(update =>
-                this.setState(({ repo }) => ({ repo: { ...repo, ...update } as GQL.IRepository }))
+                this.setState(({ repoOrError }) => ({ repoOrError: { ...repoOrError, ...update } as GQL.IRepository }))
             )
         )
     }
@@ -122,23 +129,30 @@ export class RepoContainer extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (this.state.loading) {
+        if (!this.state.repoOrError) {
+            // Render nothing while loading
             return null
         }
 
-        if (this.state.error) {
-            return <HeroPage icon={DirectionalSignIcon} title="Error" subtitle={this.state.error} />
+        if (isErrorLike(this.state.repoOrError)) {
+            // Display error page
+            switch (this.state.repoOrError.code) {
+                case EREPONOTFOUND:
+                    return (
+                        <HeroPage
+                            icon={DirectionalSignIcon}
+                            title="404: Not Found"
+                            subtitle="The repository was not found."
+                        />
+                    )
+                default:
+                    return (
+                        <HeroPage icon={DirectionalSignIcon} title="Error" subtitle={this.state.repoOrError.message} />
+                    )
+            }
         }
 
-        if (this.state.repo === undefined) {
-            return null
-        }
-        if (this.state.repo === null) {
-            return (
-                <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="The repository was not found." />
-            )
-        }
-        if (!this.state.repo.enabled && !this.state.repo.viewerCanAdminister) {
+        if (!this.state.repoOrError.enabled && !this.state.repoOrError.viewerCanAdminister) {
             return (
                 <HeroPage
                     icon={NoEntryIcon}
@@ -149,18 +163,18 @@ export class RepoContainer extends React.Component<Props, State> {
         }
 
         const transferProps = {
-            repo: this.state.repo,
+            repo: this.state.repoOrError,
             user: this.props.user,
             isLightTheme: this.props.isLightTheme,
         }
 
-        const repoMatchURL = `/${this.state.repo.uri}`
+        const repoMatchURL = `/${this.state.repoOrError.uri}`
         const { filePath, position, range } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
 
         return (
             <div className="repo-composite-container composite-container">
                 <RepoHeader
-                    repo={this.state.repo}
+                    repo={this.state.repoOrError}
                     rev={this.state.rev}
                     filePath={filePath}
                     className="repo-composite-container__header"
@@ -173,7 +187,7 @@ export class RepoContainer extends React.Component<Props, State> {
                     element={
                         <GoToCodeHostAction
                             key="go-to-code-host"
-                            repo={this.state.repo}
+                            repo={this.state.repoOrError}
                             // We need a rev to generate code host URLs, since we don't have a default use HEAD.
                             rev={this.state.rev || 'HEAD'}
                             filePath={filePath}
