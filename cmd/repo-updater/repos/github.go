@@ -16,6 +16,19 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
+// GitHubServiceType is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
+// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
+const GitHubServiceType = "github"
+
+// GitHubExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitHub repository.
+func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.ExternalRepoSpec {
+	return &api.ExternalRepoSpec{
+		ID:          repo.ID,
+		ServiceType: GitHubServiceType,
+		ServiceID:   baseURL.String(),
+	}
+}
+
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) error {

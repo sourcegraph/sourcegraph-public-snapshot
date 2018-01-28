@@ -64,7 +64,7 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 	if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
 		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
 		if cached.NotFound {
-			return nil, errNotFound
+			return nil, ErrNotFound
 		}
 		return &cached.Repository, nil
 	}

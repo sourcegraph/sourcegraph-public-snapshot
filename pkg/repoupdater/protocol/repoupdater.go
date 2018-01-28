@@ -16,7 +16,7 @@ type RepoLookupResult struct {
 	Repo *RepoInfo
 }
 
-// RepoInfo is information about a repository.
+// RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).
 type RepoInfo struct {
 	// URI is the canonical URI of the repository. Its case (uppercase/lowercase) may differ from the URI arg used
 	// in the lookup. If the repository was renamed on the external service, this URI will be the new name.
@@ -24,4 +24,11 @@ type RepoInfo struct {
 
 	Description string // repository description (from the external service)
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
+
+	// ExternalRepo specifies this repository's ID on the external service where it resides (and the external
+	// service itself).
+	//
+	// TODO(sqs): make this required (non-pointer) when both sides have been upgraded to use it. It is only
+	// optional during the transition period.
+	ExternalRepo *api.ExternalRepoSpec
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -46,14 +47,17 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var githubdotcomClient *github.Client
+var (
+	githubdotcomClient  *github.Client
+	githubdotcomBaseURL = url.URL{Scheme: "https", Host: "github.com", Path: "/"}
+)
 
 func init() {
 	var githubdotcomToken string
 	if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
 		githubdotcomToken = c.Token
 	}
-	githubdotcomClient = github.NewClient(&url.URL{Scheme: "https", Host: "api.github.com"}, githubdotcomToken, nil)
+	githubdotcomClient = github.NewClient(&githubdotcomBaseURL, githubdotcomToken, nil)
 }
 
 func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
@@ -70,9 +74,10 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 		repo, err := githubdotcomClient.GetRepository(ctx, owner, name)
 		if err == nil {
 			result.Repo = &protocol.RepoInfo{
-				URI:         api.RepoURI("github.com/" + repo.NameWithOwner),
-				Description: repo.Description,
-				Fork:        repo.IsFork,
+				URI:          api.RepoURI("github.com/" + repo.NameWithOwner),
+				Description:  repo.Description,
+				Fork:         repo.IsFork,
+				ExternalRepo: repos.GitHubExternalRepoSpec(repo, githubdotcomBaseURL),
 			}
 		} else if err != nil && !github.IsNotFound(err) {
 			return nil, err

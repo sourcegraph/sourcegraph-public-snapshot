@@ -138,7 +138,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, indexed_revision, created_at, updated_at, freeze_indexed_revision FROM repo %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, indexed_revision, created_at, updated_at, freeze_indexed_revision, external_id, external_service_type, external_service_id FROM repo %s", querySuffix)
 	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -149,6 +149,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 	for rows.Next() {
 		var repo types.Repo
 		var freezeIndexedRevision *bool
+		var spec dbExternalRepoSpec
 
 		if err := rows.Scan(
 			&repo.ID,
@@ -160,11 +161,13 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 			&repo.CreatedAt,
 			&repo.UpdatedAt,
 			&freezeIndexedRevision,
+			&spec.id, &spec.serviceType, &spec.serviceID,
 		); err != nil {
 			return nil, err
 		}
 
 		repo.FreezeIndexedRevision = freezeIndexedRevision != nil && *freezeIndexedRevision // FIXME: bad DB schema: nullable boolean
+		repo.ExternalRepo = spec.toAPISpec()
 
 		// This is the only place we read from the DB, so is an appropriate
 		// time to update the URI cache.
@@ -543,18 +546,45 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 }
 
 const tryInsertNewSQL = `WITH UPSERT AS (
-	UPDATE repo SET uri=$1 WHERE uri=$1 RETURNING uri
+	UPDATE repo SET uri=$1, external_id=$5, external_service_type=$6, external_service_id=$7 WHERE uri=$1 RETURNING uri
 )
-INSERT INTO repo(uri, description, fork, language, enabled) (
-	SELECT $1 AS uri, $2 AS description, $3 AS fork, '' as language, $4 AS enabled
+INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id) (
+	SELECT $1 AS uri, $2 AS description, $3 AS fork, '' as language, $4 AS enabled,
+	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id
 	WHERE $1 NOT IN (SELECT uri FROM upsert)
 )`
 
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
 func (s *repos) TryInsertNew(ctx context.Context, op api.InsertRepoOp) error {
-	_, err := globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, op.Enabled)
+	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
+	_, err := globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, op.Enabled, spec.id, spec.serviceType, spec.serviceID)
 	return err
+}
+
+// dbExternalRepoSpec is convenience type for inserting or selecting *api.ExternalRepoSpec database data.
+type dbExternalRepoSpec struct{ id, serviceType, serviceID *string }
+
+func (s *dbExternalRepoSpec) fromAPISpec(spec *api.ExternalRepoSpec) *dbExternalRepoSpec {
+	if spec != nil {
+		*s = dbExternalRepoSpec{
+			id:          &spec.ID,
+			serviceType: &spec.ServiceType,
+			serviceID:   &spec.ServiceID,
+		}
+	}
+	return s
+}
+
+func (s dbExternalRepoSpec) toAPISpec() *api.ExternalRepoSpec {
+	if s.id != nil && s.serviceType != nil && s.serviceID != nil {
+		return &api.ExternalRepoSpec{
+			ID:          *s.id,
+			ServiceType: *s.serviceType,
+			ServiceID:   *s.serviceID,
+		}
+	}
+	return nil
 }
 
 var insertBatchSize = 100
@@ -602,11 +632,11 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp)
 			}
 		}()
 
-		if _, err := tx.ExecContext(ctx, "CREATE TEMPORARY TABLE bulk_repos(uri citext, description text, fork boolean, enabled boolean)"); err != nil {
+		if _, err := tx.ExecContext(ctx, "CREATE TEMPORARY TABLE bulk_repos(uri citext, description text, fork boolean, enabled boolean, external_id text, external_service_type text, external_service_id text)"); err != nil {
 			return err
 		}
 
-		stmt, err := tx.PrepareContext(ctx, pq.CopyIn("bulk_repos", "uri", "description", "fork", "enabled"))
+		stmt, err := tx.PrepareContext(ctx, pq.CopyIn("bulk_repos", "uri", "description", "fork", "enabled", "external_id", "external_service_type", "external_service_id"))
 		if err != nil {
 			return err
 		}
@@ -617,7 +647,8 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp)
 			}
 			seenURIs[strings.ToLower(string(rp.URI))] = struct{}{}
 
-			if _, err := stmt.Exec(rp.URI, rp.Description, rp.Fork, rp.Enabled); err != nil {
+			spec := (&dbExternalRepoSpec{}).fromAPISpec(rp.ExternalRepo)
+			if _, err := stmt.Exec(rp.URI, rp.Description, rp.Fork, rp.Enabled, spec.id, spec.serviceType, spec.serviceID); err != nil {
 				return err
 			}
 		}
@@ -626,7 +657,8 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp)
 		}
 		stmt.Close()
 
-		_, err = tx.ExecContext(ctx, `INSERT INTO repo(uri, description, fork, enabled, language) (SELECT bulk_repos.*, '' AS language FROM bulk_repos WHERE uri IS NOT NULL AND uri NOT IN (SELECT uri FROM repo))`)
+		// TODO(sqs): Unlike TryInsertNew, this does not update the external_* columns of existing repositories.
+		_, err = tx.ExecContext(ctx, `INSERT INTO repo(uri, description, fork, enabled, external_id, external_service_type, external_service_id, language) (SELECT bulk_repos.*, '' AS language FROM bulk_repos WHERE uri IS NOT NULL AND uri NOT IN (SELECT uri FROM repo))`)
 		if err != nil {
 			return err
 		}

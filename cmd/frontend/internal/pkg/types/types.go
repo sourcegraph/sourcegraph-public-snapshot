@@ -11,6 +11,11 @@ import (
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
 	ID api.RepoID
+
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo *api.ExternalRepoSpec
+
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
 	URI api.RepoURI

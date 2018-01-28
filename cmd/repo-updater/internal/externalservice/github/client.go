@@ -278,12 +278,13 @@ func HTTPErrorCode(err error) int {
 	return 0
 }
 
-var errNotFound = errors.New("GitHub repository not found")
+// ErrNotFound is when the requested GitHub repository is not found.
+var ErrNotFound = errors.New("GitHub repository not found")
 
 // IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if err == errNotFound {
+	if err == ErrNotFound {
 		return true
 	}
 	if HTTPErrorCode(err) == http.StatusNotFound {
