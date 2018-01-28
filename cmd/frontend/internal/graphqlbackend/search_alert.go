@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
 )
@@ -165,7 +166,21 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
 	alert := &searchAlert{
 		title:       "Too many matching repositories",
-		description: "Narrow your search with a repo: filter to see results.",
+		description: "Narrow your search to see results.",
+	}
+
+	// TODO(sqs): make this use search scopes from global/org/user settings, not just site config.
+	if settings := conf.Get().Settings; settings != nil {
+		for _, scope := range settings.SearchScopes {
+			// Only propose using this scope if it narrows to fewer repos.
+			if !hasRepoOrRepoGroupFilter(scope.Value) {
+				continue
+			}
+			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
+				query:       searchQuery{query: scope.Value + " " + r.rawQuery()},
+				description: scope.Name,
+			})
+		}
 	}
 
 	// Try to suggest the most helpful repo: filters to narrow the query.
@@ -350,4 +365,12 @@ func addQueryRegexpField(query *searchquery.Query, field, pattern string) []*syn
 		})
 	}
 	return expr
+}
+
+func hasRepoOrRepoGroupFilter(query string) bool {
+	q, err := searchquery.ParseAndCheck(query)
+	if err != nil {
+		return false
+	}
+	return len(q.Values(searchquery.FieldRepo)) > 0 || len(q.Values(searchquery.FieldRepoGroup)) > 0
 }
