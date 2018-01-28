@@ -307,6 +307,23 @@ export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
     )
 }
 
+export function fetchOpenSearchSettings(): Observable<GQL.IOpenSearchSettings> {
+    return queryGraphQL(gql`
+        query OpenSearchSettings {
+            openSearchSettings {
+                searchURL
+            }
+        }
+    `).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.openSearchSettings) {
+                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+            }
+            return data.openSearchSettings
+        })
+    )
+}
+
 /**
  * Fetches the site and its configuration.
  *

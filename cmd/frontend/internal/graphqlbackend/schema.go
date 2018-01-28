@@ -301,6 +301,7 @@ type Query {
         limit: Int
     ): [Dependency!]!
     updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
+    openSearchSettings: OpenSearchSettings!
     # The current site.
     site: Site!
 }
@@ -1079,6 +1080,10 @@ type OrgRepo {
     # for repositories that only exist for users locally (that they use with the editor) but that
     # are not on the server.
     repository: Repository
+}
+
+type OpenSearchSettings {
+    searchURL: String!
 }
 
 # A list of threads.

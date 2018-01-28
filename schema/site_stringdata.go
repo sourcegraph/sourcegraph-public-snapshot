@@ -354,6 +354,9 @@ const SiteSchemaJSON = `{
         }
       }
     },
+    "openSearch": {
+      "$ref": "#/definitions/OpenSearchSettings"
+    },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
       "$ref": "settings.schema.json#"
@@ -524,6 +527,17 @@ const SiteSchemaJSON = `{
             "SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\").",
           "type": "string",
           "pattern": "^-----BEGIN PRIVATE KEY-----\n"
+        }
+      }
+    },
+    "OpenSearchSettings": {
+      "type": "object",
+      "required": ["searchUrl"],
+      "additionalProperties": false,
+      "properties": {
+        "searchUrl": {
+          "description": "Replaced with the keyword or keywords desired by the search client.",
+          "type": "string"
         }
       }
     },
