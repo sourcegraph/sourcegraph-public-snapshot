@@ -212,7 +212,21 @@ export class SearchResults extends React.Component<Props, State> {
             if (this.state.error.message.includes('no query terms or regexp specified')) {
                 alert = { title: '', description: 'Enter terms to search...' }
             } else {
-                alert = { title: 'Something went wrong', description: upperFirst(this.state.error.message) }
+                let description: string
+                if (isHTTPError(this.state.error)) {
+                    // AjaxError or similar
+                    if (this.state.error.status === 0) {
+                        description =
+                            'Unable to contact the server. Check your network connection and try again in a moment.'
+                    } else {
+                        description = `The server encountered an unexpected error (HTTP ${
+                            this.state.error.status
+                        }). Try again in a moment or contact the admin.`
+                    }
+                } else {
+                    description = upperFirst(this.state.error.message)
+                }
+                alert = { title: 'Something went wrong', description }
             }
         } else if (this.state.alert) {
             alert = this.state.alert
@@ -386,4 +400,8 @@ function resultItemsCount(result: GQL.SearchResult): number {
             return 1
     }
     return 1
+}
+
+function isHTTPError(error: Error): error is Error & { status: number } {
+    return typeof (error as any).status === 'number'
 }
