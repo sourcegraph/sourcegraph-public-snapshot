@@ -238,9 +238,10 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
-	fw := newFlushingResponseWriter(w)
-	w = fw
-	defer fw.Close()
+	if fw := newFlushingResponseWriter(w); fw != nil {
+		w = fw
+		defer fw.Close()
+	}
 
 	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
 	defer cancel()

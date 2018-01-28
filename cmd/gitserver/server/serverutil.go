@@ -8,9 +8,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // runWithRemoteOpts runs the command after applying the remote options.
@@ -120,11 +123,21 @@ type flushingResponseWriter struct {
 	doFlush bool
 }
 
+var logUnflushableResponseWriterOnce sync.Once
+
 // newFlushingResponseWriter creates a new flushing response writer. Callers
 // must call Close to free the resources created by the writer.
+//
+// If w does not support flushing, it returns nil.
 func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
-	flusher := w.(http.Flusher)
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		logUnflushableResponseWriterOnce.Do(func() {
+			log15.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", "type", reflect.TypeOf(w).String())
+		})
+		return nil
+	}
 
 	f := &flushingResponseWriter{w: w}
 	go func() {
