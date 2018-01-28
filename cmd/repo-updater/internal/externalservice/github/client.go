@@ -61,7 +61,7 @@ func NewClient(baseURL *url.URL, token string, transport http.RoundTripper) *Cli
 	transport = &metricsTransport{Transport: transport}
 
 	var cacheTTL time.Duration
-	if hostname := strings.ToLower(baseURL.Hostname()); hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" {
+	if isGitHubDotComURL(baseURL) {
 		cacheTTL = 10 * time.Minute
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
@@ -84,6 +84,11 @@ func NewClient(baseURL *url.URL, token string, transport http.RoundTripper) *Cli
 		httpClient: &http.Client{Transport: transport},
 		repoCache:  repoCache,
 	}
+}
+
+func isGitHubDotComURL(baseURL *url.URL) bool {
+	hostname := strings.ToLower(baseURL.Hostname())
+	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
 }
 
 // RateLimit reports the client's GitHub rate limit (as of the last API response it received).
