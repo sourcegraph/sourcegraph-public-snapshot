@@ -70,6 +70,7 @@ func TestClient_GetRepository(t *testing.T) {
 	"node_id": "i",
 	"full_name": "o/r",
 	"description": "d",
+	"html_url": "https://github.example.com/o/r",
 	"fork": true
 }
 `}
@@ -80,6 +81,7 @@ func TestClient_GetRepository(t *testing.T) {
 		ID:            "i",
 		NameWithOwner: "o/r",
 		Description:   "d",
+		URL:           "https://github.example.com/o/r",
 		IsFork:        true,
 	}
 

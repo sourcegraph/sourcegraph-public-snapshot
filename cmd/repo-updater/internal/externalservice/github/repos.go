@@ -25,6 +25,7 @@ type Repository struct {
 	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
 	NameWithOwner string // full name of repository ("owner/name")
 	Description   string // description of repository
+	URL           string // the web URL of this repository ("https://github.com/foo/bar")
 	IsFork        bool   // whether the repository is a fork of another repository
 }
 
@@ -36,6 +37,7 @@ fragment RepositoryFields on Repository {
 	id
 	nameWithOwner
 	description
+	url
 	isFork
 }
 	`
@@ -143,6 +145,7 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 		ID          string `json:"node_id"`   // GraphQL ID
 		FullName    string `json:"full_name"` // same as nameWithOwner
 		Description string
+		HTMLURL     string `json:"html_url"` // web URL
 		Fork        bool
 	}
 	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
@@ -152,6 +155,7 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 		ID:            result.ID,
 		NameWithOwner: result.FullName,
 		Description:   result.Description,
+		URL:           result.HTMLURL,
 		IsFork:        result.Fork,
 	}, nil
 }
