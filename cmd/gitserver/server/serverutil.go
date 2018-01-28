@@ -131,8 +131,8 @@ var logUnflushableResponseWriterOnce sync.Once
 // If w does not support flushing, it returns nil.
 func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
-	flusher, ok := w.(http.Flusher)
-	if !ok {
+	flusher := hackilyGetHTTPFlusher(w)
+	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
 			log15.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", "type", reflect.TypeOf(w).String())
 		})
@@ -155,6 +155,32 @@ func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 		}
 	}()
 	return f
+}
+
+// hackilyGetHTTPFlusher attempts to get an http.Flusher from w. It (hackily) handles the case where w is a
+// nethttp.statusCodeTracker (which wraps http.ResponseWriter and does not implement http.Flusher). See
+// https://github.com/opentracing-contrib/go-stdlib/pull/11#discussion_r164295773 and
+// https://github.com/sourcegraph/sourcegraph/issues/9045.
+//
+// I (@sqs) wrote this hack instead of fixing it upstream immediately because seems to be some reluctance to merge
+// a fix (because it'd make the http.ResponseWriter falsely appear to implement many interfaces that it doesn't
+// actually implement, so it would break the correctness of Go type-assertion impl checks).
+func hackilyGetHTTPFlusher(w http.ResponseWriter) http.Flusher {
+	if f, ok := w.(http.Flusher); ok {
+		return f
+	}
+	if reflect.TypeOf(w).String() == "*nethttp.statusCodeTracker" {
+		v := reflect.ValueOf(w).Elem()
+		if v.Kind() == reflect.Struct {
+			if rwv := v.FieldByName("ResponseWriter"); rwv.IsValid() {
+				f, ok := rwv.Interface().(http.Flusher)
+				if ok {
+					return f
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // Header implements http.ResponseWriter.
