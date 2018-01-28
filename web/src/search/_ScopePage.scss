@@ -61,9 +61,11 @@
     }
 
     &__input-scope {
+        display: flex;
+        align-items: center;
         padding: 0.25rem 0.5rem;
         background: #1c2736;
-        border: 1px solid #2b3750;
+        border: 1px solid $color-border;
         border-right: 0;
         border-radius: 0.25rem 0 0 0.25rem;
         &-text {
@@ -94,8 +96,8 @@
             color: #2b3750;
         }
         &__input-scope {
-            background: #f2f4f8;
-            border: 1px solid #cad2e2;
+            background: $color-light-bg-2;
+            border-color: $color-light-border;
         }
     }
 }

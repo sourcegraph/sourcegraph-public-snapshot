@@ -1,3 +1,4 @@
+import AddIcon from '@sourcegraph/icons/lib/Add'
 import { Checkmark } from '@sourcegraph/icons/lib/Checkmark'
 import { Close } from '@sourcegraph/icons/lib/Close'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
@@ -6,6 +7,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
+import { Subscription } from 'rxjs/Subscription'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -13,6 +15,7 @@ import {
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
+import { fetchRepository } from '../repo/backend'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled, updateMirrorRepository } from './backend'
@@ -139,14 +142,115 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
     }
 }
 
+interface AddPublicRepositoryFormProps {
+    visible: boolean
+    onSuccess: () => void
+}
+interface AddPublicRepositoryFormState {
+    repoName: string
+    error?: string
+    success?: string
+}
+
+/**
+ * A form for adding a public repository (for now just from https://github.com)
+ */
+export class AddPublicRepositoryForm extends React.PureComponent<
+    AddPublicRepositoryFormProps,
+    AddPublicRepositoryFormState
+> {
+    public state = {
+        repoName: '',
+        error: undefined,
+        success: undefined,
+    }
+
+    private inputElement: HTMLInputElement | null = null
+    private subscriptions = new Subscription()
+    private submits = new Subject<{ repoName: string }>()
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.submits.subscribe(({ repoName }) =>
+                fetchRepository({ repoPath: `github.com/${repoName}` }).subscribe(
+                    () => {
+                        this.setState({ repoName: '', success: 'Repository added', error: undefined })
+                        if (this.inputElement) {
+                            this.inputElement.focus()
+                        }
+                        this.props.onSuccess()
+                    },
+                    error => {
+                        console.error(error)
+                        this.setState({ success: undefined, error: error.message })
+                        return []
+                    }
+                )
+            )
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
+    public render(): JSX.Element | null {
+        if (!this.props.visible) {
+            return null
+        }
+        return (
+            <div className="add-public-repository-form">
+                <h3 className="add-public-repository-form__title">Add a public repository</h3>
+                {this.state.error && <div className="add-public-repository-form__error">{this.state.error}</div>}
+                {this.state.success && <div className="add-public-repository-form__success">{this.state.success}</div>}
+                <form className="add-public-repository-form__form" onSubmit={this.onSubmit}>
+                    <div className="add-public-repository-form__input-scope">
+                        <span className="add-public-repository-form__input-scope-text">{'https://github.com'}/</span>
+                    </div>
+                    <div className="add-public-repository-form__input-container">
+                        <input
+                            type="input"
+                            className="add-public-repository-form__input-container-input-text form-control"
+                            value={this.state.repoName}
+                            onChange={this.onPublicRepositoryNameFieldChange}
+                            placeholder="organization/repository"
+                            ref={input => (this.inputElement = input)}
+                        />
+                    </div>
+                    <button
+                        className="add-public-repository-form__add-button btn btn-primary"
+                        type="submit"
+                        disabled={this.state.repoName === ''}
+                    >
+                        Add
+                    </button>
+                </form>
+            </div>
+        )
+    }
+
+    private onPublicRepositoryNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ repoName: e.target.value })
+    }
+
+    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault()
+        event.stopPropagation()
+        this.submits.next({ repoName: this.state.repoName })
+    }
+}
+
 interface Props extends RouteComponentProps<any> {}
+interface State {
+    addPublicRepositoryFormToggled: boolean
+}
 
 class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
 
 /**
  * A page displaying the repositories on this site.
  */
-export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
+export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State> {
     private static FILTERS: FilteredConnectionFilter[] = [
         {
             label: 'All',
@@ -192,6 +296,10 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         },
     ]
 
+    public state: State = {
+        addPublicRepositoryFormToggled: false,
+    }
+
     private repositoryUpdates = new Subject<void>()
 
     public componentDidMount(): void {
@@ -221,6 +329,12 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
                 <div className="site-admin-page__header">
                     <h2 className="site-admin-page__header-title">Repositories</h2>
                     <div className="site-admin-page__actions">
+                        <div
+                            onClick={this.onDidClickAddPublicRepositoryForm}
+                            className="btn btn-primary btn-sm site-admin-page__actions-btn"
+                        >
+                            <AddIcon className="icon-inline" /> Add public GitHub.com repository
+                        </div>
                         <Link
                             to="/site-admin/configuration"
                             className="btn btn-primary btn-sm site-admin-page__actions-btn"
@@ -229,6 +343,10 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
                         </Link>
                     </div>
                 </div>
+                <AddPublicRepositoryForm
+                    visible={this.state.addPublicRepositoryFormToggled}
+                    onSuccess={this.onDidUpdateRepository}
+                />
                 <FilteredRepositoryConnection
                     className="site-admin-page__filtered-connection"
                     noun="repository"
@@ -249,4 +367,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         fetchAllRepositoriesAndPollIfAnyCloning({ ...args })
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
+
+    private onDidClickAddPublicRepositoryForm = () =>
+        this.setState({ addPublicRepositoryFormToggled: !this.state.addPublicRepositoryFormToggled })
 }
