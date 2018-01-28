@@ -377,9 +377,26 @@
           "type": "string"
         },
         "repos": {
-          "description": "Optional list of additional repositories to add (in \"owner/repo\" format).",
+          "description":
+            "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph Server.",
           "type": "array",
-          "items": { "type": "string" }
+          "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" }
+        },
+        "repositoryQuery": {
+          "description":
+            "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph Server. The valid values are:\n\n(1) the special string \"affiliated\", which refers to all repositories that the configured token's user is affiliated with: private repositories with read access, public repositories owned by the user or their orgs, and public repositories with write access)\n\n(2) the special string \"none\", which means no repositories will be mirrored (except those specified in the \"repos\" configuration property or added manually)\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate the set in the \"repos\" configuration property), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["affiliated"]
+          },
+          "default": ["affiliated"]
+        },
+        "repositoryPathPattern": {
+          "description":
+            "The pattern used to generate a the corresponding Sourcegraph repository path for a GitHub or GitHub Enterprise repository. In the pattern, the variable \"{host}\" is replaced with the GitHub host (such as github.example.com), and \"{nameWithOwner}\" is replaced with the GitHub repository's \"owner/path\" (such as \"myorg/myrepo\").\n\nFor example, if your GitHub Enterprise URL is https://github.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"{host}/{nameWithOwner}\" would mean that a GitHub repository at https://github.example.com/myorg/myrepo is available on Sourcegraph at https://src.example.com/github.example.com/myorg/myrepo.",
+          "type": "string",
+          "default": "{host}/{nameWithOwner}"
         },
         "initialRepositoryEnablement": {
           "description":

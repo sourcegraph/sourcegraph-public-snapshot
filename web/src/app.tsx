@@ -110,6 +110,7 @@ class App extends React.Component<{}, AppState> {
         }
 
         if (window.pageError && window.pageError.statusCode !== 404) {
+            const statusCode = window.pageError.statusCode
             const statusText = window.pageError.statusText
             const errorMessage = window.pageError.error
             const errorID = window.pageError.errorID
@@ -135,7 +136,7 @@ class App extends React.Component<{}, AppState> {
             } else {
                 subtitle = <div className="app__error">{subtitle}</div>
             }
-            return <HeroPage icon={ServerIcon} title={'500: ' + statusText} subtitle={subtitle} />
+            return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
         if (this.state.user === undefined) {

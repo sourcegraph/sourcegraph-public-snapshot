@@ -71,7 +71,17 @@ func main() {
 		}
 	} else if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
 		authenticateRequest = func(query url.Values, header http.Header) {
-			header.Set("authorization", "token "+c.Token)
+			// Only add Authorization if not present. This is for the
+			// repo-updater RepoLookup handler, which does not know which token
+			// to use to perform the lookup to GitHub.
+			//
+			// TODO(sqs): when all users of github-proxy set this (soon), remove
+			// this entirely and never set it here. It's technically incorrect
+			// to set it here because we always only ever use the 1st token
+			// configured, which might not be the right one to use.
+			if _, ok := header["Authorization"]; !ok {
+				header.Set("Authorization", "token "+c.Token)
+			}
 		}
 	}
 
@@ -81,6 +91,10 @@ func main() {
 		h2 := make(http.Header)
 		h2.Set("User-Agent", r.Header.Get("User-Agent"))
 		h2.Set("Accept", r.Header.Get("Accept"))
+		h2.Set("Content-Type", r.Header.Get("Content-Type"))
+		if r.Header.Get("Authorization") != "" {
+			h2.Set("Authorization", r.Header.Get("Authorization"))
+		}
 
 		// Authenticate for higher rate limits.
 		if authenticateRequest != nil {
@@ -89,6 +103,7 @@ func main() {
 
 		req2 := &http.Request{
 			Method: r.Method,
+			Body:   r.Body,
 			URL: &url.URL{
 				Scheme:   "https",
 				Host:     "api.github.com",
@@ -112,6 +127,8 @@ func main() {
 			resource := "core"
 			if strings.HasPrefix(r.URL.Path, "/search/") {
 				resource = "search"
+			} else if r.URL.Path == "/graphql" {
+				resource = "graphql"
 			}
 			rateLimitRemainingGauge.WithLabelValues(resource).Set(float64(limit))
 		}

@@ -49,6 +49,6 @@ func (t *metricsTransport) RoundTrip(r *http.Request) (resp *http.Response, err 
 	}
 
 	requestCount.WithLabelValues(category, code).Inc()
-	log15.Debug("TRACE github", "path", r.URL.Path, "code", code, "duration", time.Since(start))
+	log15.Debug("TRACE github", "host", r.URL.Host, "path", r.URL.Path, "code", code, "duration", time.Since(start))
 	return
 }

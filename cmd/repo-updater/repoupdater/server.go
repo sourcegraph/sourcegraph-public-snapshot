@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
@@ -32,7 +32,11 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 
 	result, err := repoLookup(r.Context(), args)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		code := github.HTTPErrorCode(err)
+		if code == 0 {
+			code = http.StatusInternalServerError
+		}
+		http.Error(w, err.Error(), code)
 		return
 	}
 
@@ -42,27 +46,36 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var githubdotcomClient *github.Client
+
+func init() {
+	var githubdotcomToken string
+	if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
+		githubdotcomToken = c.Token
+	}
+	githubdotcomClient = github.NewClient(&url.URL{Scheme: "https", Host: "api.github.com"}, githubdotcomToken, nil)
+}
+
 func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 	var result protocol.RepoLookupResult
 
 	switch {
+	// TODO(sqs): support GitHub (Enterprise) hosts other than github.com
 	case strings.HasPrefix(strings.ToLower(string(args.Repo)), "github.com/"):
-		ghRepo, err := github.GetRepo(ctx, args.Repo)
-		if err == nil {
-			result.Repo = &protocol.RepoInfo{
-				URI:         api.RepoURI("github.com/" + ghRepo.GetFullName()),
-				Description: ghRepo.GetDescription(),
-				Fork:        ghRepo.GetFork(),
-			}
-		} else if err != nil && legacyerr.ErrCode(err) != legacyerr.NotFound {
+		nameWithOwner := string(args.Repo[len("github.com/"):])
+		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+		if err != nil {
 			return nil, err
 		}
-
-	default:
-		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, args.Repo); err == nil {
+		repo, err := githubdotcomClient.GetRepository(ctx, owner, name)
+		if err == nil {
 			result.Repo = &protocol.RepoInfo{
-				URI: args.Repo,
+				URI:         api.RepoURI("github.com/" + repo.NameWithOwner),
+				Description: repo.Description,
+				Fork:        repo.IsFork,
 			}
+		} else if err != nil && !github.IsNotFound(err) {
+			return nil, err
 		}
 	}
 

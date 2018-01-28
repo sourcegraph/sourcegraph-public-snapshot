@@ -47,6 +47,8 @@ type GitHubConnection struct {
 	InitialRepositoryEnablement bool     `json:"initialRepositoryEnablement,omitempty"`
 	PreemptivelyClone           bool     `json:"preemptivelyClone,omitempty"`
 	Repos                       []string `json:"repos,omitempty"`
+	RepositoryPathPattern       string   `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string `json:"repositoryQuery,omitempty"`
 	Token                       string   `json:"token"`
 	Url                         string   `json:"url,omitempty"`
 }
