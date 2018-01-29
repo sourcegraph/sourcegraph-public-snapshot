@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	"github.com/neelance/parallel"
@@ -186,7 +187,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			} else {
 				if err == context.DeadlineExceeded || err == context.Canceled {
 					log15.Warn("search suggestions exceeded deadline (skipping)", "query", r.rawQuery())
-				} else if !isBadRequest(err) {
+				} else if !errcode.IsBadRequest(err) {
 					// We exclude bad user input. Note that this means that we
 					// may have some tokens in the input that are valid, but
 					// typing something "bad" results in no suggestions from the

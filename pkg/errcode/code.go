@@ -59,6 +59,8 @@ func HTTP(err error) int {
 		return http.StatusForbidden
 	} else if IsNotFound(err) {
 		return http.StatusNotFound
+	} else if IsBadRequest(err) {
+		return http.StatusBadRequest
 	}
 
 	return http.StatusInternalServerError
@@ -110,6 +112,42 @@ func IsNotFound(err error) bool {
 	return isErrorPredicate(err, func(err error) bool {
 		e, ok := err.(notFounder)
 		return ok && e.NotFound()
+	})
+}
+
+// IsBadRequest will check if err or one of its causes is a bad request.
+func IsBadRequest(err error) bool {
+	type badRequester interface {
+		BadRequest() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		badrequest, ok := err.(badRequester)
+		return ok && badrequest.BadRequest()
+	})
+}
+
+// IsTemporary will check if err or one of its causes is temporary. A
+// temporary error can be retried. Many errors in the go stdlib implement the
+// temporary interface.
+func IsTemporary(err error) bool {
+	type temporaryer interface {
+		Temporary() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(temporaryer)
+		return ok && e.Temporary()
+	})
+}
+
+// IsTimeout will check if err or one of its causes is a timeout. Many errors
+// in the go stdlib implement the timeout interface.
+func IsTimeout(err error) bool {
+	type timeouter interface {
+		Timeout() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(timeouter)
+		return ok && e.Timeout()
 	})
 }
 

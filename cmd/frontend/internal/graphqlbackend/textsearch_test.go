@@ -2,12 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
 
+	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -34,6 +35,12 @@ func TestSearchRepos(t *testing.T) {
 			return nil, false, vcs.RepoNotExistError{CloneInProgress: true}
 		case "foo/missing":
 			return nil, false, vcs.RepoNotExistError{}
+		case "foo/missing-db":
+			return nil, false, &errcode.Mock{Message: "repo not found: foo/missing-db", IsNotFound: true}
+		case "foo/timedout":
+			return nil, false, context.DeadlineExceeded
+		case "foo/no-rev":
+			return nil, false, vcs.ErrRevisionNotFound
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -45,7 +52,7 @@ func TestSearchRepos(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing"),
+		repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
 	}
 	query, err := searchquery.ParseAndCheck("foo")
 	if err != nil {
@@ -61,15 +68,33 @@ func TestSearchRepos(t *testing.T) {
 	if !reflect.DeepEqual(common.cloning, []api.RepoURI{"foo/cloning"}) {
 		t.Errorf("unexpected missing: %v", common.cloning)
 	}
-	if !reflect.DeepEqual(common.missing, []api.RepoURI{"foo/missing"}) {
+	if !reflect.DeepEqual(common.missing, []api.RepoURI{"foo/missing-db", "foo/missing"}) {
 		t.Errorf("unexpected missing: %v", common.missing)
+	}
+	if !reflect.DeepEqual(common.timedout, []api.RepoURI{"foo/timedout"}) {
+		t.Errorf("unexpected timedout: %v", common.timedout)
+	}
+
+	// If we specify a rev and it isn't found, we fail the whole search since
+	// that should be checked earlier.
+	args = &repoSearchArgs{
+		query: &patternInfo{
+			FileMatchLimit: defaultMaxSearchResults,
+			Pattern:        "foo",
+		},
+		repos: makeRepositoryRevisions("foo/no-rev@dev"),
+	}
+	results, common, err = searchRepos(context.Background(), args, *query)
+	if errors.Cause(err) != vcs.ErrRevisionNotFound {
+		t.Fatalf("searching non-existent rev expected to fail with %v got: %v", vcs.ErrRevisionNotFound, err)
 	}
 }
 
-func makeRepositoryRevisions(repos ...api.RepoURI) []*repositoryRevisions {
+func makeRepositoryRevisions(repos ...string) []*repositoryRevisions {
 	r := make([]*repositoryRevisions, len(repos))
-	for i, uri := range repos {
-		r[i] = &repositoryRevisions{repo: &types.Repo{URI: uri}}
+	for i, urispec := range repos {
+		uri, revs := parseRepositoryRevisions(urispec)
+		r[i] = &repositoryRevisions{repo: &types.Repo{URI: uri}, revs: revs}
 	}
 	return r
 }
