@@ -206,7 +206,8 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return *s
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, gitLogSearchTimeout)
+	deadline := time.Now().Add(gitLogSearchTimeout)
+	ctx, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
 
 	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
@@ -221,6 +222,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		Diff:              op.diff,
 		OnlyMatchingHunks: true,
 		Args:              args,
+		Deadline:          deadline,
 	})
 	if err != nil {
 		return nil, false, err

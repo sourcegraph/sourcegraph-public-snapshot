@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -106,9 +107,21 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	appendCommonQueryArgs(&onelineArgs)
 	appendCommonDashDashArgs(&onelineArgs)
 
+	// Time out the first `git log` operation prior to the parent context timeout, so we still have time to `git
+	// show` the results it returns. These proportions are untuned guesses.
+	//
+	// TODO(sqs): this can be made much more efficient in many ways
+	withTimeout := func(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
+		if opt.Deadline.IsZero() {
+			return ctx, func() {}
+		}
+		return context.WithTimeout(ctx, timeout)
+	}
 	// Run `git log` oneline command and read list of matching commits.
 	onelineCmd := r.command("git", onelineArgs...)
-	data, complete, err := readUntilTimeout(ctx, onelineCmd)
+	ctxLog, cancel := withTimeout(ctx, opt.Deadline.Sub(time.Now())/2)
+	data, complete, err := readUntilTimeout(ctxLog, onelineCmd)
+	cancel()
 	if err != nil {
 		// Don't fail if the repository is empty.
 		if strings.Contains(err.Error(), "does not have any commits yet") {
@@ -177,7 +190,9 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 	showCmd := r.command("git", showArgs...)
 	var complete2 bool
-	data, complete2, err = readUntilTimeout(ctx, showCmd)
+	ctxShow, cancel := withTimeout(ctx, opt.Deadline.Sub(time.Now()))
+	data, complete2, err = readUntilTimeout(ctxShow, showCmd)
+	cancel()
 	if err != nil {
 		return nil, complete, err
 	}
