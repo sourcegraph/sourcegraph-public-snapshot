@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -82,11 +83,12 @@ func TestCleanupExpired(t *testing.T) {
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	restoreOriginMap := originMap[:]
-	defer func() {
-		originMap = restoreOriginMap
-	}()
-	originMap = append(originMap, prefixAndOrgin{Prefix: testRepoB, Origin: remote})
+
+	origRepoRemoteURL := repoRemoteURL
+	repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
+		return remote, nil
+	}
+	defer func() { repoRemoteURL = origRepoRemoteURL }()
 
 	atime, err := os.Stat(repoA)
 	if err != nil {

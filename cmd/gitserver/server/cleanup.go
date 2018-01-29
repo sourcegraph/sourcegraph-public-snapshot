@@ -102,14 +102,26 @@ func (s *Server) CleanupRepos() {
 				return
 			}
 			defer os.RemoveAll(tmp)
+
+			ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+			defer cancel()
+
+			remoteURL := OriginMap(uri)
+			if remoteURL == "" {
+				var err error
+				remoteURL, err = repoRemoteURL(ctx, repoRoot)
+				if err != nil {
+					log15.Error("error getting remote URL", "error", err, "repo", repoRoot)
+					return
+				}
+			}
+
 			// Reclone the repo first to a tmp directory and hot-swap it into the old
 			// repo's place when finished to minimize service disruption.
 			//
 			// TODO: this will not work for private repos which require authenticated
 			// access.
-			ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
-			defer cancel()
-			cmd := cloneCmd(ctx, OriginMap(uri), tmpCloneRoot)
+			cmd := cloneCmd(ctx, remoteURL, tmpCloneRoot)
 			s.cloneLimiter.Acquire()
 			defer s.cloneLimiter.Release()
 			if output, err := cmd.CombinedOutput(); err != nil {

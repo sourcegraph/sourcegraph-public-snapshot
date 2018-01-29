@@ -23,6 +23,14 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		Cloned: repoCloned(dir),
 		URL:    OriginMap(repo),
 	}
+	if resp.Cloned && resp.URL == "" {
+		remoteURL, err := repoRemoteURL(r.Context(), dir)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		resp.URL = remoteURL
+	}
 	{
 		s.cloningMu.Lock()
 		_, resp.CloneInProgress = s.cloning[dir]

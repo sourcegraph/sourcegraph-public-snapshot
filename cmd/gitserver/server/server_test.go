@@ -14,8 +14,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type Test struct {
@@ -41,14 +39,38 @@ func TestRequest(t *testing.T) {
 			},
 		},
 		{
+			Name:         "CommandWithURL",
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-mux", "url": "https://github.com/gorilla/mux.git", "args": ["testcommand"]}`)),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "teststdout",
+			ExpectedHeaders: http.Header{
+				"Trailer":            {"X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr"},
+				"X-Exec-Error":       {""},
+				"X-Exec-Exit-Status": {"42"},
+				"X-Exec-Stderr":      {"teststderr"},
+			},
+		},
+		{
 			Name:         "NonexistingRepo",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
+			Name:         "NonexistingRepoWithURL",
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"cloneInProgress":false}`,
+		},
+		{
 			Name:         "UnclonedRepo",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"cloneInProgress":true}`,
+		},
+		{
+			Name:         "UnclonedRepoWithURL",
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":true}`,
 		},
@@ -81,11 +103,11 @@ func TestRequest(t *testing.T) {
 	h := s.Handler()
 
 	repoCloned = func(dir string) bool {
-		return dir == "/testroot/github.com/gorilla/mux"
+		return dir == "/testroot/github.com/gorilla/mux" || dir == "/testroot/my-mux"
 	}
 
-	testRepoExists = func(ctx context.Context, origin string, repo api.RepoURI) error {
-		if origin == "https://github.com/nicksnyder/go-i18n.git" {
+	testRepoExists = func(ctx context.Context, url string) error {
+		if url == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}
 		return errors.New("not cloneable")

@@ -101,6 +101,7 @@ type locks struct {
 
 type updateRepoRequest struct {
 	repo api.RepoURI
+	url  string // remote URL
 }
 
 // shortGitCommandTimeout returns the timeout for git commands that should not
@@ -173,9 +174,28 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	req.Repo = protocol.NormalizeRepo(req.Repo)
+
+	if req.URL == "" {
+		req.URL = OriginMap(req.Repo)
+	}
+	if req.URL == "" {
+		// BACKCOMPAT: Determine URL from the existing repo on disk if the client didn't send it.
+		dir := path.Join(s.ReposDir, string(req.Repo))
+		var err error
+		req.URL, err = repoRemoteURL(r.Context(), dir)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if req.URL == "" {
+			http.Error(w, "no URL in IsRepoCloneableRequest and no Git remote URL in .git/config", http.StatusInternalServerError)
+			return
+		}
+	}
 
 	var resp protocol.IsRepoCloneableResponse
-	if err := s.isCloneable(r.Context(), req.Repo); err == nil {
+	if err := s.isCloneable(r.Context(), req.URL); err == nil {
 		resp = protocol.IsRepoCloneableResponse{Cloneable: true}
 	} else {
 		resp = protocol.IsRepoCloneableResponse{
@@ -216,13 +236,13 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
 			defer cancel()
-			err := s.cloneRepo(ctx, req.Repo, dir)
+			err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
 			if err != nil {
 				log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			}
 		}()
 	} else {
-		s.updateRepo <- updateRepoRequest{req.Repo}
+		s.updateRepo <- updateRepoRequest{repo: req.Repo, url: req.URL}
 	}
 }
 
@@ -309,7 +329,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !repoCloned(dir) {
-		err := s.cloneRepo(ctx, req.Repo, dir)
+		err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
 		if err != nil {
 			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
 			status = "repo-not-found"
@@ -323,7 +343,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir)
+	s.ensureRevision(ctx, req.Repo, req.URL, req.EnsureRevision, dir)
 
 	w.Header().Set("Trailer", "X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr")
 	w.WriteHeader(http.StatusOK)
@@ -373,13 +393,16 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 
 // cloneRepo issues a non-blocking git clone command for the given repo to the given directory.
 // The repository will be cloned to ${dir}/.git.
-func (s *Server) cloneRepo(ctx context.Context, repoPath api.RepoURI, dir string) error {
-	origin := OriginMap(repoPath)
-	if origin == "" {
-		return fmt.Errorf("error cloning repo: no origin map entry found for %s", repoPath)
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir string) error {
+	if url == "" {
+		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
+		url = OriginMap(repo)
+		if url == "" {
+			return fmt.Errorf("error cloning repo: no URL provided and origin map entry found for %s", repo)
+		}
 	}
-	if err := s.isCloneable(ctx, repoPath); err != nil {
-		return fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repoPath, err)
+	if err := s.isCloneable(ctx, url); err != nil {
+		return fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
 	}
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
@@ -410,13 +433,13 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath api.RepoURI, dir string
 			s.releaseCloneLock(dir)
 		}()
 
-		log15.Debug("cloning repo", "repo", repoPath, "origin", origin)
-		cmd := cloneCmd(ctx, origin, filepath.Join(dir, ".git"))
+		log15.Debug("cloning repo", "repo", repo, "url", url, "dir", dir)
+		cmd := cloneCmd(ctx, url, filepath.Join(dir, ".git"))
 		if output, err := s.runWithRemoteOpts(ctx, cmd); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))
 			return
 		}
-		log15.Debug("repo cloned", "repo", repoPath)
+		log15.Debug("repo cloned", "repo", repo)
 	}()
 
 	return nil
@@ -424,27 +447,21 @@ func (s *Server) cloneRepo(ctx context.Context, repoPath api.RepoURI, dir string
 
 // testRepoExists is a test fixture that overrides the return value
 // for isCloneable when it is set.
-var testRepoExists func(ctx context.Context, origin string, repoURI api.RepoURI) error
+var testRepoExists func(ctx context.Context, url string) error
 
-// isCloneable checks to see if the repo is cloneable.
-func (s *Server) isCloneable(ctx context.Context, repo api.RepoURI) error {
+// isCloneable checks to see if the Git remote URL is cloneable.
+func (s *Server) isCloneable(ctx context.Context, url string) error {
 	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(nil))
 	defer cancel()
 
-	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoURI(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return nil
 	}
-
-	repo = protocol.NormalizeRepo(repo)
-	origin := OriginMap(repo)
-	if origin == "" {
-		return fmt.Errorf("repo %q not in origin map", repo)
-	}
-
 	if testRepoExists != nil {
-		return testRepoExists(ctx, origin, repo)
+		return testRepoExists(ctx, url)
 	}
-	cmd := exec.CommandContext(ctx, "git", "ls-remote", origin, "HEAD")
+
+	cmd := exec.CommandContext(ctx, "git", "ls-remote", url, "HEAD")
 	out, err := s.runWithRemoteOpts(ctx, cmd)
 	if err != nil {
 		if len(out) > 0 {
@@ -489,7 +506,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
 				ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
 				defer cancel()
-				s.doRepoUpdate(ctx, req.repo)
+				s.doRepoUpdate(ctx, req.repo, req.url)
 			}(req)
 		}
 	}()
@@ -499,9 +516,10 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 
 var headBranchPattern = regexp.MustCompile("HEAD branch: (.+?)\\n")
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI) {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
+	span.SetTag("url", url)
 	defer span.Finish()
 
 	s.repoUpdateLocksMu.Lock()
@@ -525,13 +543,28 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI) {
 		l.once = new(sync.Once) // Make new requests wait for next update.
 		s.repoUpdateLocksMu.Unlock()
 
-		s.doRepoUpdate2(ctx, repo)
+		s.doRepoUpdate2(ctx, repo, url)
 	})
 }
 
-func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI) {
-	cmd := exec.CommandContext(ctx, "git", "remote", "update", "--prune")
-	cmd.Dir = path.Join(s.ReposDir, string(repo))
+func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string) {
+	dir := path.Join(s.ReposDir, string(repo))
+
+	if url == "" {
+		log15.Warn("Deprecated: use of saved Git remote for repo updating (API client should set URL)", "repo", repo)
+		var err error
+		url, err = repoRemoteURL(ctx, dir)
+		if err != nil || url == "" {
+			log15.Error("Failed to determine Git remote URL", "repo", repo, "error", err, "url", url)
+			return
+		}
+	}
+
+	// TODO(sqs): once gitserver no longer depends on the Git remote URL being saved in the repository's
+	// .git/config file, run `git remote rm origin` on all existing repositories.
+
+	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/*:refs/*")
+	cmd.Dir = dir
 	if output, err := s.runWithRemoteOpts(ctx, cmd); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return
@@ -540,11 +573,11 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI) {
 	headBranch := "master"
 
 	// try to fetch HEAD from origin
-	cmd = exec.CommandContext(ctx, "git", "remote", "show", "origin")
+	cmd = exec.CommandContext(ctx, "git", "remote", "show", url)
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	output, err := s.runWithRemoteOpts(ctx, cmd)
 	if err != nil {
-		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
+		log15.Error("Failed to fetch remote info", "repo", repo, "url", url, "error", err, "output", string(output))
 		return
 	}
 	submatches := headBranchPattern.FindSubmatch(output)
@@ -583,7 +616,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI) {
 	}
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, rev string, repoDir string) {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) {
 	if rev == "" {
 		return
 	}
@@ -601,7 +634,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, rev strin
 		return
 	}
 	// Revision not found, update before returning.
-	s.doRepoUpdate(ctx, repo)
+	s.doRepoUpdate(ctx, repo, url)
 }
 
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.

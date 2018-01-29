@@ -10,6 +10,7 @@ import (
 // ExecRequest is a request to execute a command inside a git repository.
 type ExecRequest struct {
 	Repo           api.RepoURI     `json:"repo"`
+	URL            string          `json:"url"` // Git remote URL
 	EnsureRevision string          `json:"ensureRevision"`
 	Args           []string        `json:"args"`
 	Opt            *vcs.RemoteOpts `json:"opt"`
@@ -18,6 +19,9 @@ type ExecRequest struct {
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
 	Repo api.RepoURI `json:"repo"`
+
+	// URL is the repository's Git remote URL (from which to clone or update).
+	URL string `json:"url"`
 }
 
 type NotFoundPayload struct {
@@ -27,7 +31,10 @@ type NotFoundPayload struct {
 // IsRepoCloneableRequest is a request to determine if a repo is cloneable.
 type IsRepoCloneableRequest struct {
 	// Repo is the repository to check.
-	Repo api.RepoURI
+	Repo api.RepoURI `json:"Repo"`
+
+	// URL is the repository's Git remote URL.
+	URL string `json:"url"`
 }
 
 // IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
@@ -50,7 +57,7 @@ type RepoInfoRequest struct {
 
 // RepoInfoResponse is the response to a repository information request (RepoInfoRequest).
 type RepoInfoResponse struct {
-	URL             string     // this repository's clone URL
+	URL             string     // this repository's Git remote URL
 	CloneInProgress bool       // whether the repository is currently being cloned
 	Cloned          bool       // whether the repository has been cloned successfully
 	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred

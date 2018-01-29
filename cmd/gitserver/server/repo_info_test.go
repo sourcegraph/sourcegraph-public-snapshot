@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -36,9 +37,9 @@ func TestServer_handleRepoInfo(t *testing.T) {
 	}
 
 	t.Run("not cloned", func(t *testing.T) {
-		orig := repoCloned
+		origRepoCloned := repoCloned
 		repoCloned = func(dir string) bool { return false }
-		defer func() { repoCloned = orig }()
+		defer func() { repoCloned = origRepoCloned }()
 
 		if got, want := getRepoInfo(t, "x"), (protocol.RepoInfoResponse{}); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v, want %+v", got, want)
@@ -46,9 +47,9 @@ func TestServer_handleRepoInfo(t *testing.T) {
 	})
 
 	t.Run("cloning", func(t *testing.T) {
-		orig := repoCloned
+		origRepoCloned := repoCloned
 		repoCloned = func(dir string) bool { return false }
-		defer func() { repoCloned = orig }()
+		defer func() { repoCloned = origRepoCloned }()
 
 		if got, want := getRepoInfo(t, "a"), (protocol.RepoInfoResponse{CloneInProgress: true}); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v, want %+v", got, want)
@@ -65,7 +66,11 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		repoLastFetched = func(dir string) (time.Time, error) { return lastFetched, nil }
 		defer func() { repoLastFetched = origRepoLastFetched }()
 
-		if got, want := getRepoInfo(t, "x"), (protocol.RepoInfoResponse{Cloned: true, LastFetched: &lastFetched}); !reflect.DeepEqual(got, want) {
+		origRepoRemoteURL := repoRemoteURL
+		repoRemoteURL = func(context.Context, string) (string, error) { return "u", nil }
+		defer func() { repoRemoteURL = origRepoRemoteURL }()
+
+		if got, want := getRepoInfo(t, "x"), (protocol.RepoInfoResponse{Cloned: true, LastFetched: &lastFetched, URL: "u"}); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v, want %+v", got, want)
 		}
 	})

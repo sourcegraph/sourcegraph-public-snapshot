@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -67,6 +68,29 @@ var repoLastFetched = func(dir string) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return fi.ModTime(), nil
+}
+
+// repoRemoteURL returns the "origin" remote fetch URL for the Git repository in dir. If the repository
+// doesn't exist or the remote doesn't exist and have a fetch URL, an error is returned. If there are
+// multiple fetch URLs, only the first is returned.
+var repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "remote", "get-url", "origin")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err, _ := runCommand(ctx, cmd)
+	if err != nil {
+		stderr := stderr.Bytes()
+		if len(stderr) > 200 {
+			stderr = stderr[:200]
+		}
+		return "", fmt.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
+	}
+	remoteURLs := strings.SplitN(strings.TrimSpace(stdout.String()), "\n", 2)
+	if len(remoteURLs) == 0 {
+		return "", fmt.Errorf("no remote URL for repo %s", dir)
+	}
+	return remoteURLs[0], nil
 }
 
 // environ is a slice of strings representing the environment, in the form "key=value".
