@@ -29,7 +29,7 @@ var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api
 	// later process to fail (since ArchiveFS fetches lazily). So we check
 	// existance first.
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", string(commitID)+"^0")
-	cmd.Repo = repo
+	cmd.Repo = gitserver.Repo{Name: repo}
 	cmd.EnsureRevision = string(commitID)
 	err := cmd.Run(ctx)
 	if err != nil {

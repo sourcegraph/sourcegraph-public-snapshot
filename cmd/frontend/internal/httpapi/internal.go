@@ -466,7 +466,7 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Repo = repo.URI
+	cmd.Repo = gitserver.Repo{Name: repo.URI}
 	refs, err := cmd.Output(r.Context())
 	if err != nil {
 		return err

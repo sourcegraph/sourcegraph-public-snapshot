@@ -80,7 +80,7 @@ func checkSpecArgSafety(spec string) error {
 // name must be 'git', otherwise it panics.
 func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 	cmd := gitserver.DefaultClient.Command(name, arg...)
-	cmd.Repo = r.repoURI
+	cmd.Repo = gitserver.Repo{Name: r.repoURI}
 	return cmd
 }
 
