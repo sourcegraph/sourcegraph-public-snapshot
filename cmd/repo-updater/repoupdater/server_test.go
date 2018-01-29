@@ -131,7 +131,7 @@ func TestRepoLookup(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if want := (&protocol.RepoLookupResult{}); !reflect.DeepEqual(result, want) {
+			if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
 				t.Errorf("got result %+v, want nil", result)
 			}
 		})
@@ -147,7 +147,7 @@ func TestRepoLookup(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if want := (&protocol.RepoLookupResult{}); !reflect.DeepEqual(result, want) {
+			if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
 				t.Errorf("got result %+v, want nil", result)
 			}
 		})

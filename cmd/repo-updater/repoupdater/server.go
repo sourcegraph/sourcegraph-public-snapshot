@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -30,11 +31,8 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 
 	result, err := repoLookup(r.Context(), args)
 	if err != nil {
-		code := github.HTTPErrorCode(err)
-		if code == 0 {
-			code = http.StatusInternalServerError
-		}
-		http.Error(w, err.Error(), code)
+		log15.Error("repoLookup failed", "args", args, "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -60,7 +58,14 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 	// Try all GetXyzRepository funcs until one returns authoritatively.
 	repo, authoritative, err := repos.GetGitHubRepository(ctx, args)
 	if authoritative {
-		if err != nil && !github.IsNotFound(err) {
+		if github.IsNotFound(err) {
+			result.ErrorNotFound = true
+			err = nil
+		} else if code := github.HTTPErrorCode(err); code == http.StatusUnauthorized || code == http.StatusForbidden {
+			result.ErrorUnauthorized = true
+			err = nil
+		}
+		if err != nil {
 			return nil, err
 		}
 		result.Repo = repo
@@ -68,5 +73,6 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 	}
 
 	// No configured code hosts are authoritative for this repository.
+	result.ErrorNotFound = true
 	return &result, nil
 }

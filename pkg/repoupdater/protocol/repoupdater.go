@@ -18,8 +18,11 @@ type RepoLookupArgs struct {
 
 // RepoLookupResult is the response to a repository information request (RepoLookupArgs).
 type RepoLookupResult struct {
-	// Repo contains information about the repository, if it is found. If it's not found, it is nil.
+	// Repo contains information about the repository, if it is found. If an error occurred, it is nil.
 	Repo *RepoInfo
+
+	// Known types of errors.
+	ErrorNotFound, ErrorUnauthorized bool
 }
 
 // RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).

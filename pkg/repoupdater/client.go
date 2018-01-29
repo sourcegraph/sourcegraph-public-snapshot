@@ -76,19 +76,21 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	stack := fmt.Sprintf("RepoLookup: %+v", args)
 	if resp.StatusCode != http.StatusOK {
-		var err error
-		if resp.StatusCode == http.StatusNotFound {
-			err = ErrNotFound
-		} else if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-			err = ErrUnauthorized
-		} else {
-			err = fmt.Errorf("http status %d", resp.StatusCode)
-		}
-		return nil, errors.Wrap(err, fmt.Sprintf("RepoLookup: %+v", args))
+		return nil, errors.Wrap(fmt.Errorf("http status %d", resp.StatusCode), stack)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil {
+		switch {
+		case result.ErrorNotFound:
+			err = ErrNotFound
+		case result.ErrorUnauthorized:
+			err = ErrUnauthorized
+		}
+	}
 	return result, err
 }
 
