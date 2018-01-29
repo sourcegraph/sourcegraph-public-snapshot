@@ -22,8 +22,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -193,7 +193,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
-		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
+		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -246,7 +246,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 	repoURI := api.RepoURI(strings.TrimPrefix(cloneURL, "https://"))
 	repo, err := db.Repos.GetByURI(ctx, repoURI)
 	if err != nil {
-		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
+		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err

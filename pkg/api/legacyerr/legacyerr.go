@@ -12,6 +12,10 @@ func (e Error) Error() string {
 	return fmt.Sprintf("error: code = %d desc = %s", e.Code, e.Desc)
 }
 
+func (e Error) NotFound() bool {
+	return e.Code == NotFound
+}
+
 // Errorf returns an error containing an error code and a description;
 // Errorf returns nil if c is OK.
 // LEGACY! Use proper Go errors instead.
@@ -48,12 +52,5 @@ type Code int
 
 const (
 	Unknown Code = iota
-	InvalidArgument
 	NotFound
-	AlreadyExists
-	PermissionDenied
-	Unauthenticated
-	FailedPrecondition
-	Unimplemented
-	Internal
 )

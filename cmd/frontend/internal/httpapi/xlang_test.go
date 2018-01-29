@@ -20,15 +20,11 @@ func TestXLang(t *testing.T) {
 	c := newTest()
 
 	calledValid := false
-	calledUnauthed := false
 	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 		switch uri {
 		case "my/repo":
 			calledValid = true
 			return &types.Repo{ID: 1, URI: uri}, nil
-		case "your/repo":
-			calledUnauthed = true
-			return nil, legacyerr.Errorf(legacyerr.Unauthenticated, "nope")
 		default:
 			t.Errorf("got unexpected repo %q", uri)
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "404")
@@ -67,18 +63,6 @@ func TestXLang(t *testing.T) {
 		return nil
 	}
 
-	// First try on a private repo we can't access
-	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootUri":"git://your/repo?myrev"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"method":"exit"}]`, nil); err == nil {
-		t.Error(err)
-	}
-	if calledValid {
-		t.Error("calledValid")
-	}
-	if !calledUnauthed {
-		t.Error("!calledUnauthed")
-	}
-	calledUnauthed = false
-
 	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootUri":"git://my/repo?myrev"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"method":"exit"}]`, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -88,9 +72,6 @@ func TestXLang(t *testing.T) {
 
 	if !calledValid {
 		t.Error("!calledValid")
-	}
-	if calledUnauthed {
-		t.Error("calledUnauthed")
 	}
 }
 

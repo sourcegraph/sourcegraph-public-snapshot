@@ -29,9 +29,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -394,7 +394,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		} else {
 			common.missing = append(common.missing, repoRev.repo.URI)
 		}
-	} else if e, ok := searchErr.(legacyerr.Error); ok && e.Code == legacyerr.NotFound {
+	} else if errcode.IsNotFound(searchErr) {
 		common.missing = append(common.missing, repoRev.repo.URI)
 	} else if searchErr == vcs.ErrRevisionNotFound && len(repoRev.revs) == 0 {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.

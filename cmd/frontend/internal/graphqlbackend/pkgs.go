@@ -5,7 +5,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 type packageResolver struct {
@@ -56,7 +56,7 @@ func (r *packageResolver) pkgStringField(name string) *string {
 func (r *packageResolver) Repo(ctx context.Context) (*repositoryResolver, error) {
 	repo, err := db.Repos.Get(ctx, r.pkg.RepoID)
 	if err != nil {
-		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
+		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err

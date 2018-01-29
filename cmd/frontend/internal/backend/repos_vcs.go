@@ -3,10 +3,11 @@ package backend
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -59,7 +60,7 @@ func (s *repos) GetCommit(ctx context.Context, repo api.RepoID, commitID api.Com
 	log15.Debug("svc.local.repos.GetCommit", "repo", repo, "commitID", commitID)
 
 	if !isAbsCommitID(commitID) {
-		return nil, errNotAbsCommitID
+		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
 	vcsrepo, err := Repos.OpenVCS(ctx, repo)
@@ -71,13 +72,3 @@ func (s *repos) GetCommit(ctx context.Context, repo api.RepoID, commitID api.Com
 }
 
 func isAbsCommitID(commitID api.CommitID) bool { return len(commitID) == 40 }
-
-func makeErrNotAbsCommitID(prefix string) error {
-	str := "absolute commit ID required (40 hex chars)"
-	if prefix != "" {
-		str = prefix + ": " + str
-	}
-	return legacyerr.Errorf(legacyerr.InvalidArgument, str)
-}
-
-var errNotAbsCommitID = makeErrNotAbsCommitID("")

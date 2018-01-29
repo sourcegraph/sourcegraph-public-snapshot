@@ -12,6 +12,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -127,7 +128,7 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoID, commitID api.
 	defer cancel()
 
 	if !isAbsCommitID(commitID) {
-		return nil, errNotAbsCommitID
+		return nil, errors.Errorf("non-absolute CommitID for Repos.GetInventory: %v", commitID)
 	}
 
 	// Try cache first

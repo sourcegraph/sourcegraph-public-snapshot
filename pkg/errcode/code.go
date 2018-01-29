@@ -1,3 +1,5 @@
+// Package errcode maps Go errors to HTTP status codes as well as other useful
+// functions for inspecting errors.
 package errcode
 
 import (
@@ -9,7 +11,6 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/gorilla/schema"
@@ -50,24 +51,17 @@ func HTTP(err error) int {
 		return http.StatusBadRequest
 	case schema.MultiError:
 		return http.StatusBadRequest
-	case legacyerr.Error:
-		return codeToHTTP(e.Code)
 	}
 
 	if os.IsNotExist(err) {
 		return http.StatusNotFound
 	} else if os.IsPermission(err) {
 		return http.StatusForbidden
+	} else if IsNotFound(err) {
+		return http.StatusNotFound
 	}
 
 	return http.StatusInternalServerError
-}
-
-// Code returns the most appropriate error code that describes
-// err.
-func Code(err error) legacyerr.Code {
-	// Piggyback on the HTTP func to reduce code duplication.
-	return HTTPToCode(HTTP(err))
 }
 
 type HTTPErr struct {
@@ -86,4 +80,35 @@ func (err *HTTPErr) HTTPStatusCode() int { return err.Status }
 
 func IsHTTPErrorCode(err error, statusCode int) bool {
 	return HTTP(err) == statusCode
+}
+
+// IsNotFound will check if err or one of its causes is a not found error.
+func IsNotFound(err error) bool {
+	type notFounder interface {
+		NotFound() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(notFounder)
+		return ok && e.NotFound()
+	})
+}
+
+// isErrorPredicate returns true if err or one of its causes returns true when
+// passed to p.
+func isErrorPredicate(err error, p func(err error) bool) bool {
+	type causer interface {
+		Cause() error
+	}
+
+	for err != nil {
+		if p(err) {
+			return true
+		}
+		cause, ok := err.(causer)
+		if !ok {
+			break
+		}
+		err = cause.Cause()
+	}
+	return false
 }
