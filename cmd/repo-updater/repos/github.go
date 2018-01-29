@@ -44,20 +44,20 @@ func NormalizeGitHubBaseURL(baseURL *url.URL) *url.URL {
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) error {
-	var clients []*githubClient
+	var conns []*githubConnection
 	for _, c := range conf.Get().Github {
-		client, err := newGitHubClient(c)
+		conn, err := newGitHubConnection(c)
 		if err != nil {
 			return fmt.Errorf("error processing GitHub config %s: %s", c.Url, err)
 		}
-		clients = append(clients, client)
+		conns = append(conns, conn)
 	}
 
-	if len(clients) == 0 {
+	if len(conns) == 0 {
 		return nil
 	}
-	for _, c := range clients {
-		go func(c *githubClient) {
+	for _, c := range conns {
+		go func(c *githubConnection) {
 			for {
 				if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit(); ok && rateLimitRemaining < 200 {
 					wait := rateLimitReset + 10*time.Second
@@ -73,15 +73,15 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 }
 
 // updateGitHubRepositories ensures that all provided repositories have been added and updated on Sourcegraph.
-func updateGitHubRepositories(ctx context.Context, client *githubClient) {
-	repos := client.listAllRepositories(ctx)
+func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
+	repos := conn.listAllRepositories(ctx)
 
 	githubRepositoryToRepoPath := func(repositoryPathPattern string, repo *github.Repository) api.RepoURI {
 		if repositoryPathPattern == "" {
 			repositoryPathPattern = "{host}/{nameWithOwner}"
 		}
 		return api.RepoURI(strings.NewReplacer(
-			"{host}", client.originalHostname,
+			"{host}", conn.originalHostname,
 			"{nameWithOwner}", repo.NameWithOwner,
 		).Replace(repositoryPathPattern))
 	}
@@ -91,17 +91,17 @@ func updateGitHubRepositories(ctx context.Context, client *githubClient) {
 	for repo := range repos {
 		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
 		repoChan <- api.RepoCreateOrUpdateRequest{
-			RepoURI:      githubRepositoryToRepoPath(client.config.RepositoryPathPattern, repo),
-			ExternalRepo: GitHubExternalRepoSpec(repo, *client.baseURL),
+			RepoURI:      githubRepositoryToRepoPath(conn.config.RepositoryPathPattern, repo),
+			ExternalRepo: GitHubExternalRepoSpec(repo, *conn.baseURL),
 			Description:  repo.Description,
 			Fork:         repo.IsFork,
-			Enabled:      client.config.InitialRepositoryEnablement,
+			Enabled:      conn.config.InitialRepositoryEnablement,
 		}
 	}
 	close(repoChan)
 }
 
-func newGitHubClient(config schema.GitHubConnection) (*githubClient, error) {
+func newGitHubConnection(config schema.GitHubConnection) (*githubConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -130,25 +130,25 @@ func newGitHubClient(config schema.GitHubConnection) (*githubClient, error) {
 		}
 	}
 
-	return &githubClient{
+	return &githubConnection{
 		config:           config,
 		baseURL:          baseURL,
-		originalHostname: originalHostname,
 		client:           github.NewClient(&apiURL, config.Token, transport),
+		originalHostname: originalHostname,
 	}, nil
 }
 
-type githubClient struct {
+type githubConnection struct {
 	config  schema.GitHubConnection
 	baseURL *url.URL
 	client  *github.Client
 
-	// originalHostname is the hostname of config.Url (differs from client baseURL, whose host is api.github.com
+	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
 	originalHostname string
 }
 
-func (c *githubClient) listAllRepositories(ctx context.Context) <-chan *github.Repository {
+func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *github.Repository {
 	const first = 100 // max GitHub API "first" parameter
 	ch := make(chan *github.Repository, first)
 
