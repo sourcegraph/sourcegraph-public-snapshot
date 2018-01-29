@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 var ssoUserHeader = conf.AuthHTTPHeader()
@@ -59,7 +60,7 @@ func getUserFromSSOHeaderUsername(ctx context.Context, username string) (userID 
 	if err == nil {
 		// User exists.
 		return user.ID, nil
-	} else if _, ok := err.(db.ErrUserNotFound); !ok {
+	} else if !errcode.IsNotFound(err) {
 		return 0, err
 	}
 
@@ -71,11 +72,12 @@ func getUserFromSSOHeaderUsername(ctx context.Context, username string) (userID 
 	})
 	// Handle the race condition where the new user performs two requests
 	// and both try to create the user.
-	if err == db.ErrUsernameExists || err == db.ErrExternalIDExists {
-		user, err = db.Users.GetByUsername(ctx, username)
-	}
 	if err != nil {
-		return 0, err
+		var err2 error
+		user, err2 = db.Users.GetByUsername(ctx, username)
+		if err2 != nil {
+			return 0, err // return Create error
+		}
 	}
 	return user.ID, nil
 }

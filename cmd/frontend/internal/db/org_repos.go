@@ -77,7 +77,7 @@ func expectOne(repos []*types.OrgRepo, err error) (*types.OrgRepo, error) {
 		return nil, err
 	}
 	if len(repos) != 1 {
-		return nil, ErrRepoNotFound
+		return nil, &repoNotFoundErr{}
 	}
 	// repos should have exactly one entry after passing the error check above.
 	return repos[0], nil

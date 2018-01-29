@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func init() {
@@ -48,7 +49,7 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			var calledGetByUsername, calledCreate bool
 			db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
 				calledGetByUsername = true
-				return nil, db.ErrUserNotFound{}
+				return nil, &errcode.Mock{Message: "user not found", IsNotFound: true}
 			}
 			db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*types.User, error) {
 				calledCreate = true

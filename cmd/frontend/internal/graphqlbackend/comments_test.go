@@ -9,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
@@ -303,7 +304,7 @@ func TestComments_CreateAccessDenied(t *testing.T) {
 	ctx := context.Background()
 
 	db.Mocks.Threads.MockGet_Return(t, &types.Thread{OrgRepoID: 1}, nil)
-	db.Mocks.OrgRepos.MockGetByID_Return(t, nil, db.ErrRepoNotFound)
+	db.Mocks.OrgRepos.MockGetByID_Return(t, nil, &errcode.Mock{Message: "repo not found", IsNotFound: true})
 	called, calledWith := db.Mocks.Comments.MockCreate(t)
 
 	r := &schemaResolver{}

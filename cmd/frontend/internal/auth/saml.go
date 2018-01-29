@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 var (
@@ -112,7 +113,7 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 	externalID := samlToExternalID(idpID, subject)
 
 	usr, err := db.Users.GetByExternalID(ctx, idpID, externalID)
-	if _, notFound := err.(db.ErrUserNotFound); notFound {
+	if errcode.IsNotFound(err) {
 		email := r.Header.Get("X-Saml-Email")
 		if email == "" && mightBeEmail(subject) {
 			email = subject

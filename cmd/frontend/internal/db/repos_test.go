@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -129,8 +130,8 @@ func TestRepos_Delete(t *testing.T) {
 	}
 
 	rp2, err := Repos.Get(ctx, rp.ID)
-	if err != ErrRepoNotFound {
-		t.Errorf("expected error %q, but got error %q with repo %v", ErrRepoNotFound, err, rp2)
+	if !errcode.IsNotFound(err) {
+		t.Errorf("expected repo not found, but got error %q with repo %v", err, rp2)
 	}
 }
 
@@ -177,7 +178,7 @@ func TestRepos_TryInsertNew(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if _, err := Repos.GetByURI(ctx, "myrepo"); err != ErrRepoNotFound {
+	if _, err := Repos.GetByURI(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo already present")
 		} else {
@@ -246,7 +247,7 @@ func TestRepos_TryInsertNewBatch(t *testing.T) {
 		ctx := testContext()
 
 		for _, expRP := range reposToInsert {
-			if _, err := Repos.GetByURI(ctx, expRP.URI); err != ErrRepoNotFound {
+			if _, err := Repos.GetByURI(ctx, expRP.URI); !errcode.IsNotFound(err) {
 				if err == nil {
 					t.Fatalf("repo %s already present", expRP.URI)
 				} else {

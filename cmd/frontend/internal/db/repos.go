@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
+	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
 	"time"
@@ -31,6 +32,25 @@ var (
 	repoURICacheTTLSeconds = 60
 )
 
+type repoNotFoundErr struct {
+	ID  api.RepoID
+	URI api.RepoURI
+}
+
+func (e *repoNotFoundErr) Error() string {
+	if e.URI != "" {
+		return fmt.Sprintf("repo not found: uri=%q", e.URI)
+	}
+	if e.ID != 0 {
+		return fmt.Sprintf("repo not found: id=%d", e.ID)
+	}
+	return "repo not found"
+}
+
+func (e *repoNotFoundErr) NotFound() bool {
+	return true
+}
+
 // repos is a DB-backed implementation of the Repos
 type repos struct{}
 
@@ -50,7 +70,7 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	}
 
 	if len(repos) == 0 {
-		return nil, ErrRepoNotFound
+		return nil, &repoNotFoundErr{ID: id}
 	}
 	return repos[0], nil
 }
@@ -78,8 +98,10 @@ func (s *repos) GetURI(ctx context.Context, id api.RepoID) (api.RepoURI, error) 
 	return r.URI, nil
 }
 
-// GetByURI returns the repository with the given URI from the database, or ErrRepoNotFound if it doesn't exist. It
-// does not attempt to look up or update the repository on any external service (such as its code host).
+// GetByURI returns the repository with the given URI from the database, or an
+// error. If the repo doesn't exist in the DB, then errcode.IsNotFound will
+// return true on the error returned. It does not attempt to look up or update
+// the repository on any external service (such as its code host).
 func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (*types.Repo, error) {
 	if Mocks.Repos.GetByURI != nil {
 		return Mocks.Repos.GetByURI(ctx, uri)
@@ -91,7 +113,7 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (*types.Repo, err
 	}
 
 	if len(repos) == 0 {
-		return nil, ErrRepoNotFound
+		return nil, &repoNotFoundErr{URI: uri}
 	}
 	return repos[0], nil
 }
@@ -505,7 +527,7 @@ func (s *repos) SetEnabled(ctx context.Context, id api.RepoID, enabled bool) err
 		return err
 	}
 	if rows == 0 {
-		return ErrRepoNotFound
+		return &repoNotFoundErr{ID: id}
 	}
 	return nil
 }

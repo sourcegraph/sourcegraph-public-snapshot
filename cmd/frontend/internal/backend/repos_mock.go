@@ -9,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
@@ -27,13 +28,18 @@ type MockRepos struct {
 	OpenVCS              func(ctx context.Context, repo api.RepoID) (vcs.Repository, error)
 }
 
+var errRepoNotFound = &errcode.Mock{
+	Message:    "repo not found",
+	IsNotFound: true,
+}
+
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 	called = new(bool)
 	s.Get = func(ctx context.Context, repo api.RepoID) (*types.Repo, error) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, db.ErrRepoNotFound
+			return nil, errRepoNotFound
 		}
 		return &types.Repo{ID: repo}, nil
 	}
@@ -46,7 +52,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, wantURI api.RepoURI, repo api.Rep
 		*called = true
 		if uri != wantURI {
 			t.Errorf("got repo URI %q, want %q", uri, wantURI)
-			return nil, db.ErrRepoNotFound
+			return nil, errRepoNotFound
 		}
 		return &types.Repo{ID: repo, URI: uri}, nil
 	}
@@ -59,7 +65,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 		*called = true
 		if repo != returns.ID {
 			t.Errorf("got repo %d, want %d", repo, returns.ID)
-			return nil, db.ErrRepoNotFound
+			return nil, errRepoNotFound
 		}
 		return returns, nil
 	}
@@ -121,7 +127,7 @@ func (s *MockRepos) MockOpenVCS(t *testing.T, wantRepo api.RepoID, mockVCSRepo v
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, db.ErrRepoNotFound
+			return nil, errRepoNotFound
 		}
 		return mockVCSRepo, nil
 	}

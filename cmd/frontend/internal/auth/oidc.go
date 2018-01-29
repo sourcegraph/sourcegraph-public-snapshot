@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/gorilla/csrf"
@@ -299,7 +300,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 	}
 
 	usr, err := db.Users.GetByExternalID(ctx, provider, externalID)
-	if _, notFound := err.(db.ErrUserNotFound); notFound {
+	if errcode.IsNotFound(err) {
 		usr, err = db.Users.Create(ctx, db.NewUser{
 			ExternalID:       externalID,
 			Email:            email,

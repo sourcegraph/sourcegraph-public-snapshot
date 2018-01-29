@@ -9,6 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
@@ -24,7 +25,7 @@ func TestThreads_Create(t *testing.T) {
 		return "alice@example.com", true, nil
 	}
 	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMember{}, nil)
-	db.Mocks.OrgRepos.MockGetByCanonicalRemoteID_Return(t, nil, db.ErrRepoNotFound)
+	db.Mocks.OrgRepos.MockGetByCanonicalRemoteID_Return(t, nil, &errcode.Mock{Message: "repo not found", IsNotFound: true})
 	repoCreateCalled, repoCreateCalledWith := db.Mocks.OrgRepos.MockCreate_Return(t, &types.OrgRepo{
 		ID:                1,
 		CanonicalRemoteID: wantRepo.CanonicalRemoteID,

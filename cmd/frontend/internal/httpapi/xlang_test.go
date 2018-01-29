@@ -11,9 +11,9 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func TestXLang(t *testing.T) {
@@ -27,7 +27,10 @@ func TestXLang(t *testing.T) {
 			return &types.Repo{ID: 1, URI: uri}, nil
 		default:
 			t.Errorf("got unexpected repo %q", uri)
-			return nil, db.ErrRepoNotFound
+			return nil, &errcode.Mock{
+				Message:    fmt.Sprintf("got unexpected repo %q", uri),
+				IsNotFound: true,
+			}
 		}
 	}
 

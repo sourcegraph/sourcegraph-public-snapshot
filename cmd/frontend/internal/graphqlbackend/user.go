@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 // userResolver resolves a Sourcegraph user.
@@ -130,7 +131,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 func currentUser(ctx context.Context) (*userResolver, error) {
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		if _, ok := err.(db.ErrUserNotFound); ok {
+		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err

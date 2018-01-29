@@ -7,6 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 type orgRepoResolver struct {
@@ -54,7 +55,7 @@ func (o *orgRepoResolver) Threads(ctx context.Context, args *struct {
 func (o *orgRepoResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
 	// See if a repository exists whose URI matches the canonical remote ID.
 	repo, err := db.Repos.GetByURI(ctx, api.RepoURI(o.repo.CanonicalRemoteID))
-	if err == db.ErrRepoNotFound {
+	if errcode.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err

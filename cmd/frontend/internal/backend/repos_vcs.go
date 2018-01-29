@@ -32,7 +32,7 @@ func (repos) OpenVCS(ctx context.Context, repo api.RepoID) (vcs.Repository, erro
 // * Repo does not exist: vcs.RepoNotExistError
 // * Commit does not exist: vcs.ErrRevisionNotFound
 // * Empty repository: vcs.ErrRevisionNotFound
-// * The user does not have permission: db.ErrRepoNotFound
+// * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
 func (s *repos) ResolveRev(ctx context.Context, repo api.RepoID, rev string) (commitID api.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {

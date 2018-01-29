@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 
 	"github.com/gorilla/mux"
 )
@@ -240,7 +240,7 @@ func TestRouter_RootPath(t *testing.T) {
 				if tst.exists {
 					return &types.Repo{URI: uri}, nil
 				}
-				return nil, db.ErrRepoNotFound
+				return nil, &errcode.Mock{Message: "repo not found", IsNotFound: true}
 			}
 			// Perform a request that we expect to redirect to the about subdomain.
 			rec := httptest.NewRecorder()

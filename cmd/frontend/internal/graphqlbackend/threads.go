@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
@@ -388,7 +389,7 @@ func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThre
 	}
 
 	repo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, args.OrgID.int32Value, api.RepoURI(args.CanonicalRemoteID))
-	if err == db.ErrRepoNotFound {
+	if errcode.IsNotFound(err) {
 		repo, err = db.OrgRepos.Create(ctx, &types.OrgRepo{
 			CanonicalRemoteID: api.RepoURI(args.CanonicalRemoteID),
 			CloneURL:          args.CloneURL,

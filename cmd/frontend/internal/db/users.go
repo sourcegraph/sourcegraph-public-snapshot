@@ -36,34 +36,32 @@ var MatchUsernameString = regexp2.MustCompile("^"+UsernamePattern+"$", 0)
 // For a detailed overview of the schema, see schema.txt.
 type users struct{}
 
-// ErrUserNotFound is the error that is returned when
-// a user is not found.
-type ErrUserNotFound struct {
+// userNotFoundErr is the error that is returned when a user is not found.
+type userNotFoundErr struct {
 	args []interface{}
 }
 
-func (err ErrUserNotFound) Error() string {
+func (err userNotFoundErr) Error() string {
 	return fmt.Sprintf("user not found: %v", err.args)
 }
 
-// ErrCannotCreateUser is the error that is returned when
+func (err userNotFoundErr) NotFound() bool {
+	return true
+}
+
+// errCannotCreateUser is the error that is returned when
 // a user cannot be added to the DB due to a constraint.
-type ErrCannotCreateUser struct {
+type errCannotCreateUser struct {
 	code string
 }
 
-func (err ErrCannotCreateUser) Error() string {
+func (err errCannotCreateUser) Error() string {
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
-func (err ErrCannotCreateUser) Code() string {
+func (err errCannotCreateUser) Code() string {
 	return err.code
 }
-
-var (
-	ErrUsernameExists   = ErrCannotCreateUser{"err_username_exists"}
-	ErrExternalIDExists = ErrCannotCreateUser{"err_external_id_exists"}
-)
 
 // NewUser describes a new to-be-created user.
 type NewUser struct {
@@ -153,9 +151,9 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
 			case "users_username_key":
-				return nil, ErrUsernameExists
+				return nil, errCannotCreateUser{"err_username_exists"}
 			case "users_external_id":
-				return nil, ErrExternalIDExists
+				return nil, errCannotCreateUser{"err_external_id_exists"}
 			}
 		}
 		return nil, err
@@ -168,7 +166,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 			if pqErr, ok := err.(*pq.Error); ok {
 				switch pqErr.Constraint {
 				case "user_emails_email_key":
-					return nil, ErrCannotCreateUser{"err_email_exists"}
+					return nil, errCannotCreateUser{"err_email_exists"}
 				}
 			}
 			return nil, err
@@ -269,7 +267,7 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 		return err
 	}
 	if rows == 0 {
-		return ErrUserNotFound{args: []interface{}{id}}
+		return userNotFoundErr{args: []interface{}{id}}
 	}
 	return nil
 }
@@ -279,11 +277,12 @@ func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) 
 	return err
 }
 
-// CheckAndDecrementInviteQuota should be called before the user (identified by userID) is
-// allowed to invite any other user. If err != nil, then the user is not allowed to invite
-// any other user (either because they've invited too many users, or some other error
-// occurred). If the user has quota remaining, their quota is decremented.
-func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) error {
+// CheckAndDecrementInviteQuota should be called before the user (identified
+// by userID) is allowed to invite any other user. If ok is false, then the
+// user is not allowed to invite any other user (either because they've
+// invited too many users, or some other error occurred). If the user has
+// quota remaining, their quota is decremented and ok is true.
+func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) (ok bool, err error) {
 	var quotaRemaining int32
 	sqlQuery := `
 	UPDATE users SET invite_quota=(invite_quota - 1)
@@ -293,16 +292,12 @@ func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) 
 	if err := row.Scan(&quotaRemaining); err == sql.ErrNoRows {
 		// It's possible that some other problem occurred, such as the user being deleted,
 		// but treat that as a quota exceeded error, too.
-		return ErrInviteQuotaExceeded
+		return false, nil
 	} else if err != nil {
-		return err
+		return false, err
 	}
-	return nil // the user has remaining quota to send invites
+	return true, nil // the user has remaining quota to send invites
 }
-
-// ErrInviteQuotaExceeded indicates that the user has exceeded their invite quota
-// and may not send any more invites.
-var ErrInviteQuotaExceeded = errors.New("invite quota exceeded")
 
 func (u *users) GetByID(ctx context.Context, id int32) (*types.User, error) {
 	if Mocks.Users.GetByID != nil {
@@ -433,7 +428,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 		return nil, err
 	}
 	if len(users) != 1 {
-		return nil, ErrUserNotFound{args}
+		return nil, userNotFoundErr{args}
 	}
 	return users[0], nil
 }

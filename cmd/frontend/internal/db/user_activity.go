@@ -35,7 +35,7 @@ func (s *userActivity) getOneBySQL(ctx context.Context, query string, args ...in
 		return nil, err
 	}
 	if len(rows) != 1 {
-		return nil, ErrUserNotFound{args}
+		return nil, userNotFoundErr{args}
 	}
 
 	return rows[0], nil

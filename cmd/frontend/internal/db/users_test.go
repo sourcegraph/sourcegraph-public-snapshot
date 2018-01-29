@@ -2,6 +2,8 @@ package db
 
 import (
 	"testing"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func TestUsers_MatchUsernameRegex(t *testing.T) {
@@ -84,20 +86,20 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	// Decrementing should succeed while we have remaining quota. Keep going until we exhaust it.
 	// Since the quota is fairly low, this isn't too slow.
 	for inviteQuota > 0 {
-		if err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); err != nil {
+		if ok, err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); !ok || err != nil {
 			t.Fatal("initial CheckAndDecrementInviteQuota failed:", err)
 		}
 		inviteQuota--
 	}
 
 	// Now our quota is exhausted, and CheckAndDecrementInviteQuota should fail.
-	if err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); err != ErrInviteQuotaExceeded {
-		t.Fatalf("over-limit CheckAndDecrementInviteQuota #1: got error %v, want %q", err, ErrInviteQuotaExceeded)
+	if ok, err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); ok || err != nil {
+		t.Fatalf("over-limit CheckAndDecrementInviteQuota #1: got error %v", err)
 	}
 
 	// Check again that we're still over quota, just in case.
-	if err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); err != ErrInviteQuotaExceeded {
-		t.Fatalf("over-limit CheckAndDecrementInviteQuota #2: got error %v, want %q", err, ErrInviteQuotaExceeded)
+	if ok, err := Users.CheckAndDecrementInviteQuota(ctx, user.ID); ok || err != nil {
+		t.Fatalf("over-limit CheckAndDecrementInviteQuota #2: got error %v", err)
 	}
 }
 
@@ -157,7 +159,7 @@ func TestUsers_Delete(t *testing.T) {
 
 	// User no longer exists.
 	_, err = Users.GetByID(ctx, user.ID)
-	if _, ok := err.(ErrUserNotFound); !ok {
+	if !errcode.IsNotFound(err) {
 		t.Errorf("got error %v, want ErrUserNotFound", err)
 	}
 	users, err := Users.List(ctx, nil)
@@ -170,7 +172,7 @@ func TestUsers_Delete(t *testing.T) {
 
 	// Can't delete already-deleted user.
 	err = Users.Delete(ctx, user.ID)
-	if _, ok := err.(ErrUserNotFound); !ok {
+	if !errcode.IsNotFound(err) {
 		t.Errorf("got error %v, want ErrUserNotFound", err)
 	}
 }

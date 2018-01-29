@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func (*schemaResolver) IsUsernameAvailable(ctx context.Context, args *struct {
@@ -11,7 +12,7 @@ func (*schemaResolver) IsUsernameAvailable(ctx context.Context, args *struct {
 }) (bool, error) {
 	_, err := db.Users.GetByUsername(ctx, args.Username)
 	if err != nil {
-		if _, ok := err.(db.ErrUserNotFound); ok {
+		if errcode.IsNotFound(err) {
 			return true, nil
 		}
 		return false, err

@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
@@ -155,7 +156,7 @@ func (o *orgResolver) Repo(ctx context.Context, args *struct {
 
 func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID api.RepoURI) (*types.OrgRepo, error) {
 	orgRepo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
-	if err == db.ErrRepoNotFound {
+	if errcode.IsNotFound(err) {
 		// We don't want to create org repos just because an org member queried for threads
 		// and we don't want the client to think this is an error.
 		err = nil
@@ -297,7 +298,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 	// Don't invite the user if they are already a member.
 	invitedUser, err := db.Users.GetByEmail(ctx, args.Email)
 	if err != nil {
-		if _, ok := err.(db.ErrUserNotFound); !ok {
+		if !errcode.IsNotFound(err) {
 			return nil, err
 		}
 	}
@@ -322,11 +323,10 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if err := db.Users.CheckAndDecrementInviteQuota(ctx, currentUser.SourcegraphID()); err != nil {
-			if err == db.ErrInviteQuotaExceeded {
-				return nil, fmt.Errorf("%s (contact support to increase the quota)", err)
-			}
+		if ok, err := db.Users.CheckAndDecrementInviteQuota(ctx, currentUser.SourcegraphID()); err != nil {
 			return nil, err
+		} else if !ok {
+			return nil, errors.New("invite quota exceeded (contact support to increase the quota)")
 		}
 	}
 

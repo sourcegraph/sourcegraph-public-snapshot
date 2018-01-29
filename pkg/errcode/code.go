@@ -82,7 +82,27 @@ func IsHTTPErrorCode(err error, statusCode int) bool {
 	return HTTP(err) == statusCode
 }
 
-// IsNotFound will check if err or one of its causes is a not found error.
+// Mock is a convenience error which makes it easy to satisfy the optional
+// interfaces errors implement.
+type Mock struct {
+	// Message is the return value for Error() string
+	Message string
+
+	// IsNotFound is the return value for NotFound
+	IsNotFound bool
+}
+
+func (e *Mock) Error() string {
+	return e.Message
+}
+
+func (e *Mock) NotFound() bool {
+	return e.IsNotFound
+}
+
+// IsNotFound will check if err or one of its causes is a not found
+// error. Note: This will not check os.IsNotExist, but rather is returned by
+// methods like Repo.Get when the repo is not found.
 func IsNotFound(err error) bool {
 	type notFounder interface {
 		NotFound() bool
