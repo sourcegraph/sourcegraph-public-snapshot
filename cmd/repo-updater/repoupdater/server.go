@@ -61,7 +61,13 @@ func init() {
 	githubdotcomClient = github.NewClient(&githubdotcomAPIURL, githubdotcomToken, nil)
 }
 
+var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
+
 func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+	if mockRepoLookup != nil {
+		return mockRepoLookup(args)
+	}
+
 	var result protocol.RepoLookupResult
 
 	switch {
