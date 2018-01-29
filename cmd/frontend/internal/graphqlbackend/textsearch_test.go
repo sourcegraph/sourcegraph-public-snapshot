@@ -68,7 +68,7 @@ func TestSearchRepos(t *testing.T) {
 	if !reflect.DeepEqual(common.cloning, []api.RepoURI{"foo/cloning"}) {
 		t.Errorf("unexpected missing: %v", common.cloning)
 	}
-	if !reflect.DeepEqual(common.missing, []api.RepoURI{"foo/missing-db", "foo/missing"}) {
+	if !reflect.DeepEqual(common.missing, []api.RepoURI{"foo/missing", "foo/missing-db"}) {
 		t.Errorf("unexpected missing: %v", common.missing)
 	}
 	if !reflect.DeepEqual(common.timedout, []api.RepoURI{"foo/timedout"}) {
