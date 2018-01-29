@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -23,7 +23,7 @@ func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path strin
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, commit.repositoryDatabaseID())
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, commit.repositoryDatabaseID())
 	if err != nil {
 		return nil, err
 	}

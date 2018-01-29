@@ -3,7 +3,6 @@ package db
 var (
 	GlobalDeps   = &globalDeps{}
 	Pkgs         = &pkgs{}
-	RepoVCS      = &repoVCS{}
 	Repos        = &repos{}
 	Phabricator  = &phabricator{}
 	OrgRepos     = &orgRepos{}

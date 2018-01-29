@@ -6,7 +6,6 @@ var Mocks MockStores
 type MockStores struct {
 	GlobalDeps  MockGlobalDeps
 	Pkgs        MockPkgs
-	RepoVCS     MockRepoVCS
 	Repos       MockRepos
 	Orgs        MockOrgs
 	OrgRepos    MockOrgRepos

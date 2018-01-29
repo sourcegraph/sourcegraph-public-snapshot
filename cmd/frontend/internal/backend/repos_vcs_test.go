@@ -8,7 +8,6 @@ import (
 
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
@@ -19,7 +18,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	db.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	Mocks.Repos.MockOpenVCS(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
@@ -45,7 +44,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	db.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	Mocks.Repos.MockOpenVCS(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
@@ -70,7 +69,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	db.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	Mocks.Repos.MockOpenVCS(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
@@ -95,7 +94,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	want := errors.New("x")
 
 	var calledVCSRepoResolveRevision bool
-	db.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
+	Mocks.Repos.MockOpenVCS(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return "", errors.New("x")

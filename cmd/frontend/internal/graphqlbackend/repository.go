@@ -117,7 +117,7 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.repo.ID)
 	if err != nil {
 		return nil, err
 	}

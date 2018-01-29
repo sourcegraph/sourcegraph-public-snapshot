@@ -8,7 +8,22 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
+
+// OpenVCS returns a handle to the underlying Git repository (i.e., on gitserver).
+func (repos) OpenVCS(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
+	if Mocks.Repos.OpenVCS != nil {
+		return Mocks.Repos.OpenVCS(ctx, repo)
+	}
+
+	uri, err := db.Repos.GetURI(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	return gitcmd.Open(uri), nil
+}
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
 // If no rev is specified, HEAD is used.
@@ -26,7 +41,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo api.RepoID, rev string) (co
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo, "rev": rev}, &err)
 	defer done()
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
+	vcsrepo, err := Repos.OpenVCS(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +62,7 @@ func (s *repos) GetCommit(ctx context.Context, repo api.RepoID, commitID api.Com
 		return nil, errNotAbsCommitID
 	}
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
+	vcsrepo, err := Repos.OpenVCS(ctx, repo)
 	if err != nil {
 		return nil, err
 	}

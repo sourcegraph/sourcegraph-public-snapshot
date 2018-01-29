@@ -12,12 +12,11 @@ import (
 	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/pkg/errors"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-
-	"github.com/pkg/errors"
 )
 
 var (
@@ -101,7 +100,7 @@ type commitSearchOp struct {
 func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResult, limitHit bool, err error) {
 	repo := op.repoRevs.repo
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, repo.ID)
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, repo.ID)
 	if err != nil {
 		return nil, false, err
 	}

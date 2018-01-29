@@ -36,7 +36,7 @@ func TestTree(t *testing.T) {
 			&util.FileInfo{Name_: "testFile", Mode_: 0},
 		}, nil
 	}
-	db.Mocks.RepoVCS.Open = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
+	backend.Mocks.Repos.OpenVCS = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
 		return mockRepo, nil
 	}
 

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -38,7 +38,7 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	Query *string
 	Type  *string
 }) (*gitRefConnectionResolver, error) {
-	vcsrepo, err := db.RepoVCS.Open(ctx, r.repo.ID)
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.repo.ID)
 	if err != nil {
 		return nil, err
 	}

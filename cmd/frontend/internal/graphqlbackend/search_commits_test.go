@@ -7,10 +7,9 @@ import (
 	"strconv"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
@@ -19,7 +18,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
 
 	var calledVCSRawLogDiffSearch bool
-	calledRepoVCSOpen := db.Mocks.RepoVCS.MockOpen(t, 1, vcstesting.MockRepository{
+	calledRepoVCSOpen := backend.Mocks.Repos.MockOpenVCS(t, 1, vcstesting.MockRepository{
 		RawLogDiffSearch_: func(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error) {
 			calledVCSRawLogDiffSearch = true
 			if want := "p"; opt.Query.Pattern != want {

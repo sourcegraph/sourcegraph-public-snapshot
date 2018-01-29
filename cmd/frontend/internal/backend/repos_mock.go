@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
 
 type MockRepos struct {
@@ -24,6 +25,7 @@ type MockRepos struct {
 	GetInventory         func(v0 context.Context, repo api.RepoID, commitID api.CommitID) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repo api.RepoID, commitID api.CommitID) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo api.RepoURI) (err error)
+	OpenVCS              func(ctx context.Context, repo api.RepoID) (vcs.Repository, error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
@@ -110,6 +112,28 @@ func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commi
 	s.GetCommit = func(ctx context.Context, repo api.RepoID, commitID api.CommitID) (*vcs.Commit, error) {
 		*called = true
 		return commit, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockOpenVCS(t *testing.T, wantRepo api.RepoID, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+	called = new(bool)
+	s.OpenVCS = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
+		*called = true
+		if repo != wantRepo {
+			t.Errorf("got repo %d, want %d", repo, wantRepo)
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
+		}
+		return mockVCSRepo, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockOpenVCS_NoCheck(t *testing.T, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+	called = new(bool)
+	s.OpenVCS = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
+		*called = true
+		return mockVCSRepo, nil
 	}
 	return
 }

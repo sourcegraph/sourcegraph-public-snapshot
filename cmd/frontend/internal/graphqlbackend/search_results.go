@@ -214,7 +214,7 @@ func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repo api.RepoID) 
 	if ok {
 		return vcsrepo, nil
 	}
-	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, repo)
 	if err != nil {
 		return nil, err
 	}

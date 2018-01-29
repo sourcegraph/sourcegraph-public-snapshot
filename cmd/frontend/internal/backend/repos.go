@@ -161,7 +161,7 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo api.RepoID, commi
 		return Mocks.Repos.GetInventoryUncached(ctx, repo, commitID)
 	}
 
-	vcsrepo, err := db.RepoVCS.Open(ctx, repo)
+	vcsrepo, err := Repos.OpenVCS(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
