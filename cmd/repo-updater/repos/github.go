@@ -71,13 +71,20 @@ func init() {
 func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error) {
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
 		// Look up by external repository spec.
+		skippedBecauseNoAuth := false
 		for _, conn := range githubConnections {
 			if args.ExternalRepo.ServiceType == GitHubServiceType && args.ExternalRepo.ServiceID == conn.baseURL.String() {
+				if canUseGraphQLAPI := conn.config.Token != ""; !canUseGraphQLAPI { // GraphQL API requires authentication
+					skippedBecauseNoAuth = true
+					continue
+				}
 				return conn, nil
 			}
 		}
 
-		return nil, fmt.Errorf("no configured GitHub connection with URL: %q", args.ExternalRepo.ServiceID)
+		if !skippedBecauseNoAuth {
+			return nil, fmt.Errorf("no configured GitHub connection with URL: %q", args.ExternalRepo.ServiceID)
+		}
 	}
 
 	if args.Repo != "" {
@@ -123,7 +130,8 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		return nil, false, nil // refers to a non-GitHub repo
 	}
 
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
+	canUseGraphQLAPI := conn.config.Token != "" // GraphQL API requires authentication
+	if canUseGraphQLAPI && args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
 		// Look up by external repository spec.
 		ghrepo, err := conn.client.GetRepositoryByNodeID(ctx, args.ExternalRepo.ID)
 		if ghrepo != nil {
@@ -146,7 +154,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		return repo, true, err
 	}
 
-	panic("unreachable")
+	return nil, true, fmt.Errorf("unable to look up GitHub repository (%+v)", args)
 }
 
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub

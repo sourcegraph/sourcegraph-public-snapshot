@@ -6,13 +6,14 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetGitHubConnection(t *testing.T) {
 	orig := githubConnections
 	githubConnections = []*githubConnection{
-		{originalHostname: "github.com", baseURL: &url.URL{Scheme: "https", Host: "github.com", Path: "/"}},
-		{originalHostname: "github.example.com", baseURL: &url.URL{Scheme: "https", Host: "github.example.com", Path: "/"}},
+		{originalHostname: "github.com", baseURL: &url.URL{Scheme: "https", Host: "github.com", Path: "/"}, config: schema.GitHubConnection{Token: "t"}},
+		{originalHostname: "github.example.com", baseURL: &url.URL{Scheme: "https", Host: "github.example.com", Path: "/"}, config: schema.GitHubConnection{Token: "t"}},
 	}
 	defer func() { githubConnections = orig }()
 
