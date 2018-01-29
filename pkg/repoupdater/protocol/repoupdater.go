@@ -5,9 +5,15 @@ import (
 )
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.
+//
+// Exactly one of Repo and ExternalRepo should be set.
 type RepoLookupArgs struct {
-	// Repo is the repository to get information about.
-	Repo api.RepoURI
+	// Repo is the repository URI to look up. If the ExternalRepo information is available to the
+	// caller, it is preferred to use that (because it is robust to renames).
+	Repo api.RepoURI `json:",omitempty"`
+
+	// ExternalRepo specifies the repository to look up by its external repository identity.
+	ExternalRepo *api.ExternalRepoSpec
 }
 
 // RepoLookupResult is the response to a repository information request (RepoLookupArgs).

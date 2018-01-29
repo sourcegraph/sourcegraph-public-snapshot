@@ -113,13 +113,35 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestRepoLookup(t *testing.T) {
+	t.Run("no args", func(t *testing.T) {
+		if _, err := repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
+			t.Error()
+		}
+	})
+
 	t.Run("github", func(t *testing.T) {
-		t.Run("not found", func(t *testing.T) {
-			orig := github.GetRepositoryMock
-			github.GetRepositoryMock = func(ctx context.Context, owner, name string) (*github.Repository, error) {
-				return nil, github.ErrNotFound
+		t.Run("not authoritative", func(t *testing.T) {
+			orig := repos.GetGitHubRepositoryMock
+			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
+				return nil, false, errors.New("x")
 			}
-			defer func() { github.GetRepositoryMock = orig }()
+			defer func() { repos.GetGitHubRepositoryMock = orig }()
+
+			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "example.com/a/b"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := (&protocol.RepoLookupResult{}); !reflect.DeepEqual(result, want) {
+				t.Errorf("got result %+v, want nil", result)
+			}
+		})
+
+		t.Run("not found", func(t *testing.T) {
+			orig := repos.GetGitHubRepositoryMock
+			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
+				return nil, true, github.ErrNotFound
+			}
+			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
 			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
 			if err != nil {
@@ -133,11 +155,11 @@ func TestRepoLookup(t *testing.T) {
 		t.Run("unexpected error", func(t *testing.T) {
 			wantErr := errors.New("x")
 
-			orig := github.GetRepositoryMock
-			github.GetRepositoryMock = func(ctx context.Context, owner, name string) (*github.Repository, error) {
-				return nil, wantErr
+			orig := repos.GetGitHubRepositoryMock
+			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
+				return nil, true, wantErr
 			}
-			defer func() { github.GetRepositoryMock = orig }()
+			defer func() { repos.GetGitHubRepositoryMock = orig }()
 
 			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
 			if err != wantErr {
@@ -149,17 +171,6 @@ func TestRepoLookup(t *testing.T) {
 		})
 
 		t.Run("found", func(t *testing.T) {
-			orig := github.GetRepositoryMock
-			github.GetRepositoryMock = func(ctx context.Context, owner, name string) (*github.Repository, error) {
-				return &github.Repository{
-					ID:            "a",
-					Description:   "b",
-					NameWithOwner: "c/d",
-					IsFork:        true,
-				}, nil
-			}
-			defer func() { github.GetRepositoryMock = orig }()
-
 			want := &protocol.RepoLookupResult{
 				Repo: &protocol.RepoInfo{
 					ExternalRepo: &api.ExternalRepoSpec{
@@ -172,6 +183,13 @@ func TestRepoLookup(t *testing.T) {
 					Fork:        true,
 				},
 			}
+
+			orig := repos.GetGitHubRepositoryMock
+			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
+				return want.Repo, true, nil
+			}
+			defer func() { repos.GetGitHubRepositoryMock = orig }()
+
 			result, err := repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
 			if err != nil {
 				t.Fatal(err)

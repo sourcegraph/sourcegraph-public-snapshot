@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -67,7 +68,7 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	needsExternalRepoBackfill := !TestDisableExternalRepoBackfillInReposGetByURI && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") && repo != nil && repo.ExternalRepo == nil
 	if (err != nil && conf.Get().AutoRepoAdd) || needsExternalRepoBackfill {
 		// Try to look up and auto-add the repo.
-		result, err := repoupdater.DefaultClient.RepoLookup(ctx, uri)
+		result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: uri})
 		if err != nil {
 			return nil, err
 		}

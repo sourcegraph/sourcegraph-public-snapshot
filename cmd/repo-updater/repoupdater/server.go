@@ -3,14 +3,11 @@ package repoupdater
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
@@ -47,49 +44,29 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var (
-	githubdotcomClient  *github.Client
-	githubdotcomBaseURL = *repos.NormalizeGitHubBaseURL(&url.URL{Scheme: "https", Host: "github.com", Path: "/"})
-	githubdotcomAPIURL  = url.URL{Scheme: "https", Host: "api.github.com", Path: "/"}
-)
-
-func init() {
-	var githubdotcomToken string
-	if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
-		githubdotcomToken = c.Token
-	}
-	githubdotcomClient = github.NewClient(&githubdotcomAPIURL, githubdotcomToken, nil)
-}
-
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+	if args.Repo == "" && args.ExternalRepo == nil {
+		return nil, errors.New("at least one of Repo and ExternalRepo must be set (both are empty)")
+	}
+
 	if mockRepoLookup != nil {
 		return mockRepoLookup(args)
 	}
 
 	var result protocol.RepoLookupResult
 
-	switch {
-	// TODO(sqs): support GitHub (Enterprise) hosts other than github.com
-	case strings.HasPrefix(strings.ToLower(string(args.Repo)), "github.com/"):
-		nameWithOwner := string(args.Repo[len("github.com/"):])
-		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
-		if err != nil {
+	// Try all GetXyzRepository funcs until one returns authoritatively.
+	repo, authoritative, err := repos.GetGitHubRepository(ctx, args)
+	if authoritative {
+		if err != nil && !github.IsNotFound(err) {
 			return nil, err
 		}
-		repo, err := githubdotcomClient.GetRepository(ctx, owner, name)
-		if err == nil {
-			result.Repo = &protocol.RepoInfo{
-				URI:          api.RepoURI("github.com/" + repo.NameWithOwner),
-				Description:  repo.Description,
-				Fork:         repo.IsFork,
-				ExternalRepo: repos.GitHubExternalRepoSpec(repo, githubdotcomBaseURL),
-			}
-		} else if err != nil && !github.IsNotFound(err) {
-			return nil, err
-		}
+		result.Repo = repo
+		return &result, nil
 	}
 
+	// No configured code hosts are authoritative for this repository.
 	return &result, nil
 }

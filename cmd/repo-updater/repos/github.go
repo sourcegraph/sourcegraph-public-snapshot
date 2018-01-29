@@ -13,6 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -41,22 +42,120 @@ func NormalizeGitHubBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
+var githubConnections []*githubConnection
+
+func init() {
+	githubConf := conf.Get().Github
+	if len(githubConf) == 0 && conf.Get().AutoRepoAdd {
+		// Add a GitHub.com entry by default, to support navigating to URL paths like
+		// /github.com/foo/bar to auto-add that repository.
+		githubConf = append(githubConf, schema.GitHubConnection{
+			RepositoryQuery: []string{"none"}, // don't try to list all repositories during syncs
+			Url:             "https://github.com",
+			InitialRepositoryEnablement: true,
+		})
+	}
+
+	for _, c := range githubConf {
+		conn, err := newGitHubConnection(c)
+		if err != nil {
+			log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
+			continue
+		}
+		githubConnections = append(githubConnections, conn)
+	}
+}
+
+// getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
+// the repository specified by the args.
+func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error) {
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
+		// Look up by external repository spec.
+		for _, conn := range githubConnections {
+			if args.ExternalRepo.ServiceType == GitHubServiceType && args.ExternalRepo.ServiceID == conn.baseURL.String() {
+				return conn, nil
+			}
+		}
+
+		return nil, fmt.Errorf("no configured GitHub connection with URL: %q", args.ExternalRepo.ServiceID)
+	}
+
+	if args.Repo != "" {
+		// Look up by repository URI.
+		repo := strings.ToLower(string(args.Repo))
+		for _, conn := range githubConnections {
+			if strings.HasPrefix(repo, conn.originalHostname+"/") {
+				return conn, nil
+			}
+		}
+	}
+
+	return nil, nil
+}
+
+// GetGitHubRepositoryMock is set by tests that need to mock GetGitHubRepository.
+var GetGitHubRepositoryMock func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error)
+
+// GetGitHubRepository queries a configured GitHub connection endpoint for information about the
+// specified repository.
+//
+// If args.Repo refers to a repository that is not known to be on a configured GitHub connection's
+// host, it returns authoritative == false.
+func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
+	if GetGitHubRepositoryMock != nil {
+		return GetGitHubRepositoryMock(args)
+	}
+
+	ghrepoToRepoInfo := func(ghrepo *github.Repository, conn *githubConnection) *protocol.RepoInfo {
+		return &protocol.RepoInfo{
+			URI:          githubRepositoryToRepoPath(conn, ghrepo),
+			ExternalRepo: GitHubExternalRepoSpec(ghrepo, *conn.baseURL),
+			Description:  ghrepo.Description,
+			Fork:         ghrepo.IsFork,
+		}
+	}
+
+	conn, err := getGitHubConnection(args)
+	if err != nil {
+		return nil, true, err // refers to a GitHub repo but the host is not configured
+	}
+	if conn == nil {
+		return nil, false, nil // refers to a non-GitHub repo
+	}
+
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
+		// Look up by external repository spec.
+		ghrepo, err := conn.client.GetRepositoryByNodeID(ctx, args.ExternalRepo.ID)
+		if ghrepo != nil {
+			repo = ghrepoToRepoInfo(ghrepo, conn)
+		}
+		return repo, true, err
+	}
+
+	if args.Repo != "" {
+		// Look up by repository URI.
+		nameWithOwner := strings.TrimPrefix(strings.ToLower(string(args.Repo)), conn.originalHostname+"/")
+		owner, repoName, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+		if err != nil {
+			return nil, true, err
+		}
+		ghrepo, err := conn.client.GetRepository(ctx, owner, repoName)
+		if ghrepo != nil {
+			repo = ghrepoToRepoInfo(ghrepo, conn)
+		}
+		return repo, true, err
+	}
+
+	panic("unreachable")
+}
+
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) error {
-	var conns []*githubConnection
-	for _, c := range conf.Get().Github {
-		conn, err := newGitHubConnection(c)
-		if err != nil {
-			return fmt.Errorf("error processing GitHub config %s: %s", c.Url, err)
-		}
-		conns = append(conns, conn)
-	}
-
-	if len(conns) == 0 {
+	if len(githubConnections) == 0 {
 		return nil
 	}
-	for _, c := range conns {
+	for _, c := range githubConnections {
 		go func(c *githubConnection) {
 			for {
 				if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit(); ok && rateLimitRemaining < 200 {
@@ -72,26 +171,27 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 	select {}
 }
 
+func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoURI {
+	repositoryPathPattern := conn.config.RepositoryPathPattern
+	if repositoryPathPattern == "" {
+		repositoryPathPattern = "{host}/{nameWithOwner}"
+	}
+	return api.RepoURI(strings.NewReplacer(
+		"{host}", conn.originalHostname,
+		"{nameWithOwner}", repo.NameWithOwner,
+	).Replace(repositoryPathPattern))
+}
+
 // updateGitHubRepositories ensures that all provided repositories have been added and updated on Sourcegraph.
 func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	repos := conn.listAllRepositories(ctx)
-
-	githubRepositoryToRepoPath := func(repositoryPathPattern string, repo *github.Repository) api.RepoURI {
-		if repositoryPathPattern == "" {
-			repositoryPathPattern = "{host}/{nameWithOwner}"
-		}
-		return api.RepoURI(strings.NewReplacer(
-			"{host}", conn.originalHostname,
-			"{nameWithOwner}", repo.NameWithOwner,
-		).Replace(repositoryPathPattern))
-	}
 
 	repoChan := make(chan api.RepoCreateOrUpdateRequest)
 	go createEnableUpdateRepos(ctx, nil, repoChan)
 	for repo := range repos {
 		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
 		repoChan <- api.RepoCreateOrUpdateRequest{
-			RepoURI:      githubRepositoryToRepoPath(conn.config.RepositoryPathPattern, repo),
+			RepoURI:      githubRepositoryToRepoPath(conn, repo),
 			ExternalRepo: GitHubExternalRepoSpec(repo, *conn.baseURL),
 			Description:  repo.Description,
 			Fork:         repo.IsFork,

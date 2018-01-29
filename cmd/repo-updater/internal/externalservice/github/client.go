@@ -250,7 +250,7 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 	if len(respBody.Errors) > 0 {
 		return respBody.Errors
 	}
-	if result != nil {
+	if result != nil && respBody.Data != nil {
 		if err := json.Unmarshal(respBody.Data, result); err != nil {
 			return err
 		}
