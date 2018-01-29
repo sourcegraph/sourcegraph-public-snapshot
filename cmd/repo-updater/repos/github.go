@@ -46,7 +46,16 @@ var githubConnections []*githubConnection
 
 func init() {
 	githubConf := conf.Get().Github
-	if len(githubConf) == 0 && conf.Get().AutoRepoAdd {
+
+	var hasGitHubDotComConnection bool
+	for _, c := range githubConf {
+		u, _ := url.Parse(c.Url)
+		if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
+			hasGitHubDotComConnection = true
+			break
+		}
+	}
+	if !hasGitHubDotComConnection {
 		// Add a GitHub.com entry by default, to support navigating to URL paths like
 		// /github.com/foo/bar to auto-add that repository.
 		githubConf = append(githubConf, schema.GitHubConnection{
