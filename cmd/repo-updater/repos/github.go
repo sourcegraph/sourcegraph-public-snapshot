@@ -91,10 +91,11 @@ func updateGitHubRepositories(ctx context.Context, client *githubClient) {
 	for repo := range repos {
 		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
 		repoChan <- api.RepoCreateOrUpdateRequest{
-			RepoURI:     githubRepositoryToRepoPath(client.config.RepositoryPathPattern, repo),
-			Description: repo.Description,
-			Fork:        repo.IsFork,
-			Enabled:     client.config.InitialRepositoryEnablement,
+			RepoURI:      githubRepositoryToRepoPath(client.config.RepositoryPathPattern, repo),
+			ExternalRepo: GitHubExternalRepoSpec(repo, *client.baseURL),
+			Description:  repo.Description,
+			Fork:         repo.IsFork,
+			Enabled:      client.config.InitialRepositoryEnablement,
 		}
 	}
 	close(repoChan)
