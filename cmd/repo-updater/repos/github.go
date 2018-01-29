@@ -128,6 +128,9 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 			ExternalRepo: GitHubExternalRepoSpec(ghrepo, *conn.baseURL),
 			Description:  ghrepo.Description,
 			Fork:         ghrepo.IsFork,
+			VCS: protocol.VCSInfo{
+				URL: ghrepo.URL,
+			},
 		}
 	}
 

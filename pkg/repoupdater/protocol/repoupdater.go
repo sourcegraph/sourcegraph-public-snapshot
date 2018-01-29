@@ -34,10 +34,17 @@ type RepoInfo struct {
 	Description string // repository description (from the external service)
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
 
+	VCS VCSInfo // VCS-related information (for cloning/updating)
+
 	// ExternalRepo specifies this repository's ID on the external service where it resides (and the external
 	// service itself).
 	//
 	// TODO(sqs): make this required (non-pointer) when both sides have been upgraded to use it. It is only
 	// optional during the transition period.
 	ExternalRepo *api.ExternalRepoSpec
+}
+
+// VCSInfo describes how to access an external repository's Git data (to clone or update it).
+type VCSInfo struct {
+	URL string // the Git remote URL
 }
