@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -99,16 +100,21 @@ func (c *searchResultsCommon) Timedout() []string {
 func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.limitHit = c.limitHit || other.limitHit
 
-	appendUnique := func(dst *[]api.RepoURI, src []api.RepoURI) {
-		dstSet := make(map[api.RepoURI]struct{}, len(*dst))
-		for _, s := range *dst {
-			dstSet[s] = struct{}{}
-		}
-		for _, s := range src {
-			if _, present := dstSet[s]; !present {
-				*dst = append(*dst, s)
+	appendUnique := func(dstp *[]api.RepoURI, src []api.RepoURI) {
+		dst := *dstp
+		sort.Slice(dst, func(i, j int) bool { return dst[i] < dst[j] })
+		sort.Slice(src, func(i, j int) bool { return src[i] < src[j] })
+		for _, r := range dst {
+			for len(src) > 0 && src[0] <= r {
+				if r != src[0] {
+					dst = append(dst, src[0])
+				}
+				src = src[1:]
 			}
 		}
+		dst = append(dst, src...)
+		sort.Slice(dst, func(i, j int) bool { return dst[i] < dst[j] })
+		*dstp = dst
 	}
 	appendUnique(&c.repos, other.repos)
 	appendUnique(&c.searched, other.searched)

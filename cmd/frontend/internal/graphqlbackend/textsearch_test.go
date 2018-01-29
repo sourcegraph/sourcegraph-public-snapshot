@@ -84,7 +84,7 @@ func TestSearchRepos(t *testing.T) {
 		},
 		repos: makeRepositoryRevisions("foo/no-rev@dev"),
 	}
-	results, common, err = searchRepos(context.Background(), args, *query)
+	_, _, err = searchRepos(context.Background(), args, *query)
 	if errors.Cause(err) != vcs.ErrRevisionNotFound {
 		t.Fatalf("searching non-existent rev expected to fail with %v got: %v", vcs.ErrRevisionNotFound, err)
 	}
