@@ -80,7 +80,7 @@ func checkSpecArgSafety(spec string) error {
 // name must be 'git', otherwise it panics.
 func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 	cmd := gitserver.DefaultClient.Command(name, arg...)
-	cmd.Repo = &api.Repo{URI: r.repoURI}
+	cmd.Repo = r.repoURI
 	return cmd
 }
 
@@ -216,7 +216,7 @@ func (r *Repository) branches(ctx context.Context, args ...string) ([]string, er
 	cmd := r.command("git", append([]string{"branch"}, args...)...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo.URI, err, out)
+		return nil, fmt.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo, err, out)
 	}
 	lines := strings.Split(string(out), "\n")
 	lines = lines[:len(lines)-1]
@@ -290,7 +290,7 @@ func (r *Repository) showRef(ctx context.Context, arg string) ([][2]string, erro
 		if cmd.ExitStatus == 1 && len(out) == 0 {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("exec `git show-ref %s` in %s failed: %s. Output was:\n\n%s", arg, cmd.Repo.URI, err, out)
+		return nil, fmt.Errorf("exec `git show-ref %s` in %s failed: %s. Output was:\n\n%s", arg, cmd.Repo, err, out)
 	}
 
 	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline

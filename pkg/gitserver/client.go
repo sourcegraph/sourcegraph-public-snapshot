@@ -65,7 +65,7 @@ func (c *Client) addrForRepo(repo api.RepoURI) string {
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
-	repoURI := protocol.NormalizeRepo(c.Repo.URI)
+	repoURI := protocol.NormalizeRepo(c.Repo)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -130,7 +130,7 @@ type Cmd struct {
 	client *Client
 
 	Args           []string
-	Repo           *api.Repo
+	Repo           api.RepoURI
 	EnsureRevision string
 	ExitStatus     int
 }

@@ -115,7 +115,7 @@ func fetchTar(ctx context.Context, repo api.RepoURI, commit api.CommitID) (r io.
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=tar", string(commit))
-	cmd.Repo = &api.Repo{URI: repo}
+	cmd.Repo = repo
 	cmd.EnsureRevision = string(commit)
 	r, err = gitserver.StdoutReader(ctx, cmd)
 	if err != nil {
