@@ -121,6 +121,9 @@ func shortGitCommandTimeout(args []string) time.Duration {
 		// we need a larger timeout.
 		return 10 * time.Minute
 
+	case "ls-remote":
+		return 5 * time.Second
+
 	default:
 		return time.Minute
 	}
@@ -451,7 +454,7 @@ var testRepoExists func(ctx context.Context, url string) error
 
 // isCloneable checks to see if the Git remote URL is cloneable.
 func (s *Server) isCloneable(ctx context.Context, url string) error {
-	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(nil))
+	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout([]string{"ls-remote"}))
 	defer cancel()
 
 	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoURI(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
