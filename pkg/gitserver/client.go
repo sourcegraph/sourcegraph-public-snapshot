@@ -65,7 +65,7 @@ func (c *Client) addrForRepo(repo api.RepoURI) string {
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
-	repoURI := protocol.NormalizeRepo(c.Repo.URI)
+	repoURI := protocol.NormalizeRepo(c.Repo.Name)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -130,9 +130,14 @@ type Cmd struct {
 	client *Client
 
 	Args           []string
-	Repo           *api.Repo
+	Repo           // the repository to execute the command in
 	EnsureRevision string
 	ExitStatus     int
+}
+
+// Repo identifies a repository on gitserver.
+type Repo struct {
+	Name api.RepoURI // the repository's URI
 }
 
 // Command creates a new Cmd. Command name must be 'git',
