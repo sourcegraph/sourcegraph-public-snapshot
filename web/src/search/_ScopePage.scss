@@ -68,13 +68,15 @@
         border: 1px solid $color-border;
         border-right: 0;
         border-radius: 0.25rem 0 0 0.25rem;
+        max-width: 200px;
+
         &-text {
             opacity: 0.5;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        max-width: 200px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     &__count {

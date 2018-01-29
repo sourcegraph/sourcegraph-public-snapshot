@@ -41,7 +41,7 @@ interface State {
     id?: string
     name?: string
     value: string
-    description?: string
+    markdownDescription?: string
     errorMessage?: string
 }
 
@@ -67,9 +67,16 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                         this.setState({ searchScopes })
                         const matchedScope = searchScopes.find(o => o.id === props.match.params.id)
                         if (matchedScope) {
-                            queryUpdates.next(this.state.value)
+                            queryUpdates.next(matchedScope.value)
                             if (matchedScope.value.includes('repo:') || matchedScope.value.includes('repogroup:')) {
-                                return of(matchedScope).pipe(
+                                return of({
+                                    ...matchedScope,
+                                    markdownDescription: marked(matchedScope.description || '', {
+                                        gfm: true,
+                                        breaks: true,
+                                        sanitize: true,
+                                    }),
+                                }).pipe(
                                     concat(
                                         fetchReposByQuery(matchedScope.value).pipe(
                                             map(repoList => ({ repoList, errorMessage: undefined })),
@@ -81,7 +88,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                     )
                                 )
                             }
-                            queryUpdates.next(this.state.value)
+                            queryUpdates.next(matchedScope.value)
                             return [{ ...matchedScope, repoList: [], errorMessage: undefined }]
                         }
                         return [
@@ -117,16 +124,15 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         if (!this.state.searchScopes.some((element: SearchScope) => element.id === this.props.match.params.id)) {
             return <ScopeNotFound />
         }
-        const sanitizedMarkdown = marked(this.state.description || '', { gfm: true, breaks: true, sanitize: true })
         return (
             <div className="scope-page">
                 <div className="scope-page__container">
                     <header>
                         <h1 className="scope-page__title">{this.state.name}</h1>
-                        {this.state.description && (
+                        {this.state.markdownDescription && (
                             <div
                                 className="scope-page__section"
-                                dangerouslySetInnerHTML={{ __html: sanitizedMarkdown }}
+                                dangerouslySetInnerHTML={{ __html: this.state.markdownDescription || '' }}
                             />
                         )}
                     </header>
