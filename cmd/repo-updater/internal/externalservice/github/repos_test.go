@@ -56,7 +56,7 @@ func newTestClient() *Client {
 	const cachePrefix = "__test__gh_repo"
 	rcache.SetupForTest(cachePrefix)
 	return &Client{
-		baseURL:    &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
+		apiURL:     &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
 		repoCache:  rcache.NewWithTTL(cachePrefix, 1000),
 		httpClient: &http.Client{},
 	}

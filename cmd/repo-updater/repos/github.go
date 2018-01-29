@@ -25,8 +25,20 @@ func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.Exter
 	return &api.ExternalRepoSpec{
 		ID:          repo.ID,
 		ServiceType: GitHubServiceType,
-		ServiceID:   baseURL.String(),
+		ServiceID:   NormalizeGitHubBaseURL(&baseURL).String(),
 	}
+}
+
+// NormalizeGitHubBaseURL modifies the input and returns a normalized form of the GitHub base URL
+// with insignificant differences (such as in presence of a trailing slash, or hostname case)
+// eliminated. Its return value should be used for the (ExternalRepoSpec).ServiceID field (and
+// passed to GitHubExternalRepoSpec) instead of a non-normalized base URL.
+func NormalizeGitHubBaseURL(baseURL *url.URL) *url.URL {
+	baseURL.Host = strings.ToLower(baseURL.Host)
+	if !strings.HasSuffix(baseURL.Path, "/") {
+		baseURL.Path += "/"
+	}
+	return baseURL
 }
 
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
@@ -93,12 +105,19 @@ func newGitHubClient(config schema.GitHubConnection) (*githubClient, error) {
 	if err != nil {
 		return nil, err
 	}
+	baseURL = NormalizeGitHubBaseURL(baseURL)
 	originalHostname := baseURL.Hostname()
 
 	// GitHub.com's API is hosted on api.github.com.
-	if hostname := strings.ToLower(baseURL.Hostname()); hostname == "github.com" || hostname == "www.github.com" {
-		baseURL.Scheme = "https"
-		baseURL.Host = "api.github.com" // might even be changed to http://github-proxy, but the github pkg handles that
+	apiURL := *baseURL
+	if hostname := strings.ToLower(apiURL.Hostname()); hostname == "github.com" || hostname == "www.github.com" {
+		// GitHub.com
+		apiURL = url.URL{Scheme: "https", Host: "api.github.com", Path: "/"}
+	} else {
+		// GitHub Enterprise
+		if apiURL.Path == "" || apiURL.Path == "/" {
+			apiURL = *apiURL.ResolveReference(&url.URL{Path: "/api"})
+		}
 	}
 
 	var transport http.RoundTripper
@@ -112,14 +131,16 @@ func newGitHubClient(config schema.GitHubConnection) (*githubClient, error) {
 
 	return &githubClient{
 		config:           config,
+		baseURL:          baseURL,
 		originalHostname: originalHostname,
-		client:           github.NewClient(baseURL, config.Token, transport),
+		client:           github.NewClient(&apiURL, config.Token, transport),
 	}, nil
 }
 
 type githubClient struct {
-	config schema.GitHubConnection
-	client *github.Client
+	config  schema.GitHubConnection
+	baseURL *url.URL
+	client  *github.Client
 
 	// originalHostname is the hostname of config.Url (differs from client baseURL, whose host is api.github.com
 	// for an originalHostname of github.com).

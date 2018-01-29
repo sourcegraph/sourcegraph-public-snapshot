@@ -37,7 +37,7 @@ var (
 
 // Client is a GitHub API client.
 type Client struct {
-	baseURL    *url.URL     // base URL of GitHub API; e.g., https://api.github.com
+	apiURL     *url.URL     // base URL of GitHub API; e.g., https://api.github.com
 	token      string       // a personal access token to authenticate requests, if set
 	httpClient *http.Client // the HTTP client to use
 
@@ -50,8 +50,12 @@ type Client struct {
 	rateLimitReset     time.Time // last X-RateLimit-Remaining HTTP response header value
 }
 
-// NewClient creates a new GitHub API client with an optional personal access token to authenticate requests.
-func NewClient(baseURL *url.URL, token string, transport http.RoundTripper) *Client {
+// NewClient creates a new GitHub API client with an optional personal access token to authenticate
+// requests.
+//
+// The API URL must point to the base URL of the GitHub API. This is https://api.github.com for
+// GitHub.com and http[s]://[github-enterprise-hostname]/api for GitHub Enterprise.
+func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Client {
 	if gitHubDisable {
 		transport = disabledTransport{}
 	}
@@ -61,33 +65,30 @@ func NewClient(baseURL *url.URL, token string, transport http.RoundTripper) *Cli
 	transport = &metricsTransport{Transport: transport}
 
 	var cacheTTL time.Duration
-	if isGitHubDotComURL(baseURL) {
+	if isGitHubDotComURL(apiURL) {
 		cacheTTL = 10 * time.Minute
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
-		baseURL = githubProxyURL
+		apiURL = githubProxyURL
 	} else {
 		// GitHub Enterprise
 		cacheTTL = 30 * time.Second
-		if baseURL.Path == "" || baseURL.Path == "/" {
-			baseURL = baseURL.ResolveReference(&url.URL{Path: "/api"})
-		}
 	}
 
 	// Cache for repository metadata.
-	key := sha256.Sum256([]byte(token + ":" + baseURL.String()))
+	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
 	repoCache := rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
 	return &Client{
-		baseURL:    baseURL,
+		apiURL:     apiURL,
 		token:      token,
 		httpClient: &http.Client{Transport: transport},
 		repoCache:  repoCache,
 	}
 }
 
-func isGitHubDotComURL(baseURL *url.URL) bool {
-	hostname := strings.ToLower(baseURL.Hostname())
+func isGitHubDotComURL(apiURL *url.URL) bool {
+	hostname := strings.ToLower(apiURL.Hostname())
 	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
 }
 
@@ -179,7 +180,7 @@ func (c *Client) recordRateLimitHeaders(h http.Header) {
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
-	req.URL = c.baseURL.ResolveReference(&url.URL{Path: path.Join(c.baseURL.Path, req.URL.Path)})
+	req.URL = c.apiURL.ResolveReference(&url.URL{Path: path.Join(c.apiURL.Path, req.URL.Path)})
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if c.token != "" {
 		req.Header.Set("Authorization", "bearer "+c.token)

@@ -49,7 +49,8 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 
 var (
 	githubdotcomClient  *github.Client
-	githubdotcomBaseURL = url.URL{Scheme: "https", Host: "github.com", Path: "/"}
+	githubdotcomBaseURL = *repos.NormalizeGitHubBaseURL(&url.URL{Scheme: "https", Host: "github.com", Path: "/"})
+	githubdotcomAPIURL  = url.URL{Scheme: "https", Host: "api.github.com", Path: "/"}
 )
 
 func init() {
@@ -57,7 +58,7 @@ func init() {
 	if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
 		githubdotcomToken = c.Token
 	}
-	githubdotcomClient = github.NewClient(&githubdotcomBaseURL, githubdotcomToken, nil)
+	githubdotcomClient = github.NewClient(&githubdotcomAPIURL, githubdotcomToken, nil)
 }
 
 func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
