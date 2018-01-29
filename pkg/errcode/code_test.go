@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -16,7 +15,7 @@ func TestHTTP(t *testing.T) {
 		want int
 	}{
 		{os.ErrNotExist, http.StatusNotFound},
-		{legacyerr.Errorf(legacyerr.NotFound, ""), http.StatusNotFound},
+		{&notFoundErr{}, http.StatusNotFound},
 		{nil, http.StatusOK},
 		{errors.New(""), http.StatusInternalServerError},
 	}
@@ -26,4 +25,14 @@ func TestHTTP(t *testing.T) {
 			t.Errorf("error %q: got %d, want %d", test.err, c, test.want)
 		}
 	}
+}
+
+type notFoundErr struct{}
+
+func (e *notFoundErr) Error() string {
+	return "not found"
+}
+
+func (e *notFoundErr) NotFound() bool {
+	return true
 }

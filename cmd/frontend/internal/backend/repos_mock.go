@@ -9,7 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
@@ -34,7 +33,7 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %d not found", wantRepo)
+			return nil, db.ErrRepoNotFound
 		}
 		return &types.Repo{ID: repo}, nil
 	}
@@ -47,7 +46,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, wantURI api.RepoURI, repo api.Rep
 		*called = true
 		if uri != wantURI {
 			t.Errorf("got repo URI %q, want %q", uri, wantURI)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", uri)
+			return nil, db.ErrRepoNotFound
 		}
 		return &types.Repo{ID: repo, URI: uri}, nil
 	}
@@ -60,7 +59,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 		*called = true
 		if repo != returns.ID {
 			t.Errorf("got repo %d, want %d", repo, returns.ID)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %d not found", returns.ID)
+			return nil, db.ErrRepoNotFound
 		}
 		return returns, nil
 	}
@@ -102,7 +101,7 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", legacyerr.Errorf(legacyerr.NotFound, "revision not found")
+		return "", vcs.ErrRevisionNotFound
 	}
 	return
 }
@@ -122,7 +121,7 @@ func (s *MockRepos) MockOpenVCS(t *testing.T, wantRepo api.RepoID, mockVCSRepo v
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
+			return nil, db.ErrRepoNotFound
 		}
 		return mockVCSRepo, nil
 	}

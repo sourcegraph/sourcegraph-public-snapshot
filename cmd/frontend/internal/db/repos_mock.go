@@ -7,7 +7,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 )
 
 type MockRepos struct {
@@ -25,7 +24,7 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
+			return nil, ErrRepoNotFound
 		}
 		return &types.Repo{ID: repo}, nil
 	}
@@ -38,7 +37,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 		*called = true
 		if repo != returns.ID {
 			t.Errorf("got repo %d, want %d", repo, returns.ID)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v (%d) not found", returns.URI, returns.ID)
+			return nil, ErrRepoNotFound
 		}
 		return returns, nil
 	}
@@ -51,7 +50,7 @@ func (s *MockRepos) MockGetURI(t *testing.T, want api.RepoID, returns api.RepoUR
 		*called = true
 		if repo != want {
 			t.Errorf("got repo %d, want %d", repo, want)
-			return "", legacyerr.Errorf(legacyerr.NotFound, "repo %d not found", want)
+			return "", ErrRepoNotFound
 		}
 		return returns, nil
 	}
@@ -64,7 +63,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, want api.RepoURI, repo api.RepoID
 		*called = true
 		if uri != want {
 			t.Errorf("got repo URI %q, want %q", uri, want)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", uri)
+			return nil, ErrRepoNotFound
 		}
 		return &types.Repo{ID: repo, URI: uri}, nil
 	}
