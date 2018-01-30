@@ -153,6 +153,6 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
         } else {
             localStorage.removeItem(RepoRevSidebar.STORAGE_KEY)
         }
-        this.setState({ showSidebar: !this.state.showSidebar })
+        this.setState(state => ({ showSidebar: !state.showSidebar }))
     }
 }

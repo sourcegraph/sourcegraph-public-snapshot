@@ -181,7 +181,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
             e.preventDefault()
         }
         eventLogger.log('SavedQueryToggleEditing', { queries: { editing: !this.state.editing } })
-        this.setState({ editing: !this.state.editing })
+        this.setState(state => ({ editing: !state.editing }))
     }
 
     private onDidUpdateSavedQuery = () => {

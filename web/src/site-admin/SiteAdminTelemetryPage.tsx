@@ -36,7 +36,9 @@ class TelemetrySample extends React.PureComponent<
         )
     }
 
-    private toggle = () => this.setState({ expanded: !this.state.expanded })
+    private toggle = () => {
+        this.setState(state => ({ expanded: !state.expanded }))
+    }
 }
 
 interface Props extends RouteComponentProps<any> {}

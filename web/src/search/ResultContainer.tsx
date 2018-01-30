@@ -109,6 +109,6 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         if (!this.state.expanded) {
             eventLogger.log('SearchResultsExpanded')
         }
-        this.setState({ expanded: !this.state.expanded })
+        this.setState(state => ({ expanded: !state.expanded }))
     }
 }
