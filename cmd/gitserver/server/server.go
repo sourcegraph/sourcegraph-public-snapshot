@@ -554,7 +554,11 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 	dir := path.Join(s.ReposDir, string(repo))
 
 	if url == "" {
-		log15.Warn("Deprecated: use of saved Git remote for repo updating (API client should set URL)", "repo", repo)
+		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
+		url = OriginMap(repo)
+	}
+	if url == "" {
+		// log15.Warn("Deprecated: use of saved Git remote for repo updating (API client should set URL)", "repo", repo)
 		var err error
 		url, err = repoRemoteURL(ctx, dir)
 		if err != nil || url == "" {

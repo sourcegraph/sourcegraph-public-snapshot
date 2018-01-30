@@ -75,6 +75,7 @@ var repoLastFetched = func(dir string) (time.Time, error) {
 // multiple fetch URLs, only the first is returned.
 var repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "remote", "get-url", "origin")
+	cmd.Dir = dir
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
