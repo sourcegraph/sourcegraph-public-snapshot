@@ -5,10 +5,12 @@ package slack
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
@@ -83,7 +85,10 @@ func Post(payload *Payload, webhookURL *string) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return errors.Wrap(err, "slack: http request")
 	}
