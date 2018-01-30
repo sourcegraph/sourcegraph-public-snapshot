@@ -215,9 +215,26 @@ type ConfigurationMutation {
     # type instead if possible.
     updateConfiguration(input: UpdateConfigurationInput!): UpdateConfigurationPayload
     # Create a saved query.
-    createSavedQuery(description: String!, query: String!, showOnHomepage: Boolean = false): SavedQuery!
+    createSavedQuery(
+        description: String!
+        query: String!
+        showOnHomepage: Boolean = false
+        notify: Boolean = false
+        notifySlack: Boolean = false
+        notifyUsers: [String!]! = []
+        notifyOrganizations: [String!]! = []
+    ): SavedQuery!
     # Update the saved query with the given ID in the configuration.
-    updateSavedQuery(id: ID!, description: String, query: String, showOnHomepage: Boolean = false): SavedQuery!
+    updateSavedQuery(
+        id: ID!
+        description: String
+        query: String
+        showOnHomepage: Boolean = false
+        notify: Boolean = false
+        notifySlack: Boolean = false
+        notifyUsers: [String!]! = []
+        notifyOrganizations: [String!]! = []
+    ): SavedQuery!
     # Delete the saved query with the given ID in the configuration.
     deleteSavedQuery(id: ID!): EmptyResponse
 }
@@ -388,6 +405,10 @@ type SavedQuery {
     description: String!
     query: SearchQuery!
     showOnHomepage: Boolean!
+    notify: Boolean!
+    notifySlack: Boolean!
+    notifyUsers: [String!]!
+    notifyOrganizations: [String!]!
 }
 
 type SearchQueryDescription {
