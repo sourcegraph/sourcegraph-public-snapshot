@@ -20,7 +20,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
@@ -400,10 +399,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	if service != "" {
 		// Link unfurled by some service in specific (i.e. not just some user
 		// visiting this link in their browser)
-		err := eventlogger.EventLogger.LogEvent(nil, "CommentUnfurled", map[string]string{"unfurl_service": service})
-		if err != nil {
-			log15.Warn("failed to log link unfurl event", "error", err)
-		}
+		eventlogger.LogEvent("CommentUnfurled", map[string]string{"unfurl_service": service})
 	}
 
 	common.Title = fmt.Sprintf("%s - Sourcegraph", title)
@@ -490,10 +486,7 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 	if service != "" {
 		// Link unfurled by some service in specific (i.e. not just some user
 		// visiting this link in their browser)
-		err := eventlogger.EventLogger.LogEvent(nil, "DeepLinkUnfurled", map[string]string{"unfurl_service": service})
-		if err != nil {
-			log15.Warn("failed to log link unfurl event", "error", err)
-		}
+		eventlogger.LogEvent("DeepLinkUnfurled", map[string]string{"unfurl_service": service})
 	}
 
 	return renderTemplate(w, "app.html", common)

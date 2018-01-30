@@ -8,19 +8,32 @@ import (
 	"net/http"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 var backendEventsTrackingSiteID = "SourcegraphBackend"
 var defaultRemoteURL = "https://sourcegraph-logging.telligentdata.com/log/v1/"
 
-// EventLogger is a singleton for event logging from the backend
-// TODO(Dan): build this to handle custom end-points for on-prem deployments
-var EventLogger = new(nil)
+// defaultLogger is a singleton for event logging from the backend
+var defaultLogger = new(nil)
+
+// LogEvent sends a payload representing an event to the remote analytics
+// endpoint. Note: This does not block since it creates a new goroutine.
+func LogEvent(eventLabel string, eventProperties map[string]string) {
+	go func() {
+		err := defaultLogger.LogEvent(nil, eventLabel, eventProperties)
+		if err != nil {
+			log15.Warn("eventlogger.LogEvent failed", "event", eventLabel, "error", err)
+		}
+	}()
+}
 
 // eventLogger represents a connection to a remote URL for sending
 // event logs, with environment and user context
@@ -52,17 +65,14 @@ func new(opt *eventLoggerOptions) *eventLogger {
 
 // post sends payload to the remote analytics endpoint
 func (logger *eventLogger) post(payload *Payload) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		return errors.Wrap(err, "eventLogger: marshal json")
 	}
-	req, err := http.NewRequest("POST", logger.url, bytes.NewReader(payloadJSON))
-	if err != nil {
-		return errors.Wrap(err, "eventLogger: create post request")
-	}
-	req.Header.Set("Content-Type", "text/plain")
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ctxhttp.Post(ctx, nil, logger.url, "text/plain", bytes.NewReader(payloadJSON))
 	if err != nil {
 		return errors.Wrap(err, "eventLogger: http request")
 	}
@@ -72,7 +82,7 @@ func (logger *eventLogger) post(payload *Payload) error {
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("eventLogger: %s failed with %d %s", payloadJSON, resp.StatusCode, string(body))
+		return errors.Errorf("eventLogger: %s failed with %d %s", payloadJSON, resp.StatusCode, string(body))
 	}
 	return nil
 }
