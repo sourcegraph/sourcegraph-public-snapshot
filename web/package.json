@@ -119,7 +119,7 @@
     "write-file-webpack-plugin": "^4.2.0"
   },
   "dependencies": {
-    "@sourcegraph/icons": "^1.10.1",
+    "@sourcegraph/icons": "^1.11.2",
     "@sqs/jsonc-parser": "^1.0.1",
     "bootstrap": "^4.0.0-beta",
     "copy-to-clipboard": "^3.0.7",
@@ -142,6 +142,7 @@
     "react-visibility-sensor": "^3.10.1",
     "rx-component": "^0.0.8",
     "rxjs": "^5.5.2",
+    "string-score": "^1.0.1",
     "vscode-languageserver-types": "^3.4.0",
     "whatwg-url": "^6.2.1"
   }

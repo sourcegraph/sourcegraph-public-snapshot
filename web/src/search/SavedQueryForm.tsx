@@ -96,7 +96,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         return (
             <form className="saved-query-form" onSubmit={this.handleSubmit}>
-                {title && <h3 className="saved-query-form__title">{title}</h3>}
+                {title && <h1 className="saved-query-form__title">{title}</h1>}
                 <span>Search query</span>
                 <input
                     type="text"
@@ -112,7 +112,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     onFocus={this.handleInputFocus}
                     onBlur={this.handleInputBlur}
                 />
-                <span>Description</span>
+                <span>Description of this search</span>
                 <input
                     type="text"
                     name="description"

@@ -1,18 +1,27 @@
 @import './global-styles/colors';
 
-.saved-query {
+.saved-query-row {
     width: 100%;
+
+    &:last-of-type {
+        border-bottom: 1px solid $color-border;
+    }
 
     &__row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        border-style: solid none;
-        border-width: 0.5px;
-        border-color: $color-border;
 
-        &:first-child:not(:last-child) {
-            border-bottom-width: 0;
+        border-top: 1px solid $color-border;
+
+        padding: 0 0.5rem;
+
+        &:hover {
+            background: #232f43;
+
+            .saved-query-row__description {
+                color: white;
+            }
         }
     }
 
@@ -73,8 +82,8 @@
 
     &__result-count {
         display: inline-block;
-        padding: .25rem .5rem;
-        margin: .25rem .5rem;
+        padding: 0.25rem 0.5rem;
+        margin: 0.25rem 0 0.25rem 0.5rem;
         border-radius: 1.125rem;
         background: $color-bg-2;
     }
@@ -142,9 +151,21 @@
 }
 
 .theme-light {
-    .saved-query {
+    .saved-query-row {
+        &:last-of-type {
+            border-bottom-color: $color-light-border;
+        }
+
         &__row {
             border-color: $color-light-border;
+
+            &:hover {
+                background: #f2f4f8;
+            }
+
+            &:hover .saved-query-row__description {
+                color: $color-light-text-1;
+            }
         }
 
         &__result-count {
@@ -153,6 +174,10 @@
         }
 
         &__description {
+            color: $color-light-text-1;
+        }
+
+        &:hover .action {
             color: $color-light-text-1;
         }
     }

@@ -1,5 +1,5 @@
 @import './SavedQueryForm';
-@import './SavedQuery';
+@import './SavedQueryRow';
 
 .saved-queries {
     display: flex;
@@ -29,6 +29,7 @@
 
     &__help {
         line-height: normal;
+        padding: 0.5rem 1rem;
     }
 
     .saved-query-form {

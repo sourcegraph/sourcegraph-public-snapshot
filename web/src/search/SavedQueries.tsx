@@ -1,6 +1,7 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import HelpIcon from '@sourcegraph/icons/lib/Help'
 import Loader from '@sourcegraph/icons/lib/Loader'
+import WandIcon from '@sourcegraph/icons/lib/MagicWand'
 import * as H from 'history'
 import * as React from 'react'
 import { Redirect } from 'react-router'
@@ -11,8 +12,10 @@ import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { eventLogger } from '../tracking/eventLogger'
 import { observeSavedQueries } from './backend'
+import { ExampleSearches } from './ExampleSearches'
 import { SavedQuery } from './SavedQuery'
 import { SavedQueryCreateForm } from './SavedQueryCreateForm'
+import { SavedQueryFields } from './SavedQueryForm'
 
 interface Props {
     location: H.Location
@@ -25,32 +28,37 @@ interface State {
     /**
      * Whether the saved query creation form is visible.
      */
-    creating: boolean
+    isCreating: boolean
 
     loading: boolean
     error?: Error
     user: GQL.IUser | null
+
+    isViewingExamples: boolean
+    exampleQuery: Partial<SavedQueryFields> | null
 }
 
 export class SavedQueries extends React.Component<Props, State> {
     public state: State = {
         savedQueries: [],
-        creating: false,
+        isCreating: false,
         loading: true,
         user: null,
+        isViewingExamples: false,
+        exampleQuery: null,
     }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
-        super(props)
+    public componentDidMount(): void {
+        const isHomepage = this.props.location.pathname === '/search'
 
         this.subscriptions.add(
             observeSavedQueries()
                 .pipe(
                     map(savedQueries => ({
-                        savedQueries: savedQueries.sort((a, b) => {
+                        savedQueries: savedQueries.filter(query => !isHomepage || query.showOnHomepage).sort((a, b) => {
                             if (a.description < b.description) {
                                 return -1
                             }
@@ -64,9 +72,7 @@ export class SavedQueries extends React.Component<Props, State> {
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
-    }
 
-    public componentDidMount(): void {
         this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
     }
 
@@ -93,13 +99,6 @@ export class SavedQueries extends React.Component<Props, State> {
             return <Redirect to={'/sign-up' + newUrl.search} />
         }
 
-        const savedQueries = this.state.savedQueries.filter(savedQuery => {
-            if (isHomepage) {
-                return savedQuery.showOnHomepage
-            }
-            return savedQuery
-        })
-
         return (
             <div className="saved-queries">
                 {!isHomepage && (
@@ -109,8 +108,17 @@ export class SavedQueries extends React.Component<Props, State> {
                             <span className="saved-queries__center">
                                 <button
                                     className="btn btn-link"
+                                    onClick={this.toggleExamples}
+                                    disabled={this.state.isCreating || this.state.isViewingExamples}
+                                >
+                                    <WandIcon className="icon-inline" />
+                                    Discover useful searches
+                                </button>
+
+                                <button
+                                    className="btn btn-link"
                                     onClick={this.toggleCreating}
-                                    disabled={this.state.creating}
+                                    disabled={this.state.isCreating || this.state.isViewingExamples}
                                 >
                                     <AddIcon className="icon-inline" /> Add new query
                                 </button>
@@ -128,28 +136,37 @@ export class SavedQueries extends React.Component<Props, State> {
                                 </a>
                             </span>
                         </div>
-                        {this.state.creating && (
+                        {this.state.isCreating && (
                             <SavedQueryCreateForm
                                 onDidCreate={this.onDidCreateSavedQuery}
                                 onDidCancel={this.toggleCreating}
+                                values={this.state.exampleQuery || {}}
                             />
                         )}
-                        {!this.state.creating &&
+                        {!this.state.isCreating &&
+                            !this.state.isViewingExamples &&
                             this.state.savedQueries.length === 0 && <p>You don't have any saved queries yet.</p>}
                     </div>
                 )}
                 <div>
-                    {savedQueries.map((savedQuery, i) => (
+                    {!this.state.isCreating &&
+                        this.state.isViewingExamples && (
+                            <ExampleSearches
+                                isLightTheme={this.props.isLightTheme}
+                                onClose={this.toggleExamples}
+                                onExampleSelected={this.onExampleSelected}
+                            />
+                        )}
+                    {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
-                            hideBottomBorder={i === 0 && savedQueries.length > 1}
-                            key={i}
+                            key={`${savedQuery.query.query}-${i}`}
                             savedQuery={savedQuery}
                             onDidDuplicate={this.onDidDuplicateSavedQuery}
                             isLightTheme={this.props.isLightTheme}
                         />
                     ))}
                 </div>
-                {savedQueries.length === 0 &&
+                {this.state.savedQueries.length === 0 &&
                     this.state.user &&
                     isHomepage && (
                         <div className="saved-query">
@@ -168,13 +185,23 @@ export class SavedQueries extends React.Component<Props, State> {
     }
 
     private toggleCreating = () => {
-        eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: !this.state.creating } })
-        this.setState(state => ({ creating: !state.creating }))
+        eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: !this.state.isCreating } })
+        this.setState(state => ({ isCreating: !state.isCreating, exampleQuery: null }))
+    }
+
+    private toggleExamples = () => {
+        eventLogger.log('SavedQueriesToggleExamples', { queries: { viewingExamples: !this.state.isViewingExamples } })
+        this.setState(state => ({ isViewingExamples: !state.isViewingExamples, exampleQuery: null }))
+    }
+
+    private onExampleSelected = (query: Partial<SavedQueryFields>) => {
+        eventLogger.log('SavedQueryExampleSelected', { queries: { example: query } })
+        this.setState({ isViewingExamples: false, isCreating: true, exampleQuery: query })
     }
 
     private onDidCreateSavedQuery = () => {
         eventLogger.log('SavedQueryCreated')
-        this.setState({ creating: false })
+        this.setState({ isCreating: false, exampleQuery: null })
     }
 
     private onDidDuplicateSavedQuery = () => {

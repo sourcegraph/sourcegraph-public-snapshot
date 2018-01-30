@@ -8,5 +8,6 @@
     "@sourcegraph/prettierrc": "^2.1.1",
     "chokidar-cli": "^1.2.0",
     "prettier": "^1.10.2"
-  }
+  },
+  "dependencies": {}
 }

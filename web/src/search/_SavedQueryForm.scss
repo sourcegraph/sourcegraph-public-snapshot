@@ -1,6 +1,7 @@
 .saved-query-form {
-    background-color: darken($color-page-background, 15%);
     padding: 1.5rem;
+
+    border: 1px solid $color-border;
 
     &__error {
         margin-top: 1rem;
@@ -38,8 +39,7 @@
 
 .theme-light {
     .saved-query-form {
-        background: $color-light-bg-2;
-
+        border: 1px solid $border-color;
         .form-control {
             background: $color-light-bg-1;
         }
