@@ -1,7 +1,6 @@
 package hubspot
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -14,12 +13,10 @@ import (
 // that is already taken
 //
 // http://developers.hubspot.com/docs/methods/contacts/create_or_update
-func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) ([]byte, error) {
-	payload, err := json.Marshal(newAPIValues(params))
-	if err != nil {
-		return nil, err
-	}
-	return c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), "", string(payload))
+func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) (*ContactResponse, error) {
+	var resp ContactResponse
+	err := c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), newAPIValues(params), &resp)
+	return &resp, err
 }
 
 func (c *Client) baseContactURL(email string) *url.URL {

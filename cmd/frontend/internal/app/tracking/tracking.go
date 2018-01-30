@@ -1,7 +1,6 @@
 package tracking
 
 import (
-	"encoding/json"
 	"log"
 	"net/url"
 	"time"
@@ -78,7 +77,7 @@ func trackHubSpotContact(email string, eventLabel string, params *hubspot.Contac
 	}
 
 	// Create or update the contact
-	resp, err := c.CreateOrUpdateContact(email, params)
+	hsResponse, err := c.CreateOrUpdateContact(email, params)
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +88,6 @@ func trackHubSpotContact(email string, eventLabel string, params *hubspot.Contac
 		if err != nil {
 			return nil, errors.Wrap(err, "LogEvent")
 		}
-	}
-
-	// Parse response
-	hsResponse := &hubspot.ContactResponse{}
-	err = json.Unmarshal(resp, hsResponse)
-	if err != nil {
-		return nil, err
 	}
 
 	return hsResponse, nil
