@@ -39,7 +39,7 @@ import (
 var runCommand = func(ctx context.Context, cmd *exec.Cmd) (err error, exitCode int) { // mocked by tests
 	span, _ := opentracing.StartSpanFromContext(ctx, "runCommand")
 	span.SetTag("path", cmd.Path)
-	span.SetTag("args", cmd.Args)
+	span.SetTag("args", fmt.Sprint(cmd.Args))
 	span.SetTag("dir", cmd.Dir)
 	defer func() {
 		if err != nil {
