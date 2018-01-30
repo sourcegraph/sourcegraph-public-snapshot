@@ -348,9 +348,9 @@ func checkAPIResponse(resp *http.Response) error {
 		b := buf.Bytes()
 		errString := string(b)
 		if errString != "" {
-			return fmt.Errorf("sourcegraph API response status %d: %s", resp.StatusCode, errString)
+			return fmt.Errorf("internal API response error code %d: %s (%s)", resp.StatusCode, errString, resp.Request.URL)
 		}
-		return fmt.Errorf("sourcegraph API response status %d", resp.StatusCode)
+		return fmt.Errorf("internal API response error code %d (%s)", resp.StatusCode, resp.Request.URL)
 	}
 	return nil
 }
