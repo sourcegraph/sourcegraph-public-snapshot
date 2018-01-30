@@ -141,6 +141,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
 	}
+	defer resp.Body.Close()
 
 	var res *gqlSearchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {

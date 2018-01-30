@@ -26,7 +26,12 @@ var InternalClient = &internalClient{URL: "http://" + frontendInternal}
 // the endpoint, indicating that the endpoint is available.
 func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
 	ping := func(ctx context.Context) error {
-		resp, err := http.Get(c.URL + "/.internal/ping")
+		req, err := http.NewRequest("GET", c.URL+"/.internal/ping", nil)
+		if err != nil {
+			return err
+		}
+		req = req.WithContext(ctx)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return err
 		}
@@ -126,12 +131,8 @@ type SavedQuerySpecAndConfig struct {
 
 // SavedQueriesListAll lists all saved queries, from every user, org, etc.
 func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[SavedQueryIDSpec]ConfigSavedQuery, error) {
-	resp, err := c.post("saved-queries/list-all", nil)
-	if err != nil {
-		return nil, err
-	}
 	var result []SavedQuerySpecAndConfig
-	err = json.NewDecoder(resp.Body).Decode(&result)
+	err := c.post(ctx, "saved-queries/list-all", nil, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -163,16 +164,8 @@ type SavedQueryInfo struct {
 // SavedQueriesGetInfo gets the info from the DB for the given saved query. nil
 // is returned if there is no existing info for the saved query.
 func (c *internalClient) SavedQueriesGetInfo(ctx context.Context, query string) (*SavedQueryInfo, error) {
-	args, err := json.Marshal(query)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.post("saved-queries/get-info", args)
-	if err != nil {
-		return nil, err
-	}
 	var result *SavedQueryInfo
-	err = json.NewDecoder(resp.Body).Decode(&result)
+	err := c.post(ctx, "saved-queries/get-info", query, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -181,33 +174,15 @@ func (c *internalClient) SavedQueriesGetInfo(ctx context.Context, query string) 
 
 // SavedQueriesSetInfo sets the info in the DB for the given query.
 func (c *internalClient) SavedQueriesSetInfo(ctx context.Context, info *SavedQueryInfo) error {
-	args, err := json.Marshal(info)
-	if err != nil {
-		return err
-	}
-	_, err = c.post("saved-queries/set-info", args)
-	return err
+	return c.post(ctx, "saved-queries/set-info", info, nil)
 }
 
 func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query string) error {
-	args, err := json.Marshal(query)
-	if err != nil {
-		return err
-	}
-	_, err = c.post("saved-queries/delete-info", args)
-	return err
+	return c.post(ctx, "saved-queries/delete-info", query, nil)
 }
 
 func (c *internalClient) OrgsListUsers(ctx context.Context, orgID int32) (users []int32, err error) {
-	args, err := json.Marshal(orgID)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.post("orgs/list-users", args)
-	if err != nil {
-		return nil, err
-	}
-	err = json.NewDecoder(resp.Body).Decode(&users)
+	err = c.post(ctx, "orgs/list-users", orgID, &users)
 	if err != nil {
 		return nil, err
 	}
@@ -215,15 +190,7 @@ func (c *internalClient) OrgsListUsers(ctx context.Context, orgID int32) (users 
 }
 
 func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (orgID *int32, err error) {
-	args, err := json.Marshal(orgName)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.post("orgs/get-by-name", args)
-	if err != nil {
-		return nil, err
-	}
-	err = json.NewDecoder(resp.Body).Decode(&orgID)
+	err = c.post(ctx, "orgs/get-by-name", orgName, &orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -231,15 +198,7 @@ func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (org
 }
 
 func (c *internalClient) OrgsGetSlackWebhooks(ctx context.Context, orgIDs []int32) (webhooks []*string, err error) {
-	args, err := json.Marshal(orgIDs)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.post("orgs/get-slack-webhooks", args)
-	if err != nil {
-		return nil, err
-	}
-	err = json.NewDecoder(resp.Body).Decode(&webhooks)
+	err = c.post(ctx, "orgs/get-slack-webhooks", orgIDs, &webhooks)
 	if err != nil {
 		return nil, err
 	}
@@ -247,15 +206,7 @@ func (c *internalClient) OrgsGetSlackWebhooks(ctx context.Context, orgIDs []int3
 }
 
 func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {
-	args, err := json.Marshal(username)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.post("users/get-by-username", args)
-	if err != nil {
-		return nil, err
-	}
-	err = json.NewDecoder(resp.Body).Decode(&user)
+	err = c.post(ctx, "users/get-by-username", username, &user)
 	if err != nil {
 		return nil, err
 	}
@@ -263,15 +214,7 @@ func (c *internalClient) UsersGetByUsername(ctx context.Context, username string
 }
 
 func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (email *string, err error) {
-	args, err := json.Marshal(userID)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.post("user-emails/get-email", args)
-	if err != nil {
-		return nil, err
-	}
-	err = json.NewDecoder(resp.Body).Decode(&email)
+	err = c.post(ctx, "user-emails/get-email", userID, &email)
 	if err != nil {
 		return nil, err
 	}
@@ -282,12 +225,8 @@ func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (
 // variables to build AppURL, remove this in favor of services just reading it
 // directly from the configuration file.
 func (c *internalClient) AppURL(ctx context.Context) (string, error) {
-	resp, err := c.post("app-url", nil)
-	if err != nil {
-		return "", err
-	}
 	var appURL string
-	err = json.NewDecoder(resp.Body).Decode(&appURL)
+	err := c.post(ctx, "app-url", nil, &appURL)
 	if err != nil {
 		return "", err
 	}
@@ -295,40 +234,22 @@ func (c *internalClient) AppURL(ctx context.Context) (string, error) {
 }
 
 func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
-	req, err := json.Marshal(&DefsRefreshIndexRequest{
+	return c.post(ctx, "defs/refresh-index", &DefsRefreshIndexRequest{
 		RepoURI:  uri,
 		CommitID: commitID,
-	})
-	if err != nil {
-		return err
-	}
-	_, err = c.post("defs/refresh-index", req)
-	return err
+	}, nil)
 }
 
 func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
-	req, err := json.Marshal(&PkgsRefreshIndexRequest{
+	return c.post(ctx, "pkgs/refresh-index", &PkgsRefreshIndexRequest{
 		RepoURI:  uri,
 		CommitID: commitID,
-	})
-	if err != nil {
-		return err
-	}
-	_, err = c.post("pkgs/refresh-index", req)
-	return err
+	}, nil)
 }
 
 func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCreateOrUpdateRequest) (*Repo, error) {
-	req, err := json.Marshal(op)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.post("repos/create-if-not-exists", req)
-	if err != nil {
-		return nil, err
-	}
 	var repo Repo
-	err = json.NewDecoder(resp.Body).Decode(&repo)
+	err := c.post(ctx, "repos/create-if-not-exists", op, &repo)
 	if err != nil {
 		return nil, err
 	}
@@ -336,19 +257,11 @@ func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCrea
 }
 
 func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo RepoID, lang string) ([]*DependencyReference, error) {
-	req, err := json.Marshal(RepoUnindexedDependenciesRequest{
+	var unfetchedDeps []*DependencyReference
+	err := c.post(ctx, "repos/unindexed-dependencies", RepoUnindexedDependenciesRequest{
 		RepoID:   repo,
 		Language: lang,
-	})
-	if err != nil {
-		return nil, err
-	}
-	var unfetchedDeps []*DependencyReference
-	resp, err := c.post("repos/unindexed-dependencies", req)
-	if err != nil {
-		return nil, err
-	}
-	err = json.NewDecoder(resp.Body).Decode(&unfetchedDeps)
+	}, &unfetchedDeps)
 	if err != nil {
 		return nil, err
 	}
@@ -356,28 +269,16 @@ func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo Re
 }
 
 func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, commitID CommitID, lang string) error {
-	req, err := json.Marshal(RepoUpdateIndexRequest{
+	return c.post(ctx, "repos/update-index", RepoUpdateIndexRequest{
 		RepoID:   repo,
 		CommitID: commitID,
 		Language: lang,
-	})
-	if err != nil {
-		return err
-	}
-	_, err = c.post("repos/update-index", req)
-	if err != nil {
-		return err
-	}
-	return nil
+	}, nil)
 }
 
 func (c *internalClient) ReposGetByURI(ctx context.Context, uri RepoURI) (*Repo, error) {
-	resp, err := c.get("repos/" + string(uri))
-	if err != nil {
-		return nil, err
-	}
 	var repo Repo
-	err = json.NewDecoder(resp.Body).Decode(&repo)
+	err := c.post(ctx, "repos/"+string(uri), nil, &repo)
 	if err != nil {
 		return nil, err
 	}
@@ -385,16 +286,8 @@ func (c *internalClient) ReposGetByURI(ctx context.Context, uri RepoURI) (*Repo,
 }
 
 func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
-	req, err := json.Marshal(ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID})
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.post("repos/inventory-uncached", req)
-	if err != nil {
-		return nil, err
-	}
 	var inv inventory.Inventory
-	err = json.NewDecoder(resp.Body).Decode(&inv)
+	err := c.post(ctx, "repos/inventory-uncached", ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID}, &inv)
 	if err != nil {
 		return nil, err
 	}
@@ -402,49 +295,50 @@ func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo Rep
 }
 
 func (c *internalClient) GitoliteUpdateRepos(ctx context.Context) error {
-	_, err := c.post("gitolite/update-repos", []byte{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.post(ctx, "gitolite/update-repos", nil, nil)
 }
 
 func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri RepoURI, callsign, url string) error {
-	req, err := json.Marshal(PhabricatorRepoCreateRequest{
+	return c.post(ctx, "phabricator/repo-create", PhabricatorRepoCreateRequest{
 		RepoURI:  uri,
 		Callsign: callsign,
 		URL:      url,
-	})
+	}, nil)
+}
+
+// post sends an HTTP Post request to the internal route. If reqBody is
+// non-nil it will Marshal it as JSON and set that as the Request body. If
+// respBody is non-nil the response body will be JSON unmarshalled to resp.
+func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody interface{}) error {
+	var data []byte
+	if reqBody != nil {
+		var err error
+		data, err = json.Marshal(reqBody)
+		if err != nil {
+			return err
+		}
+	}
+
+	req, err := http.NewRequest("POST", c.URL+"/.internal/"+route, bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
-	_, err = c.post("phabricator/repo-create", req)
+	req = req.WithContext(ctx)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
+	}
+	defer resp.Body.Close()
+	if err := checkAPIResponse(resp); err != nil {
+		return err
+	}
+
+	if respBody != nil {
+		return json.NewDecoder(resp.Body).Decode(respBody)
 	}
 	return nil
-}
-
-func (c *internalClient) post(route string, body []byte) (*http.Response, error) {
-	resp, err := http.Post(c.URL+"/.internal/"+route, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
-	if err := checkAPIResponse(resp); err != nil {
-		return nil, err
-	}
-	return resp, err
-}
-
-func (c *internalClient) get(route string) (*http.Response, error) {
-	resp, err := http.Get(c.URL + "/.internal/" + route)
-	if err != nil {
-		return nil, err
-	}
-	if err := checkAPIResponse(resp); err != nil {
-		return nil, err
-	}
-	return resp, err
 }
 
 func checkAPIResponse(resp *http.Response) error {
