@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
@@ -22,4 +23,17 @@ func TraceName(ctx context.Context, name string) (string, context.Context) {
 	}
 	names = append(names, name)
 	return strings.Join(names, " > "), context.WithValue(ctx, traceNameKey, names)
+}
+
+func init() {
+	// Ignore warnings from the tracer about SetTag calls with unrecognized value types. The
+	// github.com/lightstep/lightstep-tracer-go package calls fmt.Sprintf("%#v", ...) on them, which is fine.
+	defaultHandler := lightstep.NewEventLogOneError()
+	lightstep.SetGlobalEventHandler(func(e lightstep.Event) {
+		if _, ok := e.(lightstep.EventUnsupportedValue); ok {
+			// ignore
+		} else {
+			defaultHandler(e)
+		}
+	})
 }
