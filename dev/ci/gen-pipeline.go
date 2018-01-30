@@ -107,12 +107,10 @@ func pkgs() []string {
 			panic(err)
 		}
 
-		if len(pkg.TestGoFiles) == 0 && len(pkg.XTestGoFiles) == 0 {
-			fmt.Fprintf(os.Stderr, "error: package %s has no tests\n", pkg.ImportPath)
-			os.Exit(1)
+		if len(pkg.TestGoFiles) != 0 || len(pkg.XTestGoFiles) != 0 {
+			pkgs = append(pkgs, path)
 		}
 
-		pkgs = append(pkgs, path)
 		return nil
 	})
 	if err != nil {
