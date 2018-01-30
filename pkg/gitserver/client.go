@@ -76,7 +76,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		span.Finish()
 	}()
 	span.SetTag("request", "Exec")
-	span.SetTag("repo", c.Repo)
+	span.SetTag("repo", c.Repo.Name)
 	span.SetTag("args", c.Args[1:])
 
 	// Check that ctx is not expired.
