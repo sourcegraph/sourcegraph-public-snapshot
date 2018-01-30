@@ -550,6 +550,7 @@
   revision = "32fa128f234d041f196a9f3e0fea5ac9772c08e1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/mattes/migrate"
   packages = [
     ".",
@@ -1345,6 +1346,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "522c5973a295ffa74bcf4c318f3e6b800390c28b31067a3199d2f4dc5de8c6d7"
+  inputs-digest = "a947a0f158cc3041c2b9fd2a1b7fd11b18ca6e447fd1bb2ba826bf463ceda75b"
   solver-name = "gps-cdcl"
   solver-version = 1

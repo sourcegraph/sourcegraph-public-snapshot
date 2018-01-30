@@ -143,6 +143,10 @@ required = [
 
 [[constraint]]
   branch = "master"
+  name = "github.com/mattes/migrate"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/sourcegraph/gosyntect"
 
 [[constraint]]
