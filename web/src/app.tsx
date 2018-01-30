@@ -19,6 +19,7 @@ import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
+import { eventLogger } from './tracking/eventLogger'
 
 interface LayoutProps extends RouteComponentProps<any> {
     user: GQL.IUser | null
@@ -162,7 +163,12 @@ class App extends React.Component<{}, AppState> {
     )
 
     private onThemeChange = () => {
-        this.setState(({ isLightTheme }) => ({ isLightTheme: !isLightTheme }))
+        this.setState(
+            state => ({ isLightTheme: !state.isLightTheme }),
+            () => {
+                eventLogger.log(this.state.isLightTheme ? 'LightThemeClicked' : 'DarkThemeClicked')
+            }
+        )
     }
 }
 
