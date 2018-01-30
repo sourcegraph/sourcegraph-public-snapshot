@@ -233,12 +233,12 @@ export class SavedQueryForm extends React.Component<Props, State> {
      */
     private createInputChangeHandler(key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> {
         return event => {
-            const { currentTarget: { value, type } } = event
+            const { currentTarget: { value, checked, type } } = event
 
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    [key]: type === 'checkbox' ? Boolean(value) : String(value),
+                    [key]: type === 'checkbox' ? checked : value,
                 },
             }))
         }
