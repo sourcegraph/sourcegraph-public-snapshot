@@ -77,7 +77,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	}()
 	span.SetTag("request", "Exec")
 	span.SetTag("repo", c.Repo)
-	span.SetTag("args", fmt.Sprint(c.Args[1:]))
+	span.SetTag("args", c.Args[1:])
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -139,8 +139,6 @@ type Cmd struct {
 type Repo struct {
 	Name api.RepoURI // the repository's URI
 }
-
-func (r Repo) String() string { return string(r.Name) }
 
 // Command creates a new Cmd. Command name must be 'git',
 // otherwise it panics.
