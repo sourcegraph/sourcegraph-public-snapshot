@@ -88,12 +88,11 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/git/{RepoURI:.*}/git-upload-pack").Methods("POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/repos/create-if-not-exists").Methods("POST").Name(ReposCreateIfNotExists)
-	base.Path("/repos/get-by-uri").Methods("POST").Name(ReposGetByURI)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/unindexed-dependencies").Methods("POST").Name(ReposUnindexedDependencies)
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
-	base.Path("/repos/{RepoURI:.*}").Methods("GET").Name(ReposGetByURI)
+	base.Path("/repos/{RepoURI:.*}").Methods("POST").Name(ReposGetByURI)
 
 	return base
 }
