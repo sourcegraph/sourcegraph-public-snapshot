@@ -6,6 +6,8 @@ import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
+import { catchError } from 'rxjs/operators/catchError'
+import { mergeMap } from 'rxjs/operators/mergeMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import {
@@ -143,7 +145,6 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
 }
 
 interface AddPublicRepositoryFormProps {
-    visible: boolean
     onSuccess: () => void
 }
 interface AddPublicRepositoryFormState {
@@ -171,22 +172,25 @@ export class AddPublicRepositoryForm extends React.PureComponent<
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.submits.subscribe(({ repoName }) =>
-                fetchRepository({ repoPath: `github.com/${repoName}` }).subscribe(
-                    () => {
-                        this.setState({ repoName: '', success: 'Repository added', error: undefined })
-                        if (this.inputElement) {
-                            this.inputElement.focus()
-                        }
-                        this.props.onSuccess()
-                    },
-                    error => {
-                        console.error(error)
-                        this.setState({ success: undefined, error: error.message })
-                        return []
-                    }
+            this.submits
+                .pipe(
+                    mergeMap(({ repoName }) =>
+                        fetchRepository({ repoPath: `github.com/${repoName}` }).pipe(
+                            catchError(error => {
+                                console.error(error)
+                                this.setState({ success: undefined, error: error.message })
+                                return []
+                            })
+                        )
+                    )
                 )
-            )
+                .subscribe(() => {
+                    this.setState({ repoName: '', success: 'Repository added', error: undefined })
+                    if (this.inputElement) {
+                        this.inputElement.focus()
+                    }
+                    this.props.onSuccess()
+                })
         )
     }
 
@@ -195,9 +199,6 @@ export class AddPublicRepositoryForm extends React.PureComponent<
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.visible) {
-            return null
-        }
         return (
             <div className="add-public-repository-form">
                 <h3 className="add-public-repository-form__title">Add a public repository</h3>
@@ -242,7 +243,7 @@ export class AddPublicRepositoryForm extends React.PureComponent<
 
 interface Props extends RouteComponentProps<any> {}
 interface State {
-    addPublicRepositoryFormToggled: boolean
+    addPublicRepositoryFormVisible: boolean
 }
 
 class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
@@ -297,7 +298,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
     ]
 
     public state: State = {
-        addPublicRepositoryFormToggled: false,
+        addPublicRepositoryFormVisible: false,
     }
 
     private repositoryUpdates = new Subject<void>()
@@ -343,10 +344,9 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                         </Link>
                     </div>
                 </div>
-                <AddPublicRepositoryForm
-                    visible={this.state.addPublicRepositoryFormToggled}
-                    onSuccess={this.onDidUpdateRepository}
-                />
+                {this.state.addPublicRepositoryFormVisible && (
+                    <AddPublicRepositoryForm onSuccess={this.onDidUpdateRepository} />
+                )}
                 <FilteredRepositoryConnection
                     className="site-admin-page__filtered-connection"
                     noun="repository"
@@ -368,6 +368,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 
-    private onDidClickAddPublicRepositoryForm = () =>
-        this.setState({ addPublicRepositoryFormToggled: !this.state.addPublicRepositoryFormToggled })
+    private onDidClickAddPublicRepositoryForm = () => {
+        this.setState(state => ({ addPublicRepositoryFormVisible: !state.addPublicRepositoryFormVisible }))
+    }
 }
