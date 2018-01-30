@@ -10,6 +10,8 @@ import (
 	"path"
 	"strings"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -63,7 +65,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		req.Header[k] = r.Header[k]
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	symbolResp, err := http.DefaultClient.Do(req)
+	symbolResp, err := ctxhttp.Do(r.Context(), nil, req)
 	if err != nil {
 		return err
 	}

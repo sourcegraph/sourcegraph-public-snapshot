@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 )
@@ -26,12 +28,7 @@ var InternalClient = &internalClient{URL: "http://" + frontendInternal}
 // the endpoint, indicating that the endpoint is available.
 func (c *internalClient) RetryPingUntilAvailable(ctx context.Context) error {
 	ping := func(ctx context.Context) error {
-		req, err := http.NewRequest("GET", c.URL+"/.internal/ping", nil)
-		if err != nil {
-			return err
-		}
-		req = req.WithContext(ctx)
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := ctxhttp.Get(ctx, nil, c.URL+"/.internal/ping")
 		if err != nil {
 			return err
 		}
@@ -319,14 +316,7 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 		}
 	}
 
-	req, err := http.NewRequest("POST", c.URL+"/.internal/"+route, bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-	req = req.WithContext(ctx)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ctxhttp.Post(ctx, nil, c.URL+"/.internal/"+route, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -74,7 +76,7 @@ func updateURL() string {
 // (returned by Last and IsPending).
 func check(ctx context.Context) (*Status, error) {
 	doCheck := func() (updateVersion string, err error) {
-		resp, err := http.Get(updateURL())
+		resp, err := ctxhttp.Get(ctx, nil, updateURL())
 		if err != nil {
 			return "", err
 		}

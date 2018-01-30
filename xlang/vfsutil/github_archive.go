@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -39,7 +41,7 @@ func NewGitHubRepoVFS(repo, rev string) (*ArchiveFS, error) {
 		ff, err := cachedFetch(ctx, "githubvfs", repo+"@"+rev, func(ctx context.Context) (io.ReadCloser, error) {
 			ghFetch.Inc()
 			url := fmt.Sprintf("https://codeload.%s/zip/%s", repo, rev)
-			resp, err := http.Get(url)
+			resp, err := ctxhttp.Get(ctx, nil, url)
 			if err != nil {
 				return nil, err
 			}

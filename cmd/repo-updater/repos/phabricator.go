@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context/ctxhttp"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -102,13 +103,7 @@ func fetchPhabRepos(ctx context.Context, cfg schema.Phabricator, after string) (
 	if after != "" {
 		form.Add("params[after]", after)
 	}
-	req, err := http.NewRequest("POST", strings.TrimSuffix(cfg.Url, "/")+"/api/diffusion.repository.search", strings.NewReader(form.Encode()))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ctxhttp.PostForm(ctx, nil, strings.TrimSuffix(cfg.Url, "/")+"/api/diffusion.repository.search", form)
 	if err != nil {
 		return nil, err
 	}

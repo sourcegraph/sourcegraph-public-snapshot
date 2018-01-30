@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"net/url"
 	"runtime"
 	"time"
+
+	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/pkg/errors"
 )
@@ -137,7 +138,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}
 
-	resp, err := http.Post(url, "application/json", &buf)
+	resp, err := ctxhttp.Post(ctx, nil, url, "application/json", &buf)
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
 	}

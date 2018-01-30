@@ -18,6 +18,8 @@ import (
 	"testing/iotest"
 	"testing/quick"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 )
@@ -496,7 +498,7 @@ func fetchTarFromGithub(ctx context.Context, repo api.RepoURI, commit api.Commit
 	tmpPath := path + ".part"
 	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", string(repo), string(commit))
 	fmt.Println("fetching", url)
-	resp, err := http.Get(url)
+	resp, err := ctxhttp.Get(ctx, nil, url)
 	if err != nil {
 		return nil, err
 	}
