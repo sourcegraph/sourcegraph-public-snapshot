@@ -42,16 +42,20 @@ interface State {
     name?: string
     value: string
     markdownDescription?: string
+    first: number
     errorMessage?: string
 }
 
 export class ScopePage extends React.Component<ScopePageProps, State> {
     private subscriptions = new Subscription()
     private propUpdates = new Subject<ScopePageProps>()
+    private showMoreClicks = new Subject<void>()
+
     public state: State = {
         query: '',
         repoList: [],
         value: '',
+        first: 50,
     }
 
     public componentDidMount(): void {
@@ -67,44 +71,59 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                         this.setState({ searchScopes })
                         const matchedScope = searchScopes.find(o => o.id === props.match.params.id)
                         if (matchedScope) {
+                            const markdownDescription = marked(matchedScope.description || '', {
+                                gfm: true,
+                                breaks: true,
+                                sanitize: true,
+                            })
                             queryUpdates.next(matchedScope.value)
                             if (matchedScope.value.includes('repo:') || matchedScope.value.includes('repogroup:')) {
                                 return of({
                                     ...matchedScope,
-                                    markdownDescription: marked(matchedScope.description || '', {
-                                        gfm: true,
-                                        breaks: true,
-                                        sanitize: true,
-                                    }),
+                                    markdownDescription,
                                 }).pipe(
                                     concat(
                                         fetchReposByQuery(matchedScope.value).pipe(
                                             map(repoList => ({ repoList, errorMessage: undefined })),
                                             catchError(err => {
                                                 console.error(err)
-                                                return [{ errorMessage: err.message, repoList: [] }]
+                                                return [{ errorMessage: err.message, repoList: [], first: 0 }]
                                             })
                                         )
                                     )
                                 )
                             }
                             queryUpdates.next(matchedScope.value)
-                            return [{ ...matchedScope, repoList: [], errorMessage: undefined }]
+                            return [
+                                {
+                                    ...matchedScope,
+                                    markdownDescription,
+                                    repoList: [],
+                                    errorMessage: undefined,
+                                    first: 0,
+                                },
+                            ]
                         }
                         return [
                             {
                                 id: undefined,
                                 name: undefined,
                                 value: '',
-                                description: undefined,
+                                markdownDescription: '',
                                 repoList: [],
                                 errorMessage: undefined,
+                                first: 0,
                             },
                         ]
                     })
                 )
                 .subscribe(state => this.setState(state as State))
         )
+
+        this.subscriptions.add(
+            this.showMoreClicks.subscribe(() => this.setState(state => ({ first: state.first + 50 })))
+        )
+
         this.propUpdates.next(this.props)
     }
 
@@ -138,7 +157,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                     </header>
                     <section>
                         <form className="scope-page__section-search" onSubmit={this.onSubmit}>
-                            <div className="scope-page__input-scope">
+                            <div className="scope-page__input-scope" title={this.state.value}>
                                 <span className="scope-page__input-scope-text">{this.state.value}</span>
                             </div>
                             <QueryInput
@@ -165,7 +184,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                         <div>
                                             <p>Repositories included in this scope:</p>
                                             <div>
-                                                {this.state.repoList.slice(0, 50).map((repo, i) => (
+                                                {this.state.repoList.slice(0, this.state.first).map((repo, i) => (
                                                     <div key={i} className="scope-page__row">
                                                         <Link to={`/${repo}`} className="scope-page__link">
                                                             <RepositoryIcon className="icon-inline scope-page__link-icon" />
@@ -177,8 +196,18 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                             <p className="scope-page__count">
                                                 {this.state.repoList.length}{' '}
                                                 {this.state.repoList.length > 1 ? 'repositories ' : 'repository '} total{' '}
-                                                {this.state.repoList.length > 50 ? '(showing first 50)' : ''}{' '}
+                                                {this.state.repoList.length > this.state.first
+                                                    ? `(showing first ${this.state.first})`
+                                                    : ''}{' '}
                                             </p>
+                                            {this.state.first < this.state.repoList.length && (
+                                                <button
+                                                    className="btn btn-secondary btn-sm scope-page__show-more"
+                                                    onClick={this.onShowMore}
+                                                >
+                                                    Show more
+                                                </button>
+                                            )}
                                         </div>
                                     ) : (
                                         <p>All repositories included in this scope</p>
@@ -203,5 +232,9 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         submitSearch(this.props.history, { query: `${this.state.value} ${this.state.query}` }, 'home')
+    }
+
+    private onShowMore = (event: React.MouseEvent<HTMLButtonElement>): void => {
+        this.showMoreClicks.next()
     }
 }
