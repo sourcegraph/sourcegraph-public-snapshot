@@ -558,8 +558,7 @@
     "source",
     "source/go-bindata"
   ]
-  revision = "035c07716cd373d88456ec4d701402df52584cb4"
-  version = "v3.0.1"
+  revision = "d23f71b03c4a439b81ccccb2ac5090032ec5c735"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
