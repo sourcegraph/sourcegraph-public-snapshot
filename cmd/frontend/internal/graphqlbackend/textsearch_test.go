@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -68,6 +69,7 @@ func TestSearchRepos(t *testing.T) {
 	if !reflect.DeepEqual(common.cloning, []api.RepoURI{"foo/cloning"}) {
 		t.Errorf("unexpected missing: %v", common.cloning)
 	}
+	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i] < common.missing[j] }) // to make deterministic
 	if !reflect.DeepEqual(common.missing, []api.RepoURI{"foo/missing", "foo/missing-db"}) {
 		t.Errorf("unexpected missing: %v", common.missing)
 	}
