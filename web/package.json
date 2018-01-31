@@ -112,7 +112,7 @@
     "tsify": "^3.0.4",
     "tslint": "^5.8.0",
     "tslint-language-service": "^0.9.6",
-    "typescript": "~2.7.0-rc",
+    "typescript": "~2.7.1",
     "webpack": "^3.10.0",
     "webpack-bundle-analyzer": "^2.9.1",
     "webpack-dev-server": "^2.10.0",
