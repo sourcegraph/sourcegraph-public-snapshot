@@ -330,11 +330,13 @@ reposLoop:
 		// Check if the repository actually has the revisions that the user specified. (If they just
 		// specified the default branch, skip this to save time.)
 		if revspecs := repoRev.revspecs(); len(revspecs) > 0 {
-			// Do not trigger a repo-updater lookup (e.g., backend.Repos.GitserverRepoInfo) because
-			// that would slow this operation down by a lot (if we're looping over many repos). This
-			// means that it'll fail if a repo is not on gitserver.
+			// Do not trigger a repo-updater lookup (e.g.,
+			// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
+			// down by a lot (if we're looping over many repos). This means that it'll fail if a
+			// repo is not on gitserver.
+			vcsrepo := backend.Repos.VCSForGitserverRepo(repoRev.gitserverRepo)
 			for _, revspec := range revspecs {
-				if _, err := backend.Repos.ResolveRev(ctx, repo, revspec); err == vcs.ErrRevisionNotFound {
+				if _, err := vcsrepo.ResolveRevision(ctx, revspec); err == vcs.ErrRevisionNotFound {
 					// revision does not exist, so do not include this repository.
 					missingRepoRevisions = append(missingRepoRevisions, repoRev)
 					continue reposLoop
