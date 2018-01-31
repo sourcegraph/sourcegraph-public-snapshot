@@ -182,7 +182,11 @@ func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubj
 	if createdOrUpdated {
 		go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), subject, newSavedQueries)
 	}
-	for _, deletedQuery := range oldSavedQueries.SavedQueries[len(newSavedQueries.SavedQueries):] {
+	for i, deletedQuery := range oldSavedQueries.SavedQueries {
+		if i <= len(newSavedQueries.SavedQueries) {
+			// Not deleted.
+			continue
+		}
 		// Deleted
 		spec := api.SavedQueryIDSpec{Subject: subject, Key: deletedQuery.Key}
 		go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec)
