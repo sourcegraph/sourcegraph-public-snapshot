@@ -262,7 +262,10 @@ type Query {
     currentSiteSettings: Settings
     isUsernameAvailable(username: String!): Boolean!
     configuration: ConfigurationCascade!
-    search(query: String = ""): Search
+    search(
+        # The search query (such as "foo" or "repo:myrepo foo").
+        query: String = ""
+    ): Search
     searchScopes: [SearchScope!]!
     # All saved queries configured for the current user, merged from all configurations.
     savedQueries: [SavedQuery!]!
