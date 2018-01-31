@@ -1,5 +1,7 @@
+import { matchPath } from 'react-router'
 import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
+import { repoRevRoute } from '../routes'
 import { getPathExtension } from '../util'
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
@@ -152,26 +154,16 @@ class EventLogger {
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : '',
         }
 
-        try {
-            // TODO: This will not work on repo pages like sourcegraph.mycompany.com/foo/bar
-            // because it does not start with github. But removing the startsWith below means
-            // sourcegraph.mycompany.com/c/01BYDGS45FJ1XE91M2GGR2WTAC would find a repository
-            // "c/01BYDGS45FJ1XE91M2GGR2WTAC" which isn't what you want either. This code
-            // should be factored out to only be invoked on real repo pages according to the
-            // router.
+        const match = matchPath<{ repoRev?: string; filePath?: string }>(window.location.pathname, repoRevRoute)
+        if (match) {
             const u = parseBrowserRepoURL(window.location.href)
-            if (u.repoPath.startsWith('github.com/')) {
-                props.repo = u.repoPath
-                props.rev = u.rev
-                if (u.filePath) {
-                    props.path = u.filePath
-                    props.language = getPathExtension(u.filePath)
-                }
+            props.repo = u.repoPath
+            props.rev = u.rev
+            if (u.filePath) {
+                props.path = u.filePath
+                props.language = getPathExtension(u.filePath)
             }
-        } catch (error) {
-            // no-op
         }
-
         return props
     }
 }

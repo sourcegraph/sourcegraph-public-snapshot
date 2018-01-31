@@ -32,6 +32,14 @@ export interface LayoutRouteProps extends RouteProps {
 }
 
 /**
+ * Holds properties for repository+ routes.
+ */
+export const repoRevRoute: LayoutRouteProps = {
+    path: '/:repoRevAndRest+',
+    component: RepoContainer,
+}
+
+/**
  * Holds all top-level routes for the app because both the navbar and the main content area need to
  * switch over matched path.
  *
@@ -125,8 +133,5 @@ export const routes: LayoutRouteProps[] = [
         component: APIConsole,
         exact: true,
     },
-    {
-        path: '/:repoRevAndRest+',
-        component: RepoContainer,
-    },
+    repoRevRoute,
 ]
