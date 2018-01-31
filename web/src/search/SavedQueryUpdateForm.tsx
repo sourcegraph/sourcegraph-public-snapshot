@@ -21,6 +21,8 @@ export const SavedQueryUpdateForm: React.StatelessComponent<Props> = props => (
             showOnHomepage: props.savedQuery.showOnHomepage,
             notify: props.savedQuery.notify,
             notifySlack: props.savedQuery.notifySlack,
+            notifyUsers: props.savedQuery.notifyUsers,
+            notifyOrganizations: props.savedQuery.notifyOrganizations,
         }}
         onDidCommit={props.onDidUpdate}
         onDidCancel={props.onDidCancel}

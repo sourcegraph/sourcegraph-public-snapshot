@@ -16,6 +16,8 @@ export interface SavedQueryFields {
     showOnHomepage: boolean
     notify: boolean
     notifySlack: boolean
+    notifyUsers: string[]
+    notifyOrganizations: string[]
 }
 
 interface Props {
@@ -59,6 +61,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 showOnHomepage: !!(defaultValues && defaultValues.showOnHomepage),
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
+                notifyUsers: (defaultValues && defaultValues.notifyUsers) || [],
+                notifyOrganizations: (defaultValues && defaultValues.notifyOrganizations) || [],
             },
             subjectOptions: [],
             isSubmitting: false,
@@ -95,7 +99,16 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
-            values: { query, description, subject, showOnHomepage, notify, notifySlack },
+            values: {
+                query,
+                description,
+                subject,
+                showOnHomepage,
+                notify,
+                notifySlack,
+                notifyUsers,
+                notifyOrganizations,
+            },
             subjectOptions,
             isSubmitting,
             error,
@@ -206,6 +219,21 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         </label>
                     </span>
                 </div>
+                {(notifyUsers.length > 0 || notifyOrganizations.length > 0) && (
+                    <div className="saved-query-form__also-notifying">
+                        Note: also notifying &nbsp;
+                        <strong>
+                            {notifyUsers
+                                .map(user => `${user} (user)`)
+                                .concat(notifyOrganizations.map(org => `${org} (org)`))
+                                .join(', ')}
+                        </strong>
+                        &nbsp;
+                        <span data-tooltip="See `notifyUsers` and `notifyOrganizations` in the JSON configuration">
+                            due to manual configuration
+                        </span>
+                    </div>
+                )}
                 <div className="saved-query-form__actions">
                     <button
                         type="submit"
@@ -235,8 +263,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
     }
 
     private savingToOrg = () => {
-        const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id == this.state.values.subject)
-        return chosen && chosen.__typename == 'Org'
+        const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
+        return chosen && chosen.__typename === 'Org'
     }
 
     private saveTargetName = () => {
@@ -245,7 +273,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 (subjectOption: GQL.ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
                     subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
             )
-            .find(subjectOption => subjectOption.id == this.state.values.subject)
+            .find(subjectOption => subjectOption.id === this.state.values.subject)
         return chosen && configurationSubjectLabel(chosen, true)
     }
 
