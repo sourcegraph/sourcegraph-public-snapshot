@@ -278,11 +278,12 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo Repo) error {
 }
 
 // IsRepoCloneable returns nil if the repository is cloneable.
-func (c *Client) IsRepoCloneable(ctx context.Context, repo api.RepoURI) error {
+func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 	req := &protocol.IsRepoCloneableRequest{
-		Repo: repo,
+		Repo: repo.Name,
+		URL:  repo.URL,
 	}
-	r, err := c.httpPost(ctx, repo, "is-repo-cloneable", req)
+	r, err := c.httpPost(ctx, repo.Name, "is-repo-cloneable", req)
 	if err != nil {
 		return err
 	}
