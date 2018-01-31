@@ -35,6 +35,8 @@ interface State {
     sparkline?: number[]
 }
 
+const truncate = (str: string) => (str.length > 50 ? `${str.substr(0, 50)}...` : str)
+
 export class SavedQueryRow extends React.PureComponent<Props, State> {
     public static defaultProps: Partial<Props> = { className: '' }
 
@@ -86,9 +88,11 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
         return (
             <div className={`saved-query-row ${this.props.className}`}>
                 <Link onClick={this.logEvent} to={'/search?' + buildSearchURLQuery({ query: this.props.query })}>
-                    <div data-tooltip={this.props.query} className="saved-query-row__row">
+                    <div className="saved-query-row__row">
                         <div className="saved-query-row__row-column">
-                            <div className="saved-query__description">{this.props.description}</div>
+                            <div className="saved-query__description">
+                                <span data-tooltip={truncate(this.props.query)}>{this.props.description}</span>
+                            </div>
                             {this.props.actions}
                         </div>
                         <div className="saved-query-row__results-container">
