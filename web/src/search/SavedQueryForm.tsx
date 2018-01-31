@@ -234,6 +234,14 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         </span>
                     </div>
                 )}
+                {(notify || notifySlack || notifyUsers.length > 0 || notifyOrganizations.length > 0) &&
+                    !query.includes('type:diff') &&
+                    !query.includes('type:commit') && (
+                        <div className="saved-query-form__also-notifying">
+                            Warning: non-commit searches do not currently support notifications. Consider adding
+                            `type:diff` to your query.
+                        </div>
+                    )}
                 <div className="saved-query-form__actions">
                     <button
                         type="submit"
