@@ -41,6 +41,17 @@ const addGitHubEnterprise: ConfigHelper = config => {
     return { edits, selectText: tokenPlaceholder }
 }
 
+const addGitLab: ConfigHelper = config => {
+    const tokenPlaceholder =
+        '<personal access token with api scope (https://[your-gitlab-hostname]/profile/personal_access_tokens)>'
+    const value: GitHubConnection = {
+        url: 'https://gitlab.example.com',
+        token: tokenPlaceholder,
+    }
+    const edits = setProperty(config, ['gitlab', -1], value, defaultFormattingOptions)
+    return { edits, selectText: tokenPlaceholder }
+}
+
 const addOtherRepository: ConfigHelper = config => {
     const urlPlaceholder = '<git clone URL>'
     const value: Repository = {
@@ -116,6 +127,7 @@ export const siteConfigActions: EditorAction[] = [
         label: 'Add GitHub Enterprise repositories',
         run: addGitHubEnterprise,
     },
+    { id: 'sourcegraph.site.addGitLab', label: 'Add GitLab projects', run: addGitLab },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
     { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },
     { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },

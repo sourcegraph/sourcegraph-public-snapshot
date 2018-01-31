@@ -135,6 +135,13 @@
       "description": "(Deprecated: Use GitHub) Access token to authenticate to GitHub Enterprise API.",
       "type": "string"
     },
+    "gitlab": {
+      "description": "JSON array of configuration for GitLab hosts.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GitLabConnection"
+      }
+    },
     "gitoliteHosts": {
       "description": "Space separated list of mappings from repo name prefix to gitolite hosts.",
       "type": "string"
@@ -409,6 +416,50 @@
         "preemptivelyClone": {
           "description":
             "Preemptively clone GitHub repositories added (instead of cloning on-demand when the repository is searched or viewed)\n\nDEPRECATED: Use initialRepositoryEnablement instead.",
+          "type": "boolean"
+        }
+      }
+    },
+    "GitLabConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "token"],
+      "properties": {
+        "url": {
+          "description":
+            "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com",
+          "type": "string",
+          "default": "https://gitlab.com",
+          "pattern": "^https?://",
+          "format": "uri"
+        },
+        "token": {
+          "description": "A GitLab personal access token with \"api\" scope.",
+          "type": "string",
+          "pattern": "^[^<>]+$"
+        },
+        "certificate": {
+          "description": "TLS certificate of a GitLab instance.",
+          "type": "string"
+        },
+        "projectQuery": {
+          "description":
+            "An array of strings specifying which GitLab projects to mirror on Sourcegraph Server. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
+          "type": "array",
+          "default": ["?membership=true"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "repositoryPathPattern": {
+          "description":
+            "The pattern used to generate a the corresponding Sourcegraph repository path for a GitLab project. In the pattern, the variable \"{host}\" is replaced with the GitLab URL's host (such as gitlab.example.com), and \"{pathWithNamespace}\" is replaced with the GitLab project's \"namespace/path\" (such as \"myteam/myproject\").\n\nFor example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{pathWithNamespace}\" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.",
+          "type": "string",
+          "default": "{host}/{pathWithNamespace}"
+        },
+        "initialRepositoryEnablement": {
+          "description":
+            "Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.",
           "type": "boolean"
         }
       }

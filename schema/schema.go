@@ -53,6 +53,16 @@ type GitHubConnection struct {
 	Url                         string   `json:"url,omitempty"`
 }
 
+// GitLabConnection
+type GitLabConnection struct {
+	Certificate                 string   `json:"certificate,omitempty"`
+	InitialRepositoryEnablement bool     `json:"initialRepositoryEnablement,omitempty"`
+	ProjectQuery                []string `json:"projectQuery,omitempty"`
+	RepositoryPathPattern       string   `json:"repositoryPathPattern,omitempty"`
+	Token                       string   `json:"token"`
+	Url                         string   `json:"url"`
+}
+
 // Langservers
 type Langservers struct {
 	Address  string `json:"address,omitempty"`
@@ -179,6 +189,7 @@ type SiteConfiguration struct {
 	GithubEnterpriseCert           string                     `json:"githubEnterpriseCert,omitempty"`
 	GithubEnterpriseURL            string                     `json:"githubEnterpriseURL,omitempty"`
 	GithubPersonalAccessToken      string                     `json:"githubPersonalAccessToken,omitempty"`
+	Gitlab                         []GitLabConnection         `json:"gitlab,omitempty"`
 	GitoliteHosts                  string                     `json:"gitoliteHosts,omitempty"`
 	GitoliteRepoBlacklist          string                     `json:"gitoliteRepoBlacklist,omitempty"`
 	HtmlBodyBottom                 string                     `json:"htmlBodyBottom,omitempty"`

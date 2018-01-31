@@ -656,6 +656,12 @@
   version = "v2.0.1"
 
 [[projects]]
+  name = "github.com/peterhellberg/link"
+  packages = ["."]
+  revision = "d1cebc7ea14a5fc0de7cb4a45acae773161642c6"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"

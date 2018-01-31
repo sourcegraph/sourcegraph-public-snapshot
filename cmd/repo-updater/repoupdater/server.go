@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
+
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -57,11 +59,14 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 
 	// Try all GetXyzRepository funcs until one returns authoritatively.
 	repo, authoritative, err := repos.GetGitHubRepository(ctx, args)
+	if !authoritative {
+		repo, authoritative, err = repos.GetGitLabRepository(ctx, args)
+	}
 	if authoritative {
-		if github.IsNotFound(err) {
+		if isNotFound(err) {
 			result.ErrorNotFound = true
 			err = nil
-		} else if code := github.HTTPErrorCode(err); code == http.StatusUnauthorized || code == http.StatusForbidden {
+		} else if isUnauthorized(err) {
 			result.ErrorUnauthorized = true
 			err = nil
 		}
@@ -75,4 +80,18 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 	// No configured code hosts are authoritative for this repository.
 	result.ErrorNotFound = true
 	return &result, nil
+}
+
+func isNotFound(err error) bool {
+	// TODO(sqs): reduce duplication
+	return github.IsNotFound(err) || gitlab.IsNotFound(err)
+}
+
+func isUnauthorized(err error) bool {
+	// TODO(sqs): reduce duplication
+	code := github.HTTPErrorCode(err)
+	if code == 0 {
+		code = gitlab.HTTPErrorCode(err)
+	}
+	return code == http.StatusUnauthorized || code == http.StatusForbidden
 }
