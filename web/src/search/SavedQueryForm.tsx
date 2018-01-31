@@ -190,7 +190,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         </label>
                     </span>
                     <span className="saved-query-form__save-location-options">
-                        <label data-tooltip={`send email notifications to config owner (${this.saveTargetName()})`}>
+                        <label data-tooltip={`Send email notifications to config owner (${this.saveTargetName()})`}>
                             <input
                                 className="saved-query-form__save-location-input"
                                 type="checkbox"
@@ -204,7 +204,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         <label
                             data-tooltip={
                                 savingToOrg
-                                    ? `send slack notifications to config owner (${this.saveTargetName()})`
+                                    ? `Send slack notifications to config owner (${this.saveTargetName()})`
                                     : 'Must save to org settings to enable Slack notifications'
                             }
                         >
