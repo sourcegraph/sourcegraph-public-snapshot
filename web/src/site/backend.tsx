@@ -4,6 +4,7 @@ import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { SiteFlags } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
+import { createAggregateError } from '../util/errors'
 
 /**
  * The latest state of the site flags.
@@ -27,7 +28,7 @@ export function refreshSiteFlags(): Observable<never> {
     `).pipe(
         tap(({ data, errors }) => {
             if (!data || !data.site) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             siteFlags.next(data.site)
         }),

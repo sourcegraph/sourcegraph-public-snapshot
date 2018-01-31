@@ -3,6 +3,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { gql, queryGraphQL } from './backend/graphql'
+import { createAggregateError } from './util/errors'
 
 /**
  * Always represents the latest
@@ -52,7 +53,7 @@ export function refreshCurrentUser(): Observable<never> {
     `).pipe(
         tap(({ data, errors }) => {
             if (!data) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             currentUser.next(data.currentUser)
         }),

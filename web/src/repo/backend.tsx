@@ -1,54 +1,35 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, queryGraphQL } from '../backend/graphql'
+import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { makeRepoURI } from './index'
 
+// We don't subclass Error because Error is not subclassable in ES5.
+// Use the internal factory functions and check for the error code on callsites.
+
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
-class CloneInProgressError extends Error {
-    public readonly code = ECLONEINPROGESS
-    constructor(repoPath: string) {
-        super(`${repoPath} is clone in progress`)
-    }
-}
+const createCloneInProgressError = (repoPath: string): Error =>
+    Object.assign(new Error(`Repository ${repoPath} is clone in progress`), { code: ECLONEINPROGESS })
 
 export const EREPONOTFOUND = 'EREPONOTFOUND'
-class RepoNotFoundError extends Error {
-    public readonly code = EREPONOTFOUND
-    constructor(repoPath: string) {
-        super(`repo ${repoPath} not found`)
-    }
-}
+const createRepoNotFoundError = (repoPath: string): Error =>
+    Object.assign(new Error(`Repository ${repoPath} not found`), { code: EREPONOTFOUND })
 
 export const EREVNOTFOUND = 'EREVNOTFOUND'
-class RevNotFoundError extends Error {
-    public readonly code = EREVNOTFOUND
-    constructor(rev?: string) {
-        super(`rev ${rev} not found`)
-    }
-}
+const createRevNotFoundError = (rev?: string): Error =>
+    Object.assign(new Error(`Revision ${rev} not found`), { code: EREVNOTFOUND })
 
-export const ERREPOSEEOTHER = 'ERREPOSEEOTHER'
-export interface RepoSeeOtherError {
+export const EREPOSEEOTHER = 'ERREPOSEEOTHER'
+export interface RepoSeeOtherError extends Error {
+    code: typeof EREPOSEEOTHER
     redirectURL: string
 }
-
-export function doRepoSeeOtherRedirect(err: RepoSeeOtherError): void {
-    const externalHostURL = new URL(err.redirectURL)
-    const redirectURL = new URL(window.location.href)
-    // Preserve the path of the current URL and redirect to the repo on the external host.
-    redirectURL.host = externalHostURL.host
-    redirectURL.port = externalHostURL.port
-    redirectURL.protocol = externalHostURL.protocol
-    window.location.href = redirectURL.toString()
-}
-
-class RepoSeeOtherErrorImpl extends Error implements RepoSeeOtherErrorImpl {
-    public readonly code = ERREPOSEEOTHER
-    constructor(public redirectURL: string) {
-        super(`repo not found at this location, but might exist at ${redirectURL}`)
-    }
-}
+const createRepoSeeOtherError = (redirectURL: string): RepoSeeOtherError =>
+    Object.assign(new Error(`Repository not found at this location, but might exist at ${redirectURL}`), {
+        code: EREPOSEEOTHER as typeof EREPOSEEOTHER,
+        redirectURL,
+    })
 
 /**
  * Fetch the repository.
@@ -74,13 +55,13 @@ export const fetchRepository = memoizeObservable(
         ).pipe(
             map(({ data, errors }) => {
                 if (!data) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                    throw createAggregateError(errors)
                 }
                 if (data.repository && data.repository.redirectURL) {
-                    throw new RepoSeeOtherErrorImpl(data.repository.redirectURL)
+                    throw createRepoSeeOtherError(data.repository.redirectURL)
                 }
                 if (!data.repository) {
-                    throw new RepoNotFoundError(args.repoPath)
+                    throw createRepoNotFoundError(args.repoPath)
                 }
                 return data.repository
             })
@@ -119,22 +100,22 @@ export const resolveRev = memoizeObservable(
         ).pipe(
             map(({ data, errors }) => {
                 if (!data) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                    throw createAggregateError(errors)
                 }
                 if (data.repository && data.repository.redirectURL) {
-                    throw new RepoSeeOtherErrorImpl(data.repository.redirectURL)
+                    throw createRepoSeeOtherError(data.repository.redirectURL)
                 }
                 if (!data.repository) {
-                    throw new RepoNotFoundError(ctx.repoPath)
+                    throw createRepoNotFoundError(ctx.repoPath)
                 }
                 if (data.repository.mirrorInfo.cloneInProgress) {
-                    throw new CloneInProgressError(ctx.repoPath)
+                    throw createCloneInProgressError(ctx.repoPath)
                 }
                 if (!data.repository.commit) {
-                    throw new RevNotFoundError(ctx.rev)
+                    throw createRevNotFoundError(ctx.rev)
                 }
                 if (!data.repository.defaultBranch) {
-                    throw new RevNotFoundError('HEAD')
+                    throw createRevNotFoundError('HEAD')
                 }
                 return {
                     commitID: data.repository.commit.oid,
@@ -257,7 +238,7 @@ export const listAllFiles = memoizeObservable(
                     !data.repository.commit.tree ||
                     !data.repository.commit.tree.files
                 ) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                    throw createAggregateError(errors)
                 }
                 return data.repository.commit.tree.files.map(file => file.name)
             })

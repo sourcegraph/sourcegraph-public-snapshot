@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
+import { createAggregateError } from '../../util/errors'
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser
@@ -71,7 +72,7 @@ function fetchUserEmails(): Observable<GQL.IUserEmail[]> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.currentUser || !data.currentUser.emails) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.currentUser.emails
         })

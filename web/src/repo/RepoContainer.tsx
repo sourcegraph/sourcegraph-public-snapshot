@@ -16,7 +16,7 @@ import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { EREPONOTFOUND, ERREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
+import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
@@ -79,7 +79,7 @@ export class RepoContainer extends React.Component<Props, State> {
                         fetchRepository({ repoPath }).pipe(
                             catchError(error => {
                                 switch (error.code) {
-                                    case ERREPOSEEOTHER:
+                                    case EREPOSEEOTHER:
                                         redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
                                         return []
                                 }

@@ -5,6 +5,7 @@ import { take } from 'rxjs/operators/take'
 import { gql, GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
 import { configurationCascade } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
+import { createAggregateError } from '../util/errors'
 
 /**
  * Updates the configuration for a subject to the value produced by the given update function.
@@ -57,7 +58,7 @@ function doUpdateConfiguration(
     ).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.configurationMutation || data.configurationMutation.updateConfiguration) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return refreshConfiguration()
         })

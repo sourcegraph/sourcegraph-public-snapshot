@@ -7,6 +7,7 @@ import { currentUser } from '../../auth'
 import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
 import { configurationCascade } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
+import { createAggregateError } from '../../util/errors'
 
 /**
  * Refreshes the configuration from the server, which propagates throughout the
@@ -60,7 +61,7 @@ function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configuration) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.configuration
         })
@@ -96,7 +97,7 @@ export function fetchUserSettings(): Observable<GQL.ISettings | null> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.currentUser) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.currentUser.latestSettings
         })
@@ -122,7 +123,7 @@ export function updateUserSettings(lastKnownSettingsID: number | null, contents:
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.updateUserSettings) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.updateUserSettings
         })
@@ -168,7 +169,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
         map(({ data, errors }) => {
             if (!data || !data.updateUser) {
                 eventLogger.log('UpdateUserFailed')
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             eventLogger.log('UserProfileUpdated', {
                 auth: {
@@ -200,7 +201,7 @@ export function updatePassword(args: { oldPassword: string; newPassword: string 
         map(({ data, errors }) => {
             if (!data || !data.updatePassword) {
                 eventLogger.log('UpdatePasswordFailed')
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             eventLogger.log('PasswordUpdated')
         })
@@ -223,7 +224,7 @@ export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return
         })

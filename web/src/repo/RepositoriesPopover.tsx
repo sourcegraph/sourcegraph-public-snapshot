@@ -8,6 +8,7 @@ import { gql, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { displayRepoPath } from '../components/RepoFileLink'
 import { eventLogger } from '../tracking/eventLogger'
+import { createAggregateError } from '../util/errors'
 
 function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(
@@ -31,7 +32,7 @@ function fetchRepositories(args: { first?: number; query?: string }): Observable
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.repositories) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.site.repositories
         })

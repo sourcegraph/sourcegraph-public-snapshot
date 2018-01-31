@@ -11,6 +11,7 @@ import { gql, queryGraphQL } from '../backend/graphql'
 import { Resizable } from '../components/Resizable'
 import { Tree } from '../tree/Tree'
 import { TreeHeader } from '../tree/TreeHeader'
+import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 
 const fetchTree = memoizeObservable(
@@ -39,7 +40,7 @@ const fetchTree = memoizeObservable(
                     !data.repository.commit.tree ||
                     !data.repository.commit.tree.files
                 ) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                    throw createAggregateError(errors)
                 }
                 return data.repository.commit.tree.files.map(file => file.name)
             })

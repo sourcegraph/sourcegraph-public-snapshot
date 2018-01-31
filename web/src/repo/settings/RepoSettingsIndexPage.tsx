@@ -14,6 +14,7 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
+import { createAggregateError } from '../../util/errors'
 import { pluralize } from '../../util/strings'
 
 /**
@@ -53,7 +54,7 @@ function fetchRepositoryTextSearchIndex(id: GQLID): Observable<GQL.IRepositoryTe
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.node || errors) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return (data.node as GQL.IRepository).textSearchIndex
         })

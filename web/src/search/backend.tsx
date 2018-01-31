@@ -6,6 +6,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
 import { currentConfiguration, SavedQueryConfiguration } from '../settings/configuration'
+import { createAggregateError } from '../util/errors'
 import { SearchOptions } from './index'
 
 export function searchText(options: SearchOptions): Observable<GQL.ISearchResults> {
@@ -100,7 +101,7 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.search.results
         })
@@ -123,7 +124,7 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.stats) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.search.stats
         })
@@ -156,7 +157,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
     ).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.search || !data.search.suggestions) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.search.suggestions
         })
@@ -175,7 +176,7 @@ export function fetchSearchScopes(): Observable<GQL.ISearchScope[]> {
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.searchScopes) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.searchScopes
         })
@@ -193,7 +194,7 @@ export function fetchRepoGroups(): Observable<GQL.IRepoGroup[]> {
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.repoGroups) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.repoGroups
         })
@@ -215,7 +216,7 @@ export function fetchReposByQuery(query: string): Observable<string[]> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results || !data.search.results.repositories) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.search.results.repositories
         })
@@ -272,7 +273,7 @@ function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.savedQueries) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.savedQueries
         })
@@ -323,7 +324,7 @@ export function createSavedQuery(
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.configurationMutation.createSavedQuery
         })
@@ -377,7 +378,7 @@ export function updateSavedQuery(
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.configurationMutation.updateSavedQuery
         })
@@ -403,7 +404,7 @@ export function deleteSavedQuery(
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.deleteSavedQuery) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
         })
     )

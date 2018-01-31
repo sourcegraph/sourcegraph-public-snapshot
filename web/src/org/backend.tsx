@@ -7,6 +7,7 @@ import { currentUser, refreshCurrentUser } from '../auth'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
 import { settingsFragment } from '../user/settings/backend'
+import { createAggregateError } from '../util/errors'
 
 /**
  * Fetches an org by ID
@@ -49,7 +50,7 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.org) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.org
         })
@@ -89,7 +90,7 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
         mergeMap(({ data, errors }) => {
             if (!data || !data.createOrg) {
                 eventLogger.log('NewOrgFailed')
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             eventLogger.log('NewOrgCreated', {
                 organization: {
@@ -143,7 +144,7 @@ export function inviteUser(email: string, orgID: string): Observable<GQL.IInvite
             }
             if (!data || !data.inviteUser || (errors && errors.length > 0)) {
                 eventLogger.log('InviteOrgMemberFailed', eventData)
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             eventLogger.log('OrgMemberInvited', eventData)
             return data.inviteUser
@@ -183,7 +184,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<v
         map(({ data, errors }) => {
             if (!data || !data.acceptUserInvite) {
                 eventLogger.log('AcceptInviteFailed')
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return
         })
@@ -222,7 +223,7 @@ export function removeUserFromOrg(orgID: GQLID, userID: GQLID): Observable<never
             }
             if (errors && errors.length > 0) {
                 eventLogger.log('RemoveOrgMemberFailed', eventData)
-                throw Object.assign(new Error(errors.map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             eventLogger.log('OrgMemberRemoved', eventData)
             // Reload user data
@@ -275,7 +276,7 @@ export function updateOrg(id: string, displayName: string, slackWebhookURL: stri
             }
             if (!data || (errors && errors.length > 0)) {
                 eventLogger.log('UpdateOrgSettingsFailed', eventData)
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             eventLogger.log('OrgSettingsUpdated', eventData)
             return
@@ -297,7 +298,7 @@ export function updateOrgSettings(id: string, lastKnownSettingsID: number | null
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return
         })

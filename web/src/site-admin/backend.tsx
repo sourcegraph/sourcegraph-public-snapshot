@@ -5,6 +5,7 @@ import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { createAggregateError } from '../util/errors'
 
 /**
  * Fetches all users.
@@ -45,7 +46,7 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.users) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.site.users
         })
@@ -90,7 +91,7 @@ export function fetchAllOrgs(args: { first?: number; query?: string }): Observab
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.orgs) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.site.orgs
         })
@@ -174,7 +175,7 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.repositories) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.site.repositories
         })
@@ -210,7 +211,7 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
         })
     )
@@ -229,7 +230,7 @@ export function updateMirrorRepository(args: { repository: GQLID }): Observable<
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.updateMirrorRepository || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
         })
     )
@@ -250,7 +251,7 @@ export function checkMirrorRepositoryConnection(args: {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.checkMirrorRepositoryConnection || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.checkMirrorRepositoryConnection
         })
@@ -270,7 +271,7 @@ export function deleteRepository(repository: GQLID): Observable<void> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
         })
     )
@@ -300,7 +301,7 @@ export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.users) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.site.users.nodes
         })
@@ -317,7 +318,7 @@ export function fetchOpenSearchSettings(): Observable<GQL.IOpenSearchSettings> {
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.openSearchSettings) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.openSearchSettings
         })
@@ -347,7 +348,7 @@ export function fetchSite(opt: { telemetrySamples?: boolean }): Observable<GQL.I
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.site
         })
@@ -381,7 +382,7 @@ export function fetchSiteSettings(): Observable<GQL.ISettings | null> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.currentSiteSettings
         })
@@ -407,7 +408,7 @@ export function updateSiteSettings(lastKnownSettingsID: number | null, contents:
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.updateSiteSettings) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.updateSiteSettings
         })
@@ -430,7 +431,7 @@ export function updateSiteConfiguration(input: string): Observable<void> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.updateSiteConfiguration) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.updateSiteConfiguration as any
         })
@@ -452,7 +453,7 @@ export function reloadSite(): Observable<void> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.reloadSite) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.reloadSite as any
         })
@@ -472,7 +473,7 @@ export function updateDeploymentConfiguration(email: string, telemetryEnabled: b
     ).pipe(
         map(({ data, errors }) => {
             if (!data) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
         })
     )
@@ -491,7 +492,7 @@ export function setUserIsSiteAdmin(userID: GQLID, siteAdmin: boolean): Observabl
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
         })
     )
@@ -510,7 +511,7 @@ export function randomizeUserPasswordBySiteAdmin(user: GQLID): Observable<GQL.IR
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.randomizeUserPasswordBySiteAdmin) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.randomizeUserPasswordBySiteAdmin
         })
@@ -530,7 +531,7 @@ export function deleteUser(user: GQLID): Observable<void> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.deleteUser) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
         })
     )
@@ -549,7 +550,7 @@ export function createUserBySiteAdmin(username: string, email: string): Observab
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.createUserBySiteAdmin) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.createUserBySiteAdmin
         })
@@ -569,7 +570,7 @@ export function deleteOrganization(organization: GQLID): Observable<void> {
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.deleteOrganization) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
         })
     )
@@ -625,7 +626,7 @@ export function fetchAllThreads(args: { first?: number }): Observable<GQL.IThrea
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.threads) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.site.threads
         })
@@ -655,7 +656,7 @@ export function fetchSiteUpdateCheck(): Observable<{
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.updateCheck) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return {
                 buildVersion: data.site.buildVersion,

@@ -2,15 +2,10 @@ import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { makeRepoURI, ParsedRepoURI } from '../repo/index'
+import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 
 export const EPERMISSIONDENIED = 'EPERMISSIONDENIED'
-class PermissionDeniedError extends Error {
-    public readonly code = EPERMISSIONDENIED
-    constructor() {
-        super(`permission denied`)
-    }
-}
 
 const commonThreadFields = gql`
     id
@@ -120,9 +115,9 @@ export const fetchSharedItem = memoizeObservable(
                 if (!data || errors) {
                     // TODO(slimsag): string comparison is bad practice, remove this
                     if (errors && errors[0].message === 'permission denied') {
-                        throw new PermissionDeniedError()
+                        throw Object.assign(new Error('permission denied'), { code: EPERMISSIONDENIED })
                     }
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                    throw createAggregateError(errors)
                 }
                 return data.sharedItem
             })
@@ -149,7 +144,7 @@ export function fetchThread(id: GQLID, isLightTheme: boolean): Observable<GQL.IT
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.node || errors) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return (data.node as any) as GQL.IThread | null
         })
@@ -186,7 +181,7 @@ export function addCommentToThread(
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.addCommentToThreadShared) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                    throw createAggregateError(errors)
                 }
                 return data.addCommentToThreadShared
             })
@@ -206,7 +201,7 @@ export function addCommentToThread(
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.addCommentToThread) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return data.addCommentToThread
         })

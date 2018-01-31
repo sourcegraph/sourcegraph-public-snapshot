@@ -15,6 +15,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { createAggregateError } from '../util/errors'
 import { pluralize } from '../util/strings'
 
 interface Props extends RouteComponentProps<any> {}
@@ -189,7 +190,7 @@ function fetchOverview(): Observable<OverviewInfo> {
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site || !data.site.repositories || !data.site.users || !data.site.orgs) {
-                throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
+                throw createAggregateError(errors)
             }
             return {
                 repositories: data.site.repositories.totalCount,
