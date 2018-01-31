@@ -9,6 +9,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	repoupdaterprotocol "sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
 func (r *repositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
@@ -38,6 +40,21 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		return "", err
 	}
 
+	{
+		// Look up the remote URL in repo-updater.
+		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
+			Repo:         r.repository.repo.URI,
+			ExternalRepo: r.repository.repo.ExternalRepo,
+		})
+		if err != nil {
+			return "", err
+		}
+		if result.Repo != nil {
+			return result.Repo.VCS.URL, nil
+		}
+	}
+
+	// Fall back to the gitserver repo info for repos on hosts that are not yet fully supported by repo-updater.
 	info, err := r.gitserverRepoInfo(ctx)
 	if err != nil {
 		return "", err
