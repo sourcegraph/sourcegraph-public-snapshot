@@ -27,9 +27,12 @@
         }
     }
 
+    &__btn {
+        padding: 0.25rem 0.5rem;
+    }
+
     &__help {
         line-height: normal;
-        padding: 0.5rem 1rem;
     }
 
     .saved-query-form {

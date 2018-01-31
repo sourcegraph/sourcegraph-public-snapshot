@@ -1,6 +1,5 @@
 .example-searches {
     border: 1px solid $color-border;
-    border-bottom: none;
     margin-bottom: 2.5rem;
 
     &__filter-box {
@@ -12,25 +11,17 @@
         overflow-y: scroll;
     }
 
-    &__examples .saved-query:last-child .saved-query__row {
+    &__examples .saved-query-row:last-of-type {
         border-bottom: none;
     }
 
     &__flex-row {
         display: flex;
         flex-direction: row;
+    }
 
-        h1 {
-            flex: 1;
-        }
-
-        button {
-            color: #2b3750;
-            background: transparent;
-            border: none;
-            outline: none;
-            cursor: pointer;
-        }
+    &__title {
+        flex: 1;
     }
 
     &__show-more {

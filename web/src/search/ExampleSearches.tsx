@@ -74,9 +74,9 @@ export class ExampleSearches extends React.Component<Props, State> {
             <div className="example-searches">
                 <div className="example-searches__filter-box">
                     <div className="example-searches__flex-row">
-                        <h1>Useful Searches</h1>
-                        <button onClick={this.props.onClose} data-tooltip="Close Examples">
-                            <CloseIcon className="icon-inline" />
+                        <h1 className="example-searches__title">Useful Searches</h1>
+                        <button className="btn btn-icon" onClick={this.props.onClose}>
+                            <CloseIcon />
                         </button>
                     </div>
                     <p>

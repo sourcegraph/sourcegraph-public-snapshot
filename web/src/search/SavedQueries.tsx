@@ -107,25 +107,25 @@ export class SavedQueries extends React.Component<Props, State> {
                             <h2>Saved queries</h2>
                             <span className="saved-queries__center">
                                 <button
-                                    className="btn btn-link"
+                                    className="btn btn-link saved-queries__btn"
                                     onClick={this.toggleExamples}
-                                    disabled={this.state.isCreating || this.state.isViewingExamples}
+                                    disabled={this.state.isViewingExamples}
                                 >
                                     <WandIcon className="icon-inline" />
                                     Discover useful searches
                                 </button>
 
                                 <button
-                                    className="btn btn-link"
+                                    className="btn btn-link saved-queries__btn"
                                     onClick={this.toggleCreating}
-                                    disabled={this.state.isCreating || this.state.isViewingExamples}
+                                    disabled={this.state.isCreating}
                                 >
                                     <AddIcon className="icon-inline" /> Add new query
                                 </button>
 
                                 <a
                                     onClick={this.onDidClickQueryHelp}
-                                    className="saved-queries__help"
+                                    className="saved-queries__help saved-queries__btn"
                                     href="https://about.sourcegraph.com/docs/search/#saved-queries"
                                     target="_blank"
                                 >
@@ -186,12 +186,12 @@ export class SavedQueries extends React.Component<Props, State> {
 
     private toggleCreating = () => {
         eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: !this.state.isCreating } })
-        this.setState(state => ({ isCreating: !state.isCreating, exampleQuery: null }))
+        this.setState(state => ({ isCreating: !state.isCreating, exampleQuery: null, isViewingExamples: false }))
     }
 
     private toggleExamples = () => {
         eventLogger.log('SavedQueriesToggleExamples', { queries: { viewingExamples: !this.state.isViewingExamples } })
-        this.setState(state => ({ isViewingExamples: !state.isViewingExamples, exampleQuery: null }))
+        this.setState(state => ({ isViewingExamples: !state.isViewingExamples, exampleQuery: null, isCreating: false }))
     }
 
     private onExampleSelected = (query: Partial<SavedQueryFields>) => {

@@ -1,5 +1,5 @@
 .saved-query-form {
-    padding: 1.5rem;
+    padding: 1rem;
 
     border: 1px solid $color-border;
 
@@ -34,6 +34,26 @@
 
     &__save-location-input {
         margin-right: 0.25rem;
+    }
+
+    &__title-row {
+        display: flex;
+        flex-direction: row;
+    }
+
+    &__spacer {
+        flex: 1;
+    }
+}
+
+.modal-container {
+    .saved-query-form {
+        background: $color-page-background;
+    }
+
+    // modal already has a close button
+    .saved-query-form__close {
+        display: none;
     }
 }
 

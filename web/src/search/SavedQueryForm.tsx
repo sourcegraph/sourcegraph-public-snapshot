@@ -1,3 +1,4 @@
+import CloseIcon from '@sourcegraph/icons/lib/Close'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
@@ -96,7 +97,16 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         return (
             <form className="saved-query-form" onSubmit={this.handleSubmit}>
-                {title && <h1 className="saved-query-form__title">{title}</h1>}
+                <div className="saved-query-form__title-row">
+                    {title ? (
+                        <h1 className="saved-query-form__title saved-query-form__spacer">{title}</h1>
+                    ) : (
+                        <div className="saved-query-form__spacer" />
+                    )}
+                    <button className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
+                        <CloseIcon />
+                    </button>
+                </div>
                 <span>Search query</span>
                 <input
                     type="text"

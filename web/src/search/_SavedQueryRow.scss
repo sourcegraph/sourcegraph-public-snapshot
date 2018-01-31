@@ -2,6 +2,7 @@
 
 .saved-query-row {
     width: 100%;
+    overflow: hidden;
 
     &:last-of-type {
         border-bottom: 1px solid $color-border;
