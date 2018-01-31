@@ -570,7 +570,7 @@
 [[projects]]
   name = "github.com/mattn/goreman"
   packages = ["."]
-  revision = "d0ee41b21be92ce6fd3e55ad11c5e5c9452fe822"
+  revision = "a28d243f92f0661e33ed21e957d2c2dc17d08536"
 
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
@@ -1340,6 +1340,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0740393fec53f6a2e02d271e7dd0e018485ba31159bc3fab18d96ade4067a524"
+  inputs-digest = "2060f33e0eb6f0ad2adc05cd5dca5a989f32dc42f888a88f7cf523d4a73c2636"
   solver-name = "gps-cdcl"
   solver-version = 1

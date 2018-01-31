@@ -10,37 +10,82 @@ import (
 type Goreman int
 
 // rpc: start
-func (r *Goreman) Start(proc string, ret *string) (err error) {
+func (r *Goreman) Start(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
 		}
 	}()
-	return startProc(proc)
+	for _, arg := range args {
+		if err = startProc(arg); err != nil {
+			break
+		}
+	}
+	return err
 }
 
 // rpc: stop
-func (r *Goreman) Stop(proc string, ret *string) (err error) {
+func (r *Goreman) Stop(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
 		}
 	}()
-	return stopProc(proc, false)
+	for _, arg := range args {
+		if err = stopProc(arg, false); err != nil {
+			break
+		}
+	}
+	return err
+}
+
+// rpc: stop-all
+func (r *Goreman) StopAll(args []string, ret *string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+	for proc := range procs {
+		if err = stopProc(proc, false); err != nil {
+			break
+		}
+	}
+	return err
 }
 
 // rpc: restart
-func (r *Goreman) Restart(proc string, ret *string) (err error) {
+func (r *Goreman) Restart(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
 		}
 	}()
-	return restartProc(proc)
+	for _, arg := range args {
+		if err = restartProc(arg); err != nil {
+			break
+		}
+	}
+	return err
+}
+
+// rpc: restart-all
+func (r *Goreman) RestartAll(args []string, ret *string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+	for proc := range procs {
+		if err = restartProc(proc); err != nil {
+			break
+		}
+	}
+	return err
 }
 
 // rpc: list
-func (r *Goreman) List(empty string, ret *string) (err error) {
+func (r *Goreman) List(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
@@ -54,7 +99,7 @@ func (r *Goreman) List(empty string, ret *string) (err error) {
 }
 
 // rpc: status
-func (r *Goreman) Status(empty string, ret *string) (err error) {
+func (r *Goreman) Status(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
@@ -72,8 +117,8 @@ func (r *Goreman) Status(empty string, ret *string) (err error) {
 }
 
 // command: run.
-func run(cmd, proc string, serverPort uint) error {
-	client, err := rpc.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", serverPort))
+func run(cmd string, args []string, serverPort uint) error {
+	client, err := rpc.Dial("tcp", defaultServer(serverPort))
 	if err != nil {
 		return err
 	}
@@ -81,28 +126,32 @@ func run(cmd, proc string, serverPort uint) error {
 	var ret string
 	switch cmd {
 	case "start":
-		return client.Call("Goreman.Start", proc, &ret)
+		return client.Call("Goreman.Start", args, &ret)
 	case "stop":
-		return client.Call("Goreman.Stop", proc, &ret)
+		return client.Call("Goreman.Stop", args, &ret)
+	case "stop-all":
+		return client.Call("Goreman.StopAll", args, &ret)
 	case "restart":
-		return client.Call("Goreman.Restart", proc, &ret)
+		return client.Call("Goreman.Restart", args, &ret)
+	case "restart-all":
+		return client.Call("Goreman.RestartAll", args, &ret)
 	case "list":
-		err := client.Call("Goreman.List", "", &ret)
+		err := client.Call("Goreman.List", args, &ret)
 		fmt.Print(ret)
 		return err
 	case "status":
-		err := client.Call("Goreman.Status", "", &ret)
+		err := client.Call("Goreman.Status", args, &ret)
 		fmt.Print(ret)
 		return err
 	}
-	return errors.New("Unknown command")
+	return errors.New("unknown command")
 }
 
 // start rpc server.
 func startServer(listenPort uint) error {
 	gm := new(Goreman)
 	rpc.Register(gm)
-	server, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", listenPort))
+	server, err := net.Listen("tcp", fmt.Sprintf("%s:%d", defaultAddr(), listenPort))
 	if err != nil {
 		return err
 	}

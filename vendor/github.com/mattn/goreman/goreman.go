@@ -27,7 +27,13 @@ func usage() {
   goreman export [FORMAT] [LOCATION] # Export the apps to another process
                                        (upstart)
   goreman run COMMAND [PROCESS...]   # Run a command
-                                       (start/stop/restart/list/status)
+                                       start
+                                       stop
+                                       stop-all
+                                       restart
+                                       restart-all
+                                       list
+                                       status
   goreman start [PROCESS]            # Start the application
   goreman version                    # Display Goreman version
 
@@ -123,9 +129,25 @@ func readProcfile(cfg *config) error {
 		}
 	}
 	if len(procs) == 0 {
-		return errors.New("No valid entry")
+		return errors.New("no valid entry")
 	}
 	return nil
+}
+
+func defaultServer(serverPort uint) string {
+	s := os.Getenv("GOREMAN_RPC_SERVER")
+	if s != "" {
+		return s
+	}
+	return fmt.Sprintf("127.0.0.1:%d", defaultPort())
+}
+
+func defaultAddr() string {
+	s := os.Getenv("GOREMAN_RPC_ADDR")
+	if s != "" {
+		return s
+	}
+	return "0.0.0.0"
 }
 
 // default port
@@ -166,7 +188,11 @@ func start(cfg *config) error {
 	if len(cfg.Args) > 1 {
 		tmp := map[string]*procInfo{}
 		for _, v := range cfg.Args[1:] {
-			tmp[v] = procs[v]
+			p, ok := procs[v]
+			if !ok {
+				return errors.New("unknown proc: " + v)
+			}
+			tmp[v] = p
 		}
 		procs = tmp
 	}
@@ -197,12 +223,9 @@ func main() {
 		usage()
 		break
 	case "run":
-		if len(cfg.Args) == 3 {
-			cmd, proc := cfg.Args[1], cfg.Args[2]
-			err = run(cmd, proc, cfg.Port)
-		} else if len(cfg.Args) == 2 {
-			cmd := cfg.Args[1]
-			err = run(cmd, "", cfg.Port)
+		if len(cfg.Args) >= 2 {
+			cmd, args := cfg.Args[1], cfg.Args[2:]
+			err = run(cmd, args, cfg.Port)
 		} else {
 			usage()
 		}
@@ -226,7 +249,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		fmt.Fprintf(os.Stderr, "%s: %v\n", os.Args[0], err.Error())
 		os.Exit(1)
 	}
 }
