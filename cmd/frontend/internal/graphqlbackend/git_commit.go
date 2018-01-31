@@ -27,7 +27,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*gitCommitResolver, erro
 
 type gitCommitResolver struct {
 	// Either repoID or repo must be set.
-	repoID api.RepoID
+	repoID api.RepoID // TODO!(sqs): can remove?
 	repo   *repositoryResolver
 
 	oid       gitObjectID
@@ -113,7 +113,7 @@ func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo.ID, api.CommitID(r.oid))
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
 	if err != nil {
 		return nil, err
 	}

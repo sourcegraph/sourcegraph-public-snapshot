@@ -78,7 +78,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
 			return fileMatchesToSearchResults([]*fileMatch{
-				{uri: "git://repo?rev#dir/file", JPath: "dir/file"},
+				{uri: "git://repo?rev#dir/file", JPath: "dir/file", repo: &types.Repo{URI: "repo"}, commitID: "rev"},
 			}), &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchRepos = nil }()
@@ -132,7 +132,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
 			return fileMatchesToSearchResults([]*fileMatch{
-				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match"},
+				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", repo: &types.Repo{URI: "repo"}, commitID: "rev"},
 			}), &searchResultsCommon{}, nil
 		}
 		var calledSearchFilesFoo, calledSearchFilesRepo3 bool

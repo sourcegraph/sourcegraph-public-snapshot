@@ -31,14 +31,18 @@ func GetRepo(ctx context.Context, vars map[string]string) (*types.Repo, error) {
 }
 
 // getRepoRev resolves the repository and commit specified in the route vars.
-func getRepoRev(ctx context.Context, vars map[string]string, repo api.RepoID) (api.RepoID, api.CommitID, error) {
+func getRepoRev(ctx context.Context, vars map[string]string, repoID api.RepoID) (api.RepoID, api.CommitID, error) {
 	repoRev := routevar.ToRepoRev(vars)
+	repo, err := backend.Repos.Get(ctx, repoID)
+	if err != nil {
+		return repoID, "", err
+	}
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, repoRev.Rev)
 	if err != nil {
-		return 0, "", err
+		return repoID, "", err
 	}
 
-	return repo, commitID, nil
+	return repoID, commitID, nil
 }
 
 // GetRepoAndRev returns the repo object and the commit ID for a repository. It may

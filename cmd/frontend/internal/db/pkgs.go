@@ -28,12 +28,8 @@ import (
 type pkgs struct{}
 
 // RefreshIndex refreshes the packages index for the specified repo@commit.
-func (p *pkgs) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID, reposGetInventory func(context.Context, api.RepoID, api.CommitID) (*inventory.Inventory, error)) error {
-	repo, err := Repos.GetByURI(ctx, repoURI)
-	if err != nil {
-		return errors.Wrap(err, "Repos.GetByURI")
-	}
-	inv, err := reposGetInventory(ctx, repo.ID, commitID)
+func (p *pkgs) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api.CommitID, reposGetInventory func(context.Context, *types.Repo, api.CommitID) (*inventory.Inventory, error)) error {
+	inv, err := reposGetInventory(ctx, repo, commitID)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetInventory")
 	}

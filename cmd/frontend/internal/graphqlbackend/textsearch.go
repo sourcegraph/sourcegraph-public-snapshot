@@ -111,6 +111,8 @@ type fileMatch struct {
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
 	uri          string
+	repo         *types.Repo
+	commitID     api.CommitID // or empty for default branch
 }
 
 func (fm *fileMatch) Resource() string {
@@ -293,7 +295,7 @@ func searchRepo(ctx context.Context, repo *types.Repo, rev string, info *pattern
 		return mockSearchRepo(ctx, repo, rev, info)
 	}
 
-	commit, err := backend.Repos.ResolveRev(ctx, repo.ID, rev)
+	commit, err := backend.Repos.VCSForGitserverRepo(repo).ResolveRevision(ctx, rev)
 	if err != nil {
 		return nil, false, err
 	}
@@ -312,6 +314,8 @@ func searchRepo(ctx context.Context, repo *types.Repo, rev string, info *pattern
 	}
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
+		fm.repo = repo
+		fm.commitID = commit
 	}
 
 	return matches, limitHit, err
@@ -387,9 +391,11 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	}
 
 	// Tell zoekt which repos to search
-	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool)}
+	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
+	repoMap := make(map[api.RepoURI]*types.Repo, len(repos))
 	for _, repoRev := range repos {
 		repoSet.Set[string(repoRev.repo.URI)] = true
+		repoMap[api.RepoURI(strings.ToLower(string(repoRev.repo.URI)))] = repoRev.repo
 	}
 
 	if len(repoSet.Set) == 0 {
@@ -492,6 +498,8 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
+			repo:         repoMap[api.RepoURI(file.Repository)],
+			commitID:     "", // zoekt only searches default branch
 		}
 	}
 	return matches, limitHit, nil

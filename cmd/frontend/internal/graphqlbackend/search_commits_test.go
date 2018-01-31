@@ -18,7 +18,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
 
 	var calledVCSRawLogDiffSearch bool
-	calledRepoVCSOpen := backend.Mocks.Repos.MockOpenVCS(t, 1, vcstesting.MockRepository{
+	calledRepoVCSOpen := backend.Mocks.Repos.MockOpenVCS(t, "repo", vcstesting.MockRepository{
 		RawLogDiffSearch_: func(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error) {
 			calledVCSRawLogDiffSearch = true
 			if want := "p"; opt.Query.Pattern != want {

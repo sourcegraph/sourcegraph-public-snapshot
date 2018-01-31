@@ -52,12 +52,8 @@ var globalDepEnabledLangs = map[string]struct{}{
 }
 
 // RefreshIndex refreshes the global deps index for the specified repo@commit.
-func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID, reposGetInventory func(context.Context, api.RepoID, api.CommitID) (*inventory.Inventory, error)) error {
-	repo, err := Repos.GetByURI(ctx, repoURI)
-	if err != nil {
-		return errors.Wrap(err, "Repos.GetByURI")
-	}
-	inv, err := reposGetInventory(ctx, repo.ID, commitID)
+func (g *globalDeps) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api.CommitID, reposGetInventory func(context.Context, *types.Repo, api.CommitID) (*inventory.Inventory, error)) error {
+	inv, err := reposGetInventory(ctx, repo, commitID)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetInventory")
 	}
@@ -82,17 +78,12 @@ func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI api.RepoURI, comm
 	return nil
 }
 
-func (g *globalDeps) TotalRefs(ctx context.Context, repoURI api.RepoURI, langs []*inventory.Lang) (int, error) {
-	repo, err := Repos.GetByURI(ctx, repoURI)
-	if err != nil {
-		return 0, errors.Wrap(err, "Repos.GetByURI")
-	}
-
+func (g *globalDeps) TotalRefs(ctx context.Context, repo *types.Repo, langs []*inventory.Lang) (int, error) {
 	var sum int
 	for _, lang := range langs {
 		switch lang.Name {
 		case inventory.LangGo:
-			for _, expandedSources := range repoURIToGoPathPrefixes(repoURI) {
+			for _, expandedSources := range repoURIToGoPathPrefixes(repo.URI) {
 				refs, err := g.doTotalRefsGo(ctx, expandedSources)
 				if err != nil {
 					return 0, errors.Wrap(err, "doTotalRefsGo")
@@ -113,17 +104,12 @@ func (g *globalDeps) TotalRefs(ctx context.Context, repoURI api.RepoURI, langs [
 // ListTotalRefs is like TotalRefs, except it returns a list of repo IDs
 // instead of just the length of that list. Obviously, this is less efficient
 // if you just need the count, however.
-func (g *globalDeps) ListTotalRefs(ctx context.Context, repoURI api.RepoURI, langs []*inventory.Lang) ([]api.RepoID, error) {
-	repo, err := Repos.GetByURI(ctx, repoURI)
-	if err != nil {
-		return nil, errors.Wrap(err, "Repos.GetByURI")
-	}
-
+func (g *globalDeps) ListTotalRefs(ctx context.Context, repo *types.Repo, langs []*inventory.Lang) ([]api.RepoID, error) {
 	var repos []api.RepoID
 	for _, lang := range langs {
 		switch lang.Name {
 		case inventory.LangGo:
-			for _, expandedSources := range repoURIToGoPathPrefixes(repoURI) {
+			for _, expandedSources := range repoURIToGoPathPrefixes(repo.URI) {
 				refs, err := g.doListTotalRefsGo(ctx, expandedSources)
 				if err != nil {
 					return nil, errors.Wrap(err, "doListTotalRefsGo")

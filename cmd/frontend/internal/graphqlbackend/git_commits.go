@@ -25,7 +25,7 @@ type gitCommitConnectionResolver struct {
 
 func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commit, error) {
 	do := func() ([]*vcs.Commit, error) {
-		vcsrepo, err := backend.Repos.OpenVCS(ctx, r.repo.repo.ID)
+		vcsrepo, err := backend.Repos.OpenVCS(ctx, r.repo.repo)
 		if err != nil {
 			return nil, err
 		}

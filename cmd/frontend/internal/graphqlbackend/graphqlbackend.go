@@ -255,7 +255,7 @@ func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	rev, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
+	rev, err := backend.Repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return nil, err
 	}

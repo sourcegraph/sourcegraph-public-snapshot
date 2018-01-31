@@ -48,7 +48,7 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repositoryDatabaseID())
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repo.repo)
 	if err != nil {
 		return "", err
 	}
@@ -70,7 +70,7 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repositoryDatabaseID())
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repo.repo)
 	if err != nil {
 		return false, err
 	}
@@ -216,7 +216,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repositoryDatabaseID())
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repo.repo)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +249,7 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error
 }
 
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repositoryDatabaseID())
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repo.repo)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitRes
 	resolvers := make([]*gitCommitResolver, len(commits))
 	for i, commit := range commits {
 		resolvers[i] = toGitCommitResolver(nil, commit)
-		resolvers[i].repoID = r.commit.repositoryDatabaseID()
+		resolvers[i].repo = r.commit.repo
 	}
 
 	return resolvers, nil
@@ -275,7 +275,7 @@ func (r *fileResolver) BlameRaw(ctx context.Context, args *struct {
 	StartLine int32
 	EndLine   int32
 }) (string, error) {
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repositoryDatabaseID())
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repo.repo)
 	if err != nil {
 		return "", err
 	}
@@ -297,7 +297,7 @@ func (r *fileResolver) Blame(ctx context.Context,
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
 
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repositoryDatabaseID())
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.commit.repo.repo)
 	if err != nil {
 		return nil, err
 	}

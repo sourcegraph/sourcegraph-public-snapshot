@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"regexp"
 	"sort"
 	"strconv"
@@ -162,47 +161,50 @@ func (sr *searchResults) ElapsedMilliseconds() int32 {
 	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
 }
 
-// blameFileMatchCache caches Repos.GetByURI, Repos.ResolveRev, and RepoVCS.Open
-// operations.
+// blameFileMatchCache caches Repos.Get, Repos.ResolveRev, and RepoVCS.Open operations.
 type blameFileMatchCache struct {
 	cachedReposMu sync.RWMutex
-	cachedRepos   map[api.RepoURI]*types.Repo
+	cachedRepos   map[api.RepoID]*types.Repo
 
 	cachedRevsMu sync.RWMutex
 	cachedRevs   map[string]api.CommitID
 
 	cachedVCSReposMu sync.RWMutex
-	cachedVCSRepos   map[string]vcs.Repository
+	cachedVCSRepos   map[api.RepoID]vcs.Repository
 }
 
-// repoVCSOpen is like localstore.Repos.GetByURI except it is cached by b.
-func (b *blameFileMatchCache) reposGetByURI(ctx context.Context, repoURI api.RepoURI) (*types.Repo, error) {
+// reposGet is like db.Repos.Get except it is cached by b.
+func (b *blameFileMatchCache) reposGet(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
 	b.cachedReposMu.RLock()
-	repo, ok := b.cachedRepos[repoURI]
+	repo, ok := b.cachedRepos[repoID]
 	b.cachedReposMu.RUnlock()
 	if ok {
 		return repo, nil
 	}
-	repo, err := db.Repos.GetByURI(ctx, repoURI)
+	repo, err := db.Repos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
 	b.cachedReposMu.Lock()
-	b.cachedRepos[repoURI] = repo
+	b.cachedRepos[repoID] = repo
 	b.cachedReposMu.Unlock()
 	return repo, nil
 }
 
 // repoVCSOpen is like localstore.Repos.ResolveRev except it is cached by b.
-func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repo api.RepoID, revStr string) (api.CommitID, error) {
-	cacheKey := fmt.Sprint(repo, revStr)
+func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID api.RepoID, revStr string) (api.CommitID, error) {
+	cacheKey := fmt.Sprint(repoID, revStr)
 	b.cachedRevsMu.RLock()
 	rev, ok := b.cachedRevs[cacheKey]
 	b.cachedRevsMu.RUnlock()
 	if ok {
 		return rev, nil
 	}
-	rev, err := backend.Repos.ResolveRev(ctx, repo, revStr)
+	repo, err := b.reposGet(ctx, repoID)
+	if err != nil {
+		return "", err
+	}
+	rev, err = backend.Repos.ResolveRev(ctx, repo, revStr)
 	if err != nil {
 		return "", err
 	}
@@ -213,14 +215,18 @@ func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repo api.Repo
 }
 
 // repoVCSOpen is like localstore.RepoVCS.Open except it is cached by b.
-func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
+func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID api.RepoID) (vcs.Repository, error) {
 	b.cachedVCSReposMu.RLock()
-	vcsrepo, ok := b.cachedVCSRepos[fmt.Sprint(repo)]
+	vcsrepo, ok := b.cachedVCSRepos[repoID]
 	b.cachedVCSReposMu.RUnlock()
 	if ok {
 		return vcsrepo, nil
 	}
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, repo)
+	repo, err := b.reposGet(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	vcsrepo, err = backend.Repos.OpenVCS(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +234,7 @@ func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repo api.RepoID) 
 		return nil, err
 	}
 	b.cachedVCSReposMu.Lock()
-	b.cachedVCSRepos[fmt.Sprint(repo)] = vcsrepo
+	b.cachedVCSRepos[repoID] = vcsrepo
 	b.cachedVCSReposMu.Unlock()
 	return vcsrepo, nil
 }
@@ -245,32 +251,10 @@ func (sr *searchResults) blameFileMatch(ctx context.Context, fm *fileMatch, cach
 		span.Finish()
 	}()
 
-	u, err := url.Parse(fm.uri)
-	if err != nil {
-		return time.Time{}, err
-	}
-	repoURI := api.RepoURI(u.Host + u.Path)
-	revStr := u.RawQuery
-
-	repo, err := cache.reposGetByURI(ctx, repoURI)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	rev, err := cache.reposResolveRev(ctx, repo.ID, revStr)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	vcsrepo, err := cache.repoVCSOpen(ctx, repo.ID)
-	if err != nil {
-		return time.Time{}, err
-	}
-
 	// Blame the first line match.
 	lm := fm.LineMatches()[0]
-	hunks, err := vcsrepo.BlameFile(ctx, u.Fragment, &vcs.BlameOptions{
-		NewestCommit: rev,
+	hunks, err := backend.Repos.VCSForGitserverRepo(fm.repo).BlameFile(ctx, fm.JPath, &vcs.BlameOptions{
+		NewestCommit: fm.commitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
 	})
@@ -292,9 +276,9 @@ func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err 
 		sparklineMu sync.Mutex
 		blameOps    = 0
 		cache       = &blameFileMatchCache{
-			cachedRepos:    map[api.RepoURI]*types.Repo{},
+			cachedRepos:    map[api.RepoID]*types.Repo{},
 			cachedRevs:     map[string]api.CommitID{},
-			cachedVCSRepos: map[string]vcs.Repository{},
+			cachedVCSRepos: map[api.RepoID]vcs.Repository{},
 		}
 	)
 	sparkline = make([]int32, days)

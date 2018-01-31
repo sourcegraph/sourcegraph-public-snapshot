@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"regexp"
 	"sort"
 	"sync"
@@ -11,7 +10,6 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
@@ -101,23 +99,15 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 		cache := map[string]repoCommitSpec{}
 		getCommitSpec := func(ctx context.Context, fm *fileMatch) (repoCommitSpec, error) {
-			u, err := url.Parse(fm.uri)
-			if err != nil {
-				return repoCommitSpec{}, err
-			}
-			key := u.Host + u.Path + "?" + u.RawQuery
+			key := string(fm.repo.URI) + ":" + string(fm.commitID)
 			if spec, ok := cache[key]; ok {
 				return spec, nil
 			}
-			repo, err := db.Repos.GetByURI(ctx, api.RepoURI(u.Host+u.Path))
+			rev, err := backend.Repos.ResolveRev(ctx, fm.repo, string(fm.commitID))
 			if err != nil {
 				return repoCommitSpec{}, err
 			}
-			rev, err := backend.Repos.ResolveRev(ctx, repo.ID, u.RawQuery)
-			if err != nil {
-				return repoCommitSpec{}, err
-			}
-			spec := repoCommitSpec{repo: repo.ID, commitID: string(rev)}
+			spec := repoCommitSpec{repo: fm.repo.ID, commitID: string(rev)}
 			cache[key] = spec
 			return spec, nil
 		}

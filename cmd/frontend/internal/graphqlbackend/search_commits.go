@@ -100,7 +100,7 @@ type commitSearchOp struct {
 func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResult, limitHit bool, err error) {
 	repo := op.repoRevs.repo
 
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, repo.ID)
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, repo)
 	if err != nil {
 		return nil, false, err
 	}

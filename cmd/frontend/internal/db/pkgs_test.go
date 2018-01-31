@@ -106,7 +106,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 			if !ok {
 				t.Fatalf("attempted to call workspace/xpackages with invalid return type %T", results)
 			}
-			if rootPath != "git://github.com/my/repo?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
+			if rootPath != "git://myrepo?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
 				t.Fatalf("unexpected rootPath: %q", rootPath)
 			}
 			switch mode {
@@ -134,27 +134,13 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
-	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repo api.RepoURI) (*types.Repo, error) {
-		calledReposGetByURI = true
-		switch repo {
-		case "github.com/my/repo":
-			return &types.Repo{ID: rp.ID, URI: repo}, nil
-		default:
-			return nil, errors.New("not found")
-		}
-	}
-
-	reposGetInventory := func(context.Context, api.RepoID, api.CommitID) (*inventory.Inventory, error) {
+	reposGetInventory := func(context.Context, *types.Repo, api.CommitID) (*inventory.Inventory, error) {
 		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
 	}
 
 	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-	if err := Pkgs.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
+	if err := Pkgs.RefreshIndex(ctx, rp, commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
-	}
-	if !calledReposGetByURI {
-		t.Fatalf("!calledReposGetByURI")
 	}
 
 	expPkgs := []api.PackageInfo{{

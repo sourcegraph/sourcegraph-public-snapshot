@@ -107,7 +107,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
-			rev, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
+			rev, err := backend.Repos.ResolveRev(ctx, repo, "")
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
@@ -134,7 +134,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 					commit = *repo.IndexedRevision
 				} else {
 					var err error
-					commit, err = backend.Repos.ResolveRev(ctx, repo.ID, "")
+					commit, err = backend.Repos.ResolveRev(ctx, repo, "")
 					if err != nil {
 						return nil, errors.Wrap(err, "resolve revision for package repo")
 					}

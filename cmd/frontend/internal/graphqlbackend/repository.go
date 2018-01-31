@@ -90,7 +90,7 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
-	commitID, err := backend.Repos.ResolveRev(ctx, r.repo.ID, args.Rev)
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
 		if err == vcs.ErrRevisionNotFound {
 			return nil, nil
@@ -100,7 +100,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	commit, err := backend.Repos.GetCommit(ctx, r.repo.ID, commitID)
+	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error) {
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.repo.ID)
+	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.repo)
 	if err != nil {
 		return nil, err
 	}

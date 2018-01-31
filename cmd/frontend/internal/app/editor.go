@@ -30,11 +30,11 @@ func editorBranch(ctx context.Context, repoURI api.RepoURI, branchName string) (
 	// If we are on the default branch we want to return a clean URL without a
 	// branch. If we fail its best to return the full URL and allow the
 	// front-end to inform them of anything that is wrong.
-	defaultBranchCommitID, err := backend.Repos.ResolveRev(ctx, repo.ID, "")
+	defaultBranchCommitID, err := backend.Repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return "@" + branchName, nil
 	}
-	branchCommitID, err := backend.Repos.ResolveRev(ctx, repo.ID, branchName)
+	branchCommitID, err := backend.Repos.ResolveRev(ctx, repo, branchName)
 	if err != nil {
 		return "@" + branchName, nil
 	}

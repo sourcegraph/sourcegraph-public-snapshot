@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -177,7 +176,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 			if !ok {
 				t.Fatalf("attempted to call workspace/xpackages with invalid return type %T", results)
 			}
-			if rootPath != "git://github.com/my/repo?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
+			if rootPath != "git://myrepo?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
 				t.Fatalf("unexpected rootPath: %q", rootPath)
 			}
 			switch mode {
@@ -196,27 +195,13 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
-	calledReposGetByURI := false
-	Mocks.Repos.GetByURI = func(ctx context.Context, repoURI api.RepoURI) (*types.Repo, error) {
-		calledReposGetByURI = true
-		switch repoURI {
-		case "github.com/my/repo":
-			return &types.Repo{ID: repo.ID, URI: repoURI}, nil
-		default:
-			return nil, errors.New("not found")
-		}
-	}
-
-	reposGetInventory := func(context.Context, api.RepoID, api.CommitID) (*inventory.Inventory, error) {
+	reposGetInventory := func(context.Context, *types.Repo, api.CommitID) (*inventory.Inventory, error) {
 		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "Go"}}}, nil
 	}
 
 	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-	if err := GlobalDeps.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
+	if err := GlobalDeps.RefreshIndex(ctx, repo, commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
-	}
-	if !calledReposGetByURI {
-		t.Fatalf("!calledReposGetByURI")
 	}
 
 	wantRefs := []*api.DependencyReference{{

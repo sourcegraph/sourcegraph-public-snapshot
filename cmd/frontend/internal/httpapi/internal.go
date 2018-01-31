@@ -184,7 +184,11 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 	if err != nil {
 		return err
 	}
-	deps, err := backend.Defs.Dependencies(r.Context(), args.RepoID)
+	repo, err := backend.Repos.Get(r.Context(), args.RepoID)
+	if err != nil {
+		return err
+	}
+	deps, err := backend.Defs.Dependencies(r.Context(), repo)
 	if err != nil {
 		return fmt.Errorf("Defs.DependencyReferences failed: %s", err)
 	}
@@ -215,7 +219,11 @@ func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	inv, err := backend.Repos.GetInventoryUncached(r.Context(), req.Repo, req.CommitID)
+	repo, err := backend.Repos.Get(r.Context(), req.Repo)
+	if err != nil {
+		return err
+	}
+	inv, err := backend.Repos.GetInventoryUncached(r.Context(), repo, req.CommitID)
 	if err != nil {
 		return err
 	}
@@ -435,7 +443,11 @@ func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Defs.RefreshIndex(r.Context(), args.RepoURI, args.CommitID)
+	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoURI)
+	if err != nil {
+		return err
+	}
+	err = backend.Defs.RefreshIndex(r.Context(), repo, args.CommitID)
 	if err != nil {
 		return nil
 	}
@@ -450,7 +462,11 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Pkgs.RefreshIndex(r.Context(), args.RepoURI, args.CommitID)
+	repo, err := backend.Repos.GetByURI(r.Context(), args.RepoURI)
+	if err != nil {
+		return err
+	}
+	err = backend.Pkgs.RefreshIndex(r.Context(), repo, args.CommitID)
 	if err != nil {
 		return nil
 	}

@@ -19,13 +19,13 @@ type MockRepos struct {
 	Get                  func(v0 context.Context, id api.RepoID) (*types.Repo, error)
 	GetByURI             func(v0 context.Context, uri api.RepoURI) (*types.Repo, error)
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-	GetCommit            func(v0 context.Context, repo api.RepoID, commitID api.CommitID) (*vcs.Commit, error)
-	ResolveRev           func(v0 context.Context, repo api.RepoID, rev string) (api.CommitID, error)
+	GetCommit            func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*vcs.Commit, error)
+	ResolveRev           func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 	ListDeps             func(v0 context.Context, v1 []api.RepoURI) ([]api.RepoURI, error)
-	GetInventory         func(v0 context.Context, repo api.RepoID, commitID api.CommitID) (*inventory.Inventory, error)
-	GetInventoryUncached func(ctx context.Context, repo api.RepoID, commitID api.CommitID) (*inventory.Inventory, error)
+	GetInventory         func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+	GetInventoryUncached func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo api.RepoURI) (err error)
-	OpenVCS              func(ctx context.Context, repo api.RepoID) (vcs.Repository, error)
+	OpenVCS              func(ctx context.Context, repo *types.Repo) (vcs.Repository, error)
 }
 
 var errRepoNotFound = &errcode.Mock{
@@ -88,7 +88,7 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoURI) (called *bo
 func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID api.CommitID) (called *bool) {
 	var once sync.Once
 	called = new(bool)
-	s.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (api.CommitID, error) {
+	s.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		once.Do(func() {
 			*called = true
 		})
@@ -99,10 +99,10 @@ func (s *MockRepos) MockResolveRev_NoCheck(t *testing.T, commitID api.CommitID) 
 
 func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, wantRev string) (called *bool) {
 	called = new(bool)
-	s.ResolveRev = func(ctx context.Context, repo api.RepoID, rev string) (api.CommitID, error) {
+	s.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		*called = true
-		if repo != wantRepo {
-			t.Errorf("got repo %v, want %v", repo, wantRepo)
+		if repo.ID != wantRepo {
+			t.Errorf("got repo %v, want %v", repo.ID, wantRepo)
 		}
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
@@ -114,19 +114,19 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 
 func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commit) (called *bool) {
 	called = new(bool)
-	s.GetCommit = func(ctx context.Context, repo api.RepoID, commitID api.CommitID) (*vcs.Commit, error) {
+	s.GetCommit = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*vcs.Commit, error) {
 		*called = true
 		return commit, nil
 	}
 	return
 }
 
-func (s *MockRepos) MockOpenVCS(t *testing.T, wantRepo api.RepoID, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+func (s *MockRepos) MockOpenVCS(t *testing.T, wantRepo api.RepoURI, mockVCSRepo vcstesting.MockRepository) (called *bool) {
 	called = new(bool)
-	s.OpenVCS = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
+	s.OpenVCS = func(ctx context.Context, repo *types.Repo) (vcs.Repository, error) {
 		*called = true
-		if repo != wantRepo {
-			t.Errorf("got repo %d, want %d", repo, wantRepo)
+		if repo.URI != wantRepo {
+			t.Errorf("got repo %q, want %q", repo.URI, wantRepo)
 			return nil, errRepoNotFound
 		}
 		return mockVCSRepo, nil
@@ -136,7 +136,7 @@ func (s *MockRepos) MockOpenVCS(t *testing.T, wantRepo api.RepoID, mockVCSRepo v
 
 func (s *MockRepos) MockOpenVCS_NoCheck(t *testing.T, mockVCSRepo vcstesting.MockRepository) (called *bool) {
 	called = new(bool)
-	s.OpenVCS = func(ctx context.Context, repo api.RepoID) (vcs.Repository, error) {
+	s.OpenVCS = func(ctx context.Context, repo *types.Repo) (vcs.Repository, error) {
 		*called = true
 		return mockVCSRepo, nil
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -12,14 +13,14 @@ var Pkgs = &pkgs{}
 type pkgs struct{}
 
 // RefreshIndex refreshes the package index for the specified repository.
-func (p *pkgs) RefreshIndex(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID) (err error) {
+func (p *pkgs) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api.CommitID) (err error) {
 	if Mocks.Pkgs.RefreshIndex != nil {
-		return Mocks.Pkgs.RefreshIndex(ctx, repoURI, commitID)
+		return Mocks.Pkgs.RefreshIndex(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Pkgs", "RefreshIndex", map[string]interface{}{"repoURI": repoURI, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Pkgs", "RefreshIndex", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
 	defer done()
-	return db.Pkgs.RefreshIndex(ctx, repoURI, commitID, Repos.GetInventory)
+	return db.Pkgs.RefreshIndex(ctx, repo, commitID, Repos.GetInventory)
 }
 
 func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pkgs []api.PackageInfo, err error) {
@@ -30,6 +31,6 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pkgs [
 }
 
 type MockPkgs struct {
-	RefreshIndex func(ctx context.Context, repoURI api.RepoURI, commitID api.CommitID) error
+	RefreshIndex func(ctx context.Context, repo *types.Repo, commitID api.CommitID) error
 	ListPackages func(ctx context.Context, op *api.ListPackagesOp) (pkgs []api.PackageInfo, err error)
 }
