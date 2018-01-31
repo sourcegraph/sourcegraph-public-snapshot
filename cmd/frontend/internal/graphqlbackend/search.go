@@ -316,6 +316,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	repoRevisions = make([]*repositoryRevisions, 0, len(repos))
 	repoResolvers = make([]*searchResultResolver, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
+reposLoop:
 	for _, repo := range repos {
 		repoRev := &repositoryRevisions{
 			repo: repo,
@@ -323,20 +324,16 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 		repoResolver := &repositoryResolver{repo: repo}
 
-		if len(repoRev.revspecs()) == 1 {
-			// Check if the repository actually has the revision that the user
-			// specified.
-			//
-			// TODO(sqs): make this support multiple revspecs and ref globs
-			_, err := repoResolver.Commit(ctx, &struct {
-				Rev string
-			}{
-				Rev: repoRev.revSpecsOrDefaultBranch()[0],
-			})
+		// Check if the repository actually has the revisions that the user specified. (If they just
+		// specified the default branch, skip this to save time.)
+		for _, revspec := range repoRev.revspecs() {
+			_, err := repoResolver.Commit(ctx, &struct{ Rev string }{Rev: revspec})
 			if err == vcs.ErrRevisionNotFound {
 				// revision does not exist, so do not include this repository.
+				//
+				// TODO(sqs): make it so it just omits this refspec, not the whole repo
 				missingRepoRevisions = append(missingRepoRevisions, repoRev)
-				continue
+				continue reposLoop
 			}
 			// else, real errors will be handled later, so just ignore it.
 		}
