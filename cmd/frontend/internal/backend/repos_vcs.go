@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+
 	"github.com/pkg/errors"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -34,11 +36,15 @@ func (repos) VCSForGitserverRepo(repo gitserver.Repo) vcs.Repository {
 }
 
 func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	// If it is possible to 100% correctly determine it statically, use a fast path. This is used
-	// to avoid a RepoLookup call for public GitHub.com repositories on Sourcegraph.com, which reduces
-	// rate limit pressure significantly.
-	if strings.HasPrefix(strings.ToLower(string(repo.URI)), "github.com/") {
-		return gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI)}, nil
+	if envvar.SourcegraphDotComMode() {
+		// If it is possible to 100% correctly determine it statically, use a fast path. This is used
+		// to avoid a RepoLookup call for public GitHub.com repositories on Sourcegraph.com, which reduces
+		// rate limit pressure significantly.
+		//
+		// This fails for private repositories, which require authentication in the URL userinfo.
+		if strings.HasPrefix(strings.ToLower(string(repo.URI)), "github.com/") {
+			return gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI)}, nil
+		}
 	}
 
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
