@@ -265,11 +265,12 @@ func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, er
 	return list, err
 }
 
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoURI) error {
+func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo Repo) error {
 	req := &protocol.RepoUpdateRequest{
-		Repo: repo,
+		Repo: repo.Name,
+		URL:  repo.URL,
 	}
-	_, err := c.httpPost(ctx, repo, "enqueue-repo-update", req)
+	_, err := c.httpPost(ctx, repo.Name, "enqueue-repo-update", req)
 	if err != nil {
 		return err
 	}

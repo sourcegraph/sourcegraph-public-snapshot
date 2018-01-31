@@ -28,14 +28,19 @@ func transportWithCertTrusted(cert string) (http.RoundTripper, error) {
 	}, nil
 }
 
-func createEnableUpdateRepos(ctx context.Context, repoSlice []api.RepoCreateOrUpdateRequest, repoChan <-chan api.RepoCreateOrUpdateRequest) {
+type repoCreateOrUpdateRequest struct {
+	api.RepoCreateOrUpdateRequest
+	URL string // the repository's Git remote URL
+}
+
+func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdateRequest, repoChan <-chan repoCreateOrUpdateRequest) {
 	if repoSlice != nil && repoChan != nil {
 		panic("unexpected args")
 	}
 
 	cloned := 0
-	do := func(op api.RepoCreateOrUpdateRequest) {
-		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op)
+	do := func(op repoCreateOrUpdateRequest) {
+		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op.RepoCreateOrUpdateRequest)
 		if err != nil {
 			log15.Warn("Error creating or updating repository", "repo", op.RepoURI, "error", err)
 			return
@@ -52,7 +57,7 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []api.RepoCreateOrUp
 			if !isCloned {
 				cloned++
 				log15.Debug("fetching repo", "repo", createdRepo.URI, "cloned", isCloned)
-				err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, createdRepo.URI)
+				err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: createdRepo.URI, URL: op.URL})
 				if err != nil {
 					log15.Warn("Error enqueueing Git clone/update for repository", "repo", op.RepoURI, "error", err)
 					return

@@ -167,7 +167,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		}
 		common.Rev = mux.Vars(r)["Rev"]
 		// Update gitserver contents for a repo whenever it is visited.
-		go gitserver.DefaultClient.EnqueueRepoUpdate(context.Background(), common.Repo.URI)
+		go func() {
+			ctx := context.Background()
+			if gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, common.Repo); err == nil {
+				gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo)
+			}
+		}()
 	}
 	return common, nil
 }

@@ -118,7 +118,11 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.repo.URI); err != nil {
+	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
+	if err != nil {
+		return nil, err
+	}
+	if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
