@@ -56,7 +56,7 @@ interface State {
 }
 
 export class SearchResults extends React.Component<Props, State> {
-    private static SHOW_MISSING = false
+    private static SHOW_MISSING = true
 
     public state: State = {
         results: [],
