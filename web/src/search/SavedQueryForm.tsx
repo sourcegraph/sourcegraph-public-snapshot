@@ -14,6 +14,10 @@ export interface SavedQueryFields {
     query: string
     subject: GQLID
     showOnHomepage: boolean
+    notify: boolean
+    notifySlack: boolean
+    notifyUsers: string[]
+    notifyOrganizations: string[]
 }
 
 interface Props {
@@ -39,6 +43,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private handleDescriptionChange = this.createInputChangeHandler('description')
     private handleSubjectChange = this.createInputChangeHandler('subject')
     private handleShowOnHomeChange = this.createInputChangeHandler('showOnHomepage')
+    private handleNotifyChange = this.createInputChangeHandler('notify')
+    private handleNotifySlackChange = this.createInputChangeHandler('notifySlack')
 
     private subscriptions = new Subscription()
 
@@ -53,6 +59,10 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 description: (defaultValues && defaultValues.description) || '',
                 subject: (defaultValues && defaultValues.subject) || '',
                 showOnHomepage: !!(defaultValues && defaultValues.showOnHomepage),
+                notify: !!(defaultValues && defaultValues.notify),
+                notifySlack: !!(defaultValues && defaultValues.notifySlack),
+                notifyUsers: (defaultValues && defaultValues.notifyUsers) || [],
+                notifyOrganizations: (defaultValues && defaultValues.notifyOrganizations) || [],
             },
             subjectOptions: [],
             isSubmitting: false,
@@ -89,11 +99,21 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
-            values: { query, description, subject, showOnHomepage },
+            values: {
+                query,
+                description,
+                subject,
+                showOnHomepage,
+                notify,
+                notifySlack,
+                notifyUsers,
+                notifyOrganizations,
+            },
             subjectOptions,
             isSubmitting,
             error,
         } = this.state
+        const savingToOrg = this.savingToOrg()
 
         return (
             <form className="saved-query-form" onSubmit={this.handleSubmit}>
@@ -169,7 +189,59 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             Show on homepage
                         </label>
                     </span>
+                    <span className="saved-query-form__save-location-options">
+                        <label data-tooltip={`send email notifications to config owner (${this.saveTargetName()})`}>
+                            <input
+                                className="saved-query-form__save-location-input"
+                                type="checkbox"
+                                defaultChecked={notify}
+                                onChange={this.handleNotifyChange}
+                            />
+                            Email notifications
+                        </label>
+                    </span>
+                    <span className="saved-query-form__save-location-options">
+                        <label
+                            data-tooltip={
+                                savingToOrg
+                                    ? `send slack notifications to config owner (${this.saveTargetName()})`
+                                    : 'Must save to org settings to enable Slack notifications'
+                            }
+                        >
+                            <input
+                                className="saved-query-form__save-location-input"
+                                type="checkbox"
+                                defaultChecked={notifySlack}
+                                onChange={this.handleNotifySlackChange}
+                                disabled={!savingToOrg}
+                            />
+                            Slack notifications
+                        </label>
+                    </span>
                 </div>
+                {(notifyUsers.length > 0 || notifyOrganizations.length > 0) && (
+                    <div className="saved-query-form__also-notifying">
+                        Note: also notifying &nbsp;
+                        <strong>
+                            {notifyUsers
+                                .map(user => `${user} (user)`)
+                                .concat(notifyOrganizations.map(org => `${org} (org)`))
+                                .join(', ')}
+                        </strong>
+                        &nbsp;
+                        <span data-tooltip="See `notifyUsers` and `notifyOrganizations` in the JSON configuration">
+                            due to manual configuration
+                        </span>
+                    </div>
+                )}
+                {(notify || notifySlack || notifyUsers.length > 0 || notifyOrganizations.length > 0) &&
+                    !query.includes('type:diff') &&
+                    !query.includes('type:commit') && (
+                        <div className="saved-query-form__also-notifying">
+                            Warning: non-commit searches do not currently support notifications. Consider adding
+                            `type:diff` to your query.
+                        </div>
+                    )}
                 <div className="saved-query-form__actions">
                     <button
                         type="submit"
@@ -196,6 +268,21 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     )}
             </form>
         )
+    }
+
+    private savingToOrg = () => {
+        const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
+        return chosen && chosen.__typename === 'Org'
+    }
+
+    private saveTargetName = () => {
+        const chosen = this.state.subjectOptions
+            .filter(
+                (subjectOption: GQL.ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
+                    subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
+            )
+            .find(subjectOption => subjectOption.id === this.state.values.subject)
+        return chosen && configurationSubjectLabel(chosen, true)
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -233,23 +320,23 @@ export class SavedQueryForm extends React.Component<Props, State> {
      */
     private createInputChangeHandler(key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> {
         return event => {
-            const { currentTarget: { value, type } } = event
+            const { currentTarget: { value, checked, type } } = event
 
             this.setState(state => ({
                 values: {
                     ...state.values,
-                    [key]: type === 'checkbox' ? Boolean(value) : String(value),
+                    [key]: type === 'checkbox' ? checked : value,
                 },
             }))
         }
     }
 }
 
-function configurationSubjectLabel(s: GQL.IUser | GQL.IOrg): string {
+function configurationSubjectLabel(s: GQL.IUser | GQL.IOrg, short?: boolean): string {
     switch (s.__typename) {
         case 'User':
-            return `${s.username} (user settings)`
+            return short ? s.username : `${s.username} (user settings)`
         case 'Org':
-            return `${s.name} (org settings)`
+            return short ? s.name : `${s.name} (org settings)`
     }
 }

@@ -11,6 +11,16 @@ interface Props {
     onDidCancel: () => void
 }
 
+const onSubmit = (fields: SavedQueryFields): Observable<void> =>
+    createSavedQuery(
+        { id: fields.subject },
+        fields.description,
+        fields.query,
+        fields.showOnHomepage,
+        fields.notify,
+        fields.notifySlack
+    ).pipe(map(() => undefined))
+
 export const SavedQueryCreateForm: React.StatelessComponent<Props> = props => (
     <SavedQueryForm
         onDidCommit={props.onDidCreate}
@@ -18,11 +28,6 @@ export const SavedQueryCreateForm: React.StatelessComponent<Props> = props => (
         title="Add a new saved query"
         submitLabel="Create"
         defaultValues={props.subject ? { subject: props.subject.id } : props.values}
-        // tslint:disable-next-line:jsx-no-lambda
-        onSubmit={(fields: SavedQueryFields): Observable<void> =>
-            createSavedQuery({ id: fields.subject }, fields.description, fields.query, fields.showOnHomepage).pipe(
-                map(() => undefined)
-            )
-        }
+        onSubmit={onSubmit}
     />
 )

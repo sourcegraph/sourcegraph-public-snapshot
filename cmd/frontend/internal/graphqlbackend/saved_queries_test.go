@@ -78,13 +78,16 @@ func TestCreateSavedQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 	created, err := mutation.CreateSavedQuery(ctx, &struct {
-		Description    string
-		Query          string
-		ShowOnHomepage bool
+		Description         string
+		Query               string
+		ShowOnHomepage      bool
+		Notify              bool
+		NotifySlack         bool
+		NotifyUsers         []string
+		NotifyOrganizations []string
 	}{
-		Description:    "d2",
-		Query:          "q2",
-		ShowOnHomepage: false,
+		Description: "d2",
+		Query:       "q2",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -145,14 +148,17 @@ func TestUpdateSavedQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 	updated, err := mutation.UpdateSavedQuery(ctx, &struct {
-		ID             graphql.ID
-		Description    *string
-		Query          *string
-		ShowOnHomepage bool
+		ID                  graphql.ID
+		Description         *string
+		Query               *string
+		ShowOnHomepage      bool
+		Notify              bool
+		NotifySlack         bool
+		NotifyUsers         []string
+		NotifyOrganizations []string
 	}{
-		ID:             marshalSavedQueryID(api.SavedQueryIDSpec{Subject: subject.toSubject(), Key: "a"}),
-		Description:    &newDescription,
-		ShowOnHomepage: false,
+		ID:          marshalSavedQueryID(api.SavedQueryIDSpec{Subject: subject.toSubject(), Key: "a"}),
+		Description: &newDescription,
 	})
 	if err != nil {
 		t.Fatal(err)

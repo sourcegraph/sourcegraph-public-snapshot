@@ -15,12 +15,13 @@ import (
 )
 
 type savedQueryResolver struct {
-	key            string
-	subject        *configurationSubject
-	index          int
-	description    string
-	query          searchQuery
-	showOnHomepage bool
+	key                                 string
+	subject                             *configurationSubject
+	index                               int
+	description                         string
+	query                               searchQuery
+	showOnHomepage, notify, notifySlack bool
+	notifyUsers, notifyOrganizations    []string
 }
 
 func savedQueryByID(ctx context.Context, id graphql.ID) (*savedQueryResolver, error) {
@@ -77,6 +78,22 @@ func (r savedQueryResolver) ShowOnHomepage() bool {
 	return r.showOnHomepage
 }
 
+func (r savedQueryResolver) Notify() bool {
+	return r.notify
+}
+
+func (r savedQueryResolver) NotifySlack() bool {
+	return r.notifySlack
+}
+
+func (r savedQueryResolver) NotifyUsers() []string {
+	return r.notifyUsers
+}
+
+func (r savedQueryResolver) NotifyOrganizations() []string {
+	return r.notifyOrganizations
+}
+
 func (r savedQueryResolver) Subject() *configurationSubject { return r.subject }
 
 func (r savedQueryResolver) Key() *string {
@@ -94,12 +111,16 @@ func (r savedQueryResolver) Query() *searchQuery { return &r.query }
 
 func toSavedQueryResolver(index int, subject *configurationSubject, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
-		subject:        subject,
-		key:            entry.Key,
-		index:          index,
-		description:    entry.Description,
-		query:          searchQuery{query: entry.Query},
-		showOnHomepage: entry.ShowOnHomepage,
+		subject:             subject,
+		key:                 entry.Key,
+		index:               index,
+		description:         entry.Description,
+		query:               searchQuery{query: entry.Query},
+		showOnHomepage:      entry.ShowOnHomepage,
+		notify:              entry.Notify,
+		notifySlack:         entry.NotifySlack,
+		notifyUsers:         entry.NotifyUsers,
+		notifyOrganizations: entry.NotifyOrganizations,
 	}
 }
 
@@ -181,9 +202,10 @@ func (r *schemaResolver) migrateSavedQueries(ctx context.Context, subject *confi
 }
 
 func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, args *struct {
-	Description    string
-	Query          string
-	ShowOnHomepage bool
+	Description                         string
+	Query                               string
+	ShowOnHomepage, Notify, NotifySlack bool
+	NotifyUsers, NotifyOrganizations    []string
 }) (*savedQueryResolver, error) {
 	var index int
 	var key string
@@ -197,10 +219,14 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 		key = generateUniqueSavedQueryKey(config.SavedQueries)
 
 		value := api.ConfigSavedQuery{
-			Key:            key,
-			Description:    args.Description,
-			Query:          args.Query,
-			ShowOnHomepage: args.ShowOnHomepage,
+			Key:                 key,
+			Description:         args.Description,
+			Query:               args.Query,
+			ShowOnHomepage:      args.ShowOnHomepage,
+			Notify:              args.Notify,
+			NotifySlack:         args.NotifySlack,
+			NotifyUsers:         args.NotifyUsers,
+			NotifyOrganizations: args.NotifyOrganizations,
 		}
 		edits, _, err = jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", -1), value, nil, formatOptions)
 		return edits, err
@@ -217,12 +243,16 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config)
 
 	return &savedQueryResolver{
-		subject:        r.subject,
-		key:            key,
-		index:          index,
-		description:    args.Description,
-		query:          searchQuery{query: args.Query},
-		showOnHomepage: args.ShowOnHomepage,
+		subject:             r.subject,
+		key:                 key,
+		index:               index,
+		description:         args.Description,
+		query:               searchQuery{query: args.Query},
+		showOnHomepage:      args.ShowOnHomepage,
+		notify:              args.Notify,
+		notifySlack:         args.NotifySlack,
+		notifyUsers:         args.NotifyUsers,
+		notifyOrganizations: args.NotifyOrganizations,
 	}, nil
 }
 
@@ -242,10 +272,11 @@ func (r *configurationMutationResolver) getSavedQueryIndex(ctx context.Context, 
 }
 
 func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, args *struct {
-	ID             graphql.ID
-	Description    *string
-	Query          *string
-	ShowOnHomepage bool
+	ID                                  graphql.ID
+	Description                         *string
+	Query                               *string
+	ShowOnHomepage, Notify, NotifySlack bool
+	NotifyUsers, NotifyOrganizations    []string
 }) (*savedQueryResolver, error) {
 	spec, err := unmarshalSavedQueryID(args.ID)
 	if err != nil {
@@ -275,6 +306,10 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	}
 
 	fieldUpdates["showOnHomepage"] = args.ShowOnHomepage
+	fieldUpdates["notify"] = args.Notify
+	fieldUpdates["notifySlack"] = args.NotifySlack
+	fieldUpdates["notifyUsers"] = args.NotifyUsers
+	fieldUpdates["notifyOrganizations"] = args.NotifyOrganizations
 
 	for propertyName, value := range fieldUpdates {
 		id, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {

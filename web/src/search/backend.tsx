@@ -236,6 +236,10 @@ const savedQueryFragment = gql`
         index
         description
         showOnHomepage
+        notify
+        notifySlack
+        notifyUsers
+        notifyOrganizations
         query {
             query
         }
@@ -279,7 +283,11 @@ export function createSavedQuery(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
     description: string,
     query: string,
-    showOnHomepage: boolean
+    showOnHomepage: boolean,
+    notify: boolean,
+    notifySlack: boolean,
+    notifyUsers: string[] = [],
+    notifyOrganizations: string[] = []
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
@@ -290,16 +298,28 @@ export function createSavedQuery(
                 $description: String!
                 $query: String!
                 $showOnHomepage: Boolean
+                $notify: Boolean
+                $notifySlack: Boolean
+                $notifyUsers: [String!]
+                $notifyOrganizations: [String!]
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
-                    createSavedQuery(description: $description, query: $query, showOnHomepage: $showOnHomepage) {
+                    createSavedQuery(
+                        description: $description
+                        query: $query
+                        showOnHomepage: $showOnHomepage
+                        notify: $notify
+                        notifySlack: $notifySlack
+                        notifyUsers: $notifyUsers
+                        notifyOrganizations: $notifyOrganizations
+                    ) {
                         ...SavedQueryFields
                     }
                 }
             }
             ${savedQueryFragment}
         `,
-        { description, query, showOnHomepage }
+        { description, query, showOnHomepage, notify, notifySlack, notifyUsers, notifyOrganizations }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
@@ -315,7 +335,11 @@ export function updateSavedQuery(
     id: GQLID,
     description: string,
     query: string,
-    showOnHomepage: boolean
+    showOnHomepage: boolean,
+    notify: boolean,
+    notifySlack: boolean,
+    notifyUsers: string[] = [],
+    notifyOrganizations: string[] = []
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
@@ -327,6 +351,10 @@ export function updateSavedQuery(
                 $description: String
                 $query: String
                 $showOnHomepage: Boolean
+                $notify: Boolean
+                $notifySlack: Boolean
+                $notifyUsers: [String!]
+                $notifyOrganizations: [String!]
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                     updateSavedQuery(
@@ -334,6 +362,10 @@ export function updateSavedQuery(
                         description: $description
                         query: $query
                         showOnHomepage: $showOnHomepage
+                        notify: $notify
+                        notifySlack: $notifySlack
+                        notifyUsers: $notifyUsers
+                        notifyOrganizations: $notifyOrganizations
                     ) {
                         ...SavedQueryFields
                     }
@@ -341,7 +373,7 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, showOnHomepage }
+        { id, description, query, showOnHomepage, notify, notifySlack, notifyUsers, notifyOrganizations }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {

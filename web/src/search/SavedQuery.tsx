@@ -52,7 +52,11 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             props.savedQuery.subject,
                             duplicate(props.savedQuery.description),
                             props.savedQuery.query.query,
-                            props.savedQuery.showOnHomepage
+                            props.savedQuery.showOnHomepage,
+                            props.savedQuery.notify,
+                            props.savedQuery.notifySlack,
+                            props.savedQuery.notifyUsers,
+                            props.savedQuery.notifyOrganizations
                         )
                     )
                 )
