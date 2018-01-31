@@ -330,15 +330,9 @@ reposLoop:
 		// Check if the repository actually has the revisions that the user specified. (If they just
 		// specified the default branch, skip this to save time.)
 		if revspecs := repoRev.revspecs(); len(revspecs) > 0 {
-			// Get the repository's remote URL once here so that the ResolveRev and searcher calls
-			// from here on don't need to all look it up (or risk failing if the specified remote
-			// commit isn't yet available locally).
-			var err error
-			repoRev.gitserverRepo, err = backend.Repos.GitserverRepoInfo(ctx, repo)
-			if err != nil {
-				missingRepoRevisions = append(missingRepoRevisions, repoRev)
-				continue
-			}
+			// Do not trigger a repo-updater lookup (e.g., backend.Repos.GitserverRepoInfo) because
+			// that would slow this operation down by a lot (if we're looping over many repos). This
+			// means that it'll fail if a repo is not on gitserver.
 			for _, revspec := range revspecs {
 				if _, err := backend.Repos.ResolveRev(ctx, repo, revspec); err == vcs.ErrRevisionNotFound {
 					// revision does not exist, so do not include this repository.
