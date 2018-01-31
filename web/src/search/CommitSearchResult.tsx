@@ -153,7 +153,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 }
                 lines[i] = simplerLine
 
-                lhsCtx.filePath = newName
+                lhsCtx.filePath = origName
                 rhsCtx.filePath = newName
                 lineClasses.push({ line: i + 1, className: 'file-header', url: toPrettyBlobURL(rhsCtx) })
             } else if (line.startsWith('@@')) {
