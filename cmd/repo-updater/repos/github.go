@@ -128,6 +128,9 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 			ExternalRepo: GitHubExternalRepoSpec(ghrepo, *conn.baseURL),
 			Description:  ghrepo.Description,
 			Fork:         ghrepo.IsFork,
+			VCS: protocol.VCSInfo{
+				URL: conn.authenticatedRemoteURL(ghrepo),
+			},
 		}
 	}
 
@@ -203,16 +206,19 @@ func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository)
 func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	repos := conn.listAllRepositories(ctx)
 
-	repoChan := make(chan api.RepoCreateOrUpdateRequest)
+	repoChan := make(chan repoCreateOrUpdateRequest)
 	go createEnableUpdateRepos(ctx, nil, repoChan)
 	for repo := range repos {
 		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
-		repoChan <- api.RepoCreateOrUpdateRequest{
-			RepoURI:      githubRepositoryToRepoPath(conn, repo),
-			ExternalRepo: GitHubExternalRepoSpec(repo, *conn.baseURL),
-			Description:  repo.Description,
-			Fork:         repo.IsFork,
-			Enabled:      conn.config.InitialRepositoryEnablement,
+		repoChan <- repoCreateOrUpdateRequest{
+			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
+				RepoURI:      githubRepositoryToRepoPath(conn, repo),
+				ExternalRepo: GitHubExternalRepoSpec(repo, *conn.baseURL),
+				Description:  repo.Description,
+				Fork:         repo.IsFork,
+				Enabled:      conn.config.InitialRepositoryEnablement,
+			},
+			URL: conn.authenticatedRemoteURL(repo),
 		}
 	}
 	close(repoChan)
@@ -263,6 +269,21 @@ type githubConnection struct {
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
 	originalHostname string
+}
+
+// authenticatedRemoteURL returns the repository's Git remote URL with the configured GitHub personal access token
+// inserted in the URL userinfo, for repositories needing authentication.
+func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) string {
+	if c.config.Token == "" || !repo.IsPrivate {
+		return repo.URL
+	}
+	u, err := url.Parse(repo.URL)
+	if err != nil {
+		log15.Warn("Error adding authentication to GitHub repository Git remote URL.", "url", repo.URL, "error", err)
+		return repo.URL
+	}
+	u.User = url.User(c.config.Token)
+	return u.String()
 }
 
 func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *github.Repository {

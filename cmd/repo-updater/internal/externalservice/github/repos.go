@@ -26,6 +26,7 @@ type Repository struct {
 	NameWithOwner string // full name of repository ("owner/name")
 	Description   string // description of repository
 	URL           string // the web URL of this repository ("https://github.com/foo/bar")
+	IsPrivate     bool   // whether the repository is private
 	IsFork        bool   // whether the repository is a fork of another repository
 }
 
@@ -38,6 +39,7 @@ fragment RepositoryFields on Repository {
 	nameWithOwner
 	description
 	url
+	isPrivate
 	isFork
 }
 	`
@@ -185,6 +187,7 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 		FullName    string `json:"full_name"` // same as nameWithOwner
 		Description string
 		HTMLURL     string `json:"html_url"` // web URL
+		Private     bool
 		Fork        bool
 	}
 	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
@@ -195,6 +198,7 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 		NameWithOwner: result.FullName,
 		Description:   result.Description,
 		URL:           result.HTMLURL,
+		IsPrivate:     result.Private,
 		IsFork:        result.Fork,
 	}, nil
 }

@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/net/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 
 	"github.com/felixfbecker/stringscore"
@@ -319,23 +320,32 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 reposLoop:
 	for _, repo := range repos {
 		repoRev := &repositoryRevisions{
-			repo: repo,
-			revs: getRevsForMatchedRepo(repo.URI),
+			repo:          repo,
+			gitserverRepo: gitserver.Repo{Name: repo.URI},
+			revs:          getRevsForMatchedRepo(repo.URI),
 		}
+
 		repoResolver := &repositoryResolver{repo: repo}
 
 		// Check if the repository actually has the revisions that the user specified. (If they just
 		// specified the default branch, skip this to save time.)
-		for _, revspec := range repoRev.revspecs() {
-			_, err := repoResolver.Commit(ctx, &struct{ Rev string }{Rev: revspec})
-			if err == vcs.ErrRevisionNotFound {
-				// revision does not exist, so do not include this repository.
-				//
-				// TODO(sqs): make it so it just omits this refspec, not the whole repo
-				missingRepoRevisions = append(missingRepoRevisions, repoRev)
-				continue reposLoop
+		if revspecs := repoRev.revspecs(); len(revspecs) > 0 {
+			// Get the repository's remote URL once here so that the ResolveRev and searcher calls
+			// from here on don't need to all look it up (or risk failing if the specified remote
+			// commit isn't yet available locally).
+			var err error
+			repoRev.gitserverRepo, err = backend.Repos.GitserverRepoInfo(ctx, repo)
+			if err != nil {
+				return nil, nil, nil, false, err
 			}
-			// else, real errors will be handled later, so just ignore it.
+			for _, revspec := range revspecs {
+				if _, err := backend.Repos.ResolveRev(ctx, repo, revspec); err == vcs.ErrRevisionNotFound {
+					// revision does not exist, so do not include this repository.
+					missingRepoRevisions = append(missingRepoRevisions, repoRev)
+					continue reposLoop
+				}
+				// else, cloning and other errors will be handled later, so just ignore it.
+			}
 		}
 
 		repoResolvers = append(repoResolvers, newSearchResultResolver(

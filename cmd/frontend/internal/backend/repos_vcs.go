@@ -8,6 +8,9 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -17,12 +20,28 @@ func (repos) OpenVCS(ctx context.Context, repo *types.Repo) (vcs.Repository, err
 	if Mocks.Repos.OpenVCS != nil {
 		return Mocks.Repos.OpenVCS(ctx, repo)
 	}
-
-	return gitcmd.Open(repo.URI), nil
+	gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+	return gitcmd.Open(gitserverRepo.Name, gitserverRepo.URL), nil
 }
 
-func (repos) VCSForGitserverRepo(repo *types.Repo) vcs.Repository {
-	return gitcmd.Open(repo.URI)
+// VCSForGitserverRepo returns a handle to the Git repository specified by repo.
+func (repos) VCSForGitserverRepo(repo gitserver.Repo) vcs.Repository {
+	return gitcmd.Open(repo.Name, repo.URL)
+}
+
+func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
+	// TODO(sqs): cache this
+	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
+		Repo:         repo.URI,
+		ExternalRepo: repo.ExternalRepo,
+	})
+	if err != nil {
+		return gitserver.Repo{}, err
+	}
+	return gitserver.Repo{Name: result.Repo.URI, URL: result.Repo.VCS.URL}, nil
 }
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.

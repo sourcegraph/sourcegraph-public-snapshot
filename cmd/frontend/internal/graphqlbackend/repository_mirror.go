@@ -9,6 +9,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	repoupdaterprotocol "sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
 func (r *repositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
@@ -38,6 +40,21 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		return "", err
 	}
 
+	{
+		// Look up the remote URL in repo-updater.
+		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
+			Repo:         r.repository.repo.URI,
+			ExternalRepo: r.repository.repo.ExternalRepo,
+		})
+		if err != nil {
+			return "", err
+		}
+		if result.Repo != nil {
+			return result.Repo.VCS.URL, nil
+		}
+	}
+
+	// Fall back to the gitserver repo info for repos on hosts that are not yet fully supported by repo-updater.
 	info, err := r.gitserverRepoInfo(ctx)
 	if err != nil {
 		return "", err
@@ -87,8 +104,13 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, err
 	}
 
+	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
+	if err != nil {
+		return nil, err
+	}
+
 	var result checkMirrorRepositoryConnectionResult
-	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, repo.repo.URI); err != nil {
+	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, gitserverRepo); err != nil {
 		result.errorMessage = err.Error()
 	}
 	return &result, nil
@@ -118,7 +140,11 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, repo.repo.URI); err != nil {
+	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
+	if err != nil {
+		return nil, err
+	}
+	if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

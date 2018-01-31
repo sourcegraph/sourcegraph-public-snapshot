@@ -234,6 +234,9 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	req.Repo = protocol.NormalizeRepo(req.Repo)
+	if req.URL == "" {
+		log15.Warn("RepoUpdate request is missing Git remote URL.", "repo", req.Repo)
+	}
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	if !repoCloned(dir) && !skipCloneForTests {
 		go func() {
@@ -553,6 +556,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string) {
 	dir := path.Join(s.ReposDir, string(repo))
 
+	var urlIsGitRemote bool
 	if url == "" {
 		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
 		url = OriginMap(repo)
@@ -565,10 +569,30 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 			log15.Error("Failed to determine Git remote URL", "repo", repo, "error", err, "url", url)
 			return
 		}
+		urlIsGitRemote = true
 	}
 
-	// TODO(sqs): once gitserver no longer depends on the Git remote URL being saved in the repository's
-	// .git/config file, run `git remote rm origin` on all existing repositories.
+	{
+		// Update Git remote URL if it differs from the configured remote URL (so that callers that
+		// don't specify the URL in the request will use the latest remote URL).
+		var gitRemoteURL string
+		if urlIsGitRemote {
+			gitRemoteURL = url
+		} else {
+			var err error
+			gitRemoteURL, err = repoRemoteURL(ctx, dir)
+			if err != nil || url == "" {
+				log15.Error("Failed to determine Git remote URL", "repo", repo, "error", err, "url", url)
+				return
+			}
+		}
+
+		cmd := exec.CommandContext(ctx, "git", "remote", "set-url", "origin", "--", gitRemoteURL)
+		cmd.Dir = dir
+		if err, _ := runCommand(ctx, cmd); err != nil {
+			log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "url", url)
+		}
+	}
 
 	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/*:refs/*")
 	cmd.Dir = dir

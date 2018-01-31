@@ -6,6 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 // revpecOrRefGlob represents either a revspec or a ref glob. Exactly one field is set.
@@ -29,8 +30,9 @@ func (r revspecOrRefGlob) String() string {
 // If no revspecs and no ref globs are specified, then the repository's default branch
 // is used.
 type repositoryRevisions struct {
-	repo *types.Repo
-	revs []revspecOrRefGlob
+	repo          *types.Repo
+	gitserverRepo gitserver.Repo // URL field is optional (see (gitserver.ExecRequest).URL field for behavior)
+	revs          []revspecOrRefGlob
 }
 
 // parseRepositoryRevisions parses strings that refer to a repository and 0
