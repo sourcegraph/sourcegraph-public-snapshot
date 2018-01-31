@@ -129,7 +129,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 			Description:  ghrepo.Description,
 			Fork:         ghrepo.IsFork,
 			VCS: protocol.VCSInfo{
-				URL: ghrepo.URL,
+				URL: conn.authenticatedRemoteURL(ghrepo),
 			},
 		}
 	}
@@ -218,7 +218,7 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 				Fork:         repo.IsFork,
 				Enabled:      conn.config.InitialRepositoryEnablement,
 			},
-			URL: repo.URL,
+			URL: conn.authenticatedRemoteURL(repo),
 		}
 	}
 	close(repoChan)
@@ -269,6 +269,21 @@ type githubConnection struct {
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
 	originalHostname string
+}
+
+// authenticatedRemoteURL returns the repository's Git remote URL with the configured GitHub personal access token
+// inserted in the URL userinfo, for repositories needing authentication.
+func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) string {
+	if c.config.Token == "" || !repo.IsPrivate {
+		return repo.URL
+	}
+	u, err := url.Parse(repo.URL)
+	if err != nil {
+		log15.Warn("Error adding authentication to GitHub repository Git remote URL.", "url", repo.URL, "error", err)
+		return repo.URL
+	}
+	u.User = url.User(c.config.Token)
+	return u.String()
 }
 
 func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *github.Repository {
