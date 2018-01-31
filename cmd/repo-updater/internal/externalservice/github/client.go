@@ -18,7 +18,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context/ctxhttp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -323,15 +322,4 @@ type disabledTransport struct{}
 
 func (t disabledTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return nil, errors.New("http: github communication disabled")
-}
-
-var reposGitHubHTTPCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "repos",
-	Name:      "github_api_cache_hit",
-	Help:      "Counts cache hits and misses for the github API HTTP cache.",
-}, []string{"type"})
-
-func init() {
-	prometheus.MustRegister(reposGitHubHTTPCacheCounter)
 }
