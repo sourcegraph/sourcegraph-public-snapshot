@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -33,7 +34,13 @@ func (repos) VCSForGitserverRepo(repo gitserver.Repo) vcs.Repository {
 }
 
 func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	// TODO(sqs): cache this
+	// If it is possible to 100% correctly determine it statically, use a fast path. This is used
+	// to avoid a RepoLookup call for public GitHub.com repositories on Sourcegraph.com, which reduces
+	// rate limit pressure significantly.
+	if strings.HasPrefix(strings.ToLower(string(repo.URI)), "github.com/") {
+		return gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI)}, nil
+	}
+
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
 		Repo:         repo.URI,
 		ExternalRepo: repo.ExternalRepo,
@@ -60,15 +67,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.URI, "rev": rev}, &err)
 	defer done()
 
-	// First try without hitting the repo-updater API (for faster perf and less rate limit exhaustion).
-	vcsrepo := s.VCSForGitserverRepo(gitserver.Repo{Name: repo.URI})
-	commitID, err = vcsrepo.ResolveRevision(ctx, rev)
-	if err == nil {
-		return commitID, nil
-	}
-
-	// Failed, now try passing gitserver the repo's remote URL too (so it can clone/update the repository, which might be why it failed).
-	vcsrepo, err = Repos.OpenVCS(ctx, repo)
+	vcsrepo, err := Repos.OpenVCS(ctx, repo)
 	if err != nil {
 		return "", err
 	}

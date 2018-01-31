@@ -111,18 +111,6 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		return GetGitHubRepositoryMock(args)
 	}
 
-	if args.Repo != "" {
-		return &protocol.RepoInfo{
-			URI:          args.Repo,
-			ExternalRepo: nil,
-			Description:  "",
-			Fork:         false,
-			VCS: protocol.VCSInfo{
-				URL: "https://" + string(args.Repo),
-			},
-		}, true, nil
-	}
-
 	ghrepoToRepoInfo := func(ghrepo *github.Repository, conn *githubConnection) *protocol.RepoInfo {
 		return &protocol.RepoInfo{
 			URI:          githubRepositoryToRepoPath(conn, ghrepo),
@@ -160,6 +148,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		if err != nil {
 			return nil, true, err
 		}
+
 		ghrepo, err := conn.client.GetRepository(ctx, owner, repoName)
 		if ghrepo != nil {
 			repo = ghrepoToRepoInfo(ghrepo, conn)
