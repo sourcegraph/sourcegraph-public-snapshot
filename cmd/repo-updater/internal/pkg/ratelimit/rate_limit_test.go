@@ -1,16 +1,16 @@
-package github
+package ratelimit
 
 import (
 	"testing"
 	"time"
 )
 
-func TestRecommendedRateLimitWaitForBackgroundOp(t *testing.T) {
-	c := &Client{
-		rateLimitKnown:     true,
-		rateLimit:          5000,
-		rateLimitRemaining: 1500,
-		rateLimitReset:     time.Now().Add(30 * time.Minute),
+func TestMonitor_RecommendedWaitForBackgroundOp(t *testing.T) {
+	m := &Monitor{
+		known:     true,
+		limit:     5000,
+		remaining: 1500,
+		reset:     time.Now().Add(30 * time.Minute),
 	}
 
 	durationsApproxEqual := func(a, b time.Duration) bool {
@@ -29,7 +29,7 @@ func TestRecommendedRateLimitWaitForBackgroundOp(t *testing.T) {
 		3500: 63 * time.Minute,
 	}
 	for cost, want := range tests {
-		if got := c.RecommendedRateLimitWaitForBackgroundOp(cost); !durationsApproxEqual(got, want) {
+		if got := m.RecommendedWaitForBackgroundOp(cost); !durationsApproxEqual(got, want) {
 			t.Errorf("got %s, want %s", got, want)
 		}
 	}

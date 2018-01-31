@@ -5,12 +5,26 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
+
+// normalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant
+// differences (such as in presence of a trailing slash, or hostname case) eliminated. Its return value should be
+// used for the (ExternalRepoSpec).ServiceID field (and passed to XyzExternalRepoSpec) instead of a non-normalized
+// base URL.
+func normalizeBaseURL(baseURL *url.URL) *url.URL {
+	baseURL.Host = strings.ToLower(baseURL.Host)
+	if !strings.HasSuffix(baseURL.Path, "/") {
+		baseURL.Path += "/"
+	}
+	return baseURL
+}
 
 // transportWithCertTrusted returns an http.Transport that trusts the provided PEM cert, or http.DefaultTransport
 // if it is empty.

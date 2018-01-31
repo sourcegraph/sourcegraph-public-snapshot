@@ -26,20 +26,8 @@ func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.Exter
 	return &api.ExternalRepoSpec{
 		ID:          repo.ID,
 		ServiceType: GitHubServiceType,
-		ServiceID:   NormalizeGitHubBaseURL(&baseURL).String(),
+		ServiceID:   normalizeBaseURL(&baseURL).String(),
 	}
-}
-
-// NormalizeGitHubBaseURL modifies the input and returns a normalized form of the GitHub base URL
-// with insignificant differences (such as in presence of a trailing slash, or hostname case)
-// eliminated. Its return value should be used for the (ExternalRepoSpec).ServiceID field (and
-// passed to GitHubExternalRepoSpec) instead of a non-normalized base URL.
-func NormalizeGitHubBaseURL(baseURL *url.URL) *url.URL {
-	baseURL.Host = strings.ToLower(baseURL.Host)
-	if !strings.HasSuffix(baseURL.Path, "/") {
-		baseURL.Path += "/"
-	}
-	return baseURL
 }
 
 var githubConnections []*githubConnection
@@ -82,7 +70,7 @@ func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error
 		// Look up by external repository spec.
 		skippedBecauseNoAuth := false
 		for _, conn := range githubConnections {
-			if args.ExternalRepo.ServiceType == GitHubServiceType && args.ExternalRepo.ServiceID == conn.baseURL.String() {
+			if args.ExternalRepo.ServiceID == conn.baseURL.String() {
 				if canUseGraphQLAPI := conn.config.Token != ""; !canUseGraphQLAPI { // GraphQL API requires authentication
 					skippedBecauseNoAuth = true
 					continue
@@ -178,7 +166,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) error {
 	for _, c := range githubConnections {
 		go func(c *githubConnection) {
 			for {
-				if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit(); ok && rateLimitRemaining < 200 {
+				if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 200 {
 					wait := rateLimitReset + 10*time.Second
 					log15.Warn("GitHub API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
 					time.Sleep(wait)
@@ -229,7 +217,7 @@ func newGitHubConnection(config schema.GitHubConnection) (*githubConnection, err
 	if err != nil {
 		return nil, err
 	}
-	baseURL = NormalizeGitHubBaseURL(baseURL)
+	baseURL = normalizeBaseURL(baseURL)
 	originalHostname := baseURL.Hostname()
 
 	// GitHub.com's API is hosted on api.github.com.
@@ -312,7 +300,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 						log15.Error("Error listing viewer's affiliated GitHub repositories", "endCursor", endCursor, "error", err)
 						break
 					}
-					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit()
+					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
 					log15.Debug("github sync: ListViewerRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
 					for _, r := range repos {
 						// log15.Debug("github sync: ListViewerRepositories: repo", "repo", r.NameWithOwner)
@@ -321,7 +309,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 					if endCursor == nil {
 						break
 					}
-					time.Sleep(c.client.RecommendedRateLimitWaitForBackgroundOp(rateLimitCost))
+					time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
 				}
 
 			case "none":
@@ -349,7 +337,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 			}
 			log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
 			ch <- repo
-			time.Sleep(c.client.RecommendedRateLimitWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+			time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 		}
 	}()
 

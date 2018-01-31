@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/pkg/ratelimit"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
@@ -57,8 +58,9 @@ func newTestClient() *Client {
 	rcache.SetupForTest(cachePrefix)
 	return &Client{
 		apiURL:     &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
-		repoCache:  rcache.NewWithTTL(cachePrefix, 1000),
 		httpClient: &http.Client{},
+		RateLimit:  &ratelimit.Monitor{},
+		repoCache:  rcache.NewWithTTL(cachePrefix, 1000),
 	}
 }
 
