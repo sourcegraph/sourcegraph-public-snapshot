@@ -1,12 +1,19 @@
 // Package protocol contains structures used by the searcher API.
 package protocol
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+import (
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+)
 
 // Request represents a request to searcher
 type Request struct {
-	// Repo is which repository to search. eg "github.com/gorilla/mux"
+	// Repo is the URI of the repository to search. eg "github.com/gorilla/mux"
 	Repo api.RepoURI
+
+	// URL specifies the repository's Git remote URL (for gitserver). It is optional. See
+	// (gitserver.ExecRequest).URL for documentation on what it is used for.
+	URL string
 
 	// Commit is which commit to search. It is required to be resolved,
 	// not a ref like HEAD or master. eg
@@ -15,6 +22,9 @@ type Request struct {
 
 	PatternInfo
 }
+
+// GitserverRepo returns the repository information necessary to perform gitserver requests.
+func (r Request) GitserverRepo() gitserver.Repo { return gitserver.Repo{Name: r.Repo, URL: r.URL} }
 
 // PatternInfo describes a search request on a repo. Most of the fields
 // are based on PatternInfo used in vscode.

@@ -9,6 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
@@ -47,7 +48,11 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoRevs := repositoryRevisions{repo: &types.Repo{ID: 1, URI: "repo"}, revs: []revspecOrRefGlob{{revspec: "rev"}}}
+	repoRevs := repositoryRevisions{
+		repo:          &types.Repo{ID: 1, URI: "repo"},
+		gitserverRepo: gitserver.Repo{Name: "repo", URL: "u"},
+		revs:          []revspecOrRefGlob{{revspec: "rev"}},
+	}
 	results, limitHit, err := searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,
 		info:              &patternInfo{Pattern: "p"},

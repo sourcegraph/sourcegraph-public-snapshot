@@ -43,6 +43,10 @@ type Service struct {
 
 var decoder = schema.NewDecoder()
 
+func init() {
+	decoder.IgnoreUnknownKeys(true)
+}
+
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	running.Inc()
@@ -108,6 +112,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search")
 	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
+	span.SetTag("url", p.URL)
 	span.SetTag("commit", p.Commit)
 	span.SetTag("pattern", p.Pattern)
 	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
@@ -165,7 +170,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	// background so future requests don't have to wait.
 	prepareCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 	defer cancel()
-	path, err := s.Store.prepareZip(prepareCtx, p.Repo, p.Commit)
+	path, err := s.Store.prepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
 	if err != nil {
 		return nil, false, err
 	}

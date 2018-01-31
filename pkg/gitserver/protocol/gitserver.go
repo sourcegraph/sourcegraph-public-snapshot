@@ -9,8 +9,13 @@ import (
 
 // ExecRequest is a request to execute a command inside a git repository.
 type ExecRequest struct {
-	Repo           api.RepoURI     `json:"repo"`
-	URL            string          `json:"url"` // Git remote URL
+	Repo api.RepoURI `json:"repo"`
+
+	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
+	// this field is optional (it will use the last-used Git remote URL). If the repository is not
+	// cloned on the gitserver, the request will fail.
+	URL string `json:"url,omitempty"`
+
 	EnsureRevision string          `json:"ensureRevision"`
 	Args           []string        `json:"args"`
 	Opt            *vcs.RemoteOpts `json:"opt"`

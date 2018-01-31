@@ -10,12 +10,13 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestSearchRepos(t *testing.T) {
-	mockSearchRepo = func(ctx context.Context, repo *types.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+	mockSearchRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 		repoName := repo.URI
 		switch repoName {
 		case "foo/one":

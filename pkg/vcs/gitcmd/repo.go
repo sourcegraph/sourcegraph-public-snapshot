@@ -55,16 +55,28 @@ var (
 )
 
 type Repository struct {
-	// repoURI is the api.Repo.URI. eg "github.com/gorilla/mux"
+	// repoURI is the identifier of the repository, which is opaque to gitserver and is
+	// conventionally a string like "github.com/gorilla/mux".
 	repoURI api.RepoURI
+
+	// remoteURL is the repository's Git remote URL.
+	//
+	// NOTE: Previously, the Git remote URL was derived from repoURI (by using the origin map). That
+	// is still supported for backcompat, but it is now preferred to explicitly provide the Git
+	// remote URL.
+	remoteURL string
 }
 
 func (r *Repository) String() string {
-	return fmt.Sprintf("git repo %s", r.repoURI)
+	return fmt.Sprintf("git repo %s (remote: %s)", r.repoURI, r.remoteURL)
 }
 
-func Open(repoURI api.RepoURI) *Repository {
-	return &Repository{repoURI: repoURI}
+// Open returns a handle to a repository on gitserver with the given identifier (repoURI) and
+// optional Git remote URL. The Git remote URL is only required if the gitserver doesn't already
+// contain a clone of the repository or if EnsureRevision on a command is set to a revision that
+// must be fetched from the remote.
+func Open(repoURI api.RepoURI, remoteURL string) *Repository {
+	return &Repository{repoURI: repoURI, remoteURL: remoteURL}
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -80,7 +92,7 @@ func checkSpecArgSafety(spec string) error {
 // name must be 'git', otherwise it panics.
 func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 	cmd := gitserver.DefaultClient.Command(name, arg...)
-	cmd.Repo = gitserver.Repo{Name: r.repoURI}
+	cmd.Repo = gitserver.Repo{Name: r.repoURI, URL: r.remoteURL}
 	return cmd
 }
 

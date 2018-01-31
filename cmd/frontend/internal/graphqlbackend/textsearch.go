@@ -32,6 +32,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -161,13 +162,13 @@ func (lm *lineMatch) LimitHit() bool {
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, repo api.RepoURI, commit api.CommitID, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
 
 	traceName, ctx := traceutil.TraceName(ctx, "searcher.client")
-	tr := trace.New(traceName, fmt.Sprintf("%s@%s", repo, commit))
+	tr := trace.New(traceName, fmt.Sprintf("%s@%s", repo.Name, commit))
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)
@@ -196,7 +197,8 @@ func textSearch(ctx context.Context, repo api.RepoURI, commit api.CommitID, p *p
 		p.ExcludePattern = &s
 	}
 	q := url.Values{
-		"Repo":            []string{string(repo)},
+		"Repo":            []string{string(repo.Name)},
+		"URL":             []string{repo.URL},
 		"Commit":          []string{string(commit)},
 		"Pattern":         []string{p.Pattern},
 		"ExcludePattern":  []string{*p.ExcludePattern},
@@ -223,7 +225,7 @@ func textSearch(ctx context.Context, repo api.RepoURI, commit api.CommitID, p *p
 	// these fields from old frontends that do not (and provide a default in the latter case).
 	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
 	q.Set("PatternMatchesPath", strconv.FormatBool(p.PatternMatchesPath))
-	searcherURL, err := searcherURLs.Get(string(repo) + "@" + string(commit))
+	searcherURL, err := searcherURLs.Get(string(repo.Name) + "@" + string(commit))
 	if err != nil {
 		return nil, false, err
 	}
@@ -288,14 +290,14 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
-var mockSearchRepo func(ctx context.Context, repo *types.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+var mockSearchRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
 
-func searchRepo(ctx context.Context, repo *types.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func searchRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 	if mockSearchRepo != nil {
-		return mockSearchRepo(ctx, repo, rev, info)
+		return mockSearchRepo(ctx, repo, gitserverRepo, rev, info)
 	}
 
-	commit, err := backend.Repos.VCSForGitserverRepo(repo).ResolveRevision(ctx, rev)
+	commit, err := backend.Repos.VCSForGitserverRepo(gitserverRepo).ResolveRevision(ctx, rev)
 	if err != nil {
 		return nil, false, err
 	}
@@ -304,7 +306,7 @@ func searchRepo(ctx context.Context, repo *types.Repo, rev string, info *pattern
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	matches, limitHit, err = textSearch(ctx, repo.URI, commit, info)
+	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info)
 
 	var workspace string
 	if rev != "" {
@@ -663,7 +665,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.revSpecsOrDefaultBranch()[0]
-			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.repo, rev, args.query)
+			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.query)
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {

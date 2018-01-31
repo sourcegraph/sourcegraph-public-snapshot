@@ -13,20 +13,21 @@ import (
 
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 func TestPrepareZip(t *testing.T) {
 	s, cleanup := tmpStore(t)
 	defer cleanup()
 
-	wantRepo := api.RepoURI("foo")
+	wantRepo := gitserver.Repo{Name: "foo"}
 	wantCommit := api.CommitID("deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 
 	returnFetch := make(chan struct{})
-	var gotRepo api.RepoURI
+	var gotRepo gitserver.Repo
 	var gotCommit api.CommitID
 	var fetchZipCalled int64
-	s.FetchTar = func(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 		<-returnFetch
 		atomic.AddInt64(&fetchZipCalled, 1)
 		gotRepo = repo
@@ -85,10 +86,10 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
 	s, cleanup := tmpStore(t)
 	defer cleanup()
-	s.FetchTar = func(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
-	_, err := s.prepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	_, err := s.prepareZip(context.Background(), gitserver.Repo{Name: "foo"}, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 	if errors.Cause(err) != fetchErr {
 		t.Fatalf("expected prepareZip to fail with %v, failed with %v", fetchErr, err)
 	}

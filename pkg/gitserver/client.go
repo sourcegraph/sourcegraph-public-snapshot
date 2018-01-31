@@ -76,7 +76,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		span.Finish()
 	}()
 	span.SetTag("request", "Exec")
-	span.SetTag("repo", repoURI)
+	span.SetTag("repo", c.Repo.Name)
+	span.SetTag("remoteURL", c.Repo.URL)
 	span.SetTag("args", c.Args[1:])
 
 	// Check that ctx is not expired.
@@ -87,6 +88,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	req := &protocol.ExecRequest{
 		Repo:           repoURI,
+		URL:            c.Repo.URL,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 	}
@@ -135,9 +137,15 @@ type Cmd struct {
 	ExitStatus     int
 }
 
-// Repo identifies a repository on gitserver.
+// Repo represents a repository on gitserver. It contains the information necessary to identify and
+// create/clone it.
 type Repo struct {
 	Name api.RepoURI // the repository's URI
+
+	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
+	// this field is optional (it will use the last-used Git remote URL). If the repository is not
+	// cloned on the gitserver, the request will fail.
+	URL string
 }
 
 // Command creates a new Cmd. Command name must be 'git',

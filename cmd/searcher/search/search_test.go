@@ -21,6 +21,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 )
 
@@ -135,6 +136,7 @@ main.go:6:	fmt.Println("Hello world")
 		test.arg.PatternMatchesContent = true
 		req := protocol.Request{
 			Repo:        "foo",
+			URL:         "u",
 			Commit:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: test.arg,
 		}
@@ -168,12 +170,14 @@ func TestSearch_badrequest(t *testing.T) {
 		// Empty pattern
 		{
 			Repo:   "foo",
+			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 		},
 
 		// Bad regexp
 		{
 			Repo:   "foo",
+			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:  `\F`,
@@ -184,6 +188,7 @@ func TestSearch_badrequest(t *testing.T) {
 		// Unsupported regex
 		{
 			Repo:   "foo",
+			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:  `(?!id)entity`,
@@ -193,6 +198,7 @@ func TestSearch_badrequest(t *testing.T) {
 
 		// No repo
 		{
+			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern: "test",
@@ -202,6 +208,7 @@ func TestSearch_badrequest(t *testing.T) {
 		// No commit
 		{
 			Repo: "foo",
+			URL:  "u",
 			PatternInfo: protocol.PatternInfo{
 				Pattern: "test",
 			},
@@ -210,6 +217,7 @@ func TestSearch_badrequest(t *testing.T) {
 		// Non-absolute commit
 		{
 			Repo:   "foo",
+			URL:    "u",
 			Commit: "HEAD",
 			PatternInfo: protocol.PatternInfo{
 				Pattern: "test",
@@ -219,6 +227,7 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad include glob
 		{
 			Repo:   "foo",
+			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:        "test",
@@ -229,6 +238,7 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad exclude glob
 		{
 			Repo:   "foo",
+			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:        "test",
@@ -239,6 +249,7 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad include regexp
 		{
 			Repo:   "foo",
+			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:                "test",
@@ -250,6 +261,7 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad exclude regexp
 		{
 			Repo:   "foo",
+			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:                "test",
@@ -282,6 +294,7 @@ func TestSearch_badrequest(t *testing.T) {
 func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	form := url.Values{
 		"Repo":            []string{string(p.Repo)},
+		"URL":             []string{string(p.URL)},
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
 		"IncludePatterns": p.IncludePatterns,
@@ -362,7 +375,7 @@ func newStore(files map[string]string) (*search.Store, func(), error) {
 		return nil, nil, err
 	}
 	return &search.Store{
-		FetchTar: func(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
 		Path: d,

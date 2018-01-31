@@ -14,6 +14,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/diskcache"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -38,10 +39,10 @@ import (
 // (tar). We want to be able to support random concurrent access for reading,
 // so we store as a zip.
 type Store struct {
-	// FetchTar returns an io.ReadCloser to a tar archive. If the error
-	// implements "BadRequest() bool", it will be used to determine if the
-	// error is a bad request (eg invalid repo).
-	FetchTar func(ctx context.Context, repo api.RepoURI, commit api.CommitID) (io.ReadCloser, error)
+	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
+	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
+	// determine if the error is a bad request (eg invalid repo).
+	FetchTar func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error)
 
 	// Path is the directory to store the cache
 	Path string
@@ -92,7 +93,7 @@ func (s *Store) Start() {
 
 // prepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) prepareZip(ctx context.Context, repo api.RepoURI, commit api.CommitID) (path string, err error) {
+func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (path string, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	defer func() {
@@ -109,11 +110,11 @@ func (s *Store) prepareZip(ctx context.Context, repo api.RepoURI, commit api.Com
 	// We already validate commit is absolute in ServeHTTP, but since we
 	// rely on it for caching we check again.
 	if len(commit) != 40 {
-		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
+		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo.Name, commit)
 	}
 
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
+	h := sha256.Sum256([]byte(string(repo.Name) + " " + string(commit)))
 	key := hex.EncodeToString(h[:])
 	span.LogKV("key", key)
 
@@ -156,7 +157,7 @@ func (s *Store) prepareZip(ctx context.Context, repo api.RepoURI, commit api.Com
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
-func (s *Store) fetch(ctx context.Context, repo api.RepoURI, commit api.CommitID) (rc io.ReadCloser, err error) {
+func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (rc io.ReadCloser, err error) {
 	fetchQueueSize.Inc()
 	s.fetchSem <- 1 // Acquire concurrent fetches semaphore
 	fetchQueueSize.Dec()
@@ -168,7 +169,8 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoURI, commit api.CommitID
 	fetching.Inc()
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
-	span.SetTag("repo", repo)
+	span.SetTag("repo", repo.Name)
+	span.SetTag("repoURL", repo.URL)
 	span.SetTag("commit", commit)
 
 	// Done is called when the returned reader is closed, or if this function

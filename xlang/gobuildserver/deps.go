@@ -462,7 +462,7 @@ var NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, erro
 	// use gitserver
 	if cloneFromGitserver {
 		repo := api.RepoURI(cloneURL.Host + cloneURL.Path)
-		return vfsutil.ArchiveFileSystem(gitcmd.Open(repo), rev), nil
+		return vfsutil.ArchiveFileSystem(gitcmd.Open(repo, cloneURL.String()), rev), nil
 	}
 
 	// Fall back to a full git clone for non-github.com repos.
