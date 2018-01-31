@@ -60,7 +60,15 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.URI, "rev": rev}, &err)
 	defer done()
 
-	vcsrepo, err := Repos.OpenVCS(ctx, repo)
+	// First try without hitting the repo-updater API (for faster perf and less rate limit exhaustion).
+	vcsrepo := s.VCSForGitserverRepo(gitserver.Repo{Name: repo.URI})
+	commitID, err = vcsrepo.ResolveRevision(ctx, rev)
+	if err == nil {
+		return commitID, nil
+	}
+
+	// Failed, now try passing gitserver the repo's remote URL too (so it can clone/update the repository, which might be why it failed).
+	vcsrepo, err = Repos.OpenVCS(ctx, repo)
 	if err != nil {
 		return "", err
 	}
