@@ -112,6 +112,12 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 			VCS: protocol.VCSInfo{
 				URL: conn.authenticatedRemoteURL(proj),
 			},
+			Links: &protocol.RepoLinks{
+				Root:   proj.WebURL,
+				Tree:   proj.WebURL + "/tree/{rev}/{path}",
+				Blob:   proj.WebURL + "/blob/{rev}/{path}",
+				Commit: proj.WebURL + "/commit/{commit}",
+			},
 		}
 	}
 

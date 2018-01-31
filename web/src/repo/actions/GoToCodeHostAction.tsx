@@ -1,5 +1,6 @@
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
+import ShareIcon from '@sourcegraph/icons/lib/Share'
 import * as React from 'react'
 import { catchError } from 'rxjs/operators/catchError'
 import { switchMap } from 'rxjs/operators/switchMap'
@@ -110,6 +111,10 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             case 'Phabricator':
                 tooltip = 'View on Phabricator'
                 icon = <PhabricatorIcon className="icon-inline" />
+                break
+            case 'gitlab':
+                tooltip = 'View on GitLab'
+                icon = <ShareIcon className="icon-inline" />
                 break
             default:
                 label = 'View on code host'

@@ -7,7 +7,6 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { take } from 'rxjs/operators/take'
 import { takeUntil } from 'rxjs/operators/takeUntil'
 import { AbsoluteRepoFilePosition, AbsoluteRepoFileRange } from '../repo'
-import { fetchPhabricatorRepo } from '../repo/backend'
 import { openFromJS } from '../util/url'
 import { fetchBlameFile } from './backend'
 import { clearLineBlameContent, setLineBlame } from './dom'
@@ -100,18 +99,7 @@ function maybeOpenCommit(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): v
         return // Not clicking on blame text
     }
 
-    if (ctx.repoPath.startsWith('github.com')) {
-        openFromJS(`https://${ctx.repoPath}/commit/${rev}`, clickEvent)
-    } else {
-        // Try resolving to internal code host.
-        fetchPhabricatorRepo({ repoPath: ctx.repoPath }).subscribe(phabRepo => {
-            if (phabRepo) {
-                openFromJS(`${phabRepo.url}/r${phabRepo.callsign.toUpperCase()}${rev}`, clickEvent)
-            }
-        })
-    }
-
-    // TODO(future): For Umami Phabricator repos, the URL should be to Phabricator per #6487
+    openFromJS(`/${ctx.repoPath}/-/external/commit/${rev}`, clickEvent)
 }
 
 export function triggerBlame(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): void {
