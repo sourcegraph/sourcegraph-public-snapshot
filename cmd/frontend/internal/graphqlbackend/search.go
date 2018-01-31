@@ -336,7 +336,8 @@ reposLoop:
 			var err error
 			repoRev.gitserverRepo, err = backend.Repos.GitserverRepoInfo(ctx, repo)
 			if err != nil {
-				return nil, nil, nil, false, err
+				missingRepoRevisions = append(missingRepoRevisions, repoRev)
+				continue
 			}
 			for _, revspec := range revspecs {
 				if _, err := backend.Repos.ResolveRev(ctx, repo, revspec); err == vcs.ErrRevisionNotFound {
