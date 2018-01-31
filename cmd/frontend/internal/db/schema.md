@@ -203,14 +203,16 @@ Foreign-key constraints:
  pushed_at               | timestamp with time zone | 
  indexed_revision        | text                     | 
  freeze_indexed_revision | boolean                  | 
- origin_repo_id          | text                     | 
- origin_service          | integer                  | 
- origin_api_base_url     | text                     | 
+ external_id             | text                     | 
+ external_service_type   | text                     | 
+ external_service_id     | text                     | 
  enabled                 | boolean                  | not null default true
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_uri_unique" UNIQUE, btree (uri)
     "repo_uri_trgm" gin (lower(uri::text) gin_trgm_ops)
+Check constraints:
+    "check_external" CHECK (external_id IS NULL AND external_service_type IS NULL AND external_service_id IS NULL OR external_id IS NOT NULL AND external_service_type IS NOT NULL AND external_service_id IS NOT NULL)
 Referenced by:
     TABLE "global_dep" CONSTRAINT "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
     TABLE "pkgs" CONSTRAINT "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT

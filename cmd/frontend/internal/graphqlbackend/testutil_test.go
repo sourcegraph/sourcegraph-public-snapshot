@@ -7,6 +7,7 @@ import (
 
 func init() {
 	skipRefresh = true
+	backend.TestDisableExternalRepoBackfillInReposGetByURI = true
 }
 
 func resetMocks() {

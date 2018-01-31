@@ -616,6 +616,9 @@ type Repository implements Node {
     # some code host). In this case, the remote source repository is external to Sourcegraph and the mirror is
     # maintained by the Sourcegraph site (not the other way around).
     mirrorInfo: MirrorRepositoryInfo!
+    # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
+    # Phabricator, etc.).
+    externalRepository: ExternalRepository
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress")
     # The commit that was last indexed for cross-references, if any.
@@ -675,6 +678,25 @@ type MirrorRepositoryInfo {
     cloned: Boolean!
     # When the repository was last successfully updated from the remote source repository..
     updatedAt: String
+}
+
+# A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
+type ExternalRepository {
+    # The repository's ID on the external service.
+    #
+    # Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
+    id: String!
+
+    # The type of external service where this repository resides.
+    #
+    # Example: "github", "gitlab", etc.
+    serviceType: String!
+
+    # The particular instance of the external service where this repository resides. Its value is
+    # opaque but typically consists of the canonical base URL to the service.
+    #
+    # Example: For GitHub.com, this is "https://github.com/".
+    serviceID: String!
 }
 
 # Information about a repository's text search index.

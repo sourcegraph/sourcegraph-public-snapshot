@@ -235,6 +235,11 @@ func TestRepos_TryInsertNewBatch(t *testing.T) {
 		Description: "",
 		Fork:        false,
 		Enabled:     true,
+		ExternalRepo: &api.ExternalRepoSpec{
+			ID:          "a",
+			ServiceType: "b",
+			ServiceID:   "c",
+		},
 	}, {
 		URI:         "myrepo3",
 		Description: "",

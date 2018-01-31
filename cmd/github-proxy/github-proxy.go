@@ -69,20 +69,6 @@ func main() {
 			query.Set("client_id", clientID)
 			query.Set("client_secret", clientSecret)
 		}
-	} else if c := conf.FirstGitHubDotComConnectionWithToken(); c != nil {
-		authenticateRequest = func(query url.Values, header http.Header) {
-			// Only add Authorization if not present. This is for the
-			// repo-updater RepoLookup handler, which does not know which token
-			// to use to perform the lookup to GitHub.
-			//
-			// TODO(sqs): when all users of github-proxy set this (soon), remove
-			// this entirely and never set it here. It's technically incorrect
-			// to set it here because we always only ever use the 1st token
-			// configured, which might not be the right one to use.
-			if _, ok := header["Authorization"]; !ok {
-				header.Set("Authorization", "token "+c.Token)
-			}
-		}
 	}
 
 	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

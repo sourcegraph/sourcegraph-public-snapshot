@@ -12,8 +12,19 @@ type PkgsRefreshIndexRequest struct {
 
 // RepoCreateOrUpdateRequest is a request to create or update a repository.
 //
+// The request handler determines if the request refers to an existing repository (and should therefore update
+// instead of create). If ExternalRepo is set, then it tries to find a stored repository with the same ExternalRepo
+// values. If ExternalRepo is not set, then it tries to find a stored repository with the same RepoURI value.
+//
 // NOTE: Some fields are only used during creation (and are not used to update an existing repository).
 type RepoCreateOrUpdateRequest struct {
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	//
+	// TODO(sqs): make this required (non-pointer) when both sides have been upgraded to use it. It is only
+	// optional during the transition period.
+	ExternalRepo *ExternalRepoSpec
+
 	// RepoURI is the repository's URI.
 	//
 	// TODO(sqs): Add a way for callers to request that this repository's URI be renamed.

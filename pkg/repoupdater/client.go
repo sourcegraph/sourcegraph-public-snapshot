@@ -11,7 +11,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
@@ -51,7 +50,7 @@ type Client struct {
 }
 
 // RepoLookup retrieves information about the repository on repoupdater.
-func (c *Client) RepoLookup(ctx context.Context, repo api.RepoURI) (result *protocol.RepoLookupResult, err error) {
+func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.RepoLookup")
 	defer func() {
 		if result != nil {
@@ -63,26 +62,35 @@ func (c *Client) RepoLookup(ctx context.Context, repo api.RepoURI) (result *prot
 		}
 		span.Finish()
 	}()
-	span.SetTag("Repo", string(repo))
+	if args.ExternalRepo != nil {
+		span.SetTag("ExternalRepo.ID", args.ExternalRepo.ID)
+		span.SetTag("ExternalRepo.ServiceType", args.ExternalRepo.ServiceType)
+		span.SetTag("ExternalRepo.ServiceID", args.ExternalRepo.ServiceID)
+	}
+	if args.Repo != "" {
+		span.SetTag("Repo", string(args.Repo))
+	}
 
-	resp, err := c.httpPost(ctx, "repo-lookup", protocol.RepoLookupArgs{Repo: repo})
+	resp, err := c.httpPost(ctx, "repo-lookup", args)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	stack := fmt.Sprintf("RepoLookup: %+v", args)
 	if resp.StatusCode != http.StatusOK {
-		var err error
-		if resp.StatusCode == http.StatusNotFound {
-			err = ErrNotFound
-		} else if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-			err = ErrUnauthorized
-		} else {
-			err = fmt.Errorf("http status %d", resp.StatusCode)
-		}
-		return nil, errors.Wrap(err, fmt.Sprintf("RepoLookup: %s", repo))
+		return nil, errors.Wrap(fmt.Errorf("http status %d", resp.StatusCode), stack)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && result != nil {
+		switch {
+		case result.ErrorNotFound:
+			err = ErrNotFound
+		case result.ErrorUnauthorized:
+			err = ErrUnauthorized
+		}
+	}
 	return result, err
 }
 

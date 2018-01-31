@@ -19,8 +19,13 @@ type CommitID string
 
 // Repo represents a source code repository.
 type Repo struct {
-	// ID is the unique numeric ID for this repository.
+	// ID is the unique numeric ID for this repository on Sourcegraph.
 	ID RepoID
+
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo *ExternalRepoSpec
+
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
 	URI RepoURI
@@ -42,10 +47,35 @@ func (Repo) Fork() bool {
 
 // InsertRepoOp represents an operation to insert a repository.
 type InsertRepoOp struct {
-	URI         RepoURI
-	Description string
-	Fork        bool
-	Enabled     bool
+	URI          RepoURI
+	Description  string
+	Fork         bool
+	Enabled      bool
+	ExternalRepo *ExternalRepoSpec
+}
+
+// ExternalRepoSpec specifies a repository on an external service (such as GitHub or GitLab).
+type ExternalRepoSpec struct {
+	// ID is the repository's ID on the external service. Its value is opaque except to the repo-updater.
+	//
+	// For GitHub, this is the GitHub GraphQL API's node ID for the repository.
+	ID string
+
+	// ServiceType is the type of external service. Its value is opaque except to the repo-updater.
+	//
+	// Example: "github", "gitlab", etc.
+	ServiceType string
+
+	// ServiceID is the particular instance of the external service where this repository resides. Its value is
+	// opaque but typically consists of the canonical base URL to the service.
+	//
+	// Implementations must take care to normalize this URL. For example, if different GitHub.com repository code
+	// paths used slightly different values here (such as "https://github.com/" and "https://github.com", note the
+	// lack of trailing slash), then the same logical repository would be incorrectly treated as multiple distinct
+	// repositories depending on the code path that provided its ServiceID value.
+	//
+	// Example: "https://github.com/", "https://github-enterprise.example.com/"
+	ServiceID string
 }
 
 type DependencyReferences struct {
