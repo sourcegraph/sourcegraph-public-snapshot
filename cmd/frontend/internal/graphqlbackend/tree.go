@@ -23,15 +23,11 @@ func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path strin
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, commit.repo.repo)
-	if err != nil {
-		return nil, err
-	}
-
 	if recursive && path != "" {
 		return nil, errors.New("not implemented")
 	}
 
+	vcsrepo := backend.Repos.CachedOpenVCS(commit.repo.repo)
 	entries, err := vcsrepo.ReadDir(ctx, api.CommitID(commit.oid), path, recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value

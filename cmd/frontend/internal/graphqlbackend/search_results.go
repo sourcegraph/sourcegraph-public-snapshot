@@ -227,13 +227,7 @@ func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID api.RepoID
 	if err != nil {
 		return nil, err
 	}
-	vcsrepo, err = backend.Repos.OpenVCS(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-	if err != nil {
-		return nil, err
-	}
+	vcsrepo = backend.Repos.CachedOpenVCS(repo)
 	b.cachedVCSReposMu.Lock()
 	b.cachedVCSRepos[repoID] = vcsrepo
 	b.cachedVCSReposMu.Unlock()

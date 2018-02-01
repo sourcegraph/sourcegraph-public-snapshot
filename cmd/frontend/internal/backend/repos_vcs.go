@@ -24,10 +24,17 @@ func (repos) OpenVCS(ctx context.Context, repo *types.Repo) (vcs.Repository, err
 		return Mocks.Repos.OpenVCS(ctx, repo)
 	}
 	gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
-	if err != nil {
-		return nil, err
+	return gitcmd.Open(gitserverRepo.Name, gitserverRepo.URL), err
+}
+
+// CachedOpenVCS returns a handle to the underlying Git repository (on gitserver), without the ability to clone or
+// update the repository from the remote source if needed.
+func (repos) CachedOpenVCS(repo *types.Repo) vcs.Repository {
+	gitserverRepo := quickGitserverRepoInfo(repo)
+	if gitserverRepo == nil {
+		gitserverRepo = &gitserver.Repo{Name: repo.URI}
 	}
-	return gitcmd.Open(gitserverRepo.Name, gitserverRepo.URL), nil
+	return (repos{}).VCSForGitserverRepo(*gitserverRepo)
 }
 
 // VCSForGitserverRepo returns a handle to the Git repository specified by repo.
@@ -36,18 +43,8 @@ func (repos) VCSForGitserverRepo(repo gitserver.Repo) vcs.Repository {
 }
 
 func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	if envvar.SourcegraphDotComMode() {
-		// If it is possible to 100% correctly determine it statically, use a fast path. This is
-		// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories on
-		// Sourcegraph.com, which reduces rate limit pressure significantly.
-		//
-		// This fails for private repositories, which require authentication in the URL userinfo.
-		if strings.HasPrefix(strings.ToLower(string(repo.URI)), "github.com/") {
-			return gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI)}, nil
-		}
-		if strings.HasPrefix(strings.ToLower(string(repo.URI)), "gitlab.com/") {
-			return gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI) + ".git"}, nil
-		}
+	if gitserverRepo := quickGitserverRepoInfo(repo); gitserverRepo != nil {
+		return *gitserverRepo, nil
 	}
 
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
@@ -55,9 +52,26 @@ func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver
 		ExternalRepo: repo.ExternalRepo,
 	})
 	if err != nil {
-		return gitserver.Repo{}, err
+		return gitserver.Repo{Name: repo.URI}, err
 	}
 	return gitserver.Repo{Name: result.Repo.URI, URL: result.Repo.VCS.URL}, nil
+}
+
+func quickGitserverRepoInfo(repo *types.Repo) *gitserver.Repo {
+	if envvar.SourcegraphDotComMode() {
+		// If it is possible to 100% correctly determine it statically, use a fast path. This is
+		// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories on
+		// Sourcegraph.com, which reduces rate limit pressure significantly.
+		//
+		// This fails for private repositories, which require authentication in the URL userinfo.
+		if strings.HasPrefix(strings.ToLower(string(repo.URI)), "github.com/") {
+			return &gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI)}
+		}
+		if strings.HasPrefix(strings.ToLower(string(repo.URI)), "gitlab.com/") {
+			return &gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI) + ".git"}
+		}
+	}
+	return nil
 }
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
@@ -77,7 +91,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	defer done()
 
 	vcsrepo, err := Repos.OpenVCS(ctx, repo)
-	if err != nil {
+	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
 	return vcsrepo.ResolveRevision(ctx, rev)
@@ -98,11 +112,14 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 	}
 
 	vcsrepo, err := Repos.OpenVCS(ctx, repo)
-	if err != nil {
+	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
-
 	return vcsrepo.GetCommit(ctx, commitID)
+}
+
+func isIgnorableRepoUpdaterError(err error) bool {
+	return errors.Cause(err) == repoupdater.ErrNotFound || errors.Cause(err) == repoupdater.ErrUnauthorized
 }
 
 func isAbsCommitID(commitID api.CommitID) bool { return len(commitID) == 40 }

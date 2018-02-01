@@ -119,10 +119,7 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error) {
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.repo)
-	if err != nil {
-		return nil, err
-	}
+	vcsrepo := backend.Repos.CachedOpenVCS(r.repo)
 	defaultBranch, err := vcsrepo.GitCmdRaw(ctx, []string{"rev-parse", "--abbrev-ref", "HEAD"})
 	// If we fail to get the default branch due to cloning, we return nothing.
 	if err != nil {
