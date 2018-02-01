@@ -1,3 +1,5 @@
+//docker:user sourcegraph
+
 package main
 
 import (

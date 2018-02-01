@@ -1,3 +1,5 @@
+//docker:user sourcegraph
+
 // Command repo-updater periodically updates repositories configured in site configuration and serves repository
 // metadata from multiple external code hosts.
 package main
