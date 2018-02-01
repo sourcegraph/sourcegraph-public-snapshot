@@ -129,7 +129,7 @@ type SavedQuerySpecAndConfig struct {
 // SavedQueriesListAll lists all saved queries, from every user, org, etc.
 func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[SavedQueryIDSpec]ConfigSavedQuery, error) {
 	var result []SavedQuerySpecAndConfig
-	err := c.post(ctx, "saved-queries/list-all", nil, &result)
+	err := c.postInternal(ctx, "saved-queries/list-all", nil, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ type SavedQueryInfo struct {
 // is returned if there is no existing info for the saved query.
 func (c *internalClient) SavedQueriesGetInfo(ctx context.Context, query string) (*SavedQueryInfo, error) {
 	var result *SavedQueryInfo
-	err := c.post(ctx, "saved-queries/get-info", query, &result)
+	err := c.postInternal(ctx, "saved-queries/get-info", query, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -171,15 +171,15 @@ func (c *internalClient) SavedQueriesGetInfo(ctx context.Context, query string) 
 
 // SavedQueriesSetInfo sets the info in the DB for the given query.
 func (c *internalClient) SavedQueriesSetInfo(ctx context.Context, info *SavedQueryInfo) error {
-	return c.post(ctx, "saved-queries/set-info", info, nil)
+	return c.postInternal(ctx, "saved-queries/set-info", info, nil)
 }
 
 func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query string) error {
-	return c.post(ctx, "saved-queries/delete-info", query, nil)
+	return c.postInternal(ctx, "saved-queries/delete-info", query, nil)
 }
 
 func (c *internalClient) OrgsListUsers(ctx context.Context, orgID int32) (users []int32, err error) {
-	err = c.post(ctx, "orgs/list-users", orgID, &users)
+	err = c.postInternal(ctx, "orgs/list-users", orgID, &users)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (c *internalClient) OrgsListUsers(ctx context.Context, orgID int32) (users 
 }
 
 func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (orgID *int32, err error) {
-	err = c.post(ctx, "orgs/get-by-name", orgName, &orgID)
+	err = c.postInternal(ctx, "orgs/get-by-name", orgName, &orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (org
 }
 
 func (c *internalClient) OrgsGetSlackWebhooks(ctx context.Context, orgIDs []int32) (webhooks []*string, err error) {
-	err = c.post(ctx, "orgs/get-slack-webhooks", orgIDs, &webhooks)
+	err = c.postInternal(ctx, "orgs/get-slack-webhooks", orgIDs, &webhooks)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (c *internalClient) OrgsGetSlackWebhooks(ctx context.Context, orgIDs []int3
 }
 
 func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {
-	err = c.post(ctx, "users/get-by-username", username, &user)
+	err = c.postInternal(ctx, "users/get-by-username", username, &user)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (c *internalClient) UsersGetByUsername(ctx context.Context, username string
 }
 
 func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (email *string, err error) {
-	err = c.post(ctx, "user-emails/get-email", userID, &email)
+	err = c.postInternal(ctx, "user-emails/get-email", userID, &email)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (
 // directly from the configuration file.
 func (c *internalClient) AppURL(ctx context.Context) (string, error) {
 	var appURL string
-	err := c.post(ctx, "app-url", nil, &appURL)
+	err := c.postInternal(ctx, "app-url", nil, &appURL)
 	if err != nil {
 		return "", err
 	}
@@ -231,14 +231,14 @@ func (c *internalClient) AppURL(ctx context.Context) (string, error) {
 }
 
 func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
-	return c.post(ctx, "defs/refresh-index", &DefsRefreshIndexRequest{
+	return c.postInternal(ctx, "defs/refresh-index", &DefsRefreshIndexRequest{
 		RepoURI:  uri,
 		CommitID: commitID,
 	}, nil)
 }
 
 func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
-	return c.post(ctx, "pkgs/refresh-index", &PkgsRefreshIndexRequest{
+	return c.postInternal(ctx, "pkgs/refresh-index", &PkgsRefreshIndexRequest{
 		RepoURI:  uri,
 		CommitID: commitID,
 	}, nil)
@@ -246,7 +246,7 @@ func (c *internalClient) PkgsRefreshIndex(ctx context.Context, uri RepoURI, comm
 
 func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCreateOrUpdateRequest) (*Repo, error) {
 	var repo Repo
-	err := c.post(ctx, "repos/create-if-not-exists", op, &repo)
+	err := c.postInternal(ctx, "repos/create-if-not-exists", op, &repo)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCrea
 
 func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo RepoID, lang string) ([]*DependencyReference, error) {
 	var unfetchedDeps []*DependencyReference
-	err := c.post(ctx, "repos/unindexed-dependencies", RepoUnindexedDependenciesRequest{
+	err := c.postInternal(ctx, "repos/unindexed-dependencies", RepoUnindexedDependenciesRequest{
 		RepoID:   repo,
 		Language: lang,
 	}, &unfetchedDeps)
@@ -266,7 +266,7 @@ func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo Re
 }
 
 func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, commitID CommitID, lang string) error {
-	return c.post(ctx, "repos/update-index", RepoUpdateIndexRequest{
+	return c.postInternal(ctx, "repos/update-index", RepoUpdateIndexRequest{
 		RepoID:   repo,
 		CommitID: commitID,
 		Language: lang,
@@ -275,7 +275,7 @@ func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, comm
 
 func (c *internalClient) ReposGetByURI(ctx context.Context, uri RepoURI) (*Repo, error) {
 	var repo Repo
-	err := c.post(ctx, "repos/"+string(uri), nil, &repo)
+	err := c.postInternal(ctx, "repos/"+string(uri), nil, &repo)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (c *internalClient) ReposGetByURI(ctx context.Context, uri RepoURI) (*Repo,
 
 func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
 	var inv inventory.Inventory
-	err := c.post(ctx, "repos/inventory-uncached", ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID}, &inv)
+	err := c.postInternal(ctx, "repos/inventory-uncached", ReposGetInventoryUncachedRequest{Repo: repo, CommitID: commitID}, &inv)
 	if err != nil {
 		return nil, err
 	}
@@ -292,18 +292,32 @@ func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo Rep
 }
 
 func (c *internalClient) GitoliteUpdateRepos(ctx context.Context) error {
-	return c.post(ctx, "gitolite/update-repos", nil, nil)
+	return c.postInternal(ctx, "gitolite/update-repos", nil, nil)
 }
 
 func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri RepoURI, callsign, url string) error {
-	return c.post(ctx, "phabricator/repo-create", PhabricatorRepoCreateRequest{
+	return c.postInternal(ctx, "phabricator/repo-create", PhabricatorRepoCreateRequest{
 		RepoURI:  uri,
 		Callsign: callsign,
 		URL:      url,
 	}, nil)
 }
 
-// post sends an HTTP Post request to the internal route. If reqBody is
+func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody interface{}) error {
+	return c.postAPI(ctx, "telemetry/log/v1/"+env, reqBody, nil)
+}
+
+// postInternal sends an HTTP post request to the internal route.
+func (c *internalClient) postInternal(ctx context.Context, route string, reqBody, respBody interface{}) error {
+	return c.post(ctx, "/.internal/"+route, reqBody, respBody)
+}
+
+// postAPI sends an HTTP post request to the api route.
+func (c *internalClient) postAPI(ctx context.Context, route string, reqBody, respBody interface{}) error {
+	return c.post(ctx, "/.api/"+route, reqBody, respBody)
+}
+
+// post sends an HTTP post request to the provided route. If reqBody is
 // non-nil it will Marshal it as JSON and set that as the Request body. If
 // respBody is non-nil the response body will be JSON unmarshalled to resp.
 func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody interface{}) error {
@@ -316,7 +330,7 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 		}
 	}
 
-	resp, err := ctxhttp.Post(ctx, nil, c.URL+"/.internal/"+route, "application/json", bytes.NewBuffer(data))
+	resp, err := ctxhttp.Post(ctx, nil, c.URL+route, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}

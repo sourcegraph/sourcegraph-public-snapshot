@@ -67,7 +67,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			clientAddr = r.RemoteAddr
 		}
-		eventlogger.LogEvent("ServerUpdateCheck", map[string]string{
+		eventlogger.LogEvent(nil, "ServerUpdateCheck", map[string]string{
 			"remote_ip":           clientAddr,
 			"remote_site_version": clientVersionString,
 			"remote_site_id":      clientSiteID,

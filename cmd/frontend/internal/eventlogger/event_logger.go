@@ -1,34 +1,36 @@
 package eventlogger
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 var backendEventsTrackingSiteID = "SourcegraphBackend"
-var defaultRemoteURL = "https://sourcegraph-logging.telligentdata.com/log/v1/"
 
 // defaultLogger is a singleton for event logging from the backend
-var defaultLogger = new(nil)
+var defaultLogger = new()
 
-// LogEvent sends a payload representing an event to the remote analytics
-// endpoint. Note: This does not block since it creates a new goroutine.
-func LogEvent(eventLabel string, eventProperties map[string]string) {
+// LogEvent sends a payload representing an event to either the remote
+// analytics endpoint or, if not in Sourcegraph.com mode, the Server's
+// internal telemetry endpoint.
+//
+// This method should be invoked after the frontend service has started. It is
+// safe to not do so (it will just log an error), but logging the actual event
+// will fail otherwise. Consider using e.g. api.InternalClient.RetryPingUntilAvailable
+// to wait for the frontend to start.
+//
+// Note: This does not block since it creates a new goroutine.
+func LogEvent(userEmail *string, eventLabel string, eventProperties map[string]string) {
 	go func() {
-		err := defaultLogger.LogEvent(nil, eventLabel, eventProperties)
+		err := defaultLogger.logEvent(userEmail, eventLabel, eventProperties)
 		if err != nil {
 			log15.Warn("eventlogger.LogEvent failed", "event", eventLabel, "error", err)
 		}
@@ -42,49 +44,15 @@ type eventLogger struct {
 	ctx      context.Context
 }
 
-type eventLoggerOptions struct {
-	remoteURL string
-}
-
 // new returns a new EventLogger client
-func new(opt *eventLoggerOptions) *eventLogger {
+func new() *eventLogger {
 	environment := "production"
 	if env.Version == "dev" {
 		environment = "development"
 	}
-	url := defaultRemoteURL + environment
-	if opt != nil && opt.remoteURL != "" {
-		url = opt.remoteURL
-	}
 	return &eventLogger{
 		env: environment,
-		ctx: context.Background(),
-		url: url,
 	}
-}
-
-// post sends payload to the remote analytics endpoint
-func (logger *eventLogger) post(payload *Payload) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
-	payloadJSON, err := json.Marshal(payload)
-	if err != nil {
-		return errors.Wrap(err, "eventLogger: marshal json")
-	}
-	resp, err := ctxhttp.Post(ctx, nil, logger.url, "text/plain", bytes.NewReader(payloadJSON))
-	if err != nil {
-		return errors.Wrap(err, "eventLogger: http request")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		return errors.Errorf("eventLogger: %s failed with %d %s", payloadJSON, resp.StatusCode, string(body))
-	}
-	return nil
 }
 
 // newPayload generates a new Payload struct for a provided event
@@ -120,8 +88,8 @@ func (logger *eventLogger) newPayload(userEmail *string, event *Event) *Payload 
 	}
 }
 
-// LogEvent sends a payload representing some user event to the remote analytics endpoint
-func (logger *eventLogger) LogEvent(userEmail *string, eventLabel string, eventProperties map[string]string) error {
+// logEvent sends a payload representing some user event to the InternalClient telemetry API
+func (logger *eventLogger) logEvent(userEmail *string, eventLabel string, eventProperties map[string]string) error {
 	event := &Event{
 		Type:            eventLabel,
 		EventID:         uuid.New().String(),
@@ -132,5 +100,9 @@ func (logger *eventLogger) LogEvent(userEmail *string, eventLabel string, eventP
 		},
 	}
 	payload := logger.newPayload(userEmail, event)
-	return logger.post(payload)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	return api.InternalClient.LogTelemetry(ctx, logger.env, payload)
 }
