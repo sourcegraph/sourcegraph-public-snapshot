@@ -436,6 +436,10 @@ const SiteSchemaJSON = `{
           "type": "string",
           "default": "https://gitlab.com",
           "pattern": "^https?://",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
           "format": "uri"
         },
         "token": {
