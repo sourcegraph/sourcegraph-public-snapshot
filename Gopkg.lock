@@ -644,6 +644,12 @@
   version = "v1.0.2"
 
 [[projects]]
+  name = "github.com/pelletier/go-toml"
+  packages = ["."]
+  revision = "acdc4509485b587f5e675510c4f2c63e90ff68a8"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/petar/GoLLRB"
   packages = ["llrb"]
@@ -1346,6 +1352,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2060f33e0eb6f0ad2adc05cd5dca5a989f32dc42f888a88f7cf523d4a73c2636"
+  inputs-digest = "70422cf76ebe26e9e70cd804003324cc1426eaf13e77fc074737092b407f3ccc"
   solver-name = "gps-cdcl"
   solver-version = 1

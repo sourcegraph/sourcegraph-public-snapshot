@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	toml "github.com/pelletier/go-toml"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -34,6 +36,30 @@ func (p pinnedPkgs) Find(pkg string) string {
 func (p pinnedPkgs) Len() int           { return len(p) }
 func (p pinnedPkgs) Less(i, j int) bool { return p[i].Pkg < p[j].Pkg }
 func (p pinnedPkgs) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// loadGopkgLock supports unmarshalling the lock file used by
+// github.com/golang/dep.
+func loadGopkgLock(rawToml []byte) pinnedPkgs {
+	lock := struct {
+		Projects []struct {
+			Name     string `toml:"name"`
+			Revision string `toml:"revision"`
+			// There are other fields, but we don't use them
+		} `toml:"projects"`
+		// There are other fields, but we don't use them
+	}{}
+	err := toml.Unmarshal(rawToml, &lock)
+	if err != nil {
+		return nil
+	}
+
+	pkgs := make(pinnedPkgs, 0, len(lock.Projects))
+	for _, p := range lock.Projects {
+		pkgs = append(pkgs, pinnedPkg{Pkg: p.Name + "/", Rev: p.Revision})
+	}
+	sort.Sort(pkgs)
+	return pkgs
+}
 
 func loadGlideLock(yml []byte) pinnedPkgs {
 	type glideLock struct {

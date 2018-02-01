@@ -311,6 +311,14 @@ func (h *BuildHandler) pinnedDep(ctx context.Context, pkg string) string {
 		root := h.RootFSPath
 		h.HandlerShared.Mu.Unlock()
 
+		// github.com/golang/dep is not widely used yet, but likely will in
+		// the future. So we try it first.
+		toml, err := ctxvfs.ReadFile(ctx, fs, path.Join(root, "Gopkg.lock"))
+		if err == nil && len(toml) > 0 {
+			h.pinnedDeps = loadGopkgLock(toml)
+			return
+		}
+
 		// We assume glide.lock is in the top-level dir of the
 		// repo. This assumption may not be valid in the future.
 		yml, err := ctxvfs.ReadFile(ctx, fs, path.Join(root, "glide.lock"))

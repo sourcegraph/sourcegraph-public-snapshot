@@ -55,6 +55,11 @@ required = [
   branch = "master"
   name = "github.com/russross/blackfriday"
 
+# This is the same constraint used for toml in dep v0.4.1
+[[constraint]]
+  branch = "master"
+  name = "github.com/pelletier/go-toml"
+
 [[constraint]]
   branch = "master"
   name = "github.com/beevik/etree"
