@@ -1,5 +1,4 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -20,6 +19,7 @@ import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
+import { RepositoryDisabledPage } from './RepositoryDisabledPage'
 import { RepoSettingsArea } from './settings/RepoSettingsArea'
 
 const RepoPageNotFound: React.SFC = () => (
@@ -152,16 +152,6 @@ export class RepoContainer extends React.Component<Props, State> {
             }
         }
 
-        if (!this.state.repoOrError.enabled && !this.state.repoOrError.viewerCanAdminister) {
-            return (
-                <HeroPage
-                    icon={NoEntryIcon}
-                    title="Repository disabled"
-                    subtitle="To access this repository, contact the Sourcegraph admin."
-                />
-            )
-        }
-
         const transferProps = {
             repo: this.state.repoOrError,
             user: this.props.user,
@@ -170,6 +160,10 @@ export class RepoContainer extends React.Component<Props, State> {
 
         const repoMatchURL = `/${this.state.repoOrError.uri}`
         const { filePath, position, range } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
+
+        const isSettingsPage =
+            location.pathname === `${repoMatchURL}/-/settings` ||
+            location.pathname.startsWith(`${repoMatchURL}/-/settings/`)
 
         return (
             <div className="repo-composite-container composite-container">
@@ -196,105 +190,112 @@ export class RepoContainer extends React.Component<Props, State> {
                         />
                     }
                 />
-                <Switch>
-                    <Route
-                        path={`${repoMatchURL}`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <RepoRevContainer
-                                {...routeComponentProps}
-                                {...transferProps}
-                                rev={this.state.rev}
-                                objectType={'tree'}
-                            />
-                        )}
+                {this.state.repoOrError.enabled || isSettingsPage ? (
+                    <Switch>
+                        <Route
+                            path={`${repoMatchURL}`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoRevContainer
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    rev={this.state.rev}
+                                    objectType={'tree'}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}/-/blob/:filePath+`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoRevContainer
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    rev={this.state.rev}
+                                    objectType={'blob'}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}@${this.state.rev}/-/blob/:filePath+`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoRevContainer
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    rev={this.state.rev}
+                                    objectType={'blob'}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}/-/tree/:filePath+`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoRevContainer
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    rev={this.state.rev}
+                                    objectType={'tree'}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}@${this.state.rev}/-/tree/:filePath+`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoRevContainer
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    rev={this.state.rev}
+                                    objectType={'tree'}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}@${this.state.rev}`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoRevContainer
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    rev={this.state.rev}
+                                    objectType={'tree'}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}/-/settings`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepoSettingsArea
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    onDidUpdateRepository={this.onDidUpdateRepository}
+                                />
+                            )}
+                        />
+                        <Route key="hardcoded-key" component={RepoPageNotFound} />
+                    </Switch>
+                ) : (
+                    <RepositoryDisabledPage
+                        repo={this.state.repoOrError}
+                        onDidUpdateRepository={this.onDidUpdateRepository}
                     />
-                    <Route
-                        path={`${repoMatchURL}/-/blob/:filePath+`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <RepoRevContainer
-                                {...routeComponentProps}
-                                {...transferProps}
-                                rev={this.state.rev}
-                                objectType={'blob'}
-                            />
-                        )}
-                    />
-                    <Route
-                        path={`${repoMatchURL}@${this.state.rev}/-/blob/:filePath+`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <RepoRevContainer
-                                {...routeComponentProps}
-                                {...transferProps}
-                                rev={this.state.rev}
-                                objectType={'blob'}
-                            />
-                        )}
-                    />
-                    <Route
-                        path={`${repoMatchURL}/-/tree/:filePath+`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <RepoRevContainer
-                                {...routeComponentProps}
-                                {...transferProps}
-                                rev={this.state.rev}
-                                objectType={'tree'}
-                            />
-                        )}
-                    />
-                    <Route
-                        path={`${repoMatchURL}@${this.state.rev}/-/tree/:filePath+`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <RepoRevContainer
-                                {...routeComponentProps}
-                                {...transferProps}
-                                rev={this.state.rev}
-                                objectType={'tree'}
-                            />
-                        )}
-                    />
-                    <Route
-                        path={`${repoMatchURL}@${this.state.rev}`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <RepoRevContainer
-                                {...routeComponentProps}
-                                {...transferProps}
-                                rev={this.state.rev}
-                                objectType={'tree'}
-                            />
-                        )}
-                    />
-                    <Route
-                        path={`${repoMatchURL}/-/settings`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <RepoSettingsArea
-                                {...routeComponentProps}
-                                {...transferProps}
-                                onDidUpdateRepository={this.onDidUpdateRepository}
-                            />
-                        )}
-                    />
-                    <Route key="hardcoded-key" component={RepoPageNotFound} />
-                </Switch>
+                )}
             </div>
         )
     }
