@@ -25,8 +25,12 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 		return false, err
 	}
 
+	return needsRepositoryConfiguration(), nil
+}
+
+func needsRepositoryConfiguration() bool {
 	cfg := conf.Get()
-	return len(cfg.Github) == 0 && len(cfg.ReposList) == 0 && cfg.GitoliteHosts == "" && cfg.GitOriginMap == "", nil
+	return len(cfg.Github) == 0 && len(cfg.ReposList) == 0 && cfg.GitoliteHosts == "" && cfg.GitOriginMap == ""
 }
 
 func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {
@@ -40,6 +44,10 @@ func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) 
 		return false, err
 	}
 
+	return noRepositoriesEnabled(ctx)
+}
+
+func noRepositoriesEnabled(ctx context.Context) (bool, error) {
 	// Fastest way to see if even a single enabled repository exists.
 	repos, err := db.Repos.List(ctx, db.ReposListOptions{
 		Enabled:     true,

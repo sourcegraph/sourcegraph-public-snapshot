@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
@@ -150,13 +153,58 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		})
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
-		a.title = "Change your repo: filter to see results"
-		a.description = fmt.Sprintf("No repositories satisfied your repo: filter.")
-		if strings.TrimSpace(withoutRepoFields.Query()) != "" {
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-				description: "remove repo: filter",
-				query:       withoutRepoFields,
+		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+		proposeQueries := true
+		if !envvar.SourcegraphDotComMode() {
+			if noRepositoriesEnabled, err := noRepositoriesEnabled(ctx); err == nil && noRepositoriesEnabled {
+				proposeQueries = false
+				if needsRepositoryConfiguration() {
+					a.title = "No repositories or code hosts configured"
+					a.description = "To start searching code, "
+					if isSiteAdmin {
+						a.description += "first go to site admin to configure repositories and code hosts."
+					} else {
+						a.description = "ask the site admin to configure and enable repositories."
+					}
+				} else {
+					a.title = "No repositories enabled"
+					if isSiteAdmin {
+						a.description = "Go to site admin to enable repositories to search."
+					} else {
+						a.description = "Ask the site admin to enable repositories to search."
+					}
+				}
+			}
+		}
+
+		suggestEnablingRepos := false
+		if a.title == "" && !envvar.SourcegraphDotComMode() {
+			repoPattern, _ := parseRepositoryRevisions(repoFilters[0])
+			repos, err := db.Repos.List(ctx, db.ReposListOptions{
+				Enabled:         false,
+				Disabled:        true,
+				IncludePatterns: []string{optimizeRepoPatternWithHeuristics(string(repoPattern))},
+				LimitOffset:     &db.LimitOffset{Limit: 1},
 			})
+			if err == nil && len(repos) > 0 && isSiteAdmin {
+				suggestEnablingRepos = true
+			}
+		}
+
+		if a.title == "" {
+			if suggestEnablingRepos {
+				a.title = "Enable more repositories or change your repo: filter to see results"
+				a.description = "Your repo: filter matched only disabled repositories. Go to site admin to enable more repositories, or broaden your repo: scope."
+			} else {
+				a.title = "Change your repo: filter to see results"
+				a.description = "No repositories satisfied your repo: filter."
+			}
+			if proposeQueries && strings.TrimSpace(withoutRepoFields.Query()) != "" {
+				a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+					description: "remove repo: filter",
+					query:       withoutRepoFields,
+				})
+			}
 		}
 	}
 

@@ -261,12 +261,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		if _, err := regexp.Compile(string(repoPattern)); err != nil {
 			return nil, nil, nil, false, &badRequestError{err}
 		}
-		// Optimization: make the "." in "github.com" a literal dot
-		// so that the regexp can be optimized more effectively.
-		if strings.HasPrefix(string(repoPattern), "github.com") {
-			repoPattern = "^" + repoPattern
-		}
-		repoPattern = api.RepoURI(strings.Replace(string(repoPattern), "github.com", `github\.com`, -1))
+		repoPattern = api.RepoURI(optimizeRepoPatternWithHeuristics(string(repoPattern)))
 		includePatterns[i] = string(repoPattern)
 		includePatternHasRev[i] = len(revs) > 0
 		if len(revs) > 0 {
@@ -354,6 +349,16 @@ reposLoop:
 	tr.LazyPrintf("Associate/validate revs - done")
 
 	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
+}
+
+func optimizeRepoPatternWithHeuristics(repoPattern string) string {
+	// Optimization: make the "." in "github.com" a literal dot
+	// so that the regexp can be optimized more effectively.
+	if strings.HasPrefix(string(repoPattern), "github.com") {
+		repoPattern = "^" + repoPattern
+	}
+	repoPattern = strings.Replace(string(repoPattern), "github.com", `github\.com`, -1)
+	return repoPattern
 }
 
 func (r *searchResolver) resolveFiles(ctx context.Context, limit int) ([]*searchResultResolver, error) {
