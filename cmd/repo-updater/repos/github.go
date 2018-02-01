@@ -104,6 +104,11 @@ func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error
 // GetGitHubRepositoryMock is set by tests that need to mock GetGitHubRepository.
 var GetGitHubRepositoryMock func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error)
 
+var (
+	bypassGitHubAPI, _       = strconv.ParseBool(os.Getenv("BYPASS_GITHUB_API"))
+	minGitHubAPIRateLimit, _ = strconv.Atoi(os.Getenv("GITHUB_API_MIN_RATE_LIMIT"))
+)
+
 // GetGitHubRepository queries a configured GitHub connection endpoint for information about the
 // specified repository.
 //
@@ -112,21 +117,6 @@ var GetGitHubRepositoryMock func(args protocol.RepoLookupArgs) (repo *protocol.R
 func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
 	if GetGitHubRepositoryMock != nil {
 		return GetGitHubRepositoryMock(args)
-	}
-
-	// Avoid GitHub API, for emergency rate limit evasion.
-	if v, _ := strconv.ParseBool(os.Getenv("BYPASS_GITHUB_API")); v {
-		if args.Repo != "" {
-			return &protocol.RepoInfo{
-				URI:          args.Repo,
-				ExternalRepo: nil,
-				Description:  "",
-				Fork:         false,
-				VCS: protocol.VCSInfo{
-					URL: "https://" + string(args.Repo),
-				},
-			}, true, nil
-		}
 	}
 
 	ghrepoToRepoInfo := func(ghrepo *github.Repository, conn *githubConnection) *protocol.RepoInfo {
@@ -147,6 +137,31 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	}
 	if conn == nil {
 		return nil, false, nil // refers to a non-GitHub repo
+	}
+
+	// Support bypassing GitHub API, for emergency rate limit evasion.
+	bypass := bypassGitHubAPI
+	if !bypass && minGitHubAPIRateLimit > 0 {
+		remaining, reset, known := conn.client.RateLimit.Get()
+		// If we're below the min rate limit, bypass the GitHub API. But if the rate limit has reset, then we need
+		// to perform an API request to check the new rate limit. (Give 30s of buffer for clock unsync.)
+		if known && remaining < minGitHubAPIRateLimit && reset > -30*time.Second {
+			bypass = true
+		}
+	}
+	if bypass {
+		if args.Repo != "" {
+			return &protocol.RepoInfo{
+				URI:          args.Repo,
+				ExternalRepo: nil,
+				Description:  "",
+				Fork:         false,
+				VCS: protocol.VCSInfo{
+					URL: "https://" + string(args.Repo),
+				},
+			}, true, nil
+		}
+		return nil, false, nil
 	}
 
 	canUseGraphQLAPI := conn.config.Token != "" // GraphQL API requires authentication
