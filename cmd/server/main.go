@@ -25,6 +25,7 @@ var defaultEnv = map[string]string{
 	"REPO_UPDATER_URL":        "http://127.0.0.1:3182",
 	"SRC_SESSION_STORE_REDIS": "127.0.0.1:6379",
 	"SRC_INDEXER":             "127.0.0.1:3179",
+	"QUERY_RUNNER_URL":        "http://127.0.0.1:3183",
 	"SRC_SYNTECT_SERVER":      "http://localhost:3700",
 	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
