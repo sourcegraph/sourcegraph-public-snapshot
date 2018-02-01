@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/httpcache"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
@@ -81,7 +82,7 @@ func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error
 		}
 
 		if !skippedBecauseNoAuth {
-			return nil, fmt.Errorf("no configured GitHub connection with URL: %q", args.ExternalRepo.ServiceID)
+			return nil, errors.Wrap(github.ErrNotFound, fmt.Sprintf("no configured GitHub connection with URL: %q", args.ExternalRepo.ServiceID))
 		}
 	}
 

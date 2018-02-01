@@ -137,7 +137,7 @@ var ErrNotFound = errors.New("GitLab project not found")
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if err == ErrNotFound {
+	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
 		return true
 	}
 	if HTTPErrorCode(err) == http.StatusNotFound {

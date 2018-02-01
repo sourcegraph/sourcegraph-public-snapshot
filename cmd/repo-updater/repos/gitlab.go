@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/httpcache"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
@@ -74,7 +75,7 @@ func getGitLabConnection(args protocol.RepoLookupArgs) (*gitlabConnection, error
 				return conn, nil
 			}
 		}
-		return nil, fmt.Errorf("no configured GitLab connection with URL: %q", args.ExternalRepo.ServiceID)
+		return nil, errors.Wrap(gitlab.ErrNotFound, fmt.Sprintf("no configured GitLab connection with URL: %q", args.ExternalRepo.ServiceID))
 	}
 
 	if args.Repo != "" {

@@ -100,11 +100,6 @@ type commitSearchOp struct {
 func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResult, limitHit bool, err error) {
 	repo := op.repoRevs.repo
 
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, repo)
-	if err != nil {
-		return nil, false, err
-	}
-
 	args := []string{
 		"--max-count=" + strconv.Itoa(maxGitLogSearchResults+1),
 	}
@@ -209,6 +204,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	ctx, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
 
+	vcsrepo := backend.Repos.CachedVCS(repo)
 	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
 		Query: op.textSearchOptions,
 		Paths: vcs.PathOptions{

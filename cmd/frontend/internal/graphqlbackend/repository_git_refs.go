@@ -38,13 +38,11 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	Query *string
 	Type  *string
 }) (*gitRefConnectionResolver, error) {
-	vcsrepo, err := backend.Repos.OpenVCS(ctx, r.repo)
-	if err != nil {
-		return nil, err
-	}
+	vcsrepo := backend.Repos.CachedVCS(r.repo)
 
 	var branches []*vcs.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
+		var err error
 		branches, err = vcsrepo.Branches(ctx, vcs.BranchesOptions{})
 		if err != nil {
 			return nil, err

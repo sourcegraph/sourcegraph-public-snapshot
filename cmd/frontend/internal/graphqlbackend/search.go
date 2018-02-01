@@ -329,7 +329,7 @@ reposLoop:
 			// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
 			// down by a lot (if we're looping over many repos). This means that it'll fail if a
 			// repo is not on gitserver.
-			vcsrepo := backend.Repos.VCSForGitserverRepo(repoRev.gitserverRepo)
+			vcsrepo := backend.Repos.VCS(repoRev.gitserverRepo)
 			for _, revspec := range revspecs {
 				if _, err := vcsrepo.ResolveRevision(ctx, revspec); err == vcs.ErrRevisionNotFound {
 					// revision does not exist, so do not include this repository.

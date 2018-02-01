@@ -19,7 +19,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	Mocks.Repos.MockOpenVCS(t, "a", vcstest.MockRepository{
+	Mocks.Repos.MockVCS(t, "a", vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
@@ -45,7 +45,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	Mocks.Repos.MockOpenVCS(t, "a", vcstest.MockRepository{
+	Mocks.Repos.MockVCS(t, "a", vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
@@ -70,7 +70,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	want := strings.Repeat("a", 40)
 
 	var calledVCSRepoResolveRevision bool
-	Mocks.Repos.MockOpenVCS(t, "a", vcstest.MockRepository{
+	Mocks.Repos.MockVCS(t, "a", vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
@@ -95,7 +95,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	want := errors.New("x")
 
 	var calledVCSRepoResolveRevision bool
-	Mocks.Repos.MockOpenVCS(t, "a", vcstest.MockRepository{
+	Mocks.Repos.MockVCS(t, "a", vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return "", errors.New("x")

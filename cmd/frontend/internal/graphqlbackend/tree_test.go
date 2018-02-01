@@ -37,9 +37,7 @@ func TestTree(t *testing.T) {
 			&util.FileInfo{Name_: "testFile", Mode_: 0},
 		}, nil
 	}
-	backend.Mocks.Repos.OpenVCS = func(ctx context.Context, repo *types.Repo) (vcs.Repository, error) {
-		return mockRepo, nil
-	}
+	backend.Mocks.Repos.MockVCS(t, "github.com/gorilla/mux", mockRepo)
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
