@@ -53,7 +53,7 @@ func (repos) CachedVCS(repo *types.Repo) vcs.Repository {
 		}
 		return vcsrepo
 	}
-	gitserverRepo := quickGitserverRepoInfo(repo)
+	gitserverRepo := quickGitserverRepoInfo(repo.URI)
 	if gitserverRepo == nil {
 		gitserverRepo = &gitserver.Repo{Name: repo.URI}
 	}
@@ -67,7 +67,7 @@ func (repos) VCS(repo gitserver.Repo) vcs.Repository {
 }
 
 func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	if gitserverRepo := quickGitserverRepoInfo(repo); gitserverRepo != nil {
+	if gitserverRepo := quickGitserverRepoInfo(repo.URI); gitserverRepo != nil {
 		return *gitserverRepo, nil
 	}
 
@@ -81,7 +81,7 @@ func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver
 	return gitserver.Repo{Name: result.Repo.URI, URL: result.Repo.VCS.URL}, nil
 }
 
-func quickGitserverRepoInfo(repo *types.Repo) *gitserver.Repo {
+func quickGitserverRepoInfo(repo api.RepoURI) *gitserver.Repo {
 	// If it is possible to 100% correctly determine it statically, use a fast path. This is
 	// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories
 	// (especially on Sourcegraph.com), which reduces rate limit pressure significantly.
@@ -89,14 +89,14 @@ func quickGitserverRepoInfo(repo *types.Repo) *gitserver.Repo {
 	// This fails for private repositories, which require authentication in the URL userinfo.
 
 	switch {
-	case strings.HasPrefix(strings.ToLower(string(repo.URI)), "github.com/"):
+	case strings.HasPrefix(strings.ToLower(string(repo)), "github.com/"):
 		if envvar.SourcegraphDotComMode() || !conf.HasGitHubDotComToken() {
-			return &gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI)}
+			return &gitserver.Repo{Name: repo, URL: "https://" + string(repo)}
 		}
 
-	case strings.HasPrefix(strings.ToLower(string(repo.URI)), "gitlab.com/"):
+	case strings.HasPrefix(strings.ToLower(string(repo)), "gitlab.com/"):
 		if envvar.SourcegraphDotComMode() || !conf.HasGitLabDotComToken() {
-			return &gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI) + ".git"}
+			return &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
 		}
 	}
 

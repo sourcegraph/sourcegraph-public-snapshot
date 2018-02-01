@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
@@ -68,6 +69,17 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	// TEMPORARY: Backfill external repo info for (mostly auto-added) GitHub.com repositories.
 	needsExternalRepoBackfill := !TestDisableExternalRepoBackfillInReposGetByURI && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") && repo != nil && repo.ExternalRepo == nil
 	if (err != nil && conf.Get().AutoRepoAdd) || needsExternalRepoBackfill {
+		// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
+		// limit) for repositories that don't exist or private repositories that people attempt to
+		// access.
+		if gitserverRepo := quickGitserverRepoInfo(uri); gitserverRepo != nil {
+			if isRepoCloneableErr := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); isRepoCloneableErr == gitserver.ErrNotCloneable || errors.Cause(isRepoCloneableErr) == gitserver.ErrNotCloneable {
+				return nil, err // return original error (likely "not found") if repository is not cloneable
+			} else if isRepoCloneableErr != nil {
+				return nil, isRepoCloneableErr
+			}
+		}
+
 		// Try to look up and auto-add the repo.
 		result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: uri})
 		if err != nil {
