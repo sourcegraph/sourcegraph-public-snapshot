@@ -8,7 +8,7 @@
   "scripts": {
     "test": "mocha --require ts-node/register --timeout 10000 'src/**/*.test.ts?(x)'",
     "cover": "nyc --require ts-node/register mocha --timeout 10000 'src/**/*.test.ts?(x)'",
-    "test-e2e": "mocha --require ts-node/register --timeout 30000 --slow 5000 'src/**/*.test.e2e.ts?(x)'",
+    "test-e2e": "mocha --require ts-node/register --timeout 30000 --slow 5000 --exit 'src/**/*.test.e2e.ts?(x)'",
     "build": "npm run graphql && npm run schema && npm run webpack",
     "watch": "concurrently --raw \"npm run watch-graphql\" \"npm run watch-schema\" \"npm run watch-webpack\"",
     "watch-webpack": "[ -n \"$USE_WEBPACK_DEV_SERVER\" ] && npm run webpack-dev-server || npm run webpack -- --watch",
@@ -92,7 +92,7 @@
     "javascript-typescript-langserver": "^2.5.4",
     "jsdom": "^11.6.0",
     "json-schema-to-typescript": "^5.2.2",
-    "mocha": "^3.5.3",
+    "mocha": "^5.0.0",
     "node-sass": "^4.7.2",
     "node-sass-import-once": "^1.2.0",
     "nyc": "^11.3.0",
