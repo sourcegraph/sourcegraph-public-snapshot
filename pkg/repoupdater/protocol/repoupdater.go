@@ -36,6 +36,8 @@ type RepoInfo struct {
 
 	VCS VCSInfo // VCS-related information (for cloning/updating)
 
+	Links *RepoLinks // link URLs related to this repository
+
 	// ExternalRepo specifies this repository's ID on the external service where it resides (and the external
 	// service itself).
 	//
@@ -47,4 +49,12 @@ type RepoInfo struct {
 // VCSInfo describes how to access an external repository's Git data (to clone or update it).
 type VCSInfo struct {
 	URL string // the Git remote URL
+}
+
+// RepoLinks contains URLs and URL patterns for objects in this repository.
+type RepoLinks struct {
+	Root   string // the repository's main (root) page URL
+	Tree   string // the URL to a tree, with {rev} and {path} substitution variables
+	Blob   string // the URL to a blob, with {rev} and {path} substitution variables
+	Commit string // the URL to a commit, with {commit} substitution variable
 }

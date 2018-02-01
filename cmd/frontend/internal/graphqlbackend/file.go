@@ -20,6 +20,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	repoupdaterprotocol "sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -92,6 +94,28 @@ func (r *fileResolver) URL(ctx context.Context) (*string, error) {
 	if err != nil {
 		return nil, nil
 	}
+
+	// TODO(sqs): don't special-case GitLab, clean this code up
+	if repo := r.commit.repo.repo; repo.ExternalRepo != nil && repo.ExternalRepo.ServiceType == "gitlab" {
+		info, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{ExternalRepo: repo.ExternalRepo})
+		if err != nil {
+			return nil, err
+		}
+		if info.Repo != nil && info.Repo.Links != nil {
+			var urlPattern string
+			if isDir {
+				urlPattern = info.Repo.Links.Tree
+			} else {
+				urlPattern = info.Repo.Links.Blob
+			}
+			if urlPattern != "" {
+				// TODO(sqs): use rev, not fully resolved commit ID
+				url := strings.NewReplacer("{rev}", string(r.commit.oid), "{path}", r.path).Replace(urlPattern)
+				return &url, nil
+			}
+		}
+	}
+
 	if isDir {
 		return r.treeURL(ctx)
 	} else {

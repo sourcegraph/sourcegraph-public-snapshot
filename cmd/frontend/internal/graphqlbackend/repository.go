@@ -18,6 +18,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -151,31 +153,41 @@ func (r *repositoryResolver) UpdatedAt() *string {
 	return nil
 }
 
-func (r *repositoryResolver) URL() *string {
+func (r *repositoryResolver) URL(ctx context.Context) (*string, error) {
 	uri := r.repo.URI
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Repository != "" {
-		return &rc.Links.Repository
+		return &rc.Links.Repository, nil
 	}
 
 	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s", uri)
-		return &url
+		return &url, nil
 	}
 
 	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
 		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(string(uri), host))
-		return &url
+		return &url, nil
 	}
 
 	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
 	if phabRepo != nil {
 		url := fmt.Sprintf("%s/r%s", phabRepo.URL, phabRepo.Callsign)
-		return &url
+		return &url, nil
 	}
 
-	return nil
+	if r.repo.ExternalRepo != nil {
+		info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{ExternalRepo: r.repo.ExternalRepo})
+		if err != nil {
+			return nil, err
+		}
+		if info.Repo != nil && info.Repo.Links != nil && info.Repo.Links.Root != "" {
+			return &info.Repo.Links.Root, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func (r *repositoryResolver) HostType() *string {
@@ -193,6 +205,9 @@ func (r *repositoryResolver) HostType() *string {
 	if phabRepo != nil {
 		host := "Phabricator"
 		return &host
+	}
+	if r.repo.ExternalRepo != nil {
+		return &r.repo.ExternalRepo.ServiceType
 	}
 	return nil
 }

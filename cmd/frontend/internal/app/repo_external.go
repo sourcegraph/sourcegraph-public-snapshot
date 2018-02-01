@@ -14,6 +14,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
 // githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
@@ -69,6 +71,18 @@ func serveRepoExternalCommit(w http.ResponseWriter, r *http.Request) error {
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
 		http.Redirect(w, r, fmt.Sprintf("%s%s/commit/%s", gheURL, strings.TrimPrefix(string(repo.URI), host), commitID), http.StatusFound)
 		return nil
+	}
+
+	if repo.ExternalRepo != nil {
+		info, err := repoupdater.DefaultClient.RepoLookup(r.Context(), protocol.RepoLookupArgs{ExternalRepo: repo.ExternalRepo})
+		if err != nil {
+			return err
+		}
+		if info.Repo != nil && info.Repo.Links != nil && info.Repo.Links.Commit != "" {
+			url := strings.Replace(info.Repo.Links.Commit, "{commit}", commitID, -1)
+			http.Redirect(w, r, url, http.StatusFound)
+			return nil
+		}
 	}
 
 	w.WriteHeader(http.StatusNotFound)
