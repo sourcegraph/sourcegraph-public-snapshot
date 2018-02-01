@@ -15,6 +15,7 @@ import (
 
 func (n *notifier) emailNotify(ctx context.Context) {
 	if !conf.CanSendEmail() {
+		log15.Warn("cannot send email notification about saved search (SMTP server not in site configuration")
 		return
 	}
 
@@ -79,6 +80,7 @@ View the new results on Sourcegraph: {{.URL}}
 
 func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32, query api.SavedQuerySpecAndConfig, template txemail.ParsedTemplates) {
 	if !conf.CanSendEmail() {
+		log15.Warn("cannot send email notification about saved search (SMTP server not in site configuration")
 		return
 	}
 
