@@ -104,6 +104,7 @@ func main() {
 	procfile := []string{
 		`gitserver: gitserver`,
 		`indexer: indexer`,
+		`query-runner: query-runner`,
 		`lsp-proxy: lsp-proxy`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
