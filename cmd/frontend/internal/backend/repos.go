@@ -13,6 +13,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -73,11 +74,14 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 			return nil, err
 		}
 		if result.Repo != nil {
+			// Allow anonymous users on Sourcegraph.com to enable repositories just by visiting them, but
+			// everywhere else, require server admins to explicitly enable repositories.
+			enableAutoAddedRepos := envvar.SourcegraphDotComMode()
 			if err := s.TryInsertNew(ctx, api.InsertRepoOp{
 				URI:          result.Repo.URI,
 				Description:  result.Repo.Description,
 				Fork:         result.Repo.Fork,
-				Enabled:      true,
+				Enabled:      enableAutoAddedRepos,
 				ExternalRepo: result.Repo.ExternalRepo,
 			}); err != nil {
 				return nil, err

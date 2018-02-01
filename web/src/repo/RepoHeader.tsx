@@ -190,7 +190,11 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     {!this.props.repo.enabled && (
                         <div
                             className="alert alert-danger repo-header__alert"
-                            data-tooltip="Only site admins can access disabled repositories. Go to Settings to enable it."
+                            data-tooltip={
+                                this.props.repo.viewerCanAdminister
+                                    ? 'Only site admins can access disabled repositories. Go to Settings to enable it.'
+                                    : 'Ask the site admin to enable this repository to view and search it.'
+                            }
                         >
                             Repository disabled
                         </div>
