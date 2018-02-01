@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/pkg/errors"
@@ -155,7 +157,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 }
 
 func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(frontendURL)
+	u, err := url.Parse(api.InternalClient.URL)
 	if err != nil {
 		return "", err
 	}
