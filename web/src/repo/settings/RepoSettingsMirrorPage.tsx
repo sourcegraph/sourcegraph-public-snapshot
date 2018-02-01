@@ -271,7 +271,6 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                         onDidUpdateRepository={this.onDidUpdateRepository}
                     />
                 }
-                <hr />
                 <div className="alert alert-notice repo-settings-mirror-page__troubleshooting">
                     Problems cloning or updating this repository?
                     <ul className="repo-settings-mirror-page__steps">
