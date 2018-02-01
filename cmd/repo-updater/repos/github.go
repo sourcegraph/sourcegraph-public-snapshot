@@ -141,7 +141,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		return nil, false, nil // refers to a non-GitHub repo
 	}
 
-	// Support bypassing GitHub API, for emergency rate limit evasion.
+	// Support bypassing GitHub API, for rate limit evasion.
 	bypass := bypassGitHubAPI
 	if !bypass && minGitHubAPIRateLimit > 0 {
 		remaining, reset, known := conn.client.RateLimit.Get()
@@ -153,6 +153,12 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	}
 	if bypass {
 		if args.Repo != "" && conn.config.Token == "" {
+			if remaining, reset, known := conn.client.RateLimit.Get(); known {
+				log15.Debug("GetGitHubRepository: bypassing GitHub API", "repo", args.Repo, "rateLimitRemaining", remaining, "rateLimitReset", reset)
+			} else {
+				log15.Debug("GetGitHubRepository: bypassing GitHub API", "repo", args.Repo)
+			}
+
 			// It's important to still check cloneability, so we don't add a bunch of junk GitHub repos that don't
 			// exist (like github.com/settings/profile) or that are private and not on Sourcegraph.com.
 			remoteURL := "https://" + string(args.Repo)
@@ -170,6 +176,8 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		}
 		return nil, false, nil
 	}
+
+	log15.Debug("GetGitHubRepository", "repo", args.Repo, "externalRepo", args.ExternalRepo)
 
 	canUseGraphQLAPI := conn.config.Token != "" // GraphQL API requires authentication
 	if canUseGraphQLAPI && args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
