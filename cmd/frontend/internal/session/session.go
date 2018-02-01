@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
@@ -49,12 +50,46 @@ func NewRedisStore(secureCookie bool) sessions.Store {
 	}
 	rstore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
 	if err != nil {
-		log15.Warn("Redis (used for session store) failed to respond to ping. Will continue trying to establish connection in background.", "err", err)
+		waitForRedis(rstore)
 	}
 	rstore.Options.Path = "/"
 	rstore.Options.HttpOnly = true
 	rstore.Options.Secure = secureCookie
 	return rstore
+}
+
+// waitForRedis waits up to a certain timeout for Redis to become reachable, to reduce the
+// likelihood of the HTTP handlers starting to serve requests while Redis (and therefore session
+// data) is still unavailable. After the timeout has elapsed, if Redis is still unreachable, it
+// continues anyway (because that's probably better than the site not coming up at all).
+func waitForRedis(s *redistore.RediStore) {
+	ping := func() error {
+		conn := s.Pool.Get()
+		defer conn.Close()
+		data, err := conn.Do("PING")
+		if err != nil {
+			return err
+		}
+		if data != "PONG" {
+			return errors.New("no pong received")
+		}
+		return nil
+	}
+
+	const timeout = 5 * time.Second
+	deadline := time.Now().Add(timeout)
+	var err error
+	for {
+		time.Sleep(150 * time.Millisecond)
+		err = ping()
+		if err == nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			log15.Warn("Redis (used for session store) failed to become reachable. Will continue trying to establish connection in background.", "timeout", timeout, "error", err)
+			return
+		}
+	}
 }
 
 // StartNewSession starts a new session with authentication for the given uid. If expiryPeriod is zero
