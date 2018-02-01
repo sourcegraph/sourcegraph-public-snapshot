@@ -43,13 +43,13 @@ func SetSessionStore(s sessions.Store) {
 	sessionStore = s
 }
 
-func MustNewRedisStore(secureCookie bool) sessions.Store {
+func NewRedisStore(secureCookie bool) sessions.Store {
 	if sessionStoreRedis == "" {
 		sessionStoreRedis = ":6379"
 	}
 	rstore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
 	if err != nil {
-		panic(err)
+		log15.Warn("Redis (used for session store) failed to respond to ping. Will continue trying to establish connection in background.", "err", err)
 	}
 	rstore.Options.Path = "/"
 	rstore.Options.HttpOnly = true

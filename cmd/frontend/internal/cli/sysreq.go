@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/kr/text"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
@@ -56,7 +57,7 @@ func checkSysReqs(ctx context.Context, w io.Writer) error {
 	}
 
 	if failed != nil {
-		return fmt.Errorf("system requirement checks failed: %v (see above for more information)", failed)
+		log15.Error("System requirement checks failed (see above for more information).", "failed", failed)
 	}
 	return nil
 }
