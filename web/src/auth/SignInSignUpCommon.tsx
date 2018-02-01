@@ -12,7 +12,7 @@ export const PasswordInput: React.SFC<
             className={`form-control ${props.className || ''}`}
             type="password"
             placeholder={props.placeholder === undefined ? 'Password' : props.placeholder}
-            minLength={window.context.debug ? 1 : 6}
+            required={true}
             ref={inputRef}
         />
     )
