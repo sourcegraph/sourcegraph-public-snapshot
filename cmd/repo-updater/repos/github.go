@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/httpcache"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -150,15 +152,20 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 		}
 	}
 	if bypass {
-		if args.Repo != "" {
+		if args.Repo != "" && conn.config.Token == "" {
+			// It's important to still check cloneability, so we don't add a bunch of junk GitHub repos that don't
+			// exist (like github.com/settings/profile) or that are private and not on Sourcegraph.com.
+			remoteURL := "https://" + string(args.Repo)
+			if err := gitserver.DefaultClient.IsRepoCloneable(ctx, gitserver.Repo{Name: args.Repo, URL: remoteURL}); err != nil {
+				return nil, true, errors.Wrap(github.ErrNotFound, fmt.Sprintf("IsRepoCloneable: %s", err))
+			}
+
 			return &protocol.RepoInfo{
 				URI:          args.Repo,
 				ExternalRepo: nil,
 				Description:  "",
 				Fork:         false,
-				VCS: protocol.VCSInfo{
-					URL: "https://" + string(args.Repo),
-				},
+				VCS:          protocol.VCSInfo{URL: remoteURL},
 			}, true, nil
 		}
 		return nil, false, nil
