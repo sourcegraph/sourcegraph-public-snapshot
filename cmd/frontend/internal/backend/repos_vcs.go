@@ -12,6 +12,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -81,19 +82,25 @@ func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver
 }
 
 func quickGitserverRepoInfo(repo *types.Repo) *gitserver.Repo {
-	if envvar.SourcegraphDotComMode() {
-		// If it is possible to 100% correctly determine it statically, use a fast path. This is
-		// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories on
-		// Sourcegraph.com, which reduces rate limit pressure significantly.
-		//
-		// This fails for private repositories, which require authentication in the URL userinfo.
-		if strings.HasPrefix(strings.ToLower(string(repo.URI)), "github.com/") {
+	// If it is possible to 100% correctly determine it statically, use a fast path. This is
+	// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories
+	// (especially on Sourcegraph.com), which reduces rate limit pressure significantly.
+	//
+	// This fails for private repositories, which require authentication in the URL userinfo.
+
+	switch {
+	case strings.HasPrefix(strings.ToLower(string(repo.URI)), "github.com/"):
+		if envvar.SourcegraphDotComMode() || !conf.HasGitHubDotComToken() {
 			return &gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI)}
 		}
-		if strings.HasPrefix(strings.ToLower(string(repo.URI)), "gitlab.com/") {
+
+	case strings.HasPrefix(strings.ToLower(string(repo.URI)), "gitlab.com/"):
+		if envvar.SourcegraphDotComMode() || !conf.HasGitLabDotComToken() {
 			return &gitserver.Repo{Name: repo.URI, URL: "https://" + string(repo.URI) + ".git"}
 		}
 	}
+
+	// Fall back to performing full RepoLookup, which will hit the code host.
 	return nil
 }
 
