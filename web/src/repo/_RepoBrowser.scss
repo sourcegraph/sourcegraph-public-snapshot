@@ -5,10 +5,15 @@
     &__header {
         display: flex;
         justify-content: space-between;
+        align-items: center;
     }
     &__actions {
         display: flex;
         align-items: center;
+    }
+
+    &__notice {
+        margin: 1rem 0 0.5rem 0;
     }
 
     &__filtered-connection {
