@@ -28,7 +28,7 @@ var defaultLogger = new()
 // to wait for the frontend to start.
 //
 // Note: This does not block since it creates a new goroutine.
-func LogEvent(userEmail *string, eventLabel string, eventProperties map[string]string) {
+func LogEvent(userEmail string, eventLabel string, eventProperties map[string]string) {
 	go func() {
 		err := defaultLogger.logEvent(userEmail, eventLabel, eventProperties)
 		if err != nil {
@@ -57,14 +57,14 @@ func new() *eventLogger {
 
 // newPayload generates a new Payload struct for a provided event
 // in the context of the EventLogger client
-func (logger *eventLogger) newPayload(userEmail *string, event *Event) *Payload {
+func (logger *eventLogger) newPayload(userEmail string, event *Event) *Payload {
 	userInfo := &UserInfo{
 		DomainUserID: "sourcegraph-backend-anonymous",
 	}
-	if userEmail != nil {
+	if userEmail != "" {
 		userInfo = &UserInfo{
 			DomainUserID: uuid.New().String(),
-			Email:        *userEmail,
+			Email:        userEmail,
 		}
 	}
 	return &Payload{
@@ -89,7 +89,7 @@ func (logger *eventLogger) newPayload(userEmail *string, event *Event) *Payload 
 }
 
 // logEvent sends a payload representing some user event to the InternalClient telemetry API
-func (logger *eventLogger) logEvent(userEmail *string, eventLabel string, eventProperties map[string]string) error {
+func (logger *eventLogger) logEvent(userEmail string, eventLabel string, eventProperties map[string]string) error {
 	event := &Event{
 		Type:            eventLabel,
 		EventID:         uuid.New().String(),
