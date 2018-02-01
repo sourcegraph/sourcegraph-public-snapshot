@@ -50,7 +50,7 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo := backend.Repos.CachedOpenVCS(r.commit.repo.repo)
+	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
 	contents, err := vcsrepo.ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return "", err
@@ -68,7 +68,7 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo := backend.Repos.CachedOpenVCS(r.commit.repo.repo)
+	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
 	stat, err := vcsrepo.Stat(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return false, err
@@ -232,7 +232,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo := backend.Repos.CachedOpenVCS(r.commit.repo.repo)
+	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
 	code, err := vcsrepo.ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error
 }
 
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
-	vcsrepo := backend.Repos.CachedOpenVCS(r.commit.repo.repo)
+	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
 	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
 		Head: api.CommitID(r.commit.oid),
 		N:    limit,
@@ -283,7 +283,7 @@ func (r *fileResolver) BlameRaw(ctx context.Context, args *struct {
 	StartLine int32
 	EndLine   int32
 }) (string, error) {
-	vcsrepo := backend.Repos.CachedOpenVCS(r.commit.repo.repo)
+	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
 	rawBlame, err := vcsrepo.BlameFileRaw(ctx, r.path, &vcs.BlameOptions{
 		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
@@ -300,7 +300,7 @@ func (r *fileResolver) Blame(ctx context.Context,
 		StartLine int32
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
-	vcsrepo := backend.Repos.CachedOpenVCS(r.commit.repo.repo)
+	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
 	hunks, err := vcsrepo.BlameFile(ctx, r.path, &vcs.BlameOptions{
 		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),

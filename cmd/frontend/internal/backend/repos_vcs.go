@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
@@ -18,27 +19,49 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
 
-// OpenVCS returns a handle to the underlying Git repository (i.e., on gitserver).
-func (repos) OpenVCS(ctx context.Context, repo *types.Repo) (vcs.Repository, error) {
-	if Mocks.Repos.OpenVCS != nil {
-		return Mocks.Repos.OpenVCS(ctx, repo)
+// RemoteVCS returns a handle to the underlying Git repository (on gitserver) that is cloned or updated on demand
+// (if needed), after checking with the repository's original code host to obtain the latest Git remote URL for the
+// repository.
+//
+// When to use RemoteVCS vs. CachedVCS?
+//
+// A caller should use RemoteVCS if it:
+//  - prefers to wait (on a Git remote update) instead of fail if the Git repository is out of date
+//  - needs to ensure that the repository still exists on the original code host
+//
+// A caller should use CachedVCS if it:
+//  - prefers to fail instead of block (on a Git remote update) if the Git repository is out of date
+//  - doesn't care if the repository still exists on the original code host
+func (repos) RemoteVCS(ctx context.Context, repo *types.Repo) (vcs.Repository, error) {
+	if Mocks.Repos.VCS != nil {
+		return Mocks.Repos.VCS(repo.URI)
 	}
 	gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
-	return gitcmd.Open(gitserverRepo.Name, gitserverRepo.URL), err
+	return (repos{}).VCS(gitserverRepo), err
 }
 
-// CachedOpenVCS returns a handle to the underlying Git repository (on gitserver), without the ability to clone or
-// update the repository from the remote source if needed.
-func (repos) CachedOpenVCS(repo *types.Repo) vcs.Repository {
+// CachedVCS returns a handle to the underlying Git repository on gitserver, without attempting to check that the
+// repository exists on its original code host or that gitserver's mirror is up to date.
+//
+// See (repos).RemoteVCS for guidance on when to use CachedVCS vs. RemoteVCS.
+func (repos) CachedVCS(repo *types.Repo) vcs.Repository {
+	if Mocks.Repos.VCS != nil {
+		vcsrepo, err := Mocks.Repos.VCS(repo.URI)
+		if err != nil {
+			panic(fmt.Sprintf("CachedVCS: Mock.Repos.VCS(%q) returned error: %s", repo.URI, err))
+		}
+		return vcsrepo
+	}
 	gitserverRepo := quickGitserverRepoInfo(repo)
 	if gitserverRepo == nil {
 		gitserverRepo = &gitserver.Repo{Name: repo.URI}
 	}
-	return (repos{}).VCSForGitserverRepo(*gitserverRepo)
+	return (repos{}).VCS(*gitserverRepo)
 }
 
-// VCSForGitserverRepo returns a handle to the Git repository specified by repo.
-func (repos) VCSForGitserverRepo(repo gitserver.Repo) vcs.Repository {
+// VCS returns a handle to the Git repository specified by repo. Callers, unless they already have a gitserver.Repo
+// value, should use either RemoteVCS or CachedVCS instead of this method.
+func (repos) VCS(repo gitserver.Repo) vcs.Repository {
 	return gitcmd.Open(repo.Name, repo.URL)
 }
 
@@ -90,7 +113,8 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.URI, "rev": rev}, &err)
 	defer done()
 
-	vcsrepo, err := Repos.OpenVCS(ctx, repo)
+	// Try to get latest remote URL, but continue even if that fails.
+	vcsrepo, err := Repos.RemoteVCS(ctx, repo)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
@@ -111,7 +135,8 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	vcsrepo, err := Repos.OpenVCS(ctx, repo)
+	// Try to get latest remote URL, but continue even if that fails.
+	vcsrepo, err := Repos.RemoteVCS(ctx, repo)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}

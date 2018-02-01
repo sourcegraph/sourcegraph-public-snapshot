@@ -204,7 +204,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	ctx, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
 
-	vcsrepo := backend.Repos.CachedOpenVCS(repo)
+	vcsrepo := backend.Repos.CachedVCS(repo)
 	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
 		Query: op.textSearchOptions,
 		Paths: vcs.PathOptions{

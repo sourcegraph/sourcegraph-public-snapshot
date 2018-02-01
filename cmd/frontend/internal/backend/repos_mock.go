@@ -25,7 +25,7 @@ type MockRepos struct {
 	GetInventory         func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo api.RepoURI) (err error)
-	OpenVCS              func(ctx context.Context, repo *types.Repo) (vcs.Repository, error)
+	VCS                  func(repo api.RepoURI) (vcs.Repository, error)
 }
 
 var errRepoNotFound = &errcode.Mock{
@@ -121,23 +121,14 @@ func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commi
 	return
 }
 
-func (s *MockRepos) MockOpenVCS(t *testing.T, wantRepo api.RepoURI, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+func (s *MockRepos) MockVCS(t *testing.T, wantRepo api.RepoURI, mockVCSRepo vcstesting.MockRepository) (called *bool) {
 	called = new(bool)
-	s.OpenVCS = func(ctx context.Context, repo *types.Repo) (vcs.Repository, error) {
+	s.VCS = func(repo api.RepoURI) (vcs.Repository, error) {
 		*called = true
-		if repo.URI != wantRepo {
-			t.Errorf("got repo %q, want %q", repo.URI, wantRepo)
+		if repo != wantRepo {
+			t.Errorf("got repo %q, want %q", repo, wantRepo)
 			return nil, errRepoNotFound
 		}
-		return mockVCSRepo, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockOpenVCS_NoCheck(t *testing.T, mockVCSRepo vcstesting.MockRepository) (called *bool) {
-	called = new(bool)
-	s.OpenVCS = func(ctx context.Context, repo *types.Repo) (vcs.Repository, error) {
-		*called = true
 		return mockVCSRepo, nil
 	}
 	return

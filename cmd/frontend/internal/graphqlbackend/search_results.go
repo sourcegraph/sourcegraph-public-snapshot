@@ -227,7 +227,7 @@ func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID api.RepoID
 	if err != nil {
 		return nil, err
 	}
-	vcsrepo = backend.Repos.CachedOpenVCS(repo)
+	vcsrepo = backend.Repos.CachedVCS(repo)
 	b.cachedVCSReposMu.Lock()
 	b.cachedVCSRepos[repoID] = vcsrepo
 	b.cachedVCSReposMu.Unlock()
@@ -248,7 +248,7 @@ func (sr *searchResults) blameFileMatch(ctx context.Context, fm *fileMatch, cach
 
 	// Blame the first line match.
 	lm := fm.LineMatches()[0]
-	hunks, err := backend.Repos.VCSForGitserverRepo(gitserver.Repo{Name: fm.repo.URI}).BlameFile(ctx, fm.JPath, &vcs.BlameOptions{
+	hunks, err := backend.Repos.VCS(gitserver.Repo{Name: fm.repo.URI}).BlameFile(ctx, fm.JPath, &vcs.BlameOptions{
 		NewestCommit: fm.commitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),

@@ -297,7 +297,7 @@ func searchRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.R
 		return mockSearchRepo(ctx, repo, gitserverRepo, rev, info)
 	}
 
-	commit, err := backend.Repos.VCSForGitserverRepo(gitserverRepo).ResolveRevision(ctx, rev)
+	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, rev)
 	if err != nil {
 		return nil, false, err
 	}
