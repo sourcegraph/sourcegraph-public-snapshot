@@ -1,4 +1,4 @@
-.repo-browser {
+.explore-page {
     margin-top: 1rem;
     width: 100%;
 
@@ -76,7 +76,7 @@
 }
 
 .theme-light {
-    .repo-browser {
+    .explore-page {
         &__item {
             border-color: $color-light-border;
             &-header {

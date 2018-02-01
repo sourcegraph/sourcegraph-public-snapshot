@@ -351,6 +351,7 @@ hr {
 }
 
 @import './api/APIConsole';
+@import './explore/ExplorePage';
 @import './search/ExampleSearches';
 @import './search/QueryButton';
 @import './search/SavedQueries';
@@ -371,7 +372,6 @@ hr {
 @import './auth/LicensePage';
 @import './repo/GitRefTag';
 @import './repo/Repository';
-@import './repo/RepoBrowser';
 @import './repo/RepoContainer';
 @import './repo/settings/RepoSettingsArea';
 @import './repo/Tooltips';

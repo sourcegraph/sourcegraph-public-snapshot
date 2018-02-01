@@ -20,25 +20,25 @@ interface RepositoryNodeProps {
 }
 
 export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
-    <li key={repo.id} className="repo-browser__item">
-        <div className="repo-browser__item-header">
-            <Link to={`/${repo.uri}`} className="repo-browser__item-path">
+    <li key={repo.id} className="explore-page__item">
+        <div className="explore-page__item-header">
+            <Link to={`/${repo.uri}`} className="explore-page__item-path">
                 <RepoFileLink repoPath={repo.uri} disableLinks={true} />
             </Link>
             {repo.mirrorInfo.cloneInProgress && (
-                <span className="repo-browser__item-cloning">
+                <span className="explore-page__item-cloning">
                     <small>
                         <Loader className="icon-inline" /> Cloning
                     </small>
                 </span>
             )}
         </div>
-        <div className="repo-browser__item-spacer" />
-        <div className="repo-browser__item-actions">
+        <div className="explore-page__item-spacer" />
+        <div className="explore-page__item-actions">
             {repo.viewerCanAdminister && (
                 <Link
                     to={`/${repo.uri}/-/settings`}
-                    className="btn btn-secondary btn-sm repo-browser__item-action"
+                    className="btn btn-secondary btn-sm explore-page__item-action"
                     data-tooltip="Repository settings"
                 >
                     <GearIcon className="icon-inline" />
@@ -46,7 +46,7 @@ export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) =
             )}
             <Link
                 to={`/${repo.uri}`}
-                className="btn btn-secondary btn-sm repo-browser__item-action"
+                className="btn btn-secondary btn-sm explore-page__item-action"
                 data-tooltip="Search and explore this repository"
             >
                 <RepoIcon className="icon-inline" />&nbsp;View
@@ -55,7 +55,7 @@ export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) =
     </li>
 )
 
-interface RepoBrowserProps extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<any> {
     user: GQL.IUser | null
 }
 
@@ -65,13 +65,16 @@ interface State {
 
 class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
 
-export class RepoBrowser extends React.PureComponent<RepoBrowserProps, State> {
+/**
+ * A page for exploring the repositories on this site.
+ */
+export class ExplorePage extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('Browse')
+        eventLogger.logViewEvent('Explore')
         this.subscriptions.add(
             fetchDisabledRepositoriesCount().subscribe(disabledRepositoriesCount =>
                 this.setState({ disabledRepositoriesCount })
@@ -85,13 +88,13 @@ export class RepoBrowser extends React.PureComponent<RepoBrowserProps, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repo-browser">
+            <div className="explore-page">
                 <PageTitle title="Repositories" />
-                <div className="repo-browser__header">
-                    <h2>Repositories</h2>
+                <div className="explore-page__header">
+                    <h2>Explore repositories</h2>
                     {this.props.user &&
                         this.props.user.siteAdmin && (
-                            <div className="repo-browser__actions">
+                            <div className="explore-page__actions">
                                 <Link
                                     to="/site-admin/repositories"
                                     className="btn btn-primary btn-sm site-admin-page__actions-btn"
@@ -104,7 +107,7 @@ export class RepoBrowser extends React.PureComponent<RepoBrowserProps, State> {
                 {this.props.user &&
                     this.props.user.siteAdmin &&
                     this.state.disabledRepositoriesCount && (
-                        <div className="alert alert-notice repo-browser__notice">
+                        <div className="alert alert-notice explore-page__notice">
                             {this.state.disabledRepositoriesCount}{' '}
                             {pluralize(
                                 'disabled repository is',
@@ -121,8 +124,8 @@ export class RepoBrowser extends React.PureComponent<RepoBrowserProps, State> {
                         </div>
                     )}
                 <FilteredRepositoryConnection
-                    className="repo-browser__filtered-connection"
-                    listClassName="repo-browser__items"
+                    className="explore-page__filtered-connection"
+                    listClassName="explore-page__items"
                     noun="repository"
                     pluralNoun="repositories"
                     queryConnection={fetchAllRepositoriesAndPollIfAnyCloning}

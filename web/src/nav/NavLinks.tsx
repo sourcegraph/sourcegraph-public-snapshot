@@ -62,8 +62,8 @@ export class NavLinks extends React.Component<Props, State> {
                     </Link>
                 )}
                 {canListAllRepositories && (
-                    <Link to="/browse" className="nav-links__link">
-                        Repositories
+                    <Link to="/explore" className="nav-links__link">
+                        Explore
                     </Link>
                 )}
                 {this.state.user &&

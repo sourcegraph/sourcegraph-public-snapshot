@@ -42,7 +42,7 @@ const (
 	routeSettings       = "settings"
 	routeSiteAdmin      = "site-admin"
 	routePasswordReset  = "password-reset"
-	routeBrowseRepos    = "browse"
+	routeExplore        = "explore"
 	routeAPIConsole     = "api-console"
 	routeSearchScope    = "scope"
 	routeAboutSubdomain = "about-subdomain"
@@ -105,7 +105,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(routePasswordReset)
-	r.Path("/browse").Methods("GET").Name(routeBrowseRepos)
+	r.Path("/explore").Methods("GET").Name(routeExplore)
 	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 	r.Path("/search/scope/{scope}").Methods("GET").Name(routeSearchScope)
@@ -153,7 +153,7 @@ func initRouter() {
 	router.Get(routeSettings).Handler(handler(serveBasicPageString("Settings - Sourcegraph")))
 	router.Get(routeSiteAdmin).Handler(handler(serveBasicPageString("Admin - Sourcegraph")))
 	router.Get(routePasswordReset).Handler(handler(serveBasicPageString("Reset password - Sourcegraph")))
-	router.Get(routeBrowseRepos).Handler(handler(serveBasicPageString("Browse repositories - Sourcegraph")))
+	router.Get(routeExplore).Handler(handler(serveBasicPageString("Explore - Sourcegraph")))
 	router.Get(routeAPIConsole).Handler(handler(serveBasicPageString("API explorer - Sourcegraph")))
 	router.Get(routeRepoSettings).Handler(handler(serveBasicPageString("Repository settings - Sourcegraph")))
 	router.Get(routeSearchScope).Handler(handler(serveBasicPageString("Search scope - Sourcegraph")))

@@ -7,9 +7,9 @@ import { SignUpPage } from './auth/SignUpPage'
 import { CommentsPage } from './comments/CommentsPage'
 import { ThreadPage } from './comments/ThreadPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
+import { ExplorePage } from './explore/ExplorePage'
 import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
-import { RepoBrowser } from './repo/RepoBrowser'
 import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
 import { SavedQueriesPage } from './search/SavedQueries'
@@ -118,8 +118,8 @@ export const routes: LayoutRouteProps[] = [
         forceNarrowWidth: true,
     },
     {
-        path: '/browse',
-        component: canListAllRepositories ? RepoBrowser : ErrorNotSupportedPage,
+        path: '/explore',
+        component: canListAllRepositories ? ExplorePage : ErrorNotSupportedPage,
         exact: true,
         forceNarrowWidth: true,
     },
