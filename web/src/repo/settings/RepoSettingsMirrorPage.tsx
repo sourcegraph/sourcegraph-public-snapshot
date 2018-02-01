@@ -5,12 +5,14 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { interval } from 'rxjs/observable/interval'
+import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { takeUntil } from 'rxjs/operators/takeUntil'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../../components/PageTitle'
@@ -20,13 +22,15 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 
-interface MirrorRepositoryActionContainerProps {
+interface UpdateMirrorRepositoryActionContainerProps {
     repo: GQL.IRepository
     onDidUpdateRepository: () => void
+    disabled: boolean
+    disabledReason: string | undefined
 }
 
-class UpdateMirrorRepositoryActionContainer extends React.PureComponent<MirrorRepositoryActionContainerProps> {
-    private componentUpdates = new Subject<MirrorRepositoryActionContainerProps>()
+class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMirrorRepositoryActionContainerProps> {
+    private componentUpdates = new Subject<UpdateMirrorRepositoryActionContainerProps>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -50,7 +54,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<MirrorRe
         )
     }
 
-    public componentWillReceiveProps(props: MirrorRepositoryActionContainerProps): void {
+    public componentWillReceiveProps(props: UpdateMirrorRepositoryActionContainerProps): void {
         this.componentUpdates.next(props)
     }
 
@@ -97,7 +101,8 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<MirrorRe
                 title={title}
                 description={<div>{description}</div>}
                 buttonLabel={buttonLabel}
-                buttonDisabled={buttonDisabled}
+                buttonDisabled={buttonDisabled || this.props.disabled}
+                buttonSubtitle={this.props.disabledReason}
                 flashText="Added to queue"
                 run={this.updateMirrorRepository}
             />
@@ -112,6 +117,11 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<MirrorRe
     }
 }
 
+interface CheckMirrorRepositoryConnectionActionContainerProps {
+    repo: GQL.IRepository
+    onDidUpdateReachability: (reachable: boolean | undefined) => void
+}
+
 interface CheckMirrorRepositoryConnectionActionContainerState {
     loading: boolean
     result?: GQL.ICheckMirrorRepositoryConnectionResult | null
@@ -119,10 +129,48 @@ interface CheckMirrorRepositoryConnectionActionContainerState {
 }
 
 class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent<
-    MirrorRepositoryActionContainerProps,
+    CheckMirrorRepositoryConnectionActionContainerProps,
     CheckMirrorRepositoryConnectionActionContainerState
 > {
     public state: CheckMirrorRepositoryConnectionActionContainerState = { loading: false }
+
+    private checkRequests = new Subject<void>()
+    private subscriptions = new Subscription()
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.checkRequests
+                .pipe(
+                    tap(() => {
+                        this.setState({ errorDescription: undefined, result: undefined, loading: true })
+                        this.props.onDidUpdateReachability(undefined)
+                    }),
+                    switchMap(() =>
+                        checkMirrorRepositoryConnection({ repository: this.props.repo.id }).pipe(
+                            catchError(error => {
+                                this.setState({ errorDescription: error.message, result: undefined, loading: false })
+                                this.props.onDidUpdateReachability(false)
+                                return []
+                            })
+                        )
+                    )
+                )
+                .subscribe(
+                    result => {
+                        this.setState({ result, loading: false })
+                        this.props.onDidUpdateReachability(result.error === null)
+                    },
+                    error => console.log(error)
+                )
+        )
+
+        // Run the check upon initial mount, so the user sees the information without needing to click.
+        this.checkRequests.next()
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
 
     public render(): JSX.Element | null {
         return (
@@ -171,16 +219,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
         )
     }
 
-    private checkMirrorRepositoryConnection = () => {
-        this.setState({ errorDescription: undefined, result: undefined, loading: true })
-        const p = checkMirrorRepositoryConnection({ repository: this.props.repo.id })
-            .toPromise()
-            .then(
-                result => this.setState({ result, loading: false }),
-                err => this.setState({ errorDescription: err.message, result: undefined, loading: false })
-            )
-        return p
-    }
+    private checkMirrorRepositoryConnection = () => this.checkRequests.next()
 }
 
 interface Props extends RouteComponentProps<any> {
@@ -194,6 +233,11 @@ interface State {
      * The repository object, refreshed after we make changes that modify it.
      */
     repo: GQL.IRepository
+
+    /**
+     * Whether the repository connection check reports that the repository is reachable.
+     */
+    reachable?: boolean
 
     loading: boolean
     error?: string
@@ -263,33 +307,42 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                     <UpdateMirrorRepositoryActionContainer
                         repo={this.state.repo}
                         onDidUpdateRepository={this.onDidUpdateRepository}
+                        disabled={typeof this.state.reachable === 'boolean' && !this.state.reachable}
+                        disabledReason={
+                            typeof this.state.reachable === 'boolean' && !this.state.reachable
+                                ? 'Not reachable'
+                                : undefined
+                        }
                     />
                 }
                 {
                     <CheckMirrorRepositoryConnectionActionContainer
                         repo={this.state.repo}
-                        onDidUpdateRepository={this.onDidUpdateRepository}
+                        onDidUpdateReachability={this.onDidUpdateReachability}
                     />
                 }
-                <div className="alert alert-notice repo-settings-mirror-page__troubleshooting">
-                    Problems cloning or updating this repository?
-                    <ul className="repo-settings-mirror-page__steps">
-                        <li className="repo-settings-mirror-page__step">
-                            Press <strong>Check connection</strong> above to see log output from attempting to reach the
-                            remote repository.
-                        </li>
-                        <li className="repo-settings-mirror-page__step">
-                            Consult{' '}
-                            <a href="https://about.sourcegraph.com/docs/server/config/repositories">
-                                Sourcegraph Server repositories documentation
-                            </a>{' '}
-                            for resolving authentication issues (such as HTTPS certificates and SSH keys).
-                        </li>
-                        <li className="repo-settings-mirror-page__step">
-                            <a href="mailto:support@sourcegraph.com">Contact support</a> for further help.
-                        </li>
-                    </ul>
-                </div>
+                {typeof this.state.reachable === 'boolean' &&
+                    !this.state.reachable && (
+                        <div className="alert alert-notice repo-settings-mirror-page__troubleshooting">
+                            Problems cloning or updating this repository?
+                            <ul className="repo-settings-mirror-page__steps">
+                                <li className="repo-settings-mirror-page__step">
+                                    Inspect the <strong>Check connection</strong> logs above to see log output from
+                                    attempting to reach the remote repository.
+                                </li>
+                                <li className="repo-settings-mirror-page__step">
+                                    Consult{' '}
+                                    <a href="https://about.sourcegraph.com/docs/server/config/repositories">
+                                        Sourcegraph Server repositories documentation
+                                    </a>{' '}
+                                    for resolving authentication issues (such as HTTPS certificates and SSH keys).
+                                </li>
+                                <li className="repo-settings-mirror-page__step">
+                                    <a href="mailto:support@sourcegraph.com">Contact support</a> for further help.
+                                </li>
+                            </ul>
+                        </div>
+                    )}
             </div>
         )
     }
@@ -298,4 +351,6 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
         this.repoUpdates.next()
         this.props.onDidUpdateRepository({})
     }
+
+    private onDidUpdateReachability = (reachable: boolean | undefined) => this.setState({ reachable })
 }

@@ -23,6 +23,7 @@ interface Props {
     description: React.ReactFragment
     buttonClassName?: string
     buttonLabel: React.ReactFragment
+    buttonSubtitle?: string
     buttonDisabled?: boolean
 
     /** The message to briefly display below the button when the action is successful. */
@@ -64,20 +65,27 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                         <button
                             className={`btn ${this.props.buttonClassName || 'btn-primary'} action-container__btn`}
                             onClick={this.onClick}
+                            data-tooltip={this.props.buttonSubtitle}
                             disabled={this.props.buttonDisabled || this.state.loading}
                         >
                             {this.props.buttonLabel}
                         </button>
-                        {this.props.flashText && (
-                            <div
-                                className={
-                                    'action-container__flash' +
-                                    (this.state.flash ? ' action-container__flash--visible' : '')
-                                }
-                            >
-                                <small>{this.props.flashText}</small>
+                        {this.props.buttonSubtitle && (
+                            <div className="action-container__btn-subtitle">
+                                <small>{this.props.buttonSubtitle}</small>
                             </div>
                         )}
+                        {!this.props.buttonSubtitle &&
+                            this.props.flashText && (
+                                <div
+                                    className={
+                                        'action-container__flash' +
+                                        (this.state.flash ? ' action-container__flash--visible' : '')
+                                    }
+                                >
+                                    <small>{this.props.flashText}</small>
+                                </div>
+                            )}
                     </>
                 }
             />
