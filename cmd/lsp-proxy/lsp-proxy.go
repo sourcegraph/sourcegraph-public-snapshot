@@ -11,6 +11,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/keegancsmith/tmpfriend"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -27,7 +28,7 @@ func init() {
 
 var (
 	addr     = flag.String("addr", ":4388", "proxy server TCP listen address")
-	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
+	profbind = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 	trace    = flag.Bool("trace", false, "print traces of JSON-RPC 2.0 requests/responses")
 )
 
@@ -47,6 +48,11 @@ func main() {
 func run() error {
 	tracer.Init("lsp-proxy")
 
+	// Filter log output by level.
+	if lvl, err := log15.LvlFromString(env.LogLevel); err == nil {
+		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
+	}
+
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
 
@@ -58,16 +64,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(os.Stderr, "lsp-proxy: listening on", lis.Addr())
+	log15.Info("lsp-proxy: listening", "addr", lis.Addr())
 	p := proxy.New()
 	p.Trace = *trace
-	if *profbind != "" {
+	if profbind != "" {
 		e := debugserver.Endpoint{
 			Name:    "LSP-Proxy Connections",
 			Path:    "/lsp-conns",
 			Handler: &proxy.DebugHandler{Proxy: p},
 		}
-		go debugserver.Start(*profbind, e)
+		go debugserver.Start(profbind, e)
 	}
 	return p.Serve(context.Background(), lis)
 }
