@@ -6,7 +6,6 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,6 +19,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context/ctxhttp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -299,7 +299,7 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 		if resp.Cloneable {
 			return nil
 		}
-		return fmt.Errorf("repository is not cloneable: %s", resp.Reason)
+		return errors.Wrap(ErrNotCloneable, resp.Reason)
 	}
 
 	// Backcompat (gitserver is old, does not recognize ?v=2)
@@ -312,8 +312,10 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 	if cloneable {
 		return nil
 	}
-	return errors.New("repository is not cloneable (no reason given)")
+	return ErrNotCloneable
 }
+
+var ErrNotCloneable = errors.New("repository is not cloneable")
 
 func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoURI) (bool, error) {
 	req := &protocol.IsRepoClonedRequest{

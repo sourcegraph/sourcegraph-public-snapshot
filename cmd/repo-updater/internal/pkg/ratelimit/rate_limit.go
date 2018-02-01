@@ -22,13 +22,13 @@ type Monitor struct {
 }
 
 // Get reports the client's rate limit status (as of the last API response it received).
-func (c *Monitor) Get() (remaining int, reset time.Duration, ok bool) {
+func (c *Monitor) Get() (remaining int, reset time.Duration, known bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if !c.known {
 		return 0, 0, false
 	}
-	return c.remaining, c.reset.Sub(time.Now()), false
+	return c.remaining, c.reset.Sub(time.Now()), true
 }
 
 // RecommendedWaitForBackgroundOp returns the recommended wait time before performing a periodic
