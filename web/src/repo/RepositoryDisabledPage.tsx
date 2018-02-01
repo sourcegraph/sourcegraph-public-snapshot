@@ -48,8 +48,18 @@ export class RepositoryDisabledPage extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     () => {
-                        this.setState({ loading: false })
-                        this.props.onDidUpdateRepository({ enabled: true })
+                        // HACK: Wait (via setTimeout) for gitserver to report the repository as
+                        // cloning (after the call to setRepositoryEnabled above, which will trigger
+                        // a clone). Without this, there is a race condition where immediately after
+                        // clicking this enable button, gitserver reports revision-not-found and not
+                        // cloning-in-progress. We need it to report cloning-in-progress so that the
+                        // browser polls for the clone to be complete.
+                        //
+                        // See https://github.com/sourcegraph/sourcegraph/pull/9304.
+                        setTimeout(() => {
+                            this.setState({ loading: false })
+                            this.props.onDidUpdateRepository({ enabled: true })
+                        }, 1500)
                     },
                     () => this.setState({ loading: false })
                 )
