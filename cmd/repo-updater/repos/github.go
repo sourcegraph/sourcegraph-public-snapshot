@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -110,6 +112,21 @@ var GetGitHubRepositoryMock func(args protocol.RepoLookupArgs) (repo *protocol.R
 func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
 	if GetGitHubRepositoryMock != nil {
 		return GetGitHubRepositoryMock(args)
+	}
+
+	// Avoid GitHub API, for emergency rate limit evasion.
+	if v, _ := strconv.ParseBool(os.Getenv("BYPASS_GITHUB_API")); v {
+		if args.Repo != "" {
+			return &protocol.RepoInfo{
+				URI:          args.Repo,
+				ExternalRepo: nil,
+				Description:  "",
+				Fork:         false,
+				VCS: protocol.VCSInfo{
+					URL: "https://" + string(args.Repo),
+				},
+			}, true, nil
+		}
 	}
 
 	ghrepoToRepoInfo := func(ghrepo *github.Repository, conn *githubConnection) *protocol.RepoInfo {
