@@ -219,7 +219,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 	if isSiteAdmin {
-		alert.description += " As a site admin, you can increase limit by changing maxReposToSearch in site config."
+		alert.description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
 	}
 
 	// TODO(sqs): make this use search scopes from global/org/user settings, not just site config.
