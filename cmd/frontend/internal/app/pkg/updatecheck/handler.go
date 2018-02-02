@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventlogger"
+
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/eventlogger"
 )
 
 var (
