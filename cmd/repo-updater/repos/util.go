@@ -60,7 +60,7 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 			return
 		}
 
-		if op.Enabled {
+		if createdRepo.Enabled {
 			// If newly added, the repository will have been set to enabled upon creation above. Explicitly enqueue a
 			// clone/update now so that those occur in order of most recently pushed.
 			isCloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, createdRepo.URI)
@@ -70,12 +70,12 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 			}
 			if !isCloned {
 				cloned++
-				log15.Debug("fetching repo", "repo", createdRepo.URI, "cloned", isCloned)
-				err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: createdRepo.URI, URL: op.URL})
-				if err != nil {
-					log15.Warn("Error enqueueing Git clone/update for repository", "repo", op.RepoURI, "error", err)
-					return
-				}
+			}
+			log15.Debug("fetching repo", "repo", createdRepo.URI, "cloned", isCloned)
+			err = gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: createdRepo.URI, URL: op.URL})
+			if err != nil {
+				log15.Warn("Error enqueueing Git clone/update for repository", "repo", op.RepoURI, "error", err)
+				return
 			}
 		}
 	}

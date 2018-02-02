@@ -29,6 +29,9 @@ type Repo struct {
 	// URI is a normalized identifier for this repository based on its primary clone
 	// URL. E.g., "github.com/user/repo".
 	URI RepoURI
+	// Enabled is whether the repository is enabled. Disabled repositories are
+	// not accessible by users (except site admins).
+	Enabled bool
 	// IndexedRevision is the revision that the global index is currently based on. It is only used
 	// by the indexer to determine if reindexing is necessary. Setting it to nil/null will cause
 	// the indexer to reindex the next time it gets triggered for this repository.
