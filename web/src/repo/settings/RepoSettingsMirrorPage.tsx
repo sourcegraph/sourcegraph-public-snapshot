@@ -190,7 +190,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                     <>
                         {this.state.errorDescription && (
                             <div className="alert alert-danger action-container__alert">
-                                {this.state.errorDescription}
+                                Error: {this.state.errorDescription}
                             </div>
                         )}
                         {this.state.loading && (
@@ -327,8 +327,8 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                             Problems cloning or updating this repository?
                             <ul className="repo-settings-mirror-page__steps">
                                 <li className="repo-settings-mirror-page__step">
-                                    Inspect the <strong>Check connection</strong> logs above to see log output from
-                                    attempting to reach the remote repository.
+                                    Inspect the <strong>Check connection</strong> error log output to see why the remote
+                                    repository is not reachable.
                                 </li>
                                 <li className="repo-settings-mirror-page__step">
                                     Consult{' '}
