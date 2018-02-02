@@ -191,7 +191,7 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
         startWith(null),
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
-            if (result.nodes.some(n => n.mirrorInfo.cloneInProgress)) {
+            if (result.nodes && result.nodes.some(n => n.mirrorInfo.cloneInProgress)) {
                 setTimeout(() => subject.next(), 5000)
             }
         })
