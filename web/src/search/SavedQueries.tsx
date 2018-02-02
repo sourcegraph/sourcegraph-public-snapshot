@@ -20,6 +20,7 @@ import { SavedQueryFields } from './SavedQueryForm'
 interface Props {
     location: H.Location
     isLightTheme: boolean
+    hideExampleSearches: boolean
 }
 
 interface State {
@@ -152,7 +153,8 @@ export class SavedQueries extends React.Component<Props, State> {
                     </div>
                 )}
                 <div>
-                    {!this.state.isCreating &&
+                    {!this.props.hideExampleSearches &&
+                        !this.state.isCreating &&
                         this.state.isViewingExamples && (
                             <ExampleSearches
                                 isLightTheme={this.props.isLightTheme}
@@ -160,11 +162,12 @@ export class SavedQueries extends React.Component<Props, State> {
                                 onExampleSelected={this.onExampleSelected}
                             />
                         )}
-                    {isPanelOpen && (
-                        <div className="saved-queries__header saved-queries__space">
-                            <h2>Saved searches</h2>
-                        </div>
-                    )}
+                    {!this.props.hideExampleSearches &&
+                        isPanelOpen && (
+                            <div className="saved-queries__header saved-queries__space">
+                                <h2>Saved searches</h2>
+                            </div>
+                        )}
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
                             key={`${savedQuery.query.query}-${i}`}
