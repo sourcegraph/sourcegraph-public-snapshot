@@ -80,7 +80,7 @@ export class SearchPage extends React.Component<Props, State> {
                     </div>
                 </form>
                 <div className="search search-page__query-container">
-                    <SavedQueries {...this.props} />
+                    <SavedQueries {...this.props} hideExampleSearches={true} />
                 </div>
             </div>
         )
