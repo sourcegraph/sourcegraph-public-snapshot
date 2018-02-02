@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	stdlog "log"
+	"strconv"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"encoding/json"
 
@@ -141,19 +144,23 @@ var (
 		Name:      "parse_fails",
 		Help:      "Total number of times a request fails query parsing.",
 	})
+	logBadRequests bool
 )
 
 func init() {
 	prometheus.MustRegister(strictValidationFails)
 	prometheus.MustRegister(validationFails)
 	prometheus.MustRegister(parseFails)
+	logBadRequests, _ = strconv.ParseBool(env.Get("GRAPHQL_LOG_BAD_REQUESTS", "false", ""))
 }
 
 func (s *Schema) exec(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, res *resolvable.Schema) *Response {
 	doc, qErr := query.Parse(queryString)
 	if qErr != nil {
 		parseFails.Inc()
-		stdlog.Printf("graphql parse fails for %s %q: %v", operationName, queryString, qErr)
+		if logBadRequests {
+			stdlog.Printf("graphql parse fails for %s %q: %v", operationName, queryString, qErr)
+		}
 		return &Response{Errors: []*errors.QueryError{qErr}}
 	}
 
@@ -170,11 +177,15 @@ func (s *Schema) exec(ctx context.Context, queryString string, operationName str
 		}
 		if !allNullable {
 			validationFails.Inc()
-			stdlog.Printf("graphql validation fails for %s %q: %v", operationName, queryString, errs[0])
+			if logBadRequests {
+				stdlog.Printf("graphql validation fails for %s %q: %v", operationName, queryString, errs[0])
+			}
 			return &Response{Errors: errs}
 		}
 		strictValidationFails.Inc()
-		stdlog.Printf("graphql strict validation fails for %s %q: %v", operationName, queryString, errs[0])
+		if logBadRequests {
+			stdlog.Printf("graphql strict validation fails for %s %q: %v", operationName, queryString, errs[0])
+		}
 	}
 
 	op, err := getOperation(doc, operationName)
