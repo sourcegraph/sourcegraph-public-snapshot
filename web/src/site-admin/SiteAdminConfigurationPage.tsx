@@ -277,6 +277,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 height={600}
                                 monacoRef={this.monacoRef}
                                 isLightTheme={this.props.isLightTheme}
+                                onDidSave={this.save}
                             />
                             <p className="form-text">
                                 <small>Source: {formatEnvVar(this.state.site.configuration.source)}</small>

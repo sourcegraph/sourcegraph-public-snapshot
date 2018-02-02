@@ -178,6 +178,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     readOnly={this.state.saving}
                     monacoRef={this.monacoRef}
                     isLightTheme={this.props.isLightTheme}
+                    onDidSave={this.save}
                 />
             </div>
         )

@@ -25,6 +25,11 @@ interface Props {
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
+
+    /**
+     * Called when the user presses the key binding for "save" (Ctrl+S/Cmd+S).
+     */
+    onDidSave?: () => void
 }
 
 interface State {}
@@ -156,8 +161,28 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             rules: [],
         })
 
-        this.disposables.push(monaco.editor.onDidCreateEditor(editor => (this.editor = editor)))
+        this.disposables.push(monaco.editor.onDidCreateEditor(editor => this.onDidCreateEditor(editor)))
         this.disposables.push(monaco.editor.onDidCreateModel(model => this.onDidCreateModel(model)))
+    }
+
+    private onDidCreateEditor(editor: monaco.editor.ICodeEditor): void {
+        this.editor = editor
+
+        // Necessary to wrap in setTimeout or else _standaloneKeyBindingService won't be ready and the editor will
+        // refuse to add the command because it's missing the keybinding service.
+        setTimeout(() => {
+            if (isStandaloneCodeEditor(editor)) {
+                editor.addCommand(
+                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S,
+                    () => {
+                        if (this.props.onDidSave) {
+                            this.props.onDidSave()
+                        }
+                    },
+                    ''
+                )
+            }
+        })
     }
 
     private onDidCreateModel(model: monaco.editor.IModel): void {
