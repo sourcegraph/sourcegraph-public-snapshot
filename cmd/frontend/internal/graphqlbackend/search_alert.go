@@ -214,7 +214,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
 	alert := &searchAlert{
 		title:       "Too many matching repositories",
-		description: "Narrow your search to see results.",
+		description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
 	}
 
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
