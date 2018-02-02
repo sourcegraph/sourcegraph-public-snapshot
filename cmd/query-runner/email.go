@@ -49,7 +49,7 @@ func (n *notifier) emailNotify(ctx context.Context) {
 				Ownership              string
 				MoreThanTwoResults     bool
 			}{
-				URL:         searchURL(n.newQuery, "email"),
+				URL:         searchURL(n.newQuery, utmSourceEmail),
 				Description: n.query.Description,
 				Query:       strings.Join([]string{n.query.ScopeQuery, n.query.Query}, " "),
 				ApproximateResultCount: n.results.Data.Search.Results.ApproximateResultCount,

@@ -319,6 +319,11 @@ type notifier struct {
 	usersToNotify, orgsToNotify []int32
 }
 
+const (
+	utmSourceEmail = "saved-search-email"
+	utmSourceSlack = "saved-search-slack"
+)
+
 func searchURL(query, utmSource string) string {
 	if appURL == nil {
 		// Determine the app URL.
