@@ -52,7 +52,7 @@ const configurationCascadeFragment = gql`
  */
 function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
     return queryGraphQL(gql`
-        query Configuration() {
+        query Configuration {
             configuration {
                 ...ConfigurationCascadeFields
             }

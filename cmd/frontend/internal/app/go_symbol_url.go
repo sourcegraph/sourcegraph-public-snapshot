@@ -36,7 +36,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	symbolID := strings.Join(parts[1:], "/")
 
 	body := graphqlQuery{
-		Query: `query Workbench($id: String, $mode: String) {
+		Query: `query Workbench($id: String!, $mode: String!) {
 	symbols(id: $id, mode: $mode) {
 		path
 		line
