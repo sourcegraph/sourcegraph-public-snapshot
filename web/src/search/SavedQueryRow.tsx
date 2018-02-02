@@ -1,4 +1,5 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
+import truncate from 'lodash/truncate'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { debounceTime } from 'rxjs/operators/debounceTime'
@@ -34,8 +35,6 @@ interface State {
     approximateResultCount?: string
     sparkline?: number[]
 }
-
-const truncate = (str: string) => (str.length > 50 ? `${str.substr(0, 50)}...` : str)
 
 export class SavedQueryRow extends React.PureComponent<Props, State> {
     public static defaultProps: Partial<Props> = { className: '' }
@@ -90,8 +89,10 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
                 <Link onClick={this.logEvent} to={'/search?' + buildSearchURLQuery({ query: this.props.query })}>
                     <div className="saved-query-row__row">
                         <div className="saved-query-row__row-column">
-                            <div className="saved-query__description">
-                                <span data-tooltip={truncate(this.props.query)}>{this.props.description}</span>
+                            <div className="saved-query-row__description">
+                                <span data-tooltip={truncate(this.props.query, { length: 50 })}>
+                                    {this.props.description}
+                                </span>
                             </div>
                             {this.props.actions}
                         </div>
