@@ -41,7 +41,7 @@ func (n *notifier) emailNotify(ctx context.Context) {
 				ownership = "your organization's"
 			}
 
-			sendEmail(ctx, userID, newSearchResultsEmailTemplates, struct {
+			sendEmail(ctx, userID, "results", newSearchResultsEmailTemplates, struct {
 				URL                    string
 				Description            string
 				Query                  string
@@ -84,6 +84,16 @@ func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32,
 		return
 	}
 
+	var eventType string
+	switch {
+	case template == notifySubscribedTemplate:
+		eventType = "subscribed"
+	case template == notifyUnsubscribedTemplate:
+		eventType = "unsubscribed"
+	default:
+		eventType = "unknown"
+	}
+
 	// Send tx emails asynchronously.
 	go func() {
 		if r := recover(); r != nil {
@@ -106,7 +116,7 @@ func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32,
 				ownership = "your organization's"
 			}
 
-			sendEmail(ctx, userID, template, struct {
+			sendEmail(ctx, userID, eventType, template, struct {
 				Ownership   string
 				Description string
 			}{
@@ -118,7 +128,7 @@ func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32,
 	return
 }
 
-func sendEmail(ctx context.Context, userID int32, template txemail.ParsedTemplates, data interface{}) {
+func sendEmail(ctx context.Context, userID int32, eventType string, template txemail.ParsedTemplates, data interface{}) {
 	email, err := api.InternalClient.UserEmailsGetEmail(ctx, userID)
 	if err != nil {
 		log15.Error("email notify: failed to get user email", "user_id", userID, "error", err)
@@ -137,6 +147,7 @@ func sendEmail(ctx context.Context, userID int32, template txemail.ParsedTemplat
 		log15.Error("email notify: failed to send email", "to", *email, "error", err)
 		return
 	}
+	logEvent(*email, "SavedSearchEmailNotificationSent", eventType)
 }
 
 var notifySubscribedTemplate = txemail.MustParseTemplate(txemail.Templates{
