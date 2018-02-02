@@ -239,7 +239,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     !query.includes('type:commit') && (
                         <div className="saved-query-form__also-notifying">
                             Warning: non-commit searches do not currently support notifications. Consider adding
-                            `type:diff` to your query.
+                            `type:diff` or `type:commit` to your query.
                         </div>
                     )}
                 <div className="saved-query-form__actions">
