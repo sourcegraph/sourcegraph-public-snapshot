@@ -74,15 +74,12 @@ export class ExampleSearches extends React.Component<Props, State> {
             <div className="example-searches">
                 <div className="example-searches__filter-box">
                     <div className="example-searches__flex-row">
-                        <h1 className="example-searches__title">Useful Searches</h1>
+                        <h2 className="example-searches__title">Built-in saved searches</h2>
                         <button className="btn btn-icon" onClick={this.props.onClose}>
                             <CloseIcon />
                         </button>
                     </div>
-                    <p>
-                        These search queries are generally useful in most codebases. Pick any that look useful to you
-                        and then click "Save" to save it.
-                    </p>
+                    <p>To edit or subscribe to a built-in saved search, save it first.</p>
                     <input
                         type="text"
                         className="form-control"
