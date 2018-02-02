@@ -38,13 +38,15 @@ interface State {
     exampleQuery: Partial<SavedQueryFields> | null
 }
 
+const EXAMPLE_SEARCHES_CLOSED_KEY = 'example-searches-closed'
+
 export class SavedQueries extends React.Component<Props, State> {
     public state: State = {
         savedQueries: [],
         isCreating: false,
         loading: true,
         user: null,
-        isViewingExamples: false,
+        isViewingExamples: localStorage.getItem(EXAMPLE_SEARCHES_CLOSED_KEY) !== 'true',
         exampleQuery: null,
     }
 
@@ -90,6 +92,7 @@ export class SavedQueries extends React.Component<Props, State> {
         }
 
         const isHomepage = this.props.location.pathname === '/search'
+        const isPanelOpen = this.state.isViewingExamples || this.state.isCreating
 
         // If not logged in, redirect to sign in
         if (!this.state.user && !isHomepage) {
@@ -104,7 +107,7 @@ export class SavedQueries extends React.Component<Props, State> {
                 {!isHomepage && (
                     <div>
                         <div className="saved-queries__header">
-                            <h2>Saved queries</h2>
+                            <h2>{!isPanelOpen && 'Saved searches'}</h2>
                             <span className="saved-queries__center">
                                 <button
                                     className="btn btn-link saved-queries__btn"
@@ -120,7 +123,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                     onClick={this.toggleCreating}
                                     disabled={this.state.isCreating}
                                 >
-                                    <AddIcon className="icon-inline" /> Add new query
+                                    <AddIcon className="icon-inline" /> Add new search
                                 </button>
 
                                 <a
@@ -145,7 +148,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         )}
                         {!this.state.isCreating &&
                             !this.state.isViewingExamples &&
-                            this.state.savedQueries.length === 0 && <p>You don't have any saved queries yet.</p>}
+                            this.state.savedQueries.length === 0 && <p>You don't have any saved searches yet.</p>}
                     </div>
                 )}
                 <div>
@@ -157,6 +160,11 @@ export class SavedQueries extends React.Component<Props, State> {
                                 onExampleSelected={this.onExampleSelected}
                             />
                         )}
+                    {isPanelOpen && (
+                        <div className="saved-queries__header saved-queries__space">
+                            <h2>Saved searches</h2>
+                        </div>
+                    )}
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
                             key={`${savedQuery.query.query}-${i}`}
@@ -170,10 +178,10 @@ export class SavedQueries extends React.Component<Props, State> {
                     this.state.user &&
                     isHomepage && (
                         <div className="saved-query">
-                            <Link to="/search/queries">
+                            <Link to="/search/searches">
                                 <div className={`saved-query__row`}>
                                     <div className="saved-query__add-query">
-                                        <AddIcon className="icon-inline" /> Add a new query to start monitoring your
+                                        <AddIcon className="icon-inline" /> Add a new search to start monitoring your
                                         code.
                                     </div>
                                 </div>
@@ -191,7 +199,19 @@ export class SavedQueries extends React.Component<Props, State> {
 
     private toggleExamples = () => {
         eventLogger.log('SavedQueriesToggleExamples', { queries: { viewingExamples: !this.state.isViewingExamples } })
-        this.setState(state => ({ isViewingExamples: !state.isViewingExamples, exampleQuery: null, isCreating: false }))
+
+        this.setState(
+            state => ({
+                isViewingExamples: !state.isViewingExamples,
+                exampleQuery: null,
+                isCreating: false,
+            }),
+            () => {
+                if (!this.state.isViewingExamples && localStorage.getItem(EXAMPLE_SEARCHES_CLOSED_KEY) !== 'true') {
+                    localStorage.setItem(EXAMPLE_SEARCHES_CLOSED_KEY, 'true')
+                }
+            }
+        )
     }
 
     private onExampleSelected = (query: Partial<SavedQueryFields>) => {

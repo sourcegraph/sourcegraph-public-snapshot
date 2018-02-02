@@ -51,12 +51,12 @@ export class ExampleSearches extends React.Component<Props, State> {
     public componentDidMount(): void {
         if (this.listNode) {
             this.subscriptions.add(
-                fromEvent<WheelEvent>(this.listNode, 'wheel').subscribe((e: MouseEvent) => {
+                fromEvent<WheelEvent>(this.listNode, 'wheel').subscribe((e: WheelEvent) => {
                     const div = e.currentTarget as HTMLDivElement
 
                     if (
-                        (e.movementY <= 0 && div.scrollTop >= div.scrollHeight - div.clientHeight) ||
-                        (e.movementY >= 0 && div.scrollTop === 0)
+                        (e.deltaY > 0 && div.scrollTop >= div.scrollHeight - div.clientHeight) ||
+                        (e.deltaY < 0 && div.scrollTop === 0)
                     ) {
                         e.preventDefault()
                     }

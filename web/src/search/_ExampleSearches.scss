@@ -1,6 +1,5 @@
 .example-searches {
     border: 1px solid $color-border;
-    margin-bottom: 2.5rem;
 
     &__filter-box {
         padding: 1rem;
@@ -50,7 +49,7 @@
 
 .theme-light {
     .example-searches {
-        border: 0.5px solid $border-color;
+        border: 0.5px solid $color-light-border;
 
         &__show-more {
             color: rgba(43, 55, 80, 0.5);

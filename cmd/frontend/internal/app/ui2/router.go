@@ -28,7 +28,7 @@ const (
 	routeHome           = "home"
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
-	routeSearchQueries  = "search-queries"
+	routeSearchSearches = "search-searches"
 	routeComment        = "comment"
 	routeOpen           = "open"
 	routeRepo           = "repo"
@@ -58,6 +58,7 @@ const (
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
 	routeLegacyAcceptInvite            = "legacy.accept-invite"
 	routeLegacyEditorAuth              = "legacy.editor-auth"
+	routeLegacySearchQueries           = "search-queries"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
@@ -96,7 +97,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
-	r.Path("/search/queries").Methods("GET").Name(routeSearchQueries)
+	r.Path("/search/searches").Methods("GET").Name(routeSearchSearches)
 	r.Path("/c/{ULID}").Methods("GET").Name(routeComment)
 	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(routeSignIn)
@@ -115,6 +116,7 @@ func newRouter() *mux.Router {
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
 	r.Path("/accept-invite").Methods("GET").Name(routeLegacyAcceptInvite)
 	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
+	r.Path("/search/queries").Methods("GET").Name(routeLegacySearchQueries)
 
 	// repo
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
@@ -169,6 +171,7 @@ func initRouter() {
 		router.Get(routeLegacyAcceptInvite).Handler(staticRedirectHandler("/settings/accept-invite", http.StatusMovedPermanently))
 		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/editor-auth", http.StatusMovedPermanently))
 	}
+	router.Get(routeLegacySearchQueries).Handler(staticRedirectHandler("/search/searches", http.StatusMovedPermanently))
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
@@ -183,9 +186,9 @@ func initRouter() {
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler)
 
-	// dashboard
-	router.Get(routeSearchQueries).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
-		return "Saved queries - Sourcegraph"
+	// Saved searches
+	router.Get(routeSearchSearches).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+		return "Saved searches - Sourcegraph"
 	})))
 
 	if envvar.SourcegraphDotComMode() {

@@ -41,6 +41,7 @@
 
     &__description {
         margin-bottom: 0;
+        margin-right: 1rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -130,7 +131,7 @@
         }
 
         .icon-inline {
-            margin-right: 0.05rem;
+            margin-right: 0.25rem;
         }
 
         .icon {

@@ -53,7 +53,7 @@ export const routes: LayoutRouteProps[] = [
         exact: true,
     },
     {
-        path: '/search/queries',
+        path: '/search/searches',
         component: SavedQueriesPage,
         exact: true,
         forceNarrowWidth: true,

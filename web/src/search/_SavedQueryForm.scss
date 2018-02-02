@@ -1,6 +1,5 @@
 .saved-query-form {
     padding: 1rem;
-
     border: 1px solid $color-border;
 
     &__error {
@@ -24,12 +23,13 @@
         }
     }
 
-    &__save-location, &__also-notifying {
+    &__save-location,
+    &__also-notifying {
         margin: 0 0 0.5rem 0;
     }
 
     &__save-location-options {
-        padding-right: 0.5rem;
+        padding-right: 1rem;
     }
 
     &__save-location-input {
@@ -59,7 +59,7 @@
 
 .theme-light {
     .saved-query-form {
-        border: 1px solid $border-color;
+        border: 1px solid $color-light-border;
         .form-control {
             background: $color-light-bg-1;
         }

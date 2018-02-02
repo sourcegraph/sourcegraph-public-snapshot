@@ -30,7 +30,7 @@ export const ExampleSearch = (props: Props) => {
             isLightTheme={props.isLightTheme}
             className={props.isHidden ? 'example-searches__hidden' : ''}
             actions={
-                <div className="saved-query__actions">
+                <div className="saved-query-row__actions">
                     <button className="btn btn-icon action" onClick={handleSave}>
                         <ThumbTackIcon className="icon-inline" />
                         Save

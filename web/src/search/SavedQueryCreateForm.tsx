@@ -25,7 +25,7 @@ export const SavedQueryCreateForm: React.StatelessComponent<Props> = props => (
     <SavedQueryForm
         onDidCommit={props.onDidCreate}
         onDidCancel={props.onDidCancel}
-        title="Add a new saved query"
+        title="Add a new search"
         submitLabel="Create"
         defaultValues={props.subject ? { subject: props.subject.id } : props.values}
         onSubmit={onSubmit}
