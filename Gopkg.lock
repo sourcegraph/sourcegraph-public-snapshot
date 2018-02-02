@@ -180,6 +180,12 @@
   version = "v1.4.0"
 
 [[projects]]
+  name = "github.com/gchaincl/sqlhooks"
+  packages = ["."]
+  revision = "928fba38878d453967fcf9b4a0b7952b90c94d34"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/getsentry/raven-go"
   packages = ["."]
@@ -478,12 +484,6 @@
   packages = ["."]
   revision = "1fd9edfb5c6ce9516a7277394369b0abbdfebdad"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/keegancsmith/sqlhooks"
-  packages = ["."]
-  revision = "b4e9f9054f05abeebe9df6a3642d9458d84c8135"
 
 [[projects]]
   branch = "master"
@@ -1352,6 +1352,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "70422cf76ebe26e9e70cd804003324cc1426eaf13e77fc074737092b407f3ccc"
+  inputs-digest = "7540d78e2c0aa488d2668e8846220149bc92f11278f05fd88722cf010f0c745a"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -9,10 +9,31 @@ import (
 // Hook is the hook callback signature
 type Hook func(ctx context.Context, query string, args ...interface{}) (context.Context, error)
 
+// ErrorHook is the error handling callback signature
+type ErrorHook func(ctx context.Context, err error, query string, args ...interface{}) error
+
 // Hooks instances may be passed to Wrap() to define an instrumented driver
 type Hooks interface {
 	Before(ctx context.Context, query string, args ...interface{}) (context.Context, error)
 	After(ctx context.Context, query string, args ...interface{}) (context.Context, error)
+}
+
+// OnErrorer instances will be called if any error happens
+type OnErrorer interface {
+	OnError(ctx context.Context, err error, query string, args ...interface{}) error
+}
+
+func handlerErr(ctx context.Context, hooks Hooks, err error, query string, args ...interface{}) error {
+	h, ok := hooks.(OnErrorer)
+	if !ok {
+		return err
+	}
+
+	if err := h.OnError(ctx, err, query, args...); err != nil {
+		return err
+	}
+
+	return err
 }
 
 // Driver implements a database/sql/driver.Driver
@@ -110,7 +131,7 @@ func (conn *ExecerContext) ExecContext(ctx context.Context, query string, args [
 
 	results, err := conn.execContext(ctx, query, args)
 	if err != nil {
-		return results, err
+		return results, handlerErr(ctx, conn.hooks, err, query, list...)
 	}
 
 	if ctx, err = conn.hooks.After(ctx, query, list...); err != nil {
@@ -160,7 +181,7 @@ func (stmt *Stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (dr
 
 	results, err := stmt.execContext(ctx, args)
 	if err != nil {
-		return results, err
+		return results, handlerErr(ctx, stmt.hooks, err, stmt.query, list...)
 	}
 
 	if ctx, err = stmt.hooks.After(ctx, stmt.query, list...); err != nil {
@@ -194,7 +215,7 @@ func (stmt *Stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (d
 
 	rows, err := stmt.queryContext(ctx, args)
 	if err != nil {
-		return rows, err
+		return rows, handlerErr(ctx, stmt.hooks, err, stmt.query, list...)
 	}
 
 	if ctx, err = stmt.hooks.After(ctx, stmt.query, list...); err != nil {

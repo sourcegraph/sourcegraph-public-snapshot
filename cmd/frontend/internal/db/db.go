@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/keegancsmith/sqlhooks"
+	"github.com/gchaincl/sqlhooks"
 	"github.com/lib/pq"
 	"github.com/mattes/migrate"
 	"github.com/mattes/migrate/database/postgres"
@@ -126,6 +126,17 @@ func (h *hook) After(ctx context.Context, query string, args ...interface{}) (co
 		span.Finish()
 	}
 	return ctx, nil
+}
+
+// After implements sqlhooks.OnErroer
+func (h *hook) OnError(ctx context.Context, err error, query string, args ...interface{}) error {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		ext.Error.Set(span, true)
+		span.LogFields(otlog.Error(err))
+		span.Finish()
+	}
+	return err
 }
 
 func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {

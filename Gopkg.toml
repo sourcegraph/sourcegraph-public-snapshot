@@ -119,8 +119,8 @@ required = [
   version = "1.0.1"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/keegancsmith/sqlhooks"
+  name = "github.com/gchaincl/sqlhooks"
+  version = "1"
 
 [[constraint]]
   branch = "master"
