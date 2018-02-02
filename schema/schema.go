@@ -4,6 +4,7 @@ package schema
 
 // ContainerOverrides
 type ContainerOverrides struct {
+	Image    string            `json:"image,omitempty"`
 	Limits   *ResourceOverride `json:"limits,omitempty"`
 	Requests *ResourceOverride `json:"requests,omitempty"`
 }

@@ -110,6 +110,9 @@
   "definitions": {
     "ContainerOverrides": {
       "properties": {
+        "image": {
+          "type": "string"
+        },
         "limits": {
           "$ref": "#/definitions/ResourceOverride"
         },
