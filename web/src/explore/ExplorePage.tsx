@@ -113,11 +113,8 @@ export class ExplorePage extends React.PureComponent<Props, State> {
                                 'disabled repositories are'
                             )}{' '}
                             not shown here.{' '}
-                            <Link
-                                data-tooltip="Enabling a repository makes it accessible and searchable to all users."
-                                to="/site-admin/repositories?filter=disabled"
-                            >
-                                Enable repositories
+                            <Link to="/site-admin/repositories?filter=disabled">
+                                Enable repositories in site admin.
                             </Link>
                         </div>
                     )}
