@@ -138,7 +138,7 @@ var (
 	parseFails = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "frontend",
 		Subsystem: "graphql",
-		Name:      "parse_failse",
+		Name:      "parse_fails",
 		Help:      "Total number of times a request fails query parsing.",
 	})
 )
