@@ -105,7 +105,7 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
                                     >
                                         <Sparkline
                                             data={this.state.sparkline}
-                                            width={200}
+                                            width={100}
                                             height={40}
                                             isLightTheme={this.props.isLightTheme}
                                         />

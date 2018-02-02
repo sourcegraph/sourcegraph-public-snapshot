@@ -24,7 +24,7 @@ export class Sparkline extends React.PureComponent<Props, State> {
         }
         const x = scaleLinear()
             .domain([-data.length, data.length])
-            .range([0, width])
+            .range([-width, width])
 
         const y = scaleLinear()
             .domain([-Math.max(...data), Math.max(...data)])
