@@ -19,7 +19,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
@@ -28,7 +27,6 @@ import (
 var (
 	forceRunInterval = env.Get("FORCE_RUN_INTERVAL", "", "Force an interval to run saved queries at, instead of assuming query execution time * 30 (query that takes 2s to run, runs every 60s)")
 	pprofHttp        = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
-	frontendURL      = env.Get("FRONTEND_URL", "http://sourcegraph-frontend", "URL at which the sourcegraph-frontend service can be reached")
 )
 
 func main() {
@@ -101,10 +99,6 @@ type executorT struct {
 }
 
 func (e *executorT) run(ctx context.Context) error {
-	if !conf.CanSendEmail() {
-		log15.Warn("email notifications are not configured in site configuration")
-	}
-
 	// Parse FORCE_RUN_INTERVAL value.
 	if forceRunInterval != "" {
 		forceRunInterval, err := time.ParseDuration(forceRunInterval)
