@@ -178,6 +178,9 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                         fetchRepository({ repoPath: `github.com/${repoName}` }).pipe(
                             catchError(error => {
                                 console.error(error)
+                                eventLogger.log('PublicRepositoryAdditionFailed', {
+                                    repositories: { code_host: 'github' },
+                                })
                                 this.setState({ success: undefined, error: error.message })
                                 return []
                             })
@@ -185,6 +188,7 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                     )
                 )
                 .subscribe(() => {
+                    eventLogger.log('PublicRepositoryAdded', { repositories: { code_host: 'github' } })
                     this.setState({ repoName: '', success: 'Repository added', error: undefined })
                     if (this.inputElement) {
                         this.inputElement.focus()
