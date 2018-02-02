@@ -369,6 +369,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 
     private onDidClickAddPublicRepositoryForm = () => {
+        eventLogger.log('AddPublicRepositoryFormClicked')
         this.setState(state => ({ addPublicRepositoryFormVisible: !state.addPublicRepositoryFormVisible }))
     }
 }
