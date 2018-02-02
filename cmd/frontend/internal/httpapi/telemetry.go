@@ -117,6 +117,9 @@ func serveOnPremTelemetryModification(r *http.Request) {
 	r.ContentLength = int64(buf.Len())
 	r.Body = ioutil.NopCloser(&buf)
 
+	r.URL.Scheme, r.URL.Host = "https", "example.com" // needed for DumpRequestOut
+	telemetry.Sample(r)
+
 	// Point the request to the ultimate telemetry endpoint.
 	if useBILogger(siteid.Get()) {
 		r.URL.Scheme = "http"

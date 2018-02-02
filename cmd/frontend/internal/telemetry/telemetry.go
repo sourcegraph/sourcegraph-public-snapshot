@@ -21,8 +21,7 @@ func Samples() []string {
 
 	samples := make([]string, 0, telemetrySampleCount)
 	for i := 0; i < telemetrySampleCount; i++ {
-		p := (telemetrySampleCursor - 1 + i + /* ensure nonnegative */ telemetrySampleCount) % telemetrySampleCount
-		s := telemetrySamples[p]
+		s := telemetrySamples[i]
 		if s == "" {
 			break // haven't collected the i'th sample yet
 		}
