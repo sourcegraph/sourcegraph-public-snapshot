@@ -7,6 +7,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { setRepositoryEnabled } from '../site-admin/backend'
+import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
     /** The repository that is disabled. */
@@ -33,6 +34,7 @@ export class RepositoryDisabledPage extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('RepositoryDisabled')
         this.subscriptions.add(
             this.enableClicks
                 .pipe(
