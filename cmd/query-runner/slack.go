@@ -25,8 +25,8 @@ func (n *notifier) slackNotify(ctx context.Context) {
 		searchURL(n.newQuery, utmSourceSlack),
 		n.query.Description,
 	)
-
 	slackNotify(ctx, n.orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "results")
 }
 
 func slackNotifyCreated(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
@@ -39,6 +39,7 @@ func slackNotifyCreated(ctx context.Context, orgsToNotify []int32, query api.Sav
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "created")
 }
 
 func slackNotifyDeleted(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
@@ -51,6 +52,7 @@ func slackNotifyDeleted(ctx context.Context, orgsToNotify []int32, query api.Sav
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "deleted")
 }
 
 func slackNotifySubscribed(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
@@ -63,6 +65,7 @@ func slackNotifySubscribed(ctx context.Context, orgsToNotify []int32, query api.
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "enabled")
 }
 
 func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
@@ -75,6 +78,7 @@ func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query ap
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "disabled")
 }
 
 func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
