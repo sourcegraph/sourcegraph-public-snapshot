@@ -135,16 +135,25 @@ var (
 		Name:      "validation_fails",
 		Help:      "Total number of times a request fails validation.",
 	})
+	parseFails = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "frontend",
+		Subsystem: "graphql",
+		Name:      "parse_failse",
+		Help:      "Total number of times a request fails query parsing.",
+	})
 )
 
 func init() {
 	prometheus.MustRegister(strictValidationFails)
 	prometheus.MustRegister(validationFails)
+	prometheus.MustRegister(parseFails)
 }
 
 func (s *Schema) exec(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, res *resolvable.Schema) *Response {
 	doc, qErr := query.Parse(queryString)
 	if qErr != nil {
+		parseFails.Inc()
+		stdlog.Printf("graphql parse fails for %s %q: %v", operationName, queryString, qErr)
 		return &Response{Errors: []*errors.QueryError{qErr}}
 	}
 
