@@ -28,7 +28,13 @@ const ScopeNotFound = () => (
     <HeroPage
         icon={DirectionalSignIcon}
         title="404: Not Found"
-        subtitle="Sorry, we can&#39;t find a scope here. Add an ID and description to your search scope to get a landing page."
+        subtitle={
+            <>
+                No search page found with this scope ID. Add an ID and description to a search scope to create a search
+                page. See{' '}
+                <a href="https://about.sourcegraph.com/docs/server/config/search-scopes">search scope documentation</a>.
+            </>
+        }
     />
 )
 
