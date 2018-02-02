@@ -25,6 +25,16 @@
             padding: 0.25rem 0.75rem 0.25rem 0.25rem;
             margin: 0 0.5rem 0 0.75rem;
         }
+
+        // TODO: Remove this when global styles have been fixed for icons
+        .icon-inline {
+            margin-top: -0.25rem;
+        }
+    }
+
+    // TODO: Remove this when global styles have been fixed for icons
+    &__wand {
+        margin-right: 0.25rem;
     }
 
     &__space {
