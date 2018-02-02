@@ -62,6 +62,9 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 	if !authoritative {
 		repo, authoritative, err = repos.GetGitLabRepository(ctx, args)
 	}
+	if !authoritative {
+		repo, authoritative, err = repos.GetExplicitlyConfiguredRepository(ctx, args)
+	}
 	if authoritative {
 		if isNotFound(err) {
 			result.ErrorNotFound = true

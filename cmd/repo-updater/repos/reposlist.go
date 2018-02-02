@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -9,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -65,4 +67,33 @@ func updateRepo(ctx context.Context, repoConf schema.Repository) error {
 		}
 	}
 	return nil
+}
+
+// GetExplicitlyConfiguredRepository reports information about a repository configured explicitly with "repos.list".
+func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
+	if args.Repo == "" {
+		return nil, false, nil
+	}
+
+	repoNameLower := api.RepoURI(strings.ToLower(string(args.Repo)))
+	for _, repo := range conf.Get().ReposList {
+		if api.RepoURI(strings.ToLower(string(repo.Path))) == repoNameLower {
+			repoInfo := &protocol.RepoInfo{
+				URI:          api.RepoURI(repo.Path),
+				ExternalRepo: nil,
+				VCS:          protocol.VCSInfo{URL: repo.Url},
+			}
+			if repo.Links != nil {
+				repoInfo.Links = &protocol.RepoLinks{
+					Root:   repo.Links.Repository,
+					Blob:   repo.Links.Blob,
+					Tree:   repo.Links.Tree,
+					Commit: repo.Links.Commit,
+				}
+			}
+			return repoInfo, true, nil
+		}
+	}
+
+	return nil, false, nil // not found
 }
