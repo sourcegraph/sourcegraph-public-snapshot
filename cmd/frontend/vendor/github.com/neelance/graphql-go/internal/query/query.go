@@ -7,7 +7,6 @@ import (
 
 	"github.com/neelance/graphql-go/errors"
 	"github.com/neelance/graphql-go/internal/common"
-	"github.com/neelance/graphql-go/internal/lexer"
 )
 
 type Document struct {
@@ -39,10 +38,11 @@ func (l FragmentList) Get(name string) *FragmentDecl {
 
 type Operation struct {
 	Type       OperationType
-	Name       lexer.Ident
+	Name       common.Ident
 	Vars       common.InputValueList
-	SelSet     *SelectionSet
+	Selections []Selection
 	Directives common.DirectiveList
+	Loc        errors.Location
 }
 
 type OperationType string
@@ -54,18 +54,14 @@ const (
 )
 
 type Fragment struct {
-	On     common.TypeName
-	SelSet *SelectionSet
+	On         common.TypeName
+	Selections []Selection
 }
 
 type FragmentDecl struct {
 	Fragment
-	Name       lexer.Ident
+	Name       common.Ident
 	Directives common.DirectiveList
-}
-
-type SelectionSet struct {
-	Selections []Selection
 	Loc        errors.Location
 }
 
@@ -74,21 +70,24 @@ type Selection interface {
 }
 
 type Field struct {
-	Alias      lexer.Ident
-	Name       lexer.Ident
-	Arguments  common.ArgumentList
-	Directives common.DirectiveList
-	SelSet     *SelectionSet
+	Alias           common.Ident
+	Name            common.Ident
+	Arguments       common.ArgumentList
+	Directives      common.DirectiveList
+	Selections      []Selection
+	SelectionSetLoc errors.Location
 }
 
 type InlineFragment struct {
 	Fragment
 	Directives common.DirectiveList
+	Loc        errors.Location
 }
 
 type FragmentSpread struct {
-	Name       lexer.Ident
+	Name       common.Ident
 	Directives common.DirectiveList
+	Loc        errors.Location
 }
 
 func (Field) isSelection()          {}
@@ -101,7 +100,7 @@ func Parse(queryString string) (*Document, *errors.QueryError) {
 	}
 	sc.Init(strings.NewReader(queryString))
 
-	l := lexer.New(sc)
+	l := common.New(sc)
 	var doc *Document
 	err := l.CatchSyntaxError(func() {
 		doc = parseDocument(l)
@@ -113,20 +112,22 @@ func Parse(queryString string) (*Document, *errors.QueryError) {
 	return doc, nil
 }
 
-func parseDocument(l *lexer.Lexer) *Document {
+func parseDocument(l *common.Lexer) *Document {
 	d := &Document{}
 	for l.Peek() != scanner.EOF {
 		if l.Peek() == '{' {
-			op := &Operation{Type: Query}
-			op.Name.Loc = l.Location()
-			op.SelSet = parseSelectionSet(l)
+			op := &Operation{Type: Query, Loc: l.Location()}
+			op.Selections = parseSelectionSet(l)
 			d.Operations = append(d.Operations, op)
 			continue
 		}
 
+		loc := l.Location()
 		switch x := l.ConsumeIdent(); x {
 		case "query":
-			d.Operations = append(d.Operations, parseOperation(l, Query))
+			op := parseOperation(l, Query)
+			op.Loc = loc
+			d.Operations = append(d.Operations, op)
 
 		case "mutation":
 			d.Operations = append(d.Operations, parseOperation(l, Mutation))
@@ -135,7 +136,9 @@ func parseDocument(l *lexer.Lexer) *Document {
 			d.Operations = append(d.Operations, parseOperation(l, Subscription))
 
 		case "fragment":
-			d.Fragments = append(d.Fragments, parseFragment(l))
+			frag := parseFragment(l)
+			frag.Loc = loc
+			d.Fragments = append(d.Fragments, frag)
 
 		default:
 			l.SyntaxError(fmt.Sprintf(`unexpected %q, expecting "fragment"`, x))
@@ -144,7 +147,7 @@ func parseDocument(l *lexer.Lexer) *Document {
 	return d
 }
 
-func parseOperation(l *lexer.Lexer, opType OperationType) *Operation {
+func parseOperation(l *common.Lexer, opType OperationType) *Operation {
 	op := &Operation{Type: opType}
 	op.Name.Loc = l.Location()
 	if l.Peek() == scanner.Ident {
@@ -154,44 +157,46 @@ func parseOperation(l *lexer.Lexer, opType OperationType) *Operation {
 	if l.Peek() == '(' {
 		l.ConsumeToken('(')
 		for l.Peek() != ')' {
+			loc := l.Location()
 			l.ConsumeToken('$')
-			op.Vars = append(op.Vars, common.ParseInputValue(l))
+			iv := common.ParseInputValue(l)
+			iv.Loc = loc
+			op.Vars = append(op.Vars, iv)
 		}
 		l.ConsumeToken(')')
 	}
-	op.SelSet = parseSelectionSet(l)
+	op.Selections = parseSelectionSet(l)
 	return op
 }
 
-func parseFragment(l *lexer.Lexer) *FragmentDecl {
+func parseFragment(l *common.Lexer) *FragmentDecl {
 	f := &FragmentDecl{}
 	f.Name = l.ConsumeIdentWithLoc()
 	l.ConsumeKeyword("on")
 	f.On = common.TypeName{Ident: l.ConsumeIdentWithLoc()}
 	f.Directives = common.ParseDirectives(l)
-	f.SelSet = parseSelectionSet(l)
+	f.Selections = parseSelectionSet(l)
 	return f
 }
 
-func parseSelectionSet(l *lexer.Lexer) *SelectionSet {
-	sel := &SelectionSet{}
-	sel.Loc = l.Location()
+func parseSelectionSet(l *common.Lexer) []Selection {
+	var sels []Selection
 	l.ConsumeToken('{')
 	for l.Peek() != '}' {
-		sel.Selections = append(sel.Selections, parseSelection(l))
+		sels = append(sels, parseSelection(l))
 	}
 	l.ConsumeToken('}')
-	return sel
+	return sels
 }
 
-func parseSelection(l *lexer.Lexer) Selection {
+func parseSelection(l *common.Lexer) Selection {
 	if l.Peek() == '.' {
 		return parseSpread(l)
 	}
 	return parseField(l)
 }
 
-func parseField(l *lexer.Lexer) *Field {
+func parseField(l *common.Lexer) *Field {
 	f := &Field{}
 	f.Alias = l.ConsumeIdentWithLoc()
 	f.Name = f.Alias
@@ -204,22 +209,25 @@ func parseField(l *lexer.Lexer) *Field {
 	}
 	f.Directives = common.ParseDirectives(l)
 	if l.Peek() == '{' {
-		f.SelSet = parseSelectionSet(l)
+		f.SelectionSetLoc = l.Location()
+		f.Selections = parseSelectionSet(l)
 	}
 	return f
 }
 
-func parseSpread(l *lexer.Lexer) Selection {
+func parseSpread(l *common.Lexer) Selection {
+	loc := l.Location()
 	l.ConsumeToken('.')
 	l.ConsumeToken('.')
 	l.ConsumeToken('.')
 
-	f := &InlineFragment{}
+	f := &InlineFragment{Loc: loc}
 	if l.Peek() == scanner.Ident {
 		ident := l.ConsumeIdentWithLoc()
 		if ident.Name != "on" {
 			fs := &FragmentSpread{
 				Name: ident,
+				Loc:  loc,
 			}
 			fs.Directives = common.ParseDirectives(l)
 			return fs
@@ -227,6 +235,6 @@ func parseSpread(l *lexer.Lexer) Selection {
 		f.On = common.TypeName{Ident: l.ConsumeIdentWithLoc()}
 	}
 	f.Directives = common.ParseDirectives(l)
-	f.SelSet = parseSelectionSet(l)
+	f.Selections = parseSelectionSet(l)
 	return f
 }

@@ -3,10 +3,9 @@ package graphql
 import (
 	"context"
 	"fmt"
+	stdlog "log"
 
 	"encoding/json"
-
-	"strconv"
 
 	"github.com/neelance/graphql-go/errors"
 	"github.com/neelance/graphql-go/internal/common"
@@ -19,28 +18,8 @@ import (
 	"github.com/neelance/graphql-go/introspection"
 	"github.com/neelance/graphql-go/log"
 	"github.com/neelance/graphql-go/trace"
+	"github.com/prometheus/client_golang/prometheus"
 )
-
-// ID represents GraphQL's "ID" type. A custom type may be used instead.
-type ID string
-
-func (_ ID) ImplementsGraphQLType(name string) bool {
-	return name == "ID"
-}
-
-func (id *ID) UnmarshalGraphQL(input interface{}) error {
-	switch input := input.(type) {
-	case string:
-		*id = ID(input)
-		return nil
-	default:
-		return fmt.Errorf("wrong type")
-	}
-}
-
-func (id ID) MarshalJSON() ([]byte, error) {
-	return strconv.AppendQuote(nil, string(id)), nil
-}
 
 // ParseSchema parses a GraphQL schema and attaches the given root resolver. It returns an error if
 // the Go type signature of the resolvers does not match the schema. If nil is passed as the
@@ -142,6 +121,27 @@ func (s *Schema) Exec(ctx context.Context, queryString string, operationName str
 	return s.exec(ctx, queryString, operationName, variables, s.res)
 }
 
+// HACK
+var (
+	strictValidationFails = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "frontend",
+		Subsystem: "graphql",
+		Name:      "strict_validation_fails",
+		Help:      "Total number of times a request fails only in the new validation.",
+	})
+	validationFails = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "frontend",
+		Subsystem: "graphql",
+		Name:      "validation_fails",
+		Help:      "Total number of times a request fails validation.",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(strictValidationFails)
+	prometheus.MustRegister(validationFails)
+}
+
 func (s *Schema) exec(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, res *resolvable.Schema) *Response {
 	doc, qErr := query.Parse(queryString)
 	if qErr != nil {
@@ -150,7 +150,22 @@ func (s *Schema) exec(ctx context.Context, queryString string, operationName str
 
 	errs := validation.Validate(s.schema, doc)
 	if len(errs) != 0 {
-		return &Response{Errors: errs}
+		// HACK ignore the nullable error for now. If all we have is nullable,
+		// log it and continue. Once prod never receives a bad request, we can
+		// remove this fork and always do the stricter validation.
+		allNullable := true
+		for _, err := range errs {
+			if err.Rule != "VariablesInAllowedPositionNullable" {
+				allNullable = false
+			}
+		}
+		if !allNullable {
+			validationFails.Inc()
+			stdlog.Printf("graphql validation fails for %s %q: %v", operationName, queryString, errs[0])
+			return &Response{Errors: errs}
+		}
+		strictValidationFails.Inc()
+		stdlog.Printf("graphql strict validation fails for %s %q: %v", operationName, queryString, errs[0])
 	}
 
 	op, err := getOperation(doc, operationName)

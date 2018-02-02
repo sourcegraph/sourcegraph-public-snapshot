@@ -1,4 +1,4 @@
-package lexer
+package common
 
 import (
 	"fmt"
@@ -15,17 +15,10 @@ type Lexer struct {
 	descComment string
 }
 
-type Literal struct {
-	Type rune
-	Text string
-}
-
 type Ident struct {
 	Name string
 	Loc  errors.Location
 }
-
-type Variable string
 
 func New(sc *scanner.Scanner) *Lexer {
 	l := &Lexer{sc: sc}
@@ -100,17 +93,9 @@ func (l *Lexer) ConsumeKeyword(keyword string) {
 	l.Consume()
 }
 
-func (l *Lexer) ConsumeVariable() Variable {
-	l.ConsumeToken('$')
-	return Variable(l.ConsumeIdent())
-}
-
-func (l *Lexer) ConsumeLiteral() interface{} {
-	lit := &Literal{Type: l.next, Text: l.sc.TokenText()}
+func (l *Lexer) ConsumeLiteral() *BasicLit {
+	lit := &BasicLit{Type: l.next, Text: l.sc.TokenText()}
 	l.Consume()
-	if lit.Type == scanner.Ident && lit.Text == "null" {
-		return nil
-	}
 	return lit
 }
 
