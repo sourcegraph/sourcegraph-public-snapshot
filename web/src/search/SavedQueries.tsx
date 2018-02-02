@@ -162,11 +162,12 @@ export class SavedQueries extends React.Component<Props, State> {
                                 onExampleSelected={this.onExampleSelected}
                             />
                         )}
-                    {isPanelOpen && (
-                        <div className="saved-queries__header saved-queries__space">
-                            <h2>Saved searches</h2>
-                        </div>
-                    )}
+                    {!this.props.hideExampleSearches &&
+                        isPanelOpen && (
+                            <div className="saved-queries__header saved-queries__space">
+                                <h2>Saved searches</h2>
+                            </div>
+                        )}
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
                             key={`${savedQuery.query.query}-${i}`}
