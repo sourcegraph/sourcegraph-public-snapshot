@@ -78,11 +78,34 @@
             background: $color-primary;
             color: #f2f4f8;
 
+            // Extend so it covers up surrounding gray 1px border.
+            //
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-left: -1px;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-right: -1px;
+            border-left: solid 1px $color-primary;
+            border-right: solid 1px $color-primary;
+
             &:hover {
                 background: $color-primary;
                 color: #f2f4f8;
                 text-decoration: none;
             }
+        }
+        &:first-child &--active {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-top: -1px;
+            border-top: solid 1px $color-primary;
+            border-top-right-radius: 0.125rem;
+            border-top-left-radius: 0.125rem;
+        }
+        &:last-child &--active {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-bottom: -1px;
+            border-bottom: solid 1px $color-primary;
+            border-bottom-right-radius: 0.125rem;
+            border-bottom-left-radius: 0.125rem;
         }
     }
 
