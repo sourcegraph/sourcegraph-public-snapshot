@@ -605,7 +605,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			results.alert.title = "Only diff search results from last month are shown"
 		}
 	}
-	if results.alert == nil && args.query.Pattern == "" {
+	if results.alert == nil && len(results.results) == 0 && args.query.Pattern == "" {
 		results.alert = &searchAlert{
 			title:       "Type a query",
 			description: "What do you want to search for?",
