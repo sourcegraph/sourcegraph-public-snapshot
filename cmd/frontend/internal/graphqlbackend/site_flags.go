@@ -30,7 +30,7 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 
 func needsRepositoryConfiguration() bool {
 	cfg := conf.Get()
-	return len(cfg.Github) == 0 && len(cfg.ReposList) == 0 && cfg.GitoliteHosts == "" && cfg.GitOriginMap == ""
+	return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && cfg.GitoliteHosts == "" && cfg.GitOriginMap == ""
 }
 
 func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {
