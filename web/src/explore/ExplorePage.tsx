@@ -9,7 +9,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { RepoFileLink } from '../components/RepoFileLink'
+import { RepoLink } from '../repo/RepoLink'
 import { fetchAllRepositoriesAndPollIfAnyCloning } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
@@ -22,9 +22,7 @@ interface RepositoryNodeProps {
 export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
     <li key={repo.id} className="explore-page__item">
         <div className="explore-page__item-header">
-            <Link to={`/${repo.uri}`} className="explore-page__item-path">
-                <RepoFileLink repoPath={repo.uri} disableLinks={true} />
-            </Link>
+            <RepoLink repoPath={repo.uri} className="explore-page__item-path" />
             {repo.mirrorInfo.cloneInProgress && (
                 <span className="explore-page__item-cloning">
                     <small>

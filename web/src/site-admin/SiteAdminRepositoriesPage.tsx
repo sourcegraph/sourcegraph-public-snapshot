@@ -16,8 +16,8 @@ import {
     FilteredConnectionQueryArgs,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { fetchRepository } from '../repo/backend'
+import { RepoLink } from '../repo/RepoLink'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled, updateMirrorRepository } from './backend'
@@ -38,8 +38,6 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
     }
 
     public render(): JSX.Element | null {
-        const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.node.uri))
-
         return (
             <li
                 key={this.props.node.id}
@@ -48,9 +46,11 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                 }`}
             >
                 <div className="site-admin-detail-list__header site-admin-repositories-page__repo-header">
-                    <Link to={`/${this.props.node.uri}/-/settings`} className="site-admin-repositories-page__repo-link">
-                        {repoDir}/<strong>{repoBase}</strong>
-                    </Link>
+                    <RepoLink
+                        repoPath={this.props.node.uri}
+                        to={`/${this.props.node.uri}/-/settings`}
+                        className="site-admin-repositories-page__repo-link"
+                    />
                     {this.props.node.enabled ? (
                         <small
                             data-tooltip="Access to this repository is enabled. All users can view and search it."

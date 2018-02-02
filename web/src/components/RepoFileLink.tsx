@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { RepoLink } from '../repo/RepoLink'
 import { toPrettyBlobURL, toPrettyRepoURL, toTreeURL } from '../util/url'
 
 export interface RepoBreadcrumbProps {
@@ -63,11 +64,5 @@ export const RepoFileLink: React.SFC<RepoBreadcrumbProps> = ({
         )
     }
 
-    const [repoBase, repoName] = splitPath(displayRepoPath(repoPath))
-    return (
-        <L to={`/${repoPath}${rev ? `@${rev}` : ''}`}>
-            {repoBase ? `${repoBase}/` : null}
-            <strong>{repoName}</strong>
-        </L>
-    )
+    return <RepoLink repoPath={repoPath} rev={rev} to={disableLinks ? null : undefined} />
 }

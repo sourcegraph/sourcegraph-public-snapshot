@@ -179,7 +179,8 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         popoverKey="repo"
                         hideOnChange={this.props.repo.uri}
                     >
-                        {repoDir}/<Link
+                        {repoDir ? `${repoDir}/` : ''}
+                        <Link
                             onClick={this.onClickRepoBasename}
                             to={`/${this.props.repo.uri}`}
                             className="repo-header__repo-link"
