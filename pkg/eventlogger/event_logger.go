@@ -28,7 +28,7 @@ var defaultLogger = new()
 // to wait for the frontend to start.
 //
 // Note: This does not block since it creates a new goroutine.
-func LogEvent(userEmail string, eventLabel string, eventProperties map[string]string) {
+func LogEvent(userEmail string, eventLabel string, eventProperties map[string]interface{}) {
 	go func() {
 		err := defaultLogger.logEvent(userEmail, eventLabel, eventProperties)
 		if err != nil {
@@ -89,7 +89,7 @@ func (logger *eventLogger) newPayload(userEmail string, event *Event) *Payload {
 }
 
 // logEvent sends a payload representing some user event to the InternalClient telemetry API
-func (logger *eventLogger) logEvent(userEmail string, eventLabel string, eventProperties map[string]string) error {
+func (logger *eventLogger) logEvent(userEmail string, eventLabel string, eventProperties map[string]interface{}) error {
 	event := &Event{
 		Type:            eventLabel,
 		EventID:         uuid.New().String(),
