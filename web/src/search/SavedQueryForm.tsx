@@ -237,7 +237,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     </div>
                 )}
                 {this.isUnsupportedNotifyQuery(this.state.values) && (
-                    <div className="saved-query-form__also-notifying">
+                    <div>
                         Warning: non-commit searches do not currently support notifications. Consider adding `type:diff`
                         or `type:commit` to your query.
                     </div>
