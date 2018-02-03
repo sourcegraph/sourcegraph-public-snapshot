@@ -116,7 +116,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                     disabled={this.state.isViewingExamples}
                                 >
                                     <WandIcon className="icon-inline saved-queries__wand" />
-                                    Discover useful searches
+                                    Discover built-in searches
                                 </button>
 
                                 <button
