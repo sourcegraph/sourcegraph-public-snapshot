@@ -4,7 +4,7 @@ query-runner: env SRC_PROF_HTTP=:6067 .bin/query-runner
 repo-updater: .bin/repo-updater
 searcher: env SRC_PROF_HTTP=:6069 $EXEC_SEARCHER .bin/searcher
 github-proxy: .bin/github-proxy
-lsp-proxy: .bin/lsp-proxy -prof-http=:6061
+lsp-proxy: env SRC_PROF_HTTP=:6061 .bin/lsp-proxy
 xlang-go: .bin/xlang-go -mode=tcp -addr=:4389 -prof-http=:6062
 frontend: env SRC_PROF_HTTP=:6060 $EXEC_FRONTEND .bin/frontend
 watch-go: node_modules/.bin/chokidar --silent "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" --ignore node_modules --ignore web -c "./dev/go-install.sh && $GOREMAN run restart frontend searcher"
