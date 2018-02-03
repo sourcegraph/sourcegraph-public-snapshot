@@ -1,12 +1,14 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { fromEvent } from 'rxjs/observable/fromEvent'
 import { catchError } from 'rxjs/operators/catchError'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
+import { fetchOrg } from '../org/backend'
 import { configurationCascade } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -38,6 +40,7 @@ interface State {
     isFocused: boolean
     error?: any
     sawUnsupportedNotifyQueryWarning: boolean
+    slackWebhooks: Map<string, string | null> // org ID -> slack webhook
 }
 
 export class SavedQueryForm extends React.Component<Props, State> {
@@ -69,6 +72,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             isSubmitting: false,
             isFocused: false,
             sawUnsupportedNotifyQueryWarning: false,
+            slackWebhooks: new Map<string, string | null>(),
         }
     }
 
@@ -84,6 +88,17 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         subject: state.values.subject || (subject && subject.id) || '',
                     },
                 }))
+
+                subjects.filter(subject => subject.__typename === 'Org').map(subject => {
+                    fetchOrg(subject.id).subscribe(org => {
+                        if (org) {
+                            this.setState(state => ({
+                                ...state,
+                                slackWebhooks: state.slackWebhooks.set(subject.id, org.slackWebhookURL),
+                            }))
+                        }
+                    })
+                })
             })
         )
 
@@ -250,6 +265,13 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             admin for more information.
                         </div>
                     )}
+                {notifySlack &&
+                    this.isOrgMissingSlackWebhook() && (
+                        <div>
+                            Warning: Slack webhook is not configured for this organization. Please{' '}
+                            <Link to={this.getConfigureSlackURL()}>configure one in the organization settings</Link>.
+                        </div>
+                    )}
                 <div className="saved-query-form__actions">
                     <button
                         type="submit"
@@ -289,6 +311,22 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private savingToOrg = () => {
         const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
         return chosen && chosen.__typename === 'Org'
+    }
+
+    private isOrgMissingSlackWebhook = () => {
+        const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
+        if (!chosen || chosen.__typename !== 'Org') {
+            return false
+        }
+        return !this.state.slackWebhooks.get(chosen.id)
+    }
+
+    private getConfigureSlackURL = () => {
+        const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
+        if (!chosen || chosen.__typename !== 'Org') {
+            return ''
+        }
+        return `/organizations/${chosen.name}/settings/profile`
     }
 
     private saveTargetName = () => {
