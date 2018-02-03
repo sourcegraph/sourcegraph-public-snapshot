@@ -404,7 +404,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	if service != "" {
 		// Link unfurled by some service in specific (i.e. not just some user
 		// visiting this link in their browser)
-		eventlogger.LogEvent("", "CommentUnfurled", map[string]string{"unfurl_service": service})
+		eventlogger.LogEvent("", "CommentUnfurled", map[string]interface{}{"unfurl_service": service})
 	}
 
 	common.Title = fmt.Sprintf("%s - Sourcegraph", title)
@@ -491,7 +491,7 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 	if service != "" {
 		// Link unfurled by some service in specific (i.e. not just some user
 		// visiting this link in their browser)
-		eventlogger.LogEvent("", "DeepLinkUnfurled", map[string]string{"unfurl_service": service})
+		eventlogger.LogEvent("", "DeepLinkUnfurled", map[string]interface{}{"unfurl_service": service})
 	}
 
 	return renderTemplate(w, "app.html", common)

@@ -46,6 +46,6 @@ type Event struct {
 
 // Context represents custom event-level context/properties that can be passed with an event
 type Context struct {
-	EventLabel string            `json:"event_label"`
-	Backend    map[string]string `json:"backend,omitempty"`
+	EventLabel string                 `json:"event_label"`
+	Backend    map[string]interface{} `json:"backend,omitempty"`
 }
