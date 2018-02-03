@@ -3,15 +3,21 @@
     display: flex;
 
     &__tab {
-        flex: 1;
         border-bottom: solid 3px $color-border;
         border-radius: 0;
+        &--flex-grow {
+            flex: 1;
+        }
         &--inactive {
             opacity: 0.6;
         }
         &--active {
             border-bottom-color: $color-primary;
         }
+    }
+
+    &__spacer {
+        flex: 1;
     }
 }
 

@@ -15,6 +15,11 @@ interface TabBarProps<T extends string> {
 
     /** Called when the user selects a different tab. */
     onSelect: (tab: T) => void
+
+    /** A fragment to render at the end of the tab bar. */
+    endFragment?: React.ReactFragment
+
+    tabClassName?: string
 }
 
 /**
@@ -22,26 +27,34 @@ interface TabBarProps<T extends string> {
  *
  * @template T The type that includes all possible tab IDs (typically a union of string constants).
  */
-export class TabBar<T extends string> extends React.PureComponent<TabBarProps<T>> {
+class TabBar<T extends string> extends React.PureComponent<TabBarProps<T>> {
     public render(): JSX.Element | null {
         return (
             <div className="tab-bar">
                 {this.props.tabs.map((tab, i) => (
                     <button
                         key={i}
-                        className={`btn btn-link btn-sm tab-bar__tab tab-bar__tab--${
+                        className={`btn btn-link btn-sm tab-bar__tab ${!this.props.endFragment &&
+                            'tab-bar__tab--flex-grow'} tab-bar__tab--${
                             this.props.activeTab === tab.id ? 'active' : 'inactive'
-                        }`}
+                        } ${this.props.tabClassName || ''}`}
                         // tslint:disable-next-line:jsx-no-lambda
                         onClick={() => this.props.onSelect(tab.id)}
                     >
                         {tab.label}
                     </button>
                 ))}
+                {this.props.endFragment}
             </div>
         )
     }
 }
+
+/**
+ * An element to pass to Tab's tabBarEndFragment prop to fill all width between the tabs (on the left) and the
+ * other tabBarEndFragment elements (on the right).
+ */
+export const Spacer: () => JSX.Element = () => <span className="tab-bar__spacer" />
 
 interface TabsProps<T extends string> {
     /** All tabs. */
@@ -50,9 +63,17 @@ interface TabsProps<T extends string> {
     /** A key unique to this UI element that is used for persisting the view state. */
     storageKey: string
 
-    children: React.ReactElement<{ key: T }>[]
+    /**
+     * A fragment to display at the end of the tab bar. If specified, the tabs will not flex grow to fill the
+     * width.
+     */
+    tabBarEndFragment?: React.ReactFragment
 
+    children: undefined | React.ReactElement<{ key: T }> | React.ReactElement<{ key: T }>[]
+
+    id?: string
     className?: string
+    tabClassName?: string
 }
 
 interface TabState<T extends string> {
@@ -86,10 +107,23 @@ export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, Ta
     }
 
     public render(): JSX.Element | null {
+        let children: React.ReactElement<{ key: T }>[] | undefined
+        if (Array.isArray(this.props.children)) {
+            children = this.props.children as React.ReactElement<{ key: T }>[]
+        } else if (this.props.children) {
+            children = [this.props.children as React.ReactElement<{ key: T }>]
+        }
+
         return (
-            <div className={`tabs ${this.props.className || ''}`}>
-                <TabBar tabs={this.props.tabs} activeTab={this.state.activeTab} onSelect={this.onSelectTab} />
-                {this.props.children.find(c => c.key === this.state.activeTab)}
+            <div id={this.props.id} className={`tabs ${this.props.className || ''}`}>
+                <TabBar
+                    tabs={this.props.tabs}
+                    activeTab={this.state.activeTab}
+                    onSelect={this.onSelectTab}
+                    endFragment={this.props.tabBarEndFragment}
+                    tabClassName={this.props.tabClassName}
+                />
+                {children && children.find(c => c.key === this.state.activeTab)}
             </div>
         )
     }

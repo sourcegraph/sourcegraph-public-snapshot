@@ -13,6 +13,21 @@
         width: 0;
     }
 
+    &__tab {
+        // Mimic h5 style.
+        font-size: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: $color-text !important;
+        border: none !important;
+        pointer-events: none; // suppress hover color change
+    }
+    &__close-button {
+        font-size: 12px;
+        flex: 0 0 auto;
+        padding-right: 0.125rem;
+    }
+
     &-toggle {
         width: 1.25rem;
         height: 1.25rem;
@@ -34,5 +49,14 @@
 .theme-light {
     .repo-rev-sidebar {
         border-right-color: $color-light-border;
+
+        &__tab {
+            color: $color-light-text-1 !important;
+        }
+        &__close-button {
+            &:hover {
+                color: $color-light-text-5;
+            }
+        }
     }
 }
