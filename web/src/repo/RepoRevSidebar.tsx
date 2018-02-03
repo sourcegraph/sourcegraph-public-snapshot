@@ -111,7 +111,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                     type="button"
                     className={`btn btn-icon repo-rev-sidebar-toggle ${this.props.className}-toggle`}
                     onClick={this.onSidebarToggle}
-                    data-tooltip="Show file tree"
+                    data-tooltip="Show sidebar"
                 >
                     <ListIcon />
                 </button>
