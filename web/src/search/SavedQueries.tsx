@@ -47,7 +47,9 @@ export class SavedQueries extends React.Component<Props, State> {
         isCreating: false,
         loading: true,
         user: null,
-        isViewingExamples: localStorage.getItem(EXAMPLE_SEARCHES_CLOSED_KEY) !== 'true',
+        isViewingExamples: window.context.sourcegraphDotComMode
+            ? false
+            : localStorage.getItem(EXAMPLE_SEARCHES_CLOSED_KEY) !== 'true',
         exampleQuery: null,
     }
 
@@ -110,14 +112,16 @@ export class SavedQueries extends React.Component<Props, State> {
                         <div className="saved-queries__header">
                             <h2>{!isPanelOpen && 'Saved searches'}</h2>
                             <span className="saved-queries__center">
-                                <button
-                                    className="btn btn-link saved-queries__btn"
-                                    onClick={this.toggleExamples}
-                                    disabled={this.state.isViewingExamples}
-                                >
-                                    <WandIcon className="icon-inline saved-queries__wand" />
-                                    Discover built-in searches
-                                </button>
+                                {!window.context.sourcegraphDotComMode && (
+                                    <button
+                                        className="btn btn-link saved-queries__btn"
+                                        onClick={this.toggleExamples}
+                                        disabled={this.state.isViewingExamples}
+                                    >
+                                        <WandIcon className="icon-inline saved-queries__wand" />
+                                        Discover built-in searches
+                                    </button>
+                                )}
 
                                 <button
                                     className="btn btn-link saved-queries__btn"
