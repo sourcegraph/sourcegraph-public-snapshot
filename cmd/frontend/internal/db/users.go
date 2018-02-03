@@ -475,7 +475,7 @@ func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool
 	if !passwd.Valid {
 		return false, nil
 	}
-	return bcrypt.CompareHashAndPassword([]byte(passwd.String), []byte(password)) == nil, nil
+	return validPassword(passwd.String, password), nil
 }
 
 var (
@@ -580,10 +580,25 @@ func (u *users) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Cont
 	return err
 }
 
+// mockHashPassword if non-nil is used instead of hashPassword. This is useful
+// when running tests since we can use a faster implementation.
+var mockHashPassword func(password string) (sql.NullString, error)
+var mockValidPassword func(hash, password string) bool
+
 func hashPassword(password string) (sql.NullString, error) {
+	if mockHashPassword != nil {
+		return mockHashPassword(password)
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return sql.NullString{}, err
 	}
 	return sql.NullString{Valid: true, String: string(hash)}, nil
+}
+
+func validPassword(hash, password string) bool {
+	if mockValidPassword != nil {
+		return mockValidPassword(hash, password)
+	}
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
