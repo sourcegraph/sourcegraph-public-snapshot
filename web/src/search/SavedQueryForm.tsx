@@ -8,6 +8,7 @@ import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
 import { configurationCascade } from '../settings/configuration'
+import { eventLogger } from '../tracking/eventLogger'
 
 export interface SavedQueryFields {
     description: string
@@ -36,10 +37,10 @@ interface State {
     isSubmitting: boolean
     isFocused: boolean
     error?: any
+    sawUnsupportedNotifyQueryWarning: boolean
 }
 
 export class SavedQueryForm extends React.Component<Props, State> {
-    private handleQueryChange = this.createInputChangeHandler('query')
     private handleDescriptionChange = this.createInputChangeHandler('description')
     private handleSubjectChange = this.createInputChangeHandler('subject')
     private handleShowOnHomeChange = this.createInputChangeHandler('showOnHomepage')
@@ -67,6 +68,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             subjectOptions: [],
             isSubmitting: false,
             isFocused: false,
+            sawUnsupportedNotifyQueryWarning: false,
         }
     }
 
@@ -234,14 +236,12 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         </span>
                     </div>
                 )}
-                {(notify || notifySlack || notifyUsers.length > 0 || notifyOrganizations.length > 0) &&
-                    !query.includes('type:diff') &&
-                    !query.includes('type:commit') && (
-                        <div className="saved-query-form__also-notifying">
-                            Warning: non-commit searches do not currently support notifications. Consider adding
-                            `type:diff` or `type:commit` to your query.
-                        </div>
-                    )}
+                {this.isUnsupportedNotifyQuery(this.state.values) && (
+                    <div className="saved-query-form__also-notifying">
+                        Warning: non-commit searches do not currently support notifications. Consider adding `type:diff`
+                        or `type:commit` to your query.
+                    </div>
+                )}
                 <div className="saved-query-form__actions">
                     <button
                         type="submit"
@@ -268,6 +268,14 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     )}
             </form>
         )
+    }
+
+    /**
+     * Tells if the query is unsupported for sending notifications.
+     */
+    private isUnsupportedNotifyQuery(v: SavedQueryFields): boolean {
+        const notifying = v.notify || v.notifySlack || v.notifyUsers.length > 0 || v.notifyOrganizations.length > 0
+        return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
     }
 
     private savingToOrg = () => {
@@ -311,6 +319,25 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
     private handleInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
         this.setState(() => ({ isFocused: false }))
+    }
+
+    private handleQueryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newValues = {
+            ...this.state.values,
+            query: event.currentTarget.value,
+        }
+        if (!this.state.sawUnsupportedNotifyQueryWarning && this.isUnsupportedNotifyQuery(newValues)) {
+            this.setState({ sawUnsupportedNotifyQueryWarning: true })
+            eventLogger.log('SavedSearchUnsupportedNotifyQueryWarning')
+        }
+
+        const newQuery = event.currentTarget.value
+        this.setState(prevState => ({
+            values: {
+                ...prevState.values,
+                query: newQuery,
+            },
+        }))
     }
 
     /**

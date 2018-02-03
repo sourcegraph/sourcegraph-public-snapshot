@@ -22,11 +22,11 @@ func (n *notifier) slackNotify(ctx context.Context) {
 	text := fmt.Sprintf(`*%s* new result%s found for saved search <%s|"%s">`,
 		n.results.Data.Search.Results.ApproximateResultCount,
 		plural,
-		searchURL(n.newQuery, "slack"),
+		searchURL(n.newQuery, utmSourceSlack),
 		n.query.Description,
 	)
-
 	slackNotify(ctx, n.orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "results")
 }
 
 func slackNotifyCreated(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
@@ -35,10 +35,11 @@ func slackNotifyCreated(ctx context.Context, orgsToNotify []int32, query api.Sav
 	}
 
 	text := fmt.Sprintf(`Notifications for the new saved search <%s|"%s"> will be sent here when new results are available.`,
-		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), "slack"),
+		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), utmSourceSlack),
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "created")
 }
 
 func slackNotifyDeleted(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
@@ -47,10 +48,11 @@ func slackNotifyDeleted(ctx context.Context, orgsToNotify []int32, query api.Sav
 	}
 
 	text := fmt.Sprintf(`Saved search <%s|"%s"> has been deleted.`,
-		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), "slack"),
+		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), utmSourceSlack),
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "deleted")
 }
 
 func slackNotifySubscribed(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
@@ -59,10 +61,11 @@ func slackNotifySubscribed(ctx context.Context, orgsToNotify []int32, query api.
 	}
 
 	text := fmt.Sprintf(`Slack notifications enabled for the saved search <%s|"%s">. Notifications will be sent here when new results are available.`,
-		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), "slack"),
+		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), utmSourceSlack),
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "enabled")
 }
 
 func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
@@ -71,10 +74,11 @@ func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query ap
 	}
 
 	text := fmt.Sprintf(`Slack notifications for the saved search <%s|"%s"> disabled.`,
-		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), "slack"),
+		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), utmSourceSlack),
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
+	logEvent("", "SavedSearchSlackNotificationSent", "disabled")
 }
 
 func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {

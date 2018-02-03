@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventlogger"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
@@ -319,6 +320,11 @@ type notifier struct {
 	usersToNotify, orgsToNotify []int32
 }
 
+const (
+	utmSourceEmail = "saved-search-email"
+	utmSourceSlack = "saved-search-slack"
+)
+
 func searchURL(query, utmSource string) string {
 	if appURL == nil {
 		// Determine the app URL.
@@ -418,4 +424,12 @@ func getUsersAndOrgsToNotify(ctx context.Context, spec api.SavedQueryIDSpec, que
 		return users, orgsToNotify
 	}
 	return users, nil
+}
+
+func logEvent(email, eventName, eventType string) {
+	eventlogger.LogEvent(email, eventName, map[string]interface{}{
+		"saved_searches": map[string]interface{}{
+			"event_type": eventType,
+		},
+	})
 }
