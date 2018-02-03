@@ -2299,6 +2299,8 @@
   border-radius: 3px;
   -webkit-box-shadow: 0 3px 12px rgba(27, 31, 35, 0.15);
           box-shadow: 0 3px 12px rgba(27, 31, 35, 0.15); }
+  .sg-tooltip .tooltip__title {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; }
   .sg-tooltip__title-container {
     border-bottom: 1px solid #e1e4e8;
     padding: 12px;
@@ -2361,8 +2363,7 @@
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  color: #333;
-  background: #fafbfc; }
+  color: #333; }
 
 .hljs-comment,
 .hljs-quote {
@@ -2457,8 +2458,12 @@
 .sg-save-button {
   margin-left: 5px; }
 
+.sg-cancel-button {
+  margin-left: 5px; }
+
 .sg-url-input {
   width: 150px; }
 
 .sg-options {
-  width: 350px; }
+  width: 350px;
+  display: none; }
