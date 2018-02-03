@@ -242,6 +242,14 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         or `type:commit` to your query.
                     </div>
                 )}
+                {(notify || notifyUsers.length > 0 || notifyOrganizations.length > 0) &&
+                    !window.context.emailEnabled &&
+                    !this.isUnsupportedNotifyQuery(this.state.values) && (
+                        <div>
+                            Warning: Sending emails is not currently configured on this Sourcegraph server. Contact your
+                            admin for more information.
+                        </div>
+                    )}
                 <div className="saved-query-form__actions">
                     <button
                         type="submit"
