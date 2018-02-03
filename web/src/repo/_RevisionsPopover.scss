@@ -1,23 +1,8 @@
 @import '../components/Popover';
+@import '../components/Tabs';
 
 .revisions-popover {
     width: 35rem;
-
-    &__tabs {
-        flex: 0 0 auto;
-        display: flex;
-    }
-    &__tab {
-        flex: 1;
-        border-bottom: solid 3px $color-border;
-        border-radius: 0;
-        &--inactive {
-            opacity: 0.6;
-        }
-        &--active {
-            border-bottom-color: $color-primary;
-        }
-    }
 
     &-git-commit-node {
         &__link {
@@ -42,13 +27,6 @@
 
 .theme-light {
     .revisions-popover {
-        &__tab {
-            border-bottom-color: $color-light-border;
-            &--active {
-                border-bottom-color: $color-primary;
-            }
-        }
-
         &-git-commit-node {
             &__link:not(:hover) .revisions-popover-git-commit-node__message {
                 color: $color-light-text-1;
