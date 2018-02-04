@@ -69,7 +69,7 @@ interface TabsProps<T extends string> {
      */
     tabBarEndFragment?: React.ReactFragment
 
-    children: undefined | React.ReactElement<{ key: T }> | React.ReactElement<{ key: T }>[]
+    children: undefined | React.ReactElement<{ key: T }> | (undefined | React.ReactElement<{ key: T }>)[]
 
     id?: string
     className?: string
@@ -86,6 +86,11 @@ interface TabState<T extends string> {
  * tab's contents.
  */
 export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, TabState<T>> {
+    /**
+     * The class name to use for other elements injected via tabBarEndFragment that should have a bottom border.
+     */
+    public static tabBorderClassName = 'tab-bar__end-fragment-other-element'
+
     constructor(props: TabsProps<T>) {
         super(props)
 
@@ -123,7 +128,7 @@ export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, Ta
                     endFragment={this.props.tabBarEndFragment}
                     tabClassName={this.props.tabClassName}
                 />
-                {children && children.find(c => c.key === this.state.activeTab)}
+                {children && children.find(c => c && c.key === this.state.activeTab)}
             </div>
         )
     }
