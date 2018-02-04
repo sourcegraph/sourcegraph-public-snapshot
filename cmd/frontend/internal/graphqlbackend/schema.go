@@ -282,7 +282,6 @@ type Query {
     node(id: ID!): Node
     repository(uri: String!): Repository
     phabricatorRepo(uri: String!): PhabricatorRepo
-    symbols(id: String!, mode: String!): [Symbol!]!
     currentUser: User
     currentSiteSettings: Settings
     isUsernameAvailable(username: String!): Boolean!
@@ -858,13 +857,6 @@ type PhabricatorRepo {
 type TotalRefList {
     repositories: [Repository!]!
     total: Int!
-}
-
-type Symbol {
-    repository: Repository!
-    path: String!
-    line: Int!
-    character: Int!
 }
 
 # Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.

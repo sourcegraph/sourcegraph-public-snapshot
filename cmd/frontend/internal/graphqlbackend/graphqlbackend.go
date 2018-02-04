@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -14,8 +13,6 @@ import (
 	"github.com/neelance/graphql-go/relay"
 	"github.com/neelance/graphql-go/trace"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
@@ -25,10 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // GraphQLSchema is the parsed Schema with the root resolver attached. It is
@@ -221,68 +214,6 @@ func refreshRepo(ctx context.Context, repo *types.Repo) error {
 		return nil
 	}
 	return backend.Repos.RefreshIndex(ctx, repo.URI)
-}
-
-// Resolves symbols by a global symbol ID (use case for symbol URLs)
-func (r *schemaResolver) Symbols(ctx context.Context, args *struct {
-	ID   string
-	Mode string
-}) ([]*symbolResolver, error) {
-
-	if args.Mode != "go" {
-		return []*symbolResolver{}, nil
-	}
-
-	importPath := strings.Split(args.ID, "/-/")[0]
-	cloneURL, err := gobuildserver.ResolveImportPathCloneURL(importPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if cloneURL == "" || !strings.HasPrefix(cloneURL, "https://github.com") {
-		return nil, fmt.Errorf("non-github clone URL resolved for import path %s", importPath)
-	}
-
-	repoURI := api.RepoURI(strings.TrimPrefix(cloneURL, "https://"))
-	repo, err := db.Repos.GetByURI(ctx, repoURI)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	if err := backend.Repos.RefreshIndex(ctx, repoURI); err != nil {
-		return nil, err
-	}
-
-	rev, err := backend.Repos.ResolveRev(ctx, repo, "")
-	if err != nil {
-		return nil, err
-	}
-
-	var symbols []lsp.SymbolInformation
-	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}
-
-	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, lsp.DocumentURI("git://"+string(repoURI)+"?"+string(rev)), "workspace/symbol", params, &symbols)
-	if err != nil {
-		return nil, err
-	}
-
-	var resolvers []*symbolResolver
-	for _, symbol := range symbols {
-		uri, err := uri.Parse(string(symbol.Location.URI))
-		if err != nil {
-			return nil, err
-		}
-		resolvers = append(resolvers, &symbolResolver{
-			path:      uri.Fragment,
-			line:      int32(symbol.Location.Range.Start.Line),
-			character: int32(symbol.Location.Range.Start.Character),
-			repo:      repo,
-		})
-	}
-
-	return resolvers, nil
 }
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*userResolver, error) {

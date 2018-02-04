@@ -12,9 +12,10 @@ import (
 var Mocks MockServices
 
 type MockServices struct {
-	Defs  MockDefs
-	Pkgs  MockPkgs
-	Repos MockRepos
+	Defs    MockDefs
+	Pkgs    MockPkgs
+	Repos   MockRepos
+	Symbols MockSymbols
 }
 
 // testContext creates a new context.Context for use by tests

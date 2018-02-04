@@ -1,8 +1,6 @@
 package app
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,9 +8,12 @@ import (
 	"path"
 	"strings"
 
-	"golang.org/x/net/context/ctxhttp"
-
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 type graphqlQuery struct {
@@ -24,9 +25,7 @@ type graphqlQuery struct {
 // https://sourcegraph.com/go/github.com/gorilla/mux/-/Vars) by
 // redirecting them to the file and line/column URL of the definition.
 func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
-	// Make a standard HTTP request to our GraphQL endpoint. This
-	// works because we only care about symbol URLs for Go defs in
-	// public repos.
+	ctx := r.Context()
 
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
 	if len(parts) < 2 {
@@ -35,63 +34,54 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	mode := parts[0]
 	symbolID := strings.Join(parts[1:], "/")
 
-	body := graphqlQuery{
-		Query: `query Workbench($id: String!, $mode: String!) {
-	symbols(id: $id, mode: $mode) {
-		path
-		line
-		character
-		repository {
-		uri
+	if mode != "go" {
+		return &errcode.HTTPErr{
+			Status: http.StatusNotFound,
+			Err:    errors.New("invalid mode (only \"go\" is supported"),
 		}
 	}
-}`,
-		Variables: map[string]interface{}{
-			"id":   symbolID,
-			"mode": mode,
-			"rev":  "",
-		},
-	}
-	data, err := json.Marshal(body)
+
+	importPath := strings.Split(symbolID, "/-/")[0]
+	cloneURL, err := gobuildserver.ResolveImportPathCloneURL(importPath)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", "http://localhost:3080/.api/graphql", bytes.NewReader(data))
+	if cloneURL == "" || !strings.HasPrefix(cloneURL, "https://github.com") {
+		return fmt.Errorf("non-github clone URL resolved for import path %s", importPath)
+	}
+
+	repoURI := api.RepoURI(strings.TrimSuffix(strings.TrimPrefix(cloneURL, "https://"), ".git"))
+	repo, err := backend.Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return err
 	}
-	for k := range r.Header {
-		req.Header[k] = r.Header[k]
+	if err := backend.Repos.RefreshIndex(ctx, repoURI); err != nil {
+		return err
 	}
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	symbolResp, err := ctxhttp.Do(r.Context(), nil, req)
+
+	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return err
 	}
-	defer symbolResp.Body.Close()
 
-	var resp struct {
-		Data struct {
-			Symbols []struct {
-				Path       string `json:"path"`
-				Line       int    `json:"line"`
-				Character  int    `json:"character"`
-				Repository struct {
-					URI string `json:"uri"`
-				}
-			}
-		} `json:"data"`
-	}
-	if err := json.NewDecoder(symbolResp.Body).Decode(&resp); err != nil {
+	symbols, err := backend.Symbols.List(r.Context(), repo.URI, commitID, mode, lspext.WorkspaceSymbolParams{
+		Symbol: lspext.SymbolDescriptor{"id": symbolID},
+	})
+	if err != nil {
 		return err
 	}
 
-	if len(resp.Data.Symbols) > 0 {
-		symbol := resp.Data.Symbols[0]
+	if len(symbols) > 0 {
+		symbol := symbols[0]
+		uri, err := uri.Parse(string(symbol.Location.URI))
+		if err != nil {
+			return err
+		}
+		filePath := uri.Fragment
 		dest := &url.URL{
-			Path:     "/" + path.Join(symbol.Repository.URI, "-/blob", symbol.Path),
-			Fragment: fmt.Sprintf("L%d:%d$references", symbol.Line+1, symbol.Character+1),
+			Path:     "/" + path.Join(string(repo.URI), "-/blob", filePath),
+			Fragment: fmt.Sprintf("L%d:%d$references", symbol.Location.Range.Start.Line+1, symbol.Location.Range.End.Character+1),
 		}
 		http.Redirect(w, r, dest.String(), http.StatusFound)
 		return nil
