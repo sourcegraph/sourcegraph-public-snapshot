@@ -99,7 +99,7 @@ describe('e2e test suite', () => {
             'Other repositories'
         )
 
-        await chrome.wait('.references-widget__badge')
+        await chrome.wait('.references-widget__badge--loaded')
         await retry(async () =>
             assert.ok(
                 parseInt(

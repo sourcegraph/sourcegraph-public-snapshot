@@ -282,10 +282,9 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     {externalRefCount > 0 ||
                         (!this.state.loadingExternal && (
                             <div
-                                className={
-                                    'references-widget__badge' +
-                                    (this.state.group === 'external' ? ' references-widget__badge--active' : '')
-                                }
+                                className={`references-widget__badge ${
+                                    this.state.loadingExternal ? '' : 'references-widget__badge--loaded'
+                                } ${this.state.group === 'external' ? 'references-widget__badge--active' : ''}`}
                             >
                                 {externalRefCount}
                             </div>
