@@ -1,5 +1,6 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
+import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import groupBy from 'lodash/groupBy'
@@ -254,14 +255,18 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                             This repository
                         </Link>
                     </h5>
-                    <div
-                        className={
-                            'references-widget__badge' +
-                            (this.state.group === 'local' ? ' references-widget__badge--active' : '')
-                        }
-                    >
-                        {localRefCount}
-                    </div>
+                    {this.state.loadingLocal ? (
+                        <Loader className="icon-inline references-widget__loader" />
+                    ) : (
+                        <div
+                            className={
+                                'references-widget__badge' +
+                                (this.state.group === 'local' ? ' references-widget__badge--active' : '')
+                            }
+                        >
+                            {localRefCount}
+                        </div>
+                    )}
                     <h5>
                         <Link
                             className={
@@ -274,14 +279,18 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                             Other repositories
                         </Link>
                     </h5>
-                    <div
-                        className={
-                            'references-widget__badge' +
-                            (this.state.group === 'external' ? ' references-widget__badge--active' : '')
-                        }
-                    >
-                        {externalRefCount}
-                    </div>
+                    {externalRefCount > 0 ||
+                        (!this.state.loadingExternal && (
+                            <div
+                                className={
+                                    'references-widget__badge' +
+                                    (this.state.group === 'external' ? ' references-widget__badge--active' : '')
+                                }
+                            >
+                                {externalRefCount}
+                            </div>
+                        ))}
+                    {this.state.loadingExternal && <Loader className="icon-inline references-widget__loader" />}
                     <span className="references-widget__close-icon" onClick={this.onDismiss} data-tooltip="Close">
                         <CloseIcon className="icon-inline" />
                     </span>
