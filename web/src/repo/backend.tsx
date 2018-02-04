@@ -42,7 +42,7 @@ export const fetchRepository = memoizeObservable(
                     repository(uri: $repoPath) {
                         id
                         uri
-                        url
+                        externalURL
                         hostType
                         description
                         enabled
@@ -256,7 +256,7 @@ interface FetchFileMetadataCtx {
 
 export interface FileMetadata {
     isDirectory: boolean
-    url: string | null
+    externalURL: string | null
 }
 
 export const fetchFileMetadata = memoizeObservable(
@@ -268,7 +268,7 @@ export const fetchFileMetadata = memoizeObservable(
                         commit(rev: $rev) {
                             file(path: $filePath) {
                                 isDirectory
-                                url
+                                externalURL
                             }
                         }
                     }

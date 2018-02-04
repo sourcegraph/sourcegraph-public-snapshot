@@ -140,11 +140,11 @@ function onClick(): void {
 }
 
 function urlToCodeHost(repo: GQL.IRepository, file?: FileMetadata): string | null {
-    if (file && file.url) {
-        return file.url
+    if (file && file.externalURL) {
+        return file.externalURL
     }
-    if (!file && repo.url) {
-        return repo.url
+    if (!file && repo.externalURL) {
+        return repo.externalURL
     }
     return null
 }

@@ -78,7 +78,22 @@ func (r *fileResolver) Repository(ctx context.Context) (*repositoryResolver, err
 	return r.commit.Repository(ctx)
 }
 
-func (r *fileResolver) URL(ctx context.Context) (*string, error) {
+func (r *fileResolver) URL(ctx context.Context) (string, error) {
+	url := r.commit.repoRevURL() + "/-/"
+
+	isDir, err := r.IsDirectory(ctx)
+	if err != nil {
+		return "", err
+	}
+	if isDir {
+		url += "tree"
+	} else {
+		url += "blob"
+	}
+	return url + "/" + r.path, nil
+}
+
+func (r *fileResolver) ExternalURL(ctx context.Context) (*string, error) {
 	isDir, err := r.IsDirectory(ctx)
 	if err != nil {
 		return nil, nil

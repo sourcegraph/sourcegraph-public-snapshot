@@ -29,6 +29,10 @@ type gitCommitResolver struct {
 	repoID api.RepoID // TODO!(sqs): can remove?
 	repo   *repositoryResolver
 
+	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
+	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
+	inputRev *string
+
 	oid       gitObjectID
 	author    signatureResolver
 	committer *signatureResolver
@@ -133,6 +137,20 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		query:        args.Query,
 		repo:         r.repo,
 	}
+}
+
+func (r *gitCommitResolver) repoRevURL() string {
+	url := r.repo.URL()
+	if r.inputRev != nil && *r.inputRev == "" {
+		return url
+	}
+	var rev string
+	if r.inputRev != nil {
+		rev = *r.inputRev
+	} else {
+		rev = string(r.oid)
+	}
+	return url + "@" + rev
 }
 
 func gitCommitSubject(message string) string {

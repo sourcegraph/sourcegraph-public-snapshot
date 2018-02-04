@@ -653,8 +653,10 @@ type Repository implements Node {
     # Information about the text search index for this repository, or null if text search indexing
     # is not enabled or supported for this repository.
     textSearchIndex: RepositoryTextSearchIndex
-    # URL specifying where to view the repository at an external location.
-    url: String
+    # The URL to this repository.
+    url: String!
+    # The URL specifying where to view the repository at an external location.
+    externalURL: String
     # The type of code host that hosts this repository at its external url (e.g. GitHub, Phabricator).
     hostType: String
     # The repository's Git refs.
@@ -944,6 +946,8 @@ interface TreeEntry {
     repository: Repository!
     # The list of Git commits that touched this tree entry.
     commits: [GitCommit!]!
+    # The URL to this tree entry.
+    url: String!
 }
 
 type Directory implements TreeEntry {
@@ -958,6 +962,8 @@ type Directory implements TreeEntry {
     repository: Repository!
     # The list of Git commits that touched this directory.
     commits: [GitCommit!]!
+    # The URL to this directory.
+    url: String!
     tree: Tree!
 }
 
@@ -977,6 +983,8 @@ type File implements TreeEntry {
     repository: Repository!
     # The list of Git commits that touched this file.
     commits: [GitCommit!]!
+    # The URL to this file.
+    url: String!
 
     # The content of this file.
     content: String!
@@ -988,7 +996,7 @@ type File implements TreeEntry {
     richHTML: String!
 
     # URL specifying where to view the file at an external location.
-    url: String
+    externalURL: String
     binary: Boolean!
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
