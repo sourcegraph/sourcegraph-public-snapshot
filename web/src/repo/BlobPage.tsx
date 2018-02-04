@@ -102,7 +102,7 @@ function updateLine(
 }
 
 /**
- * The same as updateLine, but also scrolls the blob.l
+ * The same as updateLine, but also scrolls the blob.
  */
 function updateAndScrollToLine(
     cell: HTMLElement | HTMLElement[],
@@ -110,8 +110,14 @@ function updateAndScrollToLine(
     ctx: AbsoluteRepoFileRange,
     clickEvent?: MouseEvent
 ): void {
+    if (!cell) {
+        return
+    }
     if (!Array.isArray(cell)) {
         cell = [cell]
+    }
+    if (cell.length === 0) {
+        return
     }
 
     updateLine(cell, history, ctx, clickEvent)
@@ -178,12 +184,8 @@ class Blob extends React.Component<Props, State> {
                 // If showing modal, remove any tooltip then highlight the element for the given start position.
                 this.setFixedTooltip()
                 if (nextHash.line) {
-                    const el = findElementWithOffset(
-                        getCodeCell(nextHash.line!).childNodes[1]! as HTMLElement,
-                        nextHash.character || 0
-                    )
-                    if (el) {
-                        el.classList.add('selection-highlight-sticky')
+                    this.addSelectionHighlightSticky(nextHash.line, nextHash.character)
+                    if (getCodeCell(nextHash.line)) {
                         this.scrollToLine(nextProps)
                     }
                 }
@@ -251,19 +253,23 @@ class Blob extends React.Component<Props, State> {
         // Update highlighted range.
         if (this.props.location.hash !== prevProps.location.hash) {
             if (parsedHash.line) {
-                const el = findElementWithOffset(
-                    getCodeCell(parsedHash.line!).childNodes[1]! as HTMLElement,
-                    parsedHash.character || 0
-                )
-                if (el) {
-                    el.classList.add('selection-highlight-sticky')
-                }
+                this.addSelectionHighlightSticky(parsedHash.line, parsedHash.character)
             }
         }
     }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+    }
+
+    private addSelectionHighlightSticky(line: number, character?: number): void {
+        const cell = getCodeCell(line)
+        if (cell) {
+            const el = findElementWithOffset(cell.childNodes[1]! as HTMLElement, character || 0)
+            if (el) {
+                el.classList.add('selection-highlight-sticky')
+            }
+        }
     }
 
     public render(): JSX.Element | null {
@@ -299,23 +305,28 @@ class Blob extends React.Component<Props, State> {
                         filter(props => {
                             const parsed = parseHash(props.location.hash)
                             if (parsed.line && parsed.character) {
-                                const td = getCodeCell(parsed.line).childNodes[1] as HTMLTableDataCellElement
-                                if (td && !td.classList.contains('annotated')) {
-                                    td.classList.add('annotated')
-                                    convertNode(td)
+                                const cell = getCodeCell(parsed.line)
+                                if (cell) {
+                                    const td = cell.childNodes[1] as HTMLTableDataCellElement
+                                    if (td && !td.classList.contains('annotated')) {
+                                        td.classList.add('annotated')
+                                        convertNode(td)
+                                    }
                                 }
                                 if (!parsed.modal) {
                                     return true
                                 }
                                 // Don't show a tooltip when there is a modal (but do highlight the token)
                                 // TODO(john): this can probably be simplified.
-                                const el = findElementWithOffset(
-                                    getCodeCell(parsed.line!).childNodes[1]! as HTMLElement,
-                                    parsed.character!
-                                )
-                                if (el) {
-                                    el.classList.add('selection-highlight-sticky')
-                                    return false
+                                if (cell) {
+                                    const el = findElementWithOffset(
+                                        cell.childNodes[1]! as HTMLElement,
+                                        parsed.character!
+                                    )
+                                    if (el) {
+                                        el.classList.add('selection-highlight-sticky')
+                                        return false
+                                    }
                                 }
                             }
                             this.setFixedTooltip()
@@ -534,7 +545,8 @@ class Blob extends React.Component<Props, State> {
         const parsed = parseHash(props.location.hash)
         const { line, character, endLine, endCharacter, modalMode } = parsed
         if (line) {
-            updateAndScrollToLine(getCodeCells(line, endLine), props.history, {
+            const cells = getCodeCells(line, endLine)
+            updateAndScrollToLine(cells, props.history, {
                 repoPath: props.repoPath,
                 rev: props.rev,
                 commitID: props.commitID,

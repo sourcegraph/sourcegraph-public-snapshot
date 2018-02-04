@@ -294,7 +294,10 @@ export function getCodeCells(line: number, endLine: number = line): HTMLElement[
     const table = document.querySelector('.blob > table') as HTMLTableElement
     const rows: HTMLElement[] = []
     for (let i = line; i <= endLine; i++) {
-        rows.push(table.rows[i - 1])
+        const cell = table.rows[i - 1]
+        if (cell) {
+            rows.push(cell)
+        }
     }
     return rows
 }
