@@ -106,7 +106,9 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 	if err != nil {
 		return nil, err
 	}
-	return toGitCommitResolver(r, commit), nil
+	resolver := toGitCommitResolver(r, commit)
+	resolver.inputRev = &args.Rev
+	return resolver, nil
 }
 
 func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCommitResolver, error) {
@@ -150,7 +152,9 @@ func (r *repositoryResolver) UpdatedAt() *string {
 	return nil
 }
 
-func (r *repositoryResolver) URL(ctx context.Context) (*string, error) {
+func (r *repositoryResolver) URL() string { return "/" + string(r.repo.URI) }
+
+func (r *repositoryResolver) ExternalURL(ctx context.Context) (*string, error) {
 	uri := r.repo.URI
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Repository != "" {

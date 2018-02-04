@@ -28,7 +28,6 @@ import (
 type fileResolver struct {
 	commit *gitCommitResolver
 
-	name string
 	path string
 
 	// stat is populated by the creator of this fileResolver if it has this
@@ -38,13 +37,11 @@ type fileResolver struct {
 	stat os.FileInfo
 }
 
-func (r *fileResolver) Name() string {
-	return r.name
-}
+func (r *fileResolver) Path() string { return r.path }
+func (r *fileResolver) Name() string { return path.Base(r.path) }
 
 func (r *fileResolver) ToDirectory() (*fileResolver, bool) { return r, true }
-
-func (r *fileResolver) ToFile() (*fileResolver, bool) { return r, true }
+func (r *fileResolver) ToFile() (*fileResolver, bool)      { return r, true }
 
 func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -81,7 +78,22 @@ func (r *fileResolver) Repository(ctx context.Context) (*repositoryResolver, err
 	return r.commit.Repository(ctx)
 }
 
-func (r *fileResolver) URL(ctx context.Context) (*string, error) {
+func (r *fileResolver) URL(ctx context.Context) (string, error) {
+	url := r.commit.repoRevURL() + "/-/"
+
+	isDir, err := r.IsDirectory(ctx)
+	if err != nil {
+		return "", err
+	}
+	if isDir {
+		url += "tree"
+	} else {
+		url += "blob"
+	}
+	return url + "/" + r.path, nil
+}
+
+func (r *fileResolver) ExternalURL(ctx context.Context) (*string, error) {
 	isDir, err := r.IsDirectory(ctx)
 	if err != nil {
 		return nil, nil

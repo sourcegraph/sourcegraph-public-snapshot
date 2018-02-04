@@ -42,7 +42,7 @@ export const fetchRepository = memoizeObservable(
                     repository(uri: $repoPath) {
                         id
                         uri
-                        url
+                        externalURL
                         hostType
                         description
                         enabled
@@ -212,40 +212,6 @@ export const fetchHighlightedFileLines = memoizeObservable(
     ctx => makeRepoURI(ctx) + `?isLightTheme=${ctx.isLightTheme}`
 )
 
-export const listAllFiles = memoizeObservable(
-    (ctx: { repoPath: string; commitID: string }): Observable<string[]> =>
-        queryGraphQL(
-            gql`
-                query FileTree($repoPath: String!, $commitID: String!) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            tree(recursive: true) {
-                                files {
-                                    name
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.tree ||
-                    !data.repository.commit.tree.files
-                ) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit.tree.files.map(file => file.name)
-            })
-        ),
-    makeRepoURI
-)
-
 interface BlobContent {
     isDirectory: boolean
     content: string
@@ -290,7 +256,7 @@ interface FetchFileMetadataCtx {
 
 export interface FileMetadata {
     isDirectory: boolean
-    url: string | null
+    externalURL: string | null
 }
 
 export const fetchFileMetadata = memoizeObservable(
@@ -302,7 +268,7 @@ export const fetchFileMetadata = memoizeObservable(
                         commit(rev: $rev) {
                             file(path: $filePath) {
                                 isDirectory
-                                url
+                                externalURL
                             }
                         }
                     }

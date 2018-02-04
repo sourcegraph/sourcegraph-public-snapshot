@@ -139,7 +139,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					path := res.fileMatch.JPath
 					fileResolver := &fileResolver{
 						path: path,
-						name: path,
 						commit: &gitCommitResolver{
 							// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
 							// (which would make it slow). This gitCommitResolver will return empty

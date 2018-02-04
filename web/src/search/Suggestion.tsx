@@ -41,16 +41,16 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
         }
         case 'File': {
             const descriptionParts = [basename(item.repository.uri)]
-            const dir = dirname(item.name)
+            const dir = dirname(item.path)
             if (dir !== undefined && dir !== '.') {
                 descriptionParts.push(`${dir}/`)
             }
 
             return {
-                title: basename(item.name),
+                title: item.name,
                 description: descriptionParts.join(' — '),
                 type: item.isDirectory ? SuggestionType.Dir : SuggestionType.File,
-                url: `/${item.repository.uri}/-/${item.isDirectory ? 'tree' : 'blob'}/${item.name}`,
+                url: `/${item.repository.uri}/-/${item.isDirectory ? 'tree' : 'blob'}/${item.path}`,
                 urlLabel: item.isDirectory ? 'go to dir' : 'go to file',
             }
         }

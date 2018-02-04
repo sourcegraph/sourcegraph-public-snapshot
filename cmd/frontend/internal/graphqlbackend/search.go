@@ -589,7 +589,7 @@ func newSearchResultResolver(result interface{}, score int) *searchResultResolve
 		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI), label: string(r.repo.URI)}
 
 	case *fileResolver:
-		return &searchResultResolver{result: r, score: score, length: len(r.name), label: r.name}
+		return &searchResultResolver{result: r, score: score, length: len(r.path), label: r.path}
 
 	default:
 		panic("never here")
