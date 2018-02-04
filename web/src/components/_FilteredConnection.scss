@@ -6,9 +6,44 @@
     &--noncompact &__form {
         margin: 1rem 0 0.5rem;
     }
-
     &--noncompact &__show-more {
         margin-bottom: 2rem;
+    }
+
+    &--compact &__nodes,
+    &--compact &__summary {
+        margin-bottom: 0;
+    }
+    &--compact &__filter {
+        border-top-width: 0;
+        border-left-width: 0;
+        border-right-width: 0;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    &--compact &__loader {
+        padding: $popover-item-padding-v $popover-item-padding-h;
+        flex: 0 0;
+    }
+    &--compact &__nodes {
+        flex: 1 1;
+        overflow-y: auto;
+        margin-top: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    &--compact &__summary {
+        flex: 0 0;
+        padding: $popover-item-padding-v $popover-item-padding-h;
+        opacity: 0.7;
+        border-top: solid 1px $color-border;
+    }
+    &--compact &__show-more {
+        flex: 0 0;
+        border: none;
+        border-radius: 0;
+        text-align: left;
+        padding-left: 0.75rem;
+        font-size: 12px;
     }
 }
 
