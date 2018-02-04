@@ -46,8 +46,8 @@ required = [
 
 # We don't support the godef code that is in master of go-langserver
 [[constraint]]
+  branch = "no-godef"
   name = "github.com/sourcegraph/go-langserver"
-  revision = "d62c2787506ccc8d2cf68eae5a892ca7130e2cbb"
 
 # github_flavored_markdown depends on v1 of blackfriday, which is the master
 # branch.

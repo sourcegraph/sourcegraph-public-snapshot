@@ -833,6 +833,7 @@
   revision = "fc136a6c6dec6d9921c6f6efe24d5289c9d4d776"
 
 [[projects]]
+  branch = "no-godef"
   name = "github.com/sourcegraph/go-langserver"
   packages = [
     "langserver",
@@ -844,7 +845,7 @@
     "pkg/lsp",
     "pkg/lspext"
   ]
-  revision = "d62c2787506ccc8d2cf68eae5a892ca7130e2cbb"
+  revision = "51f47385a6570efb4b7ebd9aa859acf6d580b12d"
 
 [[projects]]
   branch = "master"
@@ -1352,6 +1353,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7540d78e2c0aa488d2668e8846220149bc92f11278f05fd88722cf010f0c745a"
+  inputs-digest = "e6bd62ed149b7fdefb529c8113d1dc87672f66e9f44ad061c96020878f410708"
   solver-name = "gps-cdcl"
   solver-version = 1
