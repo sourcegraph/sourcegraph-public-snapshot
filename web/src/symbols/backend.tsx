@@ -56,7 +56,8 @@ export function fetchSymbols(
                 !data ||
                 !data.node ||
                 !(data.node as GQL.IRepository).commit ||
-                !(data.node as GQL.IRepository).commit!.symbols
+                !(data.node as GQL.IRepository).commit!.symbols ||
+                !(data.node as GQL.IRepository).commit!.symbols.nodes
             ) {
                 throw createAggregateError(errors)
             }
