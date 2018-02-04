@@ -247,6 +247,19 @@ class Blob extends React.Component<Props, State> {
         // The HTML contents were updated on a mounted component, e.g. from a 'back' or 'forward' event,
         // or a jump-to-def.
         this.scrollToLine(this.props)
+
+        // Update highlighted range.
+        if (this.props.location.hash !== prevProps.location.hash) {
+            if (parsedHash.line) {
+                const el = findElementWithOffset(
+                    getCodeCell(parsedHash.line!).childNodes[1]! as HTMLElement,
+                    parsedHash.character || 0
+                )
+                if (el) {
+                    el.classList.add('selection-highlight-sticky')
+                }
+            }
+        }
     }
 
     public componentWillUnmount(): void {
