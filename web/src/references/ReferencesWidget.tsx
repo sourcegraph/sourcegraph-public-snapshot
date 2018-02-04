@@ -9,6 +9,7 @@ import partition from 'lodash/partition'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
 import { bufferTime } from 'rxjs/operators/bufferTime'
 import { catchError } from 'rxjs/operators/catchError'
 import { concat } from 'rxjs/operators/concat'
@@ -34,7 +35,16 @@ interface Props extends AbsoluteRepoFilePosition {
     isLightTheme: boolean
 }
 
-interface ReferencesState {
+/** The references' subject (what the references refer to). */
+interface ReferencesStateSubject {
+    repoPath: string
+    commitID: string
+    filePath: string
+    line: number
+    character: number
+}
+
+interface ReferencesState extends ReferencesStateSubject {
     references: Location[]
     loadingLocal: boolean
     loadingExternal: boolean
@@ -43,6 +53,41 @@ interface ReferencesState {
 interface State extends ReferencesState {
     group?: 'local' | 'external'
     itemsToShow: number
+}
+
+function initialReferencesState(props: Props): ReferencesState {
+    return {
+        ...referencesStateSubject(props),
+        references: [],
+        loadingLocal: true,
+        loadingExternal: true,
+    }
+}
+
+function referencesStateSubject(props: Props): ReferencesStateSubject {
+    const parsedHash = parseHash(props.location.hash)
+    return {
+        repoPath: props.repoPath,
+        commitID: props.commitID,
+        filePath: props.filePath,
+        line: parsedHash.line || 1,
+        character: parsedHash.character || 1,
+    }
+}
+
+function referencesStateSubjectIsEqual(
+    a: ReferencesStateSubject,
+    b: ReferencesStateSubject & { line?: number; character?: number }
+): boolean {
+    return (
+        a &&
+        b &&
+        a.repoPath === b.repoPath &&
+        a.commitID === b.commitID &&
+        a.filePath === b.filePath &&
+        a.line === b.line &&
+        a.character === b.character
+    )
 }
 
 export class ReferencesWidget extends React.PureComponent<Props, State> {
@@ -55,52 +100,72 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
         this.state = {
             group: parsedHash.modalMode || 'local',
             itemsToShow: 3,
-            references: [],
-            loadingLocal: true,
-            loadingExternal: true,
+            ...initialReferencesState(props),
         }
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    distinctUntilChanged(isEqual),
+                    // Don't trigger refetch when just switching group (local/external)
+                    distinctUntilChanged<Props>((a, b) =>
+                        referencesStateSubjectIsEqual(referencesStateSubject(a), referencesStateSubject(b))
+                    ),
                     switchMap(props =>
                         merge(
+                            of([initialReferencesState(props)]),
                             fetchReferences(props).pipe(
-                                map(references => ({ references } as State)),
+                                map(references => ({ ...referencesStateSubject(props), references } as State)),
                                 catchError(e => {
                                     console.error(e)
                                     return []
                                 }),
-                                concat([{ loadingLocal: false } as State])
+                                concat([{ loadingLocal: false } as State]),
+                                map(update => [update])
                             ),
                             fetchExternalReferences(props).pipe(
-                                map(references => ({ references } as State)),
+                                map(references => ({ ...referencesStateSubject(props), references } as State)),
                                 catchError(e => {
                                     console.error(e)
                                     return []
                                 }),
-                                concat([{ loadingExternal: false } as State])
+                                concat([{ loadingExternal: false } as State]),
+                                bufferTime(500)
                             )
                         )
                     ),
-                    bufferTime(500),
                     filter(updates => updates.length > 0),
                     scan<ReferencesState[], ReferencesState>(
                         (currState, updates) => {
-                            let newState = currState
+                            const reset =
+                                !currState ||
+                                updates.some(
+                                    u =>
+                                        !!u.repoPath && // filter out updates only to loading{Local,External}
+                                        !referencesStateSubjectIsEqual(
+                                            u as ReferencesStateSubject,
+                                            currState as ReferencesStateSubject
+                                        )
+                                )
+                            let newState = reset ? initialReferencesState(this.props) : currState
+
                             for (const update of updates) {
-                                if (update.references) {
-                                    newState = {
-                                        ...newState,
-                                        references: newState.references.concat(update.references),
-                                    }
-                                } else {
-                                    newState = { ...newState, ...update }
+                                newState = {
+                                    ...newState,
+                                    ...update,
+                                    references: newState.references.concat(update.references || []),
                                 }
                             }
                             return newState
                         },
-                        { references: [], loadingLocal: true, loadingExternal: true }
+                        {
+                            repoPath: '',
+                            commitID: '',
+                            filePath: '',
+                            line: 0,
+                            character: 0,
+                            references: [],
+                            loadingLocal: true,
+                            loadingExternal: true,
+                        } as ReferencesState
                     )
                 )
                 .subscribe(state => this.setState(state))
@@ -116,7 +181,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
         if (parsedHash.modalMode && parsedHash.modalMode !== this.state.group) {
             this.setState({ group: parsedHash.modalMode, itemsToShow: 3 })
         }
-        if (isEqual(omit(this.props, 'rev'), omit(nextProps, 'rev'))) {
+        if (!isEqual(omit(this.props, 'rev'), omit(nextProps, 'rev'))) {
             this.componentUpdates.next(nextProps)
         }
     }
