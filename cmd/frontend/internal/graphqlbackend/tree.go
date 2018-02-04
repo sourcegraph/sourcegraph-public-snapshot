@@ -50,7 +50,6 @@ func (r *treeResolver) toFileResolvers(filter func(fi os.FileInfo) bool) []*file
 		if filter == nil || filter(entry) {
 			l = append(l, &fileResolver{
 				commit: r.commit,
-				name:   entry.Name(),
 				path:   path.Join(r.path, entry.Name()),
 				stat:   entry,
 			})

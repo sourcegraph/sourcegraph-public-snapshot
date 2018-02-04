@@ -934,16 +934,29 @@ type Tree {
 
 # A file, directory, or other tree entry.
 interface TreeEntry {
+    # The full path (relative to the repository root) of this tree entry.
+    path: String!
+    # The base name (i.e., file name only) of this tree entry.
     name: String!
+    # Whether this tree entry is a directory.
     isDirectory: Boolean!
+    # The repository containing this tree entry.
     repository: Repository!
+    # The list of Git commits that touched this tree entry.
     commits: [GitCommit!]!
 }
 
 type Directory implements TreeEntry {
+    # The full path (relative to the repository root) of this directory.
+    path: String!
+    # The base name (i.e., file name only) of this directory.
     name: String!
+    # True because this is a directory. (The value differs for other TreeEntry interface implementations, such as
+    # File.)
     isDirectory: Boolean!
+    # The repository containing this directory.
     repository: Repository!
+    # The list of Git commits that touched this directory.
     commits: [GitCommit!]!
     tree: Tree!
 }
@@ -954,7 +967,18 @@ type HighlightedFile {
 }
 
 type File implements TreeEntry {
+    # The full path (relative to the repository root) of this file.
+    path: String!
+    # The base name (i.e., file name only) of this file.
     name: String!
+    # False because this is a file, not a directory.
+    isDirectory: Boolean!
+    # The repository containing this file.
+    repository: Repository!
+    # The list of Git commits that touched this file.
+    commits: [GitCommit!]!
+
+    # The content of this file.
     content: String!
 
     # The file rendered as rich HTML, or an empty string if it is not a supported
@@ -965,11 +989,8 @@ type File implements TreeEntry {
 
     # URL specifying where to view the file at an external location.
     url: String
-    repository: Repository!
     binary: Boolean!
-    isDirectory: Boolean!
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    commits: [GitCommit!]!
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     blameRaw(startLine: Int!, endLine: Int!): String!

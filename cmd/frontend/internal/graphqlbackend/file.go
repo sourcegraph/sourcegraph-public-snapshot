@@ -28,7 +28,6 @@ import (
 type fileResolver struct {
 	commit *gitCommitResolver
 
-	name string
 	path string
 
 	// stat is populated by the creator of this fileResolver if it has this
@@ -38,13 +37,11 @@ type fileResolver struct {
 	stat os.FileInfo
 }
 
-func (r *fileResolver) Name() string {
-	return r.name
-}
+func (r *fileResolver) Path() string { return r.path }
+func (r *fileResolver) Name() string { return path.Base(r.path) }
 
 func (r *fileResolver) ToDirectory() (*fileResolver, bool) { return r, true }
-
-func (r *fileResolver) ToFile() (*fileResolver, bool) { return r, true }
+func (r *fileResolver) ToFile() (*fileResolver, bool)      { return r, true }
 
 func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)

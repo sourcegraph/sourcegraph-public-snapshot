@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"path"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
@@ -107,7 +106,6 @@ func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 }) (*fileResolver, error) {
 	return &fileResolver{
 		commit: r,
-		name:   path.Base(args.Path),
 		path:   args.Path,
 	}, nil
 }

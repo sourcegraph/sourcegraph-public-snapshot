@@ -143,6 +143,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                         }
                         ... on File {
                             __typename
+                            path
                             name
                             isDirectory
                             repository {

@@ -212,40 +212,6 @@ export const fetchHighlightedFileLines = memoizeObservable(
     ctx => makeRepoURI(ctx) + `?isLightTheme=${ctx.isLightTheme}`
 )
 
-export const listAllFiles = memoizeObservable(
-    (ctx: { repoPath: string; commitID: string }): Observable<string[]> =>
-        queryGraphQL(
-            gql`
-                query FileTree($repoPath: String!, $commitID: String!) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            tree(recursive: true) {
-                                files {
-                                    name
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.tree ||
-                    !data.repository.commit.tree.files
-                ) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit.tree.files.map(file => file.name)
-            })
-        ),
-    makeRepoURI
-)
-
 interface BlobContent {
     isDirectory: boolean
     content: string
