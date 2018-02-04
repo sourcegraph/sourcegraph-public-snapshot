@@ -139,7 +139,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 <Spacer />
                                 <button
                                     onClick={this.onSidebarToggle}
-                                    className="btn btn-icon repo-rev-sidebar__close-button"
+                                    className={`btn btn-icon repo-rev-sidebar__close-button ${Tabs.tabBorderClassName}`}
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon />

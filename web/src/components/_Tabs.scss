@@ -2,14 +2,22 @@
     flex: 0 0 auto;
     display: flex;
 
-    &__tab {
-        border-bottom: solid 3px $color-border;
+    &__tab,
+    &__spacer,
+    &__end-fragment-other-element {
         border-radius: 0;
+        border-bottom: solid 3px $color-border;
+    }
+
+    &__spacer,
+    &__tab--inactive,
+    &__end-fragment-other-element {
+        opacity: 0.6;
+    }
+
+    &__tab {
         &--flex-grow {
             flex: 1;
-        }
-        &--inactive {
-            opacity: 0.6;
         }
         &--active {
             border-bottom-color: $color-primary;
@@ -23,8 +31,12 @@
 
 .theme-light {
     .tab-bar {
-        &__tab {
+        &__tab,
+        &__spacer,
+        &__end-fragment-other-element {
             border-bottom-color: $color-light-border;
+        }
+        &__tab {
             &--active {
                 border-bottom-color: $color-primary;
             }
