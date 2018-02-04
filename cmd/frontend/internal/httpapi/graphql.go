@@ -32,6 +32,7 @@ var graphiqlPage = []byte(`
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react-dom.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/graphiql/0.11.11/graphiql.js"></script>
+		<style>.graphiql-container .editorWrap { overflow: hidden; }</style> <!-- hide vertical scrollbars for ~2px -->
 	</head>
 	<body style="width: 100%; height: 100%; margin: 0; overflow: hidden;">
 		<div id="graphiql" style="height: 100vh;">Loading...</div>
