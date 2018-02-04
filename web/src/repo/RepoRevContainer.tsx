@@ -230,12 +230,14 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 />
                 <RepoRevSidebar
                     className="repo-rev-container__sidebar"
+                    repoID={this.props.repo.id}
                     repoPath={this.props.repo.uri}
                     rev={this.props.rev}
                     commitID={this.state.resolvedRevOrError.commitID}
                     filePath={this.props.match.params.filePath || ''}
                     defaultBranch={this.state.resolvedRevOrError.defaultBranch || 'HEAD'}
                     history={this.props.history}
+                    location={this.props.location}
                 />
                 <div className="repo-rev-container__content">
                     {this.props.objectType === 'tree' && (

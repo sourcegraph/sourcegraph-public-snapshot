@@ -1,3 +1,5 @@
+@import './RepoRevSidebarSymbols';
+
 .repo-rev-sidebar {
     flex: 1 1 auto;
 
@@ -20,13 +22,17 @@
         letter-spacing: 1px;
         text-transform: uppercase;
         color: $color-text !important;
-        border: none !important;
-        pointer-events: none; // suppress hover color change
     }
     &__close-button {
         font-size: 12px;
         flex: 0 0 auto;
         padding-right: 0.125rem;
+    }
+    // While the symbols tab is feature-flagged, don't show it or any indication that there are multiple tabs.
+    &--no-symbols &__tab,
+    &--no-symbols .tab-bar__spacer,
+    &--no-symbols &__close-button {
+        border: none !important;
     }
 
     &-toggle {

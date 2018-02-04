@@ -1,0 +1,134 @@
+.repo-rev-sidebar-symbols {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+
+    &-node {
+        &__link {
+            display: block;
+            padding: 0.125rem 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: $color-secondary;
+            &--active,
+            &:hover {
+                background-color: $color-bg-2;
+            }
+        }
+
+        &__name {
+            color: $color-text-2;
+        }
+
+        &__container-name {
+            margin-left: 0.25rem;
+        }
+
+        &__path {
+            &::before {
+                content: ' – ';
+            }
+        }
+
+        &__kind {
+            display: inline-block;
+            width: 0.6rem;
+            height: 0.6rem;
+            vertical-align: -5.5px;
+            margin-right: 0.325rem;
+
+            opacity: 0.8;
+
+            // stylelint-disable selector-class-pattern
+            &--UNKNOWN {
+                background-color: #888;
+            }
+            &--FILE {
+                background-color: #888;
+            }
+            &--MODULE {
+                background-color: green;
+            }
+            &--NAMESPACE {
+                background-color: turquoise;
+            }
+            &--PACKAGE {
+                background-color: palevioletred;
+            }
+            &--CLASS {
+                background-color: purple;
+            }
+            &--METHOD {
+                background-color: darkgoldenrod;
+            }
+            &--PROPERTY {
+                background-color: darkorchid;
+            }
+            &--FIELD {
+                background-color: darkviolet;
+            }
+            &--CONSTRUCTOR {
+                background-color: darkcyan;
+            }
+            &--ENUM {
+                background-color: cyan;
+            }
+            &--INTERFACE {
+                background-color: violet;
+            }
+            &--FUNCTION {
+                background-color: orangered;
+            }
+            &--VARIABLE {
+                background-color: rgb(19, 87, 233);
+            }
+            &--CONSTANT {
+                background-color: rgb(113, 98, 211);
+            }
+            &--STRING,
+            &--NUMBER,
+            &--BOOLEAN,
+            &--ARRAY,
+            &--OBJECT,
+            &--KEY,
+            &--NULL {
+                background-color: teal;
+            }
+            &--ENUMMEMBER {
+                background-color: blueviolet;
+            }
+            &--STRUCT {
+                background-color: blueviolet;
+            }
+            &--EVENT {
+                background-color: darksalmon;
+            }
+            &--OPERATOR {
+                background-color: mediumseagreen;
+            }
+            &--TYPEPARAMETER {
+                background-color: yellowgreen;
+            }
+            // stylelint-enable selector-class-pattern
+        }
+    }
+}
+
+.theme-light {
+    .repo-rev-sidebar-symbols {
+        &-node {
+            &__link {
+                color: $color-light-text-2;
+                &--active,
+                &:hover {
+                    background-color: $color-light-bg-3;
+                }
+            }
+
+            &__name {
+                color: $color-light-text-1;
+            }
+        }
+    }
+}

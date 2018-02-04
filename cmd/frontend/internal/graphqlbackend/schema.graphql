@@ -678,6 +678,16 @@ type Repository implements Node {
         # Return Git tags whose names match the query.
         query: String
     ): GitRefConnection!
+    # The repository's symbols (e.g., functions, variables, types, classes, etc.) on the default branch.
+    #
+    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
+    # yet been processed. Use Repository.commit.tree.symbols to retrieve symbols for a specific revision.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
     listTotalRefs: TotalRefList!
     # Link to another Sourcegraph instance location where this repository is located.
     redirectURL: String
@@ -764,6 +774,92 @@ type GitRefConnection {
     # The total count of Git refs in the connection. This total count may be larger
     # than the number of nodes in this object when the result is paginated.
     totalCount: Int!
+}
+
+# A code symbol (e.g., a function, variable, type, class, etc.).
+#
+# It is derived from symbols as defined in the Language Server Protocol (see
+# https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+type Symbol {
+    # The name of the symbol.
+    name: String!
+    # The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
+    # structured in such a way that callers can infer a hierarchy of symbols.
+    containerName: String
+    # The kind of the symbol.
+    kind: SymbolKind!
+    # The programming language of the symbol.
+    language: String!
+    # The location where this symbol is defined.
+    location: Location!
+    # The URL of this symbol.
+    url: String!
+}
+
+# A location inside a resource (in a repository at a specific commit).
+type Location {
+    # The file that this location refers to.
+    resource: TreeEntry!
+    # The range inside the file that this location refers to.
+    range: Range
+    # The URL to this location.
+    url: String!
+}
+
+# A range inside a file. The start position is inclusive, and the end position is exclusive.
+type Range {
+    # The start position of the range (inclusive).
+    start: Position!
+    # The end position of the range (exclusive).
+    end: Position!
+}
+
+# A zero-based position inside a file.
+type Position {
+    # The line number (zero-based) of the position.
+    line: Int!
+    # The character offset (zero-based) in the line of the position.
+    character: Int!
+}
+
+# All possible kinds of symbols. This set matches that of the Language Server Protocol
+# (https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+enum SymbolKind {
+    UNKNOWN
+    FILE
+    MODULE
+    NAMESPACE
+    PACKAGE
+    CLASS
+    METHOD
+    PROPERTY
+    FIELD
+    CONSTRUCTOR
+    ENUM
+    INTERFACE
+    FUNCTION
+    VARIABLE
+    CONSTANT
+    STRING
+    NUMBER
+    BOOLEAN
+    ARRAY
+    OBJECT
+    KEY
+    NULL
+    ENUMMEMBER
+    STRUCT
+    EVENT
+    OPERATOR
+    TYPEPARAMETER
+}
+
+# A list of symbols.
+type SymbolConnection {
+    # A list of symbols.
+    nodes: [Symbol!]!
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # A Git object ID (SHA-1 hash, 40 hexadecimal characters).
@@ -897,6 +993,13 @@ type GitCommit implements Node {
         # Return commits that match the query.
         query: String
     ): GitCommitConnection!
+    # Symbols defined as of this commit. (All symbols, not just symbols that were newly defined in this commit.)
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
 }
 
 type Signature {
@@ -934,6 +1037,13 @@ interface TreeEntry {
     commits: [GitCommit!]!
     # The URL to this tree entry.
     url: String!
+    # Symbols defined in this file or directory.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
 }
 
 type Directory implements TreeEntry {
@@ -951,6 +1061,13 @@ type Directory implements TreeEntry {
     # The URL to this directory.
     url: String!
     tree: Tree!
+    # Symbols defined in this directory.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
 }
 
 type HighlightedFile {
@@ -988,6 +1105,14 @@ type File implements TreeEntry {
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     blameRaw(startLine: Int!, endLine: Int!): String!
+
+    # Symbols defined in this file.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
 }
 
 type FileMatch {

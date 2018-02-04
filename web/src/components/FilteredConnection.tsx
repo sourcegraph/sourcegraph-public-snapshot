@@ -67,7 +67,7 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
  * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
  */
-interface FilteredConnectionProps<C extends Connection<N>, N extends GQL.Node, NP = {}> {
+interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}> {
     history: H.History
     location: H.Location
 
@@ -203,11 +203,10 @@ const QUERY_KEY = 'query'
  * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
  */
-export class FilteredConnection<
-    N extends GQL.Node,
-    NP = {},
-    C extends Connection<N> = Connection<N>
-> extends React.PureComponent<FilteredConnectionProps<C, N, NP>, State<C, N>> {
+export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection<N>> extends React.PureComponent<
+    FilteredConnectionProps<C, N, NP>,
+    State<C, N>
+> {
     public static defaultProps: Partial<FilteredConnectionProps<any, any>> = {
         defaultFirst: 20,
         shouldUpdateURLQuery: true,
@@ -448,8 +447,12 @@ export class FilteredConnection<
                     this.state.connection &&
                     this.state.connection.nodes.length > 0 && (
                         <ul className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
-                            {this.state.connection.nodes.map(node => (
-                                <NodeComponent key={node.id} node={node} {...this.props.nodeComponentProps} />
+                            {this.state.connection.nodes.map((node, i) => (
+                                <NodeComponent
+                                    key={(node as any).id || i}
+                                    node={node}
+                                    {...this.props.nodeComponentProps}
+                                />
                             ))}
                         </ul>
                     )}

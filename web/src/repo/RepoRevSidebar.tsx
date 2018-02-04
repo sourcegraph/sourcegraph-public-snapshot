@@ -14,6 +14,7 @@ import { Spacer, Tab, Tabs } from '../components/Tabs'
 import { Tree } from '../tree/Tree'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
+import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
 const fetchTree = memoizeObservable(
     (args: { repoPath: string; commitID: string }): Observable<string[]> =>
@@ -49,9 +50,12 @@ const fetchTree = memoizeObservable(
     makeRepoURI
 )
 
-type SidebarTabID = 'files'
+const showSymbols = localStorage.getItem('symbols') !== null
+
+type SidebarTabID = 'files' | 'symbols'
 
 interface Props {
+    repoID: GQLID
     repoPath: string
     rev: string | undefined
     commitID: string
@@ -59,6 +63,7 @@ interface Props {
     defaultBranch: string
     className: string
     history: H.History
+    location: H.Location
 }
 
 interface State {
@@ -80,7 +85,10 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     private static LAST_TAB_STORAGE_KEY = 'repo-rev-sidebar-last-tab'
     private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
 
-    private static TABS: Tab<SidebarTabID>[] = [{ id: 'files', label: 'Files' }]
+    private static TABS: Tab<SidebarTabID>[] = ([
+        { id: 'files', label: 'Files' },
+        { id: 'symbols', label: 'Symbols' },
+    ] as Tab<SidebarTabID>[]).slice(0, showSymbols ? 2 : 1)
 
     public state: State = {
         loading: true,
@@ -149,7 +157,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         id="explorer"
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
-                        }`}
+                        } ${showSymbols ? '' : 'repo-rev-sidebar--no-symbols'}`}
                         tabClassName="repo-rev-sidebar__tab"
                     >
                         {this.state.files && (
@@ -162,6 +170,17 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 selectedPath={this.props.filePath || ''}
                                 paths={this.state.files}
                             />
+                        )}
+                        {showSymbols ? (
+                            <RepoRevSidebarSymbols
+                                key="symbols"
+                                repoID={this.props.repoID}
+                                rev={this.props.rev}
+                                history={this.props.history}
+                                location={this.props.location}
+                            />
+                        ) : (
+                            undefined
                         )}
                     </Tabs>
                 }
