@@ -89,20 +89,25 @@ function highlightNodeHelper(
 
                     if (rest.length >= length) {
                         // The highligted range is fully contained within the node.
-                        const text = rest.substr(0, length)
-                        const highlight = document.createElement('span')
-                        highlight.className = 'selection-highlight'
-                        highlight.appendChild(document.createTextNode(text))
-                        containerNode.appendChild(highlight)
-                        if (rest.length > length) {
-                            // There is more in the span than the highlighted chars.
-                            containerNode.appendChild(document.createTextNode(rest.substr(length)))
-                        }
-
-                        if (currNode.childNodes.length === 0 || isLastNode) {
-                            currNode.appendChild(containerNode)
+                        if (currNode.classList.contains('selection-highlight')) {
+                            // Nothing to do; it's already highlighted.
+                            currNode.appendChild(child)
                         } else {
-                            currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)
+                            const text = rest.substr(0, length)
+                            const highlight = document.createElement('span')
+                            highlight.className = 'selection-highlight'
+                            highlight.appendChild(document.createTextNode(text))
+                            containerNode.appendChild(highlight)
+                            if (rest.length > length) {
+                                // There is more in the span than the highlighted chars.
+                                containerNode.appendChild(document.createTextNode(rest.substr(length)))
+                            }
+
+                            if (currNode.childNodes.length === 0 || isLastNode) {
+                                currNode.appendChild(containerNode)
+                            } else {
+                                currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)
+                            }
                         }
 
                         return { highlightingCompleted: true, charsConsumed: nodeText.length, charsHighlighted: length }
