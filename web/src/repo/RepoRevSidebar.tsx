@@ -1,3 +1,4 @@
+import CloseIcon from '@sourcegraph/icons/lib/Close'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
 import * as React from 'react'
@@ -9,8 +10,8 @@ import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { Resizable } from '../components/Resizable'
+import { Spacer, Tab, Tabs } from '../components/Tabs'
 import { Tree } from '../tree/Tree'
-import { TreeHeader } from '../tree/TreeHeader'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 
@@ -48,6 +49,8 @@ const fetchTree = memoizeObservable(
     makeRepoURI
 )
 
+type SidebarTabID = 'files'
+
 interface Props {
     repoPath: string
     rev: string | undefined
@@ -74,11 +77,14 @@ interface State {
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
 export class RepoRevSidebar extends React.PureComponent<Props, State> {
-    private static STORAGE_KEY = 'repo-rev-sidebar-hidden'
+    private static LAST_TAB_STORAGE_KEY = 'repo-rev-sidebar-last-tab'
+    private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
+
+    private static TABS: Tab<SidebarTabID>[] = [{ id: 'files', label: 'Files' }]
 
     public state: State = {
         loading: true,
-        showSidebar: localStorage.getItem(RepoRevSidebar.STORAGE_KEY) === null,
+        showSidebar: localStorage.getItem(RepoRevSidebar.HIDDEN_STORAGE_KEY) === null,
     }
 
     private specChanges = new Subject<{ repoPath: string; commitID: string }>()
@@ -111,7 +117,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                     type="button"
                     className={`btn btn-icon repo-rev-sidebar-toggle ${this.props.className}-toggle`}
                     onClick={this.onSidebarToggle}
-                    data-tooltip="Show file tree"
+                    data-tooltip="Show sidebar"
                 >
                     <ListIcon />
                 </button>
@@ -125,15 +131,30 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 storageKey="repo-rev-sidebar"
                 defaultSize={256 /* px */}
                 element={
-                    <div
+                    <Tabs
+                        tabs={RepoRevSidebar.TABS}
+                        storageKey={RepoRevSidebar.LAST_TAB_STORAGE_KEY}
+                        tabBarEndFragment={
+                            <>
+                                <Spacer />
+                                <button
+                                    onClick={this.onSidebarToggle}
+                                    className="btn btn-icon repo-rev-sidebar__close-button"
+                                    data-tooltip="Close"
+                                >
+                                    <CloseIcon />
+                                </button>
+                            </>
+                        }
                         id="explorer"
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
                         }`}
+                        tabClassName="repo-rev-sidebar__tab"
                     >
-                        <TreeHeader title="Files" onDismiss={this.onSidebarToggle} />
                         {this.state.files && (
                             <Tree
+                                key="files"
                                 repoPath={this.props.repoPath}
                                 rev={this.props.rev}
                                 history={this.props.history}
@@ -142,7 +163,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 paths={this.state.files}
                             />
                         )}
-                    </div>
+                    </Tabs>
                 }
             />
         )
@@ -150,9 +171,9 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
 
     private onSidebarToggle = () => {
         if (this.state.showSidebar) {
-            localStorage.setItem(RepoRevSidebar.STORAGE_KEY, 'true')
+            localStorage.setItem(RepoRevSidebar.HIDDEN_STORAGE_KEY, 'true')
         } else {
-            localStorage.removeItem(RepoRevSidebar.STORAGE_KEY)
+            localStorage.removeItem(RepoRevSidebar.HIDDEN_STORAGE_KEY)
         }
         this.setState(state => ({ showSidebar: !state.showSidebar }))
     }

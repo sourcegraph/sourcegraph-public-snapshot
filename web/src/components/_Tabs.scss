@@ -1,0 +1,33 @@
+.tab-bar {
+    flex: 0 0 auto;
+    display: flex;
+
+    &__tab {
+        border-bottom: solid 3px $color-border;
+        border-radius: 0;
+        &--flex-grow {
+            flex: 1;
+        }
+        &--inactive {
+            opacity: 0.6;
+        }
+        &--active {
+            border-bottom-color: $color-primary;
+        }
+    }
+
+    &__spacer {
+        flex: 1;
+    }
+}
+
+.theme-light {
+    .tab-bar {
+        &__tab {
+            border-bottom-color: $color-light-border;
+            &--active {
+                border-bottom-color: $color-primary;
+            }
+        }
+    }
+}

@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators/map'
 import { replaceRevisionInURL } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
+import { Tabs } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
 import { memoizeObservable } from '../util/memoize'
 
@@ -182,15 +183,11 @@ interface Props {
     location: H.Location
 }
 
-interface State {
-    activeTab: RevisionsPopoverTabValue
-}
-
-type RevisionsPopoverTabValue = 'branches' | 'tags' | 'commits'
+type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
 
 interface RevisionsPopoverTab {
+    id: RevisionsPopoverTabID
     label: string
-    value: RevisionsPopoverTabValue
     noun: string
     pluralNoun: string
     type?: GQL.IGitRefTypeEnum
@@ -214,102 +211,83 @@ export class RevisionsPopover extends React.PureComponent<Props> {
     private static LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
     private static TABS: RevisionsPopoverTab[] = [
-        { label: 'Branches', value: 'branches', noun: 'branch', pluralNoun: 'branches', type: 'GIT_BRANCH' },
-        { label: 'Tags', value: 'tags', noun: 'tag', pluralNoun: 'tags', type: 'GIT_TAG' },
-        { label: 'Commits', value: 'commits', noun: 'commit', pluralNoun: 'commits' },
+        { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: 'GIT_BRANCH' },
+        { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: 'GIT_TAG' },
+        { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
     ]
-
-    public state: State = {
-        activeTab:
-            (localStorage.getItem(RevisionsPopover.LAST_TAB_STORAGE_KEY) as RevisionsPopoverTabValue | null) ||
-            'branches',
-    }
-
-    private static saveToLocalStorage(lastTab: RevisionsPopoverTabValue): void {
-        localStorage.setItem(RevisionsPopover.LAST_TAB_STORAGE_KEY, lastTab)
-    }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('RevisionsPopover')
     }
 
     public render(): JSX.Element | null {
-        const activeTab = RevisionsPopover.TABS.find(({ value }) => this.state.activeTab === value)!
-
         return (
             <div className="revisions-popover popover">
-                <div className="revisions-popover__tabs">
-                    {RevisionsPopover.TABS.map(({ label, value }) => (
-                        <button
-                            key={value}
-                            className={`btn btn-link btn-sm revisions-popover__tab revisions-popover__tab--${
-                                this.state.activeTab === value ? 'active' : 'inactive'
-                            }`}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            onClick={() =>
-                                this.setState({ activeTab: value }, () => RevisionsPopover.saveToLocalStorage(value))
-                            }
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-                {activeTab.type ? (
-                    <FilteredGitRefConnection
-                        key={activeTab.value}
-                        className="popover__content"
-                        compact={true}
-                        noun={activeTab.noun}
-                        pluralNoun={activeTab.pluralNoun}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        queryConnection={(args: FilteredConnectionQueryArgs) =>
-                            fetchGitRefs({ ...args, repo: this.props.repo, type: activeTab.type })
-                        }
-                        nodeComponent={GitRefNode}
-                        nodeComponentProps={
-                            {
-                                defaultBranch: this.props.defaultBranch,
-                                currentRev: this.props.currentRev,
-                                location: this.props.location,
-                            } as Pick<GitRefNodeProps, 'defaultBranch' | 'currentRev' | 'location'>
-                        }
-                        defaultFirst={50}
-                        autoFocus={true}
-                        history={this.props.history}
-                        location={this.props.location}
-                        noSummaryIfAllNodesVisible={true}
-                        shouldUpdateURLQuery={false}
-                    />
-                ) : (
-                    <FilteredGitCommitConnection
-                        key={activeTab.value}
-                        className="popover__content"
-                        compact={true}
-                        noun={activeTab.noun}
-                        pluralNoun={activeTab.pluralNoun}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        queryConnection={(args: FilteredConnectionQueryArgs) =>
-                            fetchRepositoryCommits({
-                                ...args,
-                                repo: this.props.repo,
-                                rev: this.props.currentRev || this.props.defaultBranch,
-                            })
-                        }
-                        nodeComponent={GitCommitNode}
-                        nodeComponentProps={
-                            {
-                                currentCommitID: this.props.currentCommitID,
-                                location: this.props.location,
-                            } as Pick<GitCommitNodeProps, 'currentCommitID' | 'location'>
-                        }
-                        defaultFirst={15}
-                        autoFocus={true}
-                        history={this.props.history}
-                        location={this.props.location}
-                        noSummaryIfAllNodesVisible={true}
-                        shouldUpdateURLQuery={false}
-                    />
-                )}
+                <Tabs
+                    tabs={RevisionsPopover.TABS}
+                    storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
+                    className="revisions-popover__tabs"
+                >
+                    {RevisionsPopover.TABS.map(
+                        (tab, i) =>
+                            tab.type ? (
+                                <FilteredGitRefConnection
+                                    key={tab.id}
+                                    className="popover__content"
+                                    compact={true}
+                                    noun={tab.noun}
+                                    pluralNoun={tab.pluralNoun}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    queryConnection={(args: FilteredConnectionQueryArgs) =>
+                                        fetchGitRefs({ ...args, repo: this.props.repo, type: tab.type })
+                                    }
+                                    nodeComponent={GitRefNode}
+                                    nodeComponentProps={
+                                        {
+                                            defaultBranch: this.props.defaultBranch,
+                                            currentRev: this.props.currentRev,
+                                            location: this.props.location,
+                                        } as Pick<GitRefNodeProps, 'defaultBranch' | 'currentRev' | 'location'>
+                                    }
+                                    defaultFirst={50}
+                                    autoFocus={true}
+                                    history={this.props.history}
+                                    location={this.props.location}
+                                    noSummaryIfAllNodesVisible={true}
+                                    shouldUpdateURLQuery={false}
+                                />
+                            ) : (
+                                <FilteredGitCommitConnection
+                                    key={tab.id}
+                                    className="popover__content"
+                                    compact={true}
+                                    noun={tab.noun}
+                                    pluralNoun={tab.pluralNoun}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    queryConnection={(args: FilteredConnectionQueryArgs) =>
+                                        fetchRepositoryCommits({
+                                            ...args,
+                                            repo: this.props.repo,
+                                            rev: this.props.currentRev || this.props.defaultBranch,
+                                        })
+                                    }
+                                    nodeComponent={GitCommitNode}
+                                    nodeComponentProps={
+                                        {
+                                            currentCommitID: this.props.currentCommitID,
+                                            location: this.props.location,
+                                        } as Pick<GitCommitNodeProps, 'currentCommitID' | 'location'>
+                                    }
+                                    defaultFirst={15}
+                                    autoFocus={true}
+                                    history={this.props.history}
+                                    location={this.props.location}
+                                    noSummaryIfAllNodesVisible={true}
+                                    shouldUpdateURLQuery={false}
+                                />
+                            )
+                    )}
+                </Tabs>
             </div>
         )
     }
