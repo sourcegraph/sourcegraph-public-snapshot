@@ -1,6 +1,9 @@
 import { Observable } from 'rxjs/Observable'
 import { ajax } from 'rxjs/observable/dom/ajax'
+import { AjaxResponse } from 'rxjs/observable/dom/AjaxObservable'
+import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
+import { normalizeAjaxError } from '../util/errors'
 
 const graphQLContent = Symbol('graphQLContent')
 export interface GraphQLDocument {
@@ -43,11 +46,18 @@ function requestGraphQL(request: GraphQLDocument, variables: any = {}): Observab
         method: 'POST',
         url: '/.api/graphql' + (nameMatch ? '?' + nameMatch[1] : ''),
         headers: {
-            'Content-Type': 'application/json',
             ...window.context.xhrHeaders,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify({ query: request[graphQLContent], variables }),
-    }).pipe(map(({ response }) => response))
+    }).pipe(
+        catchError<AjaxResponse, never>(err => {
+            normalizeAjaxError(err)
+            throw err
+        }),
+        map(({ response }) => response)
+    )
 }
 
 /**

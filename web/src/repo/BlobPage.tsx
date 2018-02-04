@@ -1,9 +1,11 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as H from 'history'
 import isEmpty from 'lodash/isEmpty'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import pick from 'lodash/pick'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { combineLatest } from 'rxjs/observable/combineLatest'
@@ -34,6 +36,7 @@ import { Resizable } from '../components/Resizable'
 import { ReferencesWidget } from '../references/ReferencesWidget'
 import { eventLogger } from '../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../util'
+import { ErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { OpenInEditorAction } from './actions/OpenInEditorAction'
@@ -722,7 +725,7 @@ interface BlobPageProps {
 
 interface BlobPageState {
     loading: boolean
-    error?: string
+    error?: ErrorLike
     wrapCode: boolean
 
     /**
@@ -812,6 +815,10 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
         if (this.state.loading) {
             // Render placeholder for layout before content is fetched.
             return <div className="blob-page__placeholder" />
+        }
+
+        if (this.state.error) {
+            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.error.message)} />
         }
 
         if (!this.state.blob) {

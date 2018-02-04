@@ -1,4 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { mergeMap } from 'rxjs/operators/mergeMap'
@@ -80,7 +82,7 @@ export class OrgArea extends React.Component<Props> {
         }
 
         if (this.state.error) {
-            return <HeroPage icon={DirectionalSignIcon} title="Error" subtitle={this.state.error} />
+            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.error)} />
         }
 
         if (this.state.org === undefined || !this.state.user) {

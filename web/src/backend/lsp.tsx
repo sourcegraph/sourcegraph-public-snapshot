@@ -5,12 +5,15 @@ import {
 } from 'javascript-typescript-langserver/lib/request-type'
 import { Observable } from 'rxjs/Observable'
 import { ajax } from 'rxjs/observable/dom/ajax'
+import { AjaxResponse } from 'rxjs/observable/dom/AjaxObservable'
 import { ErrorObservable } from 'rxjs/observable/ErrorObservable'
+import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
 import { Definition, Hover, Location } from 'vscode-languageserver-types'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { siteFlags } from '../site/backend'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
+import { normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 
@@ -21,14 +24,6 @@ interface LSPRequest {
 
 export const isEmptyHover = (hover: any): boolean =>
     !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
-
-const getHeaders = (): Headers => {
-    const headers = new Headers()
-    for (const [key, value] of Object.entries(window.context.xhrHeaders)) {
-        headers.set(key, value)
-    }
-    return headers
-}
 
 const wrapLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] => [
     {
@@ -110,9 +105,17 @@ const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Obser
     return ajax({
         method: 'POST',
         url: `/.api/xlang/${req.method}`,
-        headers: getHeaders(),
+        headers: {
+            ...window.context.xhrHeaders,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify(wrapLSPRequest(req, ctx, path)),
     }).pipe(
+        catchError<AjaxResponse, never>(err => {
+            normalizeAjaxError(err)
+            throw err
+        }),
         map(({ response }) => response),
         map(results => {
             for (const result of results) {

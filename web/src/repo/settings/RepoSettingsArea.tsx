@@ -1,5 +1,7 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { switchMap } from 'rxjs/operators/switchMap'
@@ -62,7 +64,7 @@ export class RepoSettingsArea extends React.Component<Props> {
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return <HeroPage icon={DirectionalSignIcon} title="Error" subtitle={this.state.error} />
+            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.error)} />
         }
 
         if (this.state.repo === undefined) {

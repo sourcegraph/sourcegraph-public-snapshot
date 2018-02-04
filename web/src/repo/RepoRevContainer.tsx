@@ -1,4 +1,5 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import isEqual from 'lodash/isEqual'
 import upperFirst from 'lodash/upperFirst'
@@ -156,7 +157,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 default:
                     return (
                         <HeroPage
-                            icon={RepoIcon}
+                            icon={ErrorIcon}
                             title="Error"
                             subtitle={upperFirst(this.state.resolvedRevOrError.message)}
                         />
