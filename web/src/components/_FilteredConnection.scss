@@ -117,6 +117,12 @@
 }
 
 .theme-light {
+    .filtered-connection {
+        &--compact .filtered-connection__summary {
+            border-color: $color-light-border;
+        }
+    }
+
     .filtered-connection-filter-control {
         &__label {
             border-color: $color-light-border;
