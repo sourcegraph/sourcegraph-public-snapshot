@@ -8,6 +8,7 @@
     position: relative;
 
     border-right: 1px solid #2b3750;
+    width: 100%; // necessary to prevent border-right from shrinking as width narrows
 
     &:not(&--open) {
         width: 0;
