@@ -177,13 +177,14 @@ class Blob extends React.Component<Props, State> {
             } else {
                 // If showing modal, remove any tooltip then highlight the element for the given start position.
                 this.setFixedTooltip()
-                if (nextHash.line && nextHash.character) {
+                if (nextHash.line) {
                     const el = findElementWithOffset(
                         getCodeCell(nextHash.line!).childNodes[1]! as HTMLElement,
-                        nextHash.character!
+                        nextHash.character || 0
                     )
                     if (el) {
                         el.classList.add('selection-highlight-sticky')
+                        this.scrollToLine(nextProps)
                     }
                 }
             }
