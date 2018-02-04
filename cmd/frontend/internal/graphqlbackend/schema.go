@@ -223,6 +223,7 @@ type ConfigurationMutation {
         notifySlack: Boolean = false
         notifyUsers: [String!]! = []
         notifyOrganizations: [String!]! = []
+        disableSubscriptionNotifications: Boolean = false
     ): SavedQuery!
     # Update the saved query with the given ID in the configuration.
     updateSavedQuery(
@@ -236,7 +237,7 @@ type ConfigurationMutation {
         notifyOrganizations: [String!]! = []
     ): SavedQuery!
     # Delete the saved query with the given ID in the configuration.
-    deleteSavedQuery(id: ID!): EmptyResponse
+    deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
 }
 
 # Input to ConfigurationMutation.updateConfiguration. If multiple fields are specified,

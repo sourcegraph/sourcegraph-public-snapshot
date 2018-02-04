@@ -83,14 +83,14 @@ func serveSavedQueryWasCreatedOrUpdated(w http.ResponseWriter, r *http.Request) 
 	allSavedQueries.mu.Lock()
 	defer allSavedQueries.mu.Unlock()
 
-	var args *queryrunnerapi.SubjectAndConfig
+	var args *queryrunnerapi.SavedQueryWasCreatedOrUpdatedArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 		writeError(w, errors.Wrap(err, "decoding JSON arguments"))
 		return
 	}
 
-	for _, query := range args.Config.SavedQueries {
-		spec := api.SavedQueryIDSpec{Subject: args.Subject, Key: query.Key}
+	for _, query := range args.SubjectAndConfig.Config.SavedQueries {
+		spec := api.SavedQueryIDSpec{Subject: args.SubjectAndConfig.Subject, Key: query.Key}
 		key := savedQueryIDSpecKey(spec)
 		newValue := api.SavedQuerySpecAndConfig{
 			Spec:   spec,
@@ -99,7 +99,7 @@ func serveSavedQueryWasCreatedOrUpdated(w http.ResponseWriter, r *http.Request) 
 
 		// Handle notifying users of saved query creation / deletion.
 		oldValue, exists := allSavedQueries.allSavedQueries[key]
-		notifySavedQueryWasCreatedOrUpdated(oldValue, newValue, exists)
+		notifySavedQueryWasCreatedOrUpdated(oldValue, newValue, exists, args.DisableSubscriptionNotifications)
 
 		allSavedQueries.allSavedQueries[key] = newValue
 	}
@@ -111,13 +111,13 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	allSavedQueries.mu.Lock()
 	defer allSavedQueries.mu.Unlock()
 
-	var args api.SavedQueryIDSpec
+	var args *queryrunnerapi.SavedQueryWasDeletedArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 		writeError(w, errors.Wrap(err, "decoding JSON arguments"))
 		return
 	}
 
-	key := savedQueryIDSpecKey(args)
+	key := savedQueryIDSpecKey(args.Spec)
 	query, ok := allSavedQueries.allSavedQueries[key]
 	if !ok {
 		return // query to delete already doesn't exist; do nothing
@@ -125,19 +125,21 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	qq := strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " ")
 	delete(allSavedQueries.allSavedQueries, key)
 
-	// Inform any subscribers that they have been unsubscribed.
-	go func() {
-		if r := recover(); r != nil {
-			// Same as net/http
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			log.Printf("executor: failed due to internal panic: %v\n%s", r, buf)
-		}
-		usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), query.Spec, query.Config)
-		emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, query, notifyUnsubscribedTemplate)
-		slackNotifyDeleted(context.Background(), orgsToNotify, query)
-	}()
+	if !args.DisableSubscriptionNotifications {
+		// Inform any subscribers that they have been unsubscribed.
+		go func() {
+			if r := recover(); r != nil {
+				// Same as net/http
+				const size = 64 << 10
+				buf := make([]byte, size)
+				buf = buf[:runtime.Stack(buf, false)]
+				log.Printf("executor: failed due to internal panic: %v\n%s", r, buf)
+			}
+			usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), query.Spec, query.Config)
+			emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, query, notifyUnsubscribedTemplate)
+			slackNotifyDeleted(context.Background(), orgsToNotify, query)
+		}()
+	}
 
 	// Delete from database, but only if another saved query is not the same.
 	anotherExists := false
@@ -157,7 +159,10 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	log15.Info("saved query deleted", "total_saved_queries", len(allSavedQueries.allSavedQueries))
 }
 
-func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAndConfig, exists bool) {
+func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAndConfig, exists, disableSubscriptionNotifications bool) {
+	if disableSubscriptionNotifications {
+		return
+	}
 	go func() {
 		if r := recover(); r != nil {
 			// Same as net/http

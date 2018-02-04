@@ -288,7 +288,8 @@ export function createSavedQuery(
     notify: boolean,
     notifySlack: boolean,
     notifyUsers: string[] = [],
-    notifyOrganizations: string[] = []
+    notifyOrganizations: string[] = [],
+    disableSubscriptionNotifications?: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
@@ -303,6 +304,7 @@ export function createSavedQuery(
                 $notifySlack: Boolean
                 $notifyUsers: [String!]
                 $notifyOrganizations: [String!]
+                $disableSubscriptionNotifications: Boolean
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                     createSavedQuery(
@@ -313,6 +315,7 @@ export function createSavedQuery(
                         notifySlack: $notifySlack
                         notifyUsers: $notifyUsers
                         notifyOrganizations: $notifyOrganizations
+                        disableSubscriptionNotifications: $disableSubscriptionNotifications
                     ) {
                         ...SavedQueryFields
                     }
@@ -320,7 +323,16 @@ export function createSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { description, query, showOnHomepage, notify, notifySlack, notifyUsers, notifyOrganizations }
+        {
+            description,
+            query,
+            showOnHomepage,
+            notify,
+            notifySlack,
+            notifyUsers,
+            notifyOrganizations,
+            disableSubscriptionNotifications: disableSubscriptionNotifications || false,
+        }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.createSavedQuery) {
@@ -387,20 +399,26 @@ export function updateSavedQuery(
 
 export function deleteSavedQuery(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
-    id: GQLID
+    id: GQLID,
+    disableSubscriptionNotifications?: boolean
 ): Observable<void> {
     return mutateConfigurationGraphQL(
         subject,
         gql`
-            mutation DeleteSavedQuery($subject: ID!, $lastID: Int, $id: ID!) {
+            mutation DeleteSavedQuery(
+                $subject: ID!
+                $lastID: Int
+                $id: ID!
+                $disableSubscriptionNotifications: Boolean
+            ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
-                    deleteSavedQuery(id: $id) {
+                    deleteSavedQuery(id: $id, disableSubscriptionNotifications: $disableSubscriptionNotifications) {
                         alwaysNil
                     }
                 }
             }
         `,
-        { id }
+        { id, disableSubscriptionNotifications: disableSubscriptionNotifications || false }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.deleteSavedQuery) {

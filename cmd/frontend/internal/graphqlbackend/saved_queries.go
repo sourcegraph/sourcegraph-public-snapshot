@@ -206,6 +206,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 	Query                               string
 	ShowOnHomepage, Notify, NotifySlack bool
 	NotifyUsers, NotifyOrganizations    []string
+	DisableSubscriptionNotifications    bool
 }) (*savedQueryResolver, error) {
 	var index int
 	var key string
@@ -240,7 +241,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 	if err := r.subject.readConfiguration(ctx, &config); err != nil {
 		return nil, err
 	}
-	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config)
+	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), r.subject.toSubject(), config, args.DisableSubscriptionNotifications)
 
 	return &savedQueryResolver{
 		subject:             r.subject,
@@ -328,12 +329,13 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	if err := r.subject.readConfiguration(ctx, &config); err != nil {
 		return nil, err
 	}
-	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), spec.Subject, config)
+	go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), spec.Subject, config, false)
 	return toSavedQueryResolver(index, r.subject, config.SavedQueries[index]), nil
 }
 
 func (r *configurationMutationResolver) DeleteSavedQuery(ctx context.Context, args *struct {
-	ID graphql.ID
+	ID                               graphql.ID
+	DisableSubscriptionNotifications bool
 }) (*EmptyResponse, error) {
 	spec, err := unmarshalSavedQueryID(args.ID)
 	if err != nil {
@@ -358,7 +360,7 @@ func (r *configurationMutationResolver) DeleteSavedQuery(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
-	go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec)
+	go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec, args.DisableSubscriptionNotifications)
 	return &EmptyResponse{}, nil
 }
 

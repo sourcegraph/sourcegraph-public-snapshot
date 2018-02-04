@@ -42,9 +42,12 @@ function updateSavedQueryFromForm(props: Props, fields: SavedQueryFields): Obser
             fields.query,
             fields.showOnHomepage,
             fields.notify,
-            fields.notifySlack
+            fields.notifySlack,
+            fields.notifyUsers,
+            fields.notifyOrganizations,
+            true
         ).pipe(
-            mergeMap(() => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.id)),
+            mergeMap(() => deleteSavedQuery(props.savedQuery.subject, props.savedQuery.id, true)),
             mergeMap(() => refreshConfiguration().pipe(concat([null])))
         )
     }

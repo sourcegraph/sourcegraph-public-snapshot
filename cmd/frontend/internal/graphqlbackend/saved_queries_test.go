@@ -78,13 +78,14 @@ func TestCreateSavedQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 	created, err := mutation.CreateSavedQuery(ctx, &struct {
-		Description         string
-		Query               string
-		ShowOnHomepage      bool
-		Notify              bool
-		NotifySlack         bool
-		NotifyUsers         []string
-		NotifyOrganizations []string
+		Description                      string
+		Query                            string
+		ShowOnHomepage                   bool
+		Notify                           bool
+		NotifySlack                      bool
+		NotifyUsers                      []string
+		NotifyOrganizations              []string
+		DisableSubscriptionNotifications bool
 	}{
 		Description: "d2",
 		Query:       "q2",
