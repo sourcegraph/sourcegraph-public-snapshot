@@ -43,19 +43,35 @@ type client struct {
 	client *http.Client
 }
 
+type SavedQueryWasCreatedOrUpdatedArgs struct {
+	SubjectAndConfig                 *SubjectAndConfig
+	DisableSubscriptionNotifications bool
+}
+
 // SavedQueryWasCreated should be called whenever a saved query was created
 // or updated after the server has started.
-func (c *client) SavedQueryWasCreatedOrUpdated(ctx context.Context, subject api.ConfigurationSubject, config api.PartialConfigSavedQueries) error {
-	return c.post(PathSavedQueryWasCreatedOrUpdated, &SubjectAndConfig{
-		Subject: subject,
-		Config:  config,
+func (c *client) SavedQueryWasCreatedOrUpdated(ctx context.Context, subject api.ConfigurationSubject, config api.PartialConfigSavedQueries, disableSubscriptionNotifications bool) error {
+	return c.post(PathSavedQueryWasCreatedOrUpdated, &SavedQueryWasCreatedOrUpdatedArgs{
+		SubjectAndConfig: &SubjectAndConfig{
+			Subject: subject,
+			Config:  config,
+		},
+		DisableSubscriptionNotifications: disableSubscriptionNotifications,
 	})
+}
+
+type SavedQueryWasDeletedArgs struct {
+	Spec                             api.SavedQueryIDSpec
+	DisableSubscriptionNotifications bool
 }
 
 // SavedQueryWasDeleted should be called whenever a saved query was deleted
 // after the server has started.
-func (c *client) SavedQueryWasDeleted(ctx context.Context, spec api.SavedQueryIDSpec) error {
-	return c.post(PathSavedQueryWasDeleted, spec)
+func (c *client) SavedQueryWasDeleted(ctx context.Context, spec api.SavedQueryIDSpec, disableSubscriptionNotifications bool) error {
+	return c.post(PathSavedQueryWasDeleted, &SavedQueryWasDeletedArgs{
+		Spec: spec,
+		DisableSubscriptionNotifications: disableSubscriptionNotifications,
+	})
 }
 
 func (c *client) post(path string, data interface{}) error {
