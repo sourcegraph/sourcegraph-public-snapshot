@@ -30,7 +30,7 @@ export default [
         description: 'Vendored code changes (default branch)',
     },
     {
-        query: 'type:diff file:.(txt|md)$',
+        query: 'type:diff file:\\.(txt|md)$',
         description: '(Text/Markdown) Changes to .txt and .md files (default branch)',
     },
     {
@@ -50,7 +50,7 @@ export default [
         description: '(TypeScript/JavaScript) React setState race conditions (all branches)',
     },
     {
-        query: 'type:diff file:\\.s?css^',
+        query: 'type:diff file:\\.s?css$',
         description: '(scss/css) Changes to .scss and .css files (default branch)',
     },
 ]
