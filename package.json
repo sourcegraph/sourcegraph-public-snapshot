@@ -2,7 +2,7 @@
   "name": "sourcegraph",
   "private": true,
   "scripts": {
-    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md},.*.js?(on)}' --write --list-different --config prettier.config.js"
+    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js"
   },
   "devDependencies": {
     "@sourcegraph/prettierrc": "^2.1.1",

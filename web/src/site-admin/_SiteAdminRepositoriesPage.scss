@@ -43,7 +43,7 @@
     flex: 1 1 auto;
     padding: 1.5rem;
     border: 1px solid $color-border;
-    
+
     &__form {
         display: flex;
         flex: 1 1 auto;
@@ -56,7 +56,7 @@
         color: $color-error;
     }
     &__success {
-        color: $color-success
+        color: $color-success;
     }
     &__input-scope {
         display: flex;
@@ -78,7 +78,7 @@
         display: flex;
         flex: 1 0 auto;
         position: relative;
-        
+
         &-input-text {
             width: 100%;
         }
