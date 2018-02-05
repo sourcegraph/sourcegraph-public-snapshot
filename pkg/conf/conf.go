@@ -67,7 +67,7 @@ func initConfig() error {
 	}
 
 	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := configFromLegacyEnvVars(); err != nil {
+	if v, envVarNames, err := configFromEnv(); err != nil {
 		return err
 	} else if len(envVarNames) > 0 {
 		if os.Getenv("DEBUG") != "" {

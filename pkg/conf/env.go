@@ -64,10 +64,7 @@ var legacyEnvToFieldName = map[string]string{
 
 // configFromLegacyEnvVars constructs site config JSON from env vars. This is merged into the
 // SOURCEGRAPH_CONFIG site config JSON.
-//
-// DEPRECATED: Accepting config from non-SOURCEGRAPH_CONFIG env vars is deprecated. All config
-// should be passed through SOURCEGRAPH_CONFIG.
-func configFromLegacyEnvVars() (configJSON []byte, envVarNames []string, err error) {
+func configFromEnv() (configJSON []byte, envVarNames []string, err error) {
 	var cfg schema.SiteConfiguration
 
 	configType := reflect.TypeOf(cfg)
