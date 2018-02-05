@@ -352,37 +352,30 @@ export class Tree extends React.PureComponent<Props, State> {
                 })
             )
 
-            // filter entries to those that are siblings to the selectedPath
-            let filter = entries
-            const selectedPathParts = selectedPath.split('/')
-            let part = 0
-            while (true) {
-                if (part >= selectedPathParts.length) {
-                    break
-                }
-                let matchedDir: TreeNode | undefined
-                // let matchedFile: TreeNode | undefined
-                for (const entry of filter) {
-                    if (entry.filePath.split('/').pop() === selectedPathParts[part] && entry.children.length > 0) {
-                        matchedDir = entry
-                        break
-                    }
-                }
-                if (matchedDir) {
-                    filter = matchedDir.children
-                }
-                if (part === selectedPathParts.length - 1) {
-                    // on the last part, filter either contains the matched file + siblings, or the matched directories children
-                    break
-                }
-                ++part
-            }
-
             // directories first (nodes w/ children), then sort lexicographically
-            return { nodes: sortBy(filter, [(e: TreeNode) => (e.children.length > 0 ? 0 : 1), 'text']), nodeMap }
+            return { nodes: sortBy(entries, [(e: TreeNode) => (e.children.length > 0 ? 0 : 1), 'text']), nodeMap }
         }
 
-        return parseHelper(paths.map(path => path.split('/')))
+        const fullTree = parseHelper(paths.map(path => path.split('/')))
+
+        const selectedTree = fullTree.nodeMap.get(selectedPath)
+        if (selectedTree && selectedTree.children.length) {
+            // When a directory is selected, the tree shows that directory's children.
+            return { nodes: selectedTree.children, nodeMap: fullTree.nodeMap }
+        }
+
+        const siblingPath = selectedPath
+            .split('/')
+            .slice(0, -1)
+            .join('/')
+        const siblingTree = fullTree.nodeMap.get(siblingPath)
+        if (siblingTree && siblingTree.children.length) {
+            // When a file is selected, the tree shows the file's siblings.
+            return { nodes: siblingTree.children, nodeMap: fullTree.nodeMap }
+        }
+
+        // Root folder.
+        return fullTree
     }
 }
 
