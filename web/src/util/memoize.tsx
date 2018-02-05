@@ -3,6 +3,19 @@ import { publishReplay } from 'rxjs/operators/publishReplay'
 import { refCount } from 'rxjs/operators/refCount'
 import { tap } from 'rxjs/operators/tap'
 
+let allCachesResetSeq = 0
+
+/**
+ * Clears all memoized data for memoizeObservable calls. All calls made to those functions after
+ * clearing will result in the fetch func being called again.
+ *
+ * You must call this function after you've modified a memoized resource, or else some components of
+ * the UI may have a stale view of the resource.
+ */
+export function resetAllMemoizationCaches(): void {
+    allCachesResetSeq++
+}
+
 /**
  * Creates a function that memoizes the observable result of func.
  * If the Observable errors, the value will not be cached.
@@ -15,7 +28,14 @@ export function memoizeObservable<P, T>(
     resolver?: (params: P) => string
 ): (params: P, force?: boolean) => Observable<T> {
     const cache = new Map<string, Observable<T>>()
+    let cacheResetSeq = allCachesResetSeq
     return (params: P, force = false) => {
+        // Reset cache if resetAllMemoizationCaches was called.
+        if (cacheResetSeq < allCachesResetSeq) {
+            cache.clear()
+            cacheResetSeq = allCachesResetSeq
+        }
+
         const key = resolver ? resolver(params) : params.toString()
         const hit = cache.get(key)
         if (!force && hit) {

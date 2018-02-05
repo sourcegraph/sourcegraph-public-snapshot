@@ -6,6 +6,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { createAggregateError } from '../util/errors'
+import { resetAllMemoizationCaches } from '../util/memoize'
 
 /**
  * Fetches all users.
@@ -213,6 +214,7 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
             if (!data || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
+            resetAllMemoizationCaches()
         })
     )
 }
@@ -232,6 +234,7 @@ export function updateMirrorRepository(args: { repository: GQLID }): Observable<
             if (!data || !data.updateMirrorRepository || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
+            resetAllMemoizationCaches()
         })
     )
 }
@@ -273,6 +276,7 @@ export function deleteRepository(repository: GQLID): Observable<void> {
             if (!data || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
+            resetAllMemoizationCaches()
         })
     )
 }
