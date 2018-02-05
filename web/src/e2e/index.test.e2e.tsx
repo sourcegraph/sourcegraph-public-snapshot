@@ -332,7 +332,7 @@ describe('e2e test suite', () => {
             it('updates rev with switcher', async () => {
                 await chrome.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
                 await chrome.click('.repo-header__rev')
-                await chrome.click('.revisions-popover__tab:nth-child(2)')
+                await chrome.click('.tab-bar__tab:nth-child(2)')
                 await chrome.click('.popover__node-link[href*="0.1.0"]')
                 await assertWindowLocation('/github.com/sourcegraph/checkup@v0.1.0/-/blob/s3.go')
             })
