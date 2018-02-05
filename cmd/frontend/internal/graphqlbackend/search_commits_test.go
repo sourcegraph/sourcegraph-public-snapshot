@@ -53,7 +53,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		gitserverRepo: gitserver.Repo{Name: "repo", URL: "u"},
 		revs:          []revspecOrRefGlob{{revspec: "rev"}},
 	}
-	results, limitHit, err := searchCommitsInRepo(ctx, commitSearchOp{
+	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,
 		info:              &patternInfo{Pattern: "p"},
 		query:             *query,
@@ -77,6 +77,9 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	if limitHit {
 		t.Error("limitHit")
+	}
+	if timedOut {
+		t.Error("timedOut")
 	}
 	if !*calledRepoVCSOpen {
 		t.Error("!calledRepoVCSOpen")

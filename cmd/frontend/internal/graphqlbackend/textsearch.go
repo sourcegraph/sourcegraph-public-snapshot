@@ -335,11 +335,11 @@ type repoSearchArgs struct {
 //
 // Callers should use it as follows:
 //
-//  if fatalErr := handleRepoSearchResult(common, repoRev, limitHit, searchErr); fatalErr != nil {
+//  if fatalErr := handleRepoSearchResult(common, repoRev, limitHit, timedOut, searchErr); fatalErr != nil {
 //     err = errors.Wrapf(searchErr, "failed to search %s because foo", ...) // return this error
 //     cancel() // cancel any other in-flight operations
 //	}
-func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevisions, limitHit bool, searchErr error) (fatalErr error) {
+func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevisions, limitHit, timedOut bool, searchErr error) (fatalErr error) {
 	common.limitHit = common.limitHit || limitHit
 	if e, ok := searchErr.(vcs.RepoNotExistError); ok {
 		if e.CloneInProgress {
@@ -351,7 +351,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		common.missing = append(common.missing, repoRev.repo.URI)
 	} else if searchErr == vcs.ErrRevisionNotFound && len(repoRev.revs) == 0 {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
-	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) {
+	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
 		common.timedout = append(common.timedout, repoRev.repo.URI)
 	} else if searchErr != nil {
 		return searchErr
@@ -671,7 +671,8 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 			if ctx.Err() == nil {
 				common.searched = append(common.searched, repoRev.repo.URI)
 			}
-			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
+			// non-diff search reports timeout through searchErr, so pass false for timedOut
+			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {
 				if ctx.Err() != nil {
 					// Our request has been canceled, we can just ignore
 					// searchRepo for this repo. We only check this condition
