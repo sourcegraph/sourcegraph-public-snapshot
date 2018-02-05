@@ -93,7 +93,9 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         </a>{' '}
                         for information about configuring organizations.
                     </p>
-                    {this.state.error && <p className="form-text text-error">{upperFirst(this.state.error.message)}</p>}
+                    {this.state.error && (
+                        <p className="form-text text-danger">{upperFirst(this.state.error.message)}</p>
+                    )}
                     <div className="form-group">
                         <label>Organization name</label>
                         <input

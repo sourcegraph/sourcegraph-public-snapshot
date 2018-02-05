@@ -137,7 +137,7 @@ export const InviteForm = reactive<Props>(props => {
                 </div>
                 <div className="invite-form__status">
                     {loading && <LoaderIcon className="icon-inline" />}
-                    {error && <div className="text-error">{error.message}</div>}
+                    {error && <div className="text-danger">{error.message}</div>}
                 </div>
                 {invited &&
                     invited.length > 0 && (

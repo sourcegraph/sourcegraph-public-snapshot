@@ -146,11 +146,11 @@ export const AcceptInvitePage = reactive<Props>(props => {
                         <PageTitle title="Accept invite" />
                         <h1>You were invited to join {orgName} on Sourcegraph!</h1>
 
-                        {error && <p className="form-text text-error">{error.message}</p>}
+                        {error && <p className="form-text text-danger">{error.message}</p>}
 
                         {/* TODO(john): provide action to re-send verification email */}
                         {hasSubmitted && (
-                            <p className="form-text text-error">
+                            <p className="form-text text-danger">
                                 Please verify your email address to accept this invitation; check your inbox for a
                                 verification link.
                             </p>

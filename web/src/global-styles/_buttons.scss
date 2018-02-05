@@ -95,8 +95,8 @@
     }
 
     &:focus:not(:disabled) {
-        outline: darken($color-error, 5%);
-        box-shadow: 0 0 0 2px rgba($color-error, 0.5);
+        outline: darken($color-danger, 5%);
+        box-shadow: 0 0 0 2px rgba($color-danger, 0.5);
     }
 }
 

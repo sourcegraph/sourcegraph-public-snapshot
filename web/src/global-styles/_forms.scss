@@ -43,7 +43,7 @@
     }
 
     &:invalid:not(:placeholder-shown) {
-        border-color: $color-error;
+        border-color: $color-danger;
 
         + .invalid-feedback {
             display: block;
@@ -92,5 +92,5 @@ select.form-control {
 // Class used for feedback on invalid input fields
 // Use it next to the input it shoud give feedback for
 .invalid-feedback {
-    color: $color-error;
+    color: $color-danger;
 }
