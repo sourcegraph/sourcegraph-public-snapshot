@@ -103,6 +103,7 @@ export class SearchResults extends React.Component<Props, State> {
                                                     (count, result) => count + resultItemsCount(result),
                                                     0
                                                 ),
+                                                any_cloning: res.cloning.length > 0,
                                             },
                                         },
                                     }),
