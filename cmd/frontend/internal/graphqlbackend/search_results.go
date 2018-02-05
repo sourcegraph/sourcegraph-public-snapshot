@@ -146,9 +146,6 @@ func (sr *searchResults) ResultCount() int32 {
 }
 
 func (sr *searchResults) ApproximateResultCount() string {
-	if sr.alert != nil {
-		return "?"
-	}
 	count := sr.ResultCount()
 	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
 		return fmt.Sprintf("%d+", count)
