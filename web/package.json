@@ -132,6 +132,7 @@
     "js-base64": "^2.3.2",
     "lodash": "^4.11.2",
     "marked": "0.3.7",
+    "open-color": "^1.6.2",
     "pretty-bytes": "^4.0.2",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
