@@ -373,7 +373,7 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
 func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error) {
-	args, err := commitLogArgs([]string{"log", logFormatFlag}, opt, true)
+	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt, true)
 	if err != nil {
 		return nil, err
 	}
@@ -394,7 +394,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	for len(data) > 0 {
 		var commit *vcs.Commit
 		var err error
-		commit, _, data, err = parseCommitFromLog(logFormatFlag, data)
+		commit, _, data, err = parseCommitFromLog(data)
 		if err != nil {
 			return nil, err
 		}

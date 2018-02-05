@@ -15,8 +15,8 @@ import (
 
 var (
 	validRawLogDiffSearchFormatArgs = [][]string{
-		{"--no-merges", "-z", "--decorate=full", "--patch", logFormatFlag},
-		{"--no-merges", "-z", "--decorate=full", logFormatFlag},
+		{"--no-merges", "-z", "--decorate=full", "--patch", logFormatWithRefs},
+		{"--no-merges", "-z", "--decorate=full", logFormatWithRefs},
 	}
 )
 
@@ -201,7 +201,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		var commit *vcs.Commit
 		var refs []string
 		var err error
-		commit, refs, data, err = parseCommitFromLog(logFormatFlag, data)
+		commit, refs, data, err = parseCommitFromLog(data)
 		if err != nil {
 			if !complete {
 				// Partial data can yield parse errors, but we still want to return what we have.

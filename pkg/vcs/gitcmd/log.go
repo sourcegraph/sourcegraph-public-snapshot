@@ -2,7 +2,6 @@ package gitcmd
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,19 +12,19 @@ import (
 )
 
 const (
-	logFormatFlag  = "--format=format:%H%x00%D%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 	partsPerCommit = 10 // number of \x00-separated fields per commit
+
+	// include refs (slow on repos with many refs)
+	logFormatWithRefs = "--format=format:%H%x00%D%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+
+	// don't include refs (faster, should be used if refs are not needed)
+	logFormatWithoutRefs = "--format=format:%H%x00%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(forLogFormatFlag string, data []byte) (commit *vcs.Commit, refs []string, patch []byte, err error) {
-	if forLogFormatFlag != logFormatFlag {
-		// Ensure we're parsing our known format; require callers to be explicit.
-		return nil, nil, nil, errors.New("invalid log format flag")
-	}
-
+func parseCommitFromLog(data []byte) (commit *vcs.Commit, refs []string, patch []byte, err error) {
 	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
 	if len(parts) < partsPerCommit {
 		return nil, nil, nil, fmt.Errorf("invalid commit log entry: %q", parts)
