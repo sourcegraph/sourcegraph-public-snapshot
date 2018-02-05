@@ -33,8 +33,8 @@ const SymbolNode: React.SFC<SymbolNodeProps> = ({ node, location }) => {
                 activeClassName="repo-rev-sidebar-symbols-node__link--active"
             >
                 <span
-                    className={`repo-rev-sidebar-symbols-node__kind repo-rev-sidebar-symbols-node__kind--${node.kind ||
-                        'UNKNOWN'}`}
+                    className={`repo-rev-sidebar-symbols-node__kind repo-rev-sidebar-symbols-node__kind--${node.kind.toLowerCase() ||
+                        'unknown'}`}
                 >
                     &nbsp;
                 </span>

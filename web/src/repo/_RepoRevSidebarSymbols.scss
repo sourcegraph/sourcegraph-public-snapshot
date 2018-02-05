@@ -40,77 +40,76 @@
 
             opacity: 0.8;
 
-            // stylelint-disable selector-class-pattern
-            &--UNKNOWN {
+            // These correspond to the GraphQL SymbolKind enum values.
+            &--unknown {
                 background-color: #888;
             }
-            &--FILE {
+            &--file {
                 background-color: #888;
             }
-            &--MODULE {
+            &--module {
                 background-color: green;
             }
-            &--NAMESPACE {
+            &--namespace {
                 background-color: turquoise;
             }
-            &--PACKAGE {
+            &--package {
                 background-color: palevioletred;
             }
-            &--CLASS {
+            &--class {
                 background-color: purple;
             }
-            &--METHOD {
+            &--method {
                 background-color: darkgoldenrod;
             }
-            &--PROPERTY {
+            &--property {
                 background-color: darkorchid;
             }
-            &--FIELD {
+            &--field {
                 background-color: darkviolet;
             }
-            &--CONSTRUCTOR {
+            &--constructor {
                 background-color: darkcyan;
             }
-            &--ENUM {
+            &--enum {
                 background-color: cyan;
             }
-            &--INTERFACE {
+            &--interface {
                 background-color: violet;
             }
-            &--FUNCTION {
+            &--function {
                 background-color: orangered;
             }
-            &--VARIABLE {
+            &--variable {
                 background-color: rgb(19, 87, 233);
             }
-            &--CONSTANT {
+            &--constant {
                 background-color: rgb(113, 98, 211);
             }
-            &--STRING,
-            &--NUMBER,
-            &--BOOLEAN,
-            &--ARRAY,
-            &--OBJECT,
-            &--KEY,
-            &--NULL {
+            &--string,
+            &--number,
+            &--boolean,
+            &--array,
+            &--object,
+            &--key,
+            &--null {
                 background-color: teal;
             }
-            &--ENUMMEMBER {
+            &--enummember {
                 background-color: blueviolet;
             }
-            &--STRUCT {
+            &--struct {
                 background-color: blueviolet;
             }
-            &--EVENT {
+            &--event {
                 background-color: darksalmon;
             }
-            &--OPERATOR {
+            &--operator {
                 background-color: mediumseagreen;
             }
-            &--TYPEPARAMETER {
+            &--typeparameter {
                 background-color: yellowgreen;
             }
-            // stylelint-enable selector-class-pattern
         }
     }
 }
