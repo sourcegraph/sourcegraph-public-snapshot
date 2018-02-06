@@ -229,7 +229,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                 <div>
                     <h3 className="user-integrations__integration-name">Code search from address bar</h3>
                     <p>
-                        Get easy access to Sourcegraph code search over your most commonly-used repositoires from your
+                        Get easy access to Sourcegraph code search over your most commonly-used repositories from your
                         browser address bar by configuring a custom search engine.
                     </p>
                     <h4>Sourcegraph Search URL</h4>
