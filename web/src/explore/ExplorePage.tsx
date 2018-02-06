@@ -106,7 +106,7 @@ export class ExplorePage extends React.PureComponent<Props, State> {
                     this.props.user.siteAdmin &&
                     typeof this.state.disabledRepositoriesCount === 'number' &&
                     this.state.disabledRepositoriesCount > 0 && (
-                        <div className="alert alert-notice explore-page__notice">
+                        <div className="alert alert-info explore-page__notice">
                             {this.state.disabledRepositoriesCount}{' '}
                             {pluralize(
                                 'disabled repository is',
