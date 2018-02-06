@@ -500,7 +500,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
-			repo:         repoMap[api.RepoURI(file.Repository)],
+			repo:         repoMap[api.RepoURI(strings.ToLower(string(file.Repository)))],
 			commitID:     "", // zoekt only searches default branch
 		}
 	}
