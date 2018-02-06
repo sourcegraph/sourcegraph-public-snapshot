@@ -3,31 +3,17 @@ import { publishReplay } from 'rxjs/operators/publishReplay'
 import { refCount } from 'rxjs/operators/refCount'
 import { tap } from 'rxjs/operators/tap'
 
+let allCachesResetSeq = 0
+
 /**
- * Creates a function that memoizes the async result of func.
- * If the promise rejects, the value will not be cached.
+ * Clears all memoized data for memoizeObservable calls. All calls made to those functions after
+ * clearing will result in the fetch func being called again.
  *
- * @param resolver If resolver provided, it determines the cache key for storing the result based on
- * the first argument provided to the memoized function.
+ * You must call this function after you've modified a memoized resource, or else some components of
+ * the UI may have a stale view of the resource.
  */
-export function memoizeAsync<P, T>(
-    func: (params: P) => Promise<T>,
-    resolver?: (params: P) => string
-): (params: P, force?: boolean) => Promise<T> {
-    const cache = new Map<string, Promise<T>>()
-    return (params: P, force = false) => {
-        const key = resolver ? resolver(params) : params.toString()
-        const hit = cache.get(key)
-        if (!force && hit) {
-            return hit
-        }
-        const p = func(params).catch(e => {
-            cache.delete(key)
-            throw e
-        })
-        cache.set(key, p)
-        return p
-    }
+export function resetAllMemoizationCaches(): void {
+    allCachesResetSeq++
 }
 
 /**
@@ -42,7 +28,14 @@ export function memoizeObservable<P, T>(
     resolver?: (params: P) => string
 ): (params: P, force?: boolean) => Observable<T> {
     const cache = new Map<string, Observable<T>>()
+    let cacheResetSeq = allCachesResetSeq
     return (params: P, force = false) => {
+        // Reset cache if resetAllMemoizationCaches was called.
+        if (cacheResetSeq < allCachesResetSeq) {
+            cache.clear()
+            cacheResetSeq = allCachesResetSeq
+        }
+
         const key = resolver ? resolver(params) : params.toString()
         const hit = cache.get(key)
         if (!force && hit) {
