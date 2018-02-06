@@ -326,7 +326,16 @@ func (r recoverError) Error() string {
 // assumed that the error message could accidentally contain sensitive data,
 // and as such is only presented to the user in debug mode.
 func serveError(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
-	serveErrorNoDebug(w, r, err, statusCode, false)
+	serveErrorNoDebug(w, r, err, statusCode, false, false)
+}
+
+// dangerouslyServeError is like serveError except it always shows the error to
+// the user and as such, if it contains sensitive information, it can leak
+// sensitive information.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/9453
+func dangerouslyServeError(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
+	serveErrorNoDebug(w, r, err, statusCode, false, true)
 }
 
 type pageError struct {
@@ -337,7 +346,7 @@ type pageError struct {
 }
 
 // serveErrorNoDebug should not be called by anyone except serveErrorTest.
-func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, statusCode int, nodebug bool) {
+func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, statusCode int, nodebug, forceServeError bool) {
 	w.WriteHeader(statusCode)
 	errorID := randstring.NewLen(6)
 
@@ -360,7 +369,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	}
 
 	var errorIfDebug string
-	if envvar.DebugMode() && !nodebug {
+	if forceServeError || (envvar.DebugMode() && !nodebug) {
 		errorIfDebug = err.Error()
 	}
 
@@ -423,7 +432,7 @@ func serveErrorTest(w http.ResponseWriter, r *http.Request) error {
 	nodebug := q.Get("nodebug") == "true"
 	errorText := q.Get("error")
 	statusCode, _ := strconv.Atoi(q.Get("status"))
-	serveErrorNoDebug(w, r, errors.New(errorText), statusCode, nodebug)
+	serveErrorNoDebug(w, r, errors.New(errorText), statusCode, nodebug, false)
 	return nil
 }
 

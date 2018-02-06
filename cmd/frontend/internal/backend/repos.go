@@ -74,6 +74,9 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 		// access.
 		if gitserverRepo := quickGitserverRepoInfo(uri); gitserverRepo != nil {
 			if isRepoCloneableErr := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); isRepoCloneableErr == gitserver.ErrNotCloneable || errors.Cause(isRepoCloneableErr) == gitserver.ErrNotCloneable {
+				if err == nil {
+					return nil, isRepoCloneableErr
+				}
 				return nil, err // return original error (likely "not found") if repository is not cloneable
 			} else if isRepoCloneableErr != nil {
 				return nil, isRepoCloneableErr

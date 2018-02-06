@@ -146,6 +146,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
+			if errors.Cause(err) == gitserver.ErrNotCloneable {
+				// Repository is not clonable.
+				dangerouslyServeError(w, r, errors.New("repository could not be cloned"), http.StatusInternalServerError)
+				return nil, nil
+			}
 			if e, ok := err.(vcs.RepoNotExistError); ok {
 				if e.CloneInProgress {
 					// Repo is cloning.
