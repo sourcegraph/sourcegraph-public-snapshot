@@ -10,6 +10,7 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
@@ -103,6 +104,9 @@ func (r *siteResolver) TelemetrySamples(ctx context.Context) ([]string, error) {
 }
 
 func (r *siteResolver) HasCodeIntelligence() bool {
+	if envvar.SourcegraphDotComMode() {
+		return true
+	}
 	addr := os.Getenv("LSP_PROXY")
 	if addr == "" {
 		return false
