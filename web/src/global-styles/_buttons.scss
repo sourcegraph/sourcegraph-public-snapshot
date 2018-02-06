@@ -1,11 +1,11 @@
 .btn {
-    display: inline-block;
-    border-radius: 0.25rem;
-    padding: 0.5rem 1rem;
+    display: inline-flex;
+    border-radius: 0.125rem;
+    padding: 0.375rem 0.75rem;
     font-size: inherit;
     line-height: inherit;
     font-family: inherit;
-    border: none;
+    border: 1px solid transparent;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -63,10 +63,12 @@
 }
 
 .btn-primary {
+    border-color: $color-primary;
     background: $color-primary;
     border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
+        border-color: darken($color-primary, 5%);
         background: darken($color-primary, 5%);
     }
 
@@ -77,10 +79,12 @@
 }
 
 .btn-success {
+    border-color: $color-success;
     background: $color-success;
     border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
+        border-color: darken($color-success, 5%);
         background: darken($color-success, 5%);
     }
 
@@ -91,11 +95,12 @@
 }
 
 .btn-danger {
-    background: rgba(201, 42, 42, 0.9);
-    border: solid 1px transparent;
+    border-color: $color-danger;
+    background: $color-danger;
 
     &:hover:not(:disabled):not(.disabled) {
-        background: darken(rgba(201, 42, 42, 0.9), 10%);
+        border-color: darken($color-danger, 10%);
+        background: darken($color-danger, 10%);
     }
 
     &:focus:not(:disabled):not(.disabled) {
@@ -105,7 +110,6 @@
 }
 
 .btn-secondary {
-    border: solid 1px;
     border-color: $color-border;
     background-color: transparent;
 
@@ -142,10 +146,12 @@
 }
 
 .btn-info {
+    border-color: $color-info;
     background: $color-info;
     border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
+        border-color: lighten($color-info, 5%);
         background: lighten($color-info, 5%);
     }
 
