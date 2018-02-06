@@ -47,7 +47,7 @@ func TestRepository_BlameFile(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		newestCommitID, err := test.repo.ResolveRevision(ctx, string(test.opt.NewestCommit))
+		newestCommitID, err := test.repo.ResolveRevision(ctx, string(test.opt.NewestCommit), nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
 			continue

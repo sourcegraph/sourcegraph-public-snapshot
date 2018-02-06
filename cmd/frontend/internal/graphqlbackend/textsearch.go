@@ -297,7 +297,7 @@ func searchRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.R
 		return mockSearchRepo(ctx, repo, gitserverRepo, rev, info)
 	}
 
-	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, rev)
+	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, rev, nil)
 	if err != nil {
 		return nil, false, err
 	}
@@ -349,7 +349,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		}
 	} else if errcode.IsNotFound(searchErr) {
 		common.missing = append(common.missing, repoRev.repo.URI)
-	} else if searchErr == vcs.ErrRevisionNotFound && len(repoRev.revs) == 0 {
+	} else if searchErr == vcs.ErrRevisionNotFound && (len(repoRev.revs) == 0 || len(repoRev.revs) == 1 && repoRev.revs[0].revspec == "") {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
 		common.timedout = append(common.timedout, repoRev.repo.URI)
@@ -513,10 +513,13 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 	}
 	for _, repoRev := range repos {
 		// We search HEAD using zoekt
-		if repoRev.revSpecsOrDefaultBranch()[0] == "" {
-			indexed = append(indexed, repoRev)
-		} else {
-			unindexed = append(unindexed, repoRev)
+		if revspecs := repoRev.revspecs(); len(revspecs) > 0 {
+			// TODO(sqs): search all revspecs
+			if revspecs[0] == "" {
+				indexed = append(indexed, repoRev)
+			} else {
+				unindexed = append(unindexed, repoRev)
+			}
 		}
 	}
 
@@ -657,6 +660,9 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 	}
 
 	for _, repoRev := range searcherRepos {
+		if len(repoRev.revs) == 0 {
+			return nil, common, nil // no revs to search
+		}
 		if len(repoRev.revs) >= 2 {
 			return nil, common, errMultipleRevsNotSupported
 		}
@@ -664,7 +670,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			rev := repoRev.revSpecsOrDefaultBranch()[0]
+			rev := repoRev.revspecs()[0] // TODO(sqs): search multiple revs
 			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.query)
 			mu.Lock()
 			defer mu.Unlock()

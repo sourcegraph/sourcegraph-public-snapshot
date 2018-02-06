@@ -43,7 +43,7 @@ type Repository interface {
 	// cases where the revision is not found, or more specific errors
 	// (such as ErrCommitNotFound) if spec can be partially resolved
 	// or determined to be a certain kind of revision specifier.
-	ResolveRevision(ctx context.Context, spec string) (api.CommitID, error)
+	ResolveRevision(ctx context.Context, spec string, opt *ResolveRevisionOptions) (api.CommitID, error)
 
 	// Branches returns a list of all branches in the repository.
 	Branches(context.Context, BranchesOptions) ([]*Branch, error)

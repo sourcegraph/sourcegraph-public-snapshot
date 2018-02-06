@@ -48,7 +48,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, test.branch)
+		commitID, err := test.repo.ResolveRevision(ctx, test.branch, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -119,7 +119,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, test.branch)
+		commitID, err := test.repo.ResolveRevision(ctx, test.branch, nil)
 		if err != test.wantErr {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -151,7 +151,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, test.tag)
+		commitID, err := test.repo.ResolveRevision(ctx, test.tag, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -182,7 +182,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, test.tag)
+		commitID, err := test.repo.ResolveRevision(ctx, test.tag, nil)
 		if err != test.wantErr {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -1086,7 +1086,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, "master")
+		commitID, err := test.repo.ResolveRevision(ctx, "master", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1146,7 +1146,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, "master")
+		commitID, err := test.repo.ResolveRevision(ctx, "master", nil)
 		if err != nil {
 			t.Fatal(err)
 		}

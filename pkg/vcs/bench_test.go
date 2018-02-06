@@ -96,7 +96,7 @@ func benchFilename(i int) string {
 }
 
 func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string) {
-	commitID, err := r.ResolveRevision(ctx, tag)
+	commitID, err := r.ResolveRevision(ctx, tag, nil)
 	if err != nil {
 		b.Errorf("ResolveRevision: %s", err)
 		return
@@ -157,7 +157,7 @@ func benchFileSystem(b *testing.B, r vcs.Repository, tag string, files []string)
 func benchGetCommit(b *testing.B, openRepo func() vcs.Repository, tag string) {
 	r := openRepo()
 
-	commitID, err := r.ResolveRevision(ctx, tag)
+	commitID, err := r.ResolveRevision(ctx, tag, nil)
 	if err != nil {
 		b.Errorf("ResolveRevision: %s", err)
 		return
@@ -173,7 +173,7 @@ func benchGetCommit(b *testing.B, openRepo func() vcs.Repository, tag string) {
 func benchCommits(b *testing.B, openRepo func() vcs.Repository, tag string) {
 	r := openRepo()
 
-	commitID, err := r.ResolveRevision(ctx, tag)
+	commitID, err := r.ResolveRevision(ctx, tag, nil)
 	if err != nil {
 		b.Errorf("ResolveRevision: %s", err)
 		return

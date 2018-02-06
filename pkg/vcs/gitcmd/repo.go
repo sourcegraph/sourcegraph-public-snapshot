@@ -103,10 +103,15 @@ func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 // * Commit does not exist: vcs.ErrRevisionNotFound
 // * Empty repository: vcs.ErrRevisionNotFound
 // * Other unexpected errors.
-func (r *Repository) ResolveRevision(ctx context.Context, spec string) (api.CommitID, error) {
+func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
+	span.SetTag("Opt", fmt.Sprintf("%+v", opt))
 	defer span.Finish()
+
+	if opt == nil {
+		opt = &vcs.ResolveRevisionOptions{}
+	}
 
 	if err := checkSpecArgSafety(spec); err != nil {
 		return "", err
@@ -123,7 +128,9 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (api.Comm
 	}
 
 	cmd := r.command("git", "rev-parse", spec)
-	cmd.EnsureRevision = string(spec)
+	if !opt.NoEnsureRevision {
+		cmd.EnsureRevision = string(spec)
+	}
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {

@@ -6,6 +6,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
+type ResolveRevisionOptions struct {
+	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
+}
+
 type Commit struct {
 	ID        api.CommitID `json:"ID,omitempty"`
 	Author    Signature    `json:"Author"`

@@ -125,7 +125,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
-	return vcsrepo.ResolveRevision(ctx, rev)
+	return vcsrepo.ResolveRevision(ctx, rev, nil)
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *vcs.Commit, err error) {

@@ -50,13 +50,13 @@ func TestRepository_Diff(t *testing.T) {
 	// TODO(sqs): implement diff for hg native
 
 	for label, test := range tests {
-		baseCommitID, err := test.repo.ResolveRevision(ctx, test.base)
+		baseCommitID, err := test.repo.ResolveRevision(ctx, test.base, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.base, err)
 			continue
 		}
 
-		headCommitID, err := test.repo.ResolveRevision(ctx, test.head)
+		headCommitID, err := test.repo.ResolveRevision(ctx, test.head, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on head: %s", label, test.head, err)
 			continue
@@ -129,13 +129,13 @@ func TestRepository_Diff_rename(t *testing.T) {
 	// TODO(sqs): implement diff for hg native
 
 	for label, test := range tests {
-		baseCommitID, err := test.repo.ResolveRevision(ctx, test.base)
+		baseCommitID, err := test.repo.ResolveRevision(ctx, test.base, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.base, err)
 			continue
 		}
 
-		headCommitID, err := test.repo.ResolveRevision(ctx, test.head)
+		headCommitID, err := test.repo.ResolveRevision(ctx, test.head, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on head: %s", label, test.head, err)
 			continue

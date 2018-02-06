@@ -312,32 +312,54 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	repoRevisions = make([]*repositoryRevisions, 0, len(repos))
 	repoResolvers = make([]*searchResultResolver, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
-reposLoop:
 	for _, repo := range repos {
 		repoRev := &repositoryRevisions{
 			repo:          repo,
 			gitserverRepo: gitserver.Repo{Name: repo.URI},
-			revs:          getRevsForMatchedRepo(repo.URI),
+		}
+
+		revs := getRevsForMatchedRepo(repo.URI)
+		if len(revs) == 0 {
+			// If no revs explicitly specified, use default branch.
+			revs = append(revs, revspecOrRefGlob{revspec: ""})
 		}
 
 		repoResolver := &repositoryResolver{repo: repo}
 
-		// Check if the repository actually has the revisions that the user specified. (If they just
-		// specified the default branch, skip this to save time.)
-		if revspecs := repoRev.revspecs(); len(revspecs) > 0 {
-			// Do not trigger a repo-updater lookup (e.g.,
-			// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
-			// down by a lot (if we're looping over many repos). This means that it'll fail if a
-			// repo is not on gitserver.
-			vcsrepo := backend.Repos.VCS(repoRev.gitserverRepo)
-			for _, revspec := range revspecs {
-				if _, err := vcsrepo.ResolveRevision(ctx, revspec); err == vcs.ErrRevisionNotFound {
-					// revision does not exist, so do not include this repository.
-					missingRepoRevisions = append(missingRepoRevisions, repoRev)
-					continue reposLoop
+		// Check if the repository actually has the revisions that the user specified.
+		for _, rev := range revs {
+			if rev.refGlob != "" || rev.excludeRefGlob != "" {
+				// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
+				// invalid, so it's not clear what validation would even mean.
+			} else if isDefaultBranch := rev.revspec == ""; !isDefaultBranch { // skip default branch resolution to save time
+				// Validate the revspec.
+
+				// Do not trigger a repo-updater lookup (e.g.,
+				// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
+				// down by a lot (if we're looping over many repos). This means that it'll fail if a
+				// repo is not on gitserver.
+				vcsrepo := backend.Repos.VCS(repoRev.gitserverRepo)
+
+				// TODO(sqs): make this NOT send gitserver this revspec in EnsureRevision, to avoid
+				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
+				// taking a long time because they all ask gitserver to try to fetch from the remote
+				// repo.
+				if _, err := vcsrepo.ResolveRevision(ctx, rev.revspec, &vcs.ResolveRevisionOptions{NoEnsureRevision: true}); err == vcs.ErrRevisionNotFound || err == context.DeadlineExceeded {
+					// The revspec does not exist, so don't include it, and report that it's missing.
+					if rev.revspec == "" {
+						// Report as HEAD not "" (empty string) to avoid user confusion.
+						rev.revspec = "HEAD"
+					}
+					missingRepoRevisions = append(missingRepoRevisions, &repositoryRevisions{
+						repo: repo,
+						revs: []revspecOrRefGlob{{revspec: rev.revspec}},
+					})
+					continue
 				}
-				// else, cloning and other errors will be handled later, so just ignore it.
+				// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
+				// if there is one.
 			}
+			repoRev.revs = append(repoRev.revs, rev)
 		}
 
 		repoResolvers = append(repoResolvers, newSearchResultResolver(
@@ -518,10 +540,14 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 		return mockSearchFilesForRepo(matcher, repoRevs, limit, includeDirs)
 	}
 
+	if len(repoRevs.revs) == 0 {
+		return nil, nil // no revs to search
+	}
+
 	repoResolver := &repositoryResolver{repo: repoRevs.repo}
 	commitResolver, err := repoResolver.Commit(ctx, &struct {
 		Rev string
-	}{Rev: repoRevs.revSpecsOrDefaultBranch()[0]})
+	}{Rev: repoRevs.revspecs()[0]}) // TODO(sqs): search all revspecs
 	if err != nil {
 		return nil, err
 	}

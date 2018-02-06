@@ -16,7 +16,7 @@ func resolveRevision(ctx context.Context, repoURI api.RepoURI, spec string) (*ap
 		return nil, "", err
 	}
 
-	commit, err := gitcmd.Open(repoURI, "").ResolveRevision(ctx, spec)
+	commit, err := gitcmd.Open(repoURI, "").ResolveRevision(ctx, spec, nil)
 	if err != nil {
 		return nil, "", err
 	}

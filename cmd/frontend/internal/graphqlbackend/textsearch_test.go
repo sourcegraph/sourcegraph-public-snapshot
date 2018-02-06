@@ -68,7 +68,7 @@ func TestSearchRepos(t *testing.T) {
 		t.Errorf("expected two results, got %d", len(results))
 	}
 	if !reflect.DeepEqual(common.cloning, []api.RepoURI{"foo/cloning"}) {
-		t.Errorf("unexpected missing: %v", common.cloning)
+		t.Errorf("unexpected cloning: %v", common.cloning)
 	}
 	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i] < common.missing[j] }) // to make deterministic
 	if !reflect.DeepEqual(common.missing, []api.RepoURI{"foo/missing", "foo/missing-db"}) {

@@ -11,7 +11,7 @@ import (
 type MockRepository struct {
 	String_ func() string
 
-	ResolveRevision_ func(ctx context.Context, spec string) (api.CommitID, error)
+	ResolveRevision_ func(ctx context.Context, spec string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error)
 
 	Branches_ func(context.Context, vcs.BranchesOptions) ([]*vcs.Branch, error)
 	Tags_     func(context.Context) ([]*vcs.Tag, error)
@@ -45,8 +45,8 @@ func (r MockRepository) String() string {
 	return r.String_()
 }
 
-func (r MockRepository) ResolveRevision(ctx context.Context, spec string) (api.CommitID, error) {
-	return r.ResolveRevision_(ctx, spec)
+func (r MockRepository) ResolveRevision(ctx context.Context, spec string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error) {
+	return r.ResolveRevision_(ctx, spec, opt)
 }
 
 func (r MockRepository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*vcs.Branch, error) {

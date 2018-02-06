@@ -333,13 +333,13 @@ outer:
 func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*repositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
-		description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].repo.URI, missingRepoRevs[0].revSpecsOrDefaultBranch()[0])
+		description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].repo.URI, missingRepoRevs[0].revspecs()[0])
 	} else {
-		revs := make([]string, 0, len(missingRepoRevs))
+		repoRevs := make([]string, 0, len(missingRepoRevs))
 		for _, r := range missingRepoRevs {
-			revs = append(revs, r.revSpecsOrDefaultBranch()...)
+			repoRevs = append(repoRevs, string(r.repo.URI)+"@"+strings.Join(r.revspecs(), ","))
 		}
-		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because they do not contain the specified revisions: %s.", len(missingRepoRevs), strings.Join(revs, ", "))
+		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist: %s.", len(missingRepoRevs), strings.Join(repoRevs, ", "))
 	}
 	return &searchAlert{
 		title:       "Some repositories could not be searched",

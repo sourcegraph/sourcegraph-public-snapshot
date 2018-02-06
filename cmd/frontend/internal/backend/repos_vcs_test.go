@@ -10,6 +10,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
 
@@ -20,7 +21,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 
 	var calledVCSRepoResolveRevision bool
 	Mocks.Repos.MockVCS(t, "a", vcstest.MockRepository{
-		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
+		ResolveRevision_: func(ctx context.Context, rev string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
 		},
@@ -46,7 +47,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 
 	var calledVCSRepoResolveRevision bool
 	Mocks.Repos.MockVCS(t, "a", vcstest.MockRepository{
-		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
+		ResolveRevision_: func(ctx context.Context, rev string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
 		},
@@ -71,7 +72,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 
 	var calledVCSRepoResolveRevision bool
 	Mocks.Repos.MockVCS(t, "a", vcstest.MockRepository{
-		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
+		ResolveRevision_: func(ctx context.Context, rev string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return api.CommitID(want), nil
 		},
@@ -96,7 +97,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 
 	var calledVCSRepoResolveRevision bool
 	Mocks.Repos.MockVCS(t, "a", vcstest.MockRepository{
-		ResolveRevision_: func(ctx context.Context, rev string) (api.CommitID, error) {
+		ResolveRevision_: func(ctx context.Context, rev string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error) {
 			calledVCSRepoResolveRevision = true
 			return "", errors.New("x")
 		},

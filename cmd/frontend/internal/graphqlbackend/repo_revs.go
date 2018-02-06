@@ -9,7 +9,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
-// revpecOrRefGlob represents either a revspec or a ref glob. Exactly one field is set.
+// revpecOrRefGlob represents either a revspec or a ref glob. At most one field is set. The default
+// branch is represented by all fields being empty.
 type revspecOrRefGlob struct {
 	revspec        string
 	refGlob        string
@@ -47,7 +48,7 @@ type repositoryRevisions struct {
 //
 // For example:
 //
-// - 'foo' refers to the 'foo' repo at the defaul branch
+// - 'foo' refers to the 'foo' repo at the default branch
 // - 'foo@bar' refers to the 'foo' repo and the 'bar' revspec.
 // - 'foo@bar:baz:qux' refers to the 'foo' repo and 3 revspecs: 'bar', 'baz',
 //   and 'qux'.
@@ -57,7 +58,7 @@ type repositoryRevisions struct {
 func parseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []revspecOrRefGlob) {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
-		return api.RepoURI(repoAndOptionalRev), nil
+		return api.RepoURI(repoAndOptionalRev), []revspecOrRefGlob{{revspec: ""}} // default branch
 	}
 
 	repo := api.RepoURI(repoAndOptionalRev[:i])
@@ -75,6 +76,9 @@ func parseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []revspec
 			rev.revspec = part
 		}
 		revs = append(revs, rev)
+	}
+	if len(revs) == 0 {
+		revs = []revspecOrRefGlob{{revspec: ""}} // default branch
 	}
 	return repo, revs
 }
@@ -97,13 +101,6 @@ func (r *repositoryRevisions) revspecs() []string {
 		revspecs = append(revspecs, rev.revspec)
 	}
 	return revspecs
-}
-
-func (r *repositoryRevisions) revSpecsOrDefaultBranch() []string {
-	if len(r.revspecs()) == 0 {
-		return []string{""}
-	}
-	return r.revspecs()
 }
 
 func (r *repositoryRevisions) hasSingleRevSpec() bool {
