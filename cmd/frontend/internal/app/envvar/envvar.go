@@ -29,9 +29,6 @@ func DebugMode() bool { return debugMode }
 
 // HasCodeIntelligence reports whether the site has enabled code intelligence.
 func HasCodeIntelligence() bool {
-	if SourcegraphDotComMode() {
-		return true
-	}
 	addr := os.Getenv("LSP_PROXY")
 	if addr == "" {
 		return false
