@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -48,7 +47,7 @@ func RegisterServers() error {
 		return err
 	}
 	if len(ServersByMode) == 0 {
-		return errors.New("No language servers registered")
+		log15.Info("No language servers registered")
 	}
 	return nil
 }
