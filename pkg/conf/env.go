@@ -64,10 +64,7 @@ var legacyEnvToFieldName = map[string]string{
 
 // configFromLegacyEnvVars constructs site config JSON from env vars. This is merged into the
 // SOURCEGRAPH_CONFIG site config JSON.
-//
-// DEPRECATED: Accepting config from non-SOURCEGRAPH_CONFIG env vars is deprecated. All config
-// should be passed through SOURCEGRAPH_CONFIG.
-func configFromLegacyEnvVars() (configJSON []byte, envVarNames []string, err error) {
+func configFromEnv() (configJSON []byte, envVarNames []string, err error) {
 	var cfg schema.SiteConfiguration
 
 	configType := reflect.TypeOf(cfg)
@@ -80,12 +77,14 @@ func configFromLegacyEnvVars() (configJSON []byte, envVarNames []string, err err
 		// Read from environment variable with the same name as the JSON tag
 		jsonName := typeField.Tag.Get("json")
 		jsonName = strings.TrimSuffix(jsonName, ",omitempty")
-		if jsonName == "" && typeField.Name != "PublicRepoRedirects" {
+		envName := strings.Replace(jsonName, ".", "__", -1)
+		if envName == "" && typeField.Name != "PublicRepoRedirects" {
 			return nil, nil, fmt.Errorf("missing JSON struct tag for config field %s", typeField.Name)
 		}
-		envVal = os.Getenv(jsonName)
+
+		envVal = os.Getenv(envName)
 		if envVal != "" {
-			envVarNames = append(envVarNames, jsonName)
+			envVarNames = append(envVarNames, envName)
 		}
 
 		if envVal == "" {

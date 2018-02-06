@@ -67,12 +67,9 @@ func initConfig() error {
 	}
 
 	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := configFromLegacyEnvVars(); err != nil {
+	if v, envVarNames, err := configFromEnv(); err != nil {
 		return err
 	} else if len(envVarNames) > 0 {
-		if os.Getenv("DEBUG") != "" {
-			log.Printf("Deprecation warning: Add the following config to SOURCEGRAPH_CONFIG instead of passing via other env vars: %v", envVarNames)
-		}
 		if err := json.Unmarshal(v, &cfg); err != nil {
 			return err
 		}
