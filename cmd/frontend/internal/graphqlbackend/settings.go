@@ -168,7 +168,7 @@ func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubj
 	// Notify query-runner of any changes.
 	createdOrUpdated := false
 	for i, newQuery := range newSavedQueries.SavedQueries {
-		if i > len(oldSavedQueries.SavedQueries) {
+		if i >= len(oldSavedQueries.SavedQueries) {
 			// Created
 			createdOrUpdated = true
 			break
