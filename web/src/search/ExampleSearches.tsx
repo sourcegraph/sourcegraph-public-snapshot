@@ -8,7 +8,15 @@ import exampleSearches from './data/exampleSearches'
 import { ExampleSearch, IExampleSearch } from './ExampleSearch'
 import { SavedQueryFields } from './SavedQueryForm'
 
-const searches: IExampleSearch[] = exampleSearches
+interface ScoredSearch {
+    search: IExampleSearch
+
+    /** The index in exampleSearches array. */
+    index: number
+
+    /** Score value from matching description against the user inputted filter value. */
+    score: number
+}
 
 interface Props {
     isLightTheme: boolean
@@ -19,31 +27,58 @@ interface Props {
 interface State {
     filterTerm: string
     numShown: number
+    scoredSearches: ScoredSearch[]
 }
 
 const numShownStep = 6
-const fuzzyFactor = 0.5
 
-const fuzzyMatch = (description: string, term: string): boolean => {
-    if (term === '') {
-        return true
+const calcScore = (description: string, term: string): number => {
+    if (term.trim() === '') {
+        return 1
     }
 
-    const descWords = description.split(' ')
-    const termWords = term.split(' ')
+    const notAlphanumeric = /[^A-Za-z0-9]/
+    const descWords = description.split(notAlphanumeric)
+    const termWords = term.split(notAlphanumeric)
 
     let score = 0
+    let count = 0
     for (const dWord of descWords) {
         for (const tWord of termWords) {
-            score += stringScore(dWord, tWord, fuzzyFactor)
+            const s = stringScore(dWord, tWord)
+            if (isNaN(s)) {
+                continue // e.g. empty string
+            }
+            count++
+            score += s
         }
     }
+    if (count > 0) {
+        score = score / count // average, so that we keep a normalized score value
+    }
+    return score
+}
 
-    return score > fuzzyFactor
+const getSortedExampleSearches = (filterTerm: string): ScoredSearch[] => {
+    // Calculate scores against our filter term.
+    const scoredSearches = exampleSearches.map((search, index) => ({
+        search,
+        index,
+        score: calcScore(search.description, filterTerm),
+    }))
+
+    // Sort searches based on calculate score.
+    scoredSearches.sort((a, b) => {
+        if (a.score === b.score) {
+            return 0
+        }
+        return a.score > b.score ? -1 : 1
+    })
+    return scoredSearches
 }
 
 export class ExampleSearches extends React.Component<Props, State> {
-    public state = { filterTerm: '', numShown: numShownStep }
+    public state = { filterTerm: '', numShown: numShownStep, scoredSearches: getSortedExampleSearches('') }
 
     public listNode: HTMLDivElement | null = null
     public subscriptions = new Subscription()
@@ -97,16 +132,16 @@ export class ExampleSearches extends React.Component<Props, State> {
                     <VirtualList
                         itemsToShow={this.state.numShown}
                         onShowMoreItems={this.handleShowMore}
-                        items={searches.map((search, idx) => (
+                        items={this.state.scoredSearches.map(({ search, index, score }) => (
                             <ExampleSearch
-                                key={`${search.query}-${idx}`}
+                                key={`${index}`}
                                 search={search}
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.props.onExampleSelected}
                                 // We just want to hide the items that don't match the filter so that
                                 // we do not hit the search endpoint every time the filter term changes
                                 // and mounts and remounts the same queries to get the sparkline data
-                                isHidden={!this.isMatch(search)}
+                                isHidden={score < 0.01}
                             />
                         ))}
                     />
@@ -118,16 +153,13 @@ export class ExampleSearches extends React.Component<Props, State> {
     private handleFilterChange: React.FormEventHandler<HTMLInputElement> = event => {
         this.setState({
             filterTerm: event.currentTarget.value,
+            scoredSearches: getSortedExampleSearches(event.currentTarget.value),
         })
     }
 
     private handleShowMore = () => {
         this.setState(state => ({
-            numShown: Math.min(state.numShown + numShownStep, searches.length),
+            numShown: Math.min(state.numShown + numShownStep, this.state.scoredSearches.length),
         }))
-    }
-
-    private isMatch({ description }: IExampleSearch): boolean {
-        return fuzzyMatch(description, this.state.filterTerm)
     }
 }
