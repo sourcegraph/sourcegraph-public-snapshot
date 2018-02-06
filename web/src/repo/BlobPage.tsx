@@ -228,13 +228,16 @@ class Blob extends React.Component<Props, State> {
 
         const prevHash = parseHash(this.props.location.hash)
         const nextHash = parseHash(nextProps.location.hash)
-        if (
-            (prevHash.line !== nextHash.line || prevHash.endLine !== nextHash.endLine) &&
-            nextProps.history.action === 'POP'
-        ) {
+        if (prevHash.line !== nextHash.line || prevHash.endLine !== nextHash.endLine) {
+            if (nextHash.line) {
+                this.addSelectionHighlightSticky(nextHash.line, nextHash.character)
+            }
+
             // If we don't need an update (the file hasn't changed, and we will *not* get into componentDidUpdate).
-            // We still want to scroll if the hash is changed, but only on 'back' and 'forward' browser events (and not e.g. on each line click).
-            this.scrollToLine(nextProps)
+            // We still want to scroll if the hash is changed, but only on 'back' and 'forward' browser events or when navigating (eg from the symbol list) to a symbol off-screen (and not e.g. on each line click).
+            if (nextProps.history.action === 'POP' || (nextHash.line && !this.isVisible(nextHash.line))) {
+                this.scrollToLine(nextProps)
+            }
         }
         return false
     }
@@ -265,6 +268,10 @@ class Blob extends React.Component<Props, State> {
     }
 
     private addSelectionHighlightSticky(line: number, character?: number): void {
+        for (const el of document.querySelectorAll('.blob .selection-highlight-sticky')) {
+            el.classList.remove('selection-highlight-sticky')
+        }
+
         const cell = getCodeCell(line)
         if (cell) {
             const el = findElementWithOffset(cell.childNodes[1]! as HTMLElement, character || 0)
@@ -564,6 +571,23 @@ class Blob extends React.Component<Props, State> {
                 renderMode: props.renderMode,
             })
         }
+    }
+
+    /**
+     * Returns whether the line number is visible on screen (false if the visible area is not scrolled to reveal
+     * it.)
+     */
+    private isVisible(line: number): boolean {
+        const cells = getCodeCells(line)
+        if (cells.length === 0 || !cells[0]) {
+            return false
+        }
+        const rect = cells[0].getBoundingClientRect()
+        if (!this.blobElement) {
+            return false
+        }
+        const view = this.blobElement.getBoundingClientRect() as DOMRect
+        return rect.top >= view.y && rect.bottom <= view.y + view.height
     }
 
     /**
