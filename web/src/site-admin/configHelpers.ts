@@ -73,6 +73,7 @@ const addSSOViaGSuite: ConfigHelper = config => {
         edits: [
             ...setProperty(config, ['auth.provider'], 'openidconnect', defaultFormattingOptions),
             ...setProperty(config, ['auth.openIDConnect'], value, defaultFormattingOptions),
+            ...setProperty(config, ['auth.allowSignup'], false, defaultFormattingOptions),
         ],
         selectText: '"auth.openIDConnect": {',
     }
