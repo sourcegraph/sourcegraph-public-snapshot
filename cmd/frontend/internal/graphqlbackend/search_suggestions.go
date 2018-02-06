@@ -5,15 +5,19 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	"github.com/neelance/parallel"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 )
 
 const (
@@ -90,6 +94,119 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		return nil, nil
 	}
 	suggesters = append(suggesters, showFileSuggestions)
+
+	showSymbolMatches := func(ctx context.Context) (results []*searchResultResolver, err error) {
+		patternInfo := r.getPatternInfo()
+		if patternInfo.Pattern == "" {
+			return nil, nil
+		}
+
+		params := lspext.WorkspaceSymbolParams{
+			Limit: 7,
+			Query: patternInfo.Pattern, // TODO!(sqs): support all options here
+		}
+
+		const maxSymbolResults = 12
+		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+		defer cancel()
+
+		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		var (
+			run       = parallel.NewRun(20)
+			mu        sync.Mutex
+			resolvers []*symbolResolver
+		)
+		for _, repoRevs := range repoRevs {
+			if ctx.Err() != nil {
+				break
+			}
+			if len(repoRevs.revspecs()) == 0 {
+				continue
+			}
+			run.Acquire()
+			go func(repoRevs *repositoryRevisions) {
+				defer run.Release()
+				inputRev := repoRevs.revspecs()[0]
+				commitID, err := backend.Repos.ResolveRev(ctx, repoRevs.repo, inputRev)
+				if err != nil {
+					run.Error(err)
+					return
+				}
+				symbols, err := backend.Symbols.List(ctx, repoRevs.repo.URI, commitID, "tags", params)
+				if err != nil && err != context.Canceled && err != context.DeadlineExceeded && ctx.Err() != nil {
+					run.Error(err)
+				}
+				if len(symbols) > 0 {
+					mu.Lock()
+					defer mu.Unlock()
+					for _, symbol := range symbols {
+						commit := &gitCommitResolver{
+							repo: &repositoryResolver{repo: repoRevs.repo},
+							oid:  gitObjectID(commitID),
+							// NOTE: Not all fields are set, for performance.
+						}
+						if inputRev != "" {
+							commit.inputRev = &inputRev
+						}
+
+						lang := "" // TODO(sqs): fill this in - need to add a new extension field to lsp.SymbolInformation?
+						resolvers = append(resolvers, toSymbolResolver(symbol, lang, commit))
+					}
+					if len(resolvers) > maxSymbolResults {
+						cancel()
+					}
+				}
+			}(repoRevs)
+		}
+
+		if err := run.Wait(); err != nil {
+			log15.Warn("Error getting symbol match search suggestions.", "error", err)
+		}
+
+		if len(resolvers) > maxSymbolResults {
+			resolvers = resolvers[:maxSymbolResults]
+		}
+		results = make([]*searchResultResolver, len(resolvers))
+		for i, sr := range resolvers {
+			score := 20
+			if sr.symbol.ContainerName == "" {
+				score++
+			}
+			if len(sr.symbol.Name) < 12 {
+				score++
+			}
+			switch sr.symbol.Kind {
+			case lsp.SKFunction, lsp.SKMethod:
+				score += 2
+			case lsp.SKClass:
+				score += 3
+			}
+			if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(string(sr.symbol.Location.URI)), strings.ToLower(sr.symbol.Name)) {
+				score++
+			}
+			results[i] = newSearchResultResolver(sr, score)
+		}
+
+		sort.Sort(searchResultSorter(results))
+		const maxBoostedSymbolResults = 3
+		boost := maxBoostedSymbolResults
+		if len(results) < boost {
+			boost = len(results)
+		}
+		if boost > 0 {
+			for i := 0; i < boost; i++ {
+				results[i].score += 200
+			}
+		}
+
+		return results, nil
+	}
+	if r.query.BoolValue(searchquery.FieldSymbol) {
+		suggesters = append(suggesters, showSymbolMatches)
+	}
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
 		// If terms are specified, then show files that have text matches. Set an aggressive timeout
@@ -168,6 +285,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		repoID  api.RepoID
 		repoRev string
 		file    string
+		symbol  string
 	}
 	seen := make(map[key]struct{}, len(allSuggestions))
 	uniqueSuggestions := allSuggestions[:0]
@@ -180,6 +298,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			k.repoID = s.commit.repositoryDatabaseID()
 			k.repoRev = string(s.commit.oid)
 			k.file = s.path
+		case *symbolResolver:
+			k.repoID = s.location.resource.commit.repoID
+			k.symbol = s.symbol.Name + s.symbol.ContainerName
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))
 		}

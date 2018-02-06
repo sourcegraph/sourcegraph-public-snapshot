@@ -32,6 +32,7 @@ func restartGoremanDev() error {
 		"query-runner",
 		"repo-updater",
 		"searcher",
+		"symbols",
 		"github-proxy",
 		"lsp-proxy",
 		"xlang-go",

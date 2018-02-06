@@ -153,6 +153,20 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                                 uri
                             }
                         }
+                        ... on Symbol {
+                            __typename
+                            name
+                            containerName
+                            url
+                            location {
+                                resource {
+                                    path
+                                    repository {
+                                        uri
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

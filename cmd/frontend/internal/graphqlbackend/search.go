@@ -484,6 +484,11 @@ func (r *searchResultResolver) ToFile() (*fileResolver, bool) {
 	return res, ok
 }
 
+func (r *searchResultResolver) ToSymbol() (*symbolResolver, bool) {
+	res, ok := r.result.(*symbolResolver)
+	return res, ok
+}
+
 // A matcher describes how to filter and score results (for repos and files).
 // Exactly one of (query) and (match, scoreQuery) must be set.
 type matcher struct {
@@ -617,6 +622,9 @@ func newSearchResultResolver(result interface{}, score int) *searchResultResolve
 	case *fileResolver:
 		return &searchResultResolver{result: r, score: score, length: len(r.path), label: r.path}
 
+	case *symbolResolver:
+		return &searchResultResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.ContainerName), label: r.symbol.Name + " " + r.symbol.ContainerName}
+
 	default:
 		panic("never here")
 	}
@@ -651,8 +659,7 @@ const (
 
 // calcScore calculates and assigns the sorting score to the given result.
 //
-// A panic occurs if the type of result is not a *repositoryResolver or
-// *fileResolver.
+// A panic occurs if the type of result is not a valid search result resolver type.
 func (s *scorer) calcScore(result interface{}) int {
 	var score int
 	if s.queryEmpty {

@@ -447,6 +447,39 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 }
 
+func (r *searchResolver) getPatternInfo() *patternInfo {
+	var patternsToCombine []string
+	for _, v := range r.query.Values(searchquery.FieldDefault) {
+		// Treat quoted strings as literal strings to match, not regexps.
+		var pattern string
+		switch {
+		case v.String != nil:
+			pattern = regexp.QuoteMeta(*v.String)
+		case v.Regexp != nil:
+			pattern = v.Regexp.String()
+		}
+		if pattern == "" {
+			continue
+		}
+		patternsToCombine = append(patternsToCombine, pattern)
+	}
+	includePatterns, excludePatterns := r.query.RegexpPatterns(searchquery.FieldFile)
+	patternInfo := &patternInfo{
+		IsRegExp:                     true,
+		IsCaseSensitive:              r.query.IsCaseSensitive(),
+		FileMatchLimit:               r.maxResults(),
+		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
+		IncludePatterns:              includePatterns,
+		PathPatternsAreRegExps:       true,
+		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
+	}
+	if len(excludePatterns) > 0 {
+		excludePattern := unionRegExps(excludePatterns)
+		patternInfo.ExcludePattern = &excludePattern
+	}
+	return patternInfo
+}
+
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResults, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "graphql.SearchResults")
 	tr := trace.New(traceName, r.rawQuery())
@@ -480,37 +513,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &searchResults{alert: alert}, nil
 	}
 
-	var patternsToCombine []string
-	for _, v := range r.query.Values(searchquery.FieldDefault) {
-		// Treat quoted strings as literal strings to match, not regexps.
-		var pattern string
-		switch {
-		case v.String != nil:
-			pattern = regexp.QuoteMeta(*v.String)
-		case v.Regexp != nil:
-			pattern = v.Regexp.String()
-		}
-		if pattern == "" {
-			continue
-		}
-		patternsToCombine = append(patternsToCombine, pattern)
-	}
-	includePatterns, excludePatterns := r.query.RegexpPatterns(searchquery.FieldFile)
 	args := repoSearchArgs{
-		query: &patternInfo{
-			IsRegExp:                     true,
-			IsCaseSensitive:              r.query.IsCaseSensitive(),
-			FileMatchLimit:               r.maxResults(),
-			Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
-			IncludePatterns:              includePatterns,
-			PathPatternsAreRegExps:       true,
-			PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
-		},
+		query: r.getPatternInfo(),
 		repos: repos,
-	}
-	if len(excludePatterns) > 0 {
-		excludePattern := unionRegExps(excludePatterns)
-		args.query.ExcludePattern = &excludePattern
 	}
 	if err := args.query.validate(); err != nil {
 		return nil, &badRequestError{err}

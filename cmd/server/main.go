@@ -27,6 +27,7 @@ var defaultEnv = map[string]string{
 	"SRC_INDEXER":             "127.0.0.1:3179",
 	"QUERY_RUNNER_URL":        "http://127.0.0.1:3183",
 	"SRC_SYNTECT_SERVER":      "http://127.0.0.1:3700",
+	"SYMBOLS_URL":             "http://127.0.0.1:3184",
 	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_HTTPS_ADDR":          ":7443",
 	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
@@ -34,9 +35,10 @@ var defaultEnv = map[string]string{
 	"LSP_PROXY":               "127.0.0.1:4388",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
-	// searcher to ensure this value isn't larger than the volume for
+	// searcher/symbols to ensure this value isn't larger than the volume for
 	// CACHE_DIR.
-	"SEARCHER_CACHE_SIZE_MB": "100000",
+	"SEARCHER_CACHE_SIZE_MB": "50000",
+	"SYMBOLS_CACHE_SIZE_MB":  "50000",
 
 	// TODO other bits
 	// * Guess SRC_APP_URL based on hostname
@@ -107,6 +109,7 @@ func main() {
 		`gitserver: gitserver`,
 		`indexer: indexer`,
 		`query-runner: query-runner`,
+		`symbols: symbols`,
 		`lsp-proxy: lsp-proxy`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,

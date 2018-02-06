@@ -3,6 +3,7 @@ indexer: .bin/indexer
 query-runner: env SRC_PROF_HTTP=:6067 .bin/query-runner
 repo-updater: .bin/repo-updater
 searcher: env SRC_PROF_HTTP=:6069 $EXEC_SEARCHER .bin/searcher
+symbols: env SRC_PROF_HTTP=:6070 .bin/symbols
 github-proxy: .bin/github-proxy
 lsp-proxy: env SRC_PROF_HTTP=:6061 .bin/lsp-proxy
 xlang-go: .bin/xlang-go -mode=tcp -addr=:4389 -prof-http=:6062
