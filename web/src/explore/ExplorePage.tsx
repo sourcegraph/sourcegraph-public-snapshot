@@ -104,7 +104,8 @@ export class ExplorePage extends React.PureComponent<Props, State> {
                 </div>
                 {this.props.user &&
                     this.props.user.siteAdmin &&
-                    this.state.disabledRepositoriesCount && (
+                    typeof this.state.disabledRepositoriesCount === 'number' &&
+                    this.state.disabledRepositoriesCount > 0 && (
                         <div className="alert alert-notice explore-page__notice">
                             {this.state.disabledRepositoriesCount}{' '}
                             {pluralize(
