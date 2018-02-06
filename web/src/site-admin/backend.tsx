@@ -175,7 +175,7 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.repositories) {
+            if (!data || !data.site || !data.site.repositories || !data.site.repositories.nodes) {
                 throw createAggregateError(errors)
             }
             return data.site.repositories
