@@ -14,9 +14,6 @@ export const SearchHelp: React.SFC = () => (
         target="_blank"
         data-tooltip="View search documentation"
     >
-        <small>
-            <HelpIcon className="icon-inline" />
-            <span className="search-help__text">Help</span>
-        </small>
+        <HelpIcon className="icon-inline" /> <span className="search-help__text">Help</span>
     </a>
 )
