@@ -8,6 +8,7 @@
         display: inline-block;
         text-decoration: none;
         margin-left: 1rem;
+        white-space: nowrap;
         &-user {
             font-weight: bold;
         }
@@ -35,9 +36,25 @@
         text-overflow: ellipsis;
     }
 
+    &__scopes-toggle {
+        min-width: 6.875rem;
+    }
+
     @media (max-width: $media-lg) {
-        &__widescreen-only {
+        &__scopes-toggle {
+            min-width: 0;
+        }
+        &__widescreen-only,
+        &__scopes-toggle-text {
             display: none;
+        }
+    }
+}
+
+.theme-light {
+    .nav-links {
+        &__border-link {
+            border: $color-light-border;
         }
     }
 }

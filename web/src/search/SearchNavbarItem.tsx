@@ -9,22 +9,17 @@ import { submitSearch } from './helpers'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { SearchHelp } from './SearchHelp'
 
 interface Props {
     location: H.Location
     history: H.History
-}
-
-interface State {
-    /** The query in the input field */
     userQuery: string
+    onChange: (newValue: string) => void
 }
-
 /**
  * The search item in the navbar
  */
-export class SearchNavbarItem extends React.Component<Props, State> {
+export class SearchNavbarItem extends React.Component<Props> {
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
 
@@ -33,9 +28,6 @@ export class SearchNavbarItem extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-
-        // Fill text input from URL info
-        this.state = this.getStateFromProps(props) || { userQuery: '' }
 
         /** Emits whenever the route changes */
         const routeChanges = this.componentUpdates.pipe(
@@ -48,7 +40,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         this.subscriptions.add(
             routeChanges.subscribe(
                 props => {
-                    this.setState(this.getStateFromProps(props))
+                    this.props.onChange(this.getUserQueryFromProps(props))
                 },
                 err => {
                     console.error(err)
@@ -81,13 +73,12 @@ export class SearchNavbarItem extends React.Component<Props, State> {
             <form className="search search--navbar-item" onSubmit={this.onSubmit}>
                 <QueryInput
                     {...this.props}
-                    value={this.state.userQuery}
-                    onChange={this.onUserQueryChange}
+                    value={this.props.userQuery}
+                    onChange={this.props.onChange}
                     autoFocus={autoFocus ? 'cursor-at-end' : undefined}
                     hasGlobalQueryBehavior={true}
                 />
                 <SearchButton />
-                <SearchHelp />
             </form>
         )
     }
@@ -96,7 +87,7 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         // Store the last-used search options ('q' and 'sq' query parameters) in the location
         // state if we're navigating to a URL that lacks them, so that we can preserve them without
         // storing them in the URL (which is ugly) and across page reloads in the same tab.
-        const oldSearch: SearchOptions = { query: this.state.userQuery }
+        const oldSearch: SearchOptions = { query: this.props.userQuery }
         const locationStateNeedsUpdate =
             !location.state || !searchOptionsEqual(location.state as SearchOptions, oldSearch)
         const newSearch = parseSearchURLQuery(location.search)
@@ -110,44 +101,26 @@ export class SearchNavbarItem extends React.Component<Props, State> {
         }
     }
 
-    private onUserQueryChange = (userQuery: string) => {
-        this.setState({ userQuery })
-    }
-
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         submitSearch(
             this.props.history,
             {
-                query: this.state.userQuery,
+                query: this.props.userQuery,
             },
             'nav'
         )
     }
 
-    /**
-     * Reads initial state from the props (i.e. URL parameters).
-     */
-    private getStateFromProps(props: Props): State {
+    private getUserQueryFromProps(props: Props): string {
         const options = parseSearchURLQuery(props.location.search || '')
         if (options) {
-            return { userQuery: options.query }
-        }
-
-        // If the new URL has no search options, then preserve the ones we had before.
-        // That makes it so that if we navigate from search results to a blob, the
-        // query and scope will remain the same (instead of being cleared).
-        //
-        // The first place to look for the previous query options is in our state.
-        if (this.state) {
-            return this.state
+            return options.query
         }
 
         // If we have no component state, then we may have gotten unmounted during a route change.
         // We always store the last query in the location state, so check there.
         const state: SearchOptions | undefined = props.location.state
-        return {
-            userQuery: state ? state.query : '',
-        }
+        return state ? state.query : ''
     }
 }

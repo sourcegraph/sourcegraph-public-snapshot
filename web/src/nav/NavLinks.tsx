@@ -1,9 +1,12 @@
+import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
+import ChevronUpIcon from '@sourcegraph/icons/lib/ChevronUp'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { SearchHelp } from '../search/SearchHelp'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
@@ -12,6 +15,8 @@ interface Props {
     location: H.Location
     isLightTheme: boolean
     onThemeChange: () => void
+    showScopes?: boolean
+    onShowScopes?: () => void
 }
 
 interface State {
@@ -43,9 +48,28 @@ export class NavLinks extends React.Component<Props, State> {
         })
     }
 
+    private onShowScopes: React.MouseEventHandler<HTMLAnchorElement> = e => {
+        e.preventDefault()
+        if (this.props.onShowScopes) {
+            this.props.onShowScopes()
+        }
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className="nav-links">
+                {this.props.onShowScopes && (
+                    <a className="nav-links__link nav-links__scopes-toggle" onClick={this.onShowScopes} href="">
+                        <span className="nav-links__scopes-toggle-text">
+                            {this.props.showScopes ? 'Hide scopes' : 'Show scopes'}
+                        </span>
+                        {this.props.showScopes ? (
+                            <ChevronUpIcon className="icon-inline" />
+                        ) : (
+                            <ChevronDownIcon className="icon-inline" />
+                        )}
+                    </a>
+                )}
                 {showDotComMarketing && (
                     <a
                         href="https://about.sourcegraph.com"
@@ -90,6 +114,7 @@ export class NavLinks extends React.Component<Props, State> {
                         </Link>
                     )}
                 <ThemeSwitcher {...this.props} />
+                <SearchHelp />
             </div>
         )
     }

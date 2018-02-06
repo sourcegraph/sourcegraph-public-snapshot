@@ -4,7 +4,7 @@ import { PageTitle } from '../components/PageTitle'
 import { NavLinks } from '../nav/NavLinks'
 import { eventLogger } from '../tracking/eventLogger'
 import { limitString } from '../util'
-import { submitSearch } from './helpers'
+import { queryIndexOfScope, submitSearch } from './helpers'
 import { parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
 import { SavedQueries } from './SavedQueries'
@@ -31,6 +31,8 @@ interface State {
  * The search page
  */
 export class SearchPage extends React.Component<Props, State> {
+    private static HIDE_REPOGROUP_SAMPLE_STORAGE_KEY = 'SearchPage/hideRepogroupSample'
+
     constructor(props: Props) {
         super(props)
 
@@ -43,6 +45,12 @@ export class SearchPage extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('Home')
+        if (
+            window.context.sourcegraphDotComMode &&
+            !localStorage.getItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
+        ) {
+            this.addScopeToQuery('repogroup:sample')
+        }
     }
 
     public render(): JSX.Element | null {
@@ -86,12 +94,46 @@ export class SearchPage extends React.Component<Props, State> {
         )
     }
 
-    private onSuggestionChosen = (query: string) => {
-        this.setState(state => ({ userQuery: [state.userQuery, query].filter(s => s).join(' ') + ' ' }))
+    private onSuggestionChosen = (scope: string) => {
+        const idx = queryIndexOfScope(this.state.userQuery, scope)
+        if (idx === -1) {
+            this.addScopeToQuery(scope)
+        } else {
+            this.removeScopeFromQuery(scope, idx)
+        }
+    }
+
+    private addScopeToQuery(scope: string): void {
+        this.setState(state => ({ userQuery: [state.userQuery.trim(), scope].filter(s => s).join(' ') + ' ' }))
+        if (window.context.sourcegraphDotComMode && scope === 'repogroup:sample') {
+            localStorage.removeItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
+        }
+    }
+
+    private removeScopeFromQuery(scope: string, idx: number): void {
+        this.setState(state => ({
+            userQuery: (
+                state.userQuery.substring(0, idx).trim() +
+                ' ' +
+                state.userQuery.substring(idx + scope.length).trim()
+            ).trim(),
+        }))
+
+        if (window.context.sourcegraphDotComMode && scope === 'repogroup:sample') {
+            localStorage.setItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY, 'true')
+        }
     }
 
     private onUserQueryChange = (userQuery: string) => {
         this.setState({ userQuery })
+
+        if (window.context.sourcegraphDotComMode) {
+            if (queryIndexOfScope(userQuery, 'repogroup:sample') !== -1) {
+                localStorage.removeItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
+            } else {
+                localStorage.setItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY, 'true')
+            }
+        }
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

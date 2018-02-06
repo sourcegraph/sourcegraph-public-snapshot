@@ -101,16 +101,20 @@
 }
 
 .btn-secondary {
-    border: solid 1px $color-secondary;
+    border: solid 1px $color-border;
     background-color: transparent;
+
+    .theme-light & {
+        border: $color-light-border-2;
+    }
 
     &:hover:not(:disabled) {
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        border-color: lighten($color-secondary, 10%);
+        border-color: lighten($color-border, 10%);
         color: lighten($color-secondary, 10%);
         .theme-light & {
             // stylelint-disable-next-line declaration-property-unit-whitelist
-            border-color: darken($color-secondary, 10%);
+            border-color: darken($color-light-border-2, 10%);
             color: darken($color-light-text-2, 10%);
         }
     }

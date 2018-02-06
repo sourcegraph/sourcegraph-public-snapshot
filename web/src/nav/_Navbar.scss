@@ -1,16 +1,7 @@
 $navbar-search-height: 2.75rem;
 
 .navbar {
-    position: sticky;
-    flex: none;
     width: 100%;
-    z-index: 1;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    background-color: #1c2736;
 
     &__right {
         display: flex;
@@ -35,6 +26,9 @@ $navbar-search-height: 2.75rem;
     }
 
     &__logo {
+        width: 1.5rem;
+        height: 1.5rem;
+
         &:hover {
             animation: spin 0.5s ease-in-out 1;
 
@@ -58,22 +52,48 @@ $navbar-search-height: 2.75rem;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding-right: 1rem;
     }
 
-    &.navbar-search {
+    &__search {
+        position: sticky;
+        flex: none;
+        z-index: 1;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        background-color: $color-bg-2;
         height: $navbar-search-height; // +.05 to avoid the search box leaking
-        .navbar__logo {
-            width: 1.5rem;
-            height: 1.5rem;
+    }
+
+    &__scopesbar {
+        width: 100%;
+
+        padding-left: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: $color-bg-2;
+
+        &--hidden {
+            display: none !important;
         }
     }
 }
 
 .theme-light {
     .navbar {
-        background-color: $color-light-bg-2;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        border-bottom: solid 1px darken($color-light-bg-2, 3%);
+        &__search {
+            background-color: $color-light-bg-2;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            border-bottom: solid 1px darken($color-light-border-2, 3%);
+        }
+
+        &__scopesbar {
+            background-color: $color-light-bg-1;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            border-bottom: solid 1px darken($color-light-border-2, 3%);
+        }
     }
 }

@@ -5,14 +5,17 @@ import * as React from 'react'
 import { matchPath } from 'react-router'
 import { NavLink } from 'react-router-dom'
 import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
+import { Tooltip } from '../components/tooltip/Tooltip'
 import { routes } from '../routes'
 import { currentConfiguration } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSearchScopes } from './backend'
+import { queryIndexOfScope } from './helpers'
 
 interface Props {
     location: H.Location
@@ -33,43 +36,22 @@ interface ISearchScope {
     value: string
 }
 
-/** The subset of State that is persisted to localStorage */
-interface PersistableState {
-    /** All fetched search scopes */
-    remoteScopes?: ISearchScope[]
-}
-
-/** Data that is persisted to localStorage but NOT in the component state. */
-interface PersistedState extends PersistableState {
-    /** The value of the last-active scope. */
-    lastScopeValue?: string
-}
-
-interface State extends PersistableState {
+interface State {
     /** All search scopes from configuration */
     configuredScopes?: ISearchScope[]
+    /** All fetched search scopes */
+    remoteScopes?: ISearchScope[]
     user: GQL.IUser | null
 }
 
 export class SearchSuggestionChips extends React.PureComponent<Props, State> {
-    private static REMOTE_SCOPES_STORAGE_KEY = 'SearchScope/remoteScopes'
-    private static LAST_SCOPE_STORAGE_KEY = 'SearchScope/lastScope'
-
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
 
-        const savedState = this.loadFromLocalStorage()
-        this.state = { remoteScopes: savedState.remoteScopes, user: null }
-
-        // Always start with the scope suggestion that the user last clicked, if any.
-        if (savedState.lastScopeValue) {
-            this.props.onSuggestionChosen(savedState.lastScopeValue)
-        } else if (window.context.sourcegraphDotComMode) {
-            this.props.onSuggestionChosen('repogroup:sample ')
-        }
+        this.state = { user: null }
 
         this.subscriptions.add(
             fetchSearchScopes()
@@ -80,13 +62,7 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                     }),
                     map((remoteScopes: GQL.ISearchScope[]) => ({ remoteScopes }))
                 )
-                .subscribe(
-                    newState =>
-                        this.setState(newState, () => {
-                            this.saveToLocalStorage()
-                        }),
-                    err => console.error(err)
-                )
+                .subscribe(newState => this.setState(newState), err => console.error(err))
         )
     }
 
@@ -99,6 +75,13 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
             )
         )
         this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
+
+        // Update tooltip text immediately after clicking.
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(distinctUntilChanged((a, b) => a.query === b.query))
+                .subscribe(() => Tooltip.forceUpdate())
+        )
     }
 
     public componentWillReceiveProps(newProps: Props): void {
@@ -117,11 +100,17 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                 {/* Filtering out empty strings because old configurations have "All repositories" with empty value, which is useless with new chips design. */}
                 {scopes.filter(scope => scope.value !== '').map((scope, i) => (
                     <button
-                        className="btn btn-secondary btn-sm search-suggestion-chips__chip"
+                        className={
+                            'btn btn-secondary btn-sm search-suggestion-chips__chip' +
+                            (this.isScopeSelected(this.props.query, scope.value)
+                                ? ' search-suggestion-chips__chip--selected'
+                                : '')
+                        }
                         key={i}
                         value={scope.value}
-                        data-tooltip={this.props.query.includes(scope.value) ? 'Scope already in query' : scope.value}
-                        disabled={this.props.query.includes(scope.value)}
+                        data-tooltip={
+                            this.isScopeSelected(this.props.query, scope.value) ? 'Scope already in query' : scope.value
+                        }
                         onMouseDown={this.onMouseDown}
                         onClick={this.onClick}
                     >
@@ -149,12 +138,9 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
     }
 
     private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
-        eventLogger.log('SearchSuggestionClicked')
+        eventLogger.log('SearchSuggestionClicked', { code_search: { suggestion_chip: event.currentTarget.value } })
         event.preventDefault()
         this.props.onSuggestionChosen(event.currentTarget.value)
-
-        // Persist the clicked suggestion to localstorage.
-        this.saveToLocalStorage(this.props, event.currentTarget.value)
     }
 
     private getScopes(): ISearchScope[] {
@@ -170,6 +156,10 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
 
         allScopes.push(...this.getScopesForCurrentRoute())
         return allScopes
+    }
+
+    private isScopeSelected(query: string, scope: string): boolean {
+        return queryIndexOfScope(query, scope) !== -1
     }
 
     /**
@@ -221,56 +211,6 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
         }
 
         return scopes
-    }
-
-    private saveToLocalStorage(props: Props = this.props, clickedSuggestion?: string): void {
-        const writeItem = (key: string, data: any): void => {
-            if (data !== undefined && data !== null) {
-                localStorage.setItem(key, JSON.stringify(data))
-            } else {
-                localStorage.removeItem(key)
-            }
-        }
-
-        writeItem(SearchSuggestionChips.REMOTE_SCOPES_STORAGE_KEY, this.state.remoteScopes)
-
-        // Persist the clicked suggestion, if any.
-        if (clickedSuggestion) {
-            writeItem(SearchSuggestionChips.LAST_SCOPE_STORAGE_KEY, clickedSuggestion)
-        }
-    }
-
-    private loadFromLocalStorage(): PersistedState {
-        const readItem = <T extends {}>(key: string, validate: (data: T) => boolean): T | undefined => {
-            const raw = localStorage.getItem(key)
-            if (raw === null) {
-                return undefined
-            }
-
-            try {
-                const data = JSON.parse(raw)
-                if (data !== undefined && data !== null && validate(data)) {
-                    return data
-                }
-            } catch (err) {
-                /* noop */
-            }
-
-            // Else invalid data.
-            localStorage.removeItem(key)
-            return undefined
-        }
-
-        const validate = (data: ISearchScope): boolean =>
-            typeof data.name === 'string' && typeof data.value === 'string'
-        const remoteScopes = readItem<ISearchScope[]>(SearchSuggestionChips.REMOTE_SCOPES_STORAGE_KEY, data =>
-            data.every(validate)
-        )
-        const lastScopeValue = readItem<string>(
-            SearchSuggestionChips.LAST_SCOPE_STORAGE_KEY,
-            s => typeof s === 'string'
-        )
-        return { remoteScopes, lastScopeValue }
     }
 }
 
