@@ -25,6 +25,9 @@
         padding: $popover-item-padding-v $popover-item-padding-h;
         flex: 0 0;
     }
+    &--compact &__error {
+        border-radius: 0;
+    }
     &--compact &__nodes {
         flex: 1 1;
         overflow-y: auto;
