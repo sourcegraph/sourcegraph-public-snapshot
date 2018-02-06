@@ -403,21 +403,28 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         }
                     }),
                     switchMap(([query, filter]) => {
+                        type PartialStateUpdate = Pick<
+                            FilteredConnectionState<C, N>,
+                            'connectionOrError' | 'loading' | 'connectionQuery'
+                        >
+
                         const result = this.props
-                            .queryConnection({ first: this.state.first, query, ...(filter ? filter.args : {}) })
+                            .queryConnection({
+                                first: this.state.first,
+                                query,
+                                ...(filter ? filter.args : {}),
+                            })
                             .pipe(
-                                catchError(error => {
-                                    this.setState({ connectionOrError: error, loading: false })
-                                    return []
-                                }),
+                                catchError(error => [error]),
                                 map(
                                     c =>
-                                        ({ connectionOrError: c, connectionQuery: query, loading: false } as Pick<
-                                            FilteredConnectionState<C, N>,
-                                            'connectionOrError' | 'loading' | 'connectionQuery'
-                                        >)
+                                        ({
+                                            connectionOrError: c,
+                                            connectionQuery: query,
+                                            loading: false,
+                                        } as PartialStateUpdate)
                                 ),
-                                publishReplay(),
+                                publishReplay<PartialStateUpdate>(),
                                 refCount()
                             )
 
@@ -429,10 +436,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             : result
                     })
                 )
-                .subscribe(
-                    (stateUpdate: FilteredConnectionState<C, N>) => this.setState(stateUpdate),
-                    err => console.error(err)
-                )
+                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
         this.subscriptions.add(
