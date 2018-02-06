@@ -252,7 +252,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     </div>
                 )}
                 {this.isUnsupportedNotifyQuery(this.state.values) && (
-                    <div>
+                    <div className="alert alert-warning">
                         Warning: non-commit searches do not currently support notifications. Consider adding `type:diff`
                         or `type:commit` to your query.
                     </div>
@@ -260,14 +260,14 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 {(notify || notifyUsers.length > 0 || notifyOrganizations.length > 0) &&
                     !window.context.emailEnabled &&
                     !this.isUnsupportedNotifyQuery(this.state.values) && (
-                        <div>
+                        <div className="alert alert-warning">
                             Warning: Sending emails is not currently configured on this Sourcegraph server. Contact your
                             admin for more information.
                         </div>
                     )}
                 {notifySlack &&
                     this.isOrgMissingSlackWebhook() && (
-                        <div>
+                        <div className="alert alert-warning">
                             Warning: Slack webhook is not configured for this organization. Please{' '}
                             <Link to={this.getConfigureSlackURL()}>configure one in the organization settings</Link>.
                         </div>
