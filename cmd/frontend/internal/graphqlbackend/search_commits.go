@@ -46,9 +46,9 @@ func (r *commitSearchResult) SourceRefs() []*gitRefResolver      { return r.sour
 func (r *commitSearchResult) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResult) DiffPreview() *highlightedString    { return r.diffPreview }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit, timedOut bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit, timedOut bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
@@ -67,9 +67,9 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, 
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit, timedOut bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResult, limitHit, timedOut bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
 		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
 	}
@@ -97,7 +97,7 @@ type commitSearchOp struct {
 	extraMessageValues []string
 }
 
-func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResult, limitHit bool, err error) {
+func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResult, limitHit, timedOut bool, err error) {
 	repo := op.repoRevs.repo
 
 	args := []string{
@@ -125,7 +125,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 				// against a whitelist, but it could cause unexpected errors by (e.g.)
 				// changing the format of `git log` to a format that our parser doesn't
 				// expect.
-				return nil, false, fmt.Errorf("invalid revspec: %q", rev.revspec)
+				return nil, false, false, fmt.Errorf("invalid revspec: %q", rev.revspec)
 			}
 			args = append(args, rev.revspec)
 
@@ -184,13 +184,13 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return nil
 	}
 	if err := addGrepLikeFlags(&args, "--grep", searchquery.FieldMessage, op.extraMessageValues); err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 	if err := addGrepLikeFlags(&args, "--author", searchquery.FieldAuthor, nil); err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 	if err := addGrepLikeFlags(&args, "--committer", searchquery.FieldCommitter, nil); err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 
 	strv := func(s *string) string {
@@ -220,10 +220,11 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		Deadline:          deadline,
 	})
 	if err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 
-	limitHit = limitHit || !complete
+	// if the result is incomplete, git log timed out and the client should be notified of that
+	timedOut = !complete
 	if len(rawResults) > maxGitLogSearchResults {
 		limitHit = true
 		rawResults = rawResults[:maxGitLogSearchResults]
@@ -270,7 +271,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 			}
 		}
 	}
-	return results, limitHit, nil
+	return results, limitHit, timedOut, nil
 }
 
 func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
@@ -314,14 +315,14 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query s
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.query, query)
+			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.query, query)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
+			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, repoTimedOut, searchErr); fatalErr != nil {
 				err = errors.Wrapf(searchErr, "failed to search commit diffs %s", repoRev.String())
 				cancel()
 			}
@@ -364,14 +365,14 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query sea
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, searchErr := searchCommitLogInRepo(ctx, repoRev, args.query, query)
+			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.query, query)
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchRepo for this repo.
 				return
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, searchErr); fatalErr != nil {
+			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, repoTimedOut, searchErr); fatalErr != nil {
 				err = errors.Wrapf(searchErr, "failed to search commit log %s", repoRev.String())
 				cancel()
 			}

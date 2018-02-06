@@ -223,7 +223,7 @@ export class SearchResults extends React.Component<Props, State> {
             this.state.missing.length === 0 &&
             this.state.cloning.length === 0
         ) {
-            if (this.state.limitHit) {
+            if (this.state.timedout.length > 0) {
                 alert = {
                     title: 'Search timed out',
                     description: 'Try narrowing your query.',
