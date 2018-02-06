@@ -77,12 +77,14 @@ func configFromEnv() (configJSON []byte, envVarNames []string, err error) {
 		// Read from environment variable with the same name as the JSON tag
 		jsonName := typeField.Tag.Get("json")
 		jsonName = strings.TrimSuffix(jsonName, ",omitempty")
-		if jsonName == "" && typeField.Name != "PublicRepoRedirects" {
+		envName := strings.Replace(jsonName, ".", "__", -1)
+		if envName == "" && typeField.Name != "PublicRepoRedirects" {
 			return nil, nil, fmt.Errorf("missing JSON struct tag for config field %s", typeField.Name)
 		}
-		envVal = os.Getenv(jsonName)
+
+		envVal = os.Getenv(envName)
 		if envVal != "" {
-			envVarNames = append(envVarNames, jsonName)
+			envVarNames = append(envVarNames, envName)
 		}
 
 		if envVal == "" {
