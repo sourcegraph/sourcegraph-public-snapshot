@@ -1,8 +1,24 @@
 import { Position } from 'vscode-languageserver-types'
-import { AbsoluteRepoFile, PositionSpec, RangeSpec, ReferencesModeSpec, Repo, RepoFile, ResolvedRevSpec } from '../repo'
+import {
+    AbsoluteRepoFile,
+    PositionSpec,
+    RangeSpec,
+    ReferencesModeSpec,
+    RenderModeSpec,
+    Repo,
+    RepoFile,
+    ResolvedRevSpec,
+} from '../repo'
 
 type Modal = 'references'
 type ModalMode = 'local' | 'external'
+
+function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {
+    if (ctx.renderMode === 'code') {
+        return '?view=code'
+    }
+    return ''
+}
 
 /**
  * Represents a line, a position, a line range, or a position range. It forbids
@@ -108,7 +124,7 @@ function toPositionHashComponent(position: Position): string {
     return position.line.toString() + (position.character ? ':' + position.character : '')
 }
 
-function toReferencesHash(group: 'local' | 'external' | undefined): string {
+function toReferencesHashComponent(group: 'local' | 'external' | undefined): string {
     return group ? (group === 'local' ? '$references' : '$references:external') : ''
 }
 
@@ -127,18 +143,20 @@ export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec> & Partial<RangeSpec>
+    ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
+    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toRenderModeQuery(
         ctx
-    )}${toReferencesHash(ctx.referencesMode)}`
+    )}${toPositionOrRangeHash(ctx)}${toReferencesHashComponent(ctx.referencesMode)}`
 }
 
-export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec>): string {
+export function toAbsoluteBlobURL(
+    ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec> & Partial<RenderModeSpec>
+): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
         ctx
-    )}${toReferencesHash(ctx.referencesMode)}`
+    )}${toReferencesHashComponent(ctx.referencesMode)}`
 }
 
 export function toTreeURL(ctx: RepoFile): string {

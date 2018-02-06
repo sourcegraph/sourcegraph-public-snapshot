@@ -2,17 +2,13 @@ import ViewIcon from '@sourcegraph/icons/lib/View'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { RenderMode } from '..'
 import { Tooltip } from '../../components/tooltip/Tooltip'
 import { eventLogger } from '../../tracking/eventLogger'
 
-/**
- * The file rendering modes.
- */
-export type FileRenderMode = 'code' | 'rendered'
-
 interface Props {
     location: H.Location
-    mode: FileRenderMode
+    mode: RenderMode
 }
 
 /**
@@ -25,7 +21,7 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
     /**
      * Reports whether the location's URL displays the blob as rendered or source.
      */
-    public static getModeFromURL(location: H.Location): FileRenderMode {
+    public static getModeFromURL(location: H.Location): RenderMode {
         const q = new URLSearchParams(location.search)
         return q.get(ToggleRenderedFileMode.URL_QUERY_PARAM) === 'code' ? 'code' : 'rendered' // default to rendered
     }
@@ -33,7 +29,7 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
     /**
      * Returns the URL that displays the blob using the specified mode.
      */
-    private static getURLForMode(location: H.Location, mode: FileRenderMode): { search: string } {
+    private static getURLForMode(location: H.Location, mode: RenderMode): { search: string } {
         const q = new URLSearchParams(location.search)
         if (mode === 'code') {
             q.set(ToggleRenderedFileMode.URL_QUERY_PARAM, mode)
@@ -50,7 +46,7 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
-        const otherMode: FileRenderMode = this.props.mode === 'code' ? 'rendered' : 'code'
+        const otherMode: RenderMode = this.props.mode === 'code' ? 'rendered' : 'code'
 
         return (
             <Link

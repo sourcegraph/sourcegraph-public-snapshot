@@ -62,6 +62,19 @@ export interface ReferencesModeSpec {
 }
 
 /**
+ * 'code' for Markdown/rich-HTML files rendered as code, 'rendered' for rendering them as
+ * Markdown/rich-HTML.
+ */
+export type RenderMode = 'code' | 'rendered'
+
+export interface RenderModeSpec {
+    /**
+     * How the file should be rendered.
+     */
+    renderMode: RenderMode
+}
+
+/**
  * Properties of a RepoURI (like git://github.com/gorilla/mux#mux.go) or a URL (like https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go)
  */
 export interface ParsedRepoURI
@@ -101,7 +114,8 @@ export interface RepoFilePosition
         Partial<ResolvedRevSpec>,
         FileSpec,
         PositionSpec,
-        Partial<ReferencesModeSpec> {}
+        Partial<ReferencesModeSpec>,
+        Partial<RenderModeSpec> {}
 
 /**
  * A position in file at an exact commit
@@ -112,7 +126,8 @@ export interface AbsoluteRepoFilePosition
         ResolvedRevSpec,
         FileSpec,
         PositionSpec,
-        Partial<ReferencesModeSpec> {}
+        Partial<ReferencesModeSpec>,
+        Partial<RenderModeSpec> {}
 
 /**
  * A range in file at an exact commit
@@ -123,7 +138,8 @@ export interface AbsoluteRepoFileRange
         ResolvedRevSpec,
         FileSpec,
         RangeSpec,
-        Partial<ReferencesModeSpec> {}
+        Partial<ReferencesModeSpec>,
+        Partial<RenderModeSpec> {}
 
 const parsePosition = (str: string): Position => {
     const split = str.split(',')

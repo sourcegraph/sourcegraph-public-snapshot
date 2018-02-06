@@ -50,6 +50,7 @@ import {
     getCodeCells,
     makeRepoURI,
     ParsedRepoURI,
+    RenderMode,
 } from './index'
 import { RenderedFile } from './RenderedFile'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
@@ -143,6 +144,7 @@ interface Props extends AbsoluteRepoFile {
     className: string
     html: string
     wrapCode: boolean
+    renderMode: RenderMode
 }
 
 interface State {
@@ -512,6 +514,7 @@ class Blob extends React.Component<Props, State> {
                                 commitID: this.props.commitID,
                                 filePath: this.props.filePath,
                                 range: newRange,
+                                renderMode: this.props.renderMode,
                             },
                             e
                         )
@@ -558,6 +561,7 @@ class Blob extends React.Component<Props, State> {
                         : { line, character: character || 0 },
                 },
                 referencesMode: modalMode,
+                renderMode: props.renderMode,
             })
         }
     }
@@ -908,6 +912,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                         html={this.state.blob.highlight.html}
                         rev={this.props.rev}
                         wrapCode={this.state.wrapCode}
+                        renderMode={renderMode}
                         location={this.props.location}
                         history={this.props.history}
                     />
