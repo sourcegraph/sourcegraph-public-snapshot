@@ -156,18 +156,19 @@ body {
 // Formats an icon so that it appears inline in the text
 // with height matching the text
 .icon-inline {
-    vertical-align: middle;
-    // Center SVG inside the container
+    // SVGs already include padding to account for text baseline,
+    // so align with the bottom of the text
+    vertical-align: bottom;
     display: inline-flex;
     align-items: center;
 
     svg {
         // TODO find a better way to scale icons that is not proportional to the font size
-        // 14px font size -> 21px icon size
+        // 14px font size -> 20px icon size
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: 1.5em;
+        width: 1.4285714286em;
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: 1.5em;
+        height: 1.4285714286em;
         // Match color of the text
         fill: currentColor;
     }
