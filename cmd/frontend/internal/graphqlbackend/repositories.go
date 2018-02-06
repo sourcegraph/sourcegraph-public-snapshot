@@ -61,11 +61,21 @@ type repositoryConnectionResolver struct {
 func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
+
+		if envvar.SourcegraphDotComMode() {
+			// Don't allow non-admins to perform huge queries on Sourcegraph.com.
+			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
+				if opt2.LimitOffset == nil {
+					opt2.LimitOffset = &db.LimitOffset{Limit: 1000}
+				}
+			}
+		}
+
 		if opt2.LimitOffset != nil {
 			tmp := *opt2.LimitOffset
 			opt2.LimitOffset = &tmp
+			opt2.Limit++ // so we can detect if there is a next page
 		}
-		opt2.Limit++ // so we can detect if there is a next page
 
 		var indexed map[api.RepoURI]bool
 		isIndexed := func(repo api.RepoURI) bool {
@@ -122,13 +132,17 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 
 			r.repos = append(r.repos, repos...)
-			if len(r.repos) >= opt2.Limit {
+			if opt2.LimitOffset == nil {
 				break
+			} else {
+				if len(r.repos) >= opt2.Limit {
+					break
+				}
+				if reposFromDB < opt2.Limit {
+					break
+				}
+				opt2.Offset += opt2.Limit
 			}
-			if reposFromDB < opt2.Limit {
-				break
-			}
-			opt2.Offset += opt2.Limit
 		}
 	})
 	return r.repos, r.err
@@ -141,7 +155,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 	}
 	resolvers := make([]*repositoryResolver, 0, len(repos))
 	for i, repo := range repos {
-		if i == r.opt.Limit {
+		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break
 		}
 		resolvers = append(resolvers, &repositoryResolver{repo: repo})
@@ -198,7 +212,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*pageInfo,
 	if err != nil {
 		return nil, err
 	}
-	return &pageInfo{hasNextPage: len(repos) > r.opt.Limit}, nil
+	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(repos) > r.opt.Limit}, nil
 }
 
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
