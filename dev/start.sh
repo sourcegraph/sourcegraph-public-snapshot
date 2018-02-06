@@ -52,9 +52,6 @@ rm -rf "$CURRENT_CONFIG_LINK"
 ln -s "$SOURCEGRAPH_CONFIG_FILE" "$CURRENT_CONFIG_LINK"
 cp dev/config.json "$SOURCEGRAPH_CONFIG_FILE"
 
-export LANGSERVER_GO=${LANGSERVER_GO-"tcp://localhost:4389"}
-export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-"tcp://localhost:4389"}
-
 if ! [ -z "${ZOEKT-}" ]; then
 	export ZOEKT_HOST=localhost:6070
 fi

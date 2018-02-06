@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -47,7 +48,7 @@ func RegisterServers() error {
 		return err
 	}
 	if len(ServersByMode) == 0 {
-		log15.Debug("No language servers registered")
+		return errors.New("No language servers registered")
 	}
 	return nil
 }
@@ -55,9 +56,13 @@ func RegisterServers() error {
 func registerServersFromConfig() error {
 	langservers := conf.Get().Langservers
 	for _, l := range langservers {
-		err := registerTCPServer(l.Language, l.Address)
-		if err != nil {
-			return err
+		if l.Address != "" {
+			err := registerTCPServer(l.Language, l.Address)
+			if err != nil {
+				return err
+			}
+		} else {
+			log15.Warn("missing address in langserver config (it must be set by env LANGSERVER_XYZ)", "lang", l.Language)
 		}
 	}
 	return nil
