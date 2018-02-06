@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
@@ -18,18 +18,26 @@ func (s *userActivityResolver) PageViews() int32 { return s.userActivity.PageVie
 
 func (s *userActivityResolver) SearchQueries() int32 { return s.userActivity.SearchQueries }
 
+func (s *userActivityResolver) LastPageViewTime() string {
+	if s.userActivity.LastPageViewTime != nil {
+		return s.userActivity.LastPageViewTime.Format(time.RFC3339)
+	}
+	return ""
+}
+
 func (s *schemaResolver) LogUserEvent(ctx context.Context, args *struct {
-	Event string
+	Event        string
+	UserCookieID string
 }) (*EmptyResponse, error) {
 	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("must be authenticated")
-	}
 	switch args.Event {
 	case "SEARCHQUERY":
-		return nil, db.UserActivity.LogSearchQuery(ctx, actor.UID)
+		if !actor.IsAuthenticated() {
+			return nil, nil
+		}
+		return nil, useractivity.LogSearchQuery(actor.UID)
 	case "PAGEVIEW":
-		return nil, db.UserActivity.LogPageView(ctx, actor.UID)
+		return nil, useractivity.LogPageView(actor.IsAuthenticated(), actor.UID, args.UserCookieID)
 	}
 	return nil, fmt.Errorf("unknown user event %s", args.Event)
 }

@@ -15,8 +15,11 @@ import (
 	"time"
 
 	"golang.org/x/net/context/ctxhttp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -69,6 +72,12 @@ func updateURL() string {
 	q := url.Values{}
 	q.Set("version", ProductVersion)
 	q.Set("site", siteid.Get())
+	count, err := useractivity.GetUsersActiveTodayCount()
+	if err != nil {
+		log15.Error("useractivity.GetUsersActiveTodayCount failed", "error", err)
+	}
+	q.Set("u", strconv.Itoa(count))
+	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
 
@@ -137,10 +146,6 @@ func Start() {
 		panic("already started")
 	}
 	started = true
-
-	if conf.Get().DisableTelemetry {
-		return // update check is a form of telemetry
-	}
 
 	if channel := conf.Get().UpdateChannel; channel == nil || *channel != "release" {
 		return // no update check

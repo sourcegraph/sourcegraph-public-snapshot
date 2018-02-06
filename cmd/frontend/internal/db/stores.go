@@ -8,7 +8,7 @@ var (
 	OrgRepos     = &orgRepos{}
 	Threads      = &threads{}
 	Comments     = &comments{}
-	UserActivity = &userActivity{}
+	UserActivity = &userActivity{} // DEPRECATED: use package useractivity instead (based on persisted redis cache)
 	SavedQueries = &savedQueries{}
 	SharedItems  = &sharedItems{}
 	Orgs         = &orgs{}

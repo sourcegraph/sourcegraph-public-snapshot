@@ -297,6 +297,7 @@ export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
                         activity {
                             searchQueries
                             pageViews
+                            lastPageViewTime
                         }
                     }
                 }

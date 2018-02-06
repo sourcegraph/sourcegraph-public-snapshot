@@ -37,6 +37,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -180,6 +181,7 @@ func Main() error {
 	go bg.ApplyUserOrgMap(context.Background())
 	go bg.MigrateAdminUsernames(context.Background())
 	go updatecheck.Start()
+	go useractivity.MigrateUserActivityData(context.Background())
 
 	globals.AppURL, err = configureAppURL()
 	if err != nil {

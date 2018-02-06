@@ -55,7 +55,7 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 	return b, err == nil
 }
 
-// Delete implements httpcache.Cache.Set
+// Set implements httpcache.Cache.Set
 func (r *Cache) Set(key string, b []byte) {
 	c := pool.Get()
 	defer c.Close()

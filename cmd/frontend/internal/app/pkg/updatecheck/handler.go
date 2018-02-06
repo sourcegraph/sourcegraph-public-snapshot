@@ -39,6 +39,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	clientVersionString := q.Get("version")
 	clientSiteID := q.Get("site")
+	uniqueUsers := q.Get("u")
+	hasCodeIntelligence := q.Get("codeintel")
 	if clientVersionString == "" {
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
@@ -70,10 +72,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		eventlogger.LogEvent("", "ServerUpdateCheck", map[string]interface{}{
-			"remote_ip":           clientAddr,
-			"remote_site_version": clientVersionString,
-			"remote_site_id":      clientSiteID,
-			"has_update":          strconv.FormatBool(hasUpdate),
+			"remote_ip":             clientAddr,
+			"remote_site_version":   clientVersionString,
+			"remote_site_id":        clientSiteID,
+			"has_update":            strconv.FormatBool(hasUpdate),
+			"unique_users_today":    uniqueUsers,
+			"has_code_intelligence": hasCodeIntelligence,
 		})
 	}
 

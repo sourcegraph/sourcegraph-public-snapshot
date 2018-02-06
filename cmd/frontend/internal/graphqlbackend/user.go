@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
@@ -186,7 +187,7 @@ func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, err
 	if r.user == nil {
 		return nil, errors.New("Could not resolve activity on nil user")
 	}
-	activity, err := db.UserActivity.GetByUserID(ctx, r.user.ID)
+	activity, err := useractivity.GetByUserID(r.user.ID)
 	if err != nil {
 		return nil, err
 	}

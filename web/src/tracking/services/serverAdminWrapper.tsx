@@ -3,32 +3,27 @@ import { logUserEvent } from '../../user/settings/backend'
 
 class ServerAdminWrapper {
     /**
-     * active is a flag to determine whether we want to log events
+     * isAuthenicated is a flag that indicates if a user is signed in.
+     * We only log certain events (pageviews) if the user is not authenticated.
      */
-    private active = false
+    private isAuthenicated = false
 
     constructor() {
         if (!window.context.sourcegraphDotComMode) {
             currentUser.subscribe(user => {
                 if (user) {
-                    if (!this.active) {
-                        // Handles initial page load
-                        logUserEvent('PAGEVIEW').subscribe()
-                    }
-                    this.active = true
+                    this.isAuthenicated = true
                 }
             })
         }
     }
 
     public trackPageView(): void {
-        if (this.active) {
-            logUserEvent('PAGEVIEW').subscribe()
-        }
+        logUserEvent('PAGEVIEW').subscribe()
     }
 
     public trackAction(eventAction: string, eventProps: any): void {
-        if (this.active) {
+        if (this.isAuthenicated) {
             if (eventAction === 'SearchSubmitted') {
                 logUserEvent('SEARCHQUERY').subscribe()
             }

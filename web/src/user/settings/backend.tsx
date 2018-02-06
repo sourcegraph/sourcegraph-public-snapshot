@@ -209,18 +209,15 @@ export function updatePassword(args: { oldPassword: string; newPassword: string 
 }
 
 export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
-    if (!currentUser) {
-        throw new Error('User must be signed in')
-    }
     return mutateGraphQL(
         gql`
-            mutation logUserEvent($event: UserEvent!) {
-                logUserEvent(event: $event) {
+            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
+                logUserEvent(event: $event, userCookieID: $userCookieID) {
                     alwaysNil
                 }
             }
         `,
-        { event }
+        { event, userCookieID: eventLogger.uniqueUserCookieID() }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {

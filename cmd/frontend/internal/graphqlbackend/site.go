@@ -104,14 +104,7 @@ func (r *siteResolver) TelemetrySamples(ctx context.Context) ([]string, error) {
 }
 
 func (r *siteResolver) HasCodeIntelligence() bool {
-	if envvar.SourcegraphDotComMode() {
-		return true
-	}
-	addr := os.Getenv("LSP_PROXY")
-	if addr == "" {
-		return false
-	}
-	return len(conf.Get().Langservers) > 0
+	return envvar.HasCodeIntelligence()
 }
 
 type siteConfigurationResolver struct{}

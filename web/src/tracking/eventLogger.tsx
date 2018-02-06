@@ -168,6 +168,14 @@ class EventLogger {
         }
         return props
     }
+
+    /**
+     * Access the Telligent unique user ID stored in a cookie on the user's computer. Cookie TTL is 2 years
+     * https://sourcegraph.com/github.com/telligent-data/telligent-javascript-tracker@890d6a69b84fc0518a3e848f5469b34817da69fd/-/blob/src/js/tracker.js#L178
+     */
+    public uniqueUserCookieID(): string {
+        return telligent.getTelligentDuid() || ''
+    }
 }
 
 export const eventLogger = new EventLogger()

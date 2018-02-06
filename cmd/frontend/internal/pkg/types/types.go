@@ -185,7 +185,8 @@ type PhabricatorRepo struct {
 }
 
 type UserActivity struct {
-	UserID        int32
-	PageViews     int32
-	SearchQueries int32
+	UserID           int32
+	PageViews        int32
+	SearchQueries    int32
+	LastPageViewTime *time.Time
 }

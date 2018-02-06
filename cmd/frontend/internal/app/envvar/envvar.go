@@ -1,10 +1,12 @@
 package envvar
 
 import (
+	"os"
 	"strconv"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -24,3 +26,15 @@ var debugMode, _ = strconv.ParseBool(env.Get("DEBUG", "false", "debug mode"))
 // in the UI. It should also show all features (as possible). Debug should NEVER
 // be true in production.
 func DebugMode() bool { return debugMode }
+
+// HasCodeIntelligence reports whether the site has enabled code intelligence.
+func HasCodeIntelligence() bool {
+	if SourcegraphDotComMode() {
+		return true
+	}
+	addr := os.Getenv("LSP_PROXY")
+	if addr == "" {
+		return false
+	}
+	return len(conf.Get().Langservers) > 0
+}

@@ -3,6 +3,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
+import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchUserAnalytics } from './backend'
 
@@ -41,6 +42,7 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                             <th>User</th>
                             <th>Page views</th>
                             <th>Search queries</th>
+                            <th>Last active date</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -57,6 +59,7 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                                     <td>{user.username}</td>
                                     <td>{user.activity ? user.activity.pageViews : '?'}</td>
                                     <td>{user.activity ? user.activity.searchQueries : '?'}</td>
+                                    <td>{user.activity ? <Timestamp date={user.activity.lastPageViewTime} /> : '?'}</td>
                                 </tr>
                             ))}
                     </tbody>
@@ -73,6 +76,7 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                                         0
                                     )}
                                 </td>
+                                <td />
                             </tr>
                         </tfoot>
                     )}

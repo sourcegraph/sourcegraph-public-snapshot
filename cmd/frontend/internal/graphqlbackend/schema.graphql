@@ -167,7 +167,7 @@ type Mutation {
     # example callsign: "MUX"
     # example uri: "github.com/gorilla/mux"
     addPhabricatorRepo(callsign: String!, uri: String!, url: String!): EmptyResponse
-    logUserEvent(event: UserEvent!): EmptyResponse
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
     # All mutations that update configuration settings are under this field.
     configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
     # Updates the site configuration.
@@ -1545,6 +1545,8 @@ type UserActivity {
     searchQueries: Int!
     # The number of page views that the user has performed.
     pageViews: Int!
+    # The last time the user viewed a page.
+    lastPageViewTime: String!
 }
 
 enum UserEvent {
