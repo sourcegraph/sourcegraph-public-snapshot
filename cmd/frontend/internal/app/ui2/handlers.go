@@ -58,13 +58,12 @@ type Metadata struct {
 }
 
 type Common struct {
-	Injected   InjectedHTML
-	Metadata   *Metadata
-	Context    jscontext.JSContext
-	AssetURL   string
-	Title      string
-	Error      *pageError
-	OpenSearch string
+	Injected InjectedHTML
+	Metadata *Metadata
+	Context  jscontext.JSContext
+	AssetURL string
+	Title    string
+	Error    *pageError
 
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
@@ -109,10 +108,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assets.URL("/").String(),
 		Title:    title,
-	}
-
-	if conf.Get().OpenSearch != nil {
-		common.OpenSearch = conf.Get().OpenSearch.SearchUrl
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {

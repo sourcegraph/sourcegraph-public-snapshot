@@ -11,6 +11,7 @@ import { EditorAuthPage } from '../user/settings/EditorAuthPage'
 import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPage'
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
 import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
+import { UserSettingsIntegrationsPage } from '../user/settings/UserSettingsIntegrationsPage'
 import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
 import { SettingsSidebar } from './SettingsSidebar'
 
@@ -131,6 +132,12 @@ export class SettingsArea extends React.Component<Props, State> {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
                             component={EditorAuthPage}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/integrations`}
+                            key="hardcoded-key"
+                            component={UserSettingsIntegrationsPage}
+                            exact={true}
                         />
                         <Route component={SettingsNotFoundPage} key="hardcoded-key" />
                     </Switch>

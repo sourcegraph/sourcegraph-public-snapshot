@@ -87,11 +87,6 @@ type OpenIDConnectAuthProvider struct {
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 }
 
-// OpenSearchSettings
-type OpenSearchSettings struct {
-	SearchUrl string `json:"searchUrl"`
-}
-
 // Phabricator
 type Phabricator struct {
 	Repos []Repos `json:"repos,omitempty"`
@@ -209,7 +204,6 @@ type SiteConfiguration struct {
 	OidcEmailDomain                string                     `json:"oidcEmailDomain,omitempty"`
 	OidcOverrideToken              string                     `json:"oidcOverrideToken,omitempty"`
 	OidcProvider                   string                     `json:"oidcProvider,omitempty"`
-	OpenSearch                     *OpenSearchSettings        `json:"openSearch,omitempty"`
 	Phabricator                    []Phabricator              `json:"phabricator,omitempty"`
 	PhabricatorURL                 string                     `json:"phabricatorURL,omitempty"`
 	PrivateArtifactRepoID          string                     `json:"privateArtifactRepoID,omitempty"`

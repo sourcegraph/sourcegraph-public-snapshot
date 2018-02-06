@@ -46,12 +46,10 @@ export const UsernameInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement
  *
  * 🚨 SECURITY: We must disallow open redirects (to arbitrary hosts).
  */
-export function getReturnTo(location: H.Location): string | null {
+export function getReturnTo(location: H.Location): string {
     const searchParams = new URLSearchParams(location.search)
-    const returnTo = searchParams.get('returnTo')
-    if (returnTo) {
-        const newURL = new URL(returnTo, window.location.href)
-        return newURL.pathname + newURL.search + newURL.hash
-    }
-    return null
+    const returnTo = searchParams.get('returnTo') || '/search'
+    const newURL = new URL(returnTo, window.location.href)
+    newURL.searchParams.append('toast', 'integrations')
+    return newURL.pathname + newURL.search + newURL.hash
 }

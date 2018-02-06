@@ -146,13 +146,8 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                                 if (this.props.onDidSignUp) {
                                     this.props.onDidSignUp(this.state.email)
                                 }
-
                                 const returnTo = getReturnTo(this.props.location)
-                                if (returnTo) {
-                                    window.location.replace(returnTo)
-                                } else {
-                                    window.location.replace('/search')
-                                }
+                                window.location.replace(returnTo)
                             } else {
                                 this.setState({
                                     errorDescription: 'Could not create user',
@@ -210,10 +205,7 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
     public render(): JSX.Element | null {
         if (this.props.user) {
             const returnTo = getReturnTo(this.props.location)
-            if (returnTo) {
-                return <Redirect to={returnTo} />
-            }
-            return <Redirect to="/search" />
+            return <Redirect to={returnTo} />
         }
 
         return (

@@ -38,6 +38,21 @@ export const browserExtensionMessageReceived = (document.getElementById('sourceg
 )
 
 /**
+ * Indicates if the webapp ever receives a message from the user's browser extension before the extension has been configured to their Sourcegraph Server instance.
+ * This helps track how many users click the extension icon on their server instance, before configuring the remote URL.
+ */
+export const browserExtensionServerConfigurationMessageReceived = fromEvent<CustomEvent>(
+    document,
+    'sourcegraph:server-instance-configuration-clicked'
+)
+    .pipe(take(1), mapTo(true))
+    .pipe(
+        // Replay the same latest value for every subscriber
+        publishReplay(1),
+        refCount()
+    )
+
+/**
  * Indicates if the current user has the browser extension installed. It waits 500ms for the browser
  * extension to fire a registration event, and if it doesn't, emits false
  */
@@ -102,6 +117,7 @@ export function handleQueryEvents(url: string): void {
         'utm_product_version',
         'badge',
         'mid',
+        'toast',
     ])
 }
 

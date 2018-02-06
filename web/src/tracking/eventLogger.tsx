@@ -3,12 +3,18 @@ import { currentUser } from '../auth'
 import { parseBrowserRepoURL } from '../repo'
 import { repoRevRoute } from '../routes'
 import { getPathExtension } from '../util'
-import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
+import {
+    browserExtensionMessageReceived,
+    browserExtensionServerConfigurationMessageReceived,
+    handleQueryEvents,
+    pageViewQueryParameters,
+} from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
 import { telligent } from './services/telligentWrapper'
 
 class EventLogger {
     private hasStrippedQueryParameters = false
+    private user?: GQL.IUser | null
 
     constructor() {
         browserExtensionMessageReceived.subscribe(isInstalled => {
@@ -30,17 +36,13 @@ class EventLogger {
             })
         })
 
-        if (window.context.user) {
-            this.updateUser({
-                externalID: window.context.user.externalID,
-                sourcegraphID: window.context.user.UID,
-                username: null,
-                email: null,
-            })
-        }
+        browserExtensionServerConfigurationMessageReceived.subscribe(() => {
+            this.log('SourcegraphServerBrowserExtensionConfigureClicked')
+        })
 
         currentUser.subscribe(
             user => {
+                this.user = user
                 if (user) {
                     this.updateUser(user)
                     this.log('UserProfileFetched')
@@ -150,7 +152,7 @@ class EventLogger {
     private decorateEventProperties(eventProperties: any): any {
         const props = {
             ...eventProperties,
-            is_authed: window.context.user ? 'true' : 'false',
+            is_authed: this.user ? 'true' : 'false',
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : '',
         }
 

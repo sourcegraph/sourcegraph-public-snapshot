@@ -15,6 +15,7 @@ import { HeroPage } from './components/HeroPage'
 import './components/tooltip/Tooltip'
 import { Tooltip } from './components/tooltip/Tooltip'
 import { GlobalAlerts } from './global/GlobalAlerts'
+import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
@@ -38,6 +39,7 @@ const Layout: React.SFC<LayoutProps> = props => {
     return (
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
+            <IntegrationsToast history={props.history} />
             {!hideNavbar && <Navbar {...props} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>

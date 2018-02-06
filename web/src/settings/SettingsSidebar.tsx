@@ -91,6 +91,16 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             Configuration
                         </NavLink>
                     </li>
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/settings/integrations"
+                            exact={true}
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                        >
+                            Integrations
+                        </NavLink>
+                    </li>
                     {!this.props.externalAuthEnabled && (
                         <li className="sidebar__item">
                             <NavLink

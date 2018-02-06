@@ -102,14 +102,6 @@ const addSearchScopeToSettings: ConfigHelper = config => {
     return { edits, selectText: '<name>' }
 }
 
-const addOpenSearch: ConfigHelper = config => {
-    const value: { searchUrl: string } = {
-        searchUrl: '<URL with {searchTerms} in place of query (example: http://localhost:7080/search?q={searchTerms})',
-    }
-    const edits = [...setProperty(config, ['openSearch'], value, defaultFormattingOptions)]
-    return { edits, selectText: value.searchUrl }
-}
-
 export interface EditorAction {
     id: string
     label: string
@@ -131,7 +123,6 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
     { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },
     { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },
-    { id: 'sourcegraph.site.openSearch', label: 'Add address bar search', run: addOpenSearch },
 ]
 
 /** Parses the JSON site configuration provided. */

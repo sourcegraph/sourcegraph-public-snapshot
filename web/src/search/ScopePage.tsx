@@ -12,6 +12,7 @@ import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { currentUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoFileLink } from '../components/RepoFileLink'
@@ -50,6 +51,7 @@ interface State {
     markdownDescription?: string
     first: number
     errorMessage?: string
+    user?: GQL.IUser | null
 }
 
 export class ScopePage extends React.Component<ScopePageProps, State> {
@@ -66,6 +68,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('Scope')
+        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
 
         this.subscriptions.add(
             combineLatest(
@@ -220,7 +223,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                     ))}
                             </div>
                             {window.context.sourcegraphDotComMode &&
-                                !window.context.user && (
+                                !this.state.user && (
                                     <small>
                                         Have an idea for a search scope for your community, or want to add a repository
                                         to this scope? Tweet us <a href="https://twitter.com/srcgraph">@srcgraph</a>.

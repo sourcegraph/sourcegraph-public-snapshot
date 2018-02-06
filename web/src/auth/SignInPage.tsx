@@ -115,11 +115,7 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
             .then(resp => {
                 if (resp.status === 200) {
                     const returnTo = getReturnTo(this.props.location)
-                    if (returnTo) {
-                        window.location.replace(returnTo)
-                    } else {
-                        window.location.replace('/search')
-                    }
+                    window.location.replace(returnTo)
                 } else if (resp.status === 401) {
                     throw new Error('User or password was incorrect')
                 } else {
@@ -147,10 +143,7 @@ export class SignInPage extends React.Component<SignInPageProps> {
     public render(): JSX.Element | null {
         if (this.props.user) {
             const returnTo = getReturnTo(this.props.location)
-            if (returnTo) {
-                return <Redirect to={returnTo} />
-            }
-            return <Redirect to="/search" />
+            return <Redirect to={returnTo} />
         }
 
         return (
