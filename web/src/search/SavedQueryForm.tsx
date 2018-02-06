@@ -1,5 +1,4 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
@@ -94,7 +93,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     fetchOrg(subject.id).subscribe(org => {
                         if (org) {
                             this.setState(state => ({
-                                ...state,
                                 slackWebhooks: state.slackWebhooks.set(subject.id, org.slackWebhookURL),
                             }))
                         }
@@ -135,118 +133,116 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         return (
             <form className="saved-query-form" onSubmit={this.handleSubmit}>
-                <div className="saved-query-form__title-row">
-                    {title ? (
-                        <h1 className="saved-query-form__title saved-query-form__spacer">{title}</h1>
-                    ) : (
-                        <div className="saved-query-form__spacer" />
-                    )}
-                    <button type="reset" className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
-                        <CloseIcon />
-                    </button>
+                <button className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
+                    <CloseIcon />
+                </button>
+                <h2 className="saved-query-form__title">{title}</h2>
+                <div className="form-group">
+                    <label>Search query</label>
+                    <input
+                        type="text"
+                        name="query"
+                        className="form-control"
+                        placeholder="Query"
+                        onChange={this.handleQueryChange}
+                        value={query}
+                        required={true}
+                        autoCorrect="off"
+                        spellCheck={false}
+                        autoCapitalize="off"
+                        autoFocus={!query}
+                        onFocus={this.handleInputFocus}
+                        onBlur={this.handleInputBlur}
+                    />
                 </div>
-                <span>Search query</span>
-                <input
-                    type="text"
-                    name="query"
-                    className="form-control"
-                    placeholder="Query"
-                    onChange={this.handleQueryChange}
-                    value={query || ''}
-                    autoCorrect="off"
-                    spellCheck={false}
-                    autoCapitalize="off"
-                    autoFocus={!query}
-                    onFocus={this.handleInputFocus}
-                    onBlur={this.handleInputBlur}
-                />
-                <span>Description of this search</span>
-                <input
-                    type="text"
-                    name="description"
-                    className="form-control"
-                    placeholder="Description"
-                    onChange={this.handleDescriptionChange}
-                    value={description || ''}
-                    required={true}
-                    autoFocus={!!query && !description}
-                    onFocus={this.handleInputFocus}
-                    onBlur={this.handleInputBlur}
-                />
-                <span>Save location</span>
-                <div className="saved-query-form__save-location">
-                    {subjectOptions
-                        .filter(
-                            (subjectOption: GQL.ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
-                                subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
-                        )
-                        .map((subjectOption, i) => (
-                            <span className="saved-query-form__save-location-options" key={i}>
-                                <label>
+                <div className="form-group">
+                    <label>Description of this search</label>
+                    <input
+                        type="text"
+                        name="description"
+                        className="form-control"
+                        placeholder="Description"
+                        onChange={this.handleDescriptionChange}
+                        value={description}
+                        required={true}
+                        autoFocus={!!query && !description}
+                        onFocus={this.handleInputFocus}
+                        onBlur={this.handleInputBlur}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Save location</label>
+                    <div className="saved-query-form__save-location">
+                        {subjectOptions
+                            .filter(
+                                (subjectOption: GQL.ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
+                                    subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
+                            )
+                            .map((subjectOption, i) => (
+                                <label className="saved-query-form__save-location-options" key={i}>
                                     <input
                                         className="saved-query-form__save-location-input"
                                         onChange={this.handleSubjectChange}
                                         type="radio"
                                         value={subjectOption.id}
                                         checked={subject === subjectOption.id}
-                                    />
+                                    />{' '}
                                     {configurationSubjectLabel(subjectOption)}
                                 </label>
-                            </span>
-                        ))}
-                </div>
-                <div className="saved-query-form__save-location">
-                    <span className="saved-query-form__save-location-options">
-                        <label>
-                            <input
-                                className="saved-query-form__save-location-input"
-                                type="checkbox"
-                                defaultChecked={showOnHomepage}
-                                onChange={this.handleShowOnHomeChange}
-                            />
-                            Show on homepage
-                        </label>
-                    </span>
-                    <span className="saved-query-form__save-location-options">
-                        <label data-tooltip={`Send email notifications to config owner (${this.saveTargetName()})`}>
-                            <input
-                                className="saved-query-form__save-location-input"
-                                type="checkbox"
-                                defaultChecked={notify}
-                                onChange={this.handleNotifyChange}
-                            />
-                            Email notifications
-                        </label>
-                    </span>
-                    <span className="saved-query-form__save-location-options">
-                        <label
-                            data-tooltip={
-                                savingToOrg
-                                    ? `Send slack notifications to config owner (${this.saveTargetName()})`
-                                    : 'Must save to org settings to enable Slack notifications'
-                            }
-                        >
-                            <input
-                                className="saved-query-form__save-location-input"
-                                type="checkbox"
-                                defaultChecked={notifySlack}
-                                onChange={this.handleNotifySlackChange}
-                                disabled={!savingToOrg}
-                            />
-                            Slack notifications
-                        </label>
-                    </span>
+                            ))}
+                    </div>
+                    <div className="saved-query-form__save-location">
+                        <span className="saved-query-form__save-location-options">
+                            <label>
+                                <input
+                                    className="saved-query-form__save-location-input"
+                                    type="checkbox"
+                                    defaultChecked={showOnHomepage}
+                                    onChange={this.handleShowOnHomeChange}
+                                />{' '}
+                                Show on homepage
+                            </label>
+                        </span>
+                        <span className="saved-query-form__save-location-options">
+                            <label data-tooltip={`Send email notifications to config owner (${this.saveTargetName()})`}>
+                                <input
+                                    className="saved-query-form__save-location-input"
+                                    type="checkbox"
+                                    defaultChecked={notify}
+                                    onChange={this.handleNotifyChange}
+                                />{' '}
+                                Email notifications
+                            </label>
+                        </span>
+                        <span className="saved-query-form__save-location-options">
+                            <label
+                                data-tooltip={
+                                    savingToOrg
+                                        ? `Send slack notifications to config owner (${this.saveTargetName()})`
+                                        : 'Must save to org settings to enable Slack notifications'
+                                }
+                            >
+                                <input
+                                    className="saved-query-form__save-location-input"
+                                    type="checkbox"
+                                    defaultChecked={notifySlack}
+                                    onChange={this.handleNotifySlackChange}
+                                    disabled={!savingToOrg}
+                                />{' '}
+                                Slack notifications
+                            </label>
+                        </span>
+                    </div>
                 </div>
                 {(notifyUsers.length > 0 || notifyOrganizations.length > 0) && (
-                    <div className="saved-query-form__also-notifying">
-                        Note: also notifying &nbsp;
+                    <div className="form-group">
+                        Note: also notifying{' '}
                         <strong>
                             {notifyUsers
                                 .map(user => `${user} (user)`)
                                 .concat(notifyOrganizations.map(org => `${org} (org)`))
                                 .join(', ')}
-                        </strong>
-                        &nbsp;
+                        </strong>{' '}
                         <span data-tooltip="See `notifyUsers` and `notifyOrganizations` in the JSON configuration">
                             due to manual configuration
                         </span>
@@ -262,7 +258,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     !window.context.emailEnabled &&
                     !this.isUnsupportedNotifyQuery(this.state.values) && (
                         <div className="alert alert-warning">
-                            Warning: Sending emails is not currently configured on this Sourcegraph server.&nbsp;
+                            <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
+                            server.{' '}
                             {this.props.user && this.props.user.siteAdmin
                                 ? 'Use the email.smtp site configuration setting to enable sending emails.'
                                 : 'Contact your server admin for more information.'}
@@ -271,34 +268,24 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 {notifySlack &&
                     this.isOrgMissingSlackWebhook() && (
                         <div className="alert alert-warning">
-                            Warning: Slack webhook is not configured for this organization. Please{' '}
+                            <strong>Warning:</strong> Slack webhook is not configured for this organization. Please{' '}
                             <Link to={this.getConfigureSlackURL()}>configure one in the organization settings</Link>.
                         </div>
                     )}
-                <div className="saved-query-form__actions">
-                    <button
-                        type="submit"
-                        className="btn btn-primary saved-query-form__button"
-                        disabled={!(description && query && subject) || isSubmitting}
-                    >
+                {error &&
+                    !isSubmitting && (
+                        <div className="alert alert-danger">
+                            <strong>Error:</strong> {error.message}
+                        </div>
+                    )}
+                <div>
+                    <button type="submit" className="btn btn-primary" disabled={!subject || isSubmitting}>
                         {submitLabel}
-                    </button>
-                    <button
-                        type="reset"
-                        className="btn btn-secondary saved-query-form__button saved-query-form__button-cancel"
-                        disabled={isSubmitting}
-                        onClick={onDidCancel}
-                    >
+                    </button>{' '}
+                    <button type="reset" className="btn btn-secondary" disabled={isSubmitting} onClick={onDidCancel}>
                         Cancel
                     </button>
                 </div>
-                {error &&
-                    !isSubmitting && (
-                        <div className="saved-query-form__error">
-                            <ErrorIcon className="icon-inline saved-query-form__error-icon" />
-                            {error.message}
-                        </div>
-                    )}
             </form>
         )
     }
