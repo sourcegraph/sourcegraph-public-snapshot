@@ -336,13 +336,13 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                     <div className="site-admin-page__actions">
                         <div
                             onClick={this.onDidClickAddPublicRepositoryForm}
-                            className="btn btn-primary btn-sm site-admin-page__actions-btn"
+                            className="btn btn-secondary btn-sm site-admin-page__actions-btn"
                         >
                             <AddIcon className="icon-inline" /> Add public GitHub.com repository
                         </div>
                         <Link
                             to="/site-admin/configuration"
-                            className="btn btn-primary btn-sm site-admin-page__actions-btn"
+                            className="btn btn-secondary btn-sm site-admin-page__actions-btn"
                         >
                             <GearIcon className="icon-inline" /> Configure repositories
                         </Link>

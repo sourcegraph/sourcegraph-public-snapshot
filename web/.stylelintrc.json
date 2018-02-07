@@ -17,7 +17,7 @@
         ],
         "declaration-empty-line-before": null,
         "declaration-property-unit-whitelist": {
-            "/^border(?!.*-radius$)/": ["px"],
+            "/^border(?!.*-radius$)/": ["px", "%"],
             "/^border-radius/": ["px", "rem", "%"],
             "/^box-shadow": ["px"],
             "/^margin/": ["rem"],

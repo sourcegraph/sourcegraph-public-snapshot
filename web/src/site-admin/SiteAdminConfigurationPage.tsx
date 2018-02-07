@@ -249,7 +249,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                         {siteConfigActions.map(({ id, label }) => (
                                             <button
                                                 key={id}
-                                                className="btn btn-primary btn-sm site-admin-configuration-page__action"
+                                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
                                                 // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.runAction(id, this.configEditor)}
                                             >

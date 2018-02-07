@@ -323,7 +323,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                 }
                 {typeof this.state.reachable === 'boolean' &&
                     !this.state.reachable && (
-                        <div className="alert alert-notice repo-settings-mirror-page__troubleshooting">
+                        <div className="alert alert-info repo-settings-mirror-page__troubleshooting">
                             Problems cloning or updating this repository?
                             <ul className="repo-settings-mirror-page__steps">
                                 <li className="repo-settings-mirror-page__step">
