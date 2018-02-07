@@ -295,6 +295,7 @@ export class QueryInput extends React.Component<Props, State> {
                     placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
                     ref={ref => (this.inputElement = ref!)}
                 />
+                {this.state.loading && <Loader className="icon-inline query-input2__loading-notifier" />}
                 {showSuggestions && (
                     <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
                         {this.state.suggestions.map((suggestion, i) => {
@@ -317,7 +318,6 @@ export class QueryInput extends React.Component<Props, State> {
                         })}
                     </ul>
                 )}
-                {this.state.loading && <Loader className="icon-inline query-input2__loading-notifier" />}
             </div>
         )
     }

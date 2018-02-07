@@ -49,7 +49,17 @@
     &__loading-notifier {
         position: absolute;
         z-index: 1;
-        right: 0.5rem;
-        height: 100%;
+        right: 0.25rem;
+        padding-left: 0.25rem;
+        top: 0.25rem;
+        background-color: $color-bg-4;
+    }
+}
+
+.theme-light {
+    .query-input2 {
+        &__loading-notifier {
+            background-color: $color-light-bg-1;
+        }
     }
 }
