@@ -19,6 +19,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db/migrations"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -26,7 +27,6 @@ import (
 
 var (
 	globalDB          *sql.DB
-	globalMigrate     *migrate.Migrate
 	defaultDataSource = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
 )
 
@@ -48,10 +48,8 @@ func ConnectToDB(dataSource string) {
 	registerPrometheusCollector(globalDB, "_app")
 	configureConnectionPool(globalDB)
 
-	globalMigrate = newMigrate(globalDB)
-
-	if err := globalMigrate.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal("error migrating DB: " + err.Error())
+	if err := doMigrate(newMigrate(globalDB)); err != nil {
+		log.Fatal("failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:", err.Error())
 	}
 }
 
@@ -189,4 +187,23 @@ func newMigrate(db *sql.DB) *migrate.Migrate {
 	}
 
 	return m
+}
+
+func doMigrate(m *migrate.Migrate) error {
+	err := m.Up()
+	if err == nil || err == migrate.ErrNoChange {
+		return nil
+	}
+	if os.IsNotExist(err) {
+		// This should only happen if the DB is ahead of the migrations available
+		version, dirty, verr := m.Version()
+		if verr != nil {
+			return verr
+		}
+		if dirty { // this shouldn't happen, but checking anyways
+			return err
+		}
+		return errors.Errorf("Detected an old version of Sourcegraph. The database has migrated to version %v, which is ahead of this version.", version)
+	}
+	return err
 }

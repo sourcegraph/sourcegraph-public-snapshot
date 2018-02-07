@@ -29,11 +29,12 @@ func init() {
 }
 
 func TestMigrations(t *testing.T) {
+	m := newMigrate(globalDB)
 	// Run all down migrations then up migrations again to ensure there are no SQL errors.
-	if err := globalMigrate.Down(); err != nil {
+	if err := m.Down(); err != nil {
 		t.Errorf("error running down migrations: %s", err)
 	}
-	if err := globalMigrate.Up(); err != nil {
+	if err := doMigrate(m); err != nil {
 		t.Errorf("error running up migrations: %s", err)
 	}
 }
@@ -70,11 +71,12 @@ func testContext() context.Context {
 
 	Mocks = MockStores{}
 
-	if err := globalMigrate.Down(); err != nil {
+	m := newMigrate(globalDB)
+	if err := m.Down(); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := globalMigrate.Up(); err != nil {
+	if err := m.Up(); err != nil {
 		log.Fatal(err)
 	}
 
