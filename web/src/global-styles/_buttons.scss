@@ -102,11 +102,12 @@
 }
 
 .btn-secondary {
-    border: solid 1px $color-border;
+    border: solid 1px;
+    border-color: $color-border;
     background-color: transparent;
 
     .theme-light & {
-        border: $color-light-border-2;
+        border-color: $color-light-border-2;
     }
 
     &:hover:not(:disabled):not(.disabled) {

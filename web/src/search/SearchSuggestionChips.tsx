@@ -120,11 +120,19 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                 {this.state.user && (
                     <div className="search-suggestion-chips__edit">
                         <NavLink
-                            className="search-page__edit"
+                            className="search-suggestion-chips__add-edit"
                             to="/settings/configuration"
-                            data-tooltip="Edit search scopes"
+                            data-tooltip={scopes.length > 0 ? 'Edit search scopes' : undefined}
                         >
-                            <small className="search-page__center">Edit</small>
+                            <small className="search-suggestion-chips__center">
+                                {scopes.length === 0 ? (
+                                    <span className="search-suggestion-chips__add-scopes">
+                                        Add search scopes for quick filtering
+                                    </span>
+                                ) : (
+                                    `Edit`
+                                )}
+                            </small>
                         </NavLink>
                     </div>
                 )}

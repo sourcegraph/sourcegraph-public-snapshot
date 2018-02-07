@@ -43,18 +43,6 @@
         position: relative;
     }
 
-    &__edit {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding-left: 0.25rem;
-    }
-
-    &__center {
-        display: flex;
-        align-items: center;
-    }
-
     .nav-links {
         flex: 0 0 auto;
         margin-top: 1rem;

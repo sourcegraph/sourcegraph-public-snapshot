@@ -187,7 +187,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                 <div className={`saved-query__row`}>
                                     <div className="saved-query__add-query">
                                         <AddIcon className="icon-inline" /> Add a new search to start monitoring your
-                                        code.
+                                        code
                                     </div>
                                 </div>
                             </Link>

@@ -86,12 +86,10 @@ $navbar-search-height: 2.75rem;
     .navbar {
         &__search {
             background-color: $color-light-bg-2;
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            border-bottom: solid 1px darken($color-light-border-2, 3%);
         }
 
         &__scopesbar {
-            background-color: $color-light-bg-1;
+            background-color: $color-light-bg-2;
             // stylelint-disable-next-line declaration-property-unit-whitelist
             border-bottom: solid 1px darken($color-light-border-2, 3%);
         }

@@ -1,11 +1,13 @@
 .search-suggestion-chips {
     &__chip {
+        color: $color-text-1;
         padding: 0 0.25rem;
         margin: 0.25rem;
         border-radius: 2px;
 
         &--selected {
-            opacity: 0.4;
+            color: $color-text-3;
+            background-color: $color-bg-3;
         }
 
         &:first-child {
@@ -17,11 +19,34 @@
         display: inline-block;
         vertical-align: middle;
     }
+
+    &__add-scopes {
+        display: inline-block;
+        margin: 0.25rem;
+        padding: 0.25rem;
+    }
+
+    &__add-edit {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 0.25rem;
+    }
+
+    &__center {
+        display: flex;
+        align-items: center;
+    }
 }
 
 .theme-light {
-    .search-suggestion-chips__chip {
-        color: #2b3750;
-        background-color: #f2f4f8;
+    .search-suggestion-chips {
+        &__chip {
+            color: $color-light-text-1;
+            background-color: $color-light-bg-2;
+            &--selected {
+                background-color: $color-light-bg-4;
+            }
+        }
     }
 }
