@@ -67,33 +67,35 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                     (this.state.updateCheck.pending || this.state.updateCheck.checkedAt) && (
                         <div>
                             {this.state.updateCheck.pending && (
-                                <div className="alert alert-primary">
+                                <div className="site-admin-updates-page__alert alert alert-primary">
                                     <LoaderIcon className="icon-inline" /> Checking for updates... (reload in a few
                                     seconds)
                                 </div>
                             )}
                             {!this.state.updateCheck.errorMessage &&
                                 (this.state.updateCheck.updateVersionAvailable ? (
-                                    <div className="alert alert-success">
+                                    <div className="site-admin-updates-page__alert alert alert-success">
                                         <DownloadIcon className="icon-inline" /> Update available:{' '}
                                         <a href="https://about.sourcegraph.com">
                                             Sourcegraph Server {this.state.updateCheck.updateVersionAvailable}
                                         </a>
                                     </div>
                                 ) : (
-                                    <div className="alert alert-success">
+                                    <div className="site-admin-updates-page__alert alert alert-success">
                                         <CheckmarkIcon className="icon-inline" /> Sourcegraph Server is up to date.
                                     </div>
                                 ))}
                             {this.state.updateCheck.errorMessage && (
-                                <div className="alert alert-danger">
+                                <div className="site-admin-updates-page__alert alert alert-danger">
                                     Error checking for updates: {this.state.updateCheck.errorMessage}
                                 </div>
                             )}
                         </div>
                     )}
                 {!autoUpdateCheckingEnabled && (
-                    <div className="alert alert-warning">Automatic update checking is disabled.</div>
+                    <div className="site-admin-updates-page__alert alert alert-warning">
+                        Automatic update checking is disabled.
+                    </div>
                 )}
                 {this.state.updateCheck && (
                     <p className="site-admin-updates_page__info">
