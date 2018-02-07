@@ -44,6 +44,11 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
         display: inline-flex;
         vertical-align: text-bottom;
     }
+
+    // TODO: Remove with https://github.com/sourcegraph/sourcegraph/issues/9370
+    .icon-inline {
+        margin-top: -0.25rem;
+    }
 }
 
 .theme-light {

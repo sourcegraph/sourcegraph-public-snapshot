@@ -26,13 +26,13 @@
             margin: 0 0.5rem 0 0.75rem;
         }
 
-        // TODO: Remove this when global styles have been fixed for icons
+        // TODO: Remove with https://github.com/sourcegraph/sourcegraph/issues/9370
         .icon-inline {
             margin-top: -0.25rem;
         }
     }
 
-    // TODO: Remove this when global styles have been fixed for icons
+    // TODO: Remove with https://github.com/sourcegraph/sourcegraph/issues/9370
     &__wand {
         margin-right: 0.25rem;
     }
