@@ -24,6 +24,7 @@ export interface SavedQueryFields {
 }
 
 interface Props {
+    user: GQL.IUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
     submitLabel: string
@@ -261,8 +262,10 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     !window.context.emailEnabled &&
                     !this.isUnsupportedNotifyQuery(this.state.values) && (
                         <div className="alert alert-warning">
-                            Warning: Sending emails is not currently configured on this Sourcegraph server. Contact your
-                            admin for more information.
+                            Warning: Sending emails is not currently configured on this Sourcegraph server.&nbsp;
+                            {this.props.user && this.props.user.siteAdmin
+                                ? 'Use the email.smtp site configuration setting to enable sending emails.'
+                                : 'Contact your server admin for more information.'}
                         </div>
                     )}
                 {notifySlack &&

@@ -18,6 +18,7 @@ import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SavedQueryFields } from './SavedQueryForm'
 
 interface Props {
+    user: GQL.IUser | null
     location: H.Location
     isLightTheme: boolean
     hideExampleSearches: boolean
@@ -146,6 +147,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         </div>
                         {this.state.isCreating && (
                             <SavedQueryCreateForm
+                                user={this.props.user}
                                 onDidCreate={this.onDidCreateSavedQuery}
                                 onDidCancel={this.toggleCreating}
                                 values={this.state.exampleQuery || {}}
@@ -173,6 +175,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         this.state.savedQueries.length === 0 && <p>You don't have any saved searches yet.</p>}
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
+                            user={this.props.user}
                             key={`${savedQuery.query.query}-${i}`}
                             savedQuery={savedQuery}
                             onDidDuplicate={this.onDidDuplicateSavedQuery}

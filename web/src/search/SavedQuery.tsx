@@ -13,6 +13,7 @@ import { SavedQueryRow } from './SavedQueryRow'
 import { SavedQueryUpdateForm } from './SavedQueryUpdateForm'
 
 interface Props {
+    user: GQL.IUser | null
     savedQuery: GQL.ISavedQuery
     onDidUpdate?: () => void
     onDidDuplicate?: () => void
@@ -131,6 +132,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                     this.state.isEditing && (
                         <div className="saved-query-row__row">
                             <SavedQueryUpdateForm
+                                user={this.props.user}
                                 savedQuery={this.props.savedQuery}
                                 onDidUpdate={this.onDidUpdateSavedQuery}
                                 onDidCancel={this.toggleEditing}

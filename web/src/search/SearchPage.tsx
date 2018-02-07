@@ -13,6 +13,7 @@ import { SearchHelp } from './SearchHelp'
 import { SearchSuggestionChips } from './SearchSuggestionChips'
 
 interface Props {
+    user: GQL.IUser | null
     location: H.Location
     history: H.History
     isLightTheme: boolean

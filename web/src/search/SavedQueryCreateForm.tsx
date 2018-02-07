@@ -5,6 +5,7 @@ import { createSavedQuery } from './backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
 interface Props {
+    user: GQL.IUser | null
     subject?: GQL.IConfigurationSubject
     values?: Partial<SavedQueryFields>
     onDidCreate: () => void
@@ -23,6 +24,7 @@ const onSubmit = (fields: SavedQueryFields): Observable<void> =>
 
 export const SavedQueryCreateForm: React.StatelessComponent<Props> = props => (
     <SavedQueryForm
+        user={props.user}
         onDidCommit={props.onDidCreate}
         onDidCancel={props.onDidCancel}
         title="Add a new search"

@@ -7,6 +7,7 @@ import { createSavedQuery, deleteSavedQuery, updateSavedQuery } from './backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'
 
 interface Props {
+    user: GQL.IUser | null
     savedQuery: GQL.ISavedQuery
     onDidUpdate: () => void
     onDidCancel: () => void
@@ -14,6 +15,7 @@ interface Props {
 
 export const SavedQueryUpdateForm: React.StatelessComponent<Props> = props => (
     <SavedQueryForm
+        user={props.user}
         defaultValues={{
             description: props.savedQuery.description,
             query: props.savedQuery.query.query,

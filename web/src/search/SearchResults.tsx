@@ -34,6 +34,7 @@ import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SearchAlert } from './SearchAlert'
 
 interface Props {
+    user: GQL.IUser | null
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -243,6 +244,7 @@ export class SearchResults extends React.Component<Props, State> {
                         onClose={this.onModalClose}
                         component={
                             <SavedQueryCreateForm
+                                user={this.props.user}
                                 values={{ query: parsedQuery ? parsedQuery.query : '' }}
                                 onDidCancel={this.onModalClose}
                                 onDidCreate={this.onDidCreateSavedQuery}
