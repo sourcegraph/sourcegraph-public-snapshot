@@ -157,7 +157,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
             return mutateGraphQL(
                 gql`
                     mutation updateUser($username: String!, $displayName: String!, $avatarURL: String) {
-                        updateUser(username: $username, displayName: $displayName, avatarURL: $avatarUrl) {
+                        updateUser(username: $username, displayName: $displayName, avatarURL: $avatarURL) {
                             id
                             sourcegraphID
                             username
