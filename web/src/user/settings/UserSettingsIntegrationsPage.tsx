@@ -99,12 +99,10 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
 
     private enableCodeIntelligence = () => {
         eventLogger.log('EnableCodeIntelligenceClicked')
-        window.open(' https://about.sourcegraph.com/docs/code-intelligence/install?utm_source=integrations', 'blank')
     }
 
     private contactUsClicked = () => {
         eventLogger.log('ContactUsClicked')
-        window.open('https://about.sourcegraph.com/contact/sales', 'blank')
     }
 
     public render(): JSX.Element | null {
@@ -150,9 +148,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                                 <td className="user-integrations__table-item">Code search</td>
                                 <td>
                                     <div className="user-integrations__btn-container">
-                                        <button className={`btn btn-secondary btn-sm`} disabled={true}>
-                                            Enabled
-                                        </button>
+                                        <a className={`btn btn-secondary btn-sm disabled`}>Enabled</a>
                                     </div>
                                 </td>
                             </tr>
@@ -160,15 +156,16 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                                 <td className="user-integrations__table-item">Code intelligence</td>
                                 <td>
                                     <div className="user-integrations__btn-container">
-                                        <button
+                                        <a
+                                            href="https://about.sourcegraph.com/docs/code-intelligence/install?utm_source=integrations"
+                                            target="_blank"
                                             className={`btn btn-${
                                                 this.state.info.hasCodeIntelligence ? 'secondary' : 'primary'
-                                            } btn-sm`}
+                                            } btn-sm ${this.state.info.hasCodeIntelligence ? 'disabled' : ''}`}
                                             onClick={this.enableCodeIntelligence}
-                                            disabled={this.state.info.hasCodeIntelligence}
                                         >
                                             {this.state.info.hasCodeIntelligence ? 'Enabled' : 'Enable'}
-                                        </button>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -176,9 +173,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                                 <td className="user-integrations__table-item">GitHub</td>
                                 <td>
                                     <div className="user-integrations__btn-container">
-                                        <button className={`btn btn-secondary btn-sm`} disabled={true}>
-                                            Enabled
-                                        </button>
+                                        <a className={`btn btn-secondary btn-sm disabled`}>Enabled</a>
                                     </div>
                                 </td>
                             </tr>
@@ -186,9 +181,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                                 <td className="user-integrations__table-item">GitHub Enterprise</td>
                                 <td>
                                     <div className="user-integrations__btn-container">
-                                        <button className={`btn btn-secondary btn-sm`} disabled={true}>
-                                            Enabled
-                                        </button>
+                                        <a className={`btn btn-secondary btn-sm disabled`}>Enabled</a>
                                     </div>
                                 </td>
                             </tr>
@@ -196,9 +189,14 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                                 <td className="user-integrations__table-item">Other code hosts</td>
                                 <td>
                                     <div className="user-integrations__btn-container">
-                                        <button className={`btn btn-primary btn-sm`} onClick={this.contactUsClicked}>
+                                        <a
+                                            href="https://about.sourcegraph.com/contact/sales?utm_source=integrations"
+                                            target="_blank"
+                                            className={`btn btn-primary btn-sm`}
+                                            onClick={this.contactUsClicked}
+                                        >
                                             Contact us
-                                        </button>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
