@@ -39,6 +39,7 @@
     &__title-row {
         display: flex;
         flex-direction: row;
+        align-items: flex-start;
     }
 
     &__spacer {
