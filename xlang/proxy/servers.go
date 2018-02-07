@@ -56,12 +56,12 @@ func registerServersFromConfig() error {
 	langservers := conf.Get().Langservers
 	for _, l := range langservers {
 		if l.Address != "" {
-			err := registerTCPServer(l.Language, l.Address)
+			err := registerTCPServer(l.Language, l.Address, "config")
 			if err != nil {
 				return err
 			}
 		} else {
-			log15.Warn("missing address in langserver config (it must be set by env LANGSERVER_XYZ)", "lang", l.Language)
+			log15.Debug("missing address in langserver config (it must be set by env LANGSERVER_XYZ)", "lang", l.Language)
 		}
 	}
 	return nil
@@ -86,7 +86,7 @@ func registerServersFromEnv() error {
 		if prefix := "LANGSERVER_"; strings.HasPrefix(name, prefix) && !strings.HasSuffix(name, "_ARGS_JSON") {
 			mode := strings.ToLower(strings.TrimPrefix(name, prefix))
 			if strings.HasPrefix(val, "tcp://") {
-				err := registerTCPServer(mode, val)
+				err := registerTCPServer(mode, val, "env")
 				if err != nil {
 					return err
 				}
@@ -126,9 +126,14 @@ func registerServersFromEnv() error {
 	return nil
 }
 
-func registerTCPServer(mode, addr string) error {
+func registerTCPServer(mode, addr, scope string) error {
 	if _, present := ServersByMode[mode]; present {
-		return fmt.Errorf("a server is already registered for the mode %q", mode)
+		// TODO(john): at the moment it's possible for a datacenter to have services networked
+		// in a way that diverges from the site configuration (by setting `LANGSERVER_XYZ=foo' and
+		// also `"languages": [{ "language": "xyz", "address": "bar" }]` in the site config).
+		// We ignore subsequent registrations and currently prefer env variable addresses.
+		log15.Debug("A language server is already registered, skipping...", "mode", mode, "scope", scope)
+		return nil
 	}
 	log15.Info("Registering language server listener", "mode", mode, "listener", addr)
 	ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
