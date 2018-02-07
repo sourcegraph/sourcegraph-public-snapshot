@@ -146,7 +146,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                 <table className="table-hover user-integrations__table">
                     <tbody>
                         <tr className="user-integrations__table-row">
-                            <td className="user-integrations__table-item">Code Search</td>
+                            <td className="user-integrations__table-item">Code search</td>
                             <td>
                                 <div className="user-integrations__btn-container">
                                     <button className={`btn btn-secondary btn-sm`} disabled={true}>
@@ -156,7 +156,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                             </td>
                         </tr>
                         <tr className="user-integrations__table-row">
-                            <td className="user-integrations__table-item">Code Intelligence</td>
+                            <td className="user-integrations__table-item">Code intelligence</td>
                             <td>
                                 <div className="user-integrations__btn-container">
                                     <button
@@ -233,7 +233,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                         Get easy access to Sourcegraph code search over your most commonly-used repositories from your
                         browser address bar by configuring a custom search engine.
                     </p>
-                    <h4>Sourcegraph Search URL</h4>
+                    <h4>Sourcegraph search URL</h4>
                     <div className="user-integrations__form">
                         <input
                             id="remote-url-input"
