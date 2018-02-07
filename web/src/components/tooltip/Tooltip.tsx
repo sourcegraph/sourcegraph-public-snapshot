@@ -68,6 +68,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactFragment | null {
+        const rebasedLeft = (this.state.left || 0) + window.innerWidth
         return (
             <div ref={this.setContainerRef} className="tooltip2__container">
                 {this.state.subject && (
@@ -75,7 +76,14 @@ export class Tooltip extends React.PureComponent<Props, State> {
                         className="tooltip2 tooltip2--bottom"
                         ref={this.setTooltipRef}
                         // tslint:disable-next-line:jsx-ban-props
-                        style={{ top: this.state.top, left: this.state.left }}
+                        style={{
+                            top: this.state.top,
+                            left:
+                                Math.max(
+                                    5 /* min margin */,
+                                    Math.min(window.innerWidth - 108 /* 18rem * 6 */ - 5 /* min margin */, rebasedLeft)
+                                ) - window.innerWidth,
+                        }}
                     >
                         <div className="tooltip2__content">{this.state.content}</div>
                     </div>
