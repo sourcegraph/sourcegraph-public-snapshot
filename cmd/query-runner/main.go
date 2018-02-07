@@ -386,6 +386,9 @@ func getUsersAndOrgsToNotify(ctx context.Context, spec api.SavedQueryIDSpec, que
 		if spec.Subject.User != nil {
 			addUsers(*spec.Subject.User)
 		}
+	} else if query.NotifySlack && spec.Subject.Org != nil {
+		// Notifying the config owner (org) via Slack.
+		orgsToNotify = append(orgsToNotify, *spec.Subject.Org)
 	}
 
 	for _, username := range query.NotifyUsers {
