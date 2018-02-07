@@ -221,6 +221,8 @@ func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (
 // TODO(slimsag): In the future, once we're no longer using environment
 // variables to build AppURL, remove this in favor of services just reading it
 // directly from the configuration file.
+//
+// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
 func (c *internalClient) AppURL(ctx context.Context) (string, error) {
 	var appURL string
 	err := c.postInternal(ctx, "app-url", nil, &appURL)
@@ -228,6 +230,15 @@ func (c *internalClient) AppURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return appURL, nil
+}
+
+// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
+func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, err error) {
+	err = c.postInternal(ctx, "can-send-email", nil, &canSendEmail)
+	if err != nil {
+		return false, err
+	}
+	return canSendEmail, nil
 }
 
 func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {

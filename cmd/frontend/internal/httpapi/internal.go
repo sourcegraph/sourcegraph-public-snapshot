@@ -438,6 +438,13 @@ func serveAppURL(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveCanSendEmail(w http.ResponseWriter, r *http.Request) error {
+	if err := json.NewEncoder(w).Encode(conf.CanSendEmail()); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
 func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	var args api.DefsRefreshIndexRequest
 	err := json.NewDecoder(r.Body).Decode(&args)
