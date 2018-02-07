@@ -133,7 +133,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                 <a
                                     onClick={this.onDidClickQueryHelp}
                                     className="btn btn-link"
-                                    href="https://about.sourcegraph.com/docs/search/#saved-queries"
+                                    href="https://about.sourcegraph.com/docs/search/#saved-searches"
                                     target="_blank"
                                 >
                                     <HelpIcon className="icon-inline" /> Help
