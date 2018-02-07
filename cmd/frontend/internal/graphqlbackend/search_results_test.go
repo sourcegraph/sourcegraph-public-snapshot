@@ -51,9 +51,9 @@ func TestSearchResults(t *testing.T) {
 			return []*types.Repo{{URI: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
-		calledSearchRepos := false
-		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
-			calledSearchRepos = true
+		calledSearchFilesInRepos := false
+		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
+			calledSearchFilesInRepos = true
 			if want := `(foo\d).*?(bar\*)`; args.query.Pattern != want {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
@@ -61,13 +61,13 @@ func TestSearchResults(t *testing.T) {
 				{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},
 			}), &searchResultsCommon{}, nil
 		}
-		defer func() { mockSearchRepos = nil }()
+		defer func() { mockSearchFilesInRepos = nil }()
 		testCallResults(t, `foo\d "bar*"`, []string{"dir/file:123"})
 		if !calledReposList {
 			t.Error("!calledReposList")
 		}
-		if !calledSearchRepos {
-			t.Error("!calledSearchRepos")
+		if !calledSearchFilesInRepos {
+			t.Error("!calledSearchFilesInRepos")
 		}
 	})
 }

@@ -71,9 +71,9 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
-		calledSearchRepos := false
-		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
-			calledSearchRepos = true
+		calledSearchFilesInRepos := false
+		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
+			calledSearchFilesInRepos = true
 			if want := "foo"; args.query.Pattern != want {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
@@ -81,7 +81,7 @@ func TestSearchSuggestions(t *testing.T) {
 				{uri: "git://repo?rev#dir/file", JPath: "dir/file", repo: &types.Repo{URI: "repo"}, commitID: "rev"},
 			}), &searchResultsCommon{}, nil
 		}
-		defer func() { mockSearchRepos = nil }()
+		defer func() { mockSearchFilesInRepos = nil }()
 		testSuggestions(t, "foo", []string{"repo:foo-repo", "file:dir/file"})
 		if !calledReposListAll {
 			t.Error("!calledReposListAll")
@@ -89,8 +89,8 @@ func TestSearchSuggestions(t *testing.T) {
 		if !calledReposListFoo {
 			t.Error("!calledReposListFoo")
 		}
-		if !calledSearchRepos {
-			t.Error("!calledSearchRepos")
+		if !calledSearchFilesInRepos {
+			t.Error("!calledSearchFilesInRepos")
 		}
 	})
 
@@ -123,11 +123,11 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
-		calledSearchRepos := false
-		mockSearchRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
+		calledSearchFilesInRepos := false
+		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledSearchRepos = true
+			calledSearchFilesInRepos = true
 			if want := "foo"; args.query.Pattern != want {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
@@ -136,7 +136,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}), &searchResultsCommon{}, nil
 		}
 		var calledSearchFilesFoo, calledSearchFilesRepo3 bool
-		defer func() { mockSearchRepos = nil }()
+		defer func() { mockSearchFilesInRepos = nil }()
 		mockSearchFilesForRepo = func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchResultResolver, error) {
 			mu.Lock()
 			defer mu.Unlock()
@@ -175,8 +175,8 @@ func TestSearchSuggestions(t *testing.T) {
 		if !calledReposListFooRepo3 {
 			t.Error("!calledReposListFooRepo3")
 		}
-		if !calledSearchRepos {
-			t.Error("!calledSearchRepos")
+		if !calledSearchFilesInRepos {
+			t.Error("!calledSearchFilesInRepos")
 		}
 		if !calledSearchFilesFoo {
 			t.Error("!calledSearchFilesFoo")

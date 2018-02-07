@@ -317,7 +317,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query s
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.query, query)
 			if ctx.Err() != nil {
-				// Our request has been canceled, we can just ignore searchRepo for this repo.
+				// Our request has been canceled, we can just ignore searchFilesInRepo for this repo.
 				return
 			}
 			mu.Lock()
@@ -367,7 +367,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query sea
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.query, query)
 			if ctx.Err() != nil {
-				// Our request has been canceled, we can just ignore searchRepo for this repo.
+				// Our request has been canceled, we can just ignore searchFilesInRepo for this repo.
 				return
 			}
 			mu.Lock()

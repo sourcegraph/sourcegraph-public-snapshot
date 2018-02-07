@@ -540,12 +540,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		switch resultType {
 		case "file", "path":
 			if searchedFileContentsOrPaths {
-				// type:file and type:path use same searchRepos, so don't call 2x.
+				// type:file and type:path use same searchFilesInRepos, so don't call 2x.
 				continue
 			}
 			searchedFileContentsOrPaths = true
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
-				return searchRepos(ctx, &args, r.query)
+				return searchFilesInRepos(ctx, &args, r.query)
 			})
 		case "diff":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {

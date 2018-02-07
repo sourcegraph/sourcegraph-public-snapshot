@@ -290,11 +290,11 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
-var mockSearchRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
 
-func searchRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
-	if mockSearchRepo != nil {
-		return mockSearchRepo(ctx, repo, gitserverRepo, rev, info)
+func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+	if mockSearchFilesInRepo != nil {
+		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info)
 	}
 
 	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, rev, nil)
@@ -552,15 +552,15 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 	return indexed, unindexed, nil
 }
 
-var mockSearchRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
 
-// searchRepos searches a set of repos for a pattern.
-func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResult, common *searchResultsCommon, err error) {
-	if mockSearchRepos != nil {
-		return mockSearchRepos(args)
+// searchFilesInRepos searches a set of repos for a pattern.
+func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResult, common *searchResultsCommon, err error) {
+	if mockSearchFilesInRepos != nil {
+		return mockSearchFilesInRepos(args)
 	}
 
-	traceName, ctx := traceutil.TraceName(ctx, "searchRepos")
+	traceName, ctx := traceutil.TraceName(ctx, "searchFilesInRepos")
 	tr := trace.New(traceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
 	defer func() {
 		if err != nil {
@@ -671,7 +671,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.revspecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.query)
+			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.query)
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {
@@ -681,7 +681,7 @@ func searchRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Qu
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {
 				if ctx.Err() != nil {
 					// Our request has been canceled, we can just ignore
-					// searchRepo for this repo. We only check this condition
+					// searchFilesInRepo for this repo. We only check this condition
 					// here since handleRepoSearchResult handles deadlines
 					// exceeded differently to canceled.
 					return
