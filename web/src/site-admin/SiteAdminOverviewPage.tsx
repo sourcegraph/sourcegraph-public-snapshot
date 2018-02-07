@@ -147,7 +147,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
                                     {!this.state.info.hasCodeIntelligence && (
                                         <a
-                                            href="https://about.sourcegraph.com/docs/code-intelligence?utm_source=server"
+                                            href="https://about.sourcegraph.com/docs/code-intelligence/install?utm_source=server"
                                             target="_blank"
                                             className="btn btn-primary btn-sm site-admin-overview-page__item-action"
                                             onClick={this.logEnableCodeIntelligenceClicked}
