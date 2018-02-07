@@ -284,19 +284,19 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
         {
             label: 'Cloning',
             id: 'cloning',
-            tooltip: 'Show repositories that are currently being cloned',
-            args: { cloned: false, cloneInProgress: true, notCloned: false },
+            tooltip: 'Show only repositories that are currently being cloned',
+            args: { disabled: true, cloned: false, cloneInProgress: true, notCloned: false },
         },
         {
             label: 'Not cloned',
             id: 'not-cloned',
-            tooltip: 'Only show repositories that have not been cloned yet',
+            tooltip: 'Show only enabled repositories that have not been cloned yet',
             args: { cloned: false, cloneInProgress: false, notCloned: true },
         },
         {
             label: 'Needs index',
             id: 'needs-index',
-            tooltip: 'Show repositories that need to be indexed',
+            tooltip: 'Show only repositories that need to be indexed',
             args: { indexed: false },
         },
     ]
