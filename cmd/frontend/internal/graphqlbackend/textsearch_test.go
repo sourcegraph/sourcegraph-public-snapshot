@@ -6,6 +6,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/zoekt/query"
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -14,6 +15,102 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
+
+func TestQueryToZoektQuery(t *testing.T) {
+	sPtr := func(s string) *string {
+		return &s
+	}
+	cases := []struct {
+		Name    string
+		Pattern *patternInfo
+		Query   string
+	}{
+		{
+			Name: "substr",
+			Pattern: &patternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               nil,
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: "foo case:no",
+		},
+		{
+			Name: "regex",
+			Pattern: &patternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "(foo).*?(bar)",
+				IncludePatterns:              nil,
+				ExcludePattern:               nil,
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: "(foo).*?(bar) case:no",
+		},
+		{
+			Name: "path",
+			Pattern: &patternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
+				ExcludePattern:               sPtr(`\bvendor\b`),
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+		},
+		{
+			Name: "case",
+			Pattern: &patternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              true,
+				Pattern:                      "foo",
+				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
+				ExcludePattern:               sPtr(`\bvendor\b`),
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: true,
+			},
+			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			q, err := query.Parse(tt.Query)
+			if err != nil {
+				t.Fatalf("failed to parse %q: %v", tt.Query, err)
+			}
+			got, err := queryToZoektQuery(tt.Pattern)
+			if err != nil {
+				t.Fatal("queryToZoektQuery failed:", err)
+			}
+			if !queryEqual(got, q) {
+				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
+			}
+		})
+	}
+}
+
+func queryEqual(a query.Q, b query.Q) bool {
+	sortChildren := func(q query.Q) query.Q {
+		switch s := q.(type) {
+		case *query.And:
+			sort.Slice(s.Children, func(i, j int) bool {
+				return s.Children[i].String() < s.Children[j].String()
+			})
+		case *query.Or:
+			sort.Slice(s.Children, func(i, j int) bool {
+				return s.Children[i].String() < s.Children[j].String()
+			})
+		}
+		return q
+	}
+	return query.Map(a, sortChildren).String() == query.Map(b, sortChildren).String()
+}
 
 func TestSearchFilesInRepos(t *testing.T) {
 	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
