@@ -85,7 +85,9 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			return indexed[api.RepoURI(strings.ToLower(string(repo)))]
 		}
 		if zoektCache != nil && (!r.indexed || !r.notIndexed) {
-			indexedRepos, err := zoektCache.ListAll(ctx)
+			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			defer cancel()
+			indexedRepos, err := zoektCache.ListAll(listCtx)
 			if err != nil {
 				r.err = err
 				return

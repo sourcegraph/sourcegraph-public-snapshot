@@ -528,8 +528,14 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 		return indexed, unindexed, nil
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
 	resp, err := zoektCache.ListAll(ctx)
 	if err != nil {
+		// Everything is unindexed on transient errors
+		if errcode.IsTemporary(err) || errcode.IsTimeout(err) {
+			return nil, repos, nil
+		}
 		return nil, nil, err
 	}
 
