@@ -99,7 +99,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
 
     private enableCodeIntelligence = () => {
         eventLogger.log('EnableCodeIntelligenceClicked')
-        window.open('https://about.sourcegraph.com/pricing', 'blank')
+        window.open(' https://about.sourcegraph.com/docs/code-intelligence/install?utm_source=integrations', 'blank')
     }
 
     private contactUsClicked = () => {
