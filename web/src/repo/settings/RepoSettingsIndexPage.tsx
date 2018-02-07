@@ -181,8 +181,9 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                             <tr>
                                                 <th>Content size</th>
                                                 <td>
-                                                    {prettyBytes(this.state.textSearchIndex.status.contentByteSize)}{' '}
-                                                    bytes ({this.state.textSearchIndex.status.contentFilesCount}{' '}
+                                                    {prettyBytes(this.state.textSearchIndex.status.contentByteSize)} ({
+                                                        this.state.textSearchIndex.status.contentFilesCount
+                                                    }{' '}
                                                     {pluralize(
                                                         'file',
                                                         this.state.textSearchIndex.status.contentFilesCount
@@ -192,8 +193,9 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                             <tr>
                                                 <th>Index size</th>
                                                 <td>
-                                                    {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} bytes
-                                                    ({this.state.textSearchIndex.status.indexShardsCount}{' '}
+                                                    {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} ({
+                                                        this.state.textSearchIndex.status.indexShardsCount
+                                                    }{' '}
                                                     {pluralize(
                                                         'shard',
                                                         this.state.textSearchIndex.status.indexShardsCount
