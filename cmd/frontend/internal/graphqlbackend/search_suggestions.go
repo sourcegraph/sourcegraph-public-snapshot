@@ -9,7 +9,6 @@ import (
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
@@ -93,25 +92,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
-		type repoCommitSpec struct {
-			repo     api.RepoID
-			commitID string
-		}
-		cache := map[string]repoCommitSpec{}
-		getCommitSpec := func(ctx context.Context, fm *fileMatch) (repoCommitSpec, error) {
-			key := string(fm.repo.URI) + ":" + string(fm.commitID)
-			if spec, ok := cache[key]; ok {
-				return spec, nil
-			}
-			rev, err := backend.Repos.ResolveRev(ctx, fm.repo, string(fm.commitID))
-			if err != nil {
-				return repoCommitSpec{}, err
-			}
-			spec := repoCommitSpec{repo: fm.repo.ID, commitID: string(rev)}
-			cache[key] = spec
-			return spec, nil
-		}
-
 		// If terms are specified, then show files that have text matches. Set an aggressive timeout
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
@@ -127,25 +107,16 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					results.results = results.results[:*args.First]
 				}
 				for i, res := range results.results {
-					// TODO(sqs): should parallelize, or reuse data fetched elsewhere
-					commit, err := getCommitSpec(ctx, res.fileMatch)
-					if err != nil {
-						if err == context.DeadlineExceeded {
-							err = nil // don't log as error below
-						}
-						return nil, err
-					}
-
-					path := res.fileMatch.JPath
 					fileResolver := &fileResolver{
-						path: path,
+						path: res.fileMatch.JPath,
 						commit: &gitCommitResolver{
+							oid: gitObjectID(res.fileMatch.commitID),
 							// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
 							// (which would make it slow). This gitCommitResolver will return empty
 							// values for all other fields.
-							repoID: commit.repo,
+							repo: &repositoryResolver{repo: res.fileMatch.repo},
 						},
-						stat: createFileInfo(path, false),
+						stat: createFileInfo(res.fileMatch.JPath, false),
 					}
 					suggestions = append(suggestions, newSearchResultResolver(fileResolver, len(results.results)-i))
 				}
