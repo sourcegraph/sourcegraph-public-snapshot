@@ -27,6 +27,13 @@ func MustParseTemplate(input Templates) ParsedTemplates {
 	return *pt
 }
 
+// MustValidate panics if the templates are unparsable, otherwise it returns
+// them unmodified.
+func MustValidate(input Templates) Templates {
+	MustParseTemplate(input)
+	return input
+}
+
 // ParseTemplate is a helper func for parsing the text/template and html/template
 // templates together. In the future it will also provide common template funcs
 // and a common footer.

@@ -337,7 +337,7 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo types.OrgRep
 }
 
 var (
-	newCommentEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+	newCommentEmailTemplates = txemail.MustValidate(txemail.Templates{
 		Subject: threadEmailSubjectTemplate,
 		Text: `
 {{.Location}}

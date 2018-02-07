@@ -9,13 +9,17 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 func (n *notifier) emailNotify(ctx context.Context) {
-	if !conf.CanSendEmail() {
-		log15.Warn("cannot send email notification about saved search (SMTP server not in site configuration")
+	canSendEmail, err := api.InternalClient.CanSendEmail(ctx)
+	if err != nil {
+		log15.Warn("cannot send email notification about saved search (failed to retrieve email configuration)", "error", err)
+		return
+	}
+	if !canSendEmail {
+		log15.Warn("cannot send email notification about saved search (SMTP server not in site configuration)")
 		return
 	}
 
@@ -60,7 +64,7 @@ func (n *notifier) emailNotify(ctx context.Context) {
 	}()
 }
 
-var newSearchResultsEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+var newSearchResultsEmailTemplates = txemail.MustValidate(txemail.Templates{
 	Subject: `{{.ApproximateResultCount}} new search results found - {{.Description}}`,
 	Text: `
 {{.ApproximateResultCount}} new search result{{if .MoreThanTwoResults}}s{{end}} have been found for {{.Ownership}} saved search:
@@ -78,9 +82,14 @@ View the new results on Sourcegraph: {{.URL}}
 `,
 })
 
-func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32, query api.SavedQuerySpecAndConfig, template txemail.ParsedTemplates) {
-	if !conf.CanSendEmail() {
-		log15.Warn("cannot send email notification about saved search (SMTP server not in site configuration")
+func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32, query api.SavedQuerySpecAndConfig, template txemail.Templates) {
+	canSendEmail, err := api.InternalClient.CanSendEmail(ctx)
+	if err != nil {
+		log15.Warn("cannot send email notification about saved search (failed to retrieve email configuration)", "error", err)
+		return
+	}
+	if !canSendEmail {
+		log15.Warn("cannot send email notification about saved search (SMTP server not in site configuration)")
 		return
 	}
 
@@ -128,7 +137,7 @@ func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32,
 	return
 }
 
-func sendEmail(ctx context.Context, userID int32, eventType string, template txemail.ParsedTemplates, data interface{}) {
+func sendEmail(ctx context.Context, userID int32, eventType string, template txemail.Templates, data interface{}) {
 	email, err := api.InternalClient.UserEmailsGetEmail(ctx, userID)
 	if err != nil {
 		log15.Error("email notify: failed to get user email", "user_id", userID, "error", err)
@@ -139,7 +148,7 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txe
 		return
 	}
 
-	if err := txemail.Send(ctx, txemail.Message{
+	if err := api.InternalClient.SendEmail(ctx, txemail.Message{
 		To:       []string{*email},
 		Template: template,
 		Data:     data,
@@ -150,7 +159,7 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txe
 	logEvent(*email, "SavedSearchEmailNotificationSent", eventType)
 }
 
-var notifySubscribedTemplate = txemail.MustParseTemplate(txemail.Templates{
+var notifySubscribedTemplate = txemail.MustValidate(txemail.Templates{
 	Subject: `Subscribed to saved search: {{.Description}}`,
 	Text: `
 You are now receiving notifications for {{.Ownership}} saved search:
@@ -168,7 +177,7 @@ When new search results become available, we will notify you.
 `,
 })
 
-var notifyUnsubscribedTemplate = txemail.MustParseTemplate(txemail.Templates{
+var notifyUnsubscribedTemplate = txemail.MustValidate(txemail.Templates{
 	Subject: `Unsubscribed from saved search: {{.Description}}`,
 	Text: `
 You will no longer receive notifications for {{.Ownership}} saved search:

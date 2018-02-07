@@ -19,11 +19,14 @@ type Message struct {
 	FromName string   // email "From" address proper name
 	To       []string // email "To" recipients
 
-	Template ParsedTemplates // parsed subject/body templates
-	Data     interface{}     // template data
+	Template Templates   // unparsed subject/body templates
+	Data     interface{} // template data
 }
 
 // Send sends a transactional email.
+//
+// Callers that do not live in the frontend should call api.InternalClient.SendEmail
+// instead. TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
 func Send(ctx context.Context, message Message) error {
 	if MockSend != nil {
 		return MockSend(ctx, message)
@@ -48,7 +51,12 @@ func Send(ctx context.Context, message Message) error {
 		Headers: mail.Header{},
 	}
 
-	if err := message.Template.render(message.Data, &m); err != nil {
+	parsed, err := ParseTemplate(message.Template)
+	if err != nil {
+		return err
+	}
+
+	if err := parsed.render(message.Data, &m); err != nil {
 		return err
 	}
 
