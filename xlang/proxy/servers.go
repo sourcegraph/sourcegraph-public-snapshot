@@ -62,7 +62,7 @@ func registerServersFromConfig() error {
 				return err
 			}
 		} else {
-			log15.Warn("missing address in langserver config (it must be set by env LANGSERVER_XYZ)", "lang", l.Language)
+			log15.Debug("missing address in langserver config (it must be set by env LANGSERVER_XYZ)", "lang", l.Language)
 		}
 	}
 	return nil
@@ -133,7 +133,7 @@ func registerTCPServer(mode, addr, scope string) error {
 		// in a way that diverges from the site configuration (by setting `LANGSERVER_XYZ`` and
 		// also `"languages": [{ "language": "xyz" }]` in the site config).
 		// We ignore subsequent registrations and currently prefer env variable addresses.
-		log15.Warn("A language server is already registered, skipping...", "mode", mode, "scope", scope)
+		log15.Debug("A language server is already registered, skipping...", "mode", mode, "scope", scope)
 		return nil
 	}
 	log15.Info("Registering language server listener", "mode", mode, "listener", addr)
