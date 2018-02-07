@@ -125,6 +125,7 @@ export function updateUserSettings(lastKnownSettingsID: number | null, contents:
             if (!data || (errors && errors.length > 0) || !data.updateUserSettings) {
                 throw createAggregateError(errors)
             }
+            refreshConfiguration().subscribe()
             return data.updateUserSettings
         })
     )
