@@ -15,8 +15,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-func TestSearchRepos(t *testing.T) {
-	mockSearchRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func TestSearchFilesInRepos(t *testing.T) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
 		repoName := repo.URI
 		switch repoName {
 		case "foo/one":
@@ -47,7 +47,7 @@ func TestSearchRepos(t *testing.T) {
 			return nil, false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { mockSearchRepo = nil }()
+	defer func() { mockSearchFilesInRepo = nil }()
 
 	args := &repoSearchArgs{
 		query: &patternInfo{
@@ -60,7 +60,7 @@ func TestSearchRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	results, common, err := searchRepos(context.Background(), args, *query)
+	results, common, err := searchFilesInRepos(context.Background(), args, *query)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestSearchRepos(t *testing.T) {
 		},
 		repos: makeRepositoryRevisions("foo/no-rev@dev"),
 	}
-	_, _, err = searchRepos(context.Background(), args, *query)
+	_, _, err = searchFilesInRepos(context.Background(), args, *query)
 	if errors.Cause(err) != vcs.ErrRevisionNotFound {
 		t.Fatalf("searching non-existent rev expected to fail with %v got: %v", vcs.ErrRevisionNotFound, err)
 	}

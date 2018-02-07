@@ -13,16 +13,22 @@ interface Props {
     to?: string | null
 
     className?: string
+
+    onClick?: React.MouseEventHandler<HTMLElement>
 }
 
 const NotALink: React.SFC<{ to: any; children: React.ReactElement<any> }> = ({ children }) => children || null
 
-export const RepoLink: React.SFC<Props> = ({ repoPath, rev, to, className }) => {
+export const RepoLink: React.SFC<Props> = ({ repoPath, rev, to, className, onClick }) => {
     const L = to === null ? NotALink : Link
 
     const [repoBase, repoName] = splitPath(displayRepoPath(repoPath))
     return (
-        <L className={className || ''} to={typeof to === 'string' ? to : `/${repoPath}${rev ? `@${rev}` : ''}`}>
+        <L
+            className={className || ''}
+            to={typeof to === 'string' ? to : `/${repoPath}${rev ? `@${rev}` : ''}`}
+            onClick={onClick}
+        >
             {repoBase ? `${repoBase}/` : null}
             <strong>{repoName}</strong>
         </L>

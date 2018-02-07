@@ -29,6 +29,7 @@ import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { ModalContainer } from './ModalContainer'
 import { queryTelemetryData } from './queryTelemetry'
 import { RepoSearchResult } from './RepoSearchResult'
+import { RepositorySearchResult } from './RepositorySearchResult'
 import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SearchAlert } from './SearchAlert'
 
@@ -332,6 +333,8 @@ export class SearchResults extends React.Component<Props, State> {
 
     private renderResult(key: number, result: GQL.SearchResult, expanded: boolean): JSX.Element | undefined {
         switch (result.__typename) {
+            case 'Repository':
+                return <RepositorySearchResult key={key} result={result} onSelect={this.logEvent} />
             case 'FileMatch':
                 return (
                     <FileMatch

@@ -23,6 +23,9 @@ export function searchText(options: SearchOptions): Observable<GQL.ISearchResult
                         timedout
                         results {
                             __typename
+                            ... on Repository {
+                                uri
+                            }
                             ... on FileMatch {
                                 resource
                                 limitHit
