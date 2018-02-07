@@ -10,6 +10,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
+func init() {
+	featureFlagSearchRepositoriesByName = true
+}
+
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch + 1}
 
