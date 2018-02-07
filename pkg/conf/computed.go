@@ -40,7 +40,7 @@ func HasGitHubDotComToken() bool {
 // HasGitLabDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func HasGitLabDotComToken() bool {
-	for _, c := range Get().Github {
+	for _, c := range Get().Gitlab {
 		u, err := url.Parse(c.Url)
 		if err != nil {
 			continue
