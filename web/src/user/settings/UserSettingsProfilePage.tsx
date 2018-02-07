@@ -70,23 +70,13 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             displayName: this.state.displayName,
                         }).pipe(catchError(this.handleError))
                     ),
-                    tap(() => this.setState({ loading: false, error: undefined, saved: true })),
+                    tap(() => {
+                        this.setState({ loading: false, error: undefined, saved: true })
+                        setTimeout(() => this.setState({ saved: false }), 500)
+                    }),
                     mergeMap(() => refreshCurrentUser().pipe(concat([null])))
                 )
-                .subscribe(() => {
-                    const searchParams = new URLSearchParams(this.props.location.search)
-                    const returnTo = searchParams.get('returnTo')
-                    if (returnTo) {
-                        const newURL = new URL(returnTo, window.location.href)
-
-                        // 🚨 SECURITY: important that we do not allow redirects to arbitrary
-                        // hosts here (we use only pathname so that it is always relative).
-                        this.props.history.replace(newURL.pathname + newURL.search + newURL.hash) // TODO(slimsag): real
-                    } else {
-                        // just take back to settings
-                        this.props.history.replace('/settings')
-                    }
-                }, this.handleError)
+                .subscribe(undefined, this.handleError)
         )
     }
 
@@ -100,7 +90,6 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                 <PageTitle title="Profile" />
                 <h2>Profile</h2>
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
-                {this.state.saved && <p className="alert alert-success">Profile saved!</p>}
                 <form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                     <div className="user-settings-profile-page__avatar-row">
                         <div className="form-group">
@@ -148,6 +137,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         <div className="icon-inline">
                             <Loader className="icon-inline" />
                         </div>
+                    )}
+                    {this.state.saved && (
+                        <p className="alert alert-success user-settings-profile-page__alert">Profile saved!</p>
                     )}
                 </form>
             </div>
