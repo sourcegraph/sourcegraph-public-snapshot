@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 var gitoliteRepoBlacklist = compileGitoliteRepoBlacklist()
@@ -443,6 +444,15 @@ func serveCanSendEmail(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
+}
+
+func serveSendEmail(w http.ResponseWriter, r *http.Request) error {
+	var msg txemail.Message
+	err := json.NewDecoder(r.Body).Decode(&msg)
+	if err != nil {
+		return err
+	}
+	return txemail.Send(r.Context(), msg)
 }
 
 func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {

@@ -95,7 +95,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 var (
-	verifyEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+	verifyEmailTemplates = txemail.MustValidate(txemail.Templates{
 		Subject: `Verify your email on Sourcegraph`,
 		Text: `
 Verify your email address on Sourcegraph by following this link:
@@ -251,7 +251,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 }
 
 var (
-	resetPasswordEmailTemplates = txemail.MustParseTemplate(txemail.Templates{
+	resetPasswordEmailTemplates = txemail.MustValidate(txemail.Templates{
 		Subject: `Reset your Sourcegraph password`,
 		Text: `
 Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph.

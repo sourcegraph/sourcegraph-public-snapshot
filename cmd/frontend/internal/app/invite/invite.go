@@ -93,7 +93,7 @@ func SendEmail(inviteEmail, fromName, orgName, inviteURL string) error {
 }
 
 var (
-	emailTemplates = txemail.MustParseTemplate(txemail.Templates{
+	emailTemplates = txemail.MustValidate(txemail.Templates{
 		Subject: `{{.FromName}} invited you to join {{.OrgName}} on Sourcegraph`,
 		Text: `
 {{.FromName}} invited you to join {{.OrgName}} on Sourcegraph.

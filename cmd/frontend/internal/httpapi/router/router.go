@@ -25,6 +25,7 @@ const (
 	UserEmailsGetEmail         = "internal.user-emails.get-email"
 	AppURL                     = "internal.app-url"
 	CanSendEmail               = "internal.can-send-email"
+	SendEmail                  = "internal.send-email"
 	DefsRefreshIndex           = "internal.defs.refresh-index"
 	PkgsRefreshIndex           = "internal.pkgs.refresh-index"
 	GitInfoRefs                = "internal.git.info-refs"
@@ -83,6 +84,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(AppURL)
 	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
+	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
 	base.Path("/pkgs/refresh-index").Methods("POST").Name(PkgsRefreshIndex)
 	base.Path("/gitolite/update-repos").Methods("POST").Name(GitoliteUpdateRepos)

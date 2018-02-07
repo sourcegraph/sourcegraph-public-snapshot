@@ -13,6 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
@@ -239,6 +240,11 @@ func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, e
 		return false, err
 	}
 	return canSendEmail, nil
+}
+
+// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
+func (c *internalClient) SendEmail(ctx context.Context, message txemail.Message) error {
+	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
 func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
