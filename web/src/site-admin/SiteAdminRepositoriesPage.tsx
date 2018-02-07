@@ -192,7 +192,7 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                 .subscribe(() => {
                     eventLogger.log('PublicRepositoryAdded', { repositories: { code_host: 'github' } })
                     this.setState({ repoName: '', success: 'Repository added', error: undefined })
-                    setTimeout(() => this.setState({ success: '' }), 1000)
+                    setTimeout(() => this.setState({ success: undefined }), 1000)
                     if (this.inputElement) {
                         this.inputElement.focus()
                     }
