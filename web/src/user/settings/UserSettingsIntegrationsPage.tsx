@@ -72,15 +72,10 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
 
     private installFirefoxExtension = () => {
         eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Firefox' } })
-        window.open('https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-addon-for-github/', '_blank')
     }
 
     private installChromeExtension = () => {
         eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Chrome' } })
-        window.open(
-            'https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en',
-            '_blank'
-        )
     }
 
     private fetchOverview(): Observable<{ hasCodeIntelligence: boolean }> {
@@ -124,22 +119,28 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                 </p>
                 <div>
                     <div className="user-integrations__action-items">
-                        <button
-                            className="btn btn-primary"
+                        <a
+                            className={`btn btn-primary ${
+                                this.state.browserExtensionInstalled && IS_CHROME ? 'btn-disabled' : ''
+                            }`}
+                            target="_blank"
+                            href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
                             onClick={this.installChromeExtension}
-                            disabled={this.state.browserExtensionInstalled && IS_CHROME}
                         >
                             Install Chrome extension
-                        </button>
+                        </a>
                     </div>
                     <div className="user-integrations__action-items">
-                        <button
-                            className="btn btn-primary"
+                        <a
+                            className={`btn btn-primary ${
+                                this.state.browserExtensionInstalled && IS_FIREFOX ? 'btn-disabled' : ''
+                            }`}
+                            target="_blank"
+                            href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-addon-for-github/"
                             onClick={this.installFirefoxExtension}
-                            disabled={this.state.browserExtensionInstalled && IS_FIREFOX}
                         >
                             Install Firefox add-on
-                        </button>
+                        </a>
                     </div>
                 </div>
                 <table className="table-hover user-integrations__table">
