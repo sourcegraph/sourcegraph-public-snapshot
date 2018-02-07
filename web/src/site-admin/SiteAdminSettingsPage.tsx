@@ -57,7 +57,7 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
                 )}
                 <small className="form-text">
                     Documentation:{' '}
-                    <a target="_blank" href="https://about.sourcegraph.com/docs/search#scope">
+                    <a target="_blank" href="https://about.sourcegraph.com/docs/server/config/search-scopes">
                         Customizing search scopes
                     </a>
                 </small>
