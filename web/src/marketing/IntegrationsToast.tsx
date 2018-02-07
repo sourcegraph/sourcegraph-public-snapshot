@@ -1,9 +1,12 @@
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import { History, UnregisterCallback } from 'history'
 import * as React from 'react'
+import { matchPath } from 'react-router'
 import { Link } from 'react-router-dom'
 import { eventLogger } from '../tracking/eventLogger'
+import { showDotComMarketing } from '../util/features'
 import { Toast } from './Toast'
+import { daysActiveCount } from './util'
 
 interface State {
     visible: boolean
@@ -12,6 +15,8 @@ interface State {
 interface Props {
     history: History
 }
+
+const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-integrations-toast'
 
 /**
  * Renders a toast as long as the query contains toast=integrations. This toast will be rendered after sign-up and sign-in, if the
@@ -28,19 +33,24 @@ export class IntegrationsToast extends React.Component<Props, State> {
     }
 
     private updateToastVisibility(query: string): void {
-        if (query.length > 0) {
-            const parsedQuery = new URLSearchParams(location.search)
-            if (parsedQuery && parsedQuery.get('toast') === 'integrations') {
-                this.setState({
-                    visible: true,
-                })
-                eventLogger.log('IntegrationsToastViewed')
-                return
-            }
+        const canShow = localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && !showDotComMarketing
+        if (!canShow) {
+            return
         }
-        this.setState({
-            visible: false,
-        })
+        // Check if we explictily set the toast to be visible.
+        const parsedQuery = new URLSearchParams(location.search)
+        if (parsedQuery && parsedQuery.get('toast') === 'integrations') {
+            this.showToast()
+            return
+        }
+
+        // Do not show integrations toast on /search or /search?q= routes if it is their first session. Otherwise, show it.
+        const match = matchPath<{ repoRev?: string; filePath?: string }>(location.pathname, { path: '/search' })
+        if (match && daysActiveCount <= 1) {
+            return
+        }
+
+        this.showToast()
     }
 
     public componentDidMount(): void {
@@ -80,6 +90,11 @@ export class IntegrationsToast extends React.Component<Props, State> {
         )
     }
 
+    private showToast = (): void => {
+        this.setState(() => ({ visible: true }))
+        eventLogger.log('IntegrationsToastViewed')
+    }
+
     private onClickConfigure = (): void => {
         eventLogger.log('IntegrationsToastClicked')
         this.props.history.push('/settings/integrations')
@@ -92,6 +107,7 @@ export class IntegrationsToast extends React.Component<Props, State> {
     }
 
     private dismissToast = (): void => {
+        localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'true')
         this.setState({ visible: false })
     }
 }
