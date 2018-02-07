@@ -298,6 +298,9 @@ func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err 
 loop:
 	for _, r := range sr.results {
 		switch {
+		case r.repo != nil:
+			// We don't care about repo results here.
+			continue
 		case r.diff != nil:
 			// Diff searches are cheap, because we implicitly have author date info.
 			addPoint(r.diff.commit.author.date)
