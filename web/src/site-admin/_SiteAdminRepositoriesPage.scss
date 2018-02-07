@@ -52,11 +52,8 @@
         display: block;
         margin-bottom: 0.5rem;
     }
-    &__error {
-        color: $color-danger;
-    }
-    &__success {
-        color: $color-success;
+    &__alert {
+        margin-top: 1rem;
     }
     &__input-scope {
         display: flex;

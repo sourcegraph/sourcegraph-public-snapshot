@@ -64,6 +64,7 @@
 
 .btn-primary {
     background: $color-primary;
+    border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
         background: darken($color-primary, 5%);
@@ -77,6 +78,7 @@
 
 .btn-success {
     background: $color-success;
+    border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
         background: darken($color-success, 5%);
@@ -90,6 +92,7 @@
 
 .btn-danger {
     background: rgba(201, 42, 42, 0.9);
+    border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
         background: darken(rgba(201, 42, 42, 0.9), 10%);
@@ -140,6 +143,7 @@
 
 .btn-info {
     background: $color-info;
+    border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
         background: lighten($color-info, 5%);

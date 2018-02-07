@@ -8,6 +8,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { catchError } from 'rxjs/operators/catchError'
 import { mergeMap } from 'rxjs/operators/mergeMap'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import {
@@ -176,6 +177,7 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                 .pipe(
                     mergeMap(({ repoName }) =>
                         fetchRepository({ repoPath: `github.com/${repoName}` }).pipe(
+                            switchMap(repo => setRepositoryEnabled(repo.id, true)),
                             catchError(error => {
                                 console.error(error)
                                 eventLogger.log('PublicRepositoryAdditionFailed', {
@@ -190,6 +192,7 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                 .subscribe(() => {
                     eventLogger.log('PublicRepositoryAdded', { repositories: { code_host: 'github' } })
                     this.setState({ repoName: '', success: 'Repository added', error: undefined })
+                    setTimeout(() => this.setState({ success: '' }), 1000)
                     if (this.inputElement) {
                         this.inputElement.focus()
                     }
@@ -206,8 +209,6 @@ export class AddPublicRepositoryForm extends React.PureComponent<
         return (
             <div className="add-public-repository-form">
                 <h3 className="add-public-repository-form__title">Add a public repository</h3>
-                {this.state.error && <div className="add-public-repository-form__error">{this.state.error}</div>}
-                {this.state.success && <div className="add-public-repository-form__success">{this.state.success}</div>}
                 <form className="add-public-repository-form__form" onSubmit={this.onSubmit}>
                     <div className="add-public-repository-form__input-scope">
                         <span className="add-public-repository-form__input-scope-text">{'https://github.com'}/</span>
@@ -230,6 +231,12 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                         Add
                     </button>
                 </form>
+                {this.state.error && (
+                    <div className="alert alert-danger add-public-repository-form__alert">{this.state.error}</div>
+                )}
+                {this.state.success && (
+                    <div className="alert alert-success add-public-repository-form__alert">{this.state.success}</div>
+                )}
             </div>
         )
     }
@@ -334,12 +341,22 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                 <div className="site-admin-page__header">
                     <h2 className="site-admin-page__header-title">Repositories</h2>
                     <div className="site-admin-page__actions">
-                        <div
-                            onClick={this.onDidClickAddPublicRepositoryForm}
-                            className="btn btn-primary btn-sm site-admin-page__actions-btn"
+                        <button
+                            onClick={this.toggleAddPublicRepositoryForm}
+                            className={`btn btn-sm site-admin-page__actions-btn ${
+                                this.state.addPublicRepositoryFormVisible ? 'btn-secondary' : 'btn-primary'
+                            }`}
                         >
-                            <AddIcon className="icon-inline" /> Add public GitHub.com repository
-                        </div>
+                            {this.state.addPublicRepositoryFormVisible ? (
+                                <>
+                                    <Close className="icon-inline" /> Close
+                                </>
+                            ) : (
+                                <>
+                                    <AddIcon className="icon-inline" /> Add public GitHub.com repository
+                                </>
+                            )}
+                        </button>
                         <Link
                             to="/site-admin/configuration"
                             className="btn btn-primary btn-sm site-admin-page__actions-btn"
@@ -372,7 +389,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 
-    private onDidClickAddPublicRepositoryForm = () => {
+    private toggleAddPublicRepositoryForm = () => {
         eventLogger.log('AddPublicRepositoryFormClicked')
         this.setState(state => ({ addPublicRepositoryFormVisible: !state.addPublicRepositoryFormVisible }))
     }
