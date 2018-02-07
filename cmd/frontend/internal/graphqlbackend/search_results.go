@@ -509,6 +509,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		excludePattern := unionRegExps(excludePatterns)
 		args.query.ExcludePattern = &excludePattern
 	}
+	if err := args.query.validate(); err != nil {
+		return nil, &badRequestError{err}
+	}
 
 	// Determine which types of results to return.
 	var searchFuncs []func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error)

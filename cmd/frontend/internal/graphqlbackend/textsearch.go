@@ -570,10 +570,6 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		tr.Finish()
 	}()
 
-	if err := args.query.validate(); err != nil {
-		return nil, nil, &badRequestError{err}
-	}
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
