@@ -1,7 +1,7 @@
 export default [
     {
         query:
-            'type:diff repo:@*refs/heads/ Copyleft|GPL|AGPL|LGPL|General.*Public.*License|Affero.*General.*Public.*License|MPL|Mozilla.*Public.*License',
+            'type:diff repo:@*refs/heads/ case:yes Copyleft|GPL|AGPL|LGPL|General.*Public.*License|Affero.*General.*Public.*License|\bMPL\b|Mozilla.*Public.*License',
         description: 'Changes mentioning a copyleft (GPL, LGPL, etc) license (all branches)',
     },
     {
