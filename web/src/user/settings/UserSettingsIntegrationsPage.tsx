@@ -143,66 +143,68 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                         </a>
                     </div>
                 </div>
-                <table className="table-hover user-integrations__table">
-                    <tbody>
-                        <tr className="user-integrations__table-row">
-                            <td className="user-integrations__table-item">Code search</td>
-                            <td>
-                                <div className="user-integrations__btn-container">
-                                    <button className={`btn btn-secondary btn-sm`} disabled={true}>
-                                        Enabled
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr className="user-integrations__table-row">
-                            <td className="user-integrations__table-item">Code intelligence</td>
-                            <td>
-                                <div className="user-integrations__btn-container">
-                                    <button
-                                        className={`btn btn-${
-                                            this.state.info.hasCodeIntelligence ? 'secondary' : 'primary'
-                                        } btn-sm`}
-                                        onClick={this.enableCodeIntelligence}
-                                        disabled={this.state.info.hasCodeIntelligence}
-                                    >
-                                        {this.state.info.hasCodeIntelligence ? 'Enabled' : 'Enable'}
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr className="user-integrations__table-row">
-                            <td className="user-integrations__table-item">GitHub</td>
-                            <td>
-                                <div className="user-integrations__btn-container">
-                                    <button className={`btn btn-secondary btn-sm`} disabled={true}>
-                                        Enabled
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr className="user-integrations__table-row">
-                            <td className="user-integrations__table-item">GitHub Enterprise</td>
-                            <td>
-                                <div className="user-integrations__btn-container">
-                                    <button className={`btn btn-secondary btn-sm`} disabled={true}>
-                                        Enabled
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr className="user-integrations__table-row">
-                            <td className="user-integrations__table-item">Other code hosts</td>
-                            <td>
-                                <div className="user-integrations__btn-container">
-                                    <button className={`btn btn-primary btn-sm`} onClick={this.contactUsClicked}>
-                                        Contact us
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div className="user-integrations__form">
+                    <table className="table-hover user-integrations__table">
+                        <tbody>
+                            <tr className="user-integrations__table-row">
+                                <td className="user-integrations__table-item">Code search</td>
+                                <td>
+                                    <div className="user-integrations__btn-container">
+                                        <button className={`btn btn-secondary btn-sm`} disabled={true}>
+                                            Enabled
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr className="user-integrations__table-row">
+                                <td className="user-integrations__table-item">Code intelligence</td>
+                                <td>
+                                    <div className="user-integrations__btn-container">
+                                        <button
+                                            className={`btn btn-${
+                                                this.state.info.hasCodeIntelligence ? 'secondary' : 'primary'
+                                            } btn-sm`}
+                                            onClick={this.enableCodeIntelligence}
+                                            disabled={this.state.info.hasCodeIntelligence}
+                                        >
+                                            {this.state.info.hasCodeIntelligence ? 'Enabled' : 'Enable'}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr className="user-integrations__table-row">
+                                <td className="user-integrations__table-item">GitHub</td>
+                                <td>
+                                    <div className="user-integrations__btn-container">
+                                        <button className={`btn btn-secondary btn-sm`} disabled={true}>
+                                            Enabled
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr className="user-integrations__table-row">
+                                <td className="user-integrations__table-item">GitHub Enterprise</td>
+                                <td>
+                                    <div className="user-integrations__btn-container">
+                                        <button className={`btn btn-secondary btn-sm`} disabled={true}>
+                                            Enabled
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr className="user-integrations__table-row">
+                                <td className="user-integrations__table-item">Other code hosts</td>
+                                <td>
+                                    <div className="user-integrations__btn-container">
+                                        <button className={`btn btn-primary btn-sm`} onClick={this.contactUsClicked}>
+                                            Contact us
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
                 <div className="user-integrations__sub-section">
                     <h4 className="input-label">Sourcegraph Server URL</h4>
                     <p>
