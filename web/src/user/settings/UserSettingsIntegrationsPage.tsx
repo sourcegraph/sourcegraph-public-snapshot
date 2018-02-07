@@ -121,7 +121,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                     <div className="user-integrations__action-items">
                         <a
                             className={`btn btn-primary ${
-                                this.state.browserExtensionInstalled && IS_CHROME ? 'btn-disabled' : ''
+                                this.state.browserExtensionInstalled && IS_CHROME ? 'disabled' : ''
                             }`}
                             target="_blank"
                             href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
@@ -133,7 +133,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                     <div className="user-integrations__action-items">
                         <a
                             className={`btn btn-primary ${
-                                this.state.browserExtensionInstalled && IS_FIREFOX ? 'btn-disabled' : ''
+                                this.state.browserExtensionInstalled && IS_FIREFOX ? 'disabled' : ''
                             }`}
                             target="_blank"
                             href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-addon-for-github/"

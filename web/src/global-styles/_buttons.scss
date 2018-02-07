@@ -13,7 +13,8 @@
     outline: none;
     transition: box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
 
-    &:disabled {
+    &:disabled,
+    &.disabled {
         opacity: 0.4;
         cursor: not-allowed;
     }
@@ -39,12 +40,12 @@
         @extend .icon-inline;
     }
 
-    &:focus:not(:disabled) {
+    &:focus:not(:disabled):not(.disabled) {
         outline: darken($color-primary, 5%);
         box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
     }
 
-    &:hover:not(:disabled) {
+    &:hover:not(:disabled):not(.disabled) {
         color: white;
 
         .theme-light & {
@@ -64,11 +65,11 @@
 .btn-primary {
     background: $color-primary;
 
-    &:hover:not(:disabled) {
+    &:hover:not(:disabled):not(.disabled) {
         background: darken($color-primary, 5%);
     }
 
-    &:focus:not(:disabled) {
+    &:focus:not(:disabled):not(.disabled) {
         outline: darken($color-primary, 5%);
         box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
     }
@@ -77,11 +78,11 @@
 .btn-success {
     background: $color-success;
 
-    &:hover:not(:disabled) {
+    &:hover:not(:disabled):not(.disabled) {
         background: darken($color-success, 5%);
     }
 
-    &:focus:not(:disabled) {
+    &:focus:not(:disabled):not(.disabled) {
         outline: darken($color-success, 5%);
         box-shadow: 0 0 0 2px rgba($color-success, 0.5);
     }
@@ -90,11 +91,11 @@
 .btn-danger {
     background: rgba(201, 42, 42, 0.9);
 
-    &:hover:not(:disabled) {
+    &:hover:not(:disabled):not(.disabled) {
         background: darken(rgba(201, 42, 42, 0.9), 10%);
     }
 
-    &:focus:not(:disabled) {
+    &:focus:not(:disabled):not(.disabled) {
         outline: darken($color-danger, 5%);
         box-shadow: 0 0 0 2px rgba($color-danger, 0.5);
     }
@@ -108,7 +109,7 @@
         border: $color-light-border-2;
     }
 
-    &:hover:not(:disabled) {
+    &:hover:not(:disabled):not(.disabled) {
         // stylelint-disable-next-line declaration-property-unit-whitelist
         border-color: lighten($color-border, 10%);
         color: lighten($color-secondary, 10%);
@@ -119,7 +120,7 @@
         }
     }
 
-    &:focus:not(:disabled) {
+    &:focus:not(:disabled):not(.disabled) {
         outline: lighten($color-secondary, 10%);
         box-shadow: 0 0 0 2px rgba($color-secondary, 0.5);
     }
@@ -139,11 +140,11 @@
 .btn-info {
     background: $color-info;
 
-    &:hover:not(:disabled) {
+    &:hover:not(:disabled):not(.disabled) {
         background: lighten($color-info, 5%);
     }
 
-    &:focus:not(:disabled) {
+    &:focus:not(:disabled):not(.disabled) {
         outline: lighten($color-info, 5%);
         box-shadow: 0 0 0 2px rgba($color-info, 0.5);
     }
@@ -165,7 +166,6 @@
     }
 }
 
-.btn-disabled {
-    opacity: 0.4;
+.disabled {
     pointer-events: none;
 }
