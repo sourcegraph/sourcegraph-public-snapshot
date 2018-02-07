@@ -117,6 +117,7 @@ func serveOnPremTelemetryModification(r *http.Request) {
 	r.ContentLength = int64(buf.Len())
 	r.Body = ioutil.NopCloser(&buf)
 
+	stripTelemetryRequest(r)
 	r.URL.Scheme, r.URL.Host = "https", "example.com" // needed for DumpRequestOut
 	telemetry.Sample(r)
 
