@@ -172,7 +172,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<v
             }
             return mutateGraphQL(
                 gql`
-                    mutation AcceptUserInvite {
+                    mutation AcceptUserInvite($inviteToken: String!) {
                         acceptUserInvite(inviteToken: $inviteToken) {
                             alwaysNil
                         }
