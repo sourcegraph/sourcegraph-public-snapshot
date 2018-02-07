@@ -169,7 +169,8 @@ export class SavedQueries extends React.Component<Props, State> {
                                 <h2>Saved searches</h2>
                             </div>
                         )}
-                    {this.state.savedQueries.length === 0 && <p>You don't have any saved searches yet.</p>}
+                    {!isHomepage &&
+                        this.state.savedQueries.length === 0 && <p>You don't have any saved searches yet.</p>}
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
                             key={`${savedQuery.query.query}-${i}`}
@@ -185,7 +186,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         <div className="saved-query">
                             <Link to="/search/searches">
                                 <div className={`saved-query__row`}>
-                                    <div className="saved-query__add-query">
+                                    <div className="saved-query-row__add-query">
                                         <AddIcon className="icon-inline" /> Add a new search to start monitoring your
                                         code
                                     </div>
