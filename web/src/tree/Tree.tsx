@@ -87,7 +87,7 @@ export class Tree extends React.PureComponent<Props, State> {
                 if (el) {
                     el.scrollIntoView({ behavior: 'instant' })
                 }
-            }, 500)
+            })
         }
     }
 
@@ -120,7 +120,7 @@ export class Tree extends React.PureComponent<Props, State> {
                         el.scrollIntoView({ behavior: 'instant' })
                     }
                 }
-            }, 250)
+            })
         }
     }
 
