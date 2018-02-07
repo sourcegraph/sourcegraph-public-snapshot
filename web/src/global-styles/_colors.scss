@@ -8,7 +8,6 @@ It should be imported into app.scss
 // Semantic/state colors (theme-agnostic)
 $color-primary: $oc-blue-7;
 $color-secondary: #93a9c8;
-$color-warning: $oc-yellow-7;
 $color-success: $oc-teal-7;
 $color-danger: $oc-red-7;
 $color-info: $oc-cyan-7;
@@ -23,12 +22,6 @@ $color-text: #c9d4e3;
 $color-text-1: #a2b0cd;
 $color-text-2: #f2f4f8;
 $color-border: #2b3750;
-
-$color-bg-alert: #2b3750;
-$color-bg-alert-info: #1862ab;
-$color-bg-alert-success: $oc-green-9;
-$color-bg-alert-warning: $oc-yellow-9;
-$color-bg-alert-danger: $oc-red-9;
 
 // TODO add Basics color standards to Dark Theme
 
@@ -48,9 +41,3 @@ $color-light-text-5: #07090d;
 
 $color-light-border: #cad2e2;
 $color-light-border-2: #e4e9f1;
-
-$color-light-bg-alert: #f2f4f8;
-$color-light-bg-alert-info: #e8f7ff;
-$color-light-bg-alert-success: $oc-green-0;
-$color-light-bg-alert-warning: $oc-yellow-0;
-$color-light-bg-alert-danger: $oc-red-0;

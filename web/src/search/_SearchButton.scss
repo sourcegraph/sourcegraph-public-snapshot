@@ -1,4 +1,7 @@
 .search-button {
+    display: flex;
+    padding: 0 1rem;
+    border-radius: 2px;
     margin-left: 0.5rem;
 
     &__label {
@@ -6,6 +9,7 @@
     }
 
     @media (max-width: $media-lg) {
+        padding: 0 0.5rem;
         &__label {
             display: none;
         }

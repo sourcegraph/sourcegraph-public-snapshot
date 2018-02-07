@@ -91,7 +91,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
                             onInput={this.onOldPasswordFieldChange}
                             disabled={this.state.loading}
                             name="oldPassword"
-                            placeholder=" "
+                            placeholder=""
                         />
                     </div>
                     <div className="form-group">
@@ -101,7 +101,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
                             onInput={this.onNewPasswordFieldChange}
                             disabled={this.state.loading}
                             name="newPassword"
-                            placeholder=" "
+                            placeholder=""
                         />
                     </div>
                     <div className="form-group">
@@ -111,7 +111,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
                             onInput={this.onNewPasswordConfirmationFieldChange}
                             disabled={this.state.loading}
                             name="newPasswordConfirmation"
-                            placeholder=" "
+                            placeholder=""
                             inputRef={this.setNewPasswordConfirmationField}
                         />
                     </div>

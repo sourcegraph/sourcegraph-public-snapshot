@@ -14,14 +14,15 @@
             border-bottom-left-radius: 0;
             border-bottom-right-radius: 0;
             border-top-right-radius: 0;
-            padding-left: 1rem;
-            padding-right: 1rem;
+            padding-left: 3rem;
+            padding-right: 3rem;
+            font-weight: bold;
         }
         &-last {
             border-bottom-right-radius: 0;
             border-bottom-left-radius: 0;
             border-top-left-radius: 0;
-            padding-left: 1rem;
+            padding-left: 0.75rem;
             padding-right: 1rem;
         }
     }

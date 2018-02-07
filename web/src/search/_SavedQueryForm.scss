@@ -2,8 +2,30 @@
     padding: 1rem;
     border: 1px solid $color-border;
 
-    &__close {
-        float: right;
+    &__error {
+        margin-top: 1rem;
+        color: $color-danger;
+
+        &-icon {
+            vertical-align: middle;
+        }
+    }
+
+    .form-control:not(:first-child) {
+        margin: 0.25rem 0 0.5rem 0;
+    }
+
+    &__button {
+        margin-top: 0.5rem;
+
+        &:not(:first-child) {
+            margin-left: 0.5rem;
+        }
+    }
+
+    &__save-location,
+    &__also-notifying {
+        margin: 0 0 0.5rem 0;
     }
 
     &__save-location-options {
@@ -12,6 +34,15 @@
 
     &__save-location-input {
         margin-right: 0.25rem;
+    }
+
+    &__title-row {
+        display: flex;
+        flex-direction: row;
+    }
+
+    &__spacer {
+        flex: 1;
     }
 }
 

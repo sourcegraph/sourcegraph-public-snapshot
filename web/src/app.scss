@@ -156,19 +156,18 @@ body {
 // Formats an icon so that it appears inline in the text
 // with height matching the text
 .icon-inline {
-    // SVGs already include padding to account for text baseline,
-    // so align with the bottom of the text
-    vertical-align: bottom;
+    vertical-align: middle;
+    // Center SVG inside the container
     display: inline-flex;
     align-items: center;
 
     svg {
         // TODO find a better way to scale icons that is not proportional to the font size
-        // 14px font size -> 20px icon size
+        // 14px font size -> 21px icon size
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: 1.4285714286em;
+        width: 1.5em;
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: 1.4285714286em;
+        height: 1.5em;
         // Match color of the text
         fill: currentColor;
     }
@@ -262,36 +261,43 @@ body {
 }
 
 .alert {
-    border-radius: 0.125rem;
-    padding: 1rem;
-    color: $color-text-2;
-    background-color: rgba($color-bg-alert, 0.5);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
 
     &-success {
-        background-color: rgba($color-bg-alert-success, 0.5);
+        border: 1px solid #37b24d;
+        background: rgba(43, 138, 62, 0.5);
+        color: #f2f4f8;
     }
 
     &-warning {
-        background-color: rgba($color-bg-alert-warning, 0.5);
+        border: 1px solid #f59f00;
+        background: rgba(230, 119, 0, 0.5);
+        color: #f2f4f8;
     }
 
-    &-info {
-        background-color: rgba($color-bg-alert-info, 0.5);
+    &-notice {
+        border: 1px solid #f8e7ba;
+        background: rgba(250, 245, 228, 0.5);
+        color: $color-text-2;
     }
 
     &-danger {
-        background-color: rgba($color-bg-alert-danger, 0.5);
+        border: 1px solid #f03e3e;
+        background: rgba(201, 42, 42, 0.5);
+        color: #f2f4f8;
     }
 
     &-primary {
         border: 1px solid #2b3750;
         background: #1d2535;
+        color: #f2f4f8;
     }
 
     a {
         text-decoration: underline;
         font-weight: bold;
-        color: inherit;
+        color: #f2f4f8;
 
         &:hover,
         &:focus {
@@ -312,23 +318,26 @@ body {
 
 .theme-light {
     .alert {
-        color: $color-light-text-1;
-        background-color: $color-light-bg-alert;
-
         &-success {
-            background-color: $color-light-bg-alert-success;
+            background: rgba(43, 138, 62, 0.85);
         }
 
         &-danger {
-            background-color: $color-light-bg-alert-danger;
+            background: rgba(201, 42, 42, 0.75);
+            color: #f2f4f8;
         }
 
         &-warning {
-            background-color: $color-light-bg-alert-warning;
+            background: rgba(230, 119, 0, 0.75);
+            color: #f2f4f8;
         }
 
-        &-info {
-            background-color: $color-light-bg-alert-info;
+        &-notice {
+            background: rgba(250, 245, 228, 0.75);
+            &,
+            a {
+                color: $color-light-text-1;
+            }
         }
     }
 }

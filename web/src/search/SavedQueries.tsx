@@ -110,20 +110,21 @@ export class SavedQueries extends React.Component<Props, State> {
                 {!isHomepage && (
                     <div>
                         <div className="saved-queries__header">
-                            <h3>{!isPanelOpen && 'Saved searches'}</h3>
-                            <span>
+                            <h2>{!isPanelOpen && 'Saved searches'}</h2>
+                            <span className="saved-queries__center">
                                 {!window.context.sourcegraphDotComMode && (
                                     <button
-                                        className="btn btn-link"
+                                        className="btn btn-link saved-queries__btn"
                                         onClick={this.toggleExamples}
                                         disabled={this.state.isViewingExamples}
                                     >
-                                        <WandIcon className="icon-inline" /> Discover built-in searches
+                                        <WandIcon className="icon-inline saved-queries__wand" />
+                                        Discover built-in searches
                                     </button>
                                 )}
 
                                 <button
-                                    className="btn btn-link"
+                                    className="btn btn-link saved-queries__btn"
                                     onClick={this.toggleCreating}
                                     disabled={this.state.isCreating}
                                 >
@@ -132,11 +133,14 @@ export class SavedQueries extends React.Component<Props, State> {
 
                                 <a
                                     onClick={this.onDidClickQueryHelp}
-                                    className="btn btn-link"
+                                    className="saved-queries__help saved-queries__btn"
                                     href="https://about.sourcegraph.com/docs/search/#saved-searches"
                                     target="_blank"
                                 >
-                                    <HelpIcon className="icon-inline" /> Help
+                                    <small>
+                                        <HelpIcon className="icon-inline" />
+                                        <span>Help</span>
+                                    </small>
                                 </a>
                             </span>
                         </div>
@@ -165,7 +169,7 @@ export class SavedQueries extends React.Component<Props, State> {
                     {!this.props.hideExampleSearches &&
                         isPanelOpen && (
                             <div className="saved-queries__header saved-queries__space">
-                                <h3>Saved searches</h3>
+                                <h2>Saved searches</h2>
                             </div>
                         )}
                     {this.state.savedQueries.map((savedQuery, i) => (
