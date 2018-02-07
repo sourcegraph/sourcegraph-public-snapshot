@@ -521,7 +521,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.query.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path"}
+			resultTypes = []string{"file", "path", "repo"}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
@@ -541,6 +541,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		}
 		seenResultTypes[resultType] = struct{}{}
 		switch resultType {
+		case "repo":
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+				return searchRepositories(ctx, &args, r.query)
+			})
 		case "file", "path":
 			if searchedFileContentsOrPaths {
 				// type:file and type:path use same searchFilesInRepos, so don't call 2x.
@@ -629,11 +633,13 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 }
 
 type searchResult struct {
-	fileMatch *fileMatch
-	diff      *commitSearchResult
+	repo      *repositoryResolver // repo name match
+	fileMatch *fileMatch          // text match
+	diff      *commitSearchResult // diff or commit match
 }
 
-func (g *searchResult) ToFileMatch() (*fileMatch, bool) { return g.fileMatch, g.fileMatch != nil }
+func (g *searchResult) ToRepository() (*repositoryResolver, bool) { return g.repo, g.repo != nil }
+func (g *searchResult) ToFileMatch() (*fileMatch, bool)           { return g.fileMatch, g.fileMatch != nil }
 func (g *searchResult) ToCommitSearchResult() (*commitSearchResult, bool) {
 	return g.diff, g.diff != nil
 }

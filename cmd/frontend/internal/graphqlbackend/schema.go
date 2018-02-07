@@ -335,7 +335,7 @@ type Search {
     stats: SearchResultsStats!
 }
 
-union SearchResult = FileMatch | CommitSearchResult
+union SearchResult = FileMatch | CommitSearchResult | Repository
 
 type SearchResults {
     results: [SearchResult!]!
