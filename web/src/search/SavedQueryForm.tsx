@@ -140,7 +140,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     ) : (
                         <div className="saved-query-form__spacer" />
                     )}
-                    <button className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
+                    <button type="reset" className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
                         <CloseIcon />
                     </button>
                 </div>
