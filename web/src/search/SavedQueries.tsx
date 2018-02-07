@@ -151,9 +151,6 @@ export class SavedQueries extends React.Component<Props, State> {
                                 values={this.state.exampleQuery || {}}
                             />
                         )}
-                        {!this.state.isCreating &&
-                            !this.state.isViewingExamples &&
-                            this.state.savedQueries.length === 0 && <p>You don't have any saved searches yet.</p>}
                     </div>
                 )}
                 <div>
@@ -172,6 +169,8 @@ export class SavedQueries extends React.Component<Props, State> {
                                 <h2>Saved searches</h2>
                             </div>
                         )}
+                    {!this.state.isCreating &&
+                        this.state.savedQueries.length === 0 && <p>You don't have any saved searches yet.</p>}
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
                             key={`${savedQuery.query.query}-${i}`}
