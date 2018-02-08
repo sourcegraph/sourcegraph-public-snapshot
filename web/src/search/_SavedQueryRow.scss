@@ -83,7 +83,9 @@
     }
 
     &__result-count {
-        display: inline-block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         padding: 0.25rem 0.5rem;
         margin: 0.25rem 0 0.25rem 0.5rem;
         border-radius: 1.125rem;
