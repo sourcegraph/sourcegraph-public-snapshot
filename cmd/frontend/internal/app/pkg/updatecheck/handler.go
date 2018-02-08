@@ -14,17 +14,17 @@ import (
 
 var (
 	latestReleaseBuild = build{
-		Timestamp:  1516661735,
-		Version:    "2.4.3",
+		Timestamp:  1518081026,
+		Version:    "2.5.0",
 		IsReleased: true,
 		Assets: []asset{
 			{
 				Name:           "docker-image",
-				Version:        "2.4.3",
-				ProductVersion: "2.4.3",
+				Version:        "2.5.0",
+				ProductVersion: "2.5.0",
 				Platform:       "docker",
 				Type:           "docker-image",
-				URL:            "docker.io/sourcegraph/server:2.4.3",
+				URL:            "docker.io/sourcegraph/server:2.5.0",
 			},
 		},
 	}
