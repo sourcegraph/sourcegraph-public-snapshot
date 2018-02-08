@@ -167,9 +167,9 @@ body {
         // TODO find a better way to scale icons that is not proportional to the font size
         // 14px font size -> 20px icon size
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: 1.4285714286em;
+        width: (20em / 14);
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: 1.4285714286em;
+        height: (20em / 14);
         // Match color of the text
         fill: currentColor;
     }
