@@ -115,12 +115,12 @@
 
     &:hover:not(:disabled):not(.disabled) {
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        border-color: lighten($color-border, 10%);
-        color: lighten($color-secondary, 10%);
+        border-color: $color-border;
+        color: $color-text-3;
         .theme-light & {
             // stylelint-disable-next-line declaration-property-unit-whitelist
-            border-color: darken($color-light-border-2, 10%);
-            color: darken($color-light-text-2, 10%);
+            border-color: $color-light-border;
+            color: $color-light-text-6;
         }
     }
 

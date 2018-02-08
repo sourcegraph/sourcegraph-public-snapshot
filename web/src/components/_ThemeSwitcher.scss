@@ -1,5 +1,4 @@
 $color-theme-switcher-background: rgba(42, 58, 81, 0.7);
-$color-theme-switcher-background-selected: #39496a;
 $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
 
 .theme-switcher {
@@ -21,7 +20,7 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
         padding-right: 0.25rem;
 
         &--selected {
-            background-color: $color-theme-switcher-background-selected;
+            background-color: $color-bg-5;
             color: inherit;
 
             .theme-switcher__link:hover {
