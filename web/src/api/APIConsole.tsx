@@ -44,7 +44,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
         return (
             <div className="api-console">
                 <h2>Sourcegraph GraphQL API console</h2>
-                <div className="alert alert-info api-console__alert">
+                <div className="alert alert-warning api-console__alert">
                     The API console uses your <strong>real production data</strong>.
                 </div>
                 <iframe
