@@ -245,7 +245,7 @@ func Main() error {
 	internalHandler = gcontext.ClearHandler(internalHandler)
 
 	// 🚨 SECURITY: Verify user identity if required
-	h, err = auth.NewSSOAuthHandler(context.Background(), h, appURL)
+	h, err = auth.NewAuthHandler(context.Background(), h, appURL)
 	if err != nil {
 		return err
 	}
