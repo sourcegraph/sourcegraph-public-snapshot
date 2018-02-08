@@ -23,7 +23,7 @@ export function refreshSiteFlags(): Observable<never> {
                 noRepositoriesEnabled
                 hasCodeIntelligence
                 externalAuthEnabled
-                disableExampleSearches
+                disableBuiltInSearches
             }
         }
     `).pipe(

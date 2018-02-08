@@ -32,7 +32,12 @@
       "type": "boolean"
     },
     "disableExampleSearches": {
-      "description": "Whether you would like to have example searches shown on the saved searches page",
+      "description":
+        "(Deprecated: use disableBuiltInSearches) Whether built-in searches should be hidden on the Searches page.",
+      "type": "boolean"
+    },
+    "disableBuiltInSearches": {
+      "description": "Whether built-in searches should be hidden on the Searches page.",
       "type": "boolean"
     },
     "tlsCert": {

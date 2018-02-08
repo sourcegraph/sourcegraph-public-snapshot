@@ -4,5 +4,5 @@ export type SiteFlags = Pick<
     | 'noRepositoriesEnabled'
     | 'hasCodeIntelligence'
     | 'externalAuthEnabled'
-    | 'disableExampleSearches'
+    | 'disableBuiltInSearches'
 >

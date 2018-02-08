@@ -39,7 +39,7 @@ interface State {
 
     isViewingExamples: boolean
     exampleQuery: Partial<SavedQueryFields> | null
-    disableExampleSearches: boolean
+    disableBuiltInSearches: boolean
 }
 
 const EXAMPLE_SEARCHES_CLOSED_KEY = 'example-searches-closed'
@@ -54,7 +54,7 @@ export class SavedQueries extends React.Component<Props, State> {
             ? false
             : localStorage.getItem(EXAMPLE_SEARCHES_CLOSED_KEY) !== 'true',
         exampleQuery: null,
-        disableExampleSearches: false,
+        disableBuiltInSearches: false,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -84,11 +84,11 @@ export class SavedQueries extends React.Component<Props, State> {
 
         this.subscriptions.add(
             siteFlags
-                .pipe(map(({ disableExampleSearches }) => disableExampleSearches))
-                .subscribe(disableExampleSearches => {
+                .pipe(map(({ disableBuiltInSearches }) => disableBuiltInSearches))
+                .subscribe(disableBuiltInSearches => {
                     this.setState({
                         // TODO: Remove the need to check sourcegraphDotComMode by adding this to config
-                        disableExampleSearches: window.context.sourcegraphDotComMode ? true : disableExampleSearches,
+                        disableBuiltInSearches: window.context.sourcegraphDotComMode || disableBuiltInSearches,
                     })
                 })
         )
@@ -138,7 +138,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         <div className="saved-queries__header">
                             <h2>{!isPanelOpen && 'Saved searches'}</h2>
                             <span className="saved-queries__center">
-                                {!this.state.disableExampleSearches && (
+                                {!this.state.disableBuiltInSearches && (
                                     <button
                                         className="btn btn-link saved-queries__btn"
                                         onClick={this.toggleExamples}
@@ -190,7 +190,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                 onExampleSelected={this.onExampleSelected}
                             />
                         )}
-                    {!this.state.disableExampleSearches &&
+                    {!this.state.disableBuiltInSearches &&
                         !this.props.hideExampleSearches &&
                         isPanelOpen && (
                             <div className="saved-queries__header saved-queries__space">
