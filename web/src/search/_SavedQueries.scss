@@ -22,6 +22,10 @@
         justify-content: space-between;
     }
 
+    &__actions {
+        display: flex;
+    }
+
     .saved-query-form {
         flex: 1 1 auto;
         color: $color-text-2;

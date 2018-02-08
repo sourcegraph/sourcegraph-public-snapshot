@@ -137,7 +137,7 @@ export class SavedQueries extends React.Component<Props, State> {
                     <div>
                         <div className="saved-queries__header">
                             <h3>{!isPanelOpen && 'Saved searches'}</h3>
-                            <span>
+                            <div className="saved-queries__actions">
                                 {!this.state.disableBuiltInSearches && (
                                     <button
                                         className="btn btn-link"
@@ -159,7 +159,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                 <a onClick={this.onDidClickQueryHelp} className="btn btn-link" target="_blank">
                                     <HelpIcon className="icon-inline" /> Help
                                 </a>
-                            </span>
+                            </div>
                         </div>
                         {this.state.isCreating && (
                             <SavedQueryCreateForm
