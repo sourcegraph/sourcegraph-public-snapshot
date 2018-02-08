@@ -10,6 +10,7 @@ import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
+import { siteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { observeSavedQueries } from './backend'
 import { ExampleSearches } from './ExampleSearches'
@@ -38,6 +39,7 @@ interface State {
 
     isViewingExamples: boolean
     exampleQuery: Partial<SavedQueryFields> | null
+    disableExampleSearches: boolean
 }
 
 const EXAMPLE_SEARCHES_CLOSED_KEY = 'example-searches-closed'
@@ -52,6 +54,7 @@ export class SavedQueries extends React.Component<Props, State> {
             ? false
             : localStorage.getItem(EXAMPLE_SEARCHES_CLOSED_KEY) !== 'true',
         exampleQuery: null,
+        disableExampleSearches: false,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -77,6 +80,17 @@ export class SavedQueries extends React.Component<Props, State> {
                     }))
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
+        )
+
+        this.subscriptions.add(
+            siteFlags
+                .pipe(map(({ disableExampleSearches }) => disableExampleSearches))
+                .subscribe(disableExampleSearches => {
+                    this.setState({
+                        // TODO: Remove the need to check sourcegraphDotComMode by adding this to config
+                        disableExampleSearches: window.context.sourcegraphDotComMode ? true : disableExampleSearches,
+                    })
+                })
         )
 
         this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
@@ -124,7 +138,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         <div className="saved-queries__header">
                             <h2>{!isPanelOpen && 'Saved searches'}</h2>
                             <span className="saved-queries__center">
-                                {!window.context.sourcegraphDotComMode && (
+                                {!this.state.disableExampleSearches && (
                                     <button
                                         className="btn btn-link saved-queries__btn"
                                         onClick={this.toggleExamples}
@@ -176,7 +190,8 @@ export class SavedQueries extends React.Component<Props, State> {
                                 onExampleSelected={this.onExampleSelected}
                             />
                         )}
-                    {!this.props.hideExampleSearches &&
+                    {!this.state.disableExampleSearches &&
+                        !this.props.hideExampleSearches &&
                         isPanelOpen && (
                             <div className="saved-queries__header saved-queries__space">
                                 <h2>Saved searches</h2>

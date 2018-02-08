@@ -23,6 +23,7 @@
   //
   // "gitoliteHosts": "gitolite.sgdev.org/!git@gitolite.sgdev.org",
   "corsOrigin": "https://github.com http://phabricator.sgdev.org",
+  "disableExampleSearches": true,
   "github": [
     {
       "url": "http://ghe.sgdev.org",

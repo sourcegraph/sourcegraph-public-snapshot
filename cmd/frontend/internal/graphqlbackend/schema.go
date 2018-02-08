@@ -1362,6 +1362,8 @@ type Site implements ConfigurationSubject {
     hasCodeIntelligence: Boolean!
     # Whether the site is using an external authentication service such as oidc or saml.
     externalAuthEnabled: Boolean!
+    # Whether we want to show example searches on the saved searches page
+    disableExampleSearches: Boolean!
 }
 
 # The configuration for a site.

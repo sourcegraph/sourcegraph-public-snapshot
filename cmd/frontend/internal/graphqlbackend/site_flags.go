@@ -75,3 +75,7 @@ var isExternalAuthEnabled = func() bool {
 }()
 
 func (*siteResolver) ExternalAuthEnabled() bool { return isExternalAuthEnabled }
+
+var disableExampleSearches = conf.Get().DisableExampleSearches
+
+func (*siteResolver) DisableExampleSearches() bool { return disableExampleSearches }

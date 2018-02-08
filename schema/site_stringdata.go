@@ -36,6 +36,10 @@ const SiteSchemaJSON = `{
         "Prevent usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
       "type": "boolean"
     },
+    "disableExampleSearches": {
+      "description": "Whether you would like to have example searches shown on the saved searches page",
+      "type": "boolean"
+    },
     "tlsCert": {
       "description": "TLS certificate for the web app.",
       "type": "string"
