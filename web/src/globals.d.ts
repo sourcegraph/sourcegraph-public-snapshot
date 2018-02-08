@@ -108,6 +108,11 @@ interface SourcegraphContext {
     site: {
         'auth.allowSignup': boolean
     }
+
+    /**
+     * Likely running within a Docker container under a Mac host OS.
+     */
+    likelyDockerOnMac: boolean
 }
 
 declare module '*.json' {

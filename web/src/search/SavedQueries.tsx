@@ -108,6 +108,17 @@ export class SavedQueries extends React.Component<Props, State> {
 
         return (
             <div className="saved-queries">
+                {!isHomepage &&
+                    window.context.likelyDockerOnMac && (
+                        <div className="saved-queries__alert alert alert-warning">
+                            It looks like you're using Docker for Mac. Due to known issues related to Docker for Mac's
+                            file system access, search performance on Sourcegraph will be much slower.{' '}
+                            <a target="_blank" href="https://about.sourcegraph.com/docs">
+                                Run Sourcegraph on a different platform or deploy it to a server
+                            </a>{' '}
+                            for much faster searches.
+                        </div>
+                    )}
                 {!isHomepage && (
                     <div>
                         <div className="saved-queries__header">

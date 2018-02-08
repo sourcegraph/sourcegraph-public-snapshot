@@ -1,6 +1,8 @@
 package jscontext
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -73,7 +75,8 @@ type JSContext struct {
 	ShowOnboarding       bool                  `json:"showOnboarding"`
 	EmailEnabled         bool                  `json:"emailEnabled"`
 
-	Site schema.SiteConfiguration `json:"site"` // public subset of site configuration
+	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
+	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 }
@@ -147,6 +150,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         conf.CanSendEmail(),
 		Site:                 publicSiteConfiguration,
+		LikelyDockerOnMac:    likelyDockerOnMac(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
@@ -162,4 +166,12 @@ var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* p
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
+}
+
+func likelyDockerOnMac() bool {
+	data, err := ioutil.ReadFile("/proc/cmdline")
+	if err != nil {
+		return false // permission errors, or maybe not a Linux OS, etc. Assume we're not docker for mac.
+	}
+	return bytes.Contains(data, []byte("mac")) || bytes.Contains(data, []byte("osx"))
 }
