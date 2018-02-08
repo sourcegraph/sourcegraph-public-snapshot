@@ -39,7 +39,7 @@ const Layout: React.SFC<LayoutProps> = props => {
     return (
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
-            <IntegrationsToast history={props.history} />
+            {!needsSiteInit && !isSiteInit && <IntegrationsToast history={props.history} />}
             {!hideNavbar && <Navbar {...props} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>

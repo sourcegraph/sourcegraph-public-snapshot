@@ -3,6 +3,9 @@ import { History, UnregisterCallback } from 'history'
 import * as React from 'react'
 import { matchPath } from 'react-router'
 import { Link } from 'react-router-dom'
+import { Subscription } from 'rxjs/Subscription'
+import { SiteFlags } from '../site'
+import { siteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { Toast } from './Toast'
@@ -10,6 +13,7 @@ import { daysActiveCount } from './util'
 
 interface State {
     visible: boolean
+    siteFlags?: SiteFlags
 }
 
 interface Props {
@@ -24,6 +28,7 @@ const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-integrations-toast'
  */
 export class IntegrationsToast extends React.Component<Props, State> {
     private unlisten: UnregisterCallback | undefined
+    private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
@@ -54,6 +59,7 @@ export class IntegrationsToast extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
+        this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
         this.updateToastVisibility(this.props.history.location.search)
         this.unlisten = this.props.history.listen(location => {
             this.updateToastVisibility(location.search)
@@ -61,6 +67,7 @@ export class IntegrationsToast extends React.Component<Props, State> {
     }
 
     public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
         if (this.unlisten) {
             this.unlisten()
         }
@@ -69,6 +76,12 @@ export class IntegrationsToast extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         if (!this.state.visible) {
             return null
+        }
+
+        if (this.state.siteFlags) {
+            if (this.state.siteFlags.needsRepositoryConfiguration || this.state.siteFlags.noRepositoriesEnabled) {
+                return null
+            }
         }
 
         return (
