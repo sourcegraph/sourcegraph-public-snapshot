@@ -111,38 +111,33 @@
 }
 
 .btn-secondary {
+    color: $color-text-1;
     border-color: $color-border;
-    background-color: transparent;
+    background: $color-bg-1;
 
     .theme-light & {
+        color: $color-light-text-1;
         border-color: $color-light-border-2;
+        background: white;
     }
 
     &:hover:not(:disabled):not(.disabled) {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        border-color: $color-border;
-        color: $color-text-3;
+        color: $color-text-6;
         .theme-light & {
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            border-color: $color-light-border;
             color: $color-light-text-6;
         }
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: lighten($color-secondary, 10%);
-        box-shadow: 0 0 0 2px rgba($color-secondary, 0.5);
+        outline: lighten($color-bg-1, 10%);
+        box-shadow: 0 0 0 2px rgba($color-bg-1, 0.5);
     }
 
     // Make sure these styles are applied
     // even when used on an anchor element
     &,
     &:hover {
-        color: $color-secondary;
         text-decoration: none;
-        .theme-light & {
-            color: $color-light-text-2;
-        }
     }
 }
 
