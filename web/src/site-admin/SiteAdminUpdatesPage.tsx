@@ -97,33 +97,30 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                         Automatic update checking is disabled.
                     </div>
                 )}
-                {this.state.updateCheck && (
-                    <p className="site-admin-updates_page__info">
-                        <small>
-                            <strong>Current product version:</strong> {this.state.productVersion} ({
-                                this.state.buildVersion
-                            })
-                        </small>
-                        <br />
-                        <small>
-                            <strong>Last update check:</strong>{' '}
-                            {this.state.updateCheck.checkedAt
-                                ? formatDistance(this.state.updateCheck.checkedAt, new Date(), { addSuffix: true })
-                                : 'never'}.
-                        </small>
-                        <br />
-                        <small>
-                            <strong>Automatic update checking:</strong> {autoUpdateCheckingEnabled ? 'on' : 'off'}.{' '}
-                            <Link to="/site-admin/configuration">Configure</Link> <code>update.channel</code>{' '}
-                            {!this.state.telemetryEnabled && (
-                                <span>
-                                    and <code>disableTelemetry</code>
-                                </span>
-                            )}{' '}
-                            to {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
-                        </small>
-                    </p>
-                )}
+
+                <p className="site-admin-updates_page__info">
+                    <small>
+                        <strong>Current product version:</strong> {this.state.productVersion} ({this.state.buildVersion})
+                    </small>
+                    <br />
+                    <small>
+                        <strong>Last update check:</strong>{' '}
+                        {this.state.updateCheck && this.state.updateCheck.checkedAt
+                            ? formatDistance(this.state.updateCheck.checkedAt, new Date(), { addSuffix: true })
+                            : 'never'}.
+                    </small>
+                    <br />
+                    <small>
+                        <strong>Automatic update checking:</strong> {autoUpdateCheckingEnabled ? 'on' : 'off'}.{' '}
+                        <Link to="/site-admin/configuration">Configure</Link> <code>update.channel</code>{' '}
+                        {!this.state.telemetryEnabled && (
+                            <span>
+                                and <code>disableTelemetry</code>
+                            </span>
+                        )}{' '}
+                        to {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
+                    </small>
+                </p>
             </div>
         )
     }
