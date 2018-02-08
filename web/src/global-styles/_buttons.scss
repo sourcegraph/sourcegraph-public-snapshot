@@ -66,7 +66,6 @@
 .btn-primary {
     border-color: $color-primary;
     background: $color-primary;
-    border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
         border-color: darken($color-primary, 5%);
@@ -123,7 +122,9 @@
 
     &:hover:not(:disabled):not(.disabled) {
         color: white;
+        background: $color-bg-2;
         .theme-light & {
+            background: $color-light-bg-2;
             color: $color-light-text-6;
         }
     }
@@ -131,10 +132,15 @@
     &:focus:not(:disabled):not(.disabled) {
         outline: lighten($color-bg-1, 10%);
         box-shadow: 0 0 0 2px rgba($color-bg-1, 0.5);
+
+        // Override <a> styles
+        color: $color-text-1;
+        .theme-light & {
+            color: $color-light-text-1;
+        }
     }
 
-    // Make sure these styles are applied
-    // even when used on an anchor element
+    // Override <a> styles
     &,
     &:hover {
         text-decoration: none;
@@ -164,7 +170,8 @@
     // Make sure these styles are applied
     // even when used on an anchor element
     &,
-    &:hover {
+    &:hover,
+    &:focus {
         &,
         .theme-light & {
             color: white;
