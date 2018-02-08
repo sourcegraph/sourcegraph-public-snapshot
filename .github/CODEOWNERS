@@ -3,7 +3,7 @@
 # https://help.github.com/articles/about-codeowners/
 
 cmd/frontend/internal/graphqlbackend @nicksnyder
-git @keegancsmith
+*git* @keegancsmith
 migrations/ @keegancsmith
 migrations/ @nicksnyder
 monolith/ @keegancsmith
