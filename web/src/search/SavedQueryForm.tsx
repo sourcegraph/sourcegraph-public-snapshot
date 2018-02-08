@@ -249,15 +249,15 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     </div>
                 )}
                 {this.isUnsupportedNotifyQuery(this.state.values) && (
-                    <div className="alert alert-warning">
-                        Warning: non-commit searches do not currently support notifications. Consider adding `type:diff`
-                        or `type:commit` to your query.
+                    <div className="alert alert-warning mb-2">
+                        <strong>Warning:</strong> non-commit searches do not currently support notifications. Consider
+                        adding <code>type:diff</code> or <code>type:commit</code> to your query.
                     </div>
                 )}
                 {(notify || notifyUsers.length > 0 || notifyOrganizations.length > 0) &&
                     !window.context.emailEnabled &&
                     !this.isUnsupportedNotifyQuery(this.state.values) && (
-                        <div className="alert alert-warning">
+                        <div className="alert alert-warning mb-2">
                             <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
                             server.{' '}
                             {this.props.user && this.props.user.siteAdmin
@@ -267,14 +267,14 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     )}
                 {notifySlack &&
                     this.isOrgMissingSlackWebhook() && (
-                        <div className="alert alert-warning">
+                        <div className="alert alert-warning mb-2">
                             <strong>Warning:</strong> Slack webhook is not configured for this organization. Please{' '}
                             <Link to={this.getConfigureSlackURL()}>configure one in the organization settings</Link>.
                         </div>
                     )}
                 {error &&
                     !isSubmitting && (
-                        <div className="alert alert-danger">
+                        <div className="alert alert-danger mb-2">
                             <strong>Error:</strong> {error.message}
                         </div>
                     )}
