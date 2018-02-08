@@ -239,6 +239,9 @@ type gitlabConnection struct {
 // authenticatedRemoteURL returns the GitLab projects's Git remote URL with the configured GitLab personal access
 // token inserted in the URL userinfo, for repositories needing authentication.
 func (c *gitlabConnection) authenticatedRemoteURL(proj *gitlab.Project) string {
+	if c.config.GitURLType == "ssh" {
+		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
+	}
 	if c.config.Token == "" || !proj.RequiresAuthentication() {
 		return proj.HTTPURLToRepo
 	}

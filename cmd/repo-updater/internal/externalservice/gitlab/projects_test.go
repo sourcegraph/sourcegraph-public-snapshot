@@ -60,7 +60,8 @@ func TestClient_GetProject(t *testing.T) {
 	"path_with_namespace": "n1/n2/r",
 	"description": "d",
 	"web_url": "https://gitlab.example.com/n1/n2/r",
-	"http_url_to_repo": "https://gitlab.example.com/n1/n2/r.git"
+	"http_url_to_repo": "https://gitlab.example.com/n1/n2/r.git",
+	"ssh_url_to_repo": "git@gitlab.example.com:n1/n2/r.git"
 }
 `}
 	c := newTestClient()
@@ -72,6 +73,7 @@ func TestClient_GetProject(t *testing.T) {
 		Description:       "d",
 		WebURL:            "https://gitlab.example.com/n1/n2/r",
 		HTTPURLToRepo:     "https://gitlab.example.com/n1/n2/r.git",
+		SSHURLToRepo:      "git@gitlab.example.com:n1/n2/r.git",
 	}
 
 	proj, err := c.GetProject(context.Background(), 0, "n1/n2/r")

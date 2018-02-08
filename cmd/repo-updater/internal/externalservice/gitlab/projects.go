@@ -21,6 +21,7 @@ type Project struct {
 	Description       string `json:"description"`         // description of project
 	WebURL            string `json:"web_url"`             // the web URL of this project ("https://gitlab.com/foo/bar")i
 	HTTPURLToRepo     string `json:"http_url_to_repo"`    // HTTP clone URL
+	SSHURLToRepo      string `json:"ssh_url_to_repo"`     // SSH clone URL ("git@example.com:foo/bar.git")
 	Visibility        string `json:"visibility"`          // "private", "internal", or "public"
 }
 

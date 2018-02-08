@@ -331,11 +331,22 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                                     repository is not reachable.
                                 </li>
                                 <li className="repo-settings-mirror-page__step">
+                                    <code>
+                                        <strong>No ECDSA host key is known ... Host key verification failed?</strong>
+                                    </code>{' '}
+                                    See{' '}
+                                    <a href="https://about.sourcegraph.com/docs/server/config/repositories#ssh-authentication-config-keys-known_hosts">
+                                        SSH repository authentication documentation
+                                    </a>{' '}
+                                    for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
+                                    host key.
+                                </li>
+                                <li className="repo-settings-mirror-page__step">
                                     Consult{' '}
                                     <a href="https://about.sourcegraph.com/docs/server/config/repositories">
                                         Sourcegraph Server repositories documentation
                                     </a>{' '}
-                                    for resolving authentication issues (such as HTTPS certificates and SSH keys).
+                                    for resolving other authentication issues (such as HTTPS certificates and SSH keys).
                                 </li>
                                 <li className="repo-settings-mirror-page__step">
                                     <a href="mailto:support@sourcegraph.com">Contact support</a> for further help.
