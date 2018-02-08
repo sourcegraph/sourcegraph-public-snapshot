@@ -17,17 +17,17 @@ func init() {
 		timeout := 5 * time.Second
 		deadline := time.Now().Add(timeout)
 
-		for {
-			time.Sleep(100 * time.Millisecond)
-			if _, err := c.Do("PING"); err != nil && time.Now().After(deadline) {
-				return "Redis is unavailable or misconfigured",
-					fmt.Sprintf("Start a Redis server listening at port %s", redisMasterEndpoint),
-					err
-			} else if err == nil && !time.Now().After(deadline) {
-				break
+		for time.Now().Before(deadline) {
+			_, err = c.Do("PING")
+			if err == nil {
+				// Success
+				return "", "", nil
 			}
+			// Try again
+			time.Sleep(100 * time.Millisecond)
 		}
-
-		return "", "", nil
+		return "Redis is unavailable or misconfigured",
+			fmt.Sprintf("Start a Redis server listening at port %s", redisMasterEndpoint),
+			err
 	})
 }
