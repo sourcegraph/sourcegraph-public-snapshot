@@ -11,9 +11,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
-    outline: none;
-    transition: box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
-
+    transition: box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+    &:focus {
+        outline: none;
+    }
     &:disabled,
     &.disabled {
         opacity: 0.4;
@@ -42,7 +43,6 @@
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: darken($color-primary, 5%);
         box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
     }
 
@@ -73,7 +73,6 @@
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: darken($color-primary, 5%);
         box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
     }
 }
@@ -89,7 +88,6 @@
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: darken($color-success, 5%);
         box-shadow: 0 0 0 2px rgba($color-success, 0.5);
     }
 }
@@ -104,39 +102,40 @@
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: darken($color-danger, 5%);
         box-shadow: 0 0 0 2px rgba($color-danger, 0.5);
     }
 }
 
 .btn-secondary {
     color: $color-text-1;
-    border-color: $color-border;
-    background: $color-bg-1;
+    border-color: $color-bg-5;
+    background: $color-bg-5;
 
     .theme-light & {
         color: $color-light-text-1;
-        border-color: $color-light-border-2;
-        background: white;
+        border-color: $color-light-bg-4;
+        background: $color-light-bg-4;
     }
 
     &:hover:not(:disabled):not(.disabled) {
-        color: white;
-        background: $color-bg-2;
+        color: $color-text-1;
+        background: $color-bg-3;
+        border-color: $color-bg-3;
         .theme-light & {
-            background: $color-light-bg-2;
+            border-color: $color-light-bg-3;
+            background: $color-light-bg-3;
             color: $color-light-text-6;
         }
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: lighten($color-bg-1, 10%);
-        box-shadow: 0 0 0 2px rgba($color-bg-1, 0.5);
+        box-shadow: 0 0 0 2px rgba($color-bg-5, 0.5);
 
         // Override <a> styles
         color: $color-text-1;
         .theme-light & {
             color: $color-light-text-1;
+            box-shadow: 0 0 0 2px rgba($color-light-bg-4, 0.5);
         }
     }
 
