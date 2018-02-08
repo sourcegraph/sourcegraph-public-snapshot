@@ -329,7 +329,6 @@ type Query {
         package: String
         limit: Int
     ): [Dependency!]!
-    updateDeploymentConfiguration(email: String!, enableTelemetry: Boolean!): EmptyResponse
     # The current site.
     site: Site!
 }
@@ -1574,7 +1573,6 @@ enum UserEvent {
 
 type DeploymentConfiguration {
     email: String
-    telemetryEnabled: Boolean
     siteID: String
 }
 `

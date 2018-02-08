@@ -332,12 +332,11 @@ Foreign-key constraints:
 
 # Table "public.site_config"
 ```
-      Column      |           Type           |  Modifiers   
-------------------+--------------------------+--------------
- site_id          | uuid                     | not null
- enable_telemetry | boolean                  | default true
- email            | text                     | 
- updated_at       | timestamp with time zone | 
+   Column   |           Type           | Modifiers 
+------------+--------------------------+-----------
+ site_id    | uuid                     | not null
+ email      | text                     | 
+ updated_at | timestamp with time zone | 
 Indexes:
     "site_config_pkey" PRIMARY KEY, btree (site_id)
 

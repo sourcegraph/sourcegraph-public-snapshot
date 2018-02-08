@@ -306,12 +306,10 @@ func (r *schemaResolver) Dependents(ctx context.Context, args *struct {
 }
 
 func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args *struct {
-	Email           string
-	EnableTelemetry bool
+	Email string
 }) (*EmptyResponse, error) {
 	configuration := &types.SiteConfig{
-		Email:            args.Email,
-		TelemetryEnabled: args.EnableTelemetry,
+		Email: args.Email,
 	}
 	err := db.SiteConfig.UpdateConfiguration(ctx, configuration)
 	if err != nil {

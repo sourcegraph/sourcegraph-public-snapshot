@@ -7,12 +7,9 @@ import (
 	"github.com/lib/pq"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type siteConfig struct{}
-
-var telemetryDisabled = conf.Get().DisableTelemetry
 
 func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 	if Mocks.SiteConfig.Get != nil {
@@ -32,18 +29,11 @@ func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 
 func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, error) {
 	configuration := &types.SiteConfig{}
-	err := globalDB.QueryRowContext(ctx, "SELECT site_id, enable_telemetry, updated_at from site_config LIMIT 1").Scan(
+	err := globalDB.QueryRowContext(ctx, "SELECT site_id, updated_at from site_config LIMIT 1").Scan(
 		&configuration.SiteID,
-		&configuration.TelemetryEnabled,
 		&configuration.UpdatedAt,
 	)
-	if err != nil {
-		return nil, err
-	}
-	if telemetryDisabled {
-		configuration.TelemetryEnabled = false
-	}
-	return configuration, nil
+	return configuration, err
 }
 
 func (o *siteConfig) UpdateConfiguration(ctx context.Context, updatedConfiguration *types.SiteConfig) error {
@@ -51,7 +41,7 @@ func (o *siteConfig) UpdateConfiguration(ctx context.Context, updatedConfigurati
 	if err != nil {
 		return err
 	}
-	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email=$1, enable_telemetry=$2, updated_at=now()", updatedConfiguration.Email, updatedConfiguration.TelemetryEnabled)
+	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email=$1, updated_at=now()", updatedConfiguration.Email)
 	return err
 }
 
@@ -60,7 +50,7 @@ func (o *siteConfig) tryInsertNew(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(site_id, enable_telemetry, updated_at) values($1, $2, now())", siteID, !telemetryDisabled)
+	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(site_id, updated_at) values($1, now())", siteID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "site_config_pkey" {

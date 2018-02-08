@@ -136,6 +136,8 @@
 // ../../../../../migrations/1517129075_repo_external.up.sql
 // ../../../../../migrations/1518102181_cert_cache.down.sql
 // ../../../../../migrations/1518102181_cert_cache.up.sql
+// ../../../../../migrations/1518581786_remove_site_config_telemetry.down.sql
+// ../../../../../migrations/1518581786_remove_site_config_telemetry.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2923,6 +2925,46 @@ func _1518102181_cert_cacheUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1518581786_remove_site_config_telemetryDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x41\x0e\x83\x20\x10\x05\xd0\xab\xfc\x7b\x74\x45\x0b\x3b\xda\x26\x06\xd7\x04\xf4\x63\x48\x46\x48\x70\x58\x78\x7b\x9f\xf1\xc1\x2d\x08\xe6\xed\x1d\xae\xaa\x8c\x5b\x6f\xa5\x1e\x30\xd6\xe2\xf3\xf7\xeb\xf7\x07\xb6\x94\x85\x51\x29\x3c\xa9\xe3\x46\xee\x5d\x98\x1a\x76\x96\x34\x45\xa1\x63\xf2\xf5\x04\x00\x00\xff\xff\xd5\x44\x50\x78\x49\x00\x00\x00")
+
+func _1518581786_remove_site_config_telemetryDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1518581786_remove_site_config_telemetryDownSql,
+		"1518581786_remove_site_config_telemetry.down.sql",
+	)
+}
+
+func _1518581786_remove_site_config_telemetryDownSql() (*asset, error) {
+	bytes, err := _1518581786_remove_site_config_telemetryDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1518581786_remove_site_config_telemetry.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1518581786_remove_site_config_telemetryUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\xce\x2c\x49\x8d\x4f\xce\xcf\x4b\xcb\x4c\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xcd\x4b\x4c\xca\x49\x8d\x2f\x49\xcd\x49\xcd\x4d\x2d\x29\xaa\xb4\x06\x04\x00\x00\xff\xff\x40\x45\x8b\x9f\x35\x00\x00\x00")
+
+func _1518581786_remove_site_config_telemetryUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1518581786_remove_site_config_telemetryUpSql,
+		"1518581786_remove_site_config_telemetry.up.sql",
+	)
+}
+
+func _1518581786_remove_site_config_telemetryUpSql() (*asset, error) {
+	bytes, err := _1518581786_remove_site_config_telemetryUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1518581786_remove_site_config_telemetry.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3111,6 +3153,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1517129075_repo_external.up.sql":                             _1517129075_repo_externalUpSql,
 	"1518102181_cert_cache.down.sql":                              _1518102181_cert_cacheDownSql,
 	"1518102181_cert_cache.up.sql":                                _1518102181_cert_cacheUpSql,
+	"1518581786_remove_site_config_telemetry.down.sql":            _1518581786_remove_site_config_telemetryDownSql,
+	"1518581786_remove_site_config_telemetry.up.sql":              _1518581786_remove_site_config_telemetryUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3290,6 +3334,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1517129075_repo_external.up.sql":                             &bintree{_1517129075_repo_externalUpSql, map[string]*bintree{}},
 	"1518102181_cert_cache.down.sql":                              &bintree{_1518102181_cert_cacheDownSql, map[string]*bintree{}},
 	"1518102181_cert_cache.up.sql":                                &bintree{_1518102181_cert_cacheUpSql, map[string]*bintree{}},
+	"1518581786_remove_site_config_telemetry.down.sql":            &bintree{_1518581786_remove_site_config_telemetryDownSql, map[string]*bintree{}},
+	"1518581786_remove_site_config_telemetry.up.sql":              &bintree{_1518581786_remove_site_config_telemetryUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

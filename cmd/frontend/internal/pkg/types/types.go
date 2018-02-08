@@ -63,10 +63,9 @@ type Settings struct {
 }
 
 type SiteConfig struct {
-	SiteID           string
-	Email            string
-	TelemetryEnabled bool
-	UpdatedAt        string
+	SiteID    string
+	Email     string
+	UpdatedAt string
 }
 
 // User represents a registered user.

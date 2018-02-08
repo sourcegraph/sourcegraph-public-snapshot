@@ -487,16 +487,16 @@ export function reloadSite(): Observable<void> {
     )
 }
 
-export function updateDeploymentConfiguration(email: string, telemetryEnabled: boolean): Observable<void> {
+export function updateDeploymentConfiguration(email: string): Observable<void> {
     return queryGraphQL(
         gql`
-            query UpdateDeploymentConfiguration($email: String!, $enableTelemetry: Boolean!) {
-                updateDeploymentConfiguration(email: $email, enableTelemetry: $enableTelemetry) {
+            query UpdateDeploymentConfiguration($email: String!) {
+                updateDeploymentConfiguration(email: $email) {
                     alwaysNil
                 }
             }
         `,
-        { email, enableTelemetry: telemetryEnabled }
+        { email }
     ).pipe(
         map(({ data, errors }) => {
             if (!data) {

@@ -36,7 +36,7 @@ export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> 
     }
 
     private onDidSignUp = (email: string) => {
-        updateDeploymentConfiguration(email, true).subscribe(
+        updateDeploymentConfiguration(email).subscribe(
             () => window.location.replace('/site-admin'),
             error => {
                 console.error(error)
@@ -46,7 +46,6 @@ export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> 
             server: {
                 email,
                 appId: window.context.siteID,
-                telemetryEnabled: true,
             },
         })
     }
