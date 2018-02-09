@@ -45,40 +45,44 @@ func (n *notifier) emailNotify(ctx context.Context) {
 				ownership = "your organization's"
 			}
 
+			plural := ""
+			if n.results.Data.Search.Results.ApproximateResultCount != "1" {
+				plural = "s"
+			}
 			sendEmail(ctx, userID, "results", newSearchResultsEmailTemplates, struct {
 				URL                    string
 				Description            string
 				Query                  string
 				ApproximateResultCount string
 				Ownership              string
-				MoreThanTwoResults     bool
+				PluralResults          string
 			}{
 				URL:         searchURL(n.newQuery, utmSourceEmail),
 				Description: n.query.Description,
 				Query:       strings.Join([]string{n.query.ScopeQuery, n.query.Query}, " "),
 				ApproximateResultCount: n.results.Data.Search.Results.ApproximateResultCount,
 				Ownership:              ownership,
-				MoreThanTwoResults:     n.results.Data.Search.Results.ApproximateResultCount != "1",
+				PluralResults:          plural,
 			})
 		}
 	}()
 }
 
 var newSearchResultsEmailTemplates = txemail.MustValidate(txemail.Templates{
-	Subject: `{{.ApproximateResultCount}} new search results found - {{.Description}}`,
+	Subject: `[{{.ApproximateResultCount}} new result{{.PluralResults}}] {{.Description}}`,
 	Text: `
-{{.ApproximateResultCount}} new search result{{if .MoreThanTwoResults}}s{{end}} have been found for {{.Ownership}} saved search:
+{{.ApproximateResultCount}} new search result{{.PluralResults}} have been found for {{.Ownership}} saved search:
 
   "{{.Description}}"
 
-View the new results on Sourcegraph: {{.URL}}
+View the new result{{.PluralResults}} on Sourcegraph: {{.URL}}
 `,
 	HTML: `
-<strong>{{.ApproximateResultCount}}</strong> new search results have been found for {{.Ownership}} saved search:
+<strong>{{.ApproximateResultCount}}</strong> new search result{{.PluralResults}} have been found for {{.Ownership}} saved search:
 
 <p style="padding-left: 16px">&quot;{{.Description}}&quot;</p>
 
-<p><a href="{{.URL}}">View the new search results on Sourcegraph</a></p>
+<p><a href="{{.URL}}">View the new search result{{.PluralResults}} on Sourcegraph</a></p>
 `,
 })
 
@@ -160,7 +164,7 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txe
 }
 
 var notifySubscribedTemplate = txemail.MustValidate(txemail.Templates{
-	Subject: `Subscribed to saved search: {{.Description}}`,
+	Subject: `[Subscribed] {{.Description}}`,
 	Text: `
 You are now receiving notifications for {{.Ownership}} saved search:
 
@@ -178,7 +182,7 @@ When new search results become available, we will notify you.
 })
 
 var notifyUnsubscribedTemplate = txemail.MustValidate(txemail.Templates{
-	Subject: `Unsubscribed from saved search: {{.Description}}`,
+	Subject: `[Unsubscribed] {{.Description}}`,
 	Text: `
 You will no longer receive notifications for {{.Ownership}} saved search:
 
