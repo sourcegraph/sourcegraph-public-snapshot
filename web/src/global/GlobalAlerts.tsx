@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
+import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
 
@@ -37,6 +38,14 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             if (this.state.siteFlags.noRepositoriesEnabled) {
                 return <NoRepositoriesEnabledAlert />
             }
+        }
+
+        // Last priority, we would show NeedsRepositoryConfigurationAlert or
+        // NoRepositoriesEnabledAlert first above before the user would see
+        // this. That's OK because they would need to do both of those before
+        // they could see performance issues caused by Docker for Mac.
+        if (window.context.likelyDockerOnMac) {
+            return <DockerForMacAlert />
         }
         return null
     }

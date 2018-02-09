@@ -1,0 +1,10 @@
+.docker-for-mac-alert {
+    animation: moving-stripes 1.7s linear infinite;
+    &__left {
+        flex: 3;
+    }
+    &__right {
+        flex: 2;
+        margin-left: 4rem;
+    }
+}
