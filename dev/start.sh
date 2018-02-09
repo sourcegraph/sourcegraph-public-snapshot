@@ -13,7 +13,7 @@ if [ -n "$DELVE_SEARCHER" ]; then
 fi
 
 if [ -n "$DELVE" ]; then
-	echo 'Due to a limitation in delve, bebug binaries will not start until you attach a debugger.'
+	echo 'Due to a limitation in delve, debug binaries will not start until you attach a debugger.'
 	echo 'See https://github.com/derekparker/delve/issues/952'
 fi
 
