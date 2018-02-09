@@ -30,7 +30,8 @@ package zoekt
 const IndexFormatVersion = 15
 
 // FeatureVersion is increased if a feature is added that requires reindexing data.
-const FeatureVersion = 1
+// 2: Rank field for shards.
+const FeatureVersion = 2
 
 type indexTOC struct {
 	fileContents compoundSection

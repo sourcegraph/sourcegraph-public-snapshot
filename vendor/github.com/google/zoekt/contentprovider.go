@@ -42,6 +42,7 @@ type contentProvider struct {
 	bytesRead    uint32
 }
 
+// setDocument skips to the given document.
 func (p *contentProvider) setDocument(docID uint32) {
 	fileStart := p.id.boundaries[docID]
 
@@ -130,13 +131,6 @@ func (p *contentProvider) findOffset(filename bool, r uint32) uint32 {
 
 	byteOff -= fileStartByte
 	return byteOff
-}
-
-func (p *contentProvider) matchContent(m *candidateMatch) bool {
-	if m.byteOffset == 0 && m.runeOffset > 0 {
-		m.byteOffset = p.findOffset(m.fileName, m.runeOffset)
-	}
-	return m.matchContent(p.data(m.fileName))
 }
 
 func (p *contentProvider) fillMatches(ms []*candidateMatch) []LineMatch {

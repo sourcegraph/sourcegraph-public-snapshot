@@ -115,6 +115,9 @@ type Stats struct {
 	// gathered enough matches.
 	FilesSkipped int
 
+	// Shards that we did not process because a query was canceled.
+	ShardsSkipped int
+
 	// Number of non-overlapping matches
 	MatchCount int
 
@@ -136,6 +139,7 @@ func (s *Stats) Add(o Stats) {
 	s.MatchCount += o.MatchCount
 	s.NgramMatches += o.NgramMatches
 	s.ShardFilesConsidered += o.ShardFilesConsidered
+	s.ShardsSkipped += o.ShardsSkipped
 }
 
 // SearchResult contains search matches and extra data
@@ -184,6 +188,9 @@ type Repository struct {
 
 	// All zoekt.* configuration settings.
 	RawConfig map[string]string
+
+	// Importance of the repository, bigger is more important
+	Rank uint16
 }
 
 // IndexMetadata holds metadata stored in the index file.

@@ -326,12 +326,14 @@ func parseExprList(in []byte) ([]Q, int, error) {
 			newQS = append(newQS, q)
 		}
 	}
-	qs = newQS
-	for _, q := range qs {
-		if sc, ok := q.(setCaser); ok {
-			sc.setCase(setCase)
-		}
-	}
+	qs = mapQueryList(newQS, func(q Q) Q {
+		return Map(q, func(q Q) Q {
+			if sc, ok := q.(setCaser); ok {
+				sc.setCase(setCase)
+			}
+			return q
+		})
+	})
 	return qs, len(in) - len(b), nil
 }
 

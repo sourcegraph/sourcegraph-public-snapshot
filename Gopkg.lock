@@ -316,7 +316,7 @@
     "rpc",
     "rpc/internal/srv"
   ]
-  revision = "39a73c480e12a7063d8ea12047528fdf3afe6bdf"
+  revision = "6bcbd753e7f549405276e6ba620f0c369e4e97a6"
   source = "github.com/sourcegraph/zoekt"
 
 [[projects]]

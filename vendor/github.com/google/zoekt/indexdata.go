@@ -137,7 +137,19 @@ func (d *indexData) memoryUse() int {
 
 const maxUInt32 = 0xffffffff
 
-func minarg(xs []uint32) uint32 {
+func firstMinarg(xs []uint32) uint32 {
+	m := uint32(maxUInt32)
+	j := len(xs)
+	for i, x := range xs {
+		if x < m {
+			m = x
+			j = i
+		}
+	}
+	return uint32(j)
+}
+
+func lastMinarg(xs []uint32) uint32 {
 	m := uint32(maxUInt32)
 	j := len(xs)
 	for i, x := range xs {
@@ -158,27 +170,36 @@ func (data *indexData) ngramFrequency(ng ngram, filename bool) uint32 {
 }
 
 type ngramIterationResults struct {
-	cands []*candidateMatch
+	matchIterator
 
 	// The ngram matches cover the pattern, so no need to check
 	// contents.
 	coversContent bool
 
-	// The number of posting bytes
-	bytesRead uint32
+	caseSensitive bool
+	fileName      bool
+	substrBytes   []byte
+	substrLowered []byte
+	byteMatchSz   uint32
 }
 
-func (data *indexData) iterateNgrams(query *query.Substring) (*ngramIterationResults, error) {
-	iter := &ngramDocIterator{
-		query: query,
-	}
+func (r *ngramIterationResults) String() string {
+	return fmt.Sprintf("wrapper(%v)", r.matchIterator)
+}
 
-	if query.FileName {
-		iter.ends = data.fileNameEndRunes
-	} else {
-		iter.ends = data.fileEndRunes
+func (r *ngramIterationResults) candidates() []*candidateMatch {
+	cs := r.matchIterator.candidates()
+	for _, c := range cs {
+		c.caseSensitive = r.caseSensitive
+		c.fileName = r.fileName
+		c.substrBytes = r.substrBytes
+		c.substrLowered = r.substrLowered
+		c.byteMatchSz = r.byteMatchSz
 	}
+	return cs
+}
 
+func (d *indexData) iterateNgrams(query *query.Substring) (*ngramIterationResults, error) {
 	str := query.Pattern
 
 	// Find the 2 least common ngrams from the string.
@@ -187,124 +208,75 @@ func (data *indexData) iterateNgrams(query *query.Substring) (*ngramIterationRes
 	for _, o := range ngramOffs {
 		var freq uint32
 		if query.CaseSensitive {
-			freq = data.ngramFrequency(o.ngram, query.FileName)
+			freq = d.ngramFrequency(o.ngram, query.FileName)
 		} else {
 			for _, v := range generateCaseNgrams(o.ngram) {
-				freq += data.ngramFrequency(v, query.FileName)
+				freq += d.ngramFrequency(v, query.FileName)
 			}
 		}
 
 		if freq == 0 {
-			return &ngramIterationResults{}, nil
+			return &ngramIterationResults{
+				matchIterator: &noMatchTree{
+					Why: "freq=0",
+				},
+			}, nil
 		}
 
 		frequencies = append(frequencies, freq)
 	}
-
-	firstI := minarg(frequencies)
+	firstI := firstMinarg(frequencies)
 	frequencies[firstI] = maxUInt32
-	lastI := minarg(frequencies)
+	lastI := lastMinarg(frequencies)
 	if firstI > lastI {
 		lastI, firstI = firstI, lastI
 	}
 
 	firstNG := ngramOffs[firstI].ngram
 	lastNG := ngramOffs[lastI].ngram
-	iter.distance = lastI - firstI
-	iter.leftPad = firstI
-	iter.rightPad = uint32(utf8.RuneCountInString(str)-ngramSize) - lastI
-
-	postings, bytesRead, err := data.readPostings(firstNG, query.CaseSensitive, query.FileName)
-	if err != nil {
-		return nil, err
+	iter := &ngramDocIterator{
+		leftPad:  firstI,
+		rightPad: uint32(utf8.RuneCountInString(str)) - firstI,
+	}
+	if query.FileName {
+		iter.ends = d.fileNameEndRunes
+	} else {
+		iter.ends = d.fileEndRunes
 	}
 
-	iter.first = postings
-
+	var coversContent bool
 	if firstI != lastI {
-		postings, sz, err := data.readPostings(lastNG, query.CaseSensitive, query.FileName)
-		bytesRead += sz
+		i, err := d.newDistanceTrigramIter(firstNG, lastNG, lastI-firstI, query.CaseSensitive, query.FileName)
+
 		if err != nil {
 			return nil, err
 		}
-		iter.last = postings
+
+		iter.iter = i
+
+		coversContent = (lastI-firstI <= ngramSize && iter.leftPad == 0 && iter.rightPad == (lastI+ngramSize))
 	} else {
-		// TODO - we could be a little faster and skip the
-		// list intersection
-		iter.last = iter.first
-	}
-
-	result := ngramIterationResults{
-		bytesRead:     bytesRead,
-		cands:         iter.candidates(),
-		coversContent: lastI-firstI <= ngramSize && iter.leftPad == 0 && iter.rightPad == 0,
-	}
-	return &result, nil
-}
-
-func (d *indexData) readPostings(ng ngram, caseSensitive, fileName bool) ([]uint32, uint32, error) {
-	variants := []ngram{ng}
-	if !caseSensitive {
-		variants = generateCaseNgrams(ng)
-	}
-
-	// TODO - generate less garbage.
-	var sz uint32
-	postings := make([][]uint32, 0, len(variants))
-	for _, v := range variants {
-		if fileName {
-			postings = append(postings, d.fileNameNgrams[v])
-			continue
-		}
-
-		sec := d.ngrams[v]
-		blob, err := d.readSectionBlob(sec)
+		hitIter, err := d.trigramHitIterator(lastNG, query.CaseSensitive, query.FileName)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
-		sz += sec.sz
-		ps := fromDeltas(blob, nil)
-		if len(ps) > 0 {
-			postings = append(postings, ps)
-		}
+		iter.iter = hitIter
+		coversContent = (iter.leftPad == 0 && iter.rightPad == 3)
 	}
 
-	result := mergeUint32(postings)
-	return result, sz, nil
-}
+	patBytes := []byte(query.Pattern)
+	lowerPatBytes := toLower(patBytes)
 
-func mergeUint32(in [][]uint32) []uint32 {
-	sz := 0
-	for _, i := range in {
-		sz += len(i)
-	}
-	out := make([]uint32, 0, sz)
-	for len(in) > 0 {
-		minVal := uint32(maxUInt32)
-		for _, n := range in {
-			if len(n) > 0 && n[0] < minVal {
-				minVal = n[0]
-			}
-		}
-
-		next := in[:0]
-		for _, n := range in {
-			if len(n) == 0 {
-				continue
-			}
-			if n[0] == minVal {
-				out = append(out, minVal)
-				n = n[1:]
-			}
-			if len(n) > 0 {
-				next = append(next, n)
-			}
-		}
-
-		in = next
-	}
-
-	return out
+	return &ngramIterationResults{
+		matchIterator: iter,
+		coversContent: coversContent,
+		caseSensitive: query.CaseSensitive,
+		fileName:      query.FileName,
+		substrBytes:   patBytes,
+		substrLowered: lowerPatBytes,
+		// TODO - this is wrong for casefolding searches.
+		byteMatchSz: uint32(len(lowerPatBytes)),
+	}, nil
 }
 
 func (d *indexData) fileName(i uint32) []byte {

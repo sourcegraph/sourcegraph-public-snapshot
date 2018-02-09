@@ -24,6 +24,29 @@ import (
 	"github.com/google/zoekt/query"
 )
 
+// A docIterator iterates over documents in order.
+type docIterator interface {
+	// provide the next document where we can may find something
+	// interesting.
+	nextDoc() uint32
+
+	// clears any per-document state of the docIterator, and
+	// prepares for evaluating the given doc. The argument is
+	// strictly increasing over time.
+	prepare(nextDoc uint32)
+
+	// collects statistics.
+	updateStats(stats *Stats)
+}
+
+const costConst = 0
+const costMemory = 1
+const costContent = 2
+const costRegexp = 3
+
+const costMin = costConst
+const costMax = costRegexp
+
 // An expression tree coupled with matches. The matchtree has two
 // functions:
 //
@@ -52,20 +75,10 @@ import (
 //     collect all text matches by looking at leaf matchTrees
 //
 type matchTree interface {
-	// provide the next document where we can may find something
-	// interesting.
-	nextDoc() uint32
-
-	// clears any per-document state of the matchTree, and
-	// prepares for evaluating the given doc. The argument is
-	// strictly increasing over time.
-	prepare(nextDoc uint32)
+	docIterator
 
 	// returns whether this matches, and if we are sure.
-	matches(known map[matchTree]bool) (match bool, sure bool)
-
-	// For debugging: print this subtree
-	String() string
+	matches(cp *contentProvider, cost int, known map[matchTree]bool) (match bool, sure bool)
 }
 
 type docMatchTree struct {
@@ -111,8 +124,9 @@ type regexpMatchTree struct {
 }
 
 type substrMatchTree struct {
+	matchIterator
+
 	query         *query.Substring
-	cands         []*candidateMatch
 	coversContent bool
 	caseSensitive bool
 	fileName      bool
@@ -129,6 +143,37 @@ type branchQueryMatchTree struct {
 	// mutable
 	firstDone bool
 	docID     uint32
+}
+
+func (t *noMatchTree) updateStats(s *Stats) {
+}
+
+func (t *bruteForceMatchTree) updateStats(s *Stats) {
+}
+
+func (t *docMatchTree) updateStats(s *Stats) {
+}
+
+func (t *andMatchTree) updateStats(s *Stats) {
+	for _, c := range t.children {
+		c.updateStats(s)
+	}
+}
+
+func (t *orMatchTree) updateStats(s *Stats) {
+	for _, c := range t.children {
+		c.updateStats(s)
+	}
+}
+
+func (t *notMatchTree) updateStats(s *Stats) {
+	t.child.updateStats(s)
+}
+
+func (t *branchQueryMatchTree) updateStats(s *Stats) {
+}
+
+func (t *regexpMatchTree) updateStats(s *Stats) {
 }
 
 // all prepare methods
@@ -173,15 +218,8 @@ func (t *notMatchTree) prepare(doc uint32) {
 }
 
 func (t *substrMatchTree) prepare(nextDoc uint32) {
-	for len(t.cands) > 0 && t.cands[0].file < nextDoc {
-		t.cands = t.cands[1:]
-	}
-
-	i := 0
-	for ; i < len(t.cands) && t.cands[i].file == nextDoc; i++ {
-	}
-	t.current = t.cands[:i]
-	t.cands = t.cands[i:]
+	t.matchIterator.prepare(nextDoc)
+	t.current = t.matchIterator.candidates()
 	t.contEvaluated = false
 }
 
@@ -232,13 +270,6 @@ func (t *notMatchTree) nextDoc() uint32 {
 	return 0
 }
 
-func (t *substrMatchTree) nextDoc() uint32 {
-	if len(t.cands) > 0 {
-		return t.cands[0].file
-	}
-	return maxUInt32
-}
-
 func (t *branchQueryMatchTree) nextDoc() uint32 {
 	var start uint32
 	if t.firstDone {
@@ -285,27 +316,28 @@ func (t *substrMatchTree) String() string {
 		f = "f"
 	}
 
-	return fmt.Sprintf("%ssubstr(%q,%v)", f, t.query.Pattern, t.current)
+	return fmt.Sprintf("%ssubstr(%q, %v, %v)", f, t.query.Pattern, t.current, t.matchIterator)
 }
 
 func (t *branchQueryMatchTree) String() string {
 	return fmt.Sprintf("branch(%x)", t.mask)
 }
 
-func collectAtoms(t matchTree, f func(matchTree)) {
+// Visit the matchTree. Skips noVisitMatchTree
+func visitMatchTree(t matchTree, f func(matchTree)) {
 	switch s := t.(type) {
 	case *andMatchTree:
 		for _, ch := range s.children {
-			collectAtoms(ch, f)
+			visitMatchTree(ch, f)
 		}
 	case *orMatchTree:
 		for _, ch := range s.children {
-			collectAtoms(ch, f)
+			visitMatchTree(ch, f)
 		}
 	case *noVisitMatchTree:
-		collectAtoms(s.matchTree, f)
+		visitMatchTree(s.matchTree, f)
 	case *notMatchTree:
-		collectAtoms(s.child, f)
+		visitMatchTree(s.child, f)
 	default:
 		f(t)
 	}
@@ -353,19 +385,19 @@ func visitRegexMatches(t matchTree, known map[matchTree]bool, f func(*regexpMatc
 
 // all matches() methods.
 
-func (t *docMatchTree) matches(known map[matchTree]bool) (bool, bool) {
+func (t *docMatchTree) matches(cp *contentProvider, cost int, known map[matchTree]bool) (bool, bool) {
 	return len(t.current) > 0, true
 }
 
-func (t *bruteForceMatchTree) matches(known map[matchTree]bool) (bool, bool) {
+func (t *bruteForceMatchTree) matches(cp *contentProvider, cost int, known map[matchTree]bool) (bool, bool) {
 	return true, true
 }
 
-func (t *andMatchTree) matches(known map[matchTree]bool) (bool, bool) {
+func (t *andMatchTree) matches(cp *contentProvider, cost int, known map[matchTree]bool) (bool, bool) {
 	sure := true
 
 	for _, ch := range t.children {
-		v, ok := evalMatchTree(known, ch)
+		v, ok := evalMatchTree(cp, cost, known, ch)
 		if ok && !v {
 			return false, true
 		}
@@ -376,11 +408,11 @@ func (t *andMatchTree) matches(known map[matchTree]bool) (bool, bool) {
 	return true, sure
 }
 
-func (t *orMatchTree) matches(known map[matchTree]bool) (bool, bool) {
+func (t *orMatchTree) matches(cp *contentProvider, cost int, known map[matchTree]bool) (bool, bool) {
 	matches := false
 	sure := true
 	for _, ch := range t.children {
-		v, ok := evalMatchTree(known, ch)
+		v, ok := evalMatchTree(cp, cost, known, ch)
 		if ok {
 			// we could short-circuit, but we want to use
 			// the other possibilities as a ranking
@@ -393,24 +425,34 @@ func (t *orMatchTree) matches(known map[matchTree]bool) (bool, bool) {
 	return matches, sure
 }
 
-func (t *branchQueryMatchTree) matches(known map[matchTree]bool) (bool, bool) {
+func (t *branchQueryMatchTree) matches(cp *contentProvider, cost int, known map[matchTree]bool) (bool, bool) {
 	return t.fileMasks[t.docID]&t.mask != 0, true
 }
 
-func (t *regexpMatchTree) matches(known map[matchTree]bool) (bool, bool) {
-	if !t.reEvaluated {
+func (t *regexpMatchTree) matches(cp *contentProvider, cost int, known map[matchTree]bool) (bool, bool) {
+	if cost < costRegexp {
 		return false, false
+	}
+
+	idxs := t.regexp.FindAllIndex(cp.data(t.fileName), -1)
+	t.found = make([]*candidateMatch, 0, len(idxs))
+	for _, idx := range idxs {
+		t.found = append(t.found, &candidateMatch{
+			byteOffset:  uint32(idx[0]),
+			byteMatchSz: uint32(idx[1] - idx[0]),
+			fileName:    t.fileName,
+		})
 	}
 
 	return len(t.found) > 0, true
 }
 
-func evalMatchTree(known map[matchTree]bool, mt matchTree) (bool, bool) {
+func evalMatchTree(cp *contentProvider, cost int, known map[matchTree]bool, mt matchTree) (bool, bool) {
 	if v, ok := known[mt]; ok {
 		return v, true
 	}
 
-	v, ok := mt.matches(known)
+	v, ok := mt.matches(cp, cost, known)
 	if ok {
 		known[mt] = v
 	}
@@ -418,18 +460,42 @@ func evalMatchTree(known map[matchTree]bool, mt matchTree) (bool, bool) {
 	return v, ok
 }
 
-func (t *notMatchTree) matches(known map[matchTree]bool) (bool, bool) {
-	v, ok := evalMatchTree(known, t.child)
+func (t *notMatchTree) matches(cp *contentProvider, cost int, known map[matchTree]bool) (bool, bool) {
+	v, ok := evalMatchTree(cp, cost, known, t.child)
 	return !v, ok
 }
 
-func (t *substrMatchTree) matches(known map[matchTree]bool) (bool, bool) {
+func (t *substrMatchTree) matches(cp *contentProvider, cost int, known map[matchTree]bool) (bool, bool) {
 	if len(t.current) == 0 {
 		return false, true
 	}
 
-	sure := (t.coversContent || t.contEvaluated)
-	return true, sure
+	if t.fileName && cost < costMemory {
+		return false, false
+	}
+
+	if !t.fileName && cost < costContent {
+		return false, false
+	}
+
+	if !t.coversContent {
+		pruned := t.current[:0]
+		for _, m := range t.current {
+			if m.byteOffset == 0 && m.runeOffset > 0 {
+				m.byteOffset = cp.findOffset(m.fileName, m.runeOffset)
+			}
+			if m.matchContent(cp.data(m.fileName)) {
+				pruned = append(pruned, m)
+			}
+		}
+		t.current = pruned
+	} else {
+		for _, cm := range t.current {
+			cm.byteOffset = cp.findOffset(cm.fileName, cm.runeOffset)
+		}
+	}
+
+	return len(t.current) > 0, true
 }
 
 func (d *indexData) newMatchTree(q query.Q, stats *Stats) (matchTree, error) {
@@ -512,16 +578,12 @@ func (d *indexData) newMatchTree(q query.Q, stats *Stats) (matchTree, error) {
 		if s.Value {
 			return &bruteForceMatchTree{}, nil
 		} else {
-			return &substrMatchTree{
-				query: &query.Substring{Pattern: "FALSE"},
-			}, nil
+			return &noMatchTree{"const"}, nil
 		}
 	case *query.Language:
 		code, ok := d.metaData.LanguageMap[s.Language]
 		if !ok {
-			return &substrMatchTree{
-				query: &query.Substring{Pattern: "LANG"},
-			}, nil
+			return &noMatchTree{"lang"}, nil
 		}
 		docs := make([]uint32, 0, len(d.languages))
 		for d, l := range d.languages {
@@ -547,7 +609,7 @@ func (d *indexData) newMatchTree(q query.Q, stats *Stats) (matchTree, error) {
 			return nil, fmt.Errorf("found %T inside query.Symbol", mt)
 		}
 
-		subMT.cands = d.trimByDocSection(s.Atom, subMT.cands, d.runeDocSections)
+		subMT.matchIterator = d.newTrimByDocSectionIter(s.Atom, subMT.matchIterator)
 		return subMT, nil
 	}
 	log.Panicf("type %T", q)
@@ -578,40 +640,6 @@ func (d *indexData) newSubstringMatchTree(s *query.Substring, stats *Stats) (mat
 		return nil, err
 	}
 	st.coversContent = result.coversContent
-	st.cands = result.cands
-	stats.IndexBytesLoaded += int64(result.bytesRead)
+	st.matchIterator = result
 	return st, nil
-}
-
-func (d *indexData) trimByDocSection(q *query.Substring, ms []*candidateMatch, secs []DocumentSection) []*candidateMatch {
-	trimmed := ms[:0]
-
-	patSize := utf8.RuneCount([]byte(q.Pattern))
-	for len(secs) > 0 && len(ms) > 0 {
-		var fileStart uint32
-		if ms[0].file > 0 {
-			fileStart = d.fileEndRunes[ms[0].file-1]
-		}
-
-		start := fileStart + ms[0].runeOffset
-		end := start + uint32(patSize)
-		if start >= secs[0].End {
-			secs = secs[1:]
-			continue
-		}
-
-		if start < secs[0].Start {
-			ms = ms[1:]
-			continue
-		}
-
-		// here we have: sec.Start <= start < sec.End
-		if end <= secs[0].End {
-			// complete match falls inside section.
-			trimmed = append(trimmed, ms[0])
-		}
-
-		ms = ms[1:]
-	}
-	return trimmed
 }

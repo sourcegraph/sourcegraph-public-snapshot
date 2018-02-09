@@ -68,7 +68,7 @@ func (s *postingsBuilder) newSearchableString(data []byte, byteSections []Docume
 	var buf [8]byte
 	var runeGram [3]rune
 
-	runeIndex := -1
+	var runeIndex uint32
 	byteCount := 0
 	dataSz := uint32(len(data))
 
@@ -79,7 +79,7 @@ func (s *postingsBuilder) newSearchableString(data []byte, byteSections []Docume
 	var runeSectionBoundaries []uint32
 
 	endRune := s.runeCount
-	for len(data) > 0 {
+	for ; len(data) > 0; runeIndex++ {
 		c, sz := utf8.DecodeRune(data)
 		if sz > 1 {
 			s.isPlainASCII = false
@@ -87,10 +87,8 @@ func (s *postingsBuilder) newSearchableString(data []byte, byteSections []Docume
 		data = data[sz:]
 
 		runeGram[0], runeGram[1], runeGram[2] = runeGram[1], runeGram[2], c
-		runeIndex++
 
-		s.runeCount++
-		if idx := s.runeCount - 1; idx%runeOffsetFrequency == 0 {
+		if idx := s.runeCount + runeIndex; idx%runeOffsetFrequency == 0 {
 			s.runeOffsets = append(s.runeOffsets, s.endByte+uint32(byteCount))
 		}
 		for len(byteSectionBoundaries) > 0 && byteSectionBoundaries[0] == uint32(byteCount) {
@@ -113,12 +111,20 @@ func (s *postingsBuilder) newSearchableString(data []byte, byteSections []Docume
 		s.postings[ng] = append(s.postings[ng], buf[:m]...)
 		s.lastOffsets[ng] = newOff
 	}
+	s.runeCount += runeIndex
 
+	// Handle symbol definition that ends at file end. This can
+	// happen for labels at the end of .bat files.
+	for len(byteSectionBoundaries) > 0 && byteSectionBoundaries[0] == uint32(byteCount) {
+		runeSectionBoundaries = append(runeSectionBoundaries,
+			endRune+runeIndex)
+		byteSectionBoundaries = byteSectionBoundaries[1:]
+	}
 	runeSecs := make([]DocumentSection, 0, len(byteSections))
-	for i := 0; i < len(byteSections); i++ {
+	for i := 0; i < len(runeSectionBoundaries); i += 2 {
 		runeSecs = append(runeSecs, DocumentSection{
-			Start: runeSectionBoundaries[2*i],
-			End:   runeSectionBoundaries[2*i+1],
+			Start: runeSectionBoundaries[i],
+			End:   runeSectionBoundaries[i+1],
 		})
 	}
 
@@ -327,6 +333,9 @@ func (b *IndexBuilder) Add(doc Document) error {
 			}
 		}
 		last = s
+	}
+	if last.End > uint32(len(doc.Content)) {
+		return fmt.Errorf("section goes past end of content")
 	}
 
 	if doc.SubRepositoryPath != "" {
