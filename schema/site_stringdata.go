@@ -353,8 +353,8 @@ const SiteSchemaJSON = `{
     },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph Server updates.",
-      "type": ["string", "null"],
-      "enum": ["release", null],
+      "type": ["string"],
+      "enum": ["release", "none"],
       "default": "release"
     },
     "langservers": {

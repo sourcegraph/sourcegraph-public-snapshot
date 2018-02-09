@@ -60,15 +60,13 @@ func readOrGenerateConfig(path string) (configJSON string, writable bool, err er
 }
 
 func generateConfigFile(path string) (configJSON string, err error) {
-	strptr := func(s string) *string { return &s }
-
 	// The default site configuration.
 	defaultSiteConfig := schema.SiteConfiguration{
 		AutoRepoAdd:      true,
 		SecretKey:        string(mustCryptoRand()),
 		AuthAllowSignup:  true,
 		AuthProvider:     "builtin",
-		UpdateChannel:    strptr("release"),
+		UpdateChannel:    "release",
 		MaxReposToSearch: 50,
 	}
 

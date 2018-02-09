@@ -147,7 +147,7 @@ func Start() {
 	}
 	started = true
 
-	if channel := conf.Get().UpdateChannel; channel == nil || *channel != "release" {
+	if channel := conf.Get().UpdateChannel; channel != "release" {
 		return // no update check
 	}
 

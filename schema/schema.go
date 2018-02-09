@@ -226,6 +226,6 @@ type SiteConfiguration struct {
 	TlsCert                        string                     `json:"tlsCert,omitempty"`
 	TlsKey                         string                     `json:"tlsKey,omitempty"`
 	TlsLetsencrypt                 string                     `json:"tls.letsencrypt,omitempty"`
-	UpdateChannel                  *string                    `json:"update.channel,omitempty"`
+	UpdateChannel                  string                     `json:"update.channel,omitempty"`
 	UseJaeger                      bool                       `json:"useJaeger,omitempty"`
 }

@@ -120,9 +120,6 @@ func configFromEnv() (configJSON []byte, envVarNames []string, err error) {
 				// when JSON config is used.
 				if typeField.Name == "SecretKey" {
 					valField.SetString(envVal)
-				} else if typeField.Name == "UpdateChannel" {
-					cpy := envVal
-					valField.Set(reflect.ValueOf(&cpy))
 				} else if err := json.Unmarshal([]byte(envVal), valField.Addr().Interface()); err != nil {
 					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
 				}

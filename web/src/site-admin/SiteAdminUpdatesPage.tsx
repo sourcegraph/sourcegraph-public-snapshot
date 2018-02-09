@@ -57,7 +57,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const autoUpdateCheckingEnabled = !!this.state.channel && this.state.telemetryEnabled
+        const autoUpdateCheckingEnabled = this.state.channel === 'release' && this.state.telemetryEnabled
         return (
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />
