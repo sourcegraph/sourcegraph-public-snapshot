@@ -208,24 +208,6 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 			return r.Context()
 		}
 
-		// Session backcompat
-		if (info.LastActive.IsZero() || info.ExpiryPeriod == 0) && info.Expiry.After(time.Now()) {
-			info.LastActive = time.Now()
-			info.ExpiryPeriod = defaultExpiryPeriod
-			info.Expiry = time.Time{}
-			newActorJSON, err := json.Marshal(info)
-			if err != nil {
-				log15.Error("failed to update session to new format", "id", session.ID, "session", info)
-				return r.Context()
-			}
-			session.Values["actor"] = newActorJSON
-			if err := session.Save(r, w); err != nil {
-				log15.Error("error saving session", "error", err)
-				return r.Context()
-			}
-			return actor.WithActor(r.Context(), info.Actor)
-		}
-
 		// Check expiry
 		if info.LastActive.Add(info.ExpiryPeriod).Before(time.Now()) {
 			DeleteSession(w, r)
