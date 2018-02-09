@@ -1,13 +1,9 @@
-// Package ui2 handles server-side rendering of the Sourcegraph web app.
-//
-// TODO(slimsag): fully replace the "ui" package with this one.
+// Package ui handles server-side rendering of the Sourcegraph web app.
 //
 // Development
 //
-// To develop, simply update the template files in cmd/frontend/internal/app/templates/ui2/...
+// To develop, simply update the template files in cmd/frontend/internal/app/templates/ui/...
 // and reload the page (the templates will be automatically reloaded).
-//
-// TODO(slimsag): update the ui2 path above once we ditch our old template files.
 //
 // Testing the error page
 //

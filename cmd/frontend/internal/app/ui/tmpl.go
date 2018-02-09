@@ -96,7 +96,7 @@ func doLoadTemplate(path string, root *template.Template) (*template.Template, e
 	name := strings.TrimPrefix(path, "shared/")
 
 	// Read the file.
-	data, err := readFile(templates.Data, "ui2/"+path) // TODO(slimsag): remove ui2 in the future
+	data, err := readFile(templates.Data, "ui/"+path)
 	if err != nil {
 		return nil, fmt.Errorf("ui: failed to read template %q: %v", path, err)
 	}
@@ -159,13 +159,13 @@ func mustListTemplates() []string {
 				if !strings.HasSuffix(fp, ".html") {
 					continue
 				}
-				fp = strings.TrimPrefix(fp, "ui2/") // TODO(slimsag): remove line in the future
+				fp = strings.TrimPrefix(fp, "ui/") // TODO(slimsag): remove line in the future
 				list = append(list, fp)
 			}
 			return list, nil
 		}
 		var err error
-		listTemplatesCache, err = walk("ui2") // TODO(slimsag): replace with root in the future
+		listTemplatesCache, err = walk("ui") // TODO(slimsag): replace with root in the future
 		if err != nil {
 			log.Println("ui: listing templates failed:", err)
 			panic(err)
