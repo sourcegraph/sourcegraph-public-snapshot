@@ -26,7 +26,7 @@ func init() {
 }
 
 var (
-	mode     = flag.String("mode", "stdio", "communication mode (stdio|tcp)")
+	mode     = flag.String("mode", "tcp", "communication mode (stdio|tcp)")
 	addr     = flag.String("addr", ":4389", "server listen address (tcp)")
 	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
 
