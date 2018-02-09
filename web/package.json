@@ -121,7 +121,7 @@
   "dependencies": {
     "@sourcegraph/icons": "^1.11.2",
     "@sqs/jsonc-parser": "^1.0.1",
-    "bootstrap": "^4.0.0-beta",
+    "bootstrap": "^4.0.0",
     "copy-to-clipboard": "^3.0.7",
     "d3-scale": "^1.0.7",
     "d3-selection": "^1.2.0",

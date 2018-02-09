@@ -920,7 +920,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
             !this.state.blob.richHTML &&
                 this.state.blob.highlight.aborted && (
                     <div className="blob-page__aborted" key="aborted">
-                        <div className="alert alert-notice">
+                        <div className="alert alert-info">
                             Syntax-highlighting this file took too long. &nbsp;
                             <button onClick={this.onExtendHighlightingTimeoutClick} className="btn btn-sm btn-primary">
                                 Try again

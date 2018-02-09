@@ -359,7 +359,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                         </button>
                         <Link
                             to="/site-admin/configuration"
-                            className="btn btn-primary btn-sm site-admin-page__actions-btn"
+                            className="btn btn-secondary btn-sm site-admin-page__actions-btn"
                         >
                             <GearIcon className="icon-inline" /> Configure repositories
                         </Link>

@@ -17,6 +17,7 @@ $media-xl: 1200px;
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/utilities';
 @import './global-styles/colors';
 @import './global-styles/type';
 @import './global-styles/code';
@@ -156,18 +157,19 @@ body {
 // Formats an icon so that it appears inline in the text
 // with height matching the text
 .icon-inline {
-    vertical-align: middle;
-    // Center SVG inside the container
+    // SVGs already include padding to account for text baseline,
+    // so align with the bottom of the text
+    vertical-align: bottom;
     display: inline-flex;
     align-items: center;
 
     svg {
         // TODO find a better way to scale icons that is not proportional to the font size
-        // 14px font size -> 21px icon size
+        // 14px font size -> 20px icon size
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: 1.5em;
+        width: (20em / 14);
         // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: 1.5em;
+        height: (20em / 14);
         // Match color of the text
         fill: currentColor;
     }
@@ -263,41 +265,37 @@ body {
 .alert {
     border-radius: 0.25rem;
     padding: 0.5rem;
+    color: $color-text-2;
 
     &-success {
         border: 1px solid #37b24d;
         background: rgba(43, 138, 62, 0.5);
-        color: #f2f4f8;
     }
 
     &-warning {
         border: 1px solid #f59f00;
         background: rgba(230, 119, 0, 0.5);
-        color: #f2f4f8;
     }
 
-    &-notice {
-        border: 1px solid #f8e7ba;
-        background: rgba(250, 245, 228, 0.5);
-        color: $color-text-2;
+    &-info {
+        border: 1px solid $color-info;
+        background: rgba($color-info, 0.5);
     }
 
     &-danger {
         border: 1px solid #f03e3e;
         background: rgba(201, 42, 42, 0.5);
-        color: #f2f4f8;
     }
 
     &-primary {
         border: 1px solid #2b3750;
         background: #1d2535;
-        color: #f2f4f8;
     }
 
     a {
         text-decoration: underline;
         font-weight: bold;
-        color: #f2f4f8;
+        color: inherit;
 
         &:hover,
         &:focus {
@@ -324,20 +322,14 @@ body {
 
         &-danger {
             background: rgba(201, 42, 42, 0.75);
-            color: #f2f4f8;
         }
 
         &-warning {
             background: rgba(230, 119, 0, 0.75);
-            color: #f2f4f8;
         }
 
-        &-notice {
-            background: rgba(250, 245, 228, 0.75);
-            &,
-            a {
-                color: $color-light-text-1;
-            }
+        &-info {
+            background: rgba($color-info, 0.75);
         }
     }
 }

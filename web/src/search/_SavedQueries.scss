@@ -20,42 +20,13 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-
-        h2 {
-            margin-bottom: 0;
-        }
-
-        &-button {
-            padding: 0.25rem 0.75rem 0.25rem 0.25rem;
-            margin: 0 0.5rem 0 0.75rem;
-        }
-
-        // TODO: Remove with https://github.com/sourcegraph/sourcegraph/issues/9370
-        .icon-inline {
-            margin-top: -0.25rem;
-        }
     }
 
-    // TODO: Remove with https://github.com/sourcegraph/sourcegraph/issues/9370
-    &__wand {
-        margin-right: 0.25rem;
-    }
-
-    &__space {
-        padding: 0.75rem 0;
-    }
-
-    &__btn {
-        padding: 0.25rem 0.5rem;
-    }
-
-    &__help {
-        line-height: normal;
+    &__actions {
+        display: flex;
     }
 
     .saved-query-form {
-        display: flex;
-        flex-direction: column;
         flex: 1 1 auto;
         color: $color-text-2;
     }

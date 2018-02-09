@@ -101,7 +101,7 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                 {scopes.filter(scope => scope.value !== '').map((scope, i) => (
                     <button
                         className={
-                            'btn btn-secondary btn-sm search-suggestion-chips__chip' +
+                            'btn btn-sm search-suggestion-chips__chip' +
                             (this.isScopeSelected(this.props.query, scope.value)
                                 ? ' search-suggestion-chips__chip--selected'
                                 : '')

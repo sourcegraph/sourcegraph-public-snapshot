@@ -1,18 +1,20 @@
 .btn {
     display: inline-block;
-    border-radius: 0.25rem;
-    padding: 0.5rem 1rem;
+    justify-content: center;
+    border-radius: 0.125rem;
+    padding: 0.375rem 0.75rem;
     font-size: inherit;
     line-height: inherit;
     font-family: inherit;
-    border: none;
+    border: 1px solid transparent;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
-    outline: none;
-    transition: box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
-
+    transition: box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+    &:focus {
+        outline: none;
+    }
     &:disabled,
     &.disabled {
         opacity: 0.4;
@@ -41,7 +43,6 @@
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: darken($color-primary, 5%);
         box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
     }
 
@@ -63,89 +64,95 @@
 }
 
 .btn-primary {
+    border-color: $color-primary;
     background: $color-primary;
-    border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
+        border-color: darken($color-primary, 5%);
         background: darken($color-primary, 5%);
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: darken($color-primary, 5%);
         box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
     }
 }
 
 .btn-success {
+    border-color: $color-success;
     background: $color-success;
     border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
+        border-color: darken($color-success, 5%);
         background: darken($color-success, 5%);
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: darken($color-success, 5%);
         box-shadow: 0 0 0 2px rgba($color-success, 0.5);
     }
 }
 
 .btn-danger {
-    background: rgba(201, 42, 42, 0.9);
-    border: solid 1px transparent;
+    border-color: $color-danger;
+    background: $color-danger;
 
     &:hover:not(:disabled):not(.disabled) {
-        background: darken(rgba(201, 42, 42, 0.9), 10%);
+        border-color: darken($color-danger, 10%);
+        background: darken($color-danger, 10%);
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: darken($color-danger, 5%);
         box-shadow: 0 0 0 2px rgba($color-danger, 0.5);
     }
 }
 
 .btn-secondary {
-    border: solid 1px;
-    border-color: $color-border;
-    background-color: transparent;
+    color: $color-text-1;
+    border-color: $color-bg-5;
+    background: $color-bg-5;
 
     .theme-light & {
-        border-color: $color-light-border-2;
+        color: $color-light-text-1;
+        border-color: $color-light-bg-4;
+        background: $color-light-bg-4;
     }
 
     &:hover:not(:disabled):not(.disabled) {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        border-color: $color-border;
-        color: $color-text-3;
+        color: $color-text-1;
+        background: $color-bg-3;
+        border-color: $color-bg-3;
         .theme-light & {
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            border-color: $color-light-border;
+            border-color: $color-light-bg-3;
+            background: $color-light-bg-3;
             color: $color-light-text-6;
         }
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        outline: lighten($color-secondary, 10%);
-        box-shadow: 0 0 0 2px rgba($color-secondary, 0.5);
+        box-shadow: 0 0 0 2px rgba($color-bg-5, 0.5);
+
+        // Override <a> styles
+        color: $color-text-1;
+        .theme-light & {
+            color: $color-light-text-1;
+            box-shadow: 0 0 0 2px rgba($color-light-bg-4, 0.5);
+        }
     }
 
-    // Make sure these styles are applied
-    // even when used on an anchor element
+    // Override <a> styles
     &,
     &:hover {
-        color: $color-secondary;
         text-decoration: none;
-        .theme-light & {
-            color: $color-light-text-2;
-        }
     }
 }
 
 .btn-info {
+    border-color: $color-info;
     background: $color-info;
     border: solid 1px transparent;
 
     &:hover:not(:disabled):not(.disabled) {
+        border-color: lighten($color-info, 5%);
         background: lighten($color-info, 5%);
     }
 
@@ -162,7 +169,8 @@
     // Make sure these styles are applied
     // even when used on an anchor element
     &,
-    &:hover {
+    &:hover,
+    &:focus {
         &,
         .theme-light & {
             color: white;

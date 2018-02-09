@@ -64,58 +64,12 @@
         white-space: nowrap;
     }
 
-    // Hide ugly default radio button (we use Unicode circles below instead).
-    &__input {
-        border: 0;
-        clip: rect(0 0 0 0);
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: 1px;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin: -1px;
-        overflow: hidden;
-        padding: 0;
-        position: absolute;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: 1px;
-    }
-
     &__label {
         display: flex;
         user-select: none;
         cursor: pointer;
 
         padding: 0.25rem 0.5rem;
-
-        &::before {
-            padding-right: 0.125rem;
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin-top: -1px;
-            font-size: 20px;
-        }
-    }
-
-    // Use Unicode chars as radio buttons that look nicer.
-    &__input:not(:checked) + &__label {
-        &::before {
-            content: '○';
-            opacity: 0.7;
-        }
-    }
-    &__input:checked + &__label {
-        color: $color-primary;
-        &::before {
-            content: '●';
-        }
-    }
-
-    // Make it look flush with the <input> above.
-    $border-radius: 2px; // same as .form-control
-    &__item:first-child &__label {
-        border-bottom-left-radius: $border-radius;
-        border-left-width: 1px;
-    }
-    &__item:last-child &__label {
-        border-bottom-right-radius: $border-radius;
     }
 }
 
