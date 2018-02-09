@@ -292,15 +292,16 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		}
 
 		mode := id.mode
-		if _, hasLargeMode := ServersByMode[mode+"_large"]; hasLargeMode {
-			repo := id.rootURI.Repo()
-			for _, p := range repoLargeSubstr {
-				if strings.Contains(string(repo), p) {
-					mode = mode + "_large"
-					break
-				}
-			}
+		repo := id.rootURI.Repo()
+
+		if p.shouldUseLargeServer(mode, repo) {
+			mode = mode + "_large"
 		}
+
+		if p.shouldStripBGMode(mode) {
+			mode = strings.TrimSuffix(mode, "_bg")
+		}
+
 		rwc, err := connectToServer(ctx, mode)
 		if err != nil {
 			c.initErr = err
@@ -353,6 +354,26 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	}
 
 	return c, err
+}
+
+func (p *Proxy) shouldUseLargeServer(mode string, repo api.RepoURI) bool {
+	if _, hasLargeMode := ServersByMode[mode+"_large"]; hasLargeMode {
+		for _, p := range repoLargeSubstr {
+			if strings.Contains(string(repo), p) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (p *Proxy) shouldStripBGMode(mode string) bool {
+	if !strings.HasSuffix(mode, "_bg") {
+		return false
+	}
+
+	_, hasBGMode := ServersByMode[mode]
+	return !hasBGMode
 }
 
 // initializeServer will ensure we either have an open connection or will open
