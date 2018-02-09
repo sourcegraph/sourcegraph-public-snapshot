@@ -3,7 +3,6 @@ package cli
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -63,10 +62,8 @@ var (
 
 	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
 
-	tlsCert     = conf.Get().TlsCert
-	tlsCertFile = env.Get("TLS_CERT_FILE", "", "certificate file for TLS (overrides TLS_CERT)")
-	tlsKey      = conf.Get().TlsKey
-	tlsKeyFile  = env.Get("TLS_KEY_FILE", "", "key file for TLS (overrides TLS_KEY)")
+	tlsCert = conf.Get().TlsCert
+	tlsKey  = conf.Get().TlsKey
 
 	httpToHttpsRedirect = conf.Get().HttpToHttpsRedirect
 
@@ -196,26 +193,10 @@ func Main() error {
 
 	handleBiLogger(sm)
 
-	if tlsCertFile != "" {
-		b, err := ioutil.ReadFile(tlsCertFile)
-		if err != nil {
-			return err
-		}
-		tlsCert = string(b)
-	}
-	if tlsKeyFile != "" {
-		b, err := ioutil.ReadFile(tlsKeyFile)
-		if err != nil {
-			return err
-		}
-		tlsKey = string(b)
-	}
 	useTLS := tlsCert != "" && tlsKey != ""
-
 	if useTLS && globals.AppURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
 	}
-
 	if !useTLS && globals.AppURL.Scheme == "https" {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", globals.AppURL)
 	}
