@@ -36,7 +36,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query: "foo case:no",
+			Query: "content:foo case:no",
 		},
 		{
 			Name: "regex",
@@ -49,7 +49,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query: "(foo).*?(bar) case:no",
+			Query: "content:(foo).*?(bar) case:no",
 		},
 		{
 			Name: "path",
@@ -62,10 +62,23 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query: `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+			Query: `content:foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
 		{
 			Name: "case",
+			Pattern: &patternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              true,
+				Pattern:                      "foo",
+				IncludePatterns:              []string{`\.go$`, `yaml`},
+				ExcludePattern:               nil,
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: true,
+			},
+			Query: `content:foo case:yes f:\.go$ f:yaml`,
+		},
+		{
+			Name: "casepath",
 			Pattern: &patternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
@@ -75,11 +88,15 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: true,
 			},
-			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+			Query: `content:foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
+			if tt.Name == "casepath" {
+				t.Skip("upstream bug https://github.com/google/zoekt/issues/47")
+			}
+
 			q, err := query.Parse(tt.Query)
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)

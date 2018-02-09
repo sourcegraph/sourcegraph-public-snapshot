@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
@@ -480,18 +481,55 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 }
 
 func queryToZoektQuery(query *patternInfo) (zoektquery.Q, error) {
-	pattern := query.Pattern
-	if !query.IsRegExp {
-		pattern = regexp.QuoteMeta(pattern)
-	}
-	pattern = strconv.Quote(pattern)
-	q := []string{pattern}
+	var and []zoektquery.Q
 
-	// zoekt guesses case sensitivity if we don't specify
-	if query.IsCaseSensitive {
-		q = append(q, "case:yes")
+	parseRe := func(pattern string, filename, content bool) (zoektquery.Q, error) {
+		// these are the flags used by zoekt, which differ to searcher.
+		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+		if err != nil {
+			return nil, err
+		}
+		// zoekt decides to use its literal optimization at the query parser
+		// level, so we check if our regex can just be a literal.
+		if re.Op == syntax.OpLiteral {
+			return &zoektquery.Substring{
+				Pattern:       string(re.Rune),
+				CaseSensitive: query.IsCaseSensitive,
+
+				FileName: filename,
+				Content:  content,
+			}, nil
+		} else {
+			return &zoektquery.Regexp{
+				Regexp:        re,
+				CaseSensitive: query.IsCaseSensitive,
+
+				FileName: filename,
+				Content:  content,
+			}, nil
+		}
+	}
+	contentRe := func(pattern string) (zoektquery.Q, error) {
+		return parseRe(pattern, false, true)
+	}
+	fileRe := func(pattern string) (zoektquery.Q, error) {
+		return parseRe(pattern, true, false)
+	}
+
+	if query.IsRegExp {
+		q, err := contentRe(query.Pattern)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, q)
 	} else {
-		q = append(q, "case:no")
+		and = append(and, &zoektquery.Substring{
+			Pattern:       query.Pattern,
+			CaseSensitive: query.IsCaseSensitive,
+
+			FileName: false,
+			Content:  true,
+		})
 	}
 
 	// zoekt also uses regular expressions for file paths
@@ -501,13 +539,21 @@ func queryToZoektQuery(query *patternInfo) (zoektquery.Q, error) {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
 	for _, p := range query.IncludePatterns {
-		q = append(q, "f:"+p)
+		q, err := fileRe(p)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, q)
 	}
 	if query.ExcludePattern != nil {
-		q = append(q, "-f:"+*query.ExcludePattern)
+		q, err := fileRe(*query.ExcludePattern)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Not{Child: q})
 	}
 
-	return zoektquery.Parse(strings.Join(q, " "))
+	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
 func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (indexed, unindexed []*repositoryRevisions, err error) {
