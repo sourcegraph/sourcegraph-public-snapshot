@@ -1,27 +1,46 @@
 .search-suggestion-chips {
     &__chip {
-        color: $color-text-1;
         padding: 0 0.25rem;
-        margin: 0.25rem;
         border-radius: 2px;
-
-        &:hover {
-            background-color: $color-bg-3;
+        margin: 0.25rem;
+        &:first-child {
+            margin-left: 0;
         }
 
-        &--selected {
-            color: $color-text-3;
-            background-color: $color-bg-5;
-            border-color: $color-bg-5;
+        .theme-dark & {
+            background: $color-bg-2;
+            border-color: $color-border;
+            color: $color-text-1;
+        }
+        .theme-light & {
+            color: $color-light-text-1;
+            background: $color-light-bg-2;
+            border-color: $color-light-border-2;
+        }
 
-            &:hover {
-                background-color: $color-bg-5;
-                border-color: $color-bg-5 !important;
+        &:hover:not(&--selected) {
+            .theme-dark & {
+                background: $color-bg-3;
+                border-color: $color-bg-3;
+                color: white;
+            }
+            .theme-light & {
+                background: $color-light-bg-4;
+                border-color: $color-light-bg-4;
+                color: $color-light-text-6;
             }
         }
 
-        &:first-child {
-            margin-left: 0;
+        &--selected {
+            .theme-dark & {
+                color: $color-text;
+                background: $color-bg-5;
+                border-color: $color-bg-5;
+            }
+            .theme-light & {
+                background: $color-light-bg-3;
+                border-color: $color-light-border;
+            }
         }
     }
 
@@ -46,26 +65,5 @@
     &__center {
         display: flex;
         align-items: center;
-    }
-}
-
-.theme-light {
-    .search-suggestion-chips {
-        &__chip {
-            color: $color-light-text-6;
-            background-color: $color-light-bg-2;
-            &:hover {
-                background-color: $color-light-bg-4;
-                border-color: $color-light-border-2 !important;
-            }
-            &--selected {
-                background-color: $color-light-bg-3;
-                border-color: $color-light-border;
-                &:hover {
-                    background-color: $color-light-bg-3;
-                    border-color: $color-light-border !important;
-                }
-            }
-        }
     }
 }
