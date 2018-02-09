@@ -10,9 +10,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
+	"golang.org/x/crypto/acme/autocert"
 
 	"context"
 
@@ -40,6 +41,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -52,7 +54,7 @@ var (
 	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
 
 	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
-	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API")
+	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API. Only used if manual tls cert and key are specified.")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
 	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
@@ -193,12 +195,10 @@ func Main() error {
 
 	handleBiLogger(sm)
 
-	useTLS := tlsCert != "" && tlsKey != ""
+	tlsCertAndKey := tlsCert != "" && tlsKey != ""
+	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.Get().TlsLetsencrypt != "off"))
 	if useTLS && globals.AppURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
-	}
-	if !useTLS && globals.AppURL.Scheme == "https" {
-		log15.Warn("TLS is disabled but app url scheme is https", "appURL", globals.AppURL)
 	}
 
 	var h http.Handler = sm
@@ -261,10 +261,56 @@ func Main() error {
 	// Don't leak memory through gorilla/session items stored in context
 	h = gcontext.ClearHandler(h)
 
-	srv := &http.Server{
-		Handler:      h,
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 60 * time.Second,
+	// serve will serve h on l. It additionally handles graceful restarts.
+	srv := &httpServers{}
+
+	// Start HTTPS server.
+	if useTLS {
+		tlsConf := &tls.Config{
+			NextProtos: []string{"h2", "http/1.1"},
+		}
+
+		// Configure tlsConf
+		if tlsCertAndKey {
+			// Manual
+			cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
+			if err != nil {
+				return err
+			}
+			tlsConf.Certificates = []tls.Certificate{cert}
+		} else {
+			// LetsEncrypt
+			m := &autocert.Manager{
+				Prompt:     autocert.AcceptTOS,
+				HostPolicy: autocert.HostWhitelist(globals.AppURL.Host),
+				Cache:      db.CertCache,
+			}
+			tlsConf.GetCertificate = m.GetCertificate
+			// We register paths on our HTTP handler so that we can do ACME
+			// "http-01" challenges. We are required to run the port 80
+			// handler since that is the only challenge ACME will issue us
+			// that we can accept.
+			srv.SetWrapper(m.HTTPHandler)
+			if httpAddr == "" {
+				log.Fatal("HTTP is disabled but is required to serve HTTPS with Lets Encrypt")
+			}
+		}
+
+		l, err := net.Listen("tcp", httpsAddr)
+		if err != nil {
+			// Fatal if we manually specified TLS or enforce lets encrypt
+			if tlsCertAndKey || conf.Get().TlsLetsencrypt == "on" {
+				log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
+			} else {
+				log15.Warn("Failed to bind to HTTPS port, TLS disabled", "address", httpsAddr, "error", err)
+			}
+		}
+
+		if l != nil {
+			l = tls.NewListener(l, tlsConf)
+			log15.Debug("HTTPS running", "on", l.Addr())
+			srv.GoServe(l, h)
+		}
 	}
 
 	// Start HTTP server.
@@ -274,37 +320,15 @@ func Main() error {
 			return err
 		}
 
-		httpServer := srv
 		if httpToHttpsRedirect {
 			// Use JS for the redirect because this is the most reliable solution if reverse proxies are involved.
-			httpServer = &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(`<script>window.location.protocol = "https:";</script>`))
-			})}
+			})
 		}
 
 		log15.Debug("HTTP running", "on", httpAddr)
-		go func() { log.Fatal(httpServer.Serve(l)) }()
-	}
-
-	// Start HTTPS server.
-	if useTLS && httpsAddr != "" {
-		l, err := net.Listen("tcp", httpsAddr)
-		if err != nil {
-			return err
-		}
-
-		cert, err := tls.X509KeyPair([]byte(tlsCert), []byte(tlsKey))
-		if err != nil {
-			return err
-		}
-
-		l = tls.NewListener(l, &tls.Config{
-			NextProtos:   []string{"h2"},
-			Certificates: []tls.Certificate{cert},
-		})
-
-		log15.Debug("HTTPS running", "on", httpsAddr)
-		go func() { log.Fatal(srv.Serve(l)) }()
+		srv.GoServe(l, h)
 	}
 
 	if httpAddrInternal != "" {
@@ -314,22 +338,14 @@ func Main() error {
 		}
 
 		log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
-		go func() {
-			httpServer := http.Server{
-				Handler:      internalHandler,
-				ReadTimeout:  75 * time.Second,
-				WriteTimeout: 60 * time.Second,
-			}
-			go func() {
-				<-processrestart.WillRestart
-				log15.Debug("Stopping HTTP server due to imminent restart")
-				_ = httpServer.Close()
-			}()
-			if err := httpServer.Serve(l); err != http.ErrServerClosed {
-				log.Fatal(err)
-			}
-		}()
+		srv.GoServe(l, internalHandler)
 	}
+
+	go func() {
+		<-processrestart.WillRestart
+		log15.Debug("Stopping HTTP server due to imminent restart")
+		srv.Close()
+	}()
 
 	if printLogo {
 		fmt.Println(" ")
@@ -338,5 +354,64 @@ func Main() error {
 	}
 	fmt.Printf("✱ Sourcegraph is ready at: %s\n", appURL)
 
-	select {}
+	srv.Wait()
+	return nil
+}
+
+type httpServers struct {
+	mu      sync.Mutex
+	wg      sync.WaitGroup
+	servers []*http.Server
+	wrapper func(http.Handler) http.Handler
+}
+
+// SetWrapper will set the wrapper for serve. All handlers served by are
+// passed through w.
+func (s *httpServers) SetWrapper(w func(http.Handler) http.Handler) {
+	s.mu.Lock()
+	s.wrapper = w
+	s.mu.Unlock()
+}
+
+// GoServe creates an http.Server for h on l in a new goroutine. If serve
+// returns an error other than http.ErrServerClosed it will fatal.
+func (s *httpServers) GoServe(l net.Listener, h http.Handler) {
+	srv := s.newServer(h)
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		if err := srv.Serve(l); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+}
+
+func (s *httpServers) newServer(h http.Handler) *http.Server {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.wrapper != nil {
+		h = s.wrapper(h)
+	}
+	srv := &http.Server{
+		Handler:      h,
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	}
+	s.servers = append(s.servers, srv)
+	return srv
+}
+
+// Close closes all servers added
+func (s *httpServers) Close() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, srv := range s.servers {
+		srv.Close()
+	}
+	s.servers = nil
+}
+
+// Wait waits until all servers are closed.
+func (s *httpServers) Wait() {
+	s.wg.Wait()
 }

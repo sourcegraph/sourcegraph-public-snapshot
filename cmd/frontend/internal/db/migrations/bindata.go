@@ -134,6 +134,8 @@
 // ../../../../../migrations/1516834731_add_saved_queries.up.sql
 // ../../../../../migrations/1517129075_repo_external.down.sql
 // ../../../../../migrations/1517129075_repo_external.up.sql
+// ../../../../../migrations/1518102181_cert_cache.down.sql
+// ../../../../../migrations/1518102181_cert_cache.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2881,6 +2883,46 @@ func _1517129075_repo_externalUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1518102181_cert_cacheDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\x48\x4e\x2d\x2a\x89\x4f\x4e\x4c\xce\x48\x8d\xcf\x4e\xad\x8c\xcf\x4c\xa9\xb0\xe6\x02\x4b\x87\x38\x3a\xf9\xb8\x22\x49\x5b\x73\x01\x02\x00\x00\xff\xff\xec\x3d\x94\x24\x36\x00\x00\x00")
+
+func _1518102181_cert_cacheDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1518102181_cert_cacheDownSql,
+		"1518102181_cert_cache.down.sql",
+	)
+}
+
+func _1518102181_cert_cacheDownSql() (*asset, error) {
+	bytes, err := _1518102181_cert_cacheDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1518102181_cert_cache.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1518102181_cert_cacheUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x90\x41\x4b\x03\x31\x10\x46\xcf\x9b\x5f\xf1\x1d\x77\x61\x8f\xe2\xa5\xa7\x68\x47\x0d\xee\x66\xeb\x36\x41\xeb\x25\x64\x93\x41\x83\x45\x25\x46\xac\xff\x5e\x2c\x52\x17\x3c\x08\x3d\xce\xf0\x1e\xc3\xbc\xf3\x91\xa4\x21\x18\x79\xd6\x11\x02\xe7\xe2\x82\x0f\x8f\x8c\x5a\x54\x29\x62\x4a\x0f\x6f\x9c\x93\xdf\x42\x0f\x06\xda\x76\x1d\x56\xa3\xea\xe5\xb8\xc1\x35\x6d\x5a\x51\xed\x61\xf7\xc4\x9f\x28\xbc\x2b\x07\xaa\x15\xd5\x74\x7a\x12\x7d\xf1\x7f\xf6\x21\xb3\x2f\x1c\x9d\x2f\x30\xaa\xa7\xb5\x91\xfd\x0a\xb7\xca\x5c\xed\x47\xdc\x0f\x9a\x7e\x8f\x2d\xe9\x42\xda\xce\xe0\xf9\xe5\xa3\x6e\x5a\x51\xbd\xbf\xc6\xe3\xe5\xc8\x5b\xfe\x47\x16\xcd\x42\xfc\x14\xb1\x5a\xdd\x58\x82\xd2\x4b\xba\x9b\x85\xf9\xfe\xd5\xa5\xb8\xc3\xa0\xe7\xb9\xec\x5a\xe9\x4b\x4c\x25\x33\xd7\x07\xae\x59\x88\xaf\x00\x00\x00\xff\xff\xcf\xd0\xe0\x1c\x5f\x01\x00\x00")
+
+func _1518102181_cert_cacheUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1518102181_cert_cacheUpSql,
+		"1518102181_cert_cache.up.sql",
+	)
+}
+
+func _1518102181_cert_cacheUpSql() (*asset, error) {
+	bytes, err := _1518102181_cert_cacheUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1518102181_cert_cache.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3067,6 +3109,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1516834731_add_saved_queries.up.sql":                         _1516834731_add_saved_queriesUpSql,
 	"1517129075_repo_external.down.sql":                           _1517129075_repo_externalDownSql,
 	"1517129075_repo_external.up.sql":                             _1517129075_repo_externalUpSql,
+	"1518102181_cert_cache.down.sql":                              _1518102181_cert_cacheDownSql,
+	"1518102181_cert_cache.up.sql":                                _1518102181_cert_cacheUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3244,6 +3288,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1516834731_add_saved_queries.up.sql":                         &bintree{_1516834731_add_saved_queriesUpSql, map[string]*bintree{}},
 	"1517129075_repo_external.down.sql":                           &bintree{_1517129075_repo_externalDownSql, map[string]*bintree{}},
 	"1517129075_repo_external.up.sql":                             &bintree{_1517129075_repo_externalUpSql, map[string]*bintree{}},
+	"1518102181_cert_cache.down.sql":                              &bintree{_1518102181_cert_cacheDownSql, map[string]*bintree{}},
+	"1518102181_cert_cache.up.sql":                                &bintree{_1518102181_cert_cacheUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

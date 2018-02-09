@@ -19,4 +19,5 @@ var (
 	UserEmails   = &userEmails{}
 	UserTags     = &userTags{}
 	SiteConfig   = &siteConfig{}
+	CertCache    = &certCache{}
 )

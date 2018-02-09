@@ -28,6 +28,7 @@ var defaultEnv = map[string]string{
 	"QUERY_RUNNER_URL":        "http://127.0.0.1:3183",
 	"SRC_SYNTECT_SERVER":      "http://localhost:3700",
 	"SRC_HTTP_ADDR":           ":7080",
+	"SRC_HTTPS_ADDR":          ":7443",
 	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
 	"GITHUB_BASE_URL":         "http://127.0.0.1:3180", // points to github-proxy
 	"LSP_PROXY":               "127.0.0.1:4388",

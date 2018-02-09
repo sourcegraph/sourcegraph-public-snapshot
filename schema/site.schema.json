@@ -40,6 +40,13 @@
       "description": "Whether built-in searches should be hidden on the Searches page.",
       "type": "boolean"
     },
+    "tls.letsencrypt": {
+      "description":
+        "Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.\nThe default value is auto, which uses the following conditions to switch on:\n - tlsCert and tlsKey are unset.\n - appURL is a https:// URL\n - Can successfully bind to port 443",
+      "default": "auto",
+      "enum": ["auto", "on", "off"],
+      "type": "string"
+    },
     "tlsCert": {
       "description": "TLS certificate for the web app.",
       "type": "string"
