@@ -93,10 +93,6 @@ func TestQueryToZoektQuery(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			if tt.Name == "casepath" {
-				t.Skip("upstream bug https://github.com/google/zoekt/issues/47")
-			}
-
 			q, err := query.Parse(tt.Query)
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
