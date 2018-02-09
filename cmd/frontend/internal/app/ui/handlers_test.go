@@ -1,4 +1,4 @@
-package ui2
+package ui
 
 import (
 	"testing"

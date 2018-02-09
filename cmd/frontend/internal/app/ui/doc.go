@@ -22,4 +22,4 @@
 // 	error=theerror -- controls the error message text
 // 	status=500 -- controls the status code
 //
-package ui2
+package ui
