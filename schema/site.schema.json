@@ -343,7 +343,7 @@
       "description": "The channel on which to automatically check for Sourcegraph Server updates.",
       "type": ["string", "null"],
       "enum": ["release", null],
-      "default": null
+      "default": "release"
     },
     "langservers": {
       "description": "Language server configuration.",
