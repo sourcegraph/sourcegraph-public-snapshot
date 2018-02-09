@@ -65,7 +65,7 @@ func (n *notifier) emailNotify(ctx context.Context) {
 }
 
 var newSearchResultsEmailTemplates = txemail.MustValidate(txemail.Templates{
-	Subject: `{{.ApproximateResultCount}} new search results found - {{.Description}}`,
+	Subject: `[{{.ApproximateResultCount}} new results] {{.Description}}`,
 	Text: `
 {{.ApproximateResultCount}} new search result{{if .MoreThanTwoResults}}s{{end}} have been found for {{.Ownership}} saved search:
 
@@ -160,7 +160,7 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txe
 }
 
 var notifySubscribedTemplate = txemail.MustValidate(txemail.Templates{
-	Subject: `Subscribed to saved search: {{.Description}}`,
+	Subject: `[Subscribed] {{.Description}}`,
 	Text: `
 You are now receiving notifications for {{.Ownership}} saved search:
 
@@ -178,7 +178,7 @@ When new search results become available, we will notify you.
 })
 
 var notifyUnsubscribedTemplate = txemail.MustValidate(txemail.Templates{
-	Subject: `Unsubscribed from saved search: {{.Description}}`,
+	Subject: `[Unsubscribed] {{.Description}}`,
 	Text: `
 You will no longer receive notifications for {{.Ownership}} saved search:
 
