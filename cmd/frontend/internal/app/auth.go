@@ -68,15 +68,17 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		// Send verify email
 		q := make(url.Values)
 		q.Set("code", emailCode)
-		verifyLink := globals.AppURL.String() + router.Rel.URLTo(router.VerifyEmail).Path + "?" + q.Encode()
-
+		verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
 		if err := txemail.Send(r.Context(), txemail.Message{
 			To:       []string{creds.Email},
 			Template: verifyEmailTemplates,
 			Data: struct {
 				URL string
 			}{
-				URL: verifyLink,
+				URL: globals.AppURL.ResolveReference(&url.URL{
+					Path:     verifyEmailPath.Path,
+					RawQuery: q.Encode(),
+				}).String(),
 			},
 		}); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)

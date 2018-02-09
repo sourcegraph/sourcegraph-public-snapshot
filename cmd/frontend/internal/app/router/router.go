@@ -1,10 +1,10 @@
 // Package router contains the URL router for the frontend app.
+//
+// It is in a separate package from app so that other packages may use it to generate URLs without resulting in Go
+// import cycles.
 package router
 
 import (
-	"log"
-	"net/url"
-
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
@@ -42,16 +42,12 @@ const (
 	UI = "ui"
 )
 
-// Router is an app URL router.
-type Router struct{ mux.Router }
+// Router returns the frontend app router.
+func Router() *mux.Router { return router }
 
-// New creates a new app router with route URL pattern definitions but
-// no handlers attached to the routes.
-//
-// It is in a separate package from app so that other packages may use it to
-// generate URLs without resulting in Go import cycles (and so we can release
-// the router as open-source to support our client library).
-func New() *Router {
+var router = newRouter()
+
+func newRouter() *mux.Router {
 	base := mux.NewRouter()
 
 	base.StrictSlash(true)
@@ -76,7 +72,7 @@ func New() *Router {
 
 	base.Path("/gophercon").Methods("GET").Name(GopherconLiveBlog)
 
-	addOldTreeRedirectRoute(&Router{*base}, base)
+	addOldTreeRedirectRoute(base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 
 	base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)
@@ -91,28 +87,5 @@ func New() *Router {
 	// Must come last
 	base.PathPrefix("/").Methods("GET").Name(UI)
 
-	return &Router{*base}
+	return base
 }
-
-func (r *Router) URLToOrError(routeName string, params ...string) (*url.URL, error) {
-	route := r.Get(routeName)
-	if route == nil {
-		log.Panicf("no such route: %q (params: %v)", routeName, params)
-	}
-	u, err := route.URL(params...)
-	if err != nil {
-		return nil, err
-	}
-	return u, nil
-}
-
-func (r *Router) URLTo(routeName string, params ...string) *url.URL {
-	u, err := r.URLToOrError(routeName, params...)
-	if err != nil {
-		log.Printf("Route error: failed to make URL for route %q (params: %v): %s", routeName, params, err)
-		return &url.URL{}
-	}
-	return u
-}
-
-var Rel = New()

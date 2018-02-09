@@ -15,10 +15,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
-// NewHandler returns a new app handler that uses the provided app
-// router.
-func NewHandler(r *router.Router) http.Handler {
+// NewHandler returns a new app handler that uses the app router.
+func NewHandler() http.Handler {
 	session.SetSessionStore(session.NewRedisStore(globals.AppURL.Scheme == "https"))
+
+	r := router.Router()
 
 	m := http.NewServeMux()
 
