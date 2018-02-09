@@ -86,7 +86,7 @@ export class OrgSidebar extends React.Component<Props, State> {
                 <div className="sidebar__item sidebar__action">
                     <Link to="/settings/profile" className="sidebar__action-button btn">
                         <UserIcon className="icon-inline sidebar__action-icon" />
-                        Personal settings
+                        User settings
                     </Link>
                 </div>
             </div>

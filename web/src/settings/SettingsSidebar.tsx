@@ -69,7 +69,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                         <div className="sidebar__header-icon">
                             <UserIcon className="icon-inline" />
                         </div>
-                        <h5 className="sidebar__header-title">Personal settings</h5>
+                        <h5 className="sidebar__header-title">User settings</h5>
                     </li>
                     <li className="sidebar__item">
                         <NavLink
