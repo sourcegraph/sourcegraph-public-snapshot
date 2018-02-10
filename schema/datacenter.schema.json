@@ -58,31 +58,31 @@
     },
     "langGo": {
       "type": "boolean",
-      "description": "(Deprecated: Use Langserver) Use Go language server."
+      "description": "(DEPRECATED: Use the \"langservers\" site configuration option.) Use Go language server."
     },
     "langJava": {
       "type": "boolean",
-      "description": "(Deprecated: Use Langserver) Use Java language server."
+      "description": "(DEPRECATED: Use the \"langservers\" site configuration option.) Use Java language server."
     },
     "langJavaScript": {
       "type": "boolean",
-      "description": "(Deprecated: Use Langserver) Use JavaScript language server."
+      "description": "(DEPRECATED: Use the \"langservers\" site configuration option.) Use JavaScript language server."
     },
     "langPHP": {
       "type": "boolean",
-      "description": "(Deprecated: Use Langserver) Use PHP language server."
+      "description": "(DEPRECATED: Use the \"langservers\" site configuration option.) Use PHP language server."
     },
     "langPython": {
       "type": "boolean",
-      "description": "(Deprecated: Use Langserver) Use Python language server."
+      "description": "(DEPRECATED: Use the \"langservers\" site configuration option.) Use Python language server."
     },
     "langSwift": {
       "type": "boolean",
-      "description": "(Deprecated: Use Langserver) Use Swift language server."
+      "description": "(DEPRECATED: Use the \"langservers\" site configuration option.) Use Swift language server."
     },
     "langTypeScript": {
       "type": "boolean",
-      "description": "(Deprecated: Use Langserver) Use TypeScript language server."
+      "description": "(DEPRECATED: Use the \"langservers\" site configuration option.) Use TypeScript language server."
     },
     "nodeSSDPath": {
       "type": "string",
