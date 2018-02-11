@@ -343,6 +343,10 @@ func Main() error {
 
 	go func() {
 		<-processrestart.WillRestart
+		// Block forever so we don't return from main func and exit this process. Package processrestart takes care
+		// of killing and restarting this process externally.
+		srv.wg.Add(1)
+
 		log15.Debug("Stopping HTTP server due to imminent restart")
 		srv.Close()
 	}()
