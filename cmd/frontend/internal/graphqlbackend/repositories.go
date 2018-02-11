@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -233,6 +234,38 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 	}
 	if err := db.Repos.SetEnabled(ctx, repo, args.Enabled); err != nil {
 		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) SetAllRepositoriesEnabled(ctx context.Context, args *struct {
+	Enabled bool
+}) (*EmptyResponse, error) {
+	// Only usable for self-hosted instances
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("Not available on sourcegraph.com")
+	}
+	// 🚨 SECURITY: Only site admins can enable/disable repositories, because it's a site-wide
+	// and semi-destructive action.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	var listArgs db.ReposListOptions
+	if args.Enabled {
+		listArgs = db.ReposListOptions{Disabled: true}
+	} else {
+		listArgs = db.ReposListOptions{Enabled: true}
+	}
+	reposList, err := db.Repos.List(ctx, listArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, repo := range reposList {
+		if err := db.Repos.SetEnabled(ctx, repo.ID, args.Enabled); err != nil {
+			return nil, err
+		}
 	}
 	return &EmptyResponse{}, nil
 }

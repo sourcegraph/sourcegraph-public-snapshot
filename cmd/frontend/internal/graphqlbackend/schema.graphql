@@ -125,6 +125,10 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
+    # Enables or disables all site repositories.
+    #
+    # Only site admins may perform this mutation.
+    setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
     #
@@ -141,6 +145,11 @@ type Mutation {
         # The mirror repository to update.
         repository: ID!
     ): EmptyResponse!
+    # Schedules all repositories to be updated from their original source repositories. Updating
+    # occurs automatically, so this should not normally be needed.
+    #
+    # Only site admins may perform this mutation.
+    updateAllMirrorRepositories: EmptyResponse!
     # Deletes a repository and all data associated with it, irreversibly.
     #
     # If the repository was added because it was present in the site configuration (directly,

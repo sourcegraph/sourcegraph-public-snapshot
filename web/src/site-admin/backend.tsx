@@ -219,6 +219,26 @@ export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Obser
     )
 }
 
+export function setAllRepositoriesEnabled(enabled: boolean): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation SetAllRepositoriesEnabled($enabled: Boolean!) {
+                setAllRepositoriesEnabled(enabled: $enabled) {
+                    alwaysNil
+                }
+            }
+        `,
+        { enabled }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+            resetAllMemoizationCaches()
+        })
+    )
+}
+
 export function updateMirrorRepository(args: { repository: GQLID }): Observable<void> {
     return mutateGraphQL(
         gql`
@@ -232,6 +252,25 @@ export function updateMirrorRepository(args: { repository: GQLID }): Observable<
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.updateMirrorRepository || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+            resetAllMemoizationCaches()
+        })
+    )
+}
+
+export function updateAllMirrorRepositories(): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation UpdateAllMirrorRepositories() {
+                updateAllMirrorRepositories() {
+                    alwaysNil
+                }
+            }
+        `
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             resetAllMemoizationCaches()

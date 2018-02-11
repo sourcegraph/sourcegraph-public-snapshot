@@ -35,6 +35,15 @@
             color: $color-danger;
         }
     }
+
+    &__enable-all {
+        display: flex;
+        flex-direction: row-reverse;
+        margin-bottom: 1rem;
+        &-button {
+            margin-left: 0.25rem;
+        }
+    }
 }
 
 .add-public-repository-form {

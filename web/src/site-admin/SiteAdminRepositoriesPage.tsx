@@ -21,7 +21,13 @@ import { fetchRepository } from '../repo/backend'
 import { RepoLink } from '../repo/RepoLink'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchAllRepositoriesAndPollIfAnyCloning, setRepositoryEnabled, updateMirrorRepository } from './backend'
+import {
+    fetchAllRepositoriesAndPollIfAnyCloning,
+    setAllRepositoriesEnabled,
+    setRepositoryEnabled,
+    updateAllMirrorRepositories,
+    updateMirrorRepository,
+} from './backend'
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -380,6 +386,22 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                     history={this.props.history}
                     location={this.props.location}
                 />
+                {!window.context.sourcegraphDotComMode && (
+                    <div className="site-admin-repositories-page__enable-all">
+                        <button
+                            className="btn btn-secondary site-admin-repositories-page__enable-all-button"
+                            onClick={this.disableAllRepostiories}
+                        >
+                            Disable all
+                        </button>
+                        <button
+                            className="btn btn-secondary site-admin-repositories-page__enable-all-button"
+                            onClick={this.enableAllRepostiories}
+                        >
+                            Enable and clone all
+                        </button>
+                    </div>
+                )}
             </div>
         )
     }
@@ -392,5 +414,34 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
     private toggleAddPublicRepositoryForm = () => {
         eventLogger.log('AddPublicRepositoryFormClicked')
         this.setState(state => ({ addPublicRepositoryFormVisible: !state.addPublicRepositoryFormVisible }))
+    }
+
+    private enableAllRepostiories = () => this.setAllRepositoriesEnabled(true)
+    private disableAllRepostiories = () => this.setAllRepositoriesEnabled(false)
+
+    private setAllRepositoriesEnabled(enabled: boolean): void {
+        if (
+            enabled &&
+            !confirm(
+                `Enabling and cloning all repositories may take some time and use significant resources. Enable and clone all repositories?`
+            )
+        ) {
+            return
+        }
+
+        eventLogger.log(enabled ? 'EnableAllReposClicked' : 'DisableAllReposClicked')
+
+        const promises: Promise<any>[] = [setAllRepositoriesEnabled(enabled).toPromise()]
+        if (enabled) {
+            promises.push(updateAllMirrorRepositories().toPromise())
+        }
+        Promise.all(promises).then(
+            this.onDidUpdateRepository,
+            // If one (or more) repositories fail, still update the UI before re-throwing
+            err => {
+                this.onDidUpdateRepository()
+                throw err
+            }
+        )
     }
 }
