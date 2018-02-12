@@ -144,16 +144,21 @@ describe('e2e test suite', () => {
         }
 
         const tooltipActionsSelector = '.sg-tooltip > .tooltip__actions'
-        const clickTooltipJ2D = async (): Promise<void> =>
+        const clickTooltipJ2D = async (): Promise<void> => {
+            await chrome.wait(`${tooltipActionsSelector} > a:nth-child(1)`)
             await chrome.click(`${tooltipActionsSelector} > a:nth-child(1)`)
-        const clickTooltipFindRefs = async (): Promise<void> =>
+        }
+        const clickTooltipFindRefs = async (): Promise<void> => {
+            await chrome.wait(`${tooltipActionsSelector} > a:nth-child(2)`)
             await chrome.click(`${tooltipActionsSelector} > a:nth-child(2)`)
+        }
 
         describe('file tree', () => {
             it('does navigation on file click', async () => {
                 await chrome.goto(
                     baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
+                await chrome.wait(`[data-tree-path="godockerize.go"]`)
                 await chrome.click(`[data-tree-path="godockerize.go"]`)
                 await assertWindowLocation(
                     '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
@@ -162,6 +167,7 @@ describe('e2e test suite', () => {
 
             it('expands directory on row click (no navigation)', async () => {
                 await chrome.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
+                await chrome.wait('.tree__row-icon')
                 await chrome.click('.tree__row-icon')
                 await chrome.wait('.tree__row--selected [data-tree-path="websocket"]')
                 await chrome.wait('.tree__row--expanded [data-tree-path="websocket"]')
@@ -170,6 +176,7 @@ describe('e2e test suite', () => {
 
             it('does navigation on directory row click', async () => {
                 await chrome.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
+                await chrome.wait('.tree__row-label')
                 await chrome.click('.tree__row-label')
                 await chrome.wait('.tree__row--selected [data-tree-path="websocket"]')
                 await chrome.wait('.tree__row--expanded [data-tree-path="websocket"]')
@@ -297,6 +304,7 @@ describe('e2e test suite', () => {
             it('navigates when clicking on a row', async () => {
                 await chrome.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
                 // click on directory
+                await chrome.wait('.directory-entry')
                 await chrome.click('.directory-entry')
                 await assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
@@ -331,6 +339,7 @@ describe('e2e test suite', () => {
 
             it('updates rev with switcher', async () => {
                 await chrome.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
+                await chrome.wait('.repo-header__rev')
                 await chrome.click('.repo-header__rev')
                 await chrome.click('.tab-bar__tab:nth-child(2)')
                 await chrome.click('.popover__node-link[href*="0.1.0"]')
