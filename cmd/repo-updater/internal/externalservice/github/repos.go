@@ -3,6 +3,7 @@ package github
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"context"
@@ -23,6 +24,7 @@ func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err
 // Repository is a GitHub repository.
 type Repository struct {
 	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
+	DatabaseID    int64  // The integer database id
 	NameWithOwner string // full name of repository ("owner/name")
 	Description   string // description of repository
 	URL           string // the web URL of this repository ("https://github.com/foo/bar")
@@ -173,6 +175,25 @@ func (c *Client) addRepositoryToCache(keys []string, repo *cachedRepo) {
 	}
 }
 
+// addRepositoriesToCache will cache repositories that exist
+// under relevant cache keys.
+func (c *Client) addRepositoriesToCache(repos []*Repository) {
+	for _, repo := range repos {
+		keys := []string{nameWithOwnerCacheKey(repo.NameWithOwner), nodeIDCacheKey(repo.ID)} // cache under multiple
+		c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
+	}
+}
+
+type restRepository struct {
+	ID          string `json:"node_id"` // GraphQL ID
+	DatabaseID  int64  `json:"id"`
+	FullName    string `json:"full_name"` // same as nameWithOwner
+	Description string
+	HTMLURL     string `json:"html_url"` // web URL
+	Private     bool
+	Fork        bool
+}
+
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
 func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
 	// If no token, we must use the older REST API, not the GraphQL API. See
@@ -182,25 +203,46 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 	//
 	// To avoid having 2 code paths when getting a repo (REST API and GraphQL API), we just always
 	// use the REST API.
-	var result struct {
-		ID          string `json:"node_id"`   // GraphQL ID
-		FullName    string `json:"full_name"` // same as nameWithOwner
-		Description string
-		HTMLURL     string `json:"html_url"` // web URL
-		Private     bool
-		Fork        bool
-	}
+	var result restRepository
 	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
 		return nil, err
 	}
+	return convertRestRepo(result), nil
+}
+
+// convertRestRepo converts repo information returned by the rest API
+// to a standard format.
+func convertRestRepo(restRepo restRepository) *Repository {
 	return &Repository{
-		ID:            result.ID,
-		NameWithOwner: result.FullName,
-		Description:   result.Description,
-		URL:           result.HTMLURL,
-		IsPrivate:     result.Private,
-		IsFork:        result.Fork,
-	}, nil
+		ID:            restRepo.ID,
+		DatabaseID:    restRepo.DatabaseID,
+		NameWithOwner: restRepo.FullName,
+		Description:   restRepo.Description,
+		URL:           restRepo.HTMLURL,
+		IsPrivate:     restRepo.Private,
+		IsFork:        restRepo.Fork,
+	}
+}
+
+// getPublicRepositories returns a page of public repositories that were created
+// after the repository identified by sinceRepoID.
+// An empty sinceRepoID returns the first page of results.
+// This is only intended to be called for GitHub Enterprise, so no rate limit information is returned.
+// https://developer.github.com/v3/repos/#list-all-public-repositories
+func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
+	var restRepos []restRepository
+	path := "v3/repositories"
+	if sinceRepoID > 0 {
+		path += "?since=" + strconv.FormatInt(sinceRepoID, 10)
+	}
+	if err := c.requestGet(ctx, path, &restRepos); err != nil {
+		return nil, err
+	}
+	var repos []*Repository
+	for _, restRepo := range restRepos {
+		repos = append(repos, convertRestRepo(restRepo))
+	}
+	return repos, nil
 }
 
 // getRepositoryByNodeIDFromAPI attempts to fetch a repository by GraphQL node ID from the GitHub
@@ -226,6 +268,15 @@ query Repository($id: ID!) {
 		return nil, ErrNotFound
 	}
 	return result.Node, nil
+}
+
+func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
+	repos, err := c.getPublicRepositories(ctx, sinceRepoID)
+	if err != nil {
+		return nil, err
+	}
+	c.addRepositoriesToCache(repos)
+	return repos, nil
 }
 
 // ListViewerRepositories lists GitHub repositories affiliated with the viewer (the currently authenticated user).
@@ -274,12 +325,7 @@ func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *s
 		return nil, nil, 0, err
 	}
 
-	// Add to cache.
-	for _, repo := range result.Viewer.Repositories.Nodes {
-		keys := []string{nameWithOwnerCacheKey(repo.NameWithOwner), nodeIDCacheKey(repo.ID)} // cache under multiple
-		c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
-	}
-
+	c.addRepositoriesToCache(result.Viewer.Repositories.Nodes)
 	nextPageCursor = result.Viewer.Repositories.PageInfo.EndCursor
 	if !result.Viewer.Repositories.PageInfo.HasNextPage {
 		nextPageCursor = nil

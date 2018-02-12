@@ -330,15 +330,34 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if len(c.config.RepositoryQuery) == 0 {
-			// Users need to specify ["none"] to disable affiliated default.
-			c.config.RepositoryQuery = []string{"affiliated"}
-		}
-		for _, repositoryQuery := range c.config.RepositoryQuery {
+	if len(c.config.RepositoryQuery) == 0 {
+		// Users need to specify ["none"] to disable mirroring.
+		c.config.RepositoryQuery = []string{"public", "affiliated"}
+	}
+	for _, repositoryQuery := range c.config.RepositoryQuery {
+		wg.Add(1)
+		go func(repositoryQuery string) {
+			defer wg.Done()
 			switch repositoryQuery {
+			case "public":
+				var sinceRepoID int64
+				for {
+					repos, err := c.client.ListPublicRepositories(ctx, sinceRepoID)
+					if err != nil {
+						log15.Error("Error listing public repositories", "sinceRepoID", sinceRepoID, "err", err)
+						return
+					}
+					if len(repos) == 0 {
+						// Last page
+						return
+					}
+					for _, r := range repos {
+						ch <- r
+						if sinceRepoID < r.DatabaseID {
+							sinceRepoID = r.DatabaseID
+						}
+					}
+				}
 			case "affiliated":
 				var endCursor *string // GraphQL pagination cursor
 				for {
@@ -368,8 +387,8 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 			default:
 				log15.Error("Skipping unrecognized GitHub configuration repositoryQuery", "repositoryQuery", repositoryQuery)
 			}
-		}
-	}()
+		}(repositoryQuery)
+	}
 
 	wg.Add(1)
 	go func() {
@@ -396,5 +415,22 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 		close(ch)
 	}()
 
-	return ch
+	return unique(ch)
+}
+
+// unique returns a channel that only forwards repositories
+// that have never been sent on the channel before.
+func unique(in <-chan *github.Repository) <-chan *github.Repository {
+	out := make(chan *github.Repository)
+	go func() {
+		found := make(map[string]struct{})
+		for repo := range in {
+			if _, ok := found[repo.URL]; !ok {
+				out <- repo
+				found[repo.URL] = struct{}{}
+			}
+		}
+		close(out)
+	}()
+	return out
 }

@@ -101,7 +101,8 @@ func isGitHubDotComURL(apiURL *url.URL) bool {
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
-	req.URL = c.apiURL.ResolveReference(&url.URL{Path: path.Join(c.apiURL.Path, req.URL.Path)})
+	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
+	req.URL = c.apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if c.token != "" {
 		req.Header.Set("Authorization", "bearer "+c.token)

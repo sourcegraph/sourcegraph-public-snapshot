@@ -25,7 +25,7 @@
   "corsOrigin": "https://github.com http://phabricator.sgdev.org",
   "github": [
     {
-      "url": "http://ghe.sgdev.org",
+      "url": "https://ghe.sgdev.org",
       "token": "23993bbf8e0fee068b8f70db05fc445d5a7a83da"
     }
   ],
