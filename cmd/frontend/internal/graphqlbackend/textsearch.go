@@ -82,24 +82,24 @@ type patternInfo struct {
 
 func (p *patternInfo) validate() error {
 	if p.IsRegExp {
-		if _, err := regexp.Compile(p.Pattern); err != nil {
+		if _, err := syntax.Parse(p.Pattern, syntax.Perl); err != nil {
 			return err
 		}
 	}
 
 	if p.PathPatternsAreRegExps {
 		if p.IncludePattern != nil {
-			if _, err := regexp.Compile(*p.IncludePattern); err != nil {
+			if _, err := syntax.Parse(*p.IncludePattern, syntax.Perl); err != nil {
 				return err
 			}
 		}
 		if p.ExcludePattern != nil {
-			if _, err := regexp.Compile(*p.ExcludePattern); err != nil {
+			if _, err := syntax.Parse(*p.ExcludePattern, syntax.Perl); err != nil {
 				return err
 			}
 		}
 		for _, expr := range p.IncludePatterns {
-			if _, err := regexp.Compile(expr); err != nil {
+			if _, err := syntax.Parse(expr, syntax.Perl); err != nil {
 				return err
 			}
 		}
