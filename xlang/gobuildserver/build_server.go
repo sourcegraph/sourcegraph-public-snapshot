@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"path"
 	pathpkg "path"
@@ -15,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gregjones/httpcache"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -66,6 +68,7 @@ type BuildHandler struct {
 	*langserver.HandlerShared
 	init           *lspext.InitializeParams // set by "initialize" request
 	rootImportPath string                   // root import path of the workspace (e.g., "github.com/foo/bar")
+	cachingClient  *http.Client             // http.Client with a cache backed by the LSP Proxy, set by BuildHandler.reset()
 }
 
 func (h *BuildHandler) fetchAndSendDepsOnce(fileURI lsp.DocumentURI) *sync.Once {
@@ -87,7 +90,7 @@ func (h *BuildHandler) fetchAndSendDepsOnce(fileURI lsp.DocumentURI) *sync.Once 
 var RuntimeVersion = runtime.Version()
 
 // reset clears all internal state in h.
-func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI lsp.DocumentURI) error {
+func (h *BuildHandler) reset(init *lspext.InitializeParams, conn *jsonrpc2.Conn, rootURI lsp.DocumentURI) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.findPkgMu.Lock()
@@ -99,6 +102,7 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI lsp.Document
 		return err
 	}
 	h.init = init
+	h.cachingClient = &http.Client{Transport: httpcache.NewTransport(&lspCache{context.Background(), conn})}
 	h.fetchAndSendDepsOnces = nil
 	h.depURLMutex = newKeyMutex()
 	h.gopathDeps = nil
@@ -202,7 +206,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			return nil, err
 		}
 		h.rootImportPath = langInitParams.RootImportPath
-		if err := h.reset(&params, langInitParams.Root()); err != nil {
+		if err := h.reset(&params, conn, langInitParams.Root()); err != nil {
 			return nil, err
 		}
 		rootPath := strings.TrimPrefix(string(langInitParams.Root()), "file://")

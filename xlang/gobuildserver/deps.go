@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -224,7 +223,7 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 
 	// Otherwise, it's an external dependency. Fetch the package
 	// and try again.
-	d, err := resolveImportPath(httputil.CachingClient, path)
+	d, err := resolveImportPath(h.cachingClient, path)
 	if err != nil {
 		return nil, err
 	}

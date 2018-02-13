@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -42,7 +43,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	importPath := strings.Split(symbolID, "/-/")[0]
-	cloneURL, err := gobuildserver.ResolveImportPathCloneURL(importPath)
+	cloneURL, err := gobuildserver.ResolveImportPathCloneURL(httputil.CachingClient, importPath)
 	if err != nil {
 		return err
 	}
