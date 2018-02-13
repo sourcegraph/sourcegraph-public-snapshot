@@ -42,7 +42,7 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                             <th>User</th>
                             <th>Page views</th>
                             <th>Search queries</th>
-                            <th>Last active date</th>
+                            <th className="site-admin-analytics-page__date-column">Last active date</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -59,7 +59,13 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                                     <td>{user.username}</td>
                                     <td>{user.activity ? user.activity.pageViews : '?'}</td>
                                     <td>{user.activity ? user.activity.searchQueries : '?'}</td>
-                                    <td>{user.activity ? <Timestamp date={user.activity.lastPageViewTime} /> : '?'}</td>
+                                    <td className="site-admin-analytics-page__date-column">
+                                        {user.activity && user.activity.lastPageViewTime ? (
+                                            <Timestamp date={user.activity.lastPageViewTime} />
+                                        ) : (
+                                            '?'
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                     </tbody>
@@ -76,7 +82,7 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                                         0
                                     )}
                                 </td>
-                                <td />
+                                <td className="site-admin-analytics-page__date-column" />
                             </tr>
                         </tfoot>
                     )}
