@@ -2,6 +2,15 @@
 
 package schema
 
+// AWSCodeCommitConnection
+type AWSCodeCommitConnection struct {
+	AccessKeyID                 string `json:"accessKeyID"`
+	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
+	Region                      string `json:"region"`
+	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
+	SecretAccessKey             string `json:"secretAccessKey"`
+}
+
 // ContainerOverrides
 type ContainerOverrides struct {
 	Image    string            `json:"image,omitempty"`
@@ -170,6 +179,7 @@ type SiteConfiguration struct {
 	AuthUserIdentityHTTPHeader     string                     `json:"auth.userIdentityHTTPHeader,omitempty"`
 	AuthUserOrgMap                 map[string][]string        `json:"auth.userOrgMap,omitempty"`
 	AutoRepoAdd                    bool                       `json:"autoRepoAdd,omitempty"`
+	AwsCodeCommit                  []AWSCodeCommitConnection  `json:"awsCodeCommit,omitempty"`
 	CorsOrigin                     string                     `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates          bool                       `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches         bool                       `json:"disableBuiltInSearches,omitempty"`

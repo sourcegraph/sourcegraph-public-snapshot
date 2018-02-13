@@ -64,6 +64,13 @@ func main() {
 		}
 	}()
 
+	// AWS CodeCommit repository syncing thread
+	go func() {
+		if err := repos.RunAWSCodeCommitRepositorySyncWorker(ctx); err != nil {
+			log.Fatalf("Fatal error: AWS CodeCommit repository sync worker: %s", err)
+		}
+	}()
+
 	// Phabricator Repository syncing thread
 	go func() {
 		if err := repos.RunPhabricatorRepositorySyncWorker(ctx); err != nil {

@@ -6,10 +6,10 @@ import (
 	"errors"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
-
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
@@ -63,6 +63,9 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 		repo, authoritative, err = repos.GetGitLabRepository(ctx, args)
 	}
 	if !authoritative {
+		repo, authoritative, err = repos.GetAWSCodeCommitRepository(ctx, args)
+	}
+	if !authoritative {
 		repo, authoritative, err = repos.GetExplicitlyConfiguredRepository(ctx, args)
 	}
 	if authoritative {
@@ -87,11 +90,14 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 
 func isNotFound(err error) bool {
 	// TODO(sqs): reduce duplication
-	return github.IsNotFound(err) || gitlab.IsNotFound(err)
+	return github.IsNotFound(err) || gitlab.IsNotFound(err) || awscodecommit.IsNotFound(err)
 }
 
 func isUnauthorized(err error) bool {
 	// TODO(sqs): reduce duplication
+	if awscodecommit.IsUnauthorized(err) {
+		return true
+	}
 	code := github.HTTPErrorCode(err)
 	if code == 0 {
 		code = gitlab.HTTPErrorCode(err)

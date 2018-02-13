@@ -99,8 +99,11 @@ func (r *fileResolver) ExternalURL(ctx context.Context) (*string, error) {
 		return nil, nil
 	}
 
-	// TODO(sqs): don't special-case GitLab, clean this code up
-	if repo := r.commit.repo.repo; repo.ExternalRepo != nil && repo.ExternalRepo.ServiceType == "gitlab" {
+	// TODO(sqs): don't special-case GitLab/AWS CodeCommit, clean this code up
+	//
+	// TODO(sqs): temporarily don't show these links for awscodecommit repos because GRAIL
+	// prefers to see phabricator links, and there's currently no way to show both.
+	if repo := r.commit.repo.repo; repo.ExternalRepo != nil && repo.ExternalRepo.ServiceType == "gitlab" /* || repo.ExternalRepo.ServiceType == "awscodecommit" */ {
 		info, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{ExternalRepo: repo.ExternalRepo})
 		if err != nil {
 			return nil, err

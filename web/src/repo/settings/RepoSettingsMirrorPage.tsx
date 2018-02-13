@@ -289,7 +289,9 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                     </dt>
                     <dd>
                         <div className="form-control settings-page__form-fake-input">
-                            <code>{this.props.repo.mirrorInfo.remoteURL || '(unknown)'}</code>
+                            <code className="settings-page__form-fake-input--code">
+                                {this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
+                            </code>
                         </div>
                     </dd>
                     <p className="settings-page__form-notice">

@@ -32,6 +32,29 @@
   version = "0.10.0"
 
 [[projects]]
+  name = "github.com/aws/aws-sdk-go-v2"
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/defaults",
+    "aws/endpoints",
+    "aws/signer/v4",
+    "internal/awsutil",
+    "internal/sdk",
+    "private/protocol",
+    "private/protocol/json/jsonutil",
+    "private/protocol/jsonrpc",
+    "private/protocol/query",
+    "private/protocol/query/queryutil",
+    "private/protocol/rest",
+    "private/protocol/xml/xmlutil",
+    "service/codecommit",
+    "service/sts"
+  ]
+  revision = "b8e7febd4b80c6517240e473410b54d4e63fed1d"
+  version = "v2.0.0-preview.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/beevik/etree"
   packages = ["."]
@@ -430,6 +453,11 @@
   packages = ["."]
   revision = "163f41321a19dd09362d4c63cc2489db2015f1f4"
   version = "0.3.2"
+
+[[projects]]
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  revision = "0b12d6b5"
 
 [[projects]]
   name = "github.com/joho/godotenv"
@@ -1355,6 +1383,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ddd24d6cce7d80d81c4d26390123515ec9003a8a592f381b6dda6fbf6ba201ad"
+  inputs-digest = "ade99c6881c91916fdab23a93c9b05c9a7f465cf4ca2729ba02c3aa1ee29c828"
   solver-name = "gps-cdcl"
   solver-version = 1
