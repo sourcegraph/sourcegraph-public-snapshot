@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 	"regexp/syntax"
 	"sort"
 	"strconv"
