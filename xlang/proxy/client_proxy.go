@@ -89,7 +89,17 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 	// to c.handle. As such we can race with c.conn being set and c.handle
 	// being called. So we hold the client lock
 	c.mu.Lock()
-	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
+	c.conn = jsonrpc2.NewConn(
+		ctx,
+		jsonrpc2.NewBufferedStream(
+			rwc,
+			jsonrpc2.VSCodeObjectCodec{},
+		),
+		jsonrpc2.AsyncHandler(
+			jsonrpc2.HandlerWithError(c.handle).SuppressErrClosed(),
+		),
+		connOpt...,
+	)
 	c.mu.Unlock()
 
 	p.mu.Lock()
