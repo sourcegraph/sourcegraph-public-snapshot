@@ -34,3 +34,12 @@ parts will be automated.
 1. `docker tag sourcegraph/server:VERSION sourcegraph/server:latest`
 1. `docker push sourcegraph/server:VERSION`
 1. `docker push sourcegraph/server:latest`
+
+## Publishing new code intelligence images
+
+1. Ensure that the latest version of the language server is uploaded
+   to `us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION`. For most
+   languages, this can be accomplished by pushing to the branch
+   `xlang-$LANG`. Pull the latest version locally.
+1. `docker tag us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION sourcegraph/codeintel-$LANG:latest`
+1. `docker push sourcegraph/codeintel-$LANG:latest`
