@@ -2,10 +2,7 @@
     &__chip {
         padding: 0 0.25rem;
         border-radius: 2px;
-        margin: 0.25rem;
-        &:first-child {
-            margin-left: 0;
-        }
+        margin: 0.25rem 0.5rem 0.25rem 0;
 
         .theme-dark & {
             background: $color-bg-2;
@@ -65,5 +62,6 @@
     &__center {
         display: flex;
         align-items: center;
+        margin-right: 0.5rem;
     }
 }
