@@ -78,6 +78,9 @@ func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver
 	if err != nil {
 		return gitserver.Repo{Name: repo.URI}, err
 	}
+	if result.Repo == nil {
+		return gitserver.Repo{Name: repo.URI}, repoupdater.ErrNotFound
+	}
 	return gitserver.Repo{Name: result.Repo.URI, URL: result.Repo.VCS.URL}, nil
 }
 

@@ -25,9 +25,12 @@
         // A <div> that can be styled to resemble an <input>.
         &-fake-input {
             display: inline-block;
-            white-space: nowrap;
             overflow-x: auto;
             width: auto;
+            word-break: break-word;
+            &--code {
+                white-space: unset;
+            }
         }
     }
 }

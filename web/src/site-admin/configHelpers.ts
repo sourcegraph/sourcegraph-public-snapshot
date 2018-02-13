@@ -2,6 +2,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Edit, FormattingOptions } from '@sqs/jsonc-parser/lib/format'
 import { parse } from '@sqs/jsonc-parser/lib/main'
 import {
+    AwsCodeCommitConnection,
     GitHubConnection,
     OpenIdConnectAuthProvider,
     Repository,
@@ -50,6 +51,16 @@ const addGitLab: ConfigHelper = config => {
     }
     const edits = setProperty(config, ['gitlab', -1], value, defaultFormattingOptions)
     return { edits, selectText: tokenPlaceholder }
+}
+
+const addAWSCodeCommit: ConfigHelper = config => {
+    const value: AwsCodeCommitConnection = {
+        region: '' as any,
+        accessKeyID: '',
+        secretAccessKey: '',
+    }
+    const edits = setProperty(config, ['awsCodeCommit', -1], value, defaultFormattingOptions)
+    return { edits, selectText: '""' }
 }
 
 const addOtherRepository: ConfigHelper = config => {
@@ -121,6 +132,7 @@ export const siteConfigActions: EditorAction[] = [
         run: addGitHubEnterprise,
     },
     { id: 'sourcegraph.site.addGitLab', label: 'Add GitLab projects', run: addGitLab },
+    { id: 'sourcegraph.site.addAWSCodeCommit', label: 'Add AWS CodeCommit repositories', run: addAWSCodeCommit },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
     { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },
     { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },
