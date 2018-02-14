@@ -61,22 +61,8 @@ func (s *Server) CleanupRepos() {
 		lastUpdated := fi.ModTime()
 		if time.Since(lastUpdated) > inactiveRepoTTL {
 			log15.Info("removing inactive repo", "repo", repoRoot)
-			// Move the repo to a tmp directory before removing to prevent a
-			// partially-deleted repo remaining in the event of a server-restart.
-			tmp, err := ioutil.TempDir(s.ReposDir, "tmp-cleanup-")
-			if err != nil {
-				log15.Error("error removing inactive repo", "error", err, "repo", repoRoot)
-				return
-			}
-			tmpRoot := path.Join(tmp, path.Base(repoRoot))
-			err = os.Rename(repoRoot, tmpRoot)
-			if err != nil {
-				log15.Error("error removing inactive repo", "error", err, "repo", repoRoot)
-				return
-			}
-			err = os.RemoveAll(tmp)
-			if err != nil {
-				log15.Error("error removing inactive repo", "error", err, "repo", repoRoot)
+			if err := s.removeAll(repoRoot); err != nil {
+				log15.Error("error removing inactive repo", "repo", repoRoot, "error", err)
 				return
 			}
 			reposRemoved.Inc()
@@ -154,4 +140,21 @@ func (s *Server) CleanupRepos() {
 		}
 		return
 	})
+}
+
+// removeAll removes the entire directory.
+// It first moves the directory to a temporary location
+// to avoid leaving partial state in the event of server
+// restart or concurrent modifications to the directory.
+func (s *Server) removeAll(dir string) error {
+	tmpDir, err := ioutil.TempDir(s.ReposDir, "tmp-cleanup-")
+	if err != nil {
+		return err
+	}
+	tmpName := strings.Replace(dir, string(os.PathSeparator), "-", -1)
+	tmpRoot := path.Join(tmpDir, tmpName)
+	if err := os.Rename(dir, tmpRoot); err != nil {
+		return err
+	}
+	return os.RemoveAll(tmpRoot)
 }

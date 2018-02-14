@@ -439,13 +439,17 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 			s.releaseCloneLock(dir)
 		}()
 
-		log15.Debug("cloning repo", "repo", repo, "url", url, "dir", dir)
 		path := filepath.Join(dir, ".git")
 		cmd := cloneCmd(ctx, url, path)
+		if err := s.removeAll(path); err != nil {
+			log15.Error("failed to clean up before clone", "path", path, "error", err)
+		}
+
+		log15.Debug("cloning repo", "repo", repo, "url", url, "dir", dir)
 		if output, err := s.runWithRemoteOpts(ctx, cmd); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))
-			if err := os.RemoveAll(path); err != nil {
-				log15.Error("clean up of clone dir failed", "path", path, "err", err)
+			if err := s.removeAll(path); err != nil {
+				log15.Error("failed to clean up after clone", "path", path, "error", err)
 			}
 			return
 		}
