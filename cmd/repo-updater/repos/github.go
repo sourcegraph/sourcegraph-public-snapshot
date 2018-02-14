@@ -272,9 +272,11 @@ func newGitHubConnection(config schema.GitHubConnection) (*githubConnection, err
 
 	// GitHub.com's API is hosted on api.github.com.
 	apiURL := *baseURL
+	githubDotCom := false
 	if hostname := strings.ToLower(apiURL.Hostname()); hostname == "github.com" || hostname == "www.github.com" {
 		// GitHub.com
 		apiURL = url.URL{Scheme: "https", Host: "api.github.com", Path: "/"}
+		githubDotCom = true
 	} else {
 		// GitHub Enterprise
 		if apiURL.Path == "" || apiURL.Path == "/" {
@@ -294,15 +296,17 @@ func newGitHubConnection(config schema.GitHubConnection) (*githubConnection, err
 	return &githubConnection{
 		config:           config,
 		baseURL:          baseURL,
+		githubDotCom:     githubDotCom,
 		client:           github.NewClient(&apiURL, config.Token, transport),
 		originalHostname: originalHostname,
 	}, nil
 }
 
 type githubConnection struct {
-	config  schema.GitHubConnection
-	baseURL *url.URL
-	client  *github.Client
+	config       schema.GitHubConnection
+	githubDotCom bool
+	baseURL      *url.URL
+	client       *github.Client
 
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
@@ -332,7 +336,12 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 
 	if len(c.config.RepositoryQuery) == 0 {
 		// Users need to specify ["none"] to disable mirroring.
-		c.config.RepositoryQuery = []string{"public", "affiliated"}
+		if c.githubDotCom {
+			// Doesn't make sense to try to enumerate all public repos on github.com
+			c.config.RepositoryQuery = []string{"affiliated"}
+		} else {
+			c.config.RepositoryQuery = []string{"public", "affiliated"}
+		}
 	}
 	for _, repositoryQuery := range c.config.RepositoryQuery {
 		wg.Add(1)
@@ -340,11 +349,15 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 			defer wg.Done()
 			switch repositoryQuery {
 			case "public":
+				if c.githubDotCom {
+					log15.Warn(`ignoring unsupported configuration "public" for "repositoryQuery" for github.com`)
+					return
+				}
 				var sinceRepoID int64
 				for {
 					repos, err := c.client.ListPublicRepositories(ctx, sinceRepoID)
 					if err != nil {
-						log15.Error("Error listing public repositories", "sinceRepoID", sinceRepoID, "err", err)
+						log15.Error("Error listing public repositories", "sinceRepoID", sinceRepoID, "error", err)
 						return
 					}
 					if len(repos) == 0 {
