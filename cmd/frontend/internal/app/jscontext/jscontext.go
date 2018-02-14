@@ -135,7 +135,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		XHRHeaders:           headers,
 		CSRFToken:            csrfToken,
 		UserAgentIsBot:       isBot(req.UserAgent()),
-		AssetsRoot:           assets.URL("/").String(),
+		AssetsRoot:           assets.URL("").String(),
 		Version:              env.Version,
 		User:                 user,
 		DisableTelemetry:     conf.Get().DisableTelemetry,
