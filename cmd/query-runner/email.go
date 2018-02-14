@@ -71,18 +71,18 @@ func (n *notifier) emailNotify(ctx context.Context) {
 var newSearchResultsEmailTemplates = txemail.MustValidate(txemail.Templates{
 	Subject: `[{{.ApproximateResultCount}} new result{{.PluralResults}}] {{.Description}}`,
 	Text: `
-{{.ApproximateResultCount}} new search result{{.PluralResults}} have been found for {{.Ownership}} saved search:
+{{.ApproximateResultCount}} new search result{{.PluralResults}} found for {{.Ownership}} saved search:
 
   "{{.Description}}"
 
 View the new result{{.PluralResults}} on Sourcegraph: {{.URL}}
 `,
 	HTML: `
-<strong>{{.ApproximateResultCount}}</strong> new search result{{.PluralResults}} have been found for {{.Ownership}} saved search:
+<strong>{{.ApproximateResultCount}}</strong> new search result{{.PluralResults}} found for {{.Ownership}} saved search:
 
 <p style="padding-left: 16px">&quot;{{.Description}}&quot;</p>
 
-<p><a href="{{.URL}}">View the new search result{{.PluralResults}} on Sourcegraph</a></p>
+<p><a href="{{.URL}}">View the new result{{.PluralResults}} on Sourcegraph</a></p>
 `,
 })
 
