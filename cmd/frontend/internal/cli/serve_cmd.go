@@ -25,7 +25,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
-	app_router "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
@@ -190,7 +189,7 @@ func Main() error {
 
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New()), globals.AppURL.Scheme == "https"))
+	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(), globals.AppURL.Scheme == "https"))
 	assets.Mount(sm)
 
 	handleBiLogger(sm)
@@ -246,7 +245,7 @@ func Main() error {
 	internalHandler = gcontext.ClearHandler(internalHandler)
 
 	// 🚨 SECURITY: Verify user identity if required
-	h, err = auth.NewSSOAuthHandler(context.Background(), h, appURL)
+	h, err = auth.NewAuthHandler(context.Background(), h, appURL)
 	if err != nil {
 		return err
 	}

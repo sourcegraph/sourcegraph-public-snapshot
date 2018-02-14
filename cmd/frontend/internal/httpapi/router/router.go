@@ -44,7 +44,7 @@ const (
 // no handlers attached to the routes.
 func New(base *mux.Router) *mux.Router {
 	if base == nil {
-		base = mux.NewRouter()
+		panic("base == nil")
 	}
 
 	base.StrictSlash(true)
@@ -69,8 +69,9 @@ func New(base *mux.Router) *mux.Router {
 // NewInternal creates a new API router for internal endpoints.
 func NewInternal(base *mux.Router) *mux.Router {
 	if base == nil {
-		base = mux.NewRouter()
+		panic("base == nil")
 	}
+
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
 	base.Path("/saved-queries/list-all").Methods("POST").Name(SavedQueriesListAll)

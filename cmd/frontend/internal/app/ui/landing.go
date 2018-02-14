@@ -1,4 +1,4 @@
-package ui2
+package ui
 
 import (
 	"net/http"
@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
-	approuter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
@@ -31,7 +30,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		}
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
-	http.Redirect(w, r, approuter.Rel.URLToRepoRev(repo.URI, string(commitID)).String(), http.StatusMovedPermanently)
+	http.Redirect(w, r, "/"+string(repo.URI)+"@"+string(commitID), http.StatusMovedPermanently)
 	return nil
 }
 

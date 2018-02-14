@@ -7,7 +7,7 @@ import (
 )
 
 func TestOldTreesRedirect(t *testing.T) {
-	router := New()
+	router := Router()
 
 	tests := map[string]string{
 		"/r@c/.tree":       "/r@c/-/tree",

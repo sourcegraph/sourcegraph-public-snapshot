@@ -62,7 +62,7 @@ export class SearchPage extends React.Component<Props, State> {
                 <img
                     className="search-page__logo"
                     src={
-                        `${window.context.assetsRoot}/img/ui2/sourcegraph` +
+                        `${window.context.assetsRoot}/img/ui/sourcegraph` +
                         (this.props.isLightTheme ? '-light' : '') +
                         '-head-logo.svg'
                     }

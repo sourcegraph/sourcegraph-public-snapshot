@@ -7,7 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/redirects"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui2"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -15,10 +15,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
-// NewHandler returns a new app handler that uses the provided app
-// router.
-func NewHandler(r *router.Router) http.Handler {
+// NewHandler returns a new app handler that uses the app router.
+func NewHandler() http.Handler {
 	session.SetSessionStore(session.NewRedisStore(globals.AppURL.Scheme == "https"))
+
+	r := router.Router()
 
 	m := http.NewServeMux()
 
@@ -46,7 +47,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.GoSymbolURL).Handler(traceutil.TraceRoute(errorutil.Handler(serveGoSymbolURL)))
 
-	r.Get(router.UI).Handler(ui2.Router())
+	r.Get(router.UI).Handler(ui.Router())
 
 	r.Get(router.SignUp).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignUp)))
 	r.Get(router.SignIn).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignIn)))
