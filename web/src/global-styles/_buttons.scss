@@ -1,29 +1,18 @@
-.btn {
-    display: inline-block;
-    justify-content: center;
-    border-radius: 0.125rem;
-    padding: 0.375rem 0.75rem;
-    font-size: inherit;
-    line-height: inherit;
-    font-family: inherit;
-    border: 1px solid transparent;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: pointer;
-    transition: box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
-    &:focus {
-        outline: none;
-    }
-    &:disabled,
-    &.disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-}
+@import 'bootstrap/scss/buttons';
 
-.btn-block {
-    width: 100%;
+// Light theme button variants
+.theme-light {
+    @each $color, $value in $theme-colors-light {
+        .btn-#{$color} {
+            @include button-variant($value, $value);
+        }
+    }
+
+    @each $color, $value in $theme-colors-light {
+        .btn-outline-#{$color} {
+            @include button-outline-variant($value);
+        }
+    }
 }
 
 // This class is meant for clickable icons
@@ -43,7 +32,7 @@
     }
 
     &:focus:not(:disabled):not(.disabled) {
-        box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
+        box-shadow: 0 0 0 2px rgba($primary, 0.5);
     }
 
     &:hover:not(:disabled):not(.disabled) {
@@ -53,132 +42,4 @@
             color: $color-light-text-2;
         }
     }
-}
-
-.btn-sm {
-    padding: 0.25rem 0.5rem;
-}
-
-.btn-link {
-    @extend a;
-}
-
-.btn-primary {
-    border-color: $color-primary;
-    background: $color-primary;
-
-    &:hover:not(:disabled):not(.disabled) {
-        border-color: darken($color-primary, 5%);
-        background: darken($color-primary, 5%);
-    }
-
-    &:focus:not(:disabled):not(.disabled) {
-        box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
-    }
-}
-
-.btn-success {
-    border-color: $color-success;
-    background: $color-success;
-    border: solid 1px transparent;
-
-    &:hover:not(:disabled):not(.disabled) {
-        border-color: darken($color-success, 5%);
-        background: darken($color-success, 5%);
-    }
-
-    &:focus:not(:disabled):not(.disabled) {
-        box-shadow: 0 0 0 2px rgba($color-success, 0.5);
-    }
-}
-
-.btn-danger {
-    border-color: $color-danger;
-    background: $color-danger;
-
-    &:hover:not(:disabled):not(.disabled) {
-        border-color: darken($color-danger, 10%);
-        background: darken($color-danger, 10%);
-    }
-
-    &:focus:not(:disabled):not(.disabled) {
-        box-shadow: 0 0 0 2px rgba($color-danger, 0.5);
-    }
-}
-
-.btn-secondary {
-    color: $color-text-1;
-    border-color: $color-bg-5;
-    background: $color-bg-5;
-
-    .theme-light & {
-        color: $color-light-text-1;
-        border-color: $color-light-bg-4;
-        background: $color-light-bg-4;
-    }
-
-    &:hover:not(:disabled):not(.disabled) {
-        color: $color-text-1;
-        background: $color-bg-3;
-        border-color: $color-bg-3;
-        .theme-light & {
-            border-color: $color-light-bg-3;
-            background: $color-light-bg-3;
-            color: $color-light-text-6;
-        }
-    }
-
-    &:focus:not(:disabled):not(.disabled) {
-        box-shadow: 0 0 0 2px rgba($color-bg-5, 0.5);
-
-        // Override <a> styles
-        color: $color-text-1;
-        .theme-light & {
-            color: $color-light-text-1;
-            box-shadow: 0 0 0 2px rgba($color-light-bg-4, 0.5);
-        }
-    }
-
-    // Override <a> styles
-    &,
-    &:hover {
-        text-decoration: none;
-    }
-}
-
-.btn-info {
-    border-color: $color-info;
-    background: $color-info;
-    border: solid 1px transparent;
-
-    &:hover:not(:disabled):not(.disabled) {
-        border-color: lighten($color-info, 5%);
-        background: lighten($color-info, 5%);
-    }
-
-    &:focus:not(:disabled):not(.disabled) {
-        outline: lighten($color-info, 5%);
-        box-shadow: 0 0 0 2px rgba($color-info, 0.5);
-    }
-}
-
-.btn-primary,
-.btn-success,
-.btn-danger,
-.btn-info {
-    // Make sure these styles are applied
-    // even when used on an anchor element
-    &,
-    &:hover,
-    &:focus {
-        &,
-        .theme-light & {
-            color: white;
-            text-decoration: none;
-        }
-    }
-}
-
-.disabled {
-    pointer-events: none;
 }

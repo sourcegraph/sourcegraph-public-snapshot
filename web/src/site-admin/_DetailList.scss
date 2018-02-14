@@ -25,7 +25,7 @@
     &__info {
         flex: 1;
         list-style-type: none;
-        color: $color-secondary;
+        color: $secondary;
         padding-right: 0.5rem;
 
         @extend small;
@@ -51,7 +51,7 @@
     }
 
     &__error {
-        color: $color-danger;
+        color: $danger;
         width: 100%;
     }
 }

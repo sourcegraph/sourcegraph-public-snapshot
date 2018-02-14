@@ -24,6 +24,13 @@
 * Avoid styling the children of your components. This couples your component to the implementation of the child
 * Order your rules so that layout rules (that describe how the component is layed out to its parents) come first, then rules that describe the layout of its children, and finally visual details.
 
+### Theming
+
+Theming is done through toggling top-level CSS classes `theme-light` and `theme-dark`.
+Any style can be made different on either theme by scoping it to one of those two classes.
+Where possible, we use CSS variables, but unfortunately they don't work with compile-time color manipulation (`darken()` etc)
+and runtime color manipulation is not yet implemented in CSS (coming in CSS Color Level 4).
+
 ## Formatting
 
 We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.

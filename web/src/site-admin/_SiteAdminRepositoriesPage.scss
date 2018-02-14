@@ -29,10 +29,10 @@
             user-select: none;
         }
         &--enabled &-access {
-            color: $color-success;
+            color: $success;
         }
         &--disabled &-access {
-            color: $color-danger;
+            color: $danger;
         }
     }
 

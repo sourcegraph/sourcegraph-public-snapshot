@@ -1,9 +1,7 @@
 // Defined in https://www.figma.com/file/YVJp5yV7Bz8sueXekODPDEjd/styleguide-atoms?node-id=962%3A0
 
-body {
-    font-size: 14px;
-    // 14px font size -> 20px line height
-    line-height: (20/14);
+.theme-light {
+    color: $body-color-light;
 }
 
 h1 {
@@ -42,28 +40,4 @@ h5 {
 small {
     font-size: 12px;
     line-height: 16px;
-}
-
-a {
-    &,
-    &:not([href]):not([tabindex]):not([disabled]) {
-        outline: 0;
-        color: #93a9c8;
-        text-decoration: none;
-
-        &:hover,
-        &:focus {
-            color: white;
-            text-decoration: none; // necessary override
-        }
-
-        .theme-light & {
-            color: #566e9f;
-
-            &:hover,
-            &:focus {
-                color: $color-light-text-5;
-            }
-        }
-    }
 }

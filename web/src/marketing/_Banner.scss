@@ -23,7 +23,7 @@
     }
 
     &__contents-cta {
-        color: $color-primary;
+        color: $primary;
     }
 
     &__close-button {
@@ -40,7 +40,7 @@
         border: 1px solid $color-light-border;
 
         &__contents-cta {
-            color: $color-primary;
+            color: $primary;
         }
     }
 }

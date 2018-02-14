@@ -9,7 +9,7 @@
     width: 100%;
 
     &::placeholder {
-        color: $color-secondary;
+        color: $secondary;
 
         .theme-light & {
             color: $color-light-text-3;
@@ -17,10 +17,10 @@
     }
 
     &:focus {
-        border-color: $color-primary;
+        border-color: $primary;
 
         .theme-light & {
-            border-color: $color-primary;
+            border-color: $primary;
         }
     }
 
@@ -43,7 +43,7 @@
     }
 
     &:invalid:not(:placeholder-shown) {
-        border-color: $color-danger;
+        border-color: $danger;
 
         + .invalid-feedback {
             display: block;
@@ -92,5 +92,5 @@ select.form-control {
 // Class used for feedback on invalid input fields
 // Use it next to the input it shoud give feedback for
 .invalid-feedback {
-    color: $color-danger;
+    color: $danger;
 }
