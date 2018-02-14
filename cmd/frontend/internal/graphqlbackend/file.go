@@ -99,11 +99,21 @@ func (r *fileResolver) ExternalURL(ctx context.Context) (*string, error) {
 		return nil, nil
 	}
 
-	// TODO(sqs): don't special-case GitLab/AWS CodeCommit, clean this code up
-	//
-	// TODO(sqs): temporarily don't show these links for awscodecommit repos because GRAIL
-	// prefers to see phabricator links, and there's currently no way to show both.
-	if repo := r.commit.repo.repo; repo.ExternalRepo != nil && repo.ExternalRepo.ServiceType == "gitlab" /* || repo.ExternalRepo.ServiceType == "awscodecommit" */ {
+	repo := r.commit.repo.repo
+	if repo == nil {
+		return nil, nil
+	}
+	var url *string
+	if isDir {
+		url, _ = r.treeURL(ctx)
+	} else {
+		url, _ = r.blobURL(ctx)
+	}
+	if url != nil {
+		return url, nil
+	}
+
+	if repo.ExternalRepo != nil {
 		info, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{ExternalRepo: repo.ExternalRepo})
 		if err != nil {
 			return nil, err
@@ -122,12 +132,7 @@ func (r *fileResolver) ExternalURL(ctx context.Context) (*string, error) {
 			}
 		}
 	}
-
-	if isDir {
-		return r.treeURL(ctx)
-	} else {
-		return r.blobURL(ctx)
-	}
+	return nil, nil
 }
 
 func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
@@ -169,7 +174,7 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 	}
 	uri, rev := repo.repo.URI, string(r.commit.oid)
 	rc, ok := repoListConfigs[uri]
-	if ok && rc.Links != nil && rc.Links.Tree != "" {
+	if ok && rc.Links != nil && rc.Links.Blob != "" {
 		url := strings.Replace(strings.Replace(rc.Links.Blob, "{rev}", rev, 1), "{path}", r.path, 1)
 		return &url, nil
 	}
