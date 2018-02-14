@@ -17,6 +17,7 @@
         border-radius: 0.25rem;
         background: darken($color-bg-1, 10%);
         color: $color-text;
+        word-wrap: break-word;
     }
 
     &::after {
