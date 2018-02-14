@@ -100,7 +100,7 @@ export class ChromeExtensionToast extends React.Component {
         return (
             <BrowserExtensionToast
                 browserName="Chrome"
-                browserLogoAsset="/.assets/img/ui/logo-chrome.svg"
+                browserLogoAsset="/.assets/img/logo-chrome.svg"
                 onClickInstall={this.onClickInstall}
             />
         )
@@ -143,7 +143,7 @@ export class FirefoxExtensionToast extends React.Component {
         return (
             <BrowserExtensionToast
                 browserName="Firefox"
-                browserLogoAsset="/.assets/img/ui/logo-firefox.svg"
+                browserLogoAsset="/.assets/img/logo-firefox.svg"
                 onClickInstall={this.onClickInstall}
             />
         )

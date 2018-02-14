@@ -19,7 +19,7 @@ export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> 
                 <div className="site-init-page__content">
                     <img
                         className="site-init-page__logo"
-                        src={`${window.context.assetsRoot}/img/ui/sourcegraph-light-head-logo.svg`}
+                        src={`${window.context.assetsRoot}/img/sourcegraph-light-head-logo.svg`}
                     />
                     <h2 className="site-init-page__header">Welcome to Sourcegraph Server!</h2>
                     <p>Create an admin account to start using Sourcegraph.</p>
