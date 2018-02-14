@@ -37,6 +37,16 @@ $body-color: #f2f4f8;
 $body-color-light: #2b3750;
 $link-color: #1c7cd6;
 
+// Alerts
+
+$alert-bg-level: 5;
+$alert-border-level: -1;
+$alert-color-level: -10;
+
+$alert-bg-level-light: -10;
+$alert-border-level-light: -9;
+$alert-color-level-light: 6;
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 
@@ -49,6 +59,7 @@ $theme-colors-light: ('secondary': $secondary-light);
 @import './global-styles/type';
 @import './global-styles/code';
 @import './global-styles/buttons';
+@import './global-styles/alert';
 @import './global-styles/forms';
 @import './global-styles/highlight';
 
@@ -261,67 +272,6 @@ body {
             margin-top: 1rem;
             background-color: #233043;
             padding: 1rem;
-        }
-    }
-}
-
-.alert {
-    border-radius: 0.25rem;
-    padding: 0.5rem;
-    color: $color-text-2;
-
-    &-success {
-        border: 1px solid #37b24d;
-        background: rgba(43, 138, 62, 0.5);
-    }
-
-    &-warning {
-        border: 1px solid #f59f00;
-        background: rgba(230, 119, 0, 0.5);
-    }
-
-    &-info {
-        border: 1px solid $info;
-        background: rgba($info, 0.5);
-    }
-
-    &-danger {
-        border: 1px solid #f03e3e;
-        background: rgba(201, 42, 42, 0.5);
-    }
-
-    &-primary {
-        border: 1px solid #2b3750;
-        background: #1d2535;
-    }
-
-    .btn-icon {
-        &:hover,
-        &:focus {
-            &,
-            .theme-light & {
-                color: white;
-            }
-        }
-    }
-}
-
-.theme-light {
-    .alert {
-        &-success {
-            background: rgba(43, 138, 62, 0.85);
-        }
-
-        &-danger {
-            background: rgba(201, 42, 42, 0.75);
-        }
-
-        &-warning {
-            background: rgba(230, 119, 0, 0.75);
-        }
-
-        &-info {
-            background: rgba($info, 0.75);
         }
     }
 }
