@@ -15,6 +15,9 @@ $media-xl: 1200px;
 @import 'open-color/open-color';
 
 // Bootstrap configuration before Bootstrap is imported
+$border-radius: 2px;
+$border-radius-sm: 1px;
+$border-radius-lg: 4px;
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
@@ -30,8 +33,15 @@ $green: $oc-green-7;
 $teal: $oc-teal-7;
 $cyan: $oc-cyan-7;
 
+$primary: $blue;
 $secondary: #2b3750;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
 $secondary-light: #f2f4f8;
+
+$theme-colors-light: ('secondary': $secondary-light);
 
 $body-color: #f2f4f8;
 $body-color-light: #2b3750;
@@ -47,11 +57,23 @@ $alert-bg-level-light: -10;
 $alert-border-level-light: -9;
 $alert-color-level-light: 6;
 
+// Forms
+
+$input-btn-focus-width: 2px;
+$input-focus-border-color: $primary;
+
+// Forms don't manipulate the colors at compile time,
+// which is why we can use CSS variables for theming here
+// That's nice because the forms theming CSS would otherwise
+// be way more complex than it is for other components
+$input-bg: var(--input-bg);
+$input-disabled-bg: var(--input-disabled-bg);
+$input-border-color: var(--input-border-color);
+$input-color: var(--input-color);
+$input-placeholder-color: var(--input-placeholder-color);
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
-
-$theme-colors-light: ('secondary': $secondary-light);
-
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
