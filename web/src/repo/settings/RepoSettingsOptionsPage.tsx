@@ -65,37 +65,33 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <h2>Settings</h2>
                 {this.state.loading && <LoaderIcon className="icon-inline" />}
                 {this.state.error && <div className="alert alert-danger">{this.state.error}</div>}
-                <form className="settings-page__form form-inline">
-                    <dl className="form-group">
-                        <dt className="input-label">Repository name</dt>
-                        <dd>
-                            <input
-                                type="text"
-                                className="form-control settings-page__form-control"
-                                readOnly={true}
-                                disabled={true}
-                                value={this.state.repo.uri}
-                                required={true}
-                                spellCheck={false}
-                                autoCapitalize="off"
-                                autoCorrect="off"
-                            />
-                            <button className="btn btn-primary" disabled={true} type="submit">
-                                Rename
-                            </button>
-                        </dd>
-                        <p className="settings-page__form-notice">
-                            <small>
-                                This repository's name is set by its{' '}
-                                {this.state.repo.viewerCanAdminister ? (
-                                    <Link to="/site-admin/configuration">code host configuration</Link>
-                                ) : (
-                                    'code host configuration'
-                                )}{' '}
-                                and can't be changed.
-                            </small>
-                        </p>
-                    </dl>
+                <form className="settings-page__form">
+                    <div className="form-group">
+                        <label>Repository name</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            readOnly={true}
+                            disabled={true}
+                            value={this.state.repo.uri}
+                            required={true}
+                            spellCheck={false}
+                            autoCapitalize="off"
+                            autoCorrect="off"
+                        />
+                        <small className="form-text">
+                            This repository's name is set by its{' '}
+                            {this.state.repo.viewerCanAdminister ? (
+                                <Link to="/site-admin/configuration">code host configuration</Link>
+                            ) : (
+                                'code host configuration'
+                            )}{' '}
+                            and can't be changed.
+                        </small>
+                        <button className="btn btn-primary mt-1" disabled={true} type="submit">
+                            Rename
+                        </button>
+                    </div>
                 </form>
                 <ActionContainer
                     title={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
