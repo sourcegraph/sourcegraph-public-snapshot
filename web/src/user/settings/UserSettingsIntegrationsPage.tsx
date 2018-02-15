@@ -249,23 +249,21 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                 </div>
                 <div className="user-integrations__sub-section">
                     <h4>Code search from Google Chrome address bar</h4>
-                    Go to <b>{'chrome://settings/searchEngines'}</b> to add a custom search engine or
+                    Go to <b>{'chrome://settings/searchEngines'}</b> to add a custom search engine or{' '}
                     <a
                         target="_blank"
                         href="https://support.google.com/chrome/answer/95426?hl=en&co=GENIE.Platform=Desktop"
                     >
-                        {' '}
-                        read this Chrome page{' '}
-                    </a>
+                        read this Chrome page
+                    </a>{' '}
                     for more information.
                 </div>
                 <div className="user-integrations__sub-section">
                     <h4>Add Firefox search engine</h4>
-                    Go to <b>{'about:preferences#search'}</b> to add a one-click search engine or check out
+                    Go to <b>{'about:preferences#search'}</b> to add a one-click search engine or check out{' '}
                     <a target="_blank" href="https://support.mozilla.org/en-US/kb/add-or-remove-search-engine-firefox">
-                        {' '}
-                        this Firefox page{' '}
-                    </a>
+                        this Firefox page
+                    </a>{' '}
                     for additional documentation.
                 </div>
             </div>
