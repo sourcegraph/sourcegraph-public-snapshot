@@ -313,10 +313,10 @@ type githubConnection struct {
 	originalHostname string
 }
 
-// authenticatedRemoteURL returns the repository's Git remote URL with the configured GitHub personal access token
-// inserted in the URL userinfo, for repositories needing authentication.
+// authenticatedRemoteURL returns the repository's Git remote URL with the configured
+// GitHub personal access token inserted in the URL userinfo.
 func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) string {
-	if c.config.Token == "" || !repo.IsPrivate {
+	if c.config.Token == "" {
 		return repo.URL
 	}
 	u, err := url.Parse(repo.URL)
