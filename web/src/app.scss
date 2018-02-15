@@ -72,6 +72,15 @@ $input-border-color: var(--input-border-color);
 $input-color: var(--input-color);
 $input-placeholder-color: var(--input-placeholder-color);
 
+// Tables
+
+$table-cell-padding: 0.625rem;
+$table-hover-bg: #0e121b;
+$table-border-color: #2b3750;
+
+$table-hover-bg-light: #f2f4f8;
+$table-border-color-light: #e4e9f1;
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -79,6 +88,7 @@ $input-placeholder-color: var(--input-placeholder-color);
 @import 'bootstrap/scss/utilities';
 @import './global-styles/colors';
 @import './global-styles/type';
+@import './global-styles/tables';
 @import './global-styles/code';
 @import './global-styles/buttons';
 @import './global-styles/alert';
@@ -230,49 +240,12 @@ body {
     border-top: 1px solid $color-bg-1;
 }
 
-.table {
-    width: 100%;
-
-    &.table-hover {
-        > tbody > tr:hover > td {
-            background: rgba(255, 255, 255, 0.05);
-        }
-    }
-
-    tr {
-        border-bottom: 1px solid #2a3a51;
-    }
-
-    th,
-    td {
-        padding: 0.45rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-}
-
-.theme-light {
-    .table {
-        border-color: $color-light-border;
-
-        &.table-hover {
-            > tbody > tr:hover > td {
-                background: #f2f4f8;
-            }
-        }
-
-        tr {
-            border-color: $color-light-border;
-        }
-    }
-}
-
 /**
  * Global style for user-defined avatars
  * Used for user, team member, and org avatars.
  */
 .avatar {
-    display: flex;
+    display: inline-flex;
 
     .avatar-icon,
     .icon {

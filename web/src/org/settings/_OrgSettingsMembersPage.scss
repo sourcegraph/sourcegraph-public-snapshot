@@ -4,6 +4,9 @@
 .org-settings-members-page {
     &__avatar-cell {
         width: 3rem;
+        padding: 0 !important;
+        vertical-align: middle !important;
+        text-align: center;
 
         .avatar {
             height: 2rem;
