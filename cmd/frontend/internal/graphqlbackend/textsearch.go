@@ -644,7 +644,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		return nil, common, nil
 	}
 
-	// Support expzoektonly:yes and expsearcheronly:yes in search query.
+	// Support index:yes (default), index:only, and index:no in search query.
 	index, _ := query.StringValues(searchquery.FieldIndex)
 	if len(index) == 0 && os.Getenv("SEARCH10_INDEX_DEFAULT") != "" && len(args.repos) > 10 {
 		index = []string{os.Getenv("SEARCH10_INDEX_DEFAULT")}
