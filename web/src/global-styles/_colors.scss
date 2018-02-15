@@ -1,17 +1,4 @@
-/*
-This sets the colors for all styles
-It should be imported into app.scss
-*/
-
-@import 'open-color/open-color';
-
-// Semantic/state colors (theme-agnostic)
-$color-primary: $oc-blue-7;
-$color-secondary: #93a9c8;
-$color-warning: $oc-yellow-7;
-$color-success: $oc-teal-7;
-$color-danger: $oc-red-7;
-$color-info: $oc-cyan-7;
+// General reusable colors from our custom color palette
 
 // Dark Theme
 

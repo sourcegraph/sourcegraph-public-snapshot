@@ -1,9 +1,15 @@
 // Defined in https://www.figma.com/file/YVJp5yV7Bz8sueXekODPDEjd/styleguide-atoms?node-id=962%3A0
 
-body {
-    font-size: 14px;
-    // 14px font size -> 20px line height
-    line-height: (20/14);
+.theme-light {
+    color: $body-color-light;
+
+    --link-color: #566e9f;
+    --link-hover-color: #1d2535;
+}
+
+.theme-dark {
+    --link-color: #a2b0cd;
+    --link-hover-color: white;
 }
 
 h1 {
@@ -44,26 +50,37 @@ small {
     line-height: 16px;
 }
 
+// Apply the same focus outline to links as to buttons
 a {
-    &,
-    &:not([href]):not([tabindex]):not([disabled]) {
+    border-radius: $border-radius;
+
+    &:focus,
+    &.focus {
         outline: 0;
-        color: #93a9c8;
-        text-decoration: none;
+        box-shadow: $btn-focus-box-shadow;
+    }
 
-        &:hover,
+    // Disabled comes first so active can properly restyle
+    &.disabled,
+    &:disabled {
+        opacity: $btn-disabled-opacity;
+
+        @include box-shadow(none);
+    }
+
+    // Opinionated: add "hand" cursor to non-disabled .btn elements
+    &:not(:disabled):not(.disabled) {
+        cursor: pointer;
+    }
+
+    &:not(:disabled):not(.disabled):active,
+    &:not(:disabled):not(.disabled).active {
+        background-image: none;
+
+        @include box-shadow($btn-active-box-shadow);
+
         &:focus {
-            color: white;
-            text-decoration: none; // necessary override
-        }
-
-        .theme-light & {
-            color: #566e9f;
-
-            &:hover,
-            &:focus {
-                color: $color-light-text-5;
-            }
+            @include box-shadow($btn-focus-box-shadow, $btn-active-box-shadow);
         }
     }
 }

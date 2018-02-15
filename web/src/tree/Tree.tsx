@@ -480,8 +480,6 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                     className="tree__row-contents"
                                     data-tree-directory="true"
                                     data-tree-path={node.filePath}
-                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                    style={treePadding(this.props.depth, true)}
                                 >
                                     <a
                                         className="tree__row-icon"
@@ -491,6 +489,8 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                             rev: this.props.rev,
                                             filePath: node.filePath,
                                         })}
+                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                        style={treePadding(this.props.depth, true)}
                                     >
                                         {this.showSubpath(node.filePath) ? (
                                             <ChevronDownIcon className="icon-inline" />
@@ -533,8 +533,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                             key={node.filePath}
                             className={'tree__row' + (node.filePath === store.selectedPath ? '--selected' : '')}
                         >
-                            {/* tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling) */}
-                            <td style={treePadding(this.props.depth, false)}>
+                            <td>
                                 <Link
                                     className="tree__row-contents"
                                     onClick={this.linkRowClick}
@@ -546,6 +545,8 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                                     data-tree-path={node.filePath}
                                     draggable={false}
                                     title={node.filePath}
+                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                    style={treePadding(this.props.depth, false)}
                                 >
                                     {node.filePath.split('/').pop()}
                                 </Link>

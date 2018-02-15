@@ -12,7 +12,79 @@ $media-md: 768px;
 $media-lg: 992px;
 $media-xl: 1200px;
 
-// Include only Reboot of Bootstrap v4 as a foundation for our own styles
+@import 'open-color/open-color';
+
+// Bootstrap configuration before Bootstrap is imported
+$border-radius: 2px;
+$border-radius-sm: 1px;
+$border-radius-lg: 4px;
+$font-size-base: 0.875rem;
+$line-height-base: (20/14);
+
+// Tell Bootstrap to use colors from OpenColor
+$blue: $oc-blue-7;
+$indigo: $oc-indigo-7;
+$purple: $oc-violet-7;
+$pink: $oc-pink-7;
+$red: $oc-red-7;
+$orange: $oc-orange-7;
+$yellow: $oc-yellow-7;
+$green: $oc-green-7;
+$teal: $oc-teal-7;
+$cyan: $oc-cyan-7;
+
+$primary: $blue;
+$secondary: #2b3750;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+$secondary-light: #f2f4f8;
+
+$theme-colors-light: ('secondary': $secondary-light);
+
+$body-color: #f2f4f8;
+$body-color-light: #2b3750;
+
+// Links
+
+$link-color: var(--link-color);
+$link-hover-color: var(--link-hover-color);
+
+// Alerts
+
+$alert-bg-level: 5;
+$alert-border-level: -1;
+$alert-color-level: -10;
+
+$alert-bg-level-light: -10;
+$alert-border-level-light: -9;
+$alert-color-level-light: 6;
+
+// Forms
+
+$input-btn-focus-width: 2px;
+$input-focus-border-color: $primary;
+
+// Forms don't manipulate the colors at compile time,
+// which is why we can use CSS variables for theming here
+// That's nice because the forms theming CSS would otherwise
+// be way more complex than it is for other components
+$input-bg: var(--input-bg);
+$input-disabled-bg: var(--input-disabled-bg);
+$input-border-color: var(--input-border-color);
+$input-color: var(--input-color);
+$input-placeholder-color: var(--input-placeholder-color);
+
+// Tables
+
+$table-cell-padding: 0.625rem;
+$table-hover-bg: #0e121b;
+$table-border-color: #2b3750;
+
+$table-hover-bg-light: #f2f4f8;
+$table-border-color-light: #e4e9f1;
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -20,21 +92,13 @@ $media-xl: 1200px;
 @import 'bootstrap/scss/utilities';
 @import './global-styles/colors';
 @import './global-styles/type';
+@import './global-styles/icons';
+@import './global-styles/tables';
 @import './global-styles/code';
 @import './global-styles/buttons';
+@import './global-styles/alert';
 @import './global-styles/forms';
 @import './global-styles/highlight';
-
-// Define the 'system' font family
-//
-// See https://css-tricks.com/snippets/css/system-font-stack/
-@font-face {
-    font-family: system;
-    font-style: normal;
-    font-weight: 300;
-    src: local(-apple-system), local(BlinkMacSystemFont), local('Segoe UI'), local(Helvetica), local(Arial),
-        local(sans-serif), local('Apple Color Emoji'), local('Segoe UI Emoji'), local('Segoe UI Symbol');
-}
 
 * {
     box-sizing: border-box;
@@ -43,7 +107,6 @@ $media-xl: 1200px;
 }
 
 html {
-    font-family: 'system';
     // Base for layout rem values
     font-size: 16px;
 }
@@ -51,7 +114,6 @@ html {
 body {
     height: 100vh;
     display: flex;
-    color: $color-text;
 }
 
 // React root element
@@ -66,19 +128,12 @@ body {
 .theme-dark {
     border-color: $color-border;
     background-color: $color-bg-1;
-    color: $color-text;
 }
 // Light-themed elements
 
 .theme-light {
     border-color: $color-light-border;
     background-color: $color-light-bg-1;
-    color: $color-light-text-1;
-}
-
-.theme {
-    width: 100%;
-    display: flex;
 }
 
 // Selection highlight is the background color for matched/highlighted tokens,
@@ -154,98 +209,6 @@ body {
     }
 }
 
-// Formats an icon so that it appears inline in the text
-// with height matching the text
-.icon-inline {
-    // SVGs already include padding to account for text baseline,
-    // so align with the bottom of the text
-    vertical-align: bottom;
-    display: inline-flex;
-    align-items: center;
-
-    svg {
-        // TODO find a better way to scale icons that is not proportional to the font size
-        // 14px font size -> 20px icon size
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: (20em / 14);
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: (20em / 14);
-        // Match color of the text
-        fill: currentColor;
-    }
-}
-
-// Special case for the loader
-.icon-inline > .icon-loader {
-    stroke: currentColor;
-}
-
-.text-danger {
-    color: $color-danger;
-}
-
-.ui-section {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-}
-
-.ui-section:not(:first-child) {
-    border-top: 1px solid $color-bg-1;
-}
-
-.table {
-    width: 100%;
-
-    &.table-hover {
-        > tbody > tr:hover > td {
-            background: rgba(255, 255, 255, 0.05);
-        }
-    }
-
-    tr {
-        border-bottom: 1px solid #2a3a51;
-    }
-
-    th,
-    td {
-        padding: 0.45rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-}
-
-.theme-light {
-    .table {
-        border-color: $color-light-border;
-
-        &.table-hover {
-            > tbody > tr:hover > td {
-                background: #f2f4f8;
-            }
-        }
-
-        tr {
-            border-color: $color-light-border;
-        }
-    }
-}
-
-/**
- * Global style for user-defined avatars
- * Used for user, team member, and org avatars.
- */
-.avatar {
-    display: flex;
-
-    .avatar-icon,
-    .icon {
-        height: 100%;
-        fill: currentColor;
-        border-radius: 50%;
-    }
-}
-
 .app {
     &__error {
         > hr {
@@ -258,78 +221,6 @@ body {
             margin-top: 1rem;
             background-color: #233043;
             padding: 1rem;
-        }
-    }
-}
-
-.alert {
-    border-radius: 0.25rem;
-    padding: 0.5rem;
-    color: $color-text-2;
-
-    &-success {
-        border: 1px solid #37b24d;
-        background: rgba(43, 138, 62, 0.5);
-    }
-
-    &-warning {
-        border: 1px solid #f59f00;
-        background: rgba(230, 119, 0, 0.5);
-    }
-
-    &-info {
-        border: 1px solid $color-info;
-        background: rgba($color-info, 0.5);
-    }
-
-    &-danger {
-        border: 1px solid #f03e3e;
-        background: rgba(201, 42, 42, 0.5);
-    }
-
-    &-primary {
-        border: 1px solid #2b3750;
-        background: #1d2535;
-    }
-
-    a {
-        text-decoration: underline;
-        font-weight: bold;
-        color: inherit;
-
-        &:hover,
-        &:focus {
-            color: white;
-        }
-    }
-
-    .btn-icon {
-        &:hover,
-        &:focus {
-            &,
-            .theme-light & {
-                color: white;
-            }
-        }
-    }
-}
-
-.theme-light {
-    .alert {
-        &-success {
-            background: rgba(43, 138, 62, 0.85);
-        }
-
-        &-danger {
-            background: rgba(201, 42, 42, 0.75);
-        }
-
-        &-warning {
-            background: rgba(230, 119, 0, 0.75);
-        }
-
-        &-info {
-            background: rgba($color-info, 0.75);
         }
     }
 }
