@@ -230,16 +230,6 @@ body {
     stroke: currentColor;
 }
 
-.ui-section {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-}
-
-.ui-section:not(:first-child) {
-    border-top: 1px solid $color-bg-1;
-}
-
 /**
  * Global style for user-defined avatars
  * Used for user, team member, and org avatars.
