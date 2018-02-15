@@ -8,8 +8,8 @@ describe('e2e test suite', () => {
 
     let headlessChrome: any
     let chrome: Chromeless<any>
-    before(async () => {
-        if (!process.env.SKIP_LAUNCH_CHROME) {
+    if (!process.env.SKIP_LAUNCH_CHROME) {
+        before('Launch headless Chrome', async () => {
             // We manually launch chrome w/ chrome launcher because chromeless doesn't offer a way to
             // launch in headless mode.
             headlessChrome = await chromeLauncher.launch({
@@ -17,18 +17,18 @@ describe('e2e test suite', () => {
                 port: 9222,
                 chromeFlags: ['--headless', '--disable-gpu'],
             })
-        }
-    })
-    beforeEach(() => {
+        })
+        after('Kill headless Chrome', async () => {
+            if (headlessChrome) {
+                await headlessChrome.kill()
+            }
+        })
+    }
+    beforeEach('Start Chromeless', () => {
         chrome = new Chromeless({ waitTimeout: 5000, launchChrome: false })
         chrome.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
     })
-    afterEach(() => chrome.end())
-    after(async () => {
-        if (headlessChrome) {
-            await headlessChrome.kill()
-        }
-    })
+    afterEach('End Chromeless', () => chrome.end())
 
     const assertWindowLocation = async (location: string, isAbsolute = false): Promise<any> => {
         const url = isAbsolute ? location : baseURL + location
@@ -116,12 +116,16 @@ describe('e2e test suite', () => {
     describe('Theme switcher', () => {
         it('changes the theme when toggle is clicked', async () => {
             await chrome.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
+            console.log('waiting for theme')
             await chrome.wait('.theme')
+            console.log('got theme')
             const currentThemes = await chrome.evaluate<string[]>(() =>
                 Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
             )
+            console.log(currentThemes)
             assert.equal(currentThemes.length, 1, 'Expected 1 theme')
             const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
+            console.log('clicking theme switcher')
             await chrome.click('.theme-switcher')
             assert.deepStrictEqual(
                 await chrome.evaluate<string>(() =>
