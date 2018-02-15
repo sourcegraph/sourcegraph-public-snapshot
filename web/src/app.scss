@@ -88,6 +88,7 @@ $table-border-color-light: #e4e9f1;
 @import 'bootstrap/scss/utilities';
 @import './global-styles/colors';
 @import './global-styles/type';
+@import './global-styles/icons';
 @import './global-styles/tables';
 @import './global-styles/code';
 @import './global-styles/buttons';
@@ -201,47 +202,6 @@ body {
 
             width: 100%;
         }
-    }
-}
-
-// Formats an icon so that it appears inline in the text
-// with height matching the text
-.icon-inline {
-    // SVGs already include padding to account for text baseline,
-    // so align with the bottom of the text
-    vertical-align: bottom;
-    display: inline-flex;
-    align-items: center;
-
-    svg {
-        // TODO find a better way to scale icons that is not proportional to the font size
-        // 14px font size -> 20px icon size
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: (20em / 14);
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: (20em / 14);
-        // Match color of the text
-        fill: currentColor;
-    }
-}
-
-// Special case for the loader
-.icon-inline > .icon-loader {
-    stroke: currentColor;
-}
-
-/**
- * Global style for user-defined avatars
- * Used for user, team member, and org avatars.
- */
-.avatar {
-    display: inline-flex;
-
-    .avatar-icon,
-    .icon {
-        height: 100%;
-        fill: currentColor;
-        border-radius: 50%;
     }
 }
 
