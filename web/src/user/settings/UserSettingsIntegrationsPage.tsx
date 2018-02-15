@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { IS_CHROME, IS_FIREFOX } from '../../marketing/util'
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
+import { browserExtensionMessageReceived } from '../../tracking/analyticsUtils'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 
@@ -38,7 +38,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsIntegrations')
         this.subscriptions.add(
-            browserExtensionInstalled.subscribe(isInstalled => {
+            browserExtensionMessageReceived.subscribe(isInstalled => {
                 this.setState(() => ({ browserExtensionInstalled: isInstalled }))
             })
         )
