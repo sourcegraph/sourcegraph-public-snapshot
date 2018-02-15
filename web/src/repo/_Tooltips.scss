@@ -33,7 +33,7 @@
         overflow: auto;
 
         margin-bottom: 0;
-        font-family: system;
+        font-family: $font-family-base;
         border-bottom: 1px solid #2a3a51;
         white-space: normal;
     }
@@ -41,7 +41,7 @@
     &__actions {
         display: flex;
         text-align: center;
-        font-family: system;
+        font-family: $font-family-base;
     }
 
     &__action {
@@ -64,7 +64,7 @@
         font-style: italic;
         color: white;
         padding: 0.5rem;
-        font-family: system;
+        font-family: $font-family-base;
     }
 
     &__close-icon {
@@ -82,7 +82,7 @@
 
     &__loading {
         padding: 0.5rem;
-        font-family: system;
+        font-family: $font-family-base;
     }
 
     &__definition-icon {
