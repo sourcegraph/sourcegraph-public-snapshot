@@ -36,7 +36,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query: "content:foo case:no",
+			Query: "foo case:no",
 		},
 		{
 			Name: "regex",
@@ -49,7 +49,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query: "content:(foo).*?(bar) case:no",
+			Query: "(foo).*?(bar) case:no",
 		},
 		{
 			Name: "path",
@@ -62,7 +62,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query: `content:foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+			Query: `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
 		{
 			Name: "case",
@@ -75,7 +75,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: true,
 			},
-			Query: `content:foo case:yes f:\.go$ f:yaml`,
+			Query: `foo case:yes f:\.go$ f:yaml`,
 		},
 		{
 			Name: "casepath",
@@ -88,7 +88,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: true,
 			},
-			Query: `content:foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
 	}
 	for _, tt := range cases {

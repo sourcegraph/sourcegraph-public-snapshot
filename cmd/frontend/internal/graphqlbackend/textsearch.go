@@ -453,19 +453,21 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		if len(file.LineMatches) > maxLineMatches {
 			file.LineMatches = file.LineMatches[:maxLineMatches]
 		}
-		lines := make([]*lineMatch, len(file.LineMatches))
-		for j, l := range file.LineMatches {
-			if len(l.LineFragments) > maxLineFragmentMatches {
-				l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
-			}
-			offsets := make([][]int32, len(l.LineFragments))
-			for k, m := range l.LineFragments {
-				offsets[k] = []int32{int32(m.LineOffset), int32(m.MatchLength)}
-			}
-			lines[j] = &lineMatch{
-				JPreview:          string(l.Line),
-				JLineNumber:       int32(l.LineNumber - 1),
-				JOffsetAndLengths: offsets,
+		lines := make([]*lineMatch, 0, len(file.LineMatches))
+		for _, l := range file.LineMatches {
+			if !l.FileName {
+				if len(l.LineFragments) > maxLineFragmentMatches {
+					l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
+				}
+				offsets := make([][]int32, len(l.LineFragments))
+				for k, m := range l.LineFragments {
+					offsets[k] = []int32{int32(m.LineOffset), int32(m.MatchLength)}
+				}
+				lines = append(lines, &lineMatch{
+					JPreview:          string(l.Line),
+					JLineNumber:       int32(l.LineNumber - 1),
+					JOffsetAndLengths: offsets,
+				})
 			}
 		}
 		matches[i] = &fileMatch{
@@ -482,7 +484,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 func queryToZoektQuery(query *patternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
-	parseRe := func(pattern string, filename, content bool) (zoektquery.Q, error) {
+	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
 		// these are the flags used by zoekt, which differ to searcher.
 		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 		if err != nil {
@@ -495,28 +497,23 @@ func queryToZoektQuery(query *patternInfo) (zoektquery.Q, error) {
 				Pattern:       string(re.Rune),
 				CaseSensitive: query.IsCaseSensitive,
 
-				FileName: filename,
-				Content:  content,
+				FileName: filenameOnly,
 			}, nil
 		} else {
 			return &zoektquery.Regexp{
 				Regexp:        re,
 				CaseSensitive: query.IsCaseSensitive,
 
-				FileName: filename,
-				Content:  content,
+				FileName: filenameOnly,
 			}, nil
 		}
 	}
-	contentRe := func(pattern string) (zoektquery.Q, error) {
-		return parseRe(pattern, false, true)
-	}
 	fileRe := func(pattern string) (zoektquery.Q, error) {
-		return parseRe(pattern, true, false)
+		return parseRe(pattern, true)
 	}
 
 	if query.IsRegExp {
-		q, err := contentRe(query.Pattern)
+		q, err := parseRe(query.Pattern, false)
 		if err != nil {
 			return nil, err
 		}
@@ -526,7 +523,7 @@ func queryToZoektQuery(query *patternInfo) (zoektquery.Q, error) {
 			Pattern:       query.Pattern,
 			CaseSensitive: query.IsCaseSensitive,
 
-			FileName: false,
+			FileName: true,
 			Content:  true,
 		})
 	}
