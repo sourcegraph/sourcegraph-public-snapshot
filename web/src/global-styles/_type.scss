@@ -2,6 +2,14 @@
 
 .theme-light {
     color: $body-color-light;
+
+    --link-color: #566e9f;
+    --link-hover-color: #1d2535;
+}
+
+.theme-dark {
+    --link-color: #a2b0cd;
+    --link-hover-color: white;
 }
 
 h1 {

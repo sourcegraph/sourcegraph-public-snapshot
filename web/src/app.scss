@@ -45,7 +45,11 @@ $theme-colors-light: ('secondary': $secondary-light);
 
 $body-color: #f2f4f8;
 $body-color-light: #2b3750;
-$link-color: #1c7cd6;
+
+// Links
+
+$link-color: var(--link-color);
+$link-hover-color: var(--link-hover-color);
 
 // Alerts
 
