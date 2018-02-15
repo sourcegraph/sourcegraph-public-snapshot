@@ -36,7 +36,7 @@ func RunRepositorySyncWorker(ctx context.Context) error {
 	}
 	for {
 		for i, cfg := range configs {
-			log15.Info("RunRepositorySyncWorker:updateRepo", "repoURL", cfg.Url, "ith", i, "total", len(configs))
+			log15.Debug("RunRepositorySyncWorker:updateRepo", "repoURL", cfg.Url, "ith", i, "total", len(configs))
 			err := updateRepo(ctx, cfg)
 			if err != nil {
 				log15.Warn("error updating repo", "path", cfg.Path, "error", err)
