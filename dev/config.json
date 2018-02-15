@@ -6,13 +6,21 @@
     "24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735",
   "phabricator": [
     {
-      "url": "http://phabricator.sgdev.org",
+      "url": "https://phabricator.sgdev.org",
       // Uncomment one or the other of these configs depending on your testing needs.
       // Both "token" and "repos" are optional but you need to have at least one set.
       "repos": [
         {
           "path": "gitolite.sgdev.org/testing",
           "callsign": "TEST"
+        },
+        {
+          "path": "github.com/sgtest/jump",
+          "callsign": "JUMP"
+        },
+        {
+          "path": "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+          "callsign": "STRIPEGO"
         }
       ]
       // "token": "api-agswx2nwodkweitoo3t5l4dcc5xu"
@@ -27,6 +35,17 @@
     {
       "url": "https://ghe.sgdev.org",
       "token": "23993bbf8e0fee068b8f70db05fc445d5a7a83da"
+    }
+  ],
+  "repos.list": [{ "path": "github.com/sgtest/jump", "url": "https://github.com/sgtest/jump" }],
+  "awsCodeCommit": [
+    // arn:aws:iam::185007729374:user/code-commit-reader, which has read-only perms to AWS CodeCommit and no access
+    // to secret repositories.
+    {
+      "region": "us-west-1",
+      "accessKeyID": "AKIAIG7POXJDKGNQXCPA",
+      "secretAccessKey": "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",
+      "repositoryPathPattern": "git-codecommit.us-west-1.amazonaws.com/{name}"
     }
   ],
   "githubClientID": "6f2a43bd8877ff5fd1d5",
