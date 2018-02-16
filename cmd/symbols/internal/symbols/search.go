@@ -1,0 +1,103 @@
+package symbols
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"regexp"
+	"time"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	"golang.org/x/net/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+)
+
+// maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
+const maxFileSize = 1 << 19 // 512KB
+
+func (s *Service) handleSearch(w http.ResponseWriter, r *http.Request) {
+	var args protocol.SearchArgs
+	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := s.search(r.Context(), args)
+	if err != nil {
+		log15.Error("Symbol search failed", "args", args, "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result *protocol.SearchResult, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	log15.Debug("Symbol search", "repo", args.Repo, "query", args.Query)
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Symbols.search")
+	span.SetTag("repo", args.Repo)
+	span.SetTag("commitID", args.CommitID)
+	span.SetTag("query", args.Query)
+	span.SetTag("first", args.First)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	traceName, ctx := traceutil.TraceName(ctx, "Symbols.search")
+	tr := trace.New(traceName, fmt.Sprintf("args:%+v", args))
+	defer func() {
+		if err != nil {
+			tr.LazyPrintf("error: %v", err)
+			tr.SetError()
+		}
+		tr.Finish()
+	}()
+
+	symbols, err := s.indexedSymbols(ctx, args.Repo, args.CommitID)
+	if err != nil {
+		return nil, err
+	}
+
+	const maxFirst = 500
+	if args.First < 0 || args.First > maxFirst {
+		args.First = maxFirst
+	}
+
+	result = &protocol.SearchResult{}
+	if args.Query == "" {
+		if args.First != 0 && len(symbols) > args.First {
+			symbols = symbols[:args.First]
+		}
+		result.Symbols = symbols
+	} else {
+		query, err := regexp.Compile("(?i:" + args.Query + ")")
+		if err != nil {
+			return nil, err
+		}
+		for _, symbol := range symbols {
+			if !query.MatchString(symbol.Name) {
+				continue
+			}
+			result.Symbols = append(result.Symbols, symbol)
+			if args.First > 0 && len(result.Symbols) == args.First {
+				break
+			}
+		}
+	}
+	return result, nil
+}

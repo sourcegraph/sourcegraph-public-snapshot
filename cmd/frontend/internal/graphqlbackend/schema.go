@@ -378,7 +378,7 @@ type SearchResultsStats {
     sparkline: [Int!]!
 }
 
-union SearchSuggestion = Repository | File
+union SearchSuggestion = Repository | File | Symbol
 
 type SearchScope {
     # A unique identifier for the search scope.

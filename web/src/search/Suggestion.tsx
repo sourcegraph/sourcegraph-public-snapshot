@@ -1,3 +1,4 @@
+import BookIcon from '@sourcegraph/icons/lib/Book'
 import FileIcon from '@sourcegraph/icons/lib/File'
 import FolderIcon from '@sourcegraph/icons/lib/Folder'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -8,6 +9,7 @@ export const enum SuggestionType {
     Repo = 'repo',
     File = 'file',
     Dir = 'dir',
+    Symbol = 'symbol',
 }
 
 export interface Suggestion {
@@ -54,6 +56,17 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                 urlLabel: item.isDirectory ? 'go to dir' : 'go to file',
             }
         }
+        case 'Symbol': {
+            return {
+                type: SuggestionType.Symbol,
+                title: item.name,
+                description: `${item.containerName || item.location.resource.path} – ${basename(
+                    item.location.resource.repository.uri
+                )}`,
+                url: item.url,
+                urlLabel: 'go to definition',
+            }
+        }
     }
 }
 
@@ -61,6 +74,7 @@ const iconForType: { [key: string]: React.ComponentType<{ className: string }> }
     repo: RepoIcon,
     file: FileIcon,
     dir: FolderIcon,
+    symbol: BookIcon,
 }
 
 export interface SuggestionProps {

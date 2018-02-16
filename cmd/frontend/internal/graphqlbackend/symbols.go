@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -88,6 +90,9 @@ func (r *symbolConnectionResolver) compute(ctx context.Context) ([]*symbolResolv
 			params.Query = *r.query
 		}
 
+		// HACK(sqs) TODO!(sqs)
+		inv.Languages = []*inventory.Lang{{Type: "programming", Name: "tags"}}
+
 		var wg sync.WaitGroup
 		var mu sync.Mutex // protects r.symbols and r.err
 		for _, lang := range inv.Languages {
@@ -107,25 +112,10 @@ func (r *symbolConnectionResolver) compute(ctx context.Context) ([]*symbolResolv
 				if listErr == nil {
 					resolvers = make([]*symbolResolver, 0, len(symbols))
 					for _, symbol := range symbols {
-						resolver := &symbolResolver{
-							symbol:   symbol,
-							language: lang,
+						resolver := toSymbolResolver(symbol, lang, r.commit)
+						if resolver != nil {
+							resolvers = append(resolvers, resolver)
 						}
-						uri, err := uri.Parse(string(symbol.Location.URI))
-						if err != nil {
-							log15.Warn("Omitting symbol with invalid URI from results.", "uri", symbol.Location.URI, "error", err)
-							continue
-						}
-						symbolRange := symbol.Location.Range // copy
-						resolver.location = &locationResolver{
-							resource: &fileResolver{
-								commit: r.commit,
-								path:   uri.Fragment,
-								stat:   createFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)
-							},
-							lspRange: &symbolRange,
-						}
-						resolvers = append(resolvers, resolver)
 					}
 				}
 				mu.Lock()
@@ -139,6 +129,28 @@ func (r *symbolConnectionResolver) compute(ctx context.Context) ([]*symbolResolv
 		wg.Wait()
 	})
 	return r.symbols, r.err
+}
+
+func toSymbolResolver(symbol lsp.SymbolInformation, lang string, commitResolver *gitCommitResolver) *symbolResolver {
+	resolver := &symbolResolver{
+		symbol:   symbol,
+		language: lang,
+	}
+	uri, err := uri.Parse(string(symbol.Location.URI))
+	if err != nil {
+		log15.Warn("Omitting symbol with invalid URI from results.", "uri", symbol.Location.URI, "error", err)
+		return nil
+	}
+	symbolRange := symbol.Location.Range // copy
+	resolver.location = &locationResolver{
+		resource: &fileResolver{
+			commit: commitResolver,
+			path:   uri.Fragment,
+			stat:   createFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)
+		},
+		lspRange: &symbolRange,
+	}
+	return resolver
 }
 
 func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]*symbolResolver, error) {
@@ -188,5 +200,6 @@ func (r *symbolResolver) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return url + "$references", nil
+	// TODO(sqs): if we have references for this lang, then add "$references" to the URL for convenience
+	return url, nil
 }

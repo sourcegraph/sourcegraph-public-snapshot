@@ -11,12 +11,10 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
@@ -25,7 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
@@ -57,7 +54,9 @@ func main() {
 
 	service := &search.Service{
 		Store: &search.Store{
-			FetchTar:          fetchTar,
+			FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+				return gitserver.FetchTar(ctx, gitserver.DefaultClient, repo, commit)
+			},
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
 
@@ -93,41 +92,3 @@ func shutdownOnSIGINT(s *http.Server) {
 		log.Fatal("graceful server shutdown failed, will exit:", err)
 	}
 }
-
-func fetchTar(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (r io.ReadCloser, err error) {
-	// gitcmd.Repository.Archive returns a zip file read into
-	// memory. However, we do not need to read into memory and we want a
-	// tar, so we directly run the gitserver Command.
-	span, ctx := opentracing.StartSpanFromContext(ctx, "OpenTar")
-	ext.Component.Set(span, "git")
-	span.SetTag("URL", repo)
-	span.SetTag("Commit", commit)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err)
-		}
-		span.Finish()
-	}()
-
-	if strings.HasPrefix(string(commit), "-") {
-		return nil, badRequestError{("invalid git revision spec (begins with '-')")}
-	}
-
-	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=tar", string(commit))
-	cmd.Repo = repo
-	cmd.EnsureRevision = string(commit)
-	r, err = gitserver.StdoutReader(ctx, cmd)
-	if err != nil {
-		if vcs.IsRepoNotExist(err) || err == vcs.ErrRevisionNotFound {
-			err = badRequestError{err.Error()}
-		}
-		return nil, err
-	}
-	return r, nil
-}
-
-type badRequestError struct{ msg string }
-
-func (e badRequestError) Error() string    { return e.msg }
-func (e badRequestError) BadRequest() bool { return true }
