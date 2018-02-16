@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { Browser, connect, launch, Page } from 'puppeteer'
+import { Browser, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
 
 describe('e2e test suite', () => {
