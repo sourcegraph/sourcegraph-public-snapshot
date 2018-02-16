@@ -1,62 +1,62 @@
 import * as assert from 'assert'
-import { Chromeless } from 'chromeless'
+import { Browser, connect, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
-const chromeLauncher = require('chrome-launcher')
 
 describe('e2e test suite', () => {
     const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'http://localhost:3080'
 
-    let headlessChrome: any
-    let chrome: Chromeless<any>
-    if (!process.env.SKIP_LAUNCH_CHROME) {
-        before('Launch headless Chrome', async () => {
-            // We manually launch chrome w/ chrome launcher because chromeless doesn't offer a way to
-            // launch in headless mode.
-            headlessChrome = await chromeLauncher.launch({
-                startingUrl: baseURL,
-                port: 9222,
-                chromeFlags: ['--headless', '--disable-gpu'],
-            })
+    let browser: Browser
+    let page: Page
+    if (process.env.SKIP_LAUNCH_CHROME) {
+        before('Connect to browser', async () => {
+            browser = await connect()
         })
-        after('Kill headless Chrome', async () => {
-            if (headlessChrome) {
-                await headlessChrome.kill()
-            }
+        after('Disconnect from browser', async () => {
+            await browser.disconnect()
+        })
+    } else {
+        before('Start browser', async () => {
+            browser = await launch()
+        })
+        after('Close browser', async () => {
+            await browser.close()
         })
     }
-    beforeEach('Start Chromeless', () => {
-        chrome = new Chromeless({ waitTimeout: 5000, launchChrome: false })
-        chrome.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
+    beforeEach('Open page', async () => {
+        page = await browser.newPage()
+        await page.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
     })
-    afterEach('End Chromeless', () => chrome.end())
+    afterEach('Close page', async () => {
+        await page.close()
+    })
 
     const assertWindowLocation = async (location: string, isAbsolute = false): Promise<any> => {
         const url = isAbsolute ? location : baseURL + location
         await retry(async () => {
-            assert.equal(await chrome.evaluate(() => window.location.href), url)
+            assert.equal(await page.evaluate(() => window.location.href), url)
         })
     }
 
     const assertWindowLocationPrefix = async (locationPrefix: string, isAbsolute = false): Promise<any> => {
         const prefix = isAbsolute ? locationPrefix : baseURL + locationPrefix
         await retry(async () => {
-            const loc = await chrome.evaluate<string>(() => window.location.href)
+            const loc: string = await page.evaluate(() => window.location.href)
             assert.ok(loc.startsWith(prefix), `expected window.location to start with ${prefix}, but got ${loc}`)
         })
     }
 
     const assertStickyHighlightedToken = async (label: string): Promise<void> => {
-        await chrome.wait('.selection-highlight-sticky') // make sure matched token is highlighted
+        await page.waitForSelector('.selection-highlight-sticky') // make sure matched token is highlighted
         await retry(async () =>
             assert.equal(
-                await chrome.evaluate<string>(() => document.querySelector('.selection-highlight-sticky')!.textContent),
+                await page.evaluate(() => document.querySelector('.selection-highlight-sticky')!.textContent),
                 label
             )
         )
     }
 
     const assertAllHighlightedTokens = async (label: string): Promise<void> => {
-        const highlightedTokens: string[] = await chrome.evaluate<string[]>(() =>
+        const highlightedTokens: string[] = await page.evaluate(() =>
             Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent)
         )
         assert.ok(
@@ -67,21 +67,19 @@ describe('e2e test suite', () => {
 
     const assertNonemptyLocalRefs = async (): Promise<void> => {
         // verify active group is 'local'
-        await chrome.wait('.references-widget__title-bar-group--active')
+        await page.waitForSelector('.references-widget__title-bar-group--active')
         assert.equal(
-            await chrome.evaluate(
+            await page.evaluate(
                 () => document.querySelector('.references-widget__title-bar-group--active')!.textContent
             ),
             'This repository'
         )
 
-        await chrome.wait('.references-widget__badge')
+        await page.waitForSelector('.references-widget__badge')
         await retry(async () =>
             assert.ok(
                 parseInt(
-                    await chrome.evaluate<string>(
-                        () => document.querySelector('.references-widget__badge')!.textContent
-                    ),
+                    await page.evaluate(() => document.querySelector('.references-widget__badge')!.textContent),
                     10
                 ) > 0, // assert some (local) refs fetched
                 'expected some local references, got none'
@@ -91,44 +89,40 @@ describe('e2e test suite', () => {
 
     const assertNonemptyExternalRefs = async (): Promise<void> => {
         // verify active group is 'external'
-        await chrome.wait('.references-widget__title-bar-group--active')
+        await page.waitForSelector('.references-widget__title-bar-group--active')
         assert.equal(
-            await chrome.evaluate(
+            await page.evaluate(
                 () => document.querySelector('.references-widget__title-bar-group--active')!.textContent
             ),
             'Other repositories'
         )
 
-        await chrome.wait('.references-widget__badge--loaded')
-        await retry(async () =>
+        await page.waitForSelector('.references-widget__badge')
+        await retry(async () => {
             assert.ok(
                 parseInt(
-                    await chrome.evaluate<string>(
+                    await page.evaluate(
                         () => document.querySelectorAll('.references-widget__badge')[1].textContent // get the external refs count
                     ),
                     10
                 ) > 0, // assert some external refs fetched
                 'expected some external references, got none'
             )
-        )
+        })
     }
 
     describe('Theme switcher', () => {
         it('changes the theme when toggle is clicked', async () => {
-            await chrome.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
-            console.log('waiting for theme')
-            await chrome.wait('.theme')
-            console.log('got theme')
-            const currentThemes = await chrome.evaluate<string[]>(() =>
+            await page.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
+            await page.waitForSelector('.theme')
+            const currentThemes: string[] = await page.evaluate(() =>
                 Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
             )
-            console.log(currentThemes)
             assert.equal(currentThemes.length, 1, 'Expected 1 theme')
             const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
-            console.log('clicking theme switcher')
-            await chrome.click('.theme-switcher')
+            await page.click('.theme-switcher')
             assert.deepStrictEqual(
-                await chrome.evaluate<string>(() =>
+                await page.evaluate(() =>
                     Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
                 ),
                 [expectedTheme]
@@ -139,126 +133,130 @@ describe('e2e test suite', () => {
     describe('Repository component', () => {
         const blobSelector = '.blob > table'
         const clickToken = async (line: number, spanOffset: number): Promise<void> => {
-            await chrome.click(`${blobSelector} tr:nth-child(${line}) > td.code > span:nth-child(${spanOffset})`)
+            const selector = `${blobSelector} tr:nth-child(${line}) > td.code > span:nth-child(${spanOffset})`
+            await page.waitForSelector(selector)
+            await page.click(selector)
         }
 
         const getTooltipDoc = async (): Promise<string> => {
-            await chrome.wait('.tooltip__doc')
-            return await chrome.evaluate<string>(() => document.querySelector('.tooltip__doc')!.textContent)
+            await page.waitForSelector('.tooltip__doc')
+            return await page.evaluate(() => document.querySelector('.tooltip__doc')!.textContent)
         }
 
         const tooltipActionsSelector = '.sg-tooltip > .tooltip__actions'
         const clickTooltipJ2D = async (): Promise<void> => {
-            await chrome.wait(`${tooltipActionsSelector} > a:nth-child(1)`)
-            await chrome.click(`${tooltipActionsSelector} > a:nth-child(1)`)
+            const selector = `${tooltipActionsSelector} > a:nth-child(1)`
+            await page.waitForSelector(selector)
+            await page.click(selector)
         }
         const clickTooltipFindRefs = async (): Promise<void> => {
-            await chrome.wait(`${tooltipActionsSelector} > a:nth-child(2)`)
-            await chrome.click(`${tooltipActionsSelector} > a:nth-child(2)`)
+            const selector = `${tooltipActionsSelector} > a:nth-child(2)`
+            await page.waitForSelector(selector)
+            await page.click(selector)
         }
 
         describe('file tree', () => {
             it('does navigation on file click', async () => {
-                await chrome.goto(
+                await page.goto(
                     baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
-                await chrome.wait(`[data-tree-path="godockerize.go"]`)
-                await chrome.click(`[data-tree-path="godockerize.go"]`)
+                await page.waitForSelector(`[data-tree-path="godockerize.go"]`)
+                await page.click(`[data-tree-path="godockerize.go"]`)
                 await assertWindowLocation(
                     '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
             })
 
             it('expands directory on row click (no navigation)', async () => {
-                await chrome.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
-                await chrome.wait('.tree__row-icon')
-                await chrome.click('.tree__row-icon')
-                await chrome.wait('.tree__row--selected [data-tree-path="websocket"]')
-                await chrome.wait('.tree__row--expanded [data-tree-path="websocket"]')
+                await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
+                await page.waitForSelector('.tree__row-icon')
+                await page.click('.tree__row-icon')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]')
+                await page.waitForSelector('.tree__row--expanded [data-tree-path="websocket"]')
                 await assertWindowLocation('/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
             })
 
             it('does navigation on directory row click', async () => {
-                await chrome.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
-                await chrome.wait('.tree__row-label')
-                await chrome.click('.tree__row-label')
-                await chrome.wait('.tree__row--selected [data-tree-path="websocket"]')
-                await chrome.wait('.tree__row--expanded [data-tree-path="websocket"]')
+                await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
+                await page.waitForSelector('.tree__row-label')
+                await page.click('.tree__row-label')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]')
+                await page.waitForSelector('.tree__row--expanded [data-tree-path="websocket"]')
                 await assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
             })
 
             it('selects the current file', async () => {
-                await chrome.goto(
+                await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
-                await chrome.wait('.tree__row--selected [data-tree-path="godockerize.go"]')
+                await page.waitForSelector('.tree__row--selected [data-tree-path="godockerize.go"]')
             })
 
             it('shows partial tree when opening directory', async () => {
-                await chrome.goto(
+                await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
-                await chrome.wait('.tree__row')
-                assert.equal(await chrome.evaluate(() => document.querySelectorAll('.tree__row').length), 1)
+                await page.waitForSelector('.tree__row')
+                assert.equal(await page.evaluate(() => document.querySelectorAll('.tree__row').length), 1)
             })
 
             it('responds to keyboard shortcuts', async () => {
                 const assertNumRowsExpanded = async (expectedCount: number) => {
                     assert.equal(
-                        await chrome.evaluate(() => document.querySelectorAll('.tree__row--expanded').length),
+                        await page.evaluate(() => document.querySelectorAll('.tree__row--expanded').length),
                         expectedCount
                     )
                 }
 
-                await chrome.goto(
+                await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/.travis.yml'
                 )
-                await chrome.wait('.tree__row') // wait for tree to render
+                await page.waitForSelector('.tree__row') // waitForSelector for tree to render
 
-                await chrome.click('.tree')
-                await chrome.press(38) // arrow up to 'diff' directory
-                await chrome.wait('.tree__row--selected [data-tree-path="diff"]')
-                await chrome.press(39) // arrow right (expand 'diff' directory)
-                await chrome.wait('.tree__row--selected [data-tree-path="diff"]')
-                await chrome.wait('.tree__row--expanded [data-tree-path="diff"]')
-                await chrome.press(39) // arrow right (move to nested 'diff/testdata' directory)
-                await chrome.wait('.tree__row--selected [data-tree-path="diff/testdata"]')
+                await page.click('.tree')
+                await page.keyboard.press('ArrowUp') // arrow up to 'diff' directory
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]')
+                await page.keyboard.press('ArrowRight') // arrow right (expand 'diff' directory)
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]')
+                await page.waitForSelector('.tree__row--expanded [data-tree-path="diff"]')
+                await page.keyboard.press('ArrowRight') // arrow right (move to nested 'diff/testdata' directory)
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
                 await assertNumRowsExpanded(1) // only `diff` directory is expanded, though `diff/testdata` is expanded
 
-                await chrome.press(39) // arrow right (expand 'diff/testdata' directory)
-                await chrome.wait('.tree__row--selected [data-tree-path="diff/testdata"]')
-                await chrome.wait('.tree__row--expanded [data-tree-path="diff/testdata"]')
+                await page.keyboard.press('ArrowRight') // arrow right (expand 'diff/testdata' directory)
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
+                await page.waitForSelector('.tree__row--expanded [data-tree-path="diff/testdata"]')
                 await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
                 // select some file nested under `diff/testdata`
-                await chrome.press(40) // arrow down
-                await chrome.press(40) // arrow down
-                await chrome.press(40) // arrow down
-                await chrome.press(40) // arrow down
-                await chrome.wait('.tree__row--selected [data-tree-path="diff/testdata/empty_orig.diff"]')
+                await page.keyboard.press('ArrowDown') // arrow down
+                await page.keyboard.press('ArrowDown') // arrow down
+                await page.keyboard.press('ArrowDown') // arrow down
+                await page.keyboard.press('ArrowDown') // arrow down
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata/empty_orig.diff"]')
 
-                await chrome.press(37) // arrow left (navigate immediately up to parent directory `diff/testdata`)
-                await chrome.wait('.tree__row--selected [data-tree-path="diff/testdata"]')
+                await page.keyboard.press('ArrowLeft') // arrow left (navigate immediately up to parent directory `diff/testdata`)
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
                 await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
-                await chrome.press(37) // arrow left
-                await chrome.wait('.tree__row--selected [data-tree-path="diff/testdata"]') // `diff/testdata` still selected
+                await page.keyboard.press('ArrowLeft') // arrow left
+                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]') // `diff/testdata` still selected
                 await assertNumRowsExpanded(1) // only `diff` directory expanded
             })
         })
 
         describe('directory page', () => {
             it('shows a row for each file in the directory', async () => {
-                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
-                await chrome.wait('.directory-page__entries-directories')
+                await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await page.waitForSelector('.directory-page__entries-directories')
                 await retry(async () =>
                     assert.equal(
-                        await chrome.evaluate(
+                        await page.evaluate(
                             () =>
                                 document.querySelectorAll('.directory-page__entries-directories .directory-entry')
                                     .length
@@ -268,7 +266,7 @@ describe('e2e test suite', () => {
                 )
                 await retry(async () =>
                     assert.equal(
-                        await chrome.evaluate(
+                        await page.evaluate(
                             () => document.querySelectorAll('.directory-page__entries-files .directory-entry').length
                         ),
                         7
@@ -277,11 +275,11 @@ describe('e2e test suite', () => {
             })
 
             it('shows commit information on a row', async () => {
-                await chrome.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
-                await chrome.wait('.directory-page__commit-message')
+                await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await page.waitForSelector('.directory-page__commit-message')
                 await retry(async () =>
                     assert.equal(
-                        await chrome.evaluate(
+                        await page.evaluate(
                             () => document.querySelectorAll('.directory-page__commit-message')[2].textContent
                         ),
                         'Add fuzz testing corpus.'
@@ -289,7 +287,7 @@ describe('e2e test suite', () => {
                 )
                 await retry(async () =>
                     assert.equal(
-                        await chrome.evaluate(() =>
+                        await page.evaluate(() =>
                             document.querySelectorAll('.directory-page__commit-author')[2].textContent!.trim()
                         ),
                         'Kamil Kisiel'
@@ -297,7 +295,7 @@ describe('e2e test suite', () => {
                 )
                 await retry(async () =>
                     assert.equal(
-                        await chrome.evaluate(
+                        await page.evaluate(
                             () => document.querySelectorAll('.directory-page__commit-id')[2].textContent
                         ),
                         'c13558c'
@@ -306,10 +304,10 @@ describe('e2e test suite', () => {
             })
 
             it('navigates when clicking on a row', async () => {
-                await chrome.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
+                await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
                 // click on directory
-                await chrome.wait('.directory-entry')
-                await chrome.click('.directory-entry')
+                await page.waitForSelector('.directory-entry')
+                await page.click('.directory-entry')
                 await assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
@@ -318,46 +316,49 @@ describe('e2e test suite', () => {
 
         describe('rev resolution', () => {
             it('shows clone in progress interstitial page', async () => {
-                await chrome.goto(baseURL + '/github.com/sourcegraphtest/AlwaysCloningTest')
-                await chrome.wait('.hero-page__subtitle')
+                await page.goto(baseURL + '/github.com/sourcegraphtest/AlwaysCloningTest')
+                await page.waitForSelector('.hero-page__subtitle')
                 await retry(async () =>
                     assert.equal(
-                        await chrome.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent),
+                        await page.evaluate(() => document.querySelector('.hero-page__subtitle')!.textContent),
                         'Cloning in progress'
                     )
                 )
             })
 
             it('resolves default branch when unspecified', async () => {
-                await chrome.goto(baseURL + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
-                await chrome.wait('.rev-switcher__input')
-                await retry(async () =>
+                await page.goto(baseURL + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
+                await page.waitForSelector('.repo-header__rev')
+                await retry(async () => {
                     assert.equal(
-                        await chrome.evaluate(() => document.querySelector('.repo-header__rev')!.textContent!.trim()),
+                        await page.evaluate(() => document.querySelector('.repo-header__rev')!.textContent!.trim()),
                         'master'
                     )
-                )
+                })
                 // Verify file contents are loaded.
-                await chrome.wait(blobSelector)
+                await page.waitForSelector(blobSelector)
             })
 
             it('updates rev with switcher', async () => {
-                await chrome.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
-                await chrome.wait('.repo-header__rev')
-                await chrome.click('.repo-header__rev')
-                await chrome.click('.tab-bar__tab:nth-child(2)')
-                await chrome.click('.popover__node-link[href*="0.1.0"]')
+                await page.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
+                // Open rev switcher
+                await page.waitForSelector('.repo-header__rev')
+                await page.click('.repo-header__rev')
+                // Click "Tags" tab
+                await page.click('.repo-header__rev .tab-bar__tab:nth-child(2)')
+                await page.waitForSelector('.popover__node-link[href*="0.1.0"]')
+                await page.click('.popover__node-link[href*="0.1.0"]')
                 await assertWindowLocation('/github.com/sourcegraph/checkup@v0.1.0/-/blob/s3.go')
             })
         })
 
         describe('tooltips', () => {
             it('gets displayed and updates URL when clicking on a token', async () => {
-                await chrome.goto(
+                await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
-                await chrome.wait('.blob')
+                await page.waitForSelector('.blob')
                 await clickToken(23, 2)
                 await assertWindowLocation(
                     '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
@@ -366,7 +367,7 @@ describe('e2e test suite', () => {
             })
 
             it('gets displayed when navigating to a URL with a token position', async () => {
-                await chrome.goto(
+                await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
                 )
@@ -377,7 +378,7 @@ describe('e2e test suite', () => {
 
             describe('jump to definition', () => {
                 it('noops when on the definition', async () => {
-                    await chrome.goto(
+                    await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                     )
@@ -388,7 +389,7 @@ describe('e2e test suite', () => {
                 })
 
                 it('does navigation (same repo, same file)', async () => {
-                    await chrome.goto(
+                    await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go'
                     )
@@ -400,7 +401,7 @@ describe('e2e test suite', () => {
                 })
 
                 it('does navigation (same repo, different file)', async () => {
-                    await chrome.goto(
+                    await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go#L13:31'
                     )
@@ -409,11 +410,11 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
                     )
                     // Verify file tree is highlighting the new path.
-                    return await chrome.wait('.tree__row--selected [data-tree-path="diff/diff.pb.go"]')
+                    return await page.waitForSelector('.tree__row--selected [data-tree-path="diff/diff.pb.go"]')
                 })
 
                 it('does navigation (external repo)', async () => {
-                    await chrome.goto(
+                    await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
                     )
@@ -425,8 +426,10 @@ describe('e2e test suite', () => {
             })
 
             describe('find references', () => {
-                it('opens widget and fetches local references', async () => {
-                    await chrome.goto(
+                it('opens widget and fetches local references', async function(): Promise<void> {
+                    this.timeout(120000)
+
+                    await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                     )
@@ -438,12 +441,10 @@ describe('e2e test suite', () => {
                     await assertNonemptyLocalRefs()
 
                     // verify the appropriate # of references are fetched
-                    await chrome.wait('.references-widget__badge')
+                    await page.waitForSelector('.references-widget__badge')
                     await retry(async () =>
                         assert.equal(
-                            await chrome.evaluate(
-                                () => document.querySelector('.references-widget__badge')!.textContent
-                            ),
+                            await page.evaluate(() => document.querySelector('.references-widget__badge')!.textContent),
                             '5'
                         )
                     )
@@ -462,7 +463,7 @@ describe('e2e test suite', () => {
                         return
                     }
 
-                    await chrome.goto(
+                    await page.goto(
                         baseURL +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16$references:external'
                     )
@@ -480,7 +481,7 @@ describe('e2e test suite', () => {
         describe.skip('godoc.org "Uses" links', () => {
             it('resolves standard library function', async () => {
                 // https://godoc.org/bytes#Compare
-                await chrome.goto(baseURL + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
+                await page.goto(baseURL + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
                 await assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
                 await assertStickyHighlightedToken('Compare')
                 await assertNonemptyLocalRefs()
@@ -489,7 +490,7 @@ describe('e2e test suite', () => {
 
             it('resolves standard library function (from stdlib repo)', async () => {
                 // https://godoc.org/github.com/golang/go/src/bytes#Compare
-                await chrome.goto(
+                await page.goto(
                     baseURL +
                         '/-/godoc/refs?def=Compare&pkg=github.com%2Fgolang%2Fgo%2Fsrc%2Fbytes&repo=github.com%2Fgolang%2Fgo'
                 )
@@ -501,7 +502,7 @@ describe('e2e test suite', () => {
 
             it('resolves external package function (from gorilla/mux)', async () => {
                 // https://godoc.org/github.com/gorilla/mux#Router
-                await chrome.goto(
+                await page.goto(
                     baseURL + '/-/godoc/refs?def=Router&pkg=github.com%2Fgorilla%2Fmux&repo=github.com%2Fgorilla%2Fmux'
                 )
                 await assertWindowLocationPrefix('/github.com/gorilla/mux/-/blob/mux.go')
@@ -513,20 +514,20 @@ describe('e2e test suite', () => {
 
         describe('external code host links', () => {
             it('on line blame', async () => {
-                await chrome.goto(
+                await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19'
                 )
-                await chrome.wait('.blob > table > tbody > tr:nth-child(19) .blame')
-                await chrome.evaluate(() => {
+                await page.waitForSelector('.blob > table > tbody > tr:nth-child(19) .blame')
+                await page.evaluate(() => {
                     const blame = document.querySelector('.blob > table > tbody > tr:nth-child(19) .blame')!
-                    const rect = blame.getBoundingClientRect() as any
+                    const rect = blame.getBoundingClientRect() as DOMRect
                     const ev = new MouseEvent('click', {
                         view: window,
                         bubbles: true,
                         cancelable: true,
-                        clientX: rect.x + rect.width + 1,
-                        clientY: rect.y + 1,
+                        clientX: rect.x + rect.width + 2,
+                        clientY: rect.y + 2,
                     })
                     blame.dispatchEvent(ev)
                 })
@@ -537,14 +538,14 @@ describe('e2e test suite', () => {
             })
 
             it('on repo navbar ("View on GitHub")', async () => {
-                await chrome.goto(
+                await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19'
                 )
-                await chrome.wait('.composite-container__header-action[href*="github"]')
+                await page.waitForSelector('.composite-container__header-action[href*="github"]')
                 await retry(async () =>
                     assert.equal(
-                        await chrome.evaluate(
+                        await page.evaluate(
                             () =>
                                 (document.querySelector(
                                     '.composite-container__header-action[href*="github"]'
@@ -559,21 +560,21 @@ describe('e2e test suite', () => {
 
     describe('Search component', () => {
         it.skip('renders results for sourcegraph/go-diff (no search group)', async () => {
-            await chrome.goto(
+            await page.goto(
                 baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
             )
-            await chrome.wait('.search-results__header-stats')
+            await page.waitForSelector('.search-results__header-stats')
             await retry(async () => {
-                const label = await chrome.evaluate<string>(
+                const label: string = await page.evaluate(
                     () => document.querySelector('.search-results__header-stats')!.textContent
                 )
                 assert.equal(label.includes('results'), true, 'incorrect label for search results')
             })
             // navigate to result on click
-            await chrome.click('.file-match__item')
+            await page.click('.file-match__item')
             await retry(async () => {
                 assert.equal(
-                    await chrome.evaluate(() => window.location.href),
+                    await page.evaluate(() => window.location.href),
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/testdata/sample_file_extended_empty_rename.diff#L1:1a',
                     'Unexpected window.location.href after clicking result'
@@ -582,20 +583,20 @@ describe('e2e test suite', () => {
         })
 
         it('accepts query for sourcegraph/jsonrpc2', async () => {
-            await chrome.goto(baseURL + '/search')
+            await page.goto(baseURL + '/search')
 
             // Update the input value
-            await chrome.wait('input')
-            await chrome.type('test repo:sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
+            await page.waitForSelector('input')
+            await page.keyboard.type('test repo:sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
 
             // TODO: test search scopes
 
             // Submit the search
-            await chrome.click('button')
+            await page.click('button')
 
-            await chrome.wait('.search-results__header-stats')
+            await page.waitForSelector('.search-results__header-stats')
             await retry(async () => {
-                const label = await chrome.evaluate<string>(
+                const label: string = await page.evaluate(
                     () => document.querySelector('.search-results__header-stats')!.textContent
                 )
                 assert.equal(label.startsWith('66 results'), true, 'incorrect number of search results')
