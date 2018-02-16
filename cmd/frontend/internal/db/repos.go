@@ -16,20 +16,11 @@ import (
 
 	"golang.org/x/net/trace"
 
-	"github.com/coocood/freecache"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
-)
-
-var (
-	// repoURICache maintains a shortlived cache mapping repo ID to repo
-	// URI. This is a very common operation in production, so it is useful for
-	// performance reasons to keep this cache.
-	repoURICache           = freecache.NewCache(512 * 1024)
-	repoURICacheTTLSeconds = 60
 )
 
 type repoNotFoundErr struct {
@@ -73,29 +64,6 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return nil, &repoNotFoundErr{ID: id}
 	}
 	return repos[0], nil
-}
-
-// GetURI returns the URI for the request repository ID. It fetches data only
-// from the database and NOT from any external sources. It is a more
-// specialized and optimized version of Get, since many callers of Get only
-// want the Repository.URI field.
-func (s *repos) GetURI(ctx context.Context, id api.RepoID) (api.RepoURI, error) {
-	if Mocks.Repos.GetURI != nil {
-		return Mocks.Repos.GetURI(ctx, id)
-	}
-
-	uri, err := repoURICache.GetInt(int64(id))
-	if err == nil {
-		return api.RepoURI(uri), nil
-	} else if err != freecache.ErrNotFound {
-		return "", err
-	}
-
-	r, err := s.Get(ctx, id)
-	if err != nil {
-		return "", err
-	}
-	return r.URI, nil
 }
 
 // GetByURI returns the repository with the given URI from the database, or an
@@ -168,13 +136,6 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 
 		repo.FreezeIndexedRevision = freezeIndexedRevision != nil && *freezeIndexedRevision // FIXME: bad DB schema: nullable boolean
 		repo.ExternalRepo = spec.toAPISpec()
-
-		// This is the only place we read from the DB, so is an appropriate
-		// time to update the URI cache.
-		err = repoURICache.SetInt(int64(repo.ID), []byte(repo.URI), repoURICacheTTLSeconds)
-		if err != nil {
-			return nil, err
-		}
 
 		repos = append(repos, &repo)
 	}

@@ -11,7 +11,6 @@ import (
 
 type MockRepos struct {
 	Get      func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
-	GetURI   func(ctx context.Context, repo api.RepoID) (api.RepoURI, error)
 	GetByURI func(ctx context.Context, repo api.RepoURI) (*types.Repo, error)
 	List     func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
 	Delete   func(ctx context.Context, repo api.RepoID) error
@@ -38,19 +37,6 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 		if repo != returns.ID {
 			t.Errorf("got repo %d, want %d", repo, returns.ID)
 			return nil, &repoNotFoundErr{ID: repo}
-		}
-		return returns, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockGetURI(t *testing.T, want api.RepoID, returns api.RepoURI) (called *bool) {
-	called = new(bool)
-	s.GetURI = func(ctx context.Context, repo api.RepoID) (api.RepoURI, error) {
-		*called = true
-		if repo != want {
-			t.Errorf("got repo %d, want %d", repo, want)
-			return "", &repoNotFoundErr{ID: repo}
 		}
 		return returns, nil
 	}
