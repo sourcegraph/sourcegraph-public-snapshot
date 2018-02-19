@@ -56,6 +56,10 @@
       "type": "integer",
       "description": "Port exposed on all nodes directing HTTPS traffic to sourcegraph-frontend pod."
     },
+    "enableSymbols": {
+      "description": "Whether to enable services for symbol search",
+      "type": "boolean"
+    },
     "langGo": {
       "type": "boolean",
       "description": "(DEPRECATED: Use the \"langservers\" site configuration option.) Use Go language server."

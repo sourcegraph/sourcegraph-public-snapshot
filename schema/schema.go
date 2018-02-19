@@ -25,6 +25,7 @@ type DatacenterOpsConfiguration struct {
 	AuthProxyIP             string                          `json:"authProxyIP,omitempty"`
 	AuthProxyPassword       string                          `json:"authProxyPassword,omitempty"`
 	DeploymentOverrides     map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
+	EnableSymbols           bool                            `json:"enableSymbols,omitempty"`
 	ExperimentIndexedSearch bool                            `json:"experimentIndexedSearch,omitempty"`
 	GitoliteIP              string                          `json:"gitoliteIP,omitempty"`
 	GitserverCount          int                             `json:"gitserverCount,omitempty"`
