@@ -624,7 +624,7 @@ type threadEmailTemplateCommonData struct {
 	URL      string
 }
 
-const threadEmailSubjectTemplate = `{{if .Reply}}Re: {{end}}[{{.RepoName}}{{.Branch}}] {{.Title}} (#{{.Number}})`
+const threadEmailSubjectTemplate = `{{if .Reply}}Re: {{end}}[{{.RepoName}}{{.Branch}}] {{.Title|markdownToText}} (#{{.Number}})`
 
 var (
 	threadArchivedEmailTemplates = txemail.MustValidate(txemail.Templates{

@@ -353,7 +353,7 @@ func TestSendNewCommentEmails(t *testing.T) {
 	sendNewCommentEmails(
 		context.Background(),
 		types.OrgRepo{CanonicalRemoteID: "r"},
-		types.Comment{Contents: "foo"},
+		types.Comment{Contents: "foo'bar<b>baz</b>**qux**"},
 		types.Thread{
 			ID:               123,
 			RepoRevisionPath: "f",
@@ -390,13 +390,13 @@ func TestSendNewCommentEmails(t *testing.T) {
 					Reply:    false,
 					RepoName: "r",
 					Branch:   "@b",
-					Title:    "foo",
+					Title:    "foo'bar<b>baz</b>**qux**",
 					Number:   123,
 					URL:      url.String(),
 				},
 				Location:     "r/f:L10",
 				ContextLines: "t0\nt",
-				Contents:     "foo",
+				Contents:     "foo'bar<b>baz</b>**qux**",
 			},
 		},
 	}); !reflect.DeepEqual(mockSent, want) {
@@ -416,7 +416,8 @@ func TestSendNewCommentEmails(t *testing.T) {
 t</pre>
 
 
-<p>foo</p>
+<p>foo&#39;bar<b>baz</b><strong>qux</strong></p>
+
 
 <p>View discussion on Sourcegraph: <a href="http://example.com">r/f:L10</a></p>`; rendered.HTMLBody != want {
 		t.Errorf("got  %q\nwant %q", rendered.HTMLBody, want)
@@ -430,7 +431,7 @@ t
 ------------------------------------------------------------------------------
 
 
-foo
+foo'barbaz**qux**
 
 View discussion on Sourcegraph: http://example.com`; rendered.Body != want {
 		t.Errorf("got  %q\nwant %q", rendered.Body, want)

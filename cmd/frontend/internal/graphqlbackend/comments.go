@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"html"
 	"net/url"
 	"path"
 	"strings"
@@ -298,7 +297,6 @@ func sendNewCommentEmails(ctx context.Context, repo types.OrgRepo, comment types
 	}
 
 	repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
-	contents := strings.Replace(html.EscapeString(comment.Contents), "\n", "<br>", -1)
 	var lines string
 	if len(previousComments) == 0 && thread.Lines != nil {
 		lines = strings.Join([]string{thread.Lines.TextBefore, thread.Lines.Text}, "\n")
@@ -330,7 +328,7 @@ func sendNewCommentEmails(ctx context.Context, repo types.OrgRepo, comment types
 				},
 				Location:     location,
 				ContextLines: lines,
-				Contents:     contents,
+				Contents:     comment.Contents,
 			},
 		}); err != nil {
 			log15.Error("error sending new-comment notifications", "to", email, "err", err)
@@ -350,7 +348,7 @@ var (
 ------------------------------------------------------------------------------
 {{end}}
 
-{{.Contents}}
+{{.Contents|markdownToText}}
 
 View discussion on Sourcegraph: {{.URL}}
 `,
@@ -359,7 +357,7 @@ View discussion on Sourcegraph: {{.URL}}
 <pre style="color:#555">{{.ContextLines}}</pre>
 {{end}}
 
-<p>{{.Contents}}</p>
+{{.Contents|markdownToSafeHTML}}
 
 <p>View discussion on Sourcegraph: <a href="{{.URL}}">{{.Location}}</a></p>
 `,
