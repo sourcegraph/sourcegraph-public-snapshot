@@ -360,7 +360,14 @@ func TestSendNewCommentEmails(t *testing.T) {
 			Branch:           strptr("b"),
 			StartLine:        10,
 			EndLine:          11,
-			Lines:            &types.ThreadLines{HTML: "h", Text: "t"},
+			Lines: &types.ThreadLines{
+				HTMLBefore: "h0",
+				HTML:       "h1",
+				HTMLAfter:  "h2",
+				TextBefore: "t0",
+				Text:       "t",
+				TextAfter:  "t1",
+			},
 		},
 		[]*types.Comment{},
 		[]string{"a@a.com"},
@@ -368,7 +375,7 @@ func TestSendNewCommentEmails(t *testing.T) {
 		url,
 	)
 
-	want := []txemail.Message{
+	if want := ([]txemail.Message{
 		{
 			FromName: "",
 			To:       []string{"a@a.com"},
@@ -388,13 +395,45 @@ func TestSendNewCommentEmails(t *testing.T) {
 					URL:      url.String(),
 				},
 				Location:     "r/f:L10",
-				ContextLines: "\nt",
+				ContextLines: "t0\nt",
 				Contents:     "foo",
 			},
 		},
-	}
-	if !reflect.DeepEqual(mockSent, want) {
+	}); !reflect.DeepEqual(mockSent, want) {
 		t.Errorf("got  %+v\n\nwant %+v", mockSent, want)
+	}
+	if len(mockSent) == 0 {
+		t.Fatal()
+	}
+
+	// Check rendered message.
+	rendered, err := txemail.Render(mockSent[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `
+<pre style="color:#555">t0
+t</pre>
+
+
+<p>foo</p>
+
+<p>View discussion on Sourcegraph: <a href="http://example.com">r/f:L10</a></p>`; rendered.HTMLBody != want {
+		t.Errorf("got  %q\nwant %q", rendered.HTMLBody, want)
+	}
+	if want := `r/f:L10
+
+
+------------------------------------------------------------------------------
+t0
+t
+------------------------------------------------------------------------------
+
+
+foo
+
+View discussion on Sourcegraph: http://example.com`; rendered.Body != want {
+		t.Errorf("got  %q\nwant %q", rendered.Body, want)
 	}
 }
 

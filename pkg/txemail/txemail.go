@@ -23,6 +23,40 @@ type Message struct {
 	Data     interface{} // template data
 }
 
+// Render returns the rendered message contents without sending email.
+func Render(message Message) (*gophermail.Message, error) {
+
+	m := gophermail.Message{
+		From: mail.Address{
+			Name: "Sourcegraph",
+		},
+		Headers: mail.Header{},
+	}
+
+	parsed, err := ParseTemplate(message.Template)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := parsed.render(message.Data, &m); err != nil {
+		return nil, err
+	}
+
+	if message.FromName != "" {
+		m.From.Name = message.FromName
+	}
+
+	for _, to := range message.To {
+		toAddr, err := mail.ParseAddress(to)
+		if err != nil {
+			return nil, err
+		}
+		m.To = append(m.To, *toAddr)
+	}
+
+	return &m, nil
+}
+
 // Send sends a transactional email.
 //
 // Callers that do not live in the frontend should call api.InternalClient.SendEmail
@@ -43,34 +77,11 @@ func Send(ctx context.Context, message Message) error {
 		return errors.New("no SMTP server configured (in email.smtp)")
 	}
 
-	m := gophermail.Message{
-		From: mail.Address{
-			Name:    "Sourcegraph",
-			Address: conf.EmailAddress,
-		},
-		Headers: mail.Header{},
-	}
-
-	parsed, err := ParseTemplate(message.Template)
+	m, err := Render(message)
 	if err != nil {
 		return err
 	}
-
-	if err := parsed.render(message.Data, &m); err != nil {
-		return err
-	}
-
-	if message.FromName != "" {
-		m.From.Name = message.FromName
-	}
-
-	for _, to := range message.To {
-		toAddr, err := mail.ParseAddress(to)
-		if err != nil {
-			return err
-		}
-		m.To = append(m.To, *toAddr)
-	}
+	m.From.Address = conf.EmailAddress
 
 	// Disable Mandrill features, because they make the emails look sketchy.
 	if conf.EmailSmtp.Host == "smtp.mandrillapp.com" {
@@ -98,7 +109,7 @@ func Send(ctx context.Context, message Message) error {
 	return gophermail.SendMail(
 		net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
 		smtpAuth,
-		&m,
+		m,
 	)
 }
 
