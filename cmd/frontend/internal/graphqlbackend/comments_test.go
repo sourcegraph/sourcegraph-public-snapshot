@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -338,3 +339,63 @@ func TestRepoNameFromRemoteID(t *testing.T) {
 		}
 	}
 }
+
+func TestSendNewCommentEmails(t *testing.T) {
+	var mockSent []txemail.Message
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		mockSent = append(mockSent, message)
+		return nil
+	}
+	defer func() { txemail.MockSend = nil }()
+
+	url, _ := url.Parse("http://example.com")
+
+	sendNewCommentEmails(
+		context.Background(),
+		types.OrgRepo{CanonicalRemoteID: "r"},
+		types.Comment{Contents: "foo"},
+		types.Thread{
+			ID:               123,
+			RepoRevisionPath: "f",
+			Branch:           strptr("b"),
+			StartLine:        10,
+			EndLine:          11,
+			Lines:            &types.ThreadLines{HTML: "h", Text: "t"},
+		},
+		[]*types.Comment{},
+		[]string{"a@a.com"},
+		types.User{},
+		url,
+	)
+
+	want := []txemail.Message{
+		{
+			FromName: "",
+			To:       []string{"a@a.com"},
+			Template: newCommentEmailTemplates,
+			Data: struct {
+				threadEmailTemplateCommonData
+				Location     string
+				ContextLines string
+				Contents     string
+			}{
+				threadEmailTemplateCommonData: threadEmailTemplateCommonData{
+					Reply:    false,
+					RepoName: "r",
+					Branch:   "@b",
+					Title:    "foo",
+					Number:   123,
+					URL:      url.String(),
+				},
+				Location:     "r/f:L10",
+				ContextLines: "\nt",
+				Contents:     "foo",
+			},
+		},
+	}
+	if !reflect.DeepEqual(mockSent, want) {
+		t.Errorf("got  %+v\n\nwant %+v", mockSent, want)
+	}
+}
+
+func strptr(s string) *string { return &s }
