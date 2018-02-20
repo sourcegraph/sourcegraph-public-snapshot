@@ -276,16 +276,25 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo types.OrgRep
 		return &commentResults{emails: []string{}, commentURL: commentURL.String()}, nil
 	}
 
+	emails, err := emailsToNotify(ctx, append(previousComments, &comment), author, org)
+	if err != nil {
+		return nil, err
+	}
+
+	// Send tx emails asynchronously.
+	asyncCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	go sendNewCommentEmails(asyncCtx, repo, comment, thread, previousComments, emails, author, commentURL)
+
+	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil
+}
+
+func sendNewCommentEmails(ctx context.Context, repo types.OrgRepo, comment types.Comment, thread types.Thread, previousComments []*types.Comment, emails []string, author types.User, commentURL *url.URL) {
 	var first types.Comment
 	if len(previousComments) > 0 {
 		first = *previousComments[0]
 	} else {
 		first = comment
-	}
-
-	emails, err := emailsToNotify(ctx, append(previousComments, &comment), author, org)
-	if err != nil {
-		return nil, err
 	}
 
 	repoName := repoNameFromRemoteID(repo.CanonicalRemoteID)
@@ -295,45 +304,38 @@ func (s *schemaResolver) notifyNewComment(ctx context.Context, repo types.OrgRep
 		lines = strings.Join([]string{thread.Lines.TextBefore, thread.Lines.Text}, "\n")
 	}
 
-	// Send tx emails asynchronously.
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
-		for _, email := range emails {
-			var branch string
-			if thread.Branch != nil {
-				branch = "@" + *thread.Branch
-			}
-			location := fmt.Sprintf("%s/%s:L%d", repoName, thread.RepoRevisionPath, thread.StartLine)
-			if err := txemail.Send(ctx, txemail.Message{
-				FromName: author.DisplayName,
-				To:       []string{email},
-				Template: newCommentEmailTemplates,
-				Data: struct {
-					threadEmailTemplateCommonData
-					Location     string
-					ContextLines string
-					Contents     string
-				}{
-					threadEmailTemplateCommonData: threadEmailTemplateCommonData{
-						Reply:    len(previousComments) > 0,
-						RepoName: repoName,
-						Branch:   branch,
-						Title:    TitleFromContents(first.Contents),
-						Number:   thread.ID,
-						URL:      commentURL.String(),
-					},
-					Location:     location,
-					ContextLines: lines,
-					Contents:     contents,
-				},
-			}); err != nil {
-				log15.Error("error sending new-comment notifications", "to", email, "err", err)
-			}
+	for _, email := range emails {
+		var branch string
+		if thread.Branch != nil {
+			branch = "@" + *thread.Branch
 		}
-	}()
-
-	return &commentResults{emails: emails, commentURL: commentURL.String()}, nil
+		location := fmt.Sprintf("%s/%s:L%d", repoName, thread.RepoRevisionPath, thread.StartLine)
+		if err := txemail.Send(ctx, txemail.Message{
+			FromName: author.DisplayName,
+			To:       []string{email},
+			Template: newCommentEmailTemplates,
+			Data: struct {
+				threadEmailTemplateCommonData
+				Location     string
+				ContextLines string
+				Contents     string
+			}{
+				threadEmailTemplateCommonData: threadEmailTemplateCommonData{
+					Reply:    len(previousComments) > 0,
+					RepoName: repoName,
+					Branch:   branch,
+					Title:    TitleFromContents(first.Contents),
+					Number:   thread.ID,
+					URL:      commentURL.String(),
+				},
+				Location:     location,
+				ContextLines: lines,
+				Contents:     contents,
+			},
+		}); err != nil {
+			log15.Error("error sending new-comment notifications", "to", email, "err", err)
+		}
+	}
 }
 
 var (
