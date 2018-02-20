@@ -218,16 +218,16 @@ func (r *fileResolver) RichHTML(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return renderMarkdown(content)
+	return renderMarkdown(content), nil
 }
 
-func renderMarkdown(content string) (string, error) {
+func renderMarkdown(content string) string {
 	unsafeHTML := gfm.Markdown([]byte(content))
 
 	// The recommended policy at https://github.com/russross/blackfriday#extensions
 	p := bluemonday.UGCPolicy()
 	p.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
-	return string(p.SanitizeBytes(unsafeHTML)), nil
+	return string(p.SanitizeBytes(unsafeHTML))
 }
 
 func (r *fileResolver) Binary(ctx context.Context) (bool, error) {

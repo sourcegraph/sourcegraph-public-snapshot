@@ -41,7 +41,7 @@ func (c *commentResolver) Contents() string {
 	return c.comment.Contents
 }
 
-func (c *commentResolver) RichHTML() (string, error) {
+func (c *commentResolver) RichHTML() string {
 	return renderMarkdown(c.comment.Contents)
 }
 
