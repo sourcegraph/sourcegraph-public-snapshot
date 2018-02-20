@@ -9,7 +9,7 @@ import { currentConfiguration, SavedQueryConfiguration } from '../settings/confi
 import { createAggregateError } from '../util/errors'
 import { SearchOptions } from './index'
 
-export function searchText(options: SearchOptions): Observable<GQL.ISearchResults> {
+export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(
         gql`
             query Search($query: String!) {

@@ -22,7 +22,7 @@ import { ServerBanner } from '../marketing/ServerBanner'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { pluralize } from '../util/strings'
-import { searchText } from './backend'
+import { search } from './backend'
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileMatch } from './FileMatch'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
@@ -92,7 +92,7 @@ export class SearchResults extends React.Component<Props, State> {
                             code_search: { query_data: queryTelemetryData(searchOptions) },
                         })
 
-                        return searchText(searchOptions).pipe(
+                        return search(searchOptions).pipe(
                             tap(
                                 res =>
                                     eventLogger.log('SearchResultsFetched', {
