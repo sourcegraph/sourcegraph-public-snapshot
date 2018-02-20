@@ -139,7 +139,7 @@ export function fetchSearchResultStats(options: SearchOptions): Observable<GQL.I
 export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchSuggestion> {
     return queryGraphQL(
         gql`
-            query Search($query: String!) {
+            query SearchSuggestions($query: String!) {
                 search(query: $query) {
                     suggestions {
                         ... on Repository {
