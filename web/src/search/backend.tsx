@@ -22,11 +22,12 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                         cloning
                         timedout
                         results {
-                            __typename
                             ... on Repository {
+                                __typename
                                 uri
                             }
                             ... on FileMatch {
+                                __typename
                                 resource
                                 limitHit
                                 lineMatches {
@@ -36,6 +37,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                 }
                             }
                             ... on CommitSearchResult {
+                                __typename
                                 refs {
                                     name
                                     displayName
