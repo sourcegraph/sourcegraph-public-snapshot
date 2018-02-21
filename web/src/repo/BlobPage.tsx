@@ -733,7 +733,7 @@ const fetchBlob = memoizeObservable(
                     !data.repository.commit.file.highlight
                 ) {
                     throw Object.assign(
-                        'Could not fetch blob content: ' + new Error((errors || []).map(e => e.message).join('\n')),
+                        new Error('Could not fetch blob content: ' + (errors || []).map(e => e.message).join('\n')),
                         { errors }
                     )
                 }
