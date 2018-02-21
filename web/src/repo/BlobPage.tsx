@@ -1,4 +1,3 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as H from 'history'
 import isEmpty from 'lodash/isEmpty'
@@ -36,7 +35,7 @@ import { Resizable } from '../components/Resizable'
 import { ReferencesWidget } from '../references/ReferencesWidget'
 import { eventLogger } from '../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../util'
-import { ErrorLike } from '../util/errors'
+import { ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { OpenInEditorAction } from './actions/OpenInEditorAction'
@@ -754,8 +753,6 @@ interface BlobPageProps {
 }
 
 interface BlobPageState {
-    loading: boolean
-    error?: ErrorLike
     wrapCode: boolean
 
     /**
@@ -764,9 +761,10 @@ interface BlobPageState {
     showRefs: boolean
 
     /**
-     * The blob data.
+     * The blob data or error that happened.
+     * undefined while loading.
      */
-    blob?: GQL.IFile
+    blobOrError?: GQL.IFile | ErrorLike
 }
 
 export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> {
@@ -778,7 +776,6 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
         super(props)
 
         this.state = {
-            loading: true,
             wrapCode: ToggleLineWrap.getValue(),
             showRefs: parseHash(props.location.hash).modal === 'references',
         }
@@ -801,7 +798,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                 this.extendHighlightingTimeoutClicks.pipe(mapTo(true), startWith(false))
             )
                 .pipe(
-                    tap(() => this.setState({ loading: true, blob: undefined, error: undefined })),
+                    tap(() => this.setState({ blobOrError: undefined })),
                     switchMap(([{ repoPath, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
                         fetchBlob({
                             repoPath,
@@ -812,13 +809,12 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                         }).pipe(
                             catchError(error => {
                                 console.error(error)
-                                this.setState({ loading: false, error })
-                                return []
+                                return [error]
                             })
                         )
                     )
                 )
-                .subscribe(blob => this.setState({ loading: false, blob, error: undefined }), err => console.error(err))
+                .subscribe(blobOrError => this.setState({ blobOrError }), err => console.error(err))
         )
 
         this.propsUpdates.next(this.props)
@@ -842,23 +838,13 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
     }
 
     public render(): React.ReactNode {
-        if (this.state.loading) {
+        if (!this.state.blobOrError) {
             // Render placeholder for layout before content is fetched.
             return <div className="blob-page__placeholder" />
         }
 
-        if (this.state.error) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.error.message)} />
-        }
-
-        if (!this.state.blob) {
-            return (
-                <HeroPage
-                    icon={DirectionalSignIcon}
-                    title="404: Not Found"
-                    subtitle="The requested file was not found."
-                />
-            )
+        if (isErrorLike(this.state.blobOrError)) {
+            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.blobOrError.message)} />
         }
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
@@ -884,7 +870,7 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                 key="toggle-line-wrap"
                 element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
             />,
-            this.state.blob.richHTML && (
+            this.state.blobOrError.richHTML && (
                 <RepoHeaderActionPortal
                     key="toggle-rendered-file-mode"
                     position="right"
@@ -897,19 +883,19 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                     }
                 />
             ),
-            this.state.blob.richHTML &&
+            this.state.blobOrError.richHTML &&
                 renderMode === 'rendered' && (
-                    <RenderedFile key="rendered-file" dangerousInnerHTML={this.state.blob.richHTML} />
+                    <RenderedFile key="rendered-file" dangerousInnerHTML={this.state.blobOrError.richHTML} />
                 ),
-            (renderMode === 'code' || !this.state.blob.richHTML) &&
-                !this.state.blob.highlight.aborted && (
+            (renderMode === 'code' || !this.state.blobOrError.richHTML) &&
+                !this.state.blobOrError.highlight.aborted && (
                     <Blob
                         key="blob"
                         className="blob-page__blob"
                         repoPath={this.props.repoPath}
                         commitID={this.props.commitID}
                         filePath={this.props.filePath}
-                        html={this.state.blob.highlight.html}
+                        html={this.state.blobOrError.highlight.html}
                         rev={this.props.rev}
                         wrapCode={this.state.wrapCode}
                         renderMode={renderMode}
@@ -917,8 +903,8 @@ export class BlobPage extends React.PureComponent<BlobPageProps, BlobPageState> 
                         history={this.props.history}
                     />
                 ),
-            !this.state.blob.richHTML &&
-                this.state.blob.highlight.aborted && (
+            !this.state.blobOrError.richHTML &&
+                this.state.blobOrError.highlight.aborted && (
                     <div className="blob-page__aborted" key="aborted">
                         <div className="alert alert-info">
                             Syntax-highlighting this file took too long. &nbsp;
