@@ -7,14 +7,21 @@ describe('e2e test suite', () => {
 
     let browser: Browser
     let page: Page
-    before('Start browser', async () => {
-        browser = await launch()
-    })
-    after('Close browser', async () => {
-        if (browser) {
+    if (process.env.SKIP_LAUNCH_CHROME) {
+        before('Connect to browser', async () => {
+            browser = await connect()
+        })
+        after('Disconnect from browser', async () => {
+            await browser.disconnect()
+        })
+    } else {
+        before('Start browser', async () => {
+            browser = await launch()
+        })
+        after('Close browser', async () => {
             await browser.close()
-        }
-    })
+        })
+    }
     beforeEach('Open page', async () => {
         page = await browser.newPage()
         await page.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
