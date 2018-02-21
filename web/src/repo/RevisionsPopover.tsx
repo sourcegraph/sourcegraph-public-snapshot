@@ -9,6 +9,7 @@ import { gql, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { Tabs } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
+import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 
 const fetchGitRefs = memoizeObservable(
@@ -41,11 +42,7 @@ const fetchGitRefs = memoizeObservable(
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node || !(data.node as GQL.IRepository).gitRefs) {
-                    throw Object.assign(
-                        'Could not fetch repository Git refs: ' +
-                            new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
+                    throw createAggregateError(errors)
                 }
                 return (data.node as GQL.IRepository).gitRefs
             })
@@ -93,10 +90,7 @@ const fetchRepositoryCommits = memoizeObservable(
                     !(data.node as GQL.IRepository).commit ||
                     !(data.node as GQL.IRepository).commit!.ancestors
                 ) {
-                    throw Object.assign(
-                        'Could not fetch commits: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
+                    throw createAggregateError(errors)
                 }
                 return (data.node as GQL.IRepository).commit!.ancestors
             })

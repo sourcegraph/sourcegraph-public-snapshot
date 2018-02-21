@@ -35,7 +35,7 @@ import { Resizable } from '../components/Resizable'
 import { ReferencesWidget } from '../references/ReferencesWidget'
 import { eventLogger } from '../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../util'
-import { ErrorLike, isErrorLike } from '../util/errors'
+import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { OpenInEditorAction } from './actions/OpenInEditorAction'
@@ -731,10 +731,7 @@ const fetchBlob = memoizeObservable(
                     !data.repository.commit.file ||
                     !data.repository.commit.file.highlight
                 ) {
-                    throw Object.assign(
-                        new Error('Could not fetch blob content: ' + (errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
+                    throw createAggregateError(errors)
                 }
                 return data.repository.commit.file
             })

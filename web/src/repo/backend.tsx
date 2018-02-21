@@ -175,10 +175,7 @@ export const fetchHighlightedFile = memoizeObservable(
                     !data.repository.commit.file ||
                     !data.repository.commit.file.highlight
                 ) {
-                    throw Object.assign(
-                        new Error('Could not fetch highlighted file: ' + (errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
+                    throw createAggregateError(errors)
                 }
                 const file = data.repository.commit.file
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
@@ -236,10 +233,7 @@ export const fetchBlobContent = memoizeObservable(
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.repository || !data.repository.commit || !data.repository.commit.file) {
-                    throw Object.assign(
-                        'Could not fetch blob content: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
+                    throw createAggregateError(errors)
                 }
                 const file = data.repository.commit.file
                 return { isDirectory: file.isDirectory, content: file.content }
@@ -278,10 +272,7 @@ export const fetchFileMetadata = memoizeObservable(
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.repository || !data.repository.commit || !data.repository.commit.file) {
-                    throw Object.assign(
-                        'Could not fetch blob metadata: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
+                    throw createAggregateError(errors)
                 }
                 const file = data.repository.commit.file
                 return file
@@ -304,16 +295,11 @@ export const fetchPhabricatorRepo = memoizeObservable(
             `,
             ctx
         ).pipe(
-            map(result => {
-                if (result.errors || !result.data || !result.data.phabricatorRepo) {
-                    throw Object.assign(
-                        new Error(
-                            'Could not fetch phabricator repo: ' + (result.errors || []).map(e => e.message).join('\n')
-                        ),
-                        { errors: result.errors }
-                    )
+            map(({ data, errors }) => {
+                if (!data || !data.phabricatorRepo) {
+                    throw createAggregateError(errors)
                 }
-                return result.data.phabricatorRepo
+                return data.phabricatorRepo
             })
         ),
     makeRepoURI

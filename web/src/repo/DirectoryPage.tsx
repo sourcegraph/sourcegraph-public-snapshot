@@ -23,6 +23,7 @@ import { QueryInput } from '../search/QueryInput'
 import { SearchButton } from '../search/SearchButton'
 import { SearchHelp } from '../search/SearchHelp'
 import { UserAvatar } from '../user/UserAvatar'
+import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { parseCommitDateString } from '../util/time'
 import { externalCommitURL, toPrettyBlobURL, toTreeURL } from '../util/url'
@@ -101,10 +102,7 @@ export const fetchTreeAndCommits = memoizeObservable(
                     !data.repository.commit.file ||
                     !data.repository.commit.file.commits
                 ) {
-                    throw Object.assign(
-                        'Could not fetch tree and commits: ' + new Error((errors || []).map(e => e.message).join('\n')),
-                        { errors }
-                    )
+                    throw createAggregateError(errors)
                 }
                 return { tree: data.repository.commit.tree, commits: data.repository.commit.file.commits }
             })
