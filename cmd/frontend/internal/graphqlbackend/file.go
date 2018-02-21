@@ -147,6 +147,16 @@ func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
 		return &url, nil
 	}
 
+	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
+	if phabRepo != nil {
+		defaultBranch, err := repo.DefaultBranch(ctx)
+		if err != nil {
+			return nil, nil
+		}
+		url := fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", phabRepo.URL, phabRepo.Callsign, *defaultBranch, r.path, rev)
+		return &url, nil
+	}
+
 	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s/tree/%s/%s", uri, rev, r.path)
 		return &url, nil
@@ -155,12 +165,6 @@ func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
 	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
 		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
-		return &url, nil
-	}
-
-	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	if phabRepo != nil {
-		url := fmt.Sprintf("%s/source/%s/browse/%s", phabRepo.URL, phabRepo.Callsign, r.path)
 		return &url, nil
 	}
 
@@ -179,6 +183,16 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 		return &url, nil
 	}
 
+	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
+	if phabRepo != nil {
+		defaultBranch, err := repo.DefaultBranch(ctx)
+		if err != nil {
+			return nil, nil
+		}
+		url := fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", phabRepo.URL, phabRepo.Callsign, *defaultBranch, r.path, rev)
+		return &url, nil
+	}
+
 	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s/blob/%s/%s", uri, rev, r.path)
 		return &url, nil
@@ -187,12 +201,6 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
 		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
-		return &url, nil
-	}
-
-	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	if phabRepo != nil {
-		url := fmt.Sprintf("%s/source/%s/browse/%s", phabRepo.URL, phabRepo.Callsign, r.path)
 		return &url, nil
 	}
 
