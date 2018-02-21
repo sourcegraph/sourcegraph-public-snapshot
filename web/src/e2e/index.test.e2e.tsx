@@ -1,25 +1,30 @@
 import * as assert from 'assert'
-import { Browser, launch, Page } from 'puppeteer'
+import { Browser, connect, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
 
 describe('e2e test suite', () => {
     const baseURL = process.env.SOURCEGRAPH_BASE_URL || 'http://localhost:3080'
+    const browserWSEndpoint = process.env.BROWSER_WS_ENDPOINT
 
     let browser: Browser
     let page: Page
-    if (process.env.SKIP_LAUNCH_CHROME) {
+    if (browserWSEndpoint) {
         before('Connect to browser', async () => {
-            browser = await connect()
+            browser = await connect({ browserWSEndpoint })
         })
         after('Disconnect from browser', async () => {
-            await browser.disconnect()
+            if (browser) {
+                await browser.disconnect()
+            }
         })
     } else {
         before('Start browser', async () => {
             browser = await launch()
         })
         after('Close browser', async () => {
-            await browser.close()
+            if (browser) {
+                await browser.close()
+            }
         })
     }
     beforeEach('Open page', async () => {
