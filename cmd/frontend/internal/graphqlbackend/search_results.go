@@ -125,19 +125,20 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.resultCount += other.resultCount
 }
 
-type searchResults struct {
-	results []*searchResult
+// searchResultsResolver is a resolver for the GraphQL type `SearchResults`
+type searchResultsResolver struct {
+	results []*searchResultResolver
 	searchResultsCommon
 	alert           *searchAlert
 	start           time.Time // when the results started being computed
 	maxResultsCount int32
 }
 
-func (sr *searchResults) Results() []*searchResult {
+func (sr *searchResultsResolver) Results() []*searchResultResolver {
 	return sr.results
 }
 
-func (sr *searchResults) ResultCount() int32 {
+func (sr *searchResultsResolver) ResultCount() int32 {
 	var totalResults int32
 	for _, result := range sr.results {
 		totalResults += result.resultCount()
@@ -145,7 +146,7 @@ func (sr *searchResults) ResultCount() int32 {
 	return totalResults
 }
 
-func (sr *searchResults) ApproximateResultCount() string {
+func (sr *searchResultsResolver) ApproximateResultCount() string {
 	count := sr.ResultCount()
 	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
 		return fmt.Sprintf("%d+", count)
@@ -153,9 +154,9 @@ func (sr *searchResults) ApproximateResultCount() string {
 	return strconv.Itoa(int(count))
 }
 
-func (sr *searchResults) Alert() *searchAlert { return sr.alert }
+func (sr *searchResultsResolver) Alert() *searchAlert { return sr.alert }
 
-func (sr *searchResults) ElapsedMilliseconds() int32 {
+func (sr *searchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
 }
 
@@ -233,7 +234,7 @@ func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID api.RepoID
 
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
-func (sr *searchResults) blameFileMatch(ctx context.Context, fm *fileMatch, cache *blameFileMatchCache) (t time.Time, err error) {
+func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMatchResolver, cache *blameFileMatchCache) (t time.Time, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "blameFileMatch")
 	defer func() {
 		if err != nil {
@@ -257,7 +258,7 @@ func (sr *searchResults) blameFileMatch(ctx context.Context, fm *fileMatch, cach
 	return hunks[0].Author.Date, nil
 }
 
-func (sr *searchResults) Sparkline(ctx context.Context) (sparkline []int32, err error) {
+func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
 	var (
 		days     = 30                 // number of days the sparkline represents
 		maxBlame = 100                // maximum number of file results to blame for date/time information.
@@ -316,7 +317,7 @@ loop:
 			}
 
 			run.Acquire()
-			go func(r *searchResult) {
+			go func(r *searchResultResolver) {
 				defer func() {
 					if r := recover(); r != nil {
 						run.Error(fmt.Errorf("recover: %v", r))
@@ -342,7 +343,7 @@ loop:
 	return sparkline, nil
 }
 
-func (r *searchResolver) Results(ctx context.Context) (*searchResults, error) {
+func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
 	return r.doResults(ctx, "")
 }
 
@@ -394,7 +395,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	// Calculate value from scratch.
 	searchResultsStatsCounter.WithLabelValues("miss").Inc()
 	attempts := 0
-	var v *searchResults
+	var v *searchResultsResolver
 	for {
 		// Query search results.
 		var err error
@@ -480,7 +481,7 @@ func (r *searchResolver) getPatternInfo() *patternInfo {
 	return patternInfo
 }
 
-func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResultsResolver, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "graphql.SearchResults")
 	tr := trace.New(traceName, r.rawQuery())
 	defer func() {
@@ -503,14 +504,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		if err != nil {
 			return nil, err
 		}
-		return &searchResults{alert: alert}, nil
+		return &searchResultsResolver{alert: alert}, nil
 	}
 	if overLimit {
 		alert, err := r.alertForOverRepoLimit(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return &searchResults{alert: alert}, nil
+		return &searchResultsResolver{alert: alert}, nil
 	}
 
 	args := repoSearchArgs{
@@ -522,7 +523,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	// Determine which types of results to return.
-	var searchFuncs []func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error)
+	var searchFuncs []func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error)
 	var resultTypes []string
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
@@ -550,7 +551,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		seenResultTypes[resultType] = struct{}{}
 		switch resultType {
 		case "repo":
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
 				return searchRepositories(ctx, &args, r.query)
 			})
 		case "file", "path":
@@ -559,22 +560,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				continue
 			}
 			searchedFileContentsOrPaths = true
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
 				return searchFilesInRepos(ctx, &args, r.query)
 			})
 		case "diff":
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
 				return searchCommitDiffsInRepos(ctx, &args, r.query)
 			})
 		case "commit":
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResult, *searchResultsCommon, error) {
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
 				return searchCommitLogInRepos(ctx, &args, r.query)
 			})
 		}
 	}
 
 	// Run all search funcs.
-	results := searchResults{
+	results := searchResultsResolver{
 		maxResultsCount:     r.maxResults(),
 		start:               start,
 		searchResultsCommon: searchResultsCommon{maxResultsCount: r.maxResults()},
@@ -640,19 +641,24 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	return &results, nil
 }
 
-type searchResult struct {
-	repo      *repositoryResolver // repo name match
-	fileMatch *fileMatch          // text match
-	diff      *commitSearchResult // diff or commit match
+// searchResultResolver is a resolver for the GraphQL union type `SearchResult`
+type searchResultResolver struct {
+	repo      *repositoryResolver         // repo name match
+	fileMatch *fileMatchResolver          // text match
+	diff      *commitSearchResultResolver // diff or commit match
 }
 
-func (g *searchResult) ToRepository() (*repositoryResolver, bool) { return g.repo, g.repo != nil }
-func (g *searchResult) ToFileMatch() (*fileMatch, bool)           { return g.fileMatch, g.fileMatch != nil }
-func (g *searchResult) ToCommitSearchResult() (*commitSearchResult, bool) {
+func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
+	return g.repo, g.repo != nil
+}
+func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
+	return g.fileMatch, g.fileMatch != nil
+}
+func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return g.diff, g.diff != nil
 }
 
-func (g *searchResult) resultCount() int32 {
+func (g *searchResultResolver) resultCount() int32 {
 	switch {
 	case g.fileMatch != nil:
 		if l := len(g.fileMatch.LineMatches()); l > 0 {

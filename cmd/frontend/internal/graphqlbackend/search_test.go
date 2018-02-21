@@ -1,6 +1,6 @@
 package graphqlbackend
 
-func testStringResult(result *searchResultResolver) string {
+func testStringResult(result *searchSuggestionResolver) string {
 	var name string
 	switch r := result.result.(type) {
 	case *repositoryResolver:

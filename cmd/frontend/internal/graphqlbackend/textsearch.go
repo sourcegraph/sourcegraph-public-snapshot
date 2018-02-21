@@ -107,7 +107,8 @@ func (p *patternInfo) validate() error {
 	return nil
 }
 
-type fileMatch struct {
+// fileMatchResolver is a resolver for the GraphQL type `FileMatch`
+type fileMatchResolver struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
@@ -116,22 +117,22 @@ type fileMatch struct {
 	commitID     api.CommitID // or empty for default branch
 }
 
-func (fm *fileMatch) Resource() string {
+func (fm *fileMatchResolver) Resource() string {
 	return fm.uri
 }
 
-func (fm *fileMatch) LineMatches() []*lineMatch {
+func (fm *fileMatchResolver) LineMatches() []*lineMatch {
 	return fm.JLineMatches
 }
 
-func (fm *fileMatch) LimitHit() bool {
+func (fm *fileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
 }
 
-func fileMatchesToSearchResults(fms []*fileMatch) []*searchResult {
-	results := make([]*searchResult, len(fms))
+func fileMatchesToSearchResults(fms []*fileMatchResolver) []*searchResultResolver {
+	results := make([]*searchResultResolver, len(fms))
 	for i, fm := range fms {
-		results[i] = &searchResult{fileMatch: fm}
+		results[i] = &searchResultResolver{fileMatch: fm}
 	}
 	return results
 }
@@ -162,7 +163,7 @@ func (lm *lineMatch) LimitHit() bool {
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
@@ -263,7 +264,7 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 	}
 
 	r := struct {
-		Matches  []*fileMatch
+		Matches  []*fileMatchResolver
 		LimitHit bool
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&r)
@@ -290,9 +291,9 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info)
 	}
@@ -359,7 +360,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 	return nil
 }
 
-func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) (fm []*fileMatch, limitHit bool, err error) {
+func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) (fm []*fileMatchResolver, limitHit bool, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil
 	}
@@ -448,7 +449,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		resp.Files = resp.Files[:int(query.FileMatchLimit)]
 		limitHit = true
 	}
-	matches := make([]*fileMatch, len(resp.Files))
+	matches := make([]*fileMatchResolver, len(resp.Files))
 	for i, file := range resp.Files {
 		if len(file.LineMatches) > maxLineMatches {
 			file.LineMatches = file.LineMatches[:maxLineMatches]
@@ -470,7 +471,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 				})
 			}
 		}
-		matches[i] = &fileMatch{
+		matches[i] = &fileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
@@ -603,10 +604,10 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 	return indexed, unindexed, nil
 }
 
-var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResult, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -678,13 +679,13 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	var (
 		wg                sync.WaitGroup
 		mu                sync.Mutex
-		unflattened       [][]*fileMatch
+		unflattened       [][]*fileMatchResolver
 		flattenedSize     int
 		overLimitCanceled bool // canceled because we were over the limit
 	)
 
 	// addMatches assumes the caller holds mu.
-	addMatches := func(matches []*fileMatch) {
+	addMatches := func(matches []*fileMatchResolver) {
 		if len(matches) > 0 {
 			common.resultCount += int32(len(matches))
 			sort.Slice(matches, func(i, j int) bool {
@@ -774,7 +775,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	return fileMatchesToSearchResults(flattened), common, nil
 }
 
-func flattenFileMatches(unflattened [][]*fileMatch, fileMatchLimit int) []*fileMatch {
+func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) []*fileMatchResolver {
 	// Return early so we don't have to worry about empty lists in later
 	// calculations.
 	if len(unflattened) == 0 {
@@ -790,7 +791,7 @@ func flattenFileMatches(unflattened [][]*fileMatch, fileMatchLimit int) []*fileM
 		a, b := unflattened[i][0].uri, unflattened[j][0].uri
 		return a > b
 	})
-	var flattened []*fileMatch
+	var flattened []*fileMatchResolver
 	initialPortion := fileMatchLimit / len(unflattened)
 	for _, matches := range unflattened {
 		if initialPortion < len(matches) {

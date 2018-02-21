@@ -11,13 +11,13 @@ import (
 
 var featureFlagSearchRepositoriesByName, _ = strconv.ParseBool(os.Getenv("SEARCH_REPO_NAMES"))
 
-var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResult, *searchResultsCommon, error)
+var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error)
 
 // searchRepositories searches for repositories by name.
 //
 // For a repository to match a query, the repository's name ("URI") must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResult, common *searchResultsCommon, err error) {
+func searchRepositories(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	if mockSearchRepositories != nil {
 		return mockSearchRepositories(args)
 	}
@@ -40,10 +40,10 @@ func searchRepositories(ctx context.Context, args *repoSearchArgs, query searchq
 	}
 
 	common = &searchResultsCommon{}
-	var results []*searchResult
+	var results []*searchResultResolver
 	for _, repo := range args.repos {
 		if pattern.MatchString(string(repo.repo.URI)) {
-			results = append(results, &searchResult{repo: &repositoryResolver{repo: repo.repo}})
+			results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.repo}})
 		}
 	}
 	return results, common, nil

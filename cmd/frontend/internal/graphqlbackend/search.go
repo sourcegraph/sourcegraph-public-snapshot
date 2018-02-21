@@ -67,6 +67,7 @@ func asString(v *searchquerytypes.Value) string {
 	}
 }
 
+// searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	root *schemaResolver
 
@@ -75,7 +76,7 @@ type searchResolver struct {
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
 	repoRevs, missingRepoRevs []*repositoryRevisions
-	repoResults               []*searchResultResolver
+	repoResults               []*searchSuggestionResolver
 	repoOverLimit             bool
 	repoErr                   error
 }
@@ -168,7 +169,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevisions, repoResults []*searchResultResolver, overLimit bool, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevisions, repoResults []*searchSuggestionResolver, overLimit bool, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "graphql.resolveRepositories")
 	tr := trace.New(traceName, fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
 	defer func() {
@@ -208,7 +209,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	return repoRevs, missingRepoRevs, repoResults, overLimit, err
 }
 
-func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchResultResolver, overLimit bool, err error) {
+func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
 	traceName, ctx := traceutil.TraceName(ctx, "resolveRepositories")
 	tr := trace.New(traceName, fmt.Sprintf("repoFilters: %v, minusRepoFilters: %v, repoGroupFilters: %v", repoFilters, minusRepoFilters, repoGroupFilters))
 	defer func() {
@@ -310,7 +311,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 	overLimit = len(repos) >= maxRepoListSize
 
 	repoRevisions = make([]*repositoryRevisions, 0, len(repos))
-	repoResolvers = make([]*searchResultResolver, 0, len(repos))
+	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
 		repoRev := &repositoryRevisions{
@@ -383,7 +384,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	return repoPattern
 }
 
-func (r *searchResolver) resolveFiles(ctx context.Context, limit int) ([]*searchResultResolver, error) {
+func (r *searchResolver) resolveFiles(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
 	repoRevisions, _, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -463,7 +464,8 @@ func (e *badRequestError) Cause() error {
 	return e.err
 }
 
-type searchResultResolver struct {
+// searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
+type searchSuggestionResolver struct {
 	// result is either a repositoryResolver or a fileResolver
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
@@ -474,17 +476,17 @@ type searchResultResolver struct {
 	label string
 }
 
-func (r *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
+func (r *searchSuggestionResolver) ToRepository() (*repositoryResolver, bool) {
 	res, ok := r.result.(*repositoryResolver)
 	return res, ok
 }
 
-func (r *searchResultResolver) ToFile() (*fileResolver, bool) {
+func (r *searchSuggestionResolver) ToFile() (*fileResolver, bool) {
 	res, ok := r.result.(*fileResolver)
 	return res, ok
 }
 
-func (r *searchResultResolver) ToSymbol() (*symbolResolver, bool) {
+func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
 	res, ok := r.result.(*symbolResolver)
 	return res, ok
 }
@@ -499,13 +501,13 @@ type matcher struct {
 }
 
 // searchTree searches the specified repositories for files and dirs whose name matches the matcher.
-func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisions, limit int) ([]*searchResultResolver, error) {
+func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisions, limit int) ([]*searchSuggestionResolver, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	var (
 		resMu sync.Mutex
-		res   []*searchResultResolver
+		res   []*searchSuggestionResolver
 	)
 	done := make(chan error, len(repos))
 	for _, repoRev := range repos {
@@ -536,11 +538,11 @@ func searchTree(ctx context.Context, matcher matcher, repos []*repositoryRevisio
 	return res, nil
 }
 
-var mockSearchFilesForRepo func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchResultResolver, error)
+var mockSearchFilesForRepo func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error)
 
 // searchTreeForRepo searches the specified repository for files whose name matches
 // the matcher
-func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) (res []*searchResultResolver, err error) {
+func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) (res []*searchSuggestionResolver, err error) {
 	if mockSearchFilesForRepo != nil {
 		return mockSearchFilesForRepo(matcher, repoRevs, limit, includeDirs)
 	}
@@ -614,16 +616,16 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 //
 // A panic occurs if the type of result is not a *repositoryResolver or
 // *fileResolver.
-func newSearchResultResolver(result interface{}, score int) *searchResultResolver {
+func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *repositoryResolver:
-		return &searchResultResolver{result: r, score: score, length: len(r.repo.URI), label: string(r.repo.URI)}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.URI), label: string(r.repo.URI)}
 
 	case *fileResolver:
-		return &searchResultResolver{result: r, score: score, length: len(r.path), label: r.path}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
 
 	case *symbolResolver:
-		return &searchResultResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.ContainerName), label: r.symbol.Name + " " + r.symbol.ContainerName}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.ContainerName), label: r.symbol.Name + " " + r.symbol.ContainerName}
 
 	default:
 		panic("never here")
@@ -749,7 +751,7 @@ func splitNoEmpty(s, sep string) []string {
 
 // searchResultSorter implements the sort.Interface interface to sort a list of
 // searchResultResolvers.
-type searchResultSorter []*searchResultResolver
+type searchResultSorter []*searchSuggestionResolver
 
 func (s searchResultSorter) Len() int      { return len(s) }
 func (s searchResultSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

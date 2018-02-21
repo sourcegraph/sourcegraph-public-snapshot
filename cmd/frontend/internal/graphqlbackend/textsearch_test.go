@@ -126,17 +126,17 @@ func queryEqual(a query.Q, b query.Q) bool {
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error) {
 		repoName := repo.URI
 		switch repoName {
 		case "foo/one":
-			return []*fileMatch{
+			return []*fileMatchResolver{
 				{
 					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/two":
-			return []*fileMatch{
+			return []*fileMatchResolver{
 				{
 					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},

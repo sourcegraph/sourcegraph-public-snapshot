@@ -35,7 +35,7 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 	}
 }
 
-func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchResultResolver, error) {
+func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
 	args.applyDefaultsAndConstraints()
 
 	if len(r.query.Syntax.Expr) == 0 {
@@ -50,9 +50,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 	}
 
-	var suggesters []func(ctx context.Context) ([]*searchResultResolver, error)
+	var suggesters []func(ctx context.Context) ([]*searchSuggestionResolver, error)
 
-	showRepoSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
+	showRepoSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
 		// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
@@ -81,7 +81,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 	suggesters = append(suggesters, showRepoSuggestions)
 
-	showFileSuggestions := func(ctx context.Context) ([]*searchResultResolver, error) {
+	showFileSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
 		// If the query has a file: filter AND a term, then abort; we will use showFilesWithTextMatches
 		// instead.
@@ -95,7 +95,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 	suggesters = append(suggesters, showFileSuggestions)
 
-	showSymbolMatches := func(ctx context.Context) (results []*searchResultResolver, err error) {
+	showSymbolMatches := func(ctx context.Context) (results []*searchSuggestionResolver, err error) {
 		patternInfo := r.getPatternInfo()
 		if patternInfo.Pattern == "" {
 			return nil, nil
@@ -169,7 +169,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		if len(resolvers) > maxSymbolResults {
 			resolvers = resolvers[:maxSymbolResults]
 		}
-		results = make([]*searchResultResolver, len(resolvers))
+		results = make([]*searchSuggestionResolver, len(resolvers))
 		for i, sr := range resolvers {
 			score := 20
 			if sr.symbol.ContainerName == "" {
@@ -208,7 +208,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		suggesters = append(suggesters, showSymbolMatches)
 	}
 
-	showFilesWithTextMatches := func(ctx context.Context) ([]*searchResultResolver, error) {
+	showFilesWithTextMatches := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
 		// If terms are specified, then show files that have text matches. Set an aggressive timeout
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
@@ -218,7 +218,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if err == context.DeadlineExceeded {
 				err = nil // don't log as error below
 			}
-			var suggestions []*searchResultResolver
+			var suggestions []*searchSuggestionResolver
 			if results != nil {
 				if len(results.results) > *args.First {
 					results.results = results.results[:*args.First]
@@ -246,13 +246,13 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	// Run suggesters.
 	var (
-		allSuggestions []*searchResultResolver
+		allSuggestions []*searchSuggestionResolver
 		mu             sync.Mutex
 		par            = parallel.NewRun(len(suggesters))
 	)
 	for _, suggester := range suggesters {
 		par.Acquire()
-		go func(suggester func(ctx context.Context) ([]*searchResultResolver, error)) {
+		go func(suggester func(ctx context.Context) ([]*searchSuggestionResolver, error)) {
 			defer par.Release()
 			ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 			defer cancel()

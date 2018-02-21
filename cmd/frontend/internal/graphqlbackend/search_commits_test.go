@@ -63,7 +63,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []*commitSearchResult{
+	if want := []*commitSearchResultResolver{
 		{
 			commit: &gitCommitResolver{
 				repo:   &repositoryResolver{repo: &types.Repo{ID: 1, URI: "repo"}},
@@ -89,6 +89,6 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 }
 
-func (c *commitSearchResult) String() string {
+func (c *commitSearchResultResolver) String() string {
 	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", c.commit, c.diffPreview, c.messagePreview)
 }
