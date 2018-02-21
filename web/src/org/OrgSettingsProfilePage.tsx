@@ -1,4 +1,5 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs/observable/of'
@@ -139,7 +140,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                     >
                         <small>Updated!</small>
                     </div>
-                    {this.state.error && <div className="alert alert-danger">{this.state.error}</div>}
+                    {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 </form>
             </div>
         )

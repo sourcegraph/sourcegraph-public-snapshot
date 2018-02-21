@@ -3,6 +3,7 @@ import { Checkmark } from '@sourcegraph/icons/lib/Checkmark'
 import { Close } from '@sourcegraph/icons/lib/Close'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -238,7 +239,9 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                     </button>
                 </form>
                 {this.state.error && (
-                    <div className="alert alert-danger add-public-repository-form__alert">{this.state.error}</div>
+                    <div className="alert alert-danger add-public-repository-form__alert">
+                        {upperFirst(this.state.error)}
+                    </div>
                 )}
                 {this.state.success && (
                     <div className="alert alert-success add-public-repository-form__alert">{this.state.success}</div>

@@ -2,6 +2,7 @@ import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import DownloadIcon from '@sourcegraph/icons/lib/Download'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import formatDistance from 'date-fns/formatDistance'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -62,7 +63,9 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />
                 <h2>Updates</h2>
-                {this.state.error && <p className="site-admin-updates-page__error">Error: {this.state.error}</p>}
+                {this.state.error && (
+                    <p className="site-admin-updates-page__error">Error: {upperFirst(this.state.error)}</p>
+                )}
                 {this.state.updateCheck &&
                     (this.state.updateCheck.pending || this.state.updateCheck.checkedAt) && (
                         <div>

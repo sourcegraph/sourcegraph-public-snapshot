@@ -1,4 +1,5 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -64,7 +65,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Repository settings" />
                 <h2>Settings</h2>
                 {this.state.loading && <LoaderIcon className="icon-inline" />}
-                {this.state.error && <div className="alert alert-danger">{this.state.error}</div>}
+                {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 <form className="settings-page__form">
                     <div className="form-group">
                         <label>Repository name</label>

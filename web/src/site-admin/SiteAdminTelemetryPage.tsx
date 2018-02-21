@@ -1,4 +1,5 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -82,7 +83,9 @@ export class SiteAdminTelemetryPage extends React.Component<Props, State> {
             <div className="site-admin-telemetry-page">
                 <PageTitle title="Telemetry - Admin" />
                 <h2>Telemetry</h2>
-                {this.state.error && <p className="site-admin-telemetry-page__error">Error: {this.state.error}</p>}
+                {this.state.error && (
+                    <p className="site-admin-telemetry-page__error">Error: {upperFirst(this.state.error)}</p>
+                )}
                 {typeof this.state.telemetryEnabled === 'boolean' && (
                     <div>
                         <p>

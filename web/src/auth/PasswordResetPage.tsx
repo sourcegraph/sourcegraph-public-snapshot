@@ -1,4 +1,5 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
@@ -30,7 +31,9 @@ class PasswordResetForm extends React.Component<{}, State> {
             // on submission if the code matches the email.
             return (
                 <form className="password-reset-page__form" onSubmit={this.handleSubmitResetPassword}>
-                    {this.state.error !== '' && <p className="password-reset-page__error">{this.state.error}</p>}
+                    {this.state.error !== '' && (
+                        <p className="password-reset-page__error">{upperFirst(this.state.error)}</p>
+                    )}
                     <p>Enter your new password.</p>
                     <div className="form-group">
                         <PasswordInput
@@ -53,7 +56,9 @@ class PasswordResetForm extends React.Component<{}, State> {
         }
         return (
             <form className="password-reset-page__form" onSubmit={this.handleSubmitResetPasswordInit}>
-                {this.state.error !== '' && <p className="password-reset-page__error">{this.state.error}</p>}
+                {this.state.error !== '' && (
+                    <p className="password-reset-page__error">{upperFirst(this.state.error)}</p>
+                )}
                 <p>Enter your email address and we will send you a link to reset your password.</p>
                 <div className="form-group">
                     <input

@@ -1,6 +1,7 @@
 import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import LockIcon from '@sourcegraph/icons/lib/Lock'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -279,7 +280,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Mirror settings" />
                 <h2>Mirroring and cloning</h2>
                 {this.state.loading && <LoaderIcon className="icon-inline" />}
-                {this.state.error && <div className="alert alert-danger">{this.state.error}</div>}
+                {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 <dl>
                     <dt>
                         Remote repository URL{' '}

@@ -1,3 +1,4 @@
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
@@ -44,7 +45,7 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
             <div className="user-settings-configuration-page">
                 <PageTitle title="User configuration" />
                 <h2>Configuration</h2>
-                {this.state.error && <div className="alert alert-danger">{this.state.error}</div>}
+                {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 <p>View and edit your personal search scopes and saved queries.</p>
                 {this.state.settings !== undefined && (
                     <SettingsFile
