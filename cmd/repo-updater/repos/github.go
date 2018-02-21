@@ -316,6 +316,11 @@ type githubConnection struct {
 // authenticatedRemoteURL returns the repository's Git remote URL with the configured
 // GitHub personal access token inserted in the URL userinfo.
 func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) string {
+	if c.config.GitURLType == "ssh" {
+		url := fmt.Sprintf("git@%s:%s.git", c.originalHostname, repo.NameWithOwner)
+		return url
+	}
+
 	if c.config.Token == "" {
 		return repo.URL
 	}

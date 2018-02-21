@@ -402,6 +402,13 @@ const SiteSchemaJSON = `{
           "pattern": "^https?://",
           "format": "uri"
         },
+        "gitURLType": {
+          "description":
+            "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/server/config/repositories#repositories-that-need-https-or-ssh-authentication.",
+          "type": "string",
+          "enum": ["http", "ssh"],
+          "default": "http"
+        },
         "token": {
           "description": "A GitHub personal access token with repo and org scope.",
           "type": "string",

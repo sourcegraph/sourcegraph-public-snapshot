@@ -4,6 +4,7 @@ import { parse } from '@sqs/jsonc-parser/lib/main'
 import {
     AwsCodeCommitConnection,
     GitHubConnection,
+    GitLabConnection,
     OpenIdConnectAuthProvider,
     Repository,
     SamlAuthProvider,
@@ -45,7 +46,7 @@ const addGitHubEnterprise: ConfigHelper = config => {
 const addGitLab: ConfigHelper = config => {
     const tokenPlaceholder =
         '<personal access token with api scope (https://[your-gitlab-hostname]/profile/personal_access_tokens)>'
-    const value: GitHubConnection = {
+    const value: GitLabConnection = {
         url: 'https://gitlab.example.com',
         token: tokenPlaceholder,
     }
