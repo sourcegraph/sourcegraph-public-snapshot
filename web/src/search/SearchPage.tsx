@@ -78,7 +78,7 @@ export class SearchPage extends React.Component<Props, State> {
                             hasGlobalQueryBehavior={true}
                         />
                         <SearchButton />
-                        <SearchHelp />
+                        <SearchHelp className="search-page__help" />
                     </div>
                     <div className="search-page__input-sub-container">
                         <SearchSuggestionChips

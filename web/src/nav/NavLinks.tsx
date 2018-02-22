@@ -115,7 +115,12 @@ export class NavLinks extends React.Component<Props, State> {
                         </Link>
                     )}
                 <ThemeSwitcher {...this.props} />
-                <SearchHelp />
+                {showDotComMarketing && (
+                    <a href="https://about.sourcegraph.com" className="nav-links__link">
+                        About
+                    </a>
+                )}
+                <SearchHelp className="nav-links__help" />
             </div>
         )
     }

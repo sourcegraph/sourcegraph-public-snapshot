@@ -6,10 +6,10 @@ const onDidClickSearchHelp = (): void => {
     eventLogger.log('SearchHelpButtonClicked')
 }
 
-export const SearchHelp: React.SFC = () => (
+export const SearchHelp: React.SFC<{ className?: string }> = ({ className = '' }) => (
     <a
         onClick={onDidClickSearchHelp}
-        className="search-help"
+        className={`search-help ${className}`}
         href="https://about.sourcegraph.com/docs/search"
         target="_blank"
         data-tooltip="View search documentation"
