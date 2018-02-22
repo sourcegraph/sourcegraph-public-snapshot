@@ -1,0 +1,9 @@
+.repository-search-result {
+    &__title {
+        display: flex;
+        align-items: center;
+    }
+    &__spacer {
+        flex: 1;
+    }
+}

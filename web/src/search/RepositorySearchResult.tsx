@@ -20,16 +20,21 @@ const logClickOnText = () => eventLogger.log('RepositorySearchResultClicked')
 
 export const RepositorySearchResult: React.StatelessComponent<Props> = (props: Props) => (
     <ResultContainer
+        titleClassName="repository-search-result__title"
         icon={RepoIcon}
         title={
-            <RepoLink
-                repoPath={props.result.uri}
-                // tslint:disable-next-line:jsx-no-lambda
-                onClick={() => {
-                    logClickOnText()
-                    props.onSelect()
-                }}
-            />
+            <>
+                <RepoLink
+                    repoPath={props.result.uri}
+                    // tslint:disable-next-line:jsx-no-lambda
+                    onClick={() => {
+                        logClickOnText()
+                        props.onSelect()
+                    }}
+                />
+                <span className="repository-search-result__spacer" />
+                <small>Repository name match</small>
+            </>
         }
     />
 )

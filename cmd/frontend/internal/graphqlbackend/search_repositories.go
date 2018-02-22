@@ -2,14 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"os"
 	"regexp"
-	"strconv"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 )
-
-var featureFlagSearchRepositoriesByName, _ = strconv.ParseBool(os.Getenv("SEARCH_REPO_NAMES"))
 
 var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error)
 
@@ -20,10 +16,6 @@ var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResultResolver, 
 func searchRepositories(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	if mockSearchRepositories != nil {
 		return mockSearchRepositories(args)
-	}
-
-	if !featureFlagSearchRepositoriesByName {
-		return nil, nil, nil
 	}
 
 	// Only proceed if the query consists solely of type:, repo:, repogroup:, and default (no field) tokens.

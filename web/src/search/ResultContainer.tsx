@@ -28,6 +28,11 @@ interface Props {
     title: React.ReactFragment
 
     /**
+     * CSS class name to apply to the title element.
+     */
+    titleClassName?: string
+
+    /**
      * The content of the result displayed underneath the result container's
      * header when collapsed.
      */
@@ -83,7 +88,9 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     onClick={this.toggle}
                 >
                     <Icon className="icon-inline" />
-                    <div className="result-container__header-title">{this.props.title}</div>
+                    <div className={`result-container__header-title ${this.props.titleClassName || ''}`}>
+                        {this.props.title}
+                    </div>
                     {this.props.collapsible &&
                         (this.state.expanded ? (
                             <small className="result-container__toggle-matches-container">
