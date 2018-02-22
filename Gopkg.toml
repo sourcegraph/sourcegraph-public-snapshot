@@ -193,6 +193,11 @@ required = [
 [[constraint]]
   name = "github.com/mattn/goreman"
   revision = "a28d243f92f0661e33ed21e957d2c2dc17d08536"
+
 [[constraint]]
   name = "github.com/aws/aws-sdk-go-v2"
   version = "2.0.0-preview.2"
+
+[[constraint]]
+  name = "github.com/sourcegraph/godockerize"
+  revision = "f84696de123c7038bdd976011ea9cd36ba2a72d4"

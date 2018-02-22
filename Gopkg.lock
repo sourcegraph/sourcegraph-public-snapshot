@@ -870,10 +870,9 @@
   revision = "2305ecca26ab74e3f819cb3875cd631f467e0c2b"
 
 [[projects]]
-  branch = "master"
   name = "github.com/sourcegraph/godockerize"
   packages = ["."]
-  revision = "05bac79edd17c0f55127871fa9c6f4d91bebf07c"
+  revision = "f84696de123c7038bdd976011ea9cd36ba2a72d4"
 
 [[projects]]
   branch = "master"
@@ -1371,6 +1370,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f90f8412c71d45a79bee8b7779cf302b2cdd350522b2f700f99d36aab0a56d8a"
+  inputs-digest = "b1bd3c35a0724e98440f0f6d969d8a0ec9c40a6b722f556408c671a1f97d7356"
   solver-name = "gps-cdcl"
   solver-version = 1

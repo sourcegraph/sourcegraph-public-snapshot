@@ -38,7 +38,7 @@ func main() {
 					&cli.StringFlag{
 						Name:  "base",
 						Usage: "base Docker image name",
-						Value: "alpine:3.6",
+						Value: "alpine:3.7",
 					},
 					&cli.StringSliceFlag{
 						Name:  "env",
@@ -79,6 +79,8 @@ func doBuild(c *cli.Context) error {
 	expose := []string{}
 	install := []string{"ca-certificates", "mailcap", "tini"} // mailcap is for /etc/mime.types
 	run := []string{}
+	user := ""
+	userDirs := []string{}
 
 	for _, pkgName := range args.Slice() {
 		pkg, err := build.Import(pkgName, wd, 0)
@@ -106,6 +108,15 @@ func doBuild(c *cli.Context) error {
 							install = append(install, strings.Fields(parts[1])...)
 						case "run":
 							run = append(run, parts[1])
+						case "user":
+							if user != "" {
+								return errors.New("user set twice")
+							}
+							userArgs := strings.Fields(parts[1])
+							user = userArgs[0]
+							if len(userArgs) > 1 {
+								userDirs = userArgs[1:]
+							}
 						default:
 							return fmt.Errorf("%s: invalid docker comment: %s", fset.Position(c.Pos()), c.Text)
 						}
@@ -136,6 +147,14 @@ func doBuild(c *cli.Context) error {
 	}
 	if len(expose) != 0 {
 		fmt.Fprintf(&dockerfile, "  EXPOSE %s\n", strings.Join(sortedStringSet(expose), " "))
+	}
+	if user != "" {
+		runCmds := []string{fmt.Sprintf("addgroup -S %s && adduser -S -G %s -h /home/%s %s", user, user, user, user)}
+		for _, userDir := range userDirs {
+			runCmds = append(runCmds, fmt.Sprintf("mkdir -p %s && chown -R %s:%s %s", userDir, user, user, userDir))
+		}
+		fmt.Fprintf(&dockerfile, "  RUN "+strings.Join(runCmds, " && ")+"\n")
+		fmt.Fprintf(&dockerfile, "  USER %s\n", user)
 	}
 	fmt.Fprintf(&dockerfile, "  ENTRYPOINT [\"/sbin/tini\", \"--\", \"/usr/local/bin/%s\"]\n", path.Base(packages[0]))
 	for _, importPath := range packages {
