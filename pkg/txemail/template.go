@@ -2,11 +2,14 @@ package txemail
 
 import (
 	"bytes"
+	"html"
 	htmltemplate "html/template"
 	"io"
 	"strings"
 	texttemplate "text/template"
 
+	"github.com/microcosm-cc/bluemonday"
+	gfm "github.com/shurcooL/github_flavored_markdown"
 	gophermail "gopkg.in/jpoehls/gophermail.v0"
 )
 
@@ -38,17 +41,17 @@ func MustValidate(input Templates) Templates {
 // templates together. In the future it will also provide common template funcs
 // and a common footer.
 func ParseTemplate(input Templates) (*ParsedTemplates, error) {
-	st, err := texttemplate.New("").Parse(strings.TrimSpace(input.Subject))
+	st, err := texttemplate.New("").Funcs(textFuncMap).Parse(strings.TrimSpace(input.Subject))
 	if err != nil {
 		return nil, err
 	}
 
-	tt, err := texttemplate.New("").Parse(strings.TrimSpace(input.Text))
+	tt, err := texttemplate.New("").Funcs(textFuncMap).Parse(strings.TrimSpace(input.Text))
 	if err != nil {
 		return nil, err
 	}
 
-	ht, err := htmltemplate.New("").Parse(strings.TrimSpace(input.HTML))
+	ht, err := htmltemplate.New("").Funcs(htmlFuncMap).Parse(strings.TrimSpace(input.HTML))
 	if err != nil {
 		return nil, err
 	}
@@ -89,3 +92,25 @@ func (t ParsedTemplates) render(data interface{}, m *gophermail.Message) error {
 	}
 	return nil
 }
+
+var (
+	textFuncMap = map[string]interface{}{
+		// Removes HTML tags (which are valid Markdown) from the source, for display in a text-only
+		// setting.
+		"markdownToText": func(markdownSource string) string {
+			p := bluemonday.StrictPolicy()
+			return html.UnescapeString(p.Sanitize(markdownSource))
+		},
+	}
+
+	htmlFuncMap = map[string]interface{}{
+		// Renders Markdown for display in an HTML email.
+		"markdownToSafeHTML": func(markdownSource string) htmltemplate.HTML {
+			unsafeHTML := gfm.Markdown([]byte(markdownSource))
+
+			// The recommended policy at https://github.com/russross/blackfriday#extensions
+			p := bluemonday.UGCPolicy()
+			return htmltemplate.HTML(p.SanitizeBytes(unsafeHTML))
+		},
+	}
+)

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -338,3 +339,103 @@ func TestRepoNameFromRemoteID(t *testing.T) {
 		}
 	}
 }
+
+func TestSendNewCommentEmails(t *testing.T) {
+	var mockSent []txemail.Message
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		mockSent = append(mockSent, message)
+		return nil
+	}
+	defer func() { txemail.MockSend = nil }()
+
+	url, _ := url.Parse("http://example.com")
+
+	sendNewCommentEmails(
+		context.Background(),
+		types.OrgRepo{CanonicalRemoteID: "r"},
+		types.Comment{Contents: "foo'bar<b>baz</b>**qux**"},
+		types.Thread{
+			ID:               123,
+			RepoRevisionPath: "f",
+			Branch:           strptr("b"),
+			StartLine:        10,
+			EndLine:          11,
+			Lines: &types.ThreadLines{
+				HTMLBefore: "h0",
+				HTML:       "h1",
+				HTMLAfter:  "h2",
+				TextBefore: "t0",
+				Text:       "t",
+				TextAfter:  "t1",
+			},
+		},
+		[]*types.Comment{},
+		[]string{"a@a.com"},
+		types.User{},
+		url,
+	)
+
+	if want := ([]txemail.Message{
+		{
+			FromName: "",
+			To:       []string{"a@a.com"},
+			Template: newCommentEmailTemplates,
+			Data: struct {
+				threadEmailTemplateCommonData
+				Location     string
+				ContextLines string
+				Contents     string
+			}{
+				threadEmailTemplateCommonData: threadEmailTemplateCommonData{
+					Reply:    false,
+					RepoName: "r",
+					Branch:   "@b",
+					Title:    "foo'bar<b>baz</b>**qux**",
+					Number:   123,
+					URL:      url.String(),
+				},
+				Location:     "r/f:L10",
+				ContextLines: "t0\nt",
+				Contents:     "foo'bar<b>baz</b>**qux**",
+			},
+		},
+	}); !reflect.DeepEqual(mockSent, want) {
+		t.Errorf("got  %+v\n\nwant %+v", mockSent, want)
+	}
+	if len(mockSent) == 0 {
+		t.Fatal()
+	}
+
+	// Check rendered message.
+	rendered, err := txemail.Render(mockSent[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `
+<pre style="color:#555">t0
+t</pre>
+
+
+<p>foo&#39;bar<b>baz</b><strong>qux</strong></p>
+
+
+<p>View discussion on Sourcegraph: <a href="http://example.com">r/f:L10</a></p>`; rendered.HTMLBody != want {
+		t.Errorf("got  %q\nwant %q", rendered.HTMLBody, want)
+	}
+	if want := `r/f:L10
+
+
+------------------------------------------------------------------------------
+t0
+t
+------------------------------------------------------------------------------
+
+
+foo'barbaz**qux**
+
+View discussion on Sourcegraph: http://example.com`; rendered.Body != want {
+		t.Errorf("got  %q\nwant %q", rendered.Body, want)
+	}
+}
+
+func strptr(s string) *string { return &s }
