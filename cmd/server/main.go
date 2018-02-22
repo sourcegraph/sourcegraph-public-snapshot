@@ -15,7 +15,7 @@ import (
 )
 
 //docker:install curl
-//docker:run curl -o /usr/local/bin/syntect_server https://storage.googleapis.com/sourcegraph-artifacts/syntect_server/c04f24fcc8c0a04e476ecd1970445dba && chmod +x /usr/local/bin/syntect_server
+//docker:run curl -o /usr/local/bin/syntect_server https://storage.googleapis.com/sourcegraph-artifacts/syntect_server/01c34269f728ddce8c44b26b0c9e2719 && chmod +x /usr/local/bin/syntect_server
 
 // defaultEnv is environment variables that will be set if not already set.
 var defaultEnv = map[string]string{
