@@ -3,9 +3,9 @@
 
 [[projects]]
   branch = "master"
-  name = "dmitri.shuralyov.com/kebabcase"
+  name = "dmitri.shuralyov.com/text/kebabcase"
   packages = ["."]
-  revision = "bf160e40a7918fbe9dc3cc841a023d87242bd2eb"
+  revision = "40e40b42552a9cb37d6e98f4ad31f63ae53ea43a"
 
 [[projects]]
   name = "github.com/NYTimes/gziphandler"
@@ -79,22 +79,10 @@
   version = "2018.01.18"
 
 [[projects]]
-  name = "github.com/cespare/xxhash"
-  packages = ["."]
-  revision = "5c37fe3735342a2e0d01c87a907579987c8936cc"
-  version = "v1.0.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/codahale/hdrhistogram"
   packages = ["."]
   revision = "3a0bb77429bd3a61596f5e8a3172445844342120"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/coocood/freecache"
-  packages = ["."]
-  revision = "3e2d56b0a16accf0b3733f0a778322a989058015"
 
 [[projects]]
   branch = "master"
@@ -822,7 +810,7 @@
   branch = "master"
   name = "github.com/shurcooL/octiconssvg"
   packages = ["."]
-  revision = "38b02129bb6460858e11f90798a3832da1e502bd"
+  revision = "91d14858bf8188ba5143d67a3a677ea559000b0a"
 
 [[projects]]
   branch = "master"
@@ -1383,6 +1371,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ade99c6881c91916fdab23a93c9b05c9a7f465cf4ca2729ba02c3aa1ee29c828"
+  inputs-digest = "f90f8412c71d45a79bee8b7779cf302b2cdd350522b2f700f99d36aab0a56d8a"
   solver-name = "gps-cdcl"
   solver-version = 1

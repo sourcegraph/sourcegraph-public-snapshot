@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	"dmitri.shuralyov.com/kebabcase"
+	"dmitri.shuralyov.com/text/kebabcase"
 	"github.com/shurcooL/go-goon"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
