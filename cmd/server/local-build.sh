@@ -28,7 +28,7 @@ go install -tags dist \
 cat > $GOBIN/syntect_server <<EOF
 #!/bin/sh
 # Pass through all possible ROCKET env vars
-docker run --name=syntect_server --rm -p3700:80 \
+docker run --name=syntect_server --rm -p9238:9238  \
 -e QUIET \
 -e ROCKET_ENV \
 -e ROCKET_ADDRESS \

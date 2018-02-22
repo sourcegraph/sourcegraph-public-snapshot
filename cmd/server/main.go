@@ -26,7 +26,7 @@ var defaultEnv = map[string]string{
 	"SRC_SESSION_STORE_REDIS": "127.0.0.1:6379",
 	"SRC_INDEXER":             "127.0.0.1:3179",
 	"QUERY_RUNNER_URL":        "http://127.0.0.1:3183",
-	"SRC_SYNTECT_SERVER":      "http://127.0.0.1:3700",
+	"SRC_SYNTECT_SERVER":      "http://127.0.0.1:9238",
 	"SYMBOLS_URL":             "http://127.0.0.1:3184",
 	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_HTTPS_ADDR":          ":7443",
@@ -115,7 +115,7 @@ func main() {
 		`github-proxy: github-proxy`,
 		`frontend: frontend`,
 		`repo-updater: repo-updater`,
-		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=3700 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
+		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
 	}
 	if line, err := maybeRedisProcFile(); err != nil {
 		log.Fatal(err)
