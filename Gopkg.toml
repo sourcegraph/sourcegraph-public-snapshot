@@ -70,10 +70,6 @@ required = [
 
 [[constraint]]
   branch = "master"
-  name = "github.com/coocood/freecache"
-
-[[constraint]]
-  branch = "master"
   name = "github.com/coreos/go-oidc"
 
 [[constraint]]
