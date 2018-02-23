@@ -27,7 +27,7 @@ func TestEnsurePostgresVersion(t *testing.T) {
 	}
 
 	for _, pkg := range install {
-		if pkg == "'postgresql<9.6'" {
+		if pkg == "'postgresql<9.7'" {
 			return
 		}
 	}
