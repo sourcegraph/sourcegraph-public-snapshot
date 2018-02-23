@@ -27,9 +27,9 @@ func TestEnsurePostgresVersion(t *testing.T) {
 	}
 
 	for _, pkg := range install {
-		if pkg == "'postgresql<9.7'" {
+		if pkg == "'postgresql<9.6'" {
 			return
 		}
 	}
-	t.Fatal("Could not find postgres 9.6 specified in docker:install. We have to stay on postgres 9.6 since changing versions would cause existing customers to not run due to postgres data files only working on 9.6")
+	t.Fatal("Could not find postgres 9.6 specified in docker:install. We have to stay on postgres 9.6 since changing versions would cause existing customers to not run due to postgres data files only working on 9.6. Got:", install)
 }
