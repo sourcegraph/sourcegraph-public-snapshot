@@ -12,6 +12,26 @@
       "internalConsoleOptions": "openOnSessionStart"
     },
     {
+      "type": "node",
+      "request": "launch",
+      "name": "Mocha E2E Tests",
+      "cwd": "${workspaceFolder}/web",
+      "runtimeExecutable": "${workspaceFolder}/web/node_modules/.bin/ts-node",
+      "program": "${workspaceFolder}/web/node_modules/mocha/bin/_mocha",
+      "args": [
+        "--require",
+        "src/util/long-stack-traces.ts",
+        "--colors",
+        "--no-timeouts",
+        "src/**/*.test.e2e.ts?(x)",
+        "--bail"
+      ],
+      "internalConsoleOptions": "openOnSessionStart",
+      "env": {
+        // "SOURCEGRAPH_BASE_URL": "https://sourcegraph.com"
+      }
+    },
+    {
       "name": "ui",
       "type": "chrome",
       "request": "attach",
