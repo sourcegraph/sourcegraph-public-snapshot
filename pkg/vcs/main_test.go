@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("listen failed: %s", err)
 	}
 
-	srv := &http.Server{Handler: (&server.Server{InsecureSkipCheckVerifySSH: true}).Handler()}
+	srv := &http.Server{Handler: (&server.Server{}).Handler()}
 	go srv.Serve(l)
 
 	gitserver.DefaultClient = &gitserver.Client{Addrs: []string{l.Addr().String()}}
