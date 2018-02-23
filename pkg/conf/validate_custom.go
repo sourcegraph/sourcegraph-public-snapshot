@@ -39,7 +39,7 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 			invalid(`auth.openIDConnect must be configured when auth.provider == "openidconnect"`)
 		}
 		if hasOldOIDC && cfg.AuthProvider != "openidconnect" {
-			invalid(`must set auth.provider == "openidconnect" for oidc* config to take effect`)
+			invalid(`must set auth.provider == "openidconnect" for oidc* config to take effect (also, oidc* config is deprecated; see other message to that effect)`)
 		}
 		if hasNewOIDC && cfg.AuthProvider != "openidconnect" {
 			invalid(`must set auth.provider == "openidconnect" for auth.openIDConnect config to take effect`)
