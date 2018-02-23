@@ -34,7 +34,7 @@ export function refreshSiteFlags(): Observable<never> {
         }
     `).pipe(
         tap(({ data, errors }) => {
-            if (!data || !data.site || !data.site.updateCheck) {
+            if (!data || !data.site) {
                 throw createAggregateError(errors)
             }
             siteFlags.next(data.site)

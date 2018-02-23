@@ -41,6 +41,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             }
             if (
                 this.props.isSiteAdmin &&
+                this.state.siteFlags.updateCheck &&
                 !this.state.siteFlags.updateCheck.errorMessage &&
                 this.state.siteFlags.updateCheck.updateVersionAvailable
             ) {
