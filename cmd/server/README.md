@@ -17,8 +17,6 @@ parts will be automated.
 1. Prepare a branch / ensure documentation is in sync with everything
    mentioned in the [CHANGELOG](../../CHANGELOG.md). This is done in
    [sourcegraph/website](https://github.com/sourcegraph/website).
-1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseBuild` to the
-   timestamp and semver version string of the new version.
 1. If the blog post for the last release contains a command referencing a version like 2.4 but you are releasing 2.4.x, then remove the version string and refer to the canonical docs so that people don't accidentally run the old version.
 1. `git push origin -f origin/master:docker-images/server`
 1. Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
@@ -34,6 +32,8 @@ parts will be automated.
 1. `docker tag sourcegraph/server:VERSION sourcegraph/server:latest`
 1. `docker push sourcegraph/server:VERSION`
 1. `docker push sourcegraph/server:latest`
+1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseBuild` to the
+   timestamp and semver version string of the new version.
 
 ## Publishing new code intelligence images
 
