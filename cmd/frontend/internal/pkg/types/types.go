@@ -63,9 +63,10 @@ type Settings struct {
 }
 
 type SiteConfig struct {
-	SiteID    string
-	Email     string
-	UpdatedAt string
+	SiteID      string
+	Email       string
+	UpdatedAt   string
+	Initialized bool // whether the initial site admin account has been created
 }
 
 // User represents a registered user.

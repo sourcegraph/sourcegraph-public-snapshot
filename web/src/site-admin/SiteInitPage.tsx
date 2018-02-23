@@ -1,8 +1,7 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { SignUpForm } from '../auth/SignUpPage'
+import { SignUpArgs, SignUpForm } from '../auth/SignUpPage'
 import { eventLogger } from '../tracking/eventLogger'
-import { updateDeploymentConfiguration } from './backend'
 
 /**
  * A page that is shown when the Sourcegraph instance has not yet been initialized.
@@ -26,7 +25,7 @@ export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> 
                     <SignUpForm
                         autoFocus={true}
                         buttonLabel="Create admin account & continue"
-                        onDidSignUp={this.onDidSignUp}
+                        doSignUp={this.doSignUp}
                         location={this.props.location}
                         history={this.props.history}
                     />
@@ -35,18 +34,29 @@ export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> 
         )
     }
 
-    private onDidSignUp = (email: string) => {
-        updateDeploymentConfiguration(email).subscribe(
-            () => window.location.replace('/site-admin'),
-            error => {
-                console.error(error)
-            }
-        )
-        eventLogger.log('ServerInstallationComplete', {
-            server: {
-                email,
-                appId: window.context.siteID,
+    private doSignUp = (args: SignUpArgs): Promise<void> =>
+        fetch('/-/site-init', {
+            credentials: 'same-origin',
+            method: 'POST',
+            headers: {
+                ...window.context.xhrHeaders,
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
             },
+            body: JSON.stringify(args),
+        }).then(resp => {
+            if (resp.status !== 200) {
+                return resp.text().then(text => Promise.reject(text))
+            }
+
+            eventLogger.log('ServerInstallationComplete', {
+                server: {
+                    email: args.email,
+                    appId: window.context.siteID,
+                },
+            })
+
+            window.location.replace('/site-admin')
+            return Promise.resolve()
         })
-    }
 }

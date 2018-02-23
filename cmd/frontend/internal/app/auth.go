@@ -30,16 +30,31 @@ type oauthCookie struct {
 
 type credentials struct {
 	Email    string `json:"email"`
-	Password string `json:"password"`
-
 	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
+// serveSignUp handles submission of the user signup form.
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
 	if !conf.Get().AuthAllowSignup {
-		http.Error(w, "signup is not enabled", http.StatusNotFound)
+		http.Error(w, "Signup is not enabled (auth.allowSignup site configuration option)", http.StatusNotFound)
 		return
 	}
+	doServeSignUp(w, r, false)
+}
+
+// serveSiteInit handles submission of the site initialization form, where the initial site admin user is created.
+func serveSiteInit(w http.ResponseWriter, r *http.Request) {
+	doServeSignUp(w, r, true)
+}
+
+// doServeSignUp is called to create a new user account. It is called for the normal user signup process (where a
+// non-admin user is created) and for the site initialization process (where the initial site admin user account is
+// created).
+//
+// 🚨 SECURITY: Any change to this function could introduce security exploits
+// and/or break sign up / initial admin account creation. Be careful.
+func doServeSignUp(w http.ResponseWriter, r *http.Request, initialSiteAdminOrFail bool) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -50,16 +65,41 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create user
+	// Create the user.
+	//
+	// Note that in the case of initialSiteAdminOrFail == true, db.Users.Create
+	// will refuse to create the user entirely, not just an admin user. i.e.
+	// this will not create a normal user account if initialSiteAdminOrFail == true
+	// and the initial site admin account already exists. This is tested in
+	// db/users_test.go TestUsers_Create_InitialSiteAdminOrFail.
 	emailCode := backend.MakeEmailVerificationCode()
 	usr, err := db.Users.Create(r.Context(), db.NewUser{
-		Email:     creds.Email,
-		Username:  creds.Username,
-		Password:  creds.Password,
-		EmailCode: emailCode,
+		Email:                  creds.Email,
+		Username:               creds.Username,
+		Password:               creds.Password,
+		EmailCode:              emailCode,
+		InitialSiteAdminOrFail: initialSiteAdminOrFail,
 	})
 	if err != nil {
-		httpLogAndError(w, fmt.Sprintf("Could not create user %s", creds.Username), http.StatusInternalServerError)
+		var (
+			message    string
+			statusCode int
+		)
+		switch {
+		case db.IsUsernameExists(err):
+			message = "Username is already in use. Try a different username."
+			statusCode = http.StatusConflict
+		case db.IsEmailExists(err):
+			message = "Email address is already in use. Try signing into that account instead, or use a different email address."
+			statusCode = http.StatusConflict
+		default:
+			// Do not show non-whitelisted error messages to user, in case they contain sensitive or confusing
+			// information.
+			message = "Signup failed unexpectedly."
+			statusCode = http.StatusInternalServerError
+		}
+		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
+		http.Error(w, message, statusCode)
 		return
 	}
 	actor := &actor.Actor{UID: usr.ID}
@@ -82,6 +122,15 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 			},
 		}); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
+		}
+	}
+
+	if initialSiteAdminOrFail {
+		// Record initial site admin email.
+		if err := db.SiteConfig.UpdateConfiguration(r.Context(), creds.Email); err != nil {
+			log15.Warn("Failed to save initial site admin email.", "error", err)
+			http.Error(w, "Failed to save initial site admin email.", http.StatusInternalServerError)
+			return
 		}
 	}
 

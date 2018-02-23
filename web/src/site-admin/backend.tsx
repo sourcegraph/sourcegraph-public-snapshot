@@ -487,25 +487,6 @@ export function reloadSite(): Observable<void> {
     )
 }
 
-export function updateDeploymentConfiguration(email: string): Observable<void> {
-    return queryGraphQL(
-        gql`
-            query UpdateDeploymentConfiguration($email: String!) {
-                updateDeploymentConfiguration(email: $email) {
-                    alwaysNil
-                }
-            }
-        `,
-        { email }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data) {
-                throw createAggregateError(errors)
-            }
-        })
-    )
-}
-
 export function setUserIsSiteAdmin(userID: GQLID, siteAdmin: boolean): Observable<void> {
     return mutateGraphQL(
         gql`

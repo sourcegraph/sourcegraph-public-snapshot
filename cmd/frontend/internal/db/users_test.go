@@ -55,6 +55,64 @@ func TestUsers_MatchUsernameRegex(t *testing.T) {
 	}
 }
 
+func TestUsers_Create_InitialSiteAdminOrFail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	if _, err := SiteConfig.Get(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create site admin.
+	user, err := Users.Create(ctx, NewUser{
+		Email:                  "a@a.com",
+		Username:               "u",
+		Password:               "p",
+		EmailCode:              "c",
+		InitialSiteAdminOrFail: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !user.SiteAdmin {
+		t.Fatal("!user.SiteAdmin")
+	}
+
+	// Disallow creating a site admin now that the site has already been initialized.
+	_, err = Users.Create(ctx, NewUser{
+		Email:                  "a2@a2.com",
+		Username:               "u2",
+		Password:               "p2",
+		EmailCode:              "c2",
+		InitialSiteAdminOrFail: true,
+	})
+	if want := (errCannotCreateUser{"site_already_initialized"}); err != want {
+		t.Fatalf("got error %v, want %v", err, want)
+	}
+
+	// Delete the site admin.
+	if err := Users.Delete(ctx, user.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Disallow creating a site admin when a user already exists (even if the site is not yet initialized).
+	if _, err := globalDB.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
+		t.Fatal(err)
+	}
+	_, err = Users.Create(ctx, NewUser{
+		Email:                  "a3@a3.com",
+		Username:               "u3",
+		Password:               "p3",
+		EmailCode:              "c3",
+		InitialSiteAdminOrFail: true,
+	})
+	if want := (errCannotCreateUser{"initial_site_admin_must_be_first_user"}); err != want {
+		t.Fatalf("got error %v, want %v", err, want)
+	}
+}
+
 func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

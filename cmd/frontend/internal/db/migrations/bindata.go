@@ -138,6 +138,8 @@
 // ../../../../../migrations/1518102181_cert_cache.up.sql
 // ../../../../../migrations/1518581786_remove_site_config_telemetry.down.sql
 // ../../../../../migrations/1518581786_remove_site_config_telemetry.up.sql
+// ../../../../../migrations/1518581860_add_site_config_initialized.down.sql
+// ../../../../../migrations/1518581860_add_site_config_initialized.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2965,6 +2967,46 @@ func _1518581786_remove_site_config_telemetryUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1518581860_add_site_config_initializedDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\xce\x2c\x49\x8d\x4f\xce\xcf\x4b\xcb\x4c\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xc8\xcc\xcb\x2c\xc9\x4c\xcc\xc9\xac\x4a\x4d\xb1\x06\x04\x00\x00\xff\xff\x22\x95\x32\x74\x30\x00\x00\x00")
+
+func _1518581860_add_site_config_initializedDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1518581860_add_site_config_initializedDownSql,
+		"1518581860_add_site_config_initialized.down.sql",
+	)
+}
+
+func _1518581860_add_site_config_initializedDownSql() (*asset, error) {
+	bytes, err := _1518581860_add_site_config_initializedDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1518581860_add_site_config_initialized.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1518581860_add_site_config_initializedUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xcc\x31\x0a\xc2\x30\x14\x06\xe0\xdd\x53\xfc\xa3\x7a\x85\xe2\x10\x9b\x57\x10\x5e\x13\x49\x5e\xc0\x4d\xa2\xa6\xf2\x20\x24\x43\x3b\x79\x7a\xe7\x5e\xe0\x33\x2c\x14\x20\xe6\xca\x84\x55\xb7\xf2\x7c\xf7\xb6\xe8\x17\xc6\x5a\x8c\x9e\xd3\xec\xa0\x4d\x37\xcd\x55\x7f\xe5\x83\x57\xef\xb5\xe4\x06\xe7\x05\x2e\x31\xc3\xd2\x64\x12\x0b\x96\x5c\xd7\x32\x1c\xd2\xdd\x1a\xd9\x4b\x91\x64\x47\x5c\x40\x8f\x5b\x94\x78\x8c\xc4\x34\x0a\xce\x98\x82\x9f\x91\x22\x85\xd3\xf0\x0f\x00\x00\xff\xff\x66\xae\xfd\xdd\x8f\x00\x00\x00")
+
+func _1518581860_add_site_config_initializedUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1518581860_add_site_config_initializedUpSql,
+		"1518581860_add_site_config_initialized.up.sql",
+	)
+}
+
+func _1518581860_add_site_config_initializedUpSql() (*asset, error) {
+	bytes, err := _1518581860_add_site_config_initializedUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1518581860_add_site_config_initialized.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3155,6 +3197,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1518102181_cert_cache.up.sql":                                _1518102181_cert_cacheUpSql,
 	"1518581786_remove_site_config_telemetry.down.sql":            _1518581786_remove_site_config_telemetryDownSql,
 	"1518581786_remove_site_config_telemetry.up.sql":              _1518581786_remove_site_config_telemetryUpSql,
+	"1518581860_add_site_config_initialized.down.sql":             _1518581860_add_site_config_initializedDownSql,
+	"1518581860_add_site_config_initialized.up.sql":               _1518581860_add_site_config_initializedUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3336,6 +3380,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1518102181_cert_cache.up.sql":                                &bintree{_1518102181_cert_cacheUpSql, map[string]*bintree{}},
 	"1518581786_remove_site_config_telemetry.down.sql":            &bintree{_1518581786_remove_site_config_telemetryDownSql, map[string]*bintree{}},
 	"1518581786_remove_site_config_telemetry.up.sql":              &bintree{_1518581786_remove_site_config_telemetryUpSql, map[string]*bintree{}},
+	"1518581860_add_site_config_initialized.down.sql":             &bintree{_1518581860_add_site_config_initializedDownSql, map[string]*bintree{}},
+	"1518581860_add_site_config_initialized.up.sql":               &bintree{_1518581860_add_site_config_initializedUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

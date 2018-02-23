@@ -29,19 +29,20 @@ func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 
 func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, error) {
 	configuration := &types.SiteConfig{}
-	err := globalDB.QueryRowContext(ctx, "SELECT site_id, updated_at from site_config LIMIT 1").Scan(
+	err := globalDB.QueryRowContext(ctx, "SELECT site_id, updated_at, initialized FROM site_config LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.UpdatedAt,
+		&configuration.Initialized,
 	)
 	return configuration, err
 }
 
-func (o *siteConfig) UpdateConfiguration(ctx context.Context, updatedConfiguration *types.SiteConfig) error {
+func (o *siteConfig) UpdateConfiguration(ctx context.Context, email string) error {
 	_, err := o.Get(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email=$1, updated_at=now()", updatedConfiguration.Email)
+	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email=$1, updated_at=now()", email)
 	return err
 }
 

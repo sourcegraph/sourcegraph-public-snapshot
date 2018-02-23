@@ -125,9 +125,9 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
 	license, licenseStatus := license.Get(siteID)
 	var showOnboarding = false
-	if (license == nil || license.SiteID == "") && conf.AuthProvider() == "builtin" {
-		userCount, err := db.Users.Count(req.Context(), db.UsersListOptions{})
-		showOnboarding = userCount == 0 && err == nil
+	if license == nil || license.SiteID == "" {
+		siteConfig, err := db.SiteConfig.Get(req.Context())
+		showOnboarding = err == nil && !siteConfig.Initialized
 	}
 
 	return JSContext{

@@ -177,6 +177,7 @@ type SiteConfiguration struct {
 	AuthAllowSignup                bool                       `json:"auth.allowSignup,omitempty"`
 	AuthOpenIDConnect              *OpenIDConnectAuthProvider `json:"auth.openIDConnect,omitempty"`
 	AuthProvider                   string                     `json:"auth.provider,omitempty"`
+	AuthPublic                     bool                       `json:"auth.public,omitempty"`
 	AuthSaml                       *SAMLAuthProvider          `json:"auth.saml,omitempty"`
 	AuthUserIdentityHTTPHeader     string                     `json:"auth.userIdentityHTTPHeader,omitempty"`
 	AuthUserOrgMap                 map[string][]string        `json:"auth.userOrgMap,omitempty"`

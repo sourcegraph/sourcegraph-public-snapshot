@@ -23,6 +23,7 @@ const (
 	SignIn            = "sign-in"
 	SignOut           = "sign-out"
 	SignUp            = "sign-up"
+	SiteInit          = "site-init"
 	VerifyEmail       = "verify-email"
 	ResetPasswordInit = "reset-password.init"
 	ResetPassword     = "reset-password"
@@ -59,6 +60,7 @@ func newRouter() *mux.Router {
 	base.Path("/-/logout").Methods("GET").Name(Logout)
 
 	base.Path("/-/sign-up").Methods("POST").Name(SignUp)
+	base.Path("/-/site-init").Methods("POST").Name(SiteInit)
 	base.Path("/-/verify-email").Methods("GET").Name(VerifyEmail)
 	base.Path("/-/sign-in").Methods("POST").Name(SignIn)
 	base.Path("/-/sign-out").Methods("GET").Name(SignOut)

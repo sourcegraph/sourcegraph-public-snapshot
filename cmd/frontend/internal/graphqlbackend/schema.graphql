@@ -286,7 +286,6 @@ type Query {
     phabricatorRepo(uri: String!): PhabricatorRepo
     currentUser: User
     currentSiteSettings: Settings
-    isUsernameAvailable(username: String!): Boolean!
     configuration: ConfigurationCascade!
     search(
         # The search query (such as "foo" or "repo:myrepo foo").

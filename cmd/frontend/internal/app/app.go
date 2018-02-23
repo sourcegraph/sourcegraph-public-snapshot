@@ -50,6 +50,7 @@ func NewHandler() http.Handler {
 	r.Get(router.UI).Handler(ui.Router())
 
 	r.Get(router.SignUp).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignUp)))
+	r.Get(router.SiteInit).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSiteInit)))
 	r.Get(router.SignIn).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignIn)))
 	r.Get(router.SignOut).Handler(traceutil.TraceRoute(http.HandlerFunc(serveSignOut)))
 	r.Get(router.VerifyEmail).Handler(traceutil.TraceRoute(http.HandlerFunc(serveVerifyEmail)))

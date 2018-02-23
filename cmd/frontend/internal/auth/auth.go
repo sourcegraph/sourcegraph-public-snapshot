@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // authURLPrefix is the URL path prefix under which to attach authentication handlers
@@ -42,6 +43,11 @@ func NewAuthHandler(createCtx context.Context, handler http.Handler, appURL stri
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")
 		return newSAMLAuthHandler(createCtx, handler, appURL)
 	}
+
+	if !conf.Get().AuthPublic {
+		return newUserRequiredAuthzHandler(handler), nil
+	}
+
 	return handler, nil
 }
 

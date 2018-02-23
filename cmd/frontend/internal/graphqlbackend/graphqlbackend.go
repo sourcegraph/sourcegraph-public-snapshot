@@ -304,16 +304,3 @@ func (r *schemaResolver) Dependents(ctx context.Context, args *struct {
 
 	return depResolvers, nil
 }
-
-func (r *schemaResolver) UpdateDeploymentConfiguration(ctx context.Context, args *struct {
-	Email string
-}) (*EmptyResponse, error) {
-	configuration := &types.SiteConfig{
-		Email: args.Email,
-	}
-	err := db.SiteConfig.UpdateConfiguration(ctx, configuration)
-	if err != nil {
-		return nil, err
-	}
-	return &EmptyResponse{}, nil
-}

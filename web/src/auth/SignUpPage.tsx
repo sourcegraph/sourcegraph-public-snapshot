@@ -5,20 +5,29 @@ import { Base64 } from 'js-base64'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
+import { from } from 'rxjs/observable/from'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { signupTerms } from '../util/features'
-import { isUsernameAvailable } from './backend'
 import { EmailInput, getReturnTo, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+
+export interface SignUpArgs {
+    email: string
+    username: string
+    password: string
+}
 
 interface SignUpFormProps {
     location: H.Location
     history: H.History
     prefilledEmail?: string
     autoFocus?: boolean
-    onDidSignUp?: (email: string) => void
+
+    /** Called to perform the signup on the server. */
+    doSignUp: (args: SignUpArgs) => Promise<void>
+
     buttonLabel?: string
 }
 
@@ -26,7 +35,7 @@ interface SignUpFormState {
     email: string
     username: string
     password: string
-    errorDescription: string
+    error?: Error
     loading: boolean
 }
 
@@ -39,7 +48,6 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
             email: props.prefilledEmail || '',
             username: '',
             password: '',
-            errorDescription: '',
             loading: false,
         }
     }
@@ -47,9 +55,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     public render(): JSX.Element | null {
         return (
             <form className="signin-signup-form signup-form" onSubmit={this.handleSubmit}>
-                {this.state.errorDescription !== '' && (
-                    <p className="signin-signup-form__error">{this.state.errorDescription}</p>
-                )}
+                {this.state.error && <p className="signin-signup-form__error">{this.state.error.message}</p>}
                 <div className="form-group">
                     <EmailInput
                         className="signin-signup-form__input"
@@ -119,51 +125,15 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
 
         this.setState({ loading: true })
         this.subscriptions.add(
-            isUsernameAvailable(this.state.username).subscribe(availability => {
-                if (!availability) {
-                    this.setState({
-                        errorDescription: 'The username you selected is already taken, please try again.',
-                        loading: false,
+            from(
+                this.props
+                    .doSignUp({
+                        email: this.state.email,
+                        username: this.state.username,
+                        password: this.state.password,
                     })
-                    return
-                } else {
-                    fetch('/-/sign-up', {
-                        credentials: 'same-origin',
-                        method: 'POST',
-                        headers: {
-                            ...window.context.xhrHeaders,
-                            Accept: 'application/json',
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            email: this.state.email,
-                            password: this.state.password,
-                            username: this.state.username,
-                        }),
-                    }).then(
-                        resp => {
-                            if (resp.status === 200) {
-                                if (this.props.onDidSignUp) {
-                                    this.props.onDidSignUp(this.state.email)
-                                }
-                                const returnTo = getReturnTo(this.props.location)
-                                window.location.replace(returnTo)
-                            } else {
-                                this.setState({
-                                    errorDescription: 'Could not create user',
-                                    loading: false,
-                                })
-                            }
-                        },
-                        err => {
-                            this.setState({
-                                errorDescription: 'Could not create user',
-                                loading: false,
-                            })
-                        }
-                    )
-                }
-            })
+                    .catch(error => this.setState({ error, loading: false }))
+            ).subscribe()
         )
         eventLogger.log('InitiateSignUp', {
             signup: {
@@ -223,7 +193,11 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
                                 >
                                     Already have an account? Sign in.
                                 </Link>
-                                <SignUpForm {...this.props} prefilledEmail={this.state.prefilledEmail} />
+                                <SignUpForm
+                                    {...this.props}
+                                    prefilledEmail={this.state.prefilledEmail}
+                                    doSignUp={this.doSignUp}
+                                />
                             </div>
                         ) : (
                             <p>Signup is not enabled on this server.</p>
@@ -243,4 +217,22 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
         }
         return prefilledEmail
     }
+
+    private doSignUp = (args: SignUpArgs): Promise<void> =>
+        fetch('/-/sign-up', {
+            credentials: 'same-origin',
+            method: 'POST',
+            headers: {
+                ...window.context.xhrHeaders,
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(args),
+        }).then(resp => {
+            if (resp.status !== 200) {
+                return resp.text().then(text => Promise.reject(text))
+            }
+            window.location.replace(getReturnTo(this.props.location))
+            return Promise.resolve()
+        })
 }

@@ -126,7 +126,7 @@ func TestRouter(t *testing.T) {
 		// sign-in
 		{
 			path:      "/sign-in",
-			wantRoute: routeSignIn,
+			wantRoute: RouteSignIn,
 			wantVars:  map[string]string{},
 		},
 
@@ -145,7 +145,7 @@ func TestRouter(t *testing.T) {
 		// password invite
 		{
 			path:      "/password-reset",
-			wantRoute: routePasswordReset,
+			wantRoute: RoutePasswordReset,
 			wantVars:  map[string]string{},
 		},
 

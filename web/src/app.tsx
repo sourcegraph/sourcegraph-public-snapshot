@@ -96,7 +96,9 @@ class App extends React.Component<{}, AppState> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
+        this.subscriptions.add(
+            currentUser.subscribe(user => this.setState({ user }), error => this.setState({ user: null }))
+        )
     }
 
     public componentWillUnmount(): void {

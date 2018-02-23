@@ -335,8 +335,15 @@ const SiteSchemaJSON = `{
     },
     "auth.allowSignup": {
       "description":
-        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nRequires auth.provider == \"builtin\".",
-      "type": "boolean"
+        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nSECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).\n\nRequires auth.provider == \"builtin\".",
+      "type": "boolean",
+      "default": false
+    },
+    "auth.public": {
+      "description":
+        "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires auth.provider == \"builtin\".",
+      "type": "boolean",
+      "default": false
     },
     "auth.openIDConnect": {
       "$ref": "#/definitions/OpenIDConnectAuthProvider"

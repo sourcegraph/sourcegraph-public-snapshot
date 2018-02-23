@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs/Observable'
+import { catchError } from 'rxjs/operators/catchError'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
@@ -56,6 +57,10 @@ export function refreshCurrentUser(): Observable<never> {
                 throw createAggregateError(errors)
             }
             currentUser.next(data.currentUser)
+        }),
+        catchError(error => {
+            currentUser.next(null)
+            return []
         }),
         mergeMap(() => [])
     )
