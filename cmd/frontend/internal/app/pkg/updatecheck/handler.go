@@ -13,23 +13,41 @@ import (
 )
 
 var (
-	latestReleaseBuild = build{
-		Timestamp:  1519249026,
-		Version:    "2.5.12",
+	// ProductVersion is a semver version string that corresponds to this
+	// product's version number, without any build or tag information. This is
+	// compared against the remote handler's build.Assets.ProductVersion
+	// field.
+	//
+	// When we speak to sourcegraph.com we report this version. Usually should
+	// be equal to latestReleaseBuild.Version, unless we are in the process of
+	// doing a release, in which case it should be one version ahead.
+	ProductVersion = "2.5.12"
+
+	// latestReleaseBuild is only used by Sourcegraph.com to tell existing
+	// installations what the latest version is. The version here _must_ be
+	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
+	// landing in master.
+	latestReleaseBuild   = newBuild(1519249026, "2.5.12")
+	latestReleaseVersion = *semver.New(latestReleaseBuild.Version)
+)
+
+func newBuild(timestamp int64, version string) build {
+	return build{
+		Timestamp:  timestamp,
+		Version:    version,
 		IsReleased: true,
 		Assets: []asset{
 			{
 				Name:           "docker-image",
-				Version:        "2.5.12",
-				ProductVersion: "2.5.12",
+				Version:        version,
+				ProductVersion: version,
 				Platform:       "docker",
 				Type:           "docker-image",
-				URL:            "docker.io/sourcegraph/server:2.5.12",
+				URL:            "docker.io/sourcegraph/server:" + version,
 			},
 		},
 	}
-	latestReleaseVersion = *semver.New(latestReleaseBuild.Version)
-)
+}
 
 // Handler is an HTTP handler that responds with information about software updates
 // for Sourcegraph Server.

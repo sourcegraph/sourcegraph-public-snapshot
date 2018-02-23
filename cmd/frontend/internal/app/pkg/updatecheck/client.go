@@ -23,11 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-// ProductVersion is a semver version string that corresponds to this product's version number,
-// without any build or tag information. This is compared against the remote handler's
-// build.Assets.ProductVersion field.
-var ProductVersion = latestReleaseBuild.Assets[0].ProductVersion
-
 // Status of the check for software updates for Sourcegraph Server.
 type Status struct {
 	Date          time.Time // the time that the last check completed
