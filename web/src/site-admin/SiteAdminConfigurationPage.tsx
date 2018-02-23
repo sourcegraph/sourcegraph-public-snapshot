@@ -200,9 +200,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     <p>
                         <small>
                             To save and apply changes, manually update{' '}
-                            {formatEnvVar(this.state.site.configuration.source)} with the configuration below and
-                            restart the server. Online configuration editing is only supported when the configuration
-                            lives in a writable file on disk.
+                            {formatEnvVar(this.state.site.configuration.source)} (in Sourcegraph Server) or{' '}
+                            <code>config.json</code> (in Sourcegraph Data Center) with the configuration below and
+                            restart the server. Online configuration editing is only supported for Sourcegraph Server
+                            and when the configuration lives in a writable file on disk.
                         </small>
                     </p>
                 </div>
