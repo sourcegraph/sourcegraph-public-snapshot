@@ -2,21 +2,20 @@ $popover-item-padding-h: 0.75rem;
 $popover-item-padding-v: 0.325rem;
 
 .popover {
-    height: auto;
-    min-height: 27rem; // avoid jitter when only loading indicator is shown
-    max-height: 75vh;
+    display: flex;
+    flex-direction: column;
 
     min-width: 25rem;
     max-width: 70vw;
 
-    display: flex;
-    flex-direction: column;
-
     &__content {
-        overflow: hidden;
+        overflow: auto;
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
+
+        min-height: 27rem; // avoid jitter when only loading indicator is shown
+        max-height: 70vh;
     }
 
     &__node {
