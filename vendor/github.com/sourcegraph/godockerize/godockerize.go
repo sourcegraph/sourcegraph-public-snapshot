@@ -82,7 +82,7 @@ func doBuild(c *cli.Context) error {
 	user := ""
 	userDirs := []string{}
 
-	for _, pkgName := range args.Slice() {
+	for i, pkgName := range args.Slice() {
 		pkg, err := build.Import(pkgName, wd, 0)
 		if err != nil {
 			return err
@@ -113,9 +113,13 @@ func doBuild(c *cli.Context) error {
 								return errors.New("user set twice")
 							}
 							userArgs := strings.Fields(parts[1])
-							user = userArgs[0]
-							if len(userArgs) > 1 {
-								userDirs = userArgs[1:]
+							if i == 0 {
+								user = userArgs[0]
+								if len(userArgs) > 1 {
+									userDirs = userArgs[1:]
+								}
+							} else {
+								fmt.Printf("%s: ignoring user directive since %s is not the first package\n", fset.Position(c.Pos()), pkgName)
 							}
 						default:
 							return fmt.Errorf("%s: invalid docker comment: %s", fset.Position(c.Pos()), c.Text)
