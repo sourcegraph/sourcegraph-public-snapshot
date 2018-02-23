@@ -227,6 +227,19 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
             )
         }
+        // Avoid user confusion if they enter Data Center-only config here for scratch purposes.
+        const dataCenterProps = ['httpNodePort', 'storageClass', 'deploymentOverrides'].filter(
+            prop => localContents && localContents.includes(`"${prop}"`)
+        )
+        if (dataCenterProps.length > 0) {
+            alerts.push(
+                <div key="datacenter-props-present" className="alert alert-info site-admin-configuration-page__alert">
+                    The configuration contains properties that are valid only in Sourcegraph Data Center's{' '}
+                    <code>config.json</code> file: <code>{dataCenterProps.join(' ')}</code>. You can disregard the
+                    validation warnings for these properties reported by the configuration editor.
+                </div>
+            )
+        }
 
         return (
             <div className="site-admin-configuration-page">
