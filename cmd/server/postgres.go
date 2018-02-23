@@ -16,8 +16,8 @@ import (
 // something modern 9.6. We add the version specifier to prevent accidently
 // upgrading to an even newer version.
 
-//docker:install 'postgresql' su-exec
-//docker:install 'postgresql-contrib' su-exec
+//docker:install 'postgresql<10.3' su-exec
+//docker:install 'postgresql-contrib<10.3' su-exec
 
 func maybePostgresProcFile() (string, error) {
 	// PG is already configured
