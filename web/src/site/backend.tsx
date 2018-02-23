@@ -24,11 +24,17 @@ export function refreshSiteFlags(): Observable<never> {
                 hasCodeIntelligence
                 externalAuthEnabled
                 disableBuiltInSearches
+                updateCheck {
+                    pending
+                    checkedAt
+                    errorMessage
+                    updateVersionAvailable
+                }
             }
         }
     `).pipe(
         tap(({ data, errors }) => {
-            if (!data || !data.site) {
+            if (!data || !data.site || !data.site.updateCheck) {
                 throw createAggregateError(errors)
             }
             siteFlags.next(data.site)

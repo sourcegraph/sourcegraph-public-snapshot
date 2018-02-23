@@ -5,6 +5,7 @@ import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
+import { UpdateAvailableAlert } from '../site/UpdateAvailableAlert'
 
 interface Props {
     isSiteAdmin: boolean
@@ -37,6 +38,17 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             }
             if (this.state.siteFlags.noRepositoriesEnabled) {
                 return <NoRepositoriesEnabledAlert />
+            }
+            if (
+                this.props.isSiteAdmin &&
+                !this.state.siteFlags.updateCheck.errorMessage &&
+                this.state.siteFlags.updateCheck.updateVersionAvailable
+            ) {
+                return (
+                    <UpdateAvailableAlert
+                        updateVersionAvailable={this.state.siteFlags.updateCheck.updateVersionAvailable}
+                    />
+                )
             }
         }
 
