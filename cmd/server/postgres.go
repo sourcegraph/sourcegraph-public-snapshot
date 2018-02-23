@@ -15,9 +15,11 @@ import (
 // We run 9.4 in production, but if we are embedding might as well get
 // something modern 9.6. We add the version specifier to prevent accidently
 // upgrading to an even newer version.
+// NOTE: We have to stay at 9.6, otherwise existing users databases won't run
+// due to needing to be upgraded. There is no nice auto-upgrade we have here
+// without some engineering investment.
 
-//docker:install 'postgresql<10.3' su-exec
-//docker:install 'postgresql-contrib<10.3' su-exec
+//docker:install 'postgresql<9.7' 'postgresql-contrib<9.7' su-exec
 
 func maybePostgresProcFile() (string, error) {
 	// PG is already configured
