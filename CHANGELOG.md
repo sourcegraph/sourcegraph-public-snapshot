@@ -15,7 +15,7 @@ Before cutting a new release, please:
 3. Ensure the documentation is ready
 4. Tag and push a new version. Update this document.
 
-## 2.5.13
+## 2.5.13 (not yet released)
 
 ### Improvements to builtin authentication
 
