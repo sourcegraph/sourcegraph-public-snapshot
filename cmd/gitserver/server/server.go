@@ -64,17 +64,6 @@ type Server struct {
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
 
-	// GithubAccessToken if set will be used for all fetches and clones to
-	// Github. This allows gitserver to access private code. Should only
-	// be used on private servers, not Sourcegraph.com
-	GithubAccessToken string
-
-	// InsecureSkipCheckVerifySSH controls whether the client verifies the
-	// SSH server's certificate or host key. If InsecureSkipCheckVerifySSH
-	// is true, the program is susceptible to a man-in-the-middle
-	// attack. This should only be used for testing.
-	InsecureSkipCheckVerifySSH bool
-
 	// MaxConcurrentClones controls the maximum number of clones that can
 	// happen at once. Used to prevent throttle limits from a code
 	// host. Defaults to 100.
