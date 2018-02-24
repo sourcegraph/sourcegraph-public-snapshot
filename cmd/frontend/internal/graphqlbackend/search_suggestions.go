@@ -10,14 +10,12 @@ import (
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 
 	"github.com/neelance/parallel"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
 )
 
 const (
@@ -96,79 +94,17 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showSymbolMatches := func(ctx context.Context) (results []*searchSuggestionResolver, err error) {
-		patternInfo := r.getPatternInfo()
-		if patternInfo.Pattern == "" {
-			return nil, nil
-		}
-
-		params := lspext.WorkspaceSymbolParams{
-			Limit: 7,
-			Query: patternInfo.Pattern, // TODO!(sqs): support all options here
-		}
-
-		const maxSymbolResults = 12
-		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
-		defer cancel()
 
 		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
-		var (
-			run       = parallel.NewRun(20)
-			mu        sync.Mutex
-			resolvers []*symbolResolver
-		)
-		for _, repoRevs := range repoRevs {
-			if ctx.Err() != nil {
-				break
-			}
-			if len(repoRevs.revspecs()) == 0 {
-				continue
-			}
-			run.Acquire()
-			go func(repoRevs *repositoryRevisions) {
-				defer run.Release()
-				inputRev := repoRevs.revspecs()[0]
-				commitID, err := backend.Repos.ResolveRev(ctx, repoRevs.repo, inputRev)
-				if err != nil {
-					run.Error(err)
-					return
-				}
-				symbols, err := backend.Symbols.List(ctx, repoRevs.repo.URI, commitID, "tags", params)
-				if err != nil && err != context.Canceled && err != context.DeadlineExceeded && ctx.Err() != nil {
-					run.Error(err)
-				}
-				if len(symbols) > 0 {
-					mu.Lock()
-					defer mu.Unlock()
-					for _, symbol := range symbols {
-						commit := &gitCommitResolver{
-							repo: &repositoryResolver{repo: repoRevs.repo},
-							oid:  gitObjectID(commitID),
-							// NOTE: Not all fields are set, for performance.
-						}
-						if inputRev != "" {
-							commit.inputRev = &inputRev
-						}
 
-						lang := "" // TODO(sqs): fill this in - need to add a new extension field to lsp.SymbolInformation?
-						resolvers = append(resolvers, toSymbolResolver(symbol, lang, commit))
-					}
-					if len(resolvers) > maxSymbolResults {
-						cancel()
-					}
-				}
-			}(repoRevs)
+		resolvers, err := searchSymbols(ctx, &repoSearchArgs{query: r.getPatternInfo(), repos: repoRevs}, r.query, 7)
+		if err != nil {
+			return nil, err
 		}
 
-		if err := run.Wait(); err != nil {
-			log15.Warn("Error getting symbol match search suggestions.", "error", err)
-		}
-
-		if len(resolvers) > maxSymbolResults {
-			resolvers = resolvers[:maxSymbolResults]
-		}
 		results = make([]*searchSuggestionResolver, len(resolvers))
 		for i, sr := range resolvers {
 			score := 20

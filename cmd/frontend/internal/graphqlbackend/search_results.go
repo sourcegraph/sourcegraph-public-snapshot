@@ -299,8 +299,8 @@ func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 loop:
 	for _, r := range sr.results {
 		switch {
-		case r.repo != nil:
-			// We don't care about repo results here.
+		case r.repo != nil || r.symbol != nil:
+			// We don't care about repo or symbol results here.
 			continue
 		case r.diff != nil:
 			// Diff searches are cheap, because we implicitly have author date info.
@@ -530,7 +530,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.query.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo"}
+			resultTypes = []string{"symbol", "file", "path", "repo"}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
@@ -553,6 +553,32 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		case "repo":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
 				return searchRepositories(ctx, &args, r.query)
+			})
+		case "symbol":
+			// TODO remove `symbol:yes` requirement
+			if !r.query.BoolValue(searchquery.FieldSymbol) {
+				continue
+			}
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
+				// Only show a small amount of symbols at the top of the result list
+				// if not explicitly searching for *only* symbols
+				symbolsLimit := 7
+				if len(resultTypes) == 1 { // *only* searching for "symbol" results
+					// Otherwise use text search result default limit
+					// or whatever is specified in the query with `max:`
+					symbolsLimit = int(r.maxResults())
+				}
+
+				symbolResolvers, err := searchSymbols(ctx, &args, r.query, symbolsLimit)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				searchResultResolvers := make([]*searchResultResolver, len(symbolResolvers))
+				for i, symbolResolver := range symbolResolvers {
+					searchResultResolvers[i] = &searchResultResolver{symbol: symbolResolver}
+				}
+				return searchResultResolvers, nil, nil
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths {
@@ -642,7 +668,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 }
 
 // searchResultResolver is a resolver for the GraphQL union type `SearchResult`
+//
+// Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type searchResultResolver struct {
+	symbol    *symbolResolver             // symbol match
 	repo      *repositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
@@ -650,6 +679,9 @@ type searchResultResolver struct {
 
 func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
 	return g.repo, g.repo != nil
+}
+func (g *searchResultResolver) ToSymbol() (*symbolResolver, bool) {
+	return g.symbol, g.symbol != nil
 }
 func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
 	return g.fileMatch, g.fileMatch != nil

@@ -36,6 +36,21 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                     offsetAndLengths
                                 }
                             }
+                            ... on Symbol {
+                                __typename
+                                name
+                                containerName
+                                url
+                                kind
+                                location {
+                                    resource {
+                                        path
+                                        repository {
+                                            uri
+                                        }
+                                    }
+                                }
+                            }
                             ... on CommitSearchResult {
                                 __typename
                                 refs {
