@@ -12,7 +12,7 @@ interface Props extends RouteComponentProps<any> {
  */
 export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
     props.repo ? (
-        <div className={`sidebar repo-sidebar ${props.className}`}>
+        <div className={`sidebar repo-settings-sidebar ${props.className}`}>
             <ul className="sidebar__items">
                 <div className="sidebar__header">
                     <h5 className="sidebar__header-title">Repository settings</h5>
@@ -56,5 +56,5 @@ export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
             </div>
         </div>
     ) : (
-        <div className={`sidebar repo-sidebar ${props.className}`} />
+        <div className={`sidebar repo-settings-sidebar ${props.className}`} />
     )
