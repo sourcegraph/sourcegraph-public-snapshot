@@ -53,7 +53,7 @@ type repositoryConnectionResolver struct {
 	indexed         bool
 	notIndexed      bool
 
-	// cache results because they is used by multiple fields
+	// cache results because they are used by multiple fields
 	once  sync.Once
 	repos []*types.Repo
 	err   error
