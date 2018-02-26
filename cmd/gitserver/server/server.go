@@ -84,9 +84,11 @@ type Server struct {
 	cloningMu sync.Mutex
 	cloning   map[string]struct{}
 
-	// cloneLimiter limits the number of concurrent clones. Semaphore size is
-	// equal to MaxConcurrentClones.
-	cloneLimiter *parallel.Run
+	// cloneLimiter and cloneableLimiter limits the number of concurrent
+	// clones and ls-remotes respectively. Semaphore size is equal to
+	// MaxConcurrentClones.
+	cloneLimiter     *parallel.Run
+	cloneableLimiter *parallel.Run
 
 	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
@@ -143,6 +145,7 @@ func (s *Server) Handler() http.Handler {
 		s.MaxConcurrentClones = 100
 	}
 	s.cloneLimiter = parallel.NewRun(s.MaxConcurrentClones)
+	s.cloneableLimiter = parallel.NewRun(s.MaxConcurrentClones)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/exec", s.handleExec)
@@ -438,6 +441,15 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 // cloneRepo issues a non-blocking git clone command for the given repo to the given directory.
 // The repository will be cloned to ${dir}/.git.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir string) error {
+	// PERF: Before doing the network request to check if isCloneable, lets
+	// ensure we are not already cloning.
+	s.cloningMu.Lock()
+	_, cloneInProgress := s.cloning[dir]
+	s.cloningMu.Unlock()
+	if cloneInProgress {
+		return nil
+	}
+
 	if url == "" {
 		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
 		url = OriginMap(repo)
@@ -445,6 +457,14 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 			return fmt.Errorf("error cloning repo: no URL provided and origin map entry found for %s", repo)
 		}
 	}
+
+	// isCloneable causes a network request, so we limit the number that can
+	// run at one time. We use a seperate semaphore to cloning since these
+	// checks being blocked by a few slow clones will lead to poor feedback to
+	// users. We can defer since the rest of the function does not block this
+	// goroutine.
+	s.cloneableLimiter.Acquire()
+	defer s.cloneableLimiter.Release()
 	if err := s.isCloneable(ctx, url); err != nil {
 		return fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
 	}
@@ -453,7 +473,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	// cloning since we released the lock. We released the lock since isCloneable is a potentially
 	// slow operation.
 	s.cloningMu.Lock()
-	_, cloneInProgress := s.cloning[dir]
+	_, cloneInProgress = s.cloning[dir]
 	if cloneInProgress {
 		s.cloningMu.Unlock()
 		return nil
