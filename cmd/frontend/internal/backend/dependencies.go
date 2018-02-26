@@ -9,12 +9,14 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	xlang_lspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 )
 
@@ -48,7 +50,7 @@ func (dependencies) RefreshIndex(ctx context.Context, repo *types.Repo, commitID
 	return nil
 }
 
-func (dependencies) listForLanguageInRepo(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID) (deps []lspext.DependencyReference, err error) {
+func (dependencies) listForLanguageInRepo(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID) (deps []xlang_lspext.DependencyReference, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "listForLanguageInRepo "+language+" "+string(repo.URI))
 	defer func() {
 		if err != nil {
@@ -110,8 +112,22 @@ func (dependencies) List(ctx context.Context, repo *types.Repo, rev api.CommitID
 	return allDeps, nil
 }
 
+// ListReferences lists all references in the depending repository to definitions in the dependency.
+func (dependencies) ListReferences(ctx context.Context, dep api.DependencyReference, repo *types.Repo, commitID api.CommitID, limit int) ([]*lspext.ReferenceInformation, error) {
+	query, ok := xlang.DependencySymbolQuery(dep.DepData, dep.Language)
+	if !ok {
+		return nil, fmt.Errorf("listing references by dependency not supported for language %q", dep.Language)
+	}
+	return LangServer.WorkspaceXReferences(ctx, repo, commitID, dep.Language, lspext.WorkspaceReferencesParams{
+		Query: query,
+		Hints: dep.Hints,
+		Limit: limit,
+	})
+}
+
 // MockDependencies allows mocking of Dependencies backend methods (by setting Mocks.Dependencies's
 // fields).
 type MockDependencies struct {
-	List func(repo *types.Repo, rev api.CommitID) ([]*api.DependencyReference, error)
+	List           func(repo *types.Repo, rev api.CommitID) ([]*api.DependencyReference, error)
+	ListReferences func(dep api.DependencyReference, repo *types.Repo, commitID api.CommitID) ([]*lspext.ReferenceInformation, error)
 }

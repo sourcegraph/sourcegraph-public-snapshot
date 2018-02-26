@@ -18,6 +18,16 @@ func SymbolPackageDescriptor(sym lspext.SymbolDescriptor, lang string) (xlangext
 	return subSelector(sym), true
 }
 
+// DependencySymbolQuery returns a symbol descriptor that matches all symbols defined in
+// the dependency described by depData.
+func DependencySymbolQuery(depData map[string]interface{}, lang string) (lspext.SymbolDescriptor, bool) {
+	f, ok := dependencySymbolQueries[lang]
+	if !ok {
+		return nil, false
+	}
+	return f(depData), true
+}
+
 // PackageIdentifier extracts the part of the PackageDescriptor that
 // should be used to quasi-uniquely identify a package. Typically, it
 // leaves out things like package version.
@@ -124,7 +134,21 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) xlangext.PackageDesc
 	},
 }
 
+var dependencySymbolQueries = map[string]func(map[string]interface{}) lspext.SymbolDescriptor{
+	"go": func(depData map[string]interface{}) lspext.SymbolDescriptor {
+		return lspext.SymbolDescriptor{
+			"package": depData["package"],
+		}
+	},
+	// TODO(sqs): Support these for TypeScript, JavaScript, PHP, Java, and Python.
+}
+
 var packageIdentifiers = map[string]func(xlangext.PackageDescriptor) xlangext.PackageDescriptor{
+	"go": func(pkg xlangext.PackageDescriptor) xlangext.PackageDescriptor {
+		return xlangext.PackageDescriptor{
+			"package": pkg["package"],
+		}
+	},
 	"php": func(pkg xlangext.PackageDescriptor) xlangext.PackageDescriptor {
 		return xlangext.PackageDescriptor{
 			"name": pkg["name"],
