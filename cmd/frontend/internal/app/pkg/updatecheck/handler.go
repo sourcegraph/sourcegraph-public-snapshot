@@ -21,13 +21,13 @@ var (
 	// When we speak to sourcegraph.com we report this version. Usually should
 	// be equal to latestReleaseBuild.Version, unless we are in the process of
 	// doing a release, in which case it should be one version ahead.
-	ProductVersion = "2.5.12"
+	ProductVersion = "2.5.13"
 
 	// latestReleaseBuild is only used by Sourcegraph.com to tell existing
 	// installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseBuild   = newBuild(1519249026, "2.5.12")
+	latestReleaseBuild   = newBuild(1519249026, "2.5.13")
 	latestReleaseVersion = *semver.New(latestReleaseBuild.Version)
 )
 
