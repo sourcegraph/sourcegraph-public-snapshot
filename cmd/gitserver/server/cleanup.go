@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"io/ioutil"
 	"os"
 	"path"
@@ -89,7 +88,7 @@ func (s *Server) CleanupRepos() {
 			}
 			defer os.RemoveAll(tmp)
 
-			ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+			ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
 			defer cancel()
 
 			remoteURL := OriginMap(uri)

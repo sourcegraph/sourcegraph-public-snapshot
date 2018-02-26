@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -68,6 +69,15 @@ type Server struct {
 	// happen at once. Used to prevent throttle limits from a code
 	// host. Defaults to 100.
 	MaxConcurrentClones int
+
+	// ctx is the context we use for all background jobs. It is done when the
+	// server is stopped. Do not directly call this, rather call
+	// Server.context()
+	ctx      context.Context
+	cancel   context.CancelFunc // used to shutdown background jobs
+	cancelMu sync.Mutex         // protects canceled
+	canceled bool
+	wg       sync.WaitGroup // tracks running background jobs
 
 	// cloning tracks repositories that are in the process of being cloned
 	// by the parent directory of the .git directory they are cloned to.
@@ -125,6 +135,7 @@ var longGitCommandTimeout = time.Hour
 
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[api.RepoURI]*locks)
@@ -142,6 +153,44 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/upload-pack", s.handleUploadPack)
 	return mux
+}
+
+// Stop cancels the running background jobs and returns when done.
+func (s *Server) Stop() {
+	// idempotent so we can just always set and cancel
+	s.cancel()
+	s.cancelMu.Lock()
+	s.canceled = true
+	s.cancelMu.Unlock()
+	s.wg.Wait()
+}
+
+// backgroundWithTimeout returns a context tied to the lifecycle of server.
+func (s *Server) backgroundWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
+	// if we are already canceled don't increment our waitgroup. This is to
+	// prevent a loop somewhere preventing us from ever finishing the
+	// waitgroup, even though all calls fails instantly due to the canceled
+	// context.
+	s.cancelMu.Lock()
+	if s.canceled {
+		s.cancelMu.Unlock()
+		return s.ctx, func() {}
+	}
+	s.wg.Add(1)
+	s.cancelMu.Unlock()
+
+	ctx, cancel := context.WithTimeout(s.ctx, timeout)
+
+	// we need to track if we have called cancel, since we are only allowed to
+	// call wg.Done() once, but CancelFuncs can be called any number of times.
+	var canceled int32
+	return ctx, func() {
+		ok := atomic.CompareAndSwapInt32(&canceled, 0, 1)
+		if ok {
+			cancel()
+			s.wg.Done()
+		}
+	}
 }
 
 func cloneCmd(ctx context.Context, origin, dir string) *exec.Cmd {
@@ -229,7 +278,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	if !repoCloned(dir) && !skipCloneForTests {
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+			ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
 			defer cancel()
 			err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
 			if err != nil {
@@ -422,7 +471,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 		defer s.cloneLimiter.Release()
 
 		// Create a new context because this is in a background goroutine.
-		ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+		ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
 		defer func() {
 			cancel()
 			s.releaseCloneLock(dir)
@@ -507,7 +556,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 			go func(req updateRepoRequest) {
 				// Create a new context with a new timeout (instead of passing one through updateRepoRequest)
 				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
-				ctx, cancel := context.WithTimeout(context.Background(), longGitCommandTimeout)
+				ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
 				defer cancel()
 				s.doRepoUpdate(ctx, req.repo, req.url)
 			}(req)

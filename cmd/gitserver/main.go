@@ -44,13 +44,6 @@ func main() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 	}
 
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
-		<-c
-		os.Exit(0)
-	}()
-
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}
@@ -59,6 +52,9 @@ func main() {
 		MaxConcurrentClones: conf.Get().GitMaxConcurrentClones,
 	}
 	gitserver.RegisterMetrics()
+
+	// Create Handler now since it also initializes state
+	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
 
 	if profBindAddr != "" {
 		go debugserver.Start(profBindAddr)
@@ -74,9 +70,30 @@ func main() {
 		}()
 	}
 
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
-
 	log15.Info("git-server: listening", "addr", ":3178")
 	srv := &http.Server{Addr: ":3178", Handler: handler}
-	log.Fatal(srv.ListenAndServe())
+
+	go func() {
+		err := srv.ListenAndServe()
+		if err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	// Listen for shutdown signals. When we receive one attempt to clean up,
+	// but do an insta-shutdown if we receive more than one signal.
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
+	<-c
+	go func() {
+		<-c
+		os.Exit(0)
+	}()
+
+	// Stop accepting requests. In the future we should use graceful shutdown.
+	srv.Close()
+
+	// The most important thing this does is kill all our clones. If we just
+	// shutdown they will be orphaned and continue running.
+	gitserver.Stop()
 }
