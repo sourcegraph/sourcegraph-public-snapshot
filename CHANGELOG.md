@@ -2,6 +2,8 @@
 
 All notable changes to Sourcegraph Server and Data Center are documented in this file.
 
+## Coming Soon (add your changes here!)
+
 ## 2.5.13
 
 ### Improvements to builtin authentication
