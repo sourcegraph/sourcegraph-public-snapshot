@@ -17,7 +17,7 @@ parts will be automated. You will need to complete four main steps.
 #### (1) Prepare a PR to the [sourcegraph/website](https://github.com/sourcegraph/website) repository
 
 1. Check out a new branch in the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
-1. Ensure documentation is up-to-date with everything listed under the `Coming Soon` section in the [CHANGELOG](../../CHANGELOG.md). Do not edit the `CHANGELOG.md` file yet.
+1. Ensure documentation is up-to-date with everything listed under the `Unreleased chganges` section in the [CHANGELOG](../../CHANGELOG.md). Do not edit the `CHANGELOG.md` file yet.
 1. Update every old version number in the documentation to be the version number you are releasing. [Use search to do this](https://sourcegraph.sgdev.org/search?q=repo:%5Egithub%5C.com/sourcegraph/website%24+server%5C:2).
 1. Regenerate the site settings docs by running the last two commands mentioned under https://github.com/sourcegraph/website#documentation-pages
 1. Create the PR on the website repository, but do not merge it yet.
@@ -61,7 +61,7 @@ It is important that the following steps be ran closely together, otherwise we w
 1. `docker push sourcegraph/server:latest`
 1. Merge the PR that you previously prepared to the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
 1. Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
-1. Update [CHANGELOG](../../CHANGELOG.md) and move any `Coming Soon` items under their own section for the new `VERSION` you have just released.
+1. Update [CHANGELOG](../../CHANGELOG.md) and move any `Unreleased changes` under their own section for the new `VERSION` you have just released.
 1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseBuild` to the
    timestamp and semver version string of the new version.
 1. Commit and `git push` this change directly to the `master` branch.
