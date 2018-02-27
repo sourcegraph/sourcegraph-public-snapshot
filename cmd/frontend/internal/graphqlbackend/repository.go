@@ -193,6 +193,13 @@ func (r *repositoryResolver) ExternalURL(ctx context.Context) (*string, error) {
 
 func (r *repositoryResolver) HostType() *string {
 	uri := r.repo.URI
+
+	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
+	fmt.Println(phabRepo)
+	if phabRepo != nil {
+		host := "Phabricator"
+		return &host
+	}
 	if strings.HasPrefix(string(uri), "github.com/") {
 		host := "GitHub"
 		return &host
@@ -200,11 +207,6 @@ func (r *repositoryResolver) HostType() *string {
 	host := strings.Split(string(uri), "/")[0]
 	if _, ok := githubEnterpriseURLs[host]; ok {
 		host := "GitHub Enterprise"
-		return &host
-	}
-	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	if phabRepo != nil {
-		host := "Phabricator"
 		return &host
 	}
 	if r.repo.ExternalRepo != nil {
