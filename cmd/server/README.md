@@ -14,12 +14,18 @@ This process is quite manual still, since we want to ensure each release is
 high quality. As we get used to releasing Sourcegraph Server more and more
 parts will be automated.
 
-1. Prepare a branch / ensure documentation is in sync with everything
-   mentioned in the [CHANGELOG](../../CHANGELOG.md). This is done in
-   [sourcegraph/website](https://github.com/sourcegraph/website).
+#### Prepare a PR to the [sourcegraph/website](https://github.com/sourcegraph/website) repository
+
+1. Check out a new branch in the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
+2. Ensure documentation is up-to-date with everything listed under the `Coming Soon` section in the [CHANGELOG](../../CHANGELOG.md). Do not edit the `CHANGELOG.md` file yet.
+3. Update every old version number in the documentation to be the version number you are releasing. [Use search to do this](https://sourcegraph.sgdev.org/search?q=repo:%5Egithub%5C.com/sourcegraph/website%24+server%5C:2).
+4. Regenerate the site settings docs by running the last two commands mentioned under https://github.com/sourcegraph/website#documentation-pages
+5. Create the PR on the website repository, but do not merge it yet.
+
+---
+
 1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `ProductVersion` to the
    semver version string of the new version.
-1. If the blog post for the last release contains a command referencing a version like 2.4 but you are releasing 2.4.x, then remove the version string and refer to the canonical docs so that people don't accidentally run the old version.
 1. `git push origin -f origin/master:docker-images/server`
 1. Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
 1. `gcloud docker -- pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
