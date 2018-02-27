@@ -23,30 +23,24 @@ var (
 	// doing a release, in which case it should be one version ahead.
 	ProductVersion = "2.5.14"
 
-	// latestReleaseBuild is only used by Sourcegraph.com to tell existing
-	// installations what the latest version is. The version here _must_ be
+	// latestReleaseServerBuild is only used by sourcegraph.com to tell existing
+	// Server installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseBuild   = newBuild(1519249026, "2.5.14")
-	latestReleaseVersion = *semver.New(latestReleaseBuild.Version)
+	latestReleaseServerBuild = newBuild("2.5.14")
+
+	// latestReleaseDataCenterBuild is only used by sourcegraph.com to tell existing
+	// Data Center installations what the latest version is. The version here _must_ be
+	// available at https://storage.googleapis.com/sourcegraph-assets/sourcegraph-server-gen/
+	// before landing in master.
+	latestReleaseDataCenterBuild = newBuild("2.5.13")
 )
 
-func newBuild(timestamp int64, version string) build {
-	return build{
-		Timestamp:  timestamp,
-		Version:    version,
-		IsReleased: true,
-		Assets: []asset{
-			{
-				Name:           "docker-image",
-				Version:        version,
-				ProductVersion: version,
-				Platform:       "docker",
-				Type:           "docker-image",
-				URL:            "docker.io/sourcegraph/server:" + version,
-			},
-		},
+func getLatestRelease(deployType string) build {
+	if deployType == "datacenter" {
+		return latestReleaseDataCenterBuild
 	}
+	return latestReleaseServerBuild
 }
 
 // Handler is an HTTP handler that responds with information about software updates
@@ -55,6 +49,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	q := r.URL.Query()
+	deployType := q.Get("deployType")
 	clientVersionString := q.Get("version")
 	clientSiteID := q.Get("site")
 	uniqueUsers := q.Get("u")
@@ -78,7 +73,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hasUpdate := clientVersion.LessThan(latestReleaseVersion)
+	latestReleaseBuild := getLatestRelease(deployType)
+	hasUpdate := clientVersion.LessThan(latestReleaseBuild.Version)
 
 	{
 		// Log update check.

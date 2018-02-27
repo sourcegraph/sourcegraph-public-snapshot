@@ -2,7 +2,9 @@
 
 All notable changes to Sourcegraph Server and Data Center are documented in this file.
 
-## Coming Soon (add your changes here!)
+## Unreleased changes (add your changes here!)
+
+* Fixed issue where Sourcegraph Data Center would incorrectly show "An update is available".
 
 ### Phabricator Integration Changes
 

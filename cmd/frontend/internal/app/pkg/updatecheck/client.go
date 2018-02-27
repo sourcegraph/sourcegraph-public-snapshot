@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -67,6 +68,7 @@ func updateURL() string {
 	q := url.Values{}
 	q.Set("version", ProductVersion)
 	q.Set("site", siteid.Get())
+	q.Set("deployType", os.Getenv("DEPLOY_TYPE"))
 	count, err := useractivity.GetUsersActiveTodayCount()
 	if err != nil {
 		log15.Error("useractivity.GetUsersActiveTodayCount failed", "error", err)
@@ -106,10 +108,7 @@ func check(ctx context.Context) (*Status, error) {
 		if err := json.NewDecoder(resp.Body).Decode(&latestBuild); err != nil {
 			return "", err
 		}
-		if latestBuild.Version != "" && latestBuild.IsReleased && len(latestBuild.Assets) > 0 {
-			return latestBuild.Version, nil
-		}
-		return "", nil
+		return latestBuild.Version.String(), nil
 	}
 
 	mu.Lock()
