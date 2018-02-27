@@ -30,7 +30,7 @@ parts will be automated.
 3. Commit and `git push` this change directly to the `master` branch.
 4. `git push origin -f origin/master:docker-images/server`
 
----
+#### Test the Sourcegraph Server Docker image
 
 1. Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
 1. `gcloud docker -- pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
@@ -40,6 +40,9 @@ parts will be automated.
    image you just pulled instead of the dockerhub image. Do this for both the
    old and new instructions, to ensure we don't make any bad backwards
    incompatible changes. In future this will be more automated.
+
+#### Completing the release
+
 1. Update `CHANGELOG` and renaming Unreleased to the new `VERSION`.
 1. `docker tag us.gcr.io/sourcegraph-dev/server:CI_VERSION sourcegraph/server:VERSION`
 1. `docker tag sourcegraph/server:VERSION sourcegraph/server:latest`
