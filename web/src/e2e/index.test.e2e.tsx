@@ -101,8 +101,9 @@ describe('e2e test suite', () => {
             ),
             'Other repositories'
         )
-
-        await page.waitForSelector('.references-widget__badge')
+        await page.waitForSelector(
+            '.references-widget__badge.references-widget__badge--loaded.references-widget__badge--active'
+        )
         await retry(async () => {
             assert.ok(
                 parseInt(
