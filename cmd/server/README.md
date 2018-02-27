@@ -66,6 +66,8 @@ It is important that the following steps be ran closely together, otherwise we w
    timestamp and semver version string of the new version.
 1. Commit and `git push` this change directly to the `master` branch.
 
+You are done! Sourcegraph Server version `VERSION` has been released!
+
 ## Publishing new code intelligence images
 
 1. Ensure that the latest version of the language server is uploaded
