@@ -12,9 +12,9 @@ This file documents information relevant to developers at Sourcegraph.
 
 This process is quite manual still, since we want to ensure each release is
 high quality. As we get used to releasing Sourcegraph Server more and more
-parts will be automated.
+parts will be automated. You will need to complete four main steps.
 
-#### Prepare a PR to the [sourcegraph/website](https://github.com/sourcegraph/website) repository
+#### (1) Prepare a PR to the [sourcegraph/website](https://github.com/sourcegraph/website) repository
 
 1. Check out a new branch in the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
 1. Ensure documentation is up-to-date with everything listed under the `Coming Soon` section in the [CHANGELOG](../../CHANGELOG.md). Do not edit the `CHANGELOG.md` file yet.
@@ -22,7 +22,7 @@ parts will be automated.
 1. Regenerate the site settings docs by running the last two commands mentioned under https://github.com/sourcegraph/website#documentation-pages
 1. Create the PR on the website repository, but do not merge it yet.
 
-#### Build a Sourcegraph Server Docker image
+#### (2) Build a Sourcegraph Server Docker image
 
 1. Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
 1. Update `../cmd/frontend/internal/app/pkg/updatecheck/handler.go`'s `ProductVersion` to the
@@ -30,7 +30,7 @@ parts will be automated.
 1. Commit and `git push` this change directly to the `master` branch.
 1. `git push origin -f origin/master:docker-images/server`
 
-#### Test the Sourcegraph Server Docker image
+#### (3) Test the Sourcegraph Server Docker image
 
 1. Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
 1. `gcloud docker -- pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
@@ -51,7 +51,7 @@ gcloud docker -- run \
 
 At this point if you've discovered an issue and plan to stop the release, you should inform everyone that there is an issue and not to do a release temporarily (e.g. in #dev-announce). You are responsible for completing the next release following these steps where you left off, or stating clearly to others where you left off in this process so that someone else can confidently continue.
 
-#### Completing the release
+#### (4) Completing the release
 
 It is important that the following steps be ran closely together, otherwise we will end up in an incomplete release state. DO NOT pause or otherwise stop once you begin the following steps.
 
