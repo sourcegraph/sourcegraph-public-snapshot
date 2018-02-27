@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Coming Soon (add your changes here!)
 
+### Phabricator Integration Changes
+
+We now display a "View on Phabricator" link rather than a "View on other code host" link if you are using Phabricator and hosting on Github or another code host with a UI. Commit links also will point to Phabricator.
+
 ## 2.5.13
 
 ### Improvements to builtin authentication
