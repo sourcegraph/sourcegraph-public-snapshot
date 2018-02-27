@@ -22,11 +22,16 @@ parts will be automated.
 4. Regenerate the site settings docs by running the last two commands mentioned under https://github.com/sourcegraph/website#documentation-pages
 5. Create the PR on the website repository, but do not merge it yet.
 
+#### Build a Sourcegraph Server Docker image
+
+1. Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
+2. Update `../cmd/frontend/internal/app/pkg/updatecheck/handler.go`'s `ProductVersion` to the
+   semver version string of the new version (**DO NOT update `latestReleaseVersion` yet**).
+3. Commit and `git push` this change directly to the `master` branch.
+4. `git push origin -f origin/master:docker-images/server`
+
 ---
 
-1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `ProductVersion` to the
-   semver version string of the new version.
-1. `git push origin -f origin/master:docker-images/server`
 1. Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
 1. `gcloud docker -- pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
    You can find it on the build output, it should look something like
