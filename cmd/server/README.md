@@ -35,7 +35,7 @@ parts will be automated.
 1. Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
 1. `gcloud docker -- pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
    You can find it on the build output CI page in the last Docker build step, it should look something like
-   `08248_2017-12-14_8dad5ab`.
+   `08248_2017-12-14_8dad5ab`. Important: The version number must come from the [docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver) branch, not `master`. Make sure you are on the right buildkite page.
 1. Run through the [https://about.sourcegraph.com/docs/server/], but using the
    image you just pulled instead of the dockerhub image. Do this for both the
    old and new instructions, to ensure we don't make any bad backwards
