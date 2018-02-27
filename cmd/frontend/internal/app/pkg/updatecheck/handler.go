@@ -27,7 +27,7 @@ var (
 	// installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseBuild   = newBuild(1519249026, "2.5.13")
+	latestReleaseBuild   = newBuild(1519249026, "2.5.14")
 	latestReleaseVersion = *semver.New(latestReleaseBuild.Version)
 )
 
