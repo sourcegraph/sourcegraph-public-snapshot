@@ -41,6 +41,8 @@ parts will be automated.
    old and new instructions, to ensure we don't make any bad backwards
    incompatible changes. In future this will be more automated.
 
+At this point if you've discovered an issue and plan to stop the release, you should inform everyone that there is an issue and not to do a release temporarily (e.g. in #dev-announce). You are responsible for completing the next release following these steps where you left off, or stating clearly to others where you left off in this process so that someone else can confidently continue.
+
 #### Completing the release
 
 1. Update `CHANGELOG` and renaming Unreleased to the new `VERSION`.
