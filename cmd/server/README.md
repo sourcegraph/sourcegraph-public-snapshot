@@ -45,13 +45,18 @@ At this point if you've discovered an issue and plan to stop the release, you sh
 
 #### Completing the release
 
-1. Update `CHANGELOG` and renaming Unreleased to the new `VERSION`.
+It is important that the following steps be ran closely together, otherwise we will end up in an incomplete release state. DO NOT pause or otherwise stop once you begin the following steps.
+
 1. `docker tag us.gcr.io/sourcegraph-dev/server:CI_VERSION sourcegraph/server:VERSION`
 1. `docker tag sourcegraph/server:VERSION sourcegraph/server:latest`
 1. `docker push sourcegraph/server:VERSION`
 1. `docker push sourcegraph/server:latest`
+1. Merge the PR that you previously prepared to the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
+1. Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
+1. Update [CHANGELOG](../../CHANGELOG.md) and move any `Coming Soon` items under their own section for the new `VERSION` you have just released.
 1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseBuild` to the
    timestamp and semver version string of the new version.
+1. Commit and `git push` this change directly to the `master` branch.
 
 ## Publishing new code intelligence images
 
