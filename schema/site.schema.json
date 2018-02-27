@@ -8,7 +8,7 @@
   "properties": {
     "auth.userOrgMap": {
       "description":
-        "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form <tt>{\"*\": [\"org1\", \"org2\"]}</tt>, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is <tt>\"*\"</tt>.",
+        "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -199,7 +199,8 @@
       "type": "string"
     },
     "useJaeger": {
-      "description": "Use local Jaeger instance for tracing.",
+      "description":
+        "Use local Jaeger instance for tracing. Data Center only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, `kubectl get pods`\nshould display pods prefixed with `jaeger-cassandra`,\n`jaeger-collector`, and `jaeger-query`. `jaeger-collector` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [`cqlsh`](https://pypi.python.org/pypi/cqlsh).\n1. `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042`\n1. `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh`\n1. `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
       "type": "boolean"
     },
     "noGoGetDomains": {
@@ -265,19 +266,19 @@
       }
     },
     "htmlHeadTop": {
-      "description": "HTML to inject at the top of the <head> element on each page, for analytics scripts",
+      "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string"
     },
     "htmlHeadBottom": {
-      "description": "HTML to inject at the bottom of the <head> element on each page, for analytics scripts",
+      "description": "HTML to inject at the bottom of the `<head>` element on each page, for analytics scripts",
       "type": "string"
     },
     "htmlBodyTop": {
-      "description": "HTML to inject at the top of the <body> element on each page, for analytics scripts",
+      "description": "HTML to inject at the top of the `<body>` element on each page, for analytics scripts",
       "type": "string"
     },
     "htmlBodyBottom": {
-      "description": "HTML to inject at the bottom of the <body> element on each page, for analytics scripts",
+      "description": "HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts",
       "type": "string"
     },
     "licenseKey": {
@@ -296,7 +297,7 @@
     },
     "executeGradleOriginalRootPaths": {
       "description":
-        "Java: A comma-delimited list of patterns that selects repository revisions for which to execute Gradle scripts, rather than extracting Gradle metadata statically. **Security note:** these should be restricted to repositories within your own organization. A percent sign ('%') can be used to prefix-match. For example, <tt>git://my.internal.host/org1/%,git://my.internal.host/org2/repoA?%</tt> would select all revisions of all repositories in org1 and all revisions of repoA in org2.",
+        "Java: A comma-delimited list of patterns that selects repository revisions for which to execute Gradle scripts, rather than extracting Gradle metadata statically. **Security note:** these should be restricted to repositories within your own organization. A percent sign ('%') can be used to prefix-match. For example, `git://my.internal.host/org1/%,git://my.internal.host/org2/repoA?%` would select all revisions of all repositories in org1 and all revisions of repoA in org2.",
       "type": "string"
     },
     "privateArtifactRepoID": {
