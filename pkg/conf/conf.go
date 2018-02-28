@@ -46,6 +46,17 @@ func Get() schema.SiteConfiguration {
 	return cfg
 }
 
+// GetTODO denotes code that may or may not be using configuration correctly.
+// The code may need to be updated to use conf.Watch, or it may already be e.g.
+// invoked only in response to a user action (in which case it does not need to
+// use conf.Watch). See Get documentation for more details.
+func GetTODO() schema.SiteConfiguration {
+	return Get()
+}
+
+// MockGetData is overridden in tests that need to mock site config.
+var MockGetData *schema.SiteConfiguration
+
 // Watch calls the given function whenever the configuration has changed. The
 // new configuration can be recieved by calling conf.Get.
 //
@@ -71,9 +82,6 @@ func Watch(f func()) {
 		}
 	}
 }
-
-// MockGetData is overridden in tests that need to mock site config.
-var MockGetData *schema.SiteConfiguration
 
 // cfg is initialized to configuration defaults.
 var cfg = schema.SiteConfiguration{
