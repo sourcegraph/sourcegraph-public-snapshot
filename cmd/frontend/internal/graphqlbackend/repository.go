@@ -161,6 +161,12 @@ func (r *repositoryResolver) ExternalURL(ctx context.Context) (*string, error) {
 		return &rc.Links.Repository, nil
 	}
 
+	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
+	if phabRepo != nil {
+		url := fmt.Sprintf("%s/diffusion/%s", phabRepo.URL, phabRepo.Callsign)
+		return &url, nil
+	}
+
 	if strings.HasPrefix(string(uri), "github.com/") {
 		url := fmt.Sprintf("https://%s", uri)
 		return &url, nil
@@ -169,12 +175,6 @@ func (r *repositoryResolver) ExternalURL(ctx context.Context) (*string, error) {
 	host := strings.Split(string(uri), "/")[0]
 	if gheURL, ok := githubEnterpriseURLs[host]; ok {
 		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(string(uri), host))
-		return &url, nil
-	}
-
-	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	if phabRepo != nil {
-		url := fmt.Sprintf("%s/r%s", phabRepo.URL, phabRepo.Callsign)
 		return &url, nil
 	}
 
