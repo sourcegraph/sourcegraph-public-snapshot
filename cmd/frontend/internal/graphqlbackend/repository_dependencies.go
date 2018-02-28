@@ -8,6 +8,18 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
+func (r *repositoryResolver) Dependencies(ctx context.Context) ([]*dependencyResolver, error) {
+	deps, err := db.GlobalDeps.Dependencies(ctx, db.DependenciesOptions{Repo: r.repo.ID})
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*dependencyResolver, len(deps))
+	for i, dep := range deps {
+		resolvers[i] = &dependencyResolver{dep}
+	}
+	return resolvers, nil
+}
+
 type dependencyResolver struct {
 	dep *api.DependencyReference
 }
@@ -64,7 +76,7 @@ func (r *dependencyResolver) depDataIntField(name string) *int32 {
 	return nil
 }
 
-func (r *dependencyResolver) Repo(ctx context.Context) (*repositoryResolver, error) {
+func (r *dependencyResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
 	repo, err := db.Repos.Get(ctx, r.dep.RepoID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -72,10 +84,8 @@ func (r *dependencyResolver) Repo(ctx context.Context) (*repositoryResolver, err
 		}
 		return nil, err
 	}
-
 	if err := refreshRepo(ctx, repo); err != nil {
 		return nil, err
 	}
-
 	return &repositoryResolver{repo: repo}, nil
 }

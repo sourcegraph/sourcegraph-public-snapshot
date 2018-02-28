@@ -3,24 +3,26 @@ package graphqlbackend
 import (
 	"context"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-type packageResolver struct {
-	pkg *api.PackageInfo
+func (r *repositoryResolver) Packages(ctx context.Context) ([]*packageResolver, error) {
+	pkgs, err := backend.Pkgs.ListPackages(ctx, &api.ListPackagesOp{RepoID: r.repo.ID})
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*packageResolver, len(pkgs))
+	for i, pkg := range pkgs {
+		resolvers[i] = &packageResolver{&pkg}
+	}
+	return resolvers, nil
 }
 
-type packageMetadata struct {
-	id      *string
-	typ     *string
-	name    *string
-	commit  *string
-	baseDir *string
-	repoURL *string
-	version *string
-	packag  *string
+type packageResolver struct {
+	pkg *api.PackageInfo
 }
 
 func (r *packageResolver) Lang() string { return r.pkg.Lang }
@@ -53,7 +55,7 @@ func (r *packageResolver) pkgStringField(name string) *string {
 	return nil
 }
 
-func (r *packageResolver) Repo(ctx context.Context) (*repositoryResolver, error) {
+func (r *packageResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
 	repo, err := db.Repos.Get(ctx, r.pkg.RepoID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -61,39 +63,8 @@ func (r *packageResolver) Repo(ctx context.Context) (*repositoryResolver, error)
 		}
 		return nil, err
 	}
-
 	if err := refreshRepo(ctx, repo); err != nil {
 		return nil, err
 	}
-
 	return &repositoryResolver{repo: repo}, nil
-}
-
-func (r packageMetadata) toPkgQuery() map[string]interface{} {
-	pkgQuery := make(map[string]interface{})
-	if r.id != nil {
-		pkgQuery["id"] = *r.id
-	}
-	if r.typ != nil {
-		pkgQuery["type"] = *r.typ
-	}
-	if r.name != nil {
-		pkgQuery["name"] = *r.name
-	}
-	if r.commit != nil {
-		pkgQuery["commit"] = *r.commit
-	}
-	if r.baseDir != nil {
-		pkgQuery["baseDir"] = *r.baseDir
-	}
-	if r.repoURL != nil {
-		pkgQuery["repoURL"] = *r.repoURL
-	}
-	if r.version != nil {
-		pkgQuery["version"] = *r.version
-	}
-	if r.packag != nil {
-		pkgQuery["package"] = *r.packag
-	}
-	return pkgQuery
 }

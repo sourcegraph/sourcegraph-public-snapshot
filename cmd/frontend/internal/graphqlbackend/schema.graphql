@@ -298,29 +298,6 @@ type Query {
     repoGroups: [RepoGroup!]!
     org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
     sharedItem(ulid: String!): SharedItem
-    packages(
-        lang: String!
-        id: String
-        type: String
-        name: String
-        commit: String
-        baseDir: String
-        repoURL: String
-        version: String
-        limit: Int
-    ): [Package!]!
-    dependents(
-        lang: String!
-        id: String
-        type: String
-        name: String
-        commit: String
-        baseDir: String
-        repoURL: String
-        version: String
-        package: String
-        limit: Int
-    ): [Dependency!]!
     # The current site.
     site: Site!
 }
@@ -694,6 +671,12 @@ type Repository implements Node {
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
+    # Packages defined in this repository, as returned by LSP workspace/xpackages requests to this repository's
+    # language servers (running against a recent commit on its default branch).
+    packages: [Package!]!
+    # Dependencies of this repository, as returned by LSP workspace/xreferences requests to this repository's
+    # language servers (running against a recent commit on its default branch).
+    dependencies: [Dependency!]!
     listTotalRefs: TotalRefList!
     # Link to another Sourcegraph instance location where this repository is located.
     redirectURL: String
@@ -1509,10 +1492,15 @@ type Comment {
     author: User!
 }
 
+# A package represents a grouping of code that is returned by a language server in response to a
+# workspace/xpackages request.
 type Package {
+    # The programming language used to define the package.
     lang: String!
-    repo: Repository
-    # The following fields are properties of build package configuration as returned by the workspace/xpackages LSP endpoint.
+    # The repository that defines the package.
+    repository: Repository
+    # The following fields are properties of build package configuration as returned by the workspace/xpackages LSP
+    # endpoint.
     id: String
     type: String
     name: String
@@ -1522,9 +1510,13 @@ type Package {
     version: String
 }
 
+# A dependency represents a dependency relationship between two units of code. It is derived from data returned by
+# a language server in response to a workspace/xreferences request.
 type Dependency {
-    repo: Repository
-    # The following fields are properties of build package configuration as returned by the workspace/xpackages LSP endpoint.
+    # The repository that depends on the unit of code described by this resolver's other fields.
+    repository: Repository
+    # The following fields are properties of build package configuration as returned by the workspace/xpackages LSP
+    # endpoint.
     name: String
     repoURL: String
     depth: Int
@@ -1535,7 +1527,6 @@ type Dependency {
     commit: String
     version: String
     id: String
-    package: String
 }
 
 type UserTag {
