@@ -47,45 +47,23 @@ func main() {
 
 	// Repos List syncing thread
 	go func() {
-		if err := repos.RunRepositorySyncWorker(ctx); err != nil {
-			log.Fatalf("Fatal error RunRepositorySyncWorker: %s", err)
-		}
+		repos.RunRepositorySyncWorker(ctx)
 	}()
 
 	// GitHub Repository syncing thread
-	go func() {
-		if err := repos.RunGitHubRepositorySyncWorker(ctx); err != nil {
-			log.Fatalf("Fatal error RunGitHubRepositorySyncWorker: %s", err)
-		}
-	}()
+	go repos.RunGitHubRepositorySyncWorker(ctx)
 
 	// GitLab Repository syncing thread
-	go func() {
-		if err := repos.RunGitLabRepositorySyncWorker(ctx); err != nil {
-			log.Fatalf("Fatal error: GitLab repository sync worker: %s", err)
-		}
-	}()
+	go repos.RunGitLabRepositorySyncWorker(ctx)
 
 	// AWS CodeCommit repository syncing thread
-	go func() {
-		if err := repos.RunAWSCodeCommitRepositorySyncWorker(ctx); err != nil {
-			log.Fatalf("Fatal error: AWS CodeCommit repository sync worker: %s", err)
-		}
-	}()
+	go repos.RunAWSCodeCommitRepositorySyncWorker(ctx)
 
 	// Phabricator Repository syncing thread
-	go func() {
-		if err := repos.RunPhabricatorRepositorySyncWorker(ctx); err != nil {
-			log.Fatalf("Fatal error RunPhabricatorRepositorySyncworker: %s", err)
-		}
-	}()
+	go repos.RunPhabricatorRepositorySyncWorker(ctx)
 
 	// Gitolite syncing thread
-	go func() {
-		if err := repos.RunGitoliteRepositorySyncWorker(ctx); err != nil {
-			log.Fatalf("Fatal error RunGitoliteRepositorySyncWorker: %s", err)
-		}
-	}()
+	go repos.RunGitoliteRepositorySyncWorker(ctx)
 
 	var repoupdater repoupdater.Server
 

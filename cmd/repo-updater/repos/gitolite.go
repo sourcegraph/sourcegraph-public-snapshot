@@ -11,7 +11,7 @@ import (
 )
 
 // RunGitoliteRepositorySyncWorker runs the worker that syncs repositories from gitolite hosts to Sourcegraph
-func RunGitoliteRepositorySyncWorker(ctx context.Context) error {
+func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 	for {
 		log15.Debug("RunGitoliteRepositorySyncWorker:GitoliteUpdateRepos")
 		if err := api.InternalClient.GitoliteUpdateRepos(context.Background()); err != nil {

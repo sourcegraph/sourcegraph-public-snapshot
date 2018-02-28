@@ -64,7 +64,7 @@ var (
 )
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
-func RunPhabricatorRepositorySyncWorker(ctx context.Context) error {
+func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	for {
 		for i, c := range phabConf {
 			if c.Token == "" {

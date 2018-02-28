@@ -19,10 +19,10 @@ var (
 )
 
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
-func RunRepositorySyncWorker(ctx context.Context) error {
+func RunRepositorySyncWorker(ctx context.Context) {
 	configs := reposListConf
 	if len(configs) == 0 {
-		return nil
+		return
 	}
 
 	for _, cfg := range configs {

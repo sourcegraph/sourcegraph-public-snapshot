@@ -209,9 +209,9 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
-func RunGitHubRepositorySyncWorker(ctx context.Context) error {
+func RunGitHubRepositorySyncWorker(ctx context.Context) {
 	if len(githubConnections) == 0 {
-		return nil
+		return
 	}
 	for _, c := range githubConnections {
 		go func(c *githubConnection) {

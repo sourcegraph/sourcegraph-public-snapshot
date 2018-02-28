@@ -117,9 +117,9 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 
 // RunAWSCodeCommitRepositorySyncWorker runs the worker that syncs repositories from the configured AWSCodeCommit and AWSCodeCommit
 // Enterprise instances to Sourcegraph.
-func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) error {
+func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
 	if len(awsCodeCommitConnections) == 0 {
-		return nil
+		return
 	}
 	for _, c := range awsCodeCommitConnections {
 		go func(c *awsCodeCommitConnection) {

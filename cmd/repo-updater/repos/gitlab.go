@@ -158,9 +158,9 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 
 // RunGitLabRepositorySyncWorker runs the worker that syncs projects from configured GitLab instances to
 // Sourcegraph.
-func RunGitLabRepositorySyncWorker(ctx context.Context) error {
+func RunGitLabRepositorySyncWorker(ctx context.Context) {
 	if len(gitlabConnections) == 0 {
-		return nil
+		return
 	}
 	for _, c := range gitlabConnections {
 		go func(c *gitlabConnection) {
