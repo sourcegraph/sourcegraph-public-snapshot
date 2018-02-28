@@ -1,6 +1,6 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
+import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
@@ -226,7 +226,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             className="sidebar__action-button btn"
                             activeClassName="sidebar__item--active"
                         >
-                            <GlobeIcon className="icon-inline sidebar__action-icon" />
+                            <FeedIcon className="icon-inline sidebar__action-icon" />
                             API console
                         </NavLink>
                     </div>

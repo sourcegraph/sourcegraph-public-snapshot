@@ -1,4 +1,4 @@
-import GlobeIcon from '@sourcegraph/icons/lib/Globe'
+import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
@@ -50,7 +50,7 @@ export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
             </ul>
             <div className="sidebar__item sidebar__action">
                 <Link to="/api/console" className="sidebar__action-button btn">
-                    <GlobeIcon className="icon-inline sidebar__action-icon" />
+                    <FeedIcon className="icon-inline sidebar__action-icon" />
                     API console
                 </Link>
             </div>

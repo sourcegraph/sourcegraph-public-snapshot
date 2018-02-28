@@ -1,4 +1,4 @@
-import GlobeIcon from '@sourcegraph/icons/lib/Globe'
+import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as H from 'history'
 import * as React from 'react'
@@ -156,7 +156,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                         className="sidebar__action-button btn"
                         activeClassName="sidebar__item--active"
                     >
-                        <GlobeIcon className="icon-inline sidebar__action-icon" />
+                        <FeedIcon className="icon-inline sidebar__action-icon" />
                         API console
                     </NavLink>
                 </div>
