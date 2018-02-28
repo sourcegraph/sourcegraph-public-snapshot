@@ -28,7 +28,7 @@ import (
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
 
-var githubConf = conf.Get().Github
+var githubConf = conf.GetTODO().Github
 
 // githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs.
 // This can be used for the purposes of generating external GitHub enterprise links.
@@ -138,7 +138,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AssetsRoot:           assets.URL("").String(),
 		Version:              env.Version,
 		User:                 user,
-		DisableTelemetry:     conf.Get().DisableTelemetry,
+		DisableTelemetry:     conf.GetTODO().DisableTelemetry,
 		GithubEnterpriseURLs: githubEnterpriseURLs,
 		SentryDSN:            sentryDSNFrontend,
 		Debug:                envvar.DebugMode(),
@@ -159,7 +159,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 // publicSiteConfiguration is the subset of the site.schema.json site configuration
 // that is necessary for the web app and is not sensitive/secret.
 var publicSiteConfiguration = schema.SiteConfiguration{
-	AuthAllowSignup: conf.Get().AuthAllowSignup,
+	AuthAllowSignup: conf.GetTODO().AuthAllowSignup,
 }
 
 var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)

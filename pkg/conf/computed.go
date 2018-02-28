@@ -10,7 +10,7 @@ import (
 //
 // It's false for sites that do not have an email sending API key set up.
 func EmailVerificationRequired() bool {
-	return Get().EmailSmtp != nil
+	return GetTODO().EmailSmtp != nil
 }
 
 // CanSendEmail returns whether the site can send emails (e.g., to reset a password or
@@ -18,13 +18,13 @@ func EmailVerificationRequired() bool {
 //
 // It's false for sites that do not have an email sending API key set up.
 func CanSendEmail() bool {
-	return Get().EmailSmtp != nil
+	return GetTODO().EmailSmtp != nil
 }
 
 // HasGitHubDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func HasGitHubDotComToken() bool {
-	for _, c := range Get().Github {
+	for _, c := range GetTODO().Github {
 		u, err := url.Parse(c.Url)
 		if err != nil {
 			continue
@@ -40,7 +40,7 @@ func HasGitHubDotComToken() bool {
 // HasGitLabDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func HasGitLabDotComToken() bool {
-	for _, c := range Get().Gitlab {
+	for _, c := range GetTODO().Gitlab {
 		u, err := url.Parse(c.Url)
 		if err != nil {
 			continue

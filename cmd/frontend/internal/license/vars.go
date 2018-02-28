@@ -22,7 +22,7 @@ const publicKey = `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCi0YsgvNQMN+srcMXZtDAmF
 const bypassLicenseKey = `24348deeb9916a070914b5617a9a4e2c7bec0d313ca6ae11545ef034c7138d4d8710cddac80980b00426fb44830263268f028c9735`
 
 var (
-	licenseKey = conf.Get().LicenseKey
+	licenseKey = conf.GetTODO().LicenseKey
 
 	// license is the decoded and verified value of the LICENSE_KEY env var.
 	license *License

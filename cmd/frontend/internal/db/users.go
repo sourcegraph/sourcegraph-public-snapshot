@@ -229,7 +229,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		// adding random calls here.
 
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
-		orgs, errs := orgsForAllUsersToJoin(conf.Get().AuthUserOrgMap)
+		orgs, errs := orgsForAllUsersToJoin(conf.GetTODO().AuthUserOrgMap)
 		for _, err := range errs {
 			log15.Warn(err.Error())
 		}

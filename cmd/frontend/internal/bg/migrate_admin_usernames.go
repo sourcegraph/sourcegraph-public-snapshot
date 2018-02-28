@@ -13,7 +13,7 @@ import (
 // config key to designate those users as admins. This removes the dependency on the deprecated
 // adminUsernames config.
 func MigrateAdminUsernames(ctx context.Context) {
-	for _, username := range strings.Fields(conf.Get().AdminUsernames) {
+	for _, username := range strings.Fields(conf.GetTODO().AdminUsernames) {
 		user, err := db.Users.GetByUsername(ctx, username)
 		if err == nil {
 			if err := db.Users.SetIsSiteAdmin(ctx, user.ID, true); err != nil {

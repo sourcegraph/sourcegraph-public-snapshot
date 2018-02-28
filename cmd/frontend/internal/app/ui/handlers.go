@@ -34,10 +34,10 @@ import (
 )
 
 var (
-	injectedHTMLHeadTop    = conf.Get().HtmlHeadTop
-	injectedHTMLHeadBottom = conf.Get().HtmlHeadTop
-	injectedHTMLBodyTop    = conf.Get().HtmlBodyTop
-	injectedHTMLBodyBottom = conf.Get().HtmlBodyTop
+	injectedHTMLHeadTop    = conf.GetTODO().HtmlHeadTop
+	injectedHTMLHeadBottom = conf.GetTODO().HtmlHeadTop
+	injectedHTMLBodyTop    = conf.GetTODO().HtmlBodyTop
+	injectedHTMLBodyBottom = conf.GetTODO().HtmlBodyTop
 )
 
 type InjectedHTML struct {

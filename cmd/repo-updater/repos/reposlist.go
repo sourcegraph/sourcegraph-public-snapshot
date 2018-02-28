@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	reposListConf = conf.Get().ReposList
+	reposListConf = conf.GetTODO().ReposList
 )
 
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
@@ -59,7 +59,7 @@ func updateRepo(ctx context.Context, repoConf schema.Repository) error {
 	if err != nil {
 		return errors.Wrap(err, "error checking if repo cloned")
 	}
-	if !conf.Get().DisableAutoGitUpdates || !cloned {
+	if !conf.GetTODO().DisableAutoGitUpdates || !cloned {
 		log15.Debug("fetching repos.list repo", "repo", uri, "cloned", cloned)
 		err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: repo.URI, URL: repoConf.Url})
 		if err != nil {
@@ -76,7 +76,7 @@ func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLo
 	}
 
 	repoNameLower := api.RepoURI(strings.ToLower(string(args.Repo)))
-	for _, repo := range conf.Get().ReposList {
+	for _, repo := range conf.GetTODO().ReposList {
 		if api.RepoURI(strings.ToLower(string(repo.Path))) == repoNameLower {
 			repoInfo := &protocol.RepoInfo{
 				URI:          api.RepoURI(repo.Path),

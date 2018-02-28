@@ -19,11 +19,11 @@ import (
 	jaegermetrics "github.com/uber/jaeger-lib/metrics"
 )
 
-var lightstepAccessToken = conf.Get().LightstepAccessToken
-var lightstepProject = conf.Get().LightstepProject
+var lightstepAccessToken = conf.GetTODO().LightstepAccessToken
+var lightstepProject = conf.GetTODO().LightstepProject
 var lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
 
-var useJaeger = conf.Get().UseJaeger
+var useJaeger = conf.GetTODO().UseJaeger
 
 func Init(serviceName string) {
 	if useJaeger {

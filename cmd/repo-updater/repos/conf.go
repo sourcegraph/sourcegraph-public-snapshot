@@ -11,7 +11,7 @@ var (
 )
 
 func init() {
-	v := time.Duration(conf.Get().RepoListUpdateInterval) * time.Minute
+	v := time.Duration(conf.GetTODO().RepoListUpdateInterval) * time.Minute
 	if v == 0 {
 		v = 1 * time.Minute // reasonable default
 	}

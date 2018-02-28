@@ -21,8 +21,8 @@ var (
 )
 
 func init() {
-	searchScopesList = make([]*searchScope, len(conf.Get().SearchScopes))
-	for i, s := range conf.Get().SearchScopes {
+	searchScopesList = make([]*searchScope, len(conf.GetTODO().SearchScopes))
+	for i, s := range conf.GetTODO().SearchScopes {
 		if s.Id != "" {
 			searchScopesList[i].id = &s.Id
 			searchScopesList[i].description = &s.Description

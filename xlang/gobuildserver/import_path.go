@@ -17,7 +17,7 @@ import (
 // noGoGetDomains is a list of domains we do not attempt standard go vanity
 // import resolution. Instead we take an educated guess based on the URL how
 // to create the directory struct.
-var noGoGetDomains = strings.Split(conf.Get().NoGoGetDomains, ",")
+var noGoGetDomains = strings.Split(conf.GetTODO().NoGoGetDomains, ",")
 
 func init() {
 	// Clean-up noGoGetDomains to avoid needing to validate them when

@@ -36,7 +36,7 @@ type credentials struct {
 
 // serveSignUp handles submission of the user signup form.
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
-	if !conf.Get().AuthAllowSignup {
+	if !conf.GetTODO().AuthAllowSignup {
 		http.Error(w, "Signup is not enabled (auth.allowSignup site configuration option)", http.StatusNotFound)
 		return
 	}

@@ -39,7 +39,7 @@ func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.Exter
 var githubConnections []*githubConnection
 
 func init() {
-	githubConf := conf.Get().Github
+	githubConf := conf.GetTODO().Github
 
 	var hasGitHubDotComConnection bool
 	for _, c := range githubConf {

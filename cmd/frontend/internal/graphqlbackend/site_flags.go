@@ -29,7 +29,7 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 }
 
 func needsRepositoryConfiguration() bool {
-	cfg := conf.Get()
+	cfg := conf.GetTODO()
 	return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && len(cfg.AwsCodeCommit) == 0 && cfg.GitoliteHosts == "" && cfg.GitOriginMap == ""
 }
 
@@ -76,6 +76,6 @@ var isExternalAuthEnabled = func() bool {
 
 func (*siteResolver) ExternalAuthEnabled() bool { return isExternalAuthEnabled }
 
-var disableBuiltInSearches = conf.Get().DisableExampleSearches || conf.Get().DisableBuiltInSearches
+var disableBuiltInSearches = conf.GetTODO().DisableExampleSearches || conf.GetTODO().DisableBuiltInSearches
 
 func (*siteResolver) DisableBuiltInSearches() bool { return disableBuiltInSearches }

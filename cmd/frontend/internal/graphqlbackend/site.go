@@ -71,7 +71,7 @@ func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationRes
 func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 	// The site configuration (which is only visible to admins) contains a field "settings"
 	// that is visible to all users. So, this does not need a permissions check.
-	siteConfigJSON, err := json.MarshalIndent(conf.Get().Settings, "", "  ")
+	siteConfigJSON, err := json.MarshalIndent(conf.GetTODO().Settings, "", "  ")
 	if err != nil {
 		return nil, err
 	}

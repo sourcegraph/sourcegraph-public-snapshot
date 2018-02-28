@@ -16,7 +16,7 @@ type errPhabricatorRepoNotFound struct {
 }
 
 var (
-	phabricatorConfigs = conf.Get().Phabricator
+	phabricatorConfigs = conf.GetTODO().Phabricator
 	phabricatorRepos   map[api.RepoURI]*types.PhabricatorRepo
 )
 

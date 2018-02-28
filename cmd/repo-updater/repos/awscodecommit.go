@@ -42,7 +42,7 @@ func AWSCodeCommitExternalRepoSpec(repo *awscodecommit.Repository, serviceID str
 var awsCodeCommitConnections []*awsCodeCommitConnection
 
 func init() {
-	for _, c := range conf.Get().AwsCodeCommit {
+	for _, c := range conf.GetTODO().AwsCodeCommit {
 		conn, err := newAWSCodeCommitConnection(c)
 		if err != nil {
 			log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "accessKeyID", c.AccessKeyID, "error", err)

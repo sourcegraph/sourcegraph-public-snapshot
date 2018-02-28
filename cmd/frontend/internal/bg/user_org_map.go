@@ -17,7 +17,7 @@ func ApplyUserOrgMap(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	for userPattern, orgs := range conf.Get().AuthUserOrgMap {
+	for userPattern, orgs := range conf.GetTODO().AuthUserOrgMap {
 		if userPattern != "*" {
 			log15.Warn("unsupported auth.userOrgMap user pattern (only \"*\" is supported)", "userPattern", userPattern)
 			continue

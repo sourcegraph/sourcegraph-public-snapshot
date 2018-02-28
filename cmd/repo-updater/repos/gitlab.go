@@ -35,7 +35,7 @@ func GitLabExternalRepoSpec(proj *gitlab.Project, baseURL url.URL) *api.External
 var gitlabConnections []*gitlabConnection
 
 func init() {
-	gitlabConf := conf.Get().Gitlab
+	gitlabConf := conf.GetTODO().Gitlab
 
 	var hasGitLabDotComConnection bool
 	for _, c := range gitlabConf {
