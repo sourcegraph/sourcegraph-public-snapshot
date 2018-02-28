@@ -195,7 +195,6 @@ func (r *repositoryResolver) HostType() *string {
 	uri := r.repo.URI
 
 	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	fmt.Println(phabRepo)
 	if phabRepo != nil {
 		host := "Phabricator"
 		return &host
