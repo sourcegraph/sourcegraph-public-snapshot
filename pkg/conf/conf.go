@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
@@ -34,12 +35,41 @@ var raw = func() string {
 // Raw returns the raw site configuration JSON.
 func Raw() string { return raw }
 
-// Get returns a copy of the configuration. The returned value should NEVER be modified.
+// Get returns a copy of the configuration. The returned value should NEVER be
+// modified.
+//
+// Important: The configuration can change while the process is running! Code
+// should only call this in response to conf.Watch OR it should invoke it
+// periodically to ensure it responds to configuration changes while the
+// process is running.
+//
+// There are a select few configuration options that do restart the server (for
+// example, TLS or which port the frontend listens on) but these are the
+// exception rather than the rule. In general, ANY use of configuration should
+// be done in such a way that it responds to config changes while the process
+// is running.
 func Get() schema.SiteConfiguration {
 	if MockGetData != nil {
 		return *MockGetData
 	}
 	return cfg
+}
+
+// Watch calls the given function whenever the configuration has changed. The
+// new configuration can be recieved by calling conf.Get.
+//
+// Before Watch returns, it will invoke f to use the current configuration.
+func Watch(f func()) {
+	// Call the function now, to use the current configuration.
+	f()
+
+	// Every five seconds, check if the configuration has changed and invoke f.
+	for {
+		time.Sleep(5 * time.Second)
+		if IsDirty() {
+			f()
+		}
+	}
 }
 
 // MockGetData is overridden in tests that need to mock site config.
