@@ -246,7 +246,7 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 			//
 			// To new ones:
 			//
-			// 	/search?q=ErrMethodMismatch&sq=repo:^github.com/gorilla/mux$
+			// 	/search?q=repo:^github.com/gorilla/mux$+ErrMethodMismatch
 			//
 			// It does not apply the file: filter because that was not the behavior of the
 			// old blob URLs with a 'q' parameter either.

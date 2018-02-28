@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"runtime"
-	"strings"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -59,7 +58,7 @@ func (n *notifier) emailNotify(ctx context.Context) {
 			}{
 				URL:         searchURL(n.newQuery, utmSourceEmail),
 				Description: n.query.Description,
-				Query:       strings.Join([]string{n.query.ScopeQuery, n.query.Query}, " "),
+				Query:       n.query.Query,
 				ApproximateResultCount: n.results.Data.Search.Results.ApproximateResultCount,
 				Ownership:              ownership,
 				PluralResults:          plural,

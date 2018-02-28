@@ -101,7 +101,6 @@ type ConfigSavedQuery struct {
 	Key                 string   `json:"key,omitempty"`
 	Description         string   `json:"description"`
 	Query               string   `json:"query"`
-	ScopeQuery          string   `json:",omitempty"`
 	ShowOnHomepage      bool     `json:"showOnHomepage"`
 	Notify              bool     `json:"notify,omitempty"`
 	NotifySlack         bool     `json:"notifySlack,omitempty"`

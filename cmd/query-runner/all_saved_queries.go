@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
@@ -122,7 +121,6 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return // query to delete already doesn't exist; do nothing
 	}
-	qq := strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " ")
 	delete(allSavedQueries.allSavedQueries, key)
 
 	if !args.DisableSubscriptionNotifications {
@@ -143,15 +141,14 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 
 	// Delete from database, but only if another saved query is not the same.
 	anotherExists := false
-	for _, query := range allSavedQueries.allSavedQueries {
-		queryStr := strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " ")
-		if queryStr == qq {
+	for _, other := range allSavedQueries.allSavedQueries {
+		if other.Config.Query == query.Config.Query {
 			anotherExists = true
 			break
 		}
 	}
 	if !anotherExists {
-		if err := api.InternalClient.SavedQueriesDeleteInfo(r.Context(), qq); err != nil {
+		if err := api.InternalClient.SavedQueriesDeleteInfo(r.Context(), query.Config.Query); err != nil {
 			log15.Error("Failed to delete saved query from DB: SavedQueriesDeleteInfo", "error", err)
 			return
 		}

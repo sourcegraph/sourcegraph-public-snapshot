@@ -136,69 +136,12 @@ func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolve
 		if err := subject.readConfiguration(ctx, &config); err != nil {
 			return nil, err
 		}
-
-		// TEMPORARY: perform migration to add unique key to saved queries and remove scope query by adding field to query field.
-		if err := r.migrateSavedQueries(ctx, subject, config.SavedQueries); err != nil {
-			return nil, err
-		}
-
 		for i, e := range config.SavedQueries {
 			savedQueries = append(savedQueries, toSavedQueryResolver(i, subject, e))
 		}
 	}
 
 	return savedQueries, nil
-}
-
-func (r *schemaResolver) migrateSavedQueries(ctx context.Context, subject *configurationSubject, savedQueries []api.ConfigSavedQuery) error {
-	// Return if all entries have keys.
-	needsKey := false
-	hasScopeField := false
-	for _, e := range savedQueries {
-		if e.Key == "" {
-			needsKey = true
-		}
-		if e.ScopeQuery != "" {
-			hasScopeField = true
-		}
-	}
-	if !needsKey && !hasScopeField {
-		return nil
-	}
-
-	settings, err := subject.LatestSettings(ctx)
-	if err != nil {
-		return err
-	}
-	if settings == nil {
-		return nil // nothing to do
-	}
-
-	mutation, err := r.ConfigurationMutation(ctx, &struct {
-		Input *configurationMutationGroupInput
-	}{
-		Input: &configurationMutationGroupInput{LastID: &settings.settings.ID, Subject: subject.ID()},
-	})
-	if err != nil {
-		return err
-	}
-	_, err = mutation.doUpdateConfiguration(ctx, func(oldConfig string) (allEdits []jsonx.Edit, err error) {
-		for i := range savedQueries {
-			if savedQueries[i].Key != "" && savedQueries[i].ScopeQuery == "" {
-				continue
-			}
-			savedQueries[i].Query = savedQueries[i].Query + " " + savedQueries[i].ScopeQuery
-			savedQueries[i].ScopeQuery = ""
-			savedQueries[i].Key = generateUniqueSavedQueryKey(savedQueries)
-			edits, _, err := jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", i), savedQueries[i], nil, formatOptions)
-			if err != nil {
-				return nil, err
-			}
-			allEdits = append(allEdits, edits...)
-		}
-		return allEdits, nil
-	})
-	return err
 }
 
 func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, args *struct {

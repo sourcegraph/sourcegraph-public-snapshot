@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"runtime"
-	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -35,7 +34,7 @@ func slackNotifyCreated(ctx context.Context, orgsToNotify []int32, query api.Sav
 	}
 
 	text := fmt.Sprintf(`Notifications for the new saved search <%s|"%s"> will be sent here when new results are available.`,
-		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), utmSourceSlack),
+		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
@@ -48,7 +47,7 @@ func slackNotifyDeleted(ctx context.Context, orgsToNotify []int32, query api.Sav
 	}
 
 	text := fmt.Sprintf(`Saved search <%s|"%s"> has been deleted.`,
-		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), utmSourceSlack),
+		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
@@ -61,7 +60,7 @@ func slackNotifySubscribed(ctx context.Context, orgsToNotify []int32, query api.
 	}
 
 	text := fmt.Sprintf(`Slack notifications enabled for the saved search <%s|"%s">. Notifications will be sent here when new results are available.`,
-		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), utmSourceSlack),
+		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)
@@ -74,7 +73,7 @@ func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query ap
 	}
 
 	text := fmt.Sprintf(`Slack notifications for the saved search <%s|"%s"> disabled.`,
-		searchURL(strings.Join([]string{query.Config.ScopeQuery, query.Config.Query}, " "), utmSourceSlack),
+		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
 	slackNotify(ctx, orgsToNotify, text)

@@ -147,14 +147,13 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 		// No need to run this query because there will be nobody to notify.
 		return nil
 	}
-	qq := strings.Join([]string{query.ScopeQuery, query.Query}, " ")
-	if !strings.Contains(qq, "type:diff") && !strings.Contains(qq, "type:commit") {
+	if !strings.Contains(query.Query, "type:diff") && !strings.Contains(query.Query, "type:commit") {
 		// TODO(slimsag): we temporarily do not support non-commit search
 		// queries, since those do not support the after:"time" operator.
 		return nil
 	}
 
-	info, err := api.InternalClient.SavedQueriesGetInfo(ctx, qq)
+	info, err := api.InternalClient.SavedQueriesGetInfo(ctx, query.Query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueriesGetInfo")
 	}
@@ -192,10 +191,10 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 		latestKnownResult = time.Now()
 	}
 	afterTime := latestKnownResult.UTC().Format(time.RFC3339)
-	newQuery := strings.Join([]string{query.ScopeQuery, query.Query, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
+	newQuery := strings.Join([]string{query.Query, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 	if debugPretendSavedQueryResultsExist {
 		debugPretendSavedQueryResultsExist = false
-		newQuery = strings.Join([]string{query.ScopeQuery, query.Query}, " ")
+		newQuery = query.Query
 	}
 
 	// Perform the search and mark the saved query as having been executed in
@@ -205,7 +204,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// our normal interval, regardless of errors.
 	v, searchErr, execDuration := performSearch(ctx, newQuery)
 	if err := api.InternalClient.SavedQueriesSetInfo(ctx, &api.SavedQueryInfo{
-		Query:        qq,
+		Query:        query.Query,
 		LastExecuted: time.Now(),
 		LatestResult: latestResultTime(info, v, searchErr),
 		ExecDuration: execDuration,
