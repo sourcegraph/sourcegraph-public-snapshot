@@ -1,20 +1,10 @@
-import BookIcon from '@sourcegraph/icons/lib/Book'
-import FileIcon from '@sourcegraph/icons/lib/File'
 import FolderIcon from '@sourcegraph/icons/lib/Folder'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
+import { SymbolIcon } from '../symbols/SymbolIcon'
 import { basename, dirname } from '../util/path'
 
-export const enum SuggestionType {
-    Repo = 'repo',
-    File = 'file',
-    Dir = 'dir',
-    Symbol = 'symbol',
-}
-
-export interface Suggestion {
-    type: SuggestionType
-
+interface BaseSuggestion {
     title: string
     description?: string
 
@@ -31,36 +21,65 @@ export interface Suggestion {
     urlLabel: string
 }
 
+export interface SymbolSuggestion extends BaseSuggestion {
+    type: 'symbol'
+    kind: GQL.ISymbolKindEnum
+}
+
+export interface RepoSuggestion extends BaseSuggestion {
+    type: 'repo'
+}
+
+export interface FileSuggestion extends BaseSuggestion {
+    type: 'file'
+}
+
+export interface DirSuggestion extends BaseSuggestion {
+    type: 'dir'
+}
+
+export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion
+
 export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
     switch (item.__typename) {
         case 'Repository': {
             return {
-                type: SuggestionType.Repo,
+                type: 'repo',
                 title: item.uri,
                 url: `/${item.uri}`,
                 urlLabel: 'go to repository',
             }
         }
         case 'File': {
-            const descriptionParts = [basename(item.repository.uri)]
+            const descriptionParts = []
             const dir = dirname(item.path)
             if (dir !== undefined && dir !== '.') {
                 descriptionParts.push(`${dir}/`)
             }
-
+            descriptionParts.push(basename(item.repository.uri))
+            if (item.isDirectory) {
+                return {
+                    type: 'dir',
+                    title: item.name,
+                    description: descriptionParts.join(' — '),
+                    url: `/${item.repository.uri}/-/tree/${item.path}`,
+                    urlLabel: 'go to dir',
+                }
+            }
             return {
+                type: 'file',
                 title: item.name,
                 description: descriptionParts.join(' — '),
-                type: item.isDirectory ? SuggestionType.Dir : SuggestionType.File,
-                url: `/${item.repository.uri}/-/${item.isDirectory ? 'tree' : 'blob'}/${item.path}`,
-                urlLabel: item.isDirectory ? 'go to dir' : 'go to file',
+                url: `/${item.repository.uri}/-/blob/${item.path}`,
+                urlLabel: 'go to file',
             }
         }
         case 'Symbol': {
             return {
-                type: SuggestionType.Symbol,
+                type: 'symbol',
+                kind: item.kind,
                 title: item.name,
-                description: `${item.containerName || item.location.resource.path} – ${basename(
+                description: `${item.containerName || item.location.resource.path} — ${basename(
                     item.location.resource.repository.uri
                 )}`,
                 url: item.url,
@@ -70,11 +89,22 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
     }
 }
 
-const iconForType: { [key: string]: React.ComponentType<{ className: string }> } = {
-    repo: RepoIcon,
-    file: FileIcon,
-    dir: FolderIcon,
-    symbol: BookIcon,
+interface SuggestionIconProps {
+    suggestion: Suggestion
+    className?: string
+}
+
+const SuggestionIcon: React.StatelessComponent<SuggestionIconProps> = ({ suggestion, ...passThru }) => {
+    switch (suggestion.type) {
+        case 'repo':
+            return <RepoIcon {...passThru} />
+        case 'dir':
+            return <FolderIcon {...passThru} />
+        case 'file':
+            return <SymbolIcon kind={'FILE'} {...passThru} />
+        case 'symbol':
+            return <SymbolIcon kind={suggestion.kind} {...passThru} />
+    }
 }
 
 export interface SuggestionProps {
@@ -89,21 +119,13 @@ export interface SuggestionProps {
     liRef?: (ref: HTMLLIElement | null) => void
 }
 
-export const SuggestionItem = (props: SuggestionProps) => {
-    const Icon = iconForType[props.suggestion.type]
-    const suggestion = props.suggestion
-    return (
-        <li
-            className={'suggestion2' + (props.isSelected ? ' suggestion2--selected' : '')}
-            onMouseDown={props.onClick}
-            ref={props.liRef}
-        >
-            <Icon className="icon-inline" />
-            <div className="suggestion2__title">{suggestion.title}</div>
-            <div className="suggestion2__description">{suggestion.description}</div>
-            <div className="suggestion2__action" hidden={!props.isSelected}>
-                <kbd>enter</kbd> {suggestion.urlLabel}
-            </div>
-        </li>
-    )
-}
+export const SuggestionItem = ({ suggestion, isSelected, onClick, liRef }: SuggestionProps) => (
+    <li className={'suggestion2' + (isSelected ? ' suggestion2--selected' : '')} onMouseDown={onClick} ref={liRef}>
+        <SuggestionIcon className="icon-inline" suggestion={suggestion} />
+        <div className="suggestion2__title">{suggestion.title}</div>
+        <div className="suggestion2__description">{suggestion.description}</div>
+        <div className="suggestion2__action" hidden={!isSelected}>
+            <kbd>enter</kbd> {suggestion.urlLabel}
+        </div>
+    </li>
+)

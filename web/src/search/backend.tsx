@@ -175,6 +175,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                             name
                             containerName
                             url
+                            kind
                             location {
                                 resource {
                                     path
