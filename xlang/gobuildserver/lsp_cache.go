@@ -37,7 +37,11 @@ func (c *lspCache) Set(key string, responseBytes []byte) {
 	err := c.conn.Notify(c.ctx, "xcache/set", lspext.CacheSetParams{Key: key, Value: &m})
 
 	if err != nil {
-		log15.Warn("failed to execute lspCache set", "cmd", "SET", "error", err)
+		excerpt := responseBytes
+		if max := 25; len(excerpt) > max {
+			excerpt = excerpt[:max]
+		}
+		log15.Warn("failed to execute lspCache set", "cmd", "SET", "error", err, "valueExcerpt", string(excerpt))
 	}
 	return
 }
