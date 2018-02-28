@@ -3,37 +3,28 @@ package conf
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
-var configFilePath = os.Getenv("SOURCEGRAPH_CONFIG_FILE")
+var (
+	configFilePath = os.Getenv("SOURCEGRAPH_CONFIG_FILE")
 
-var raw = func() string {
-	v, ok := os.LookupEnv("SOURCEGRAPH_CONFIG")
-	if ok {
-		if configFilePath != "" {
-			log.Fatal("Multiple configuration sources are not allowed. Use only one of SOURCEGRAPH_CONFIG and SOURCEGRAPH_CONFIG_FILE env vars.")
-		}
-		return v
-	}
-	if configFilePath == "" {
-		return ""
-	}
-	data, err := ioutil.ReadFile(configFilePath)
-	if err != nil {
-		log.Fatalf("Error reading configuration file %s: %s", configFilePath, err)
-	}
-	return string(data)
-}()
+	rawMu sync.RWMutex
+	raw   string
+)
 
 // Raw returns the raw site configuration JSON.
-func Raw() string { return raw }
+func Raw() string {
+	return raw
+}
 
 // Get returns a copy of the configuration. The returned value should NEVER be
 // modified.
@@ -87,7 +78,34 @@ func init() {
 	}
 }
 
+func readConfig() (string, error) {
+	v, ok := os.LookupEnv("SOURCEGRAPH_CONFIG")
+	if ok {
+		if configFilePath != "" {
+			return "", errors.New("Multiple configuration sources are not allowed. Use only one of SOURCEGRAPH_CONFIG and SOURCEGRAPH_CONFIG_FILE env vars.")
+		}
+		return v, nil
+	}
+	if configFilePath == "" {
+		return "", nil
+	}
+	data, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		return "", fmt.Errorf("Error reading configuration file %s: %s", configFilePath, err)
+	}
+	return string(data), nil
+}
+
 func initConfig() error {
+	rawConfig, err := readConfig()
+	if err != nil {
+		return err
+	}
+
+	rawMu.Lock()
+	raw = rawConfig
+	rawMu.Unlock()
+
 	// SOURCEGRAPH_CONFIG takes lowest precedence.
 	if raw != "" {
 		if err := jsonxUnmarshal(raw, &cfg); err != nil {
@@ -103,7 +121,6 @@ func initConfig() error {
 			return err
 		}
 	}
-
 	return nil
 }
 
