@@ -163,7 +163,7 @@ func (lm *lineMatch) LimitHit() bool {
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error) {
+func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *patternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
@@ -205,6 +205,7 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 		"ExcludePattern":  []string{*p.ExcludePattern},
 		"IncludePatterns": includePatterns,
 		"IncludePattern":  []string{*p.IncludePattern},
+		"FetchTimeout":    []string{fetchTimeout.String()},
 	}
 	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
@@ -291,11 +292,11 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
-		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info)
+		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
 
 	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, rev, nil)
@@ -307,7 +308,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info)
+	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
 	var workspace string
 	if rev != "" {
@@ -707,6 +708,15 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		}
 	}
 
+	var fetchTimeout time.Duration
+	if len(searcherRepos) == 1 {
+		// When searching a single repo, give it time to fetch the archive.
+		fetchTimeout = 1 * time.Minute
+	} else {
+		// When searching many repos, don't wait long for any single repo to fetch.
+		fetchTimeout = 500 * time.Millisecond
+	}
+
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.revs) == 0 {
 			return nil, common, nil // no revs to search
@@ -719,7 +729,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.revspecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.query)
+			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.query, fetchTimeout)
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {

@@ -135,10 +135,11 @@ main.go:6:	fmt.Println("Hello world")
 	for _, test := range cases {
 		test.arg.PatternMatchesContent = true
 		req := protocol.Request{
-			Repo:        "foo",
-			URL:         "u",
-			Commit:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: test.arg,
+			Repo:         "foo",
+			URL:          "u",
+			Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo:  test.arg,
+			FetchTimeout: "500ms",
 		}
 		m, err := doSearch(ts.URL, &req)
 		if err != nil {

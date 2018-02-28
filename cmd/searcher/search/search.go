@@ -163,12 +163,14 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		return nil, false, badRequestError{err.Error()}
 	}
 
-	// When searching across thousands of repos at once, we don't want to wait
-	// for repos that are still be fetched. So we set a low deadline on how
-	// long we wait to open/fetch an archive. Note: This only times out how
-	// long we wait for this request, the fetch will still happen in the
-	// background so future requests don't have to wait.
-	prepareCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+	if p.FetchTimeout == "" {
+		p.FetchTimeout = "500ms"
+	}
+	fetchTimeout, err := time.ParseDuration(p.FetchTimeout)
+	if err != nil {
+		return nil, false, err
+	}
+	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 	path, err := s.Store.prepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
 	if err != nil {

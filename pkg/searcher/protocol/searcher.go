@@ -21,6 +21,20 @@ type Request struct {
 	Commit api.CommitID
 
 	PatternInfo
+
+	// The amount of time to wait for a repo archive to fetch.
+	// It is parsed with time.ParseDuration.
+	//
+	// This timeout should be low when searching across many repos
+	// so that unfetched repos don't delay the search, and because we are likely
+	// to get results from the repos that have already been fetched.
+	//
+	// This timeout should be high when searching across a single repo
+	// because returning results slowly is better than returning no results at all.
+	//
+	// This only times out how long we wait for the fetch request;
+	// the fetch will still happen in the background so future requests don't have to wait.
+	FetchTimeout string
 }
 
 // GitserverRepo returns the repository information necessary to perform gitserver requests.
