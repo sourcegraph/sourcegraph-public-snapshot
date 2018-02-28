@@ -75,7 +75,7 @@ func Watch(f func()) {
 			// disk, means that a configuration change reads the file from disk
 			// numConfWatch*2 times. We can easily reduce the IO here.
 			if err := initConfig(); err != nil {
-				log.Println("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
+				log.Printf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
 			}
 
 			f()
