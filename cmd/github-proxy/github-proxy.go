@@ -65,13 +65,20 @@ func main() {
 		log.Printf("Profiler available on %s/pprof", profBindAddr)
 	}
 
-	var authenticateRequest func(query url.Values, header http.Header)
-	if clientID, clientSecret := conf.GetTODO().GithubClientID, conf.GetTODO().GithubClientSecret; clientID != "" && clientSecret != "" {
-		authenticateRequest = func(query url.Values, header http.Header) {
-			query.Set("client_id", clientID)
-			query.Set("client_secret", clientSecret)
+	var (
+		authenticateRequestMu sync.RWMutex
+		authenticateRequest   func(query url.Values, header http.Header)
+	)
+	conf.Watch(func() {
+		if clientID, clientSecret := conf.Get().GithubClientID, conf.Get().GithubClientSecret; clientID != "" && clientSecret != "" {
+			authenticateRequestMu.Lock()
+			authenticateRequest = func(query url.Values, header http.Header) {
+				query.Set("client_id", clientID)
+				query.Set("client_secret", clientSecret)
+			}
+			authenticateRequestMu.Unlock()
 		}
-	}
+	})
 
 	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q2 := r.URL.Query()
@@ -85,8 +92,11 @@ func main() {
 		}
 
 		// Authenticate for higher rate limits.
-		if authenticateRequest != nil {
-			authenticateRequest(q2, h2)
+		authenticateRequestMu.RLock()
+		authRequest := authenticateRequest
+		authenticateRequestMu.RUnlock()
+		if authRequest != nil {
+			authRequest(q2, h2)
 		}
 
 		req2 := &http.Request{
