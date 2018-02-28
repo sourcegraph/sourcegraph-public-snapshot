@@ -58,6 +58,15 @@ func Watch(f func()) {
 	for {
 		time.Sleep(5 * time.Second)
 		if IsDirty() {
+			// Read the new configuration from disk.
+			//
+			// TODO(slimsag): This, combined with IsDirty reading the file from
+			// disk, means that a configuration change reads the file from disk
+			// numConfWatch*2 times. We can easily reduce the IO here.
+			if err := initConfig(); err != nil {
+				log.Println("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
+			}
+
 			f()
 		}
 	}
@@ -72,7 +81,7 @@ var cfg = schema.SiteConfiguration{
 }
 
 func init() {
-	// Read env vars to config
+	// Read configuration initially.
 	if err := initConfig(); err != nil {
 		log.Fatalf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
 	}
