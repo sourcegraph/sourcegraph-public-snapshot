@@ -44,7 +44,12 @@ func NewAuthHandler(createCtx context.Context, handler http.Handler, appURL stri
 		return newSAMLAuthHandler(createCtx, handler, appURL)
 	}
 
-	if !conf.Get().AuthPublic {
+	// Note: auth.public should only have an effect when auth.provider == "builtin".
+	//
+	// This is important to check here because there is no
+	// auth.provider == "http-header" case above, and requiring builtin auth
+	// for that provider would effectively break it.
+	if conf.Get().AuthProvider == "builtin" && !conf.Get().AuthPublic {
 		return newUserRequiredAuthzHandler(handler), nil
 	}
 

@@ -9,6 +9,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed issue where Sourcegraph Data Center would incorrectly show "An update is available".
 * Fixed Phabricator links to repos
 * Searches over a single repo are now less likely to immediately time out the first time they are searched.
+* Fixed a bug where `auth.provider == "http-header"` would incorrectly require builtin authentication / block site access when `auth.public == "false"`.
 
 ### Phabricator Integration Changes
 
