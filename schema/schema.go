@@ -128,7 +128,8 @@ type ResourceOverride struct {
 
 // SAMLAuthProvider Configures the SAML authentication provider for SSO.
 type SAMLAuthProvider struct {
-	IdentityProviderMetadataURL string `json:"identityProviderMetadataURL"`
+	IdentityProviderMetadata    string `json:"identityProviderMetadata,omitempty"`
+	IdentityProviderMetadataURL string `json:"identityProviderMetadataURL,omitempty"`
 	ServiceProviderCertificate  string `json:"serviceProviderCertificate"`
 	ServiceProviderPrivateKey   string `json:"serviceProviderPrivateKey"`
 }

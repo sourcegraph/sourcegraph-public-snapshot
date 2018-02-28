@@ -168,10 +168,6 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		ServiceProviderCertificate:  testSAMLSPCert,
 		ServiceProviderPrivateKey:   testSAMLSPKey,
 	}
-	idpMetadataURL, err = url.Parse(samlProvider.IdentityProviderMetadataURL)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// Simulate an app
 	appHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -10,6 +10,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 We now display a "View on Phabricator" link rather than a "View on other code host" link if you are using Phabricator and hosting on Github or another code host with a UI. Commit links also will point to Phabricator.
 
+### Improvements to SAML authentication
+
+You may now optionally provide the SAML Identity Provider metadata XML file contents directly, with the `auth.saml` `identityProviderMetadata` site configuration property. (Previously, you needed to specify the URL where that XML file was available; that is still possible and is more common.) The new option is useful for organizations whose SAML metadata is not web-accessible or while testing SAML metadata configuration changes.
+
 ## 2.5.13
 
 ### Improvements to builtin authentication

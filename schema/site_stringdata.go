@@ -654,7 +654,7 @@ const SiteSchemaJSON = `{
       "description": "Configures the SAML authentication provider for SSO.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["identityProviderMetadataURL", "serviceProviderCertificate", "serviceProviderPrivateKey"],
+      "required": ["serviceProviderCertificate", "serviceProviderPrivateKey"],
       "properties": {
         "identityProviderMetadataURL": {
           "description":
@@ -662,6 +662,11 @@ const SiteSchemaJSON = `{
           "type": "string",
           "format": "uri",
           "pattern": "^https?://"
+        },
+        "identityProviderMetadata": {
+          "description":
+            "SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is ` + "`" + `<EntityDescriptor>` + "`" + `.",
+          "type": "string"
         },
         "serviceProviderCertificate": {
           "description":

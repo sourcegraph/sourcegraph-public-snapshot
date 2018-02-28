@@ -5,46 +5,31 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
+	"encoding/xml"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-
 	"github.com/crewjam/saml/samlsp"
+	"github.com/pkg/errors"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-var (
-	// SAML App creation vars
-	samlProvider = conf.AuthSAML()
-
-	idpMetadataURL *url.URL
-)
-
-func init() {
-	if samlProvider != nil {
-		var err error
-		idpMetadataURL, err = url.Parse(samlProvider.IdentityProviderMetadataURL)
-		if err != nil {
-			log.Fatalf("Could not parse the Identity Provider metadata URL: %s", err)
-		}
-	}
-}
+// SAML App creation vars
+var samlProvider = conf.AuthSAML()
 
 // newSAMLAuthHandler wraps the passed in handler with SAML authentication, adding endpoints under the auth
 // path prefix to enable the login flow an requiring login for all other endpoints.
 //
 // 🚨 SECURITY
 func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
-	if samlProvider == nil || samlProvider.IdentityProviderMetadataURL == "" {
+	if samlProvider == nil {
 		return nil, errors.New("No SAML ID Provider specified")
 	}
 	if samlProvider.ServiceProviderCertificate == "" {
@@ -67,13 +52,32 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 		return nil, err
 	}
 
-	samlSP, err := samlsp.New(samlsp.Options{
-		URL:            *entityIDURL,
-		Key:            keyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate:    keyPair.Leaf,
-		IDPMetadataURL: idpMetadataURL,
-		CookieSecure:   entityIDURL.Scheme == "https",
-	})
+	opt := samlsp.Options{
+		URL:          *entityIDURL,
+		Key:          keyPair.PrivateKey.(*rsa.PrivateKey),
+		Certificate:  keyPair.Leaf,
+		CookieSecure: entityIDURL.Scheme == "https",
+	}
+
+	// Allow specifying either URL to SAML Identity Provider metadata XML file, or the XML
+	// file contents directly.
+	switch {
+	case samlProvider.IdentityProviderMetadataURL != "" && samlProvider.IdentityProviderMetadata != "":
+		return nil, errors.New("invalid SAML configuration: set either identityProviderMetadataURL or identityProviderMetadata, not both")
+	case samlProvider.IdentityProviderMetadataURL != "":
+		opt.IDPMetadataURL, err = url.Parse(samlProvider.IdentityProviderMetadataURL)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing SAML Identity Provider metadata URL")
+		}
+	case samlProvider.IdentityProviderMetadata != "":
+		if err := xml.Unmarshal([]byte(samlProvider.IdentityProviderMetadata), &opt.IDPMetadata); err != nil {
+			return nil, errors.Wrap(err, "parsing SAML Identity Provider metadata XML (note: a root element of <EntityDescriptor> is expected)")
+		}
+	default:
+		return nil, errors.New("invalid SAML configuration: must provide the SAML metadata, using either identityProviderMetadataURL (URL where XML file is available) or identityProviderMetadata (XML file contents)")
+	}
+
+	samlSP, err := samlsp.New(opt)
 	if err != nil {
 		return nil, err
 	}
