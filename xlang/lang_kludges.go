@@ -48,6 +48,7 @@ func SymbolRepoURL(symDescriptor lspext.SymbolDescriptor) string {
 // value returned from the LSP proxy, because that does not pass through the
 // value of the initialize result.
 var HasXDefinitionAndXPackages = map[string]struct{}{
+	"javascript": struct{}{},
 	"typescript": struct{}{},
 	"java":       struct{}{},
 	"python":     struct{}{},
