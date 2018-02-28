@@ -20,7 +20,7 @@ func Validate() {
 	if input == "" {
 		return
 	}
-	normalizedInput := normalizeJSON(input)
+	normalizedInput := NormalizeJSON(input)
 
 	res, err := validate([]byte(schema.SiteSchemaJSON), normalizedInput)
 	if err != nil {

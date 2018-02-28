@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -165,7 +164,7 @@ func initConfig() error {
 
 	// SOURCEGRAPH_CONFIG takes lowest precedence.
 	if raw != "" {
-		if err := jsonxUnmarshal(raw, &tmpConfig); err != nil {
+		if err := UnmarshalJSON(raw, &tmpConfig); err != nil {
 			return err
 		}
 	}
@@ -183,26 +182,6 @@ func initConfig() error {
 	cfg = &tmpConfig
 	cfgMu.Unlock()
 	return nil
-}
-
-// jsonxUnmarshal unmarshals the JSON using a fault tolerant parser. If any
-// unrecoverable faults are found an error is returned
-func jsonxUnmarshal(text string, v interface{}) error {
-	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-	if len(errs) > 0 {
-		return errors.New("failed to parse json")
-	}
-	return json.Unmarshal(data, v)
-}
-
-// normalizeJSON converts JSON with comments, trailing commas, and some types of syntax errors into
-// standard JSON.
-func normalizeJSON(input string) []byte {
-	output, _ := jsonx.Parse(string(input), jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-	if len(output) == 0 {
-		return []byte("{}")
-	}
-	return output
 }
 
 // FilePath is the path to the configuration file, if any.

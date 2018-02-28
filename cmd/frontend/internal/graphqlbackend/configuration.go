@@ -14,6 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type configurationSubject struct {
@@ -151,7 +152,7 @@ func (s *configurationSubject) readConfiguration(ctx context.Context, v interfac
 	if settings == nil {
 		return nil
 	}
-	return json.Unmarshal(normalizeJSON(settings.Contents()), &v)
+	return conf.UnmarshalJSON(settings.Contents(), &v)
 }
 
 type configurationResolver struct {
@@ -266,16 +267,6 @@ var deeplyMergedConfigFields = map[string]struct{}{
 	"search.repositoryGroups": struct{}{},
 }
 
-// normalizeJSON converts JSON with comments, trailing commas, and some types of syntax errors into
-// standard JSON.
-func normalizeJSON(input string) []byte {
-	output, _ := jsonx.Parse(string(input), jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-	if len(output) == 0 {
-		return []byte("{}")
-	}
-	return output
-}
-
 // mergeConfigs merges the specified JSON configs together to produce a single JSON config. The merge
 // algorithm is currently rudimentary but eventually it will be similar to VS Code's. The only "smart"
 // merging behavior is that described in the documentation for deeplyMergedConfigFields.
@@ -284,7 +275,7 @@ func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 	merged := map[string]interface{}{}
 	for _, s := range jsonConfigStrings {
 		var config map[string]interface{}
-		if err := json.Unmarshal(normalizeJSON(s), &config); err != nil {
+		if err := conf.UnmarshalJSON(s, &config); err != nil {
 			errs = append(errs, err)
 			continue
 		}
