@@ -53,7 +53,7 @@ func RegisterServers() error {
 }
 
 func registerServersFromConfig() error {
-	langservers := conf.Get().Langservers
+	langservers := conf.GetTODO().Langservers
 	for _, l := range langservers {
 		if l.Address != "" {
 			err := registerTCPServer(l.Language, l.Address, "config")

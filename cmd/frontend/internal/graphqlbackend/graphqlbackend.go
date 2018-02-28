@@ -43,7 +43,7 @@ var repoListConfigs = make(map[api.RepoURI]schema.Repository)
 
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
-	githubConf := conf.Get().Github
+	githubConf := conf.GetTODO().Github
 	for _, c := range githubConf {
 		gheURL, err := url.Parse(c.Url)
 		if err != nil {
@@ -51,7 +51,7 @@ func init() {
 		}
 		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
 	}
-	reposList := conf.Get().ReposList
+	reposList := conf.GetTODO().ReposList
 	for _, r := range reposList {
 		repoListConfigs[api.RepoURI(r.Path)] = r
 	}

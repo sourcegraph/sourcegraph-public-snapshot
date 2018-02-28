@@ -22,10 +22,10 @@ type prefixAndOrgin struct {
 	Origin string
 }
 
-var originMapEnv = conf.Get().GitOriginMap
-var gitoliteHostsEnv = conf.Get().GitoliteHosts
-var githubConf = conf.Get().Github
-var reposListConf = conf.Get().ReposList
+var originMapEnv = conf.GetTODO().GitOriginMap
+var gitoliteHostsEnv = conf.GetTODO().GitoliteHosts
+var githubConf = conf.GetTODO().Github
+var reposListConf = conf.GetTODO().ReposList
 
 var originMap []prefixAndOrgin
 var gitoliteHostMap []prefixAndOrgin

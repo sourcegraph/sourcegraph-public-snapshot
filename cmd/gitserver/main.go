@@ -49,7 +49,7 @@ func main() {
 	}
 	gitserver := server.Server{
 		ReposDir:            reposDir,
-		MaxConcurrentClones: conf.Get().GitMaxConcurrentClones,
+		MaxConcurrentClones: conf.GetTODO().GitMaxConcurrentClones,
 	}
 	gitserver.RegisterMetrics()
 

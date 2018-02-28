@@ -26,7 +26,7 @@ import (
 var gitoliteRepoBlacklist = compileGitoliteRepoBlacklist()
 
 func compileGitoliteRepoBlacklist() *regexp.Regexp {
-	expr := conf.Get().GitoliteRepoBlacklist
+	expr := conf.GetTODO().GitoliteRepoBlacklist
 	if expr == "" {
 		return nil
 	}
@@ -101,7 +101,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 			continue
 		}
-		if !conf.Get().DisableAutoGitUpdates || !cloned {
+		if !conf.GetTODO().DisableAutoGitUpdates || !cloned {
 			log15.Info("fetching Gitolite repo", "repo", uri, "cloned", cloned, "i", i, "total", len(whitelist))
 			// TODO!(sqs): derive gitolite clone URL
 			err := gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), gitserver.Repo{Name: repo.URI})

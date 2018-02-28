@@ -60,7 +60,7 @@ type phabAPIResponse struct {
 }
 
 var (
-	phabConf = conf.Get().Phabricator
+	phabConf = conf.GetTODO().Phabricator
 )
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph

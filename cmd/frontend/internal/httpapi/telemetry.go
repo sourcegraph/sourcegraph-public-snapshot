@@ -22,7 +22,7 @@ var telemetryReverseProxy http.Handler
 func init() {
 	// If telemetry is disabled, we still want to collect samples, so we can show the
 	// site admin what *would* be collected if it were enabled.
-	if conf.Get().DisableTelemetry {
+	if conf.GetTODO().DisableTelemetry {
 		telemetryReverseProxy = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			stripTelemetryRequest(req)
 			req.URL.Scheme, req.URL.Host = "https", "example.com" // needed for DumpRequestOut

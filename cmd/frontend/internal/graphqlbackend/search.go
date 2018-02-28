@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	maxReposToSearch = conf.Get().MaxReposToSearch
+	maxReposToSearch = conf.GetTODO().MaxReposToSearch
 )
 
 func init() {

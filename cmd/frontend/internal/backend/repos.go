@@ -68,7 +68,7 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	repo, err := db.Repos.GetByURI(ctx, uri)
 	// TEMPORARY: Backfill external repo info for (mostly auto-added) GitHub.com repositories.
 	needsExternalRepoBackfill := !TestDisableExternalRepoBackfillInReposGetByURI && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") && repo != nil && repo.ExternalRepo == nil
-	if (err != nil && conf.Get().AutoRepoAdd) || needsExternalRepoBackfill {
+	if (err != nil && conf.GetTODO().AutoRepoAdd) || needsExternalRepoBackfill {
 		// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 		// limit) for repositories that don't exist or private repositories that people attempt to
 		// access.
@@ -104,7 +104,7 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 		}
 		return db.Repos.GetByURI(ctx, uri)
 	} else if err != nil {
-		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
+		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
 			return nil, ErrRepoSeeOther{RedirectURL: fmt.Sprintf("https://sourcegraph.com/%s", uri)}
 		}
 		return nil, err

@@ -58,15 +58,15 @@ var (
 
 	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
 
-	appURL     = conf.Get().AppURL
-	corsOrigin = conf.Get().CorsOrigin
+	appURL     = conf.GetTODO().AppURL
+	corsOrigin = conf.GetTODO().CorsOrigin
 
 	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
 
-	tlsCert = conf.Get().TlsCert
-	tlsKey  = conf.Get().TlsKey
+	tlsCert = conf.GetTODO().TlsCert
+	tlsKey  = conf.GetTODO().TlsKey
 
-	httpToHttpsRedirect = conf.Get().HttpToHttpsRedirect
+	httpToHttpsRedirect = conf.GetTODO().HttpToHttpsRedirect
 
 	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
 )
@@ -195,7 +195,7 @@ func Main() error {
 	handleBiLogger(sm)
 
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
-	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.Get().TlsLetsencrypt != "off"))
+	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
 	if useTLS && globals.AppURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
 	}
@@ -298,7 +298,7 @@ func Main() error {
 		l, err := net.Listen("tcp", httpsAddr)
 		if err != nil {
 			// Fatal if we manually specified TLS or enforce lets encrypt
-			if tlsCertAndKey || conf.Get().TlsLetsencrypt == "on" {
+			if tlsCertAndKey || conf.GetTODO().TlsLetsencrypt == "on" {
 				log.Fatalf("Could not bind to address %s: %v", httpsAddr, err)
 			} else {
 				log15.Warn("Failed to bind to HTTPS port, TLS disabled", "address", httpsAddr, "error", err)

@@ -66,7 +66,7 @@ func main() {
 	}
 
 	var authenticateRequest func(query url.Values, header http.Header)
-	if clientID, clientSecret := conf.Get().GithubClientID, conf.Get().GithubClientSecret; clientID != "" && clientSecret != "" {
+	if clientID, clientSecret := conf.GetTODO().GithubClientID, conf.GetTODO().GithubClientSecret; clientID != "" && clientSecret != "" {
 		authenticateRequest = func(query url.Values, header http.Header) {
 			query.Set("client_id", clientID)
 			query.Set("client_secret", clientSecret)

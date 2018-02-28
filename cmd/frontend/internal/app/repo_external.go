@@ -24,7 +24,7 @@ var githubEnterpriseURLs = make(map[string]string)
 var reposListURLs = make(map[api.RepoURI]string)
 
 func init() {
-	githubConf := conf.Get().Github
+	githubConf := conf.GetTODO().Github
 	for _, c := range githubConf {
 		gheURL, err := url.Parse(c.Url)
 		if err != nil {
@@ -32,7 +32,7 @@ func init() {
 		}
 		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
 	}
-	reposList := conf.Get().ReposList
+	reposList := conf.GetTODO().ReposList
 	for _, r := range reposList {
 		if r.Links != nil && r.Links.Commit != "" {
 			reposListURLs[api.RepoURI(r.Path)] = r.Links.Commit

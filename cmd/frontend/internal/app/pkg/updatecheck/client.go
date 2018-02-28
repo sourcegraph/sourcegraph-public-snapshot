@@ -141,7 +141,7 @@ func Start() {
 	}
 	started = true
 
-	if channel := conf.Get().UpdateChannel; channel != "release" {
+	if channel := conf.GetTODO().UpdateChannel; channel != "release" {
 		return // no update check
 	}
 
