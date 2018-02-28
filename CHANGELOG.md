@@ -6,6 +6,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Bug fixes
 
+## 2.5.15
+
+### Bug fixes
+
 * Fixed issue where Sourcegraph Data Center would incorrectly show "An update is available".
 * Fixed Phabricator links to repos
 * Searches over a single repo are now less likely to immediately time out the first time they are searched.
