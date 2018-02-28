@@ -37,7 +37,7 @@ func init() {
 var update = flag.Bool("update", false, "update golden files on disk")
 
 // lspTests runs all test suites for LSP functionality.
-func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string, wantXDependencies string, wantXReferences map[*lsext.WorkspaceReferencesParams][]string) {
+func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string, wantXDependencies string, wantXReferences map[*lsext.WorkspaceReferencesParams][]string, wantXPackages []string) {
 	for pos, want := range wantHover {
 		tbRun(t, fmt.Sprintf("hover-%s", strings.Replace(pos, "/", "-", -1)), func(t testing.TB) {
 			hoverTest(t, ctx, c, root, pos, want)
@@ -84,6 +84,12 @@ func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI
 				workspaceReferencesTest(t, ctx, c, root, *params, want)
 			})
 		}
+	}
+
+	if wantXPackages != nil {
+		tbRun(t, "xpackages", func(t testing.TB) {
+			workspacePackagesTest(t, ctx, c, root, wantXPackages)
+		})
 	}
 }
 
@@ -235,6 +241,29 @@ func workspaceReferencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn
 	if !reflect.DeepEqual(references, want) {
 		t.Errorf("\ngot  %q\nwant %q", references, want)
 	}
+}
+
+func workspacePackagesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootPath *uri.URI, want []string) {
+	packages, err := callWorkspacePackages(ctx, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(packages, want) {
+		t.Errorf("\ngot  %q\nwant %q", packages, want)
+	}
+}
+
+func callWorkspacePackages(ctx context.Context, c *jsonrpc2.Conn) ([]string, error) {
+	var packages []lspext.PackageInformation
+	err := c.Call(ctx, "workspace/xpackages", nil, &packages)
+	if err != nil {
+		return nil, err
+	}
+	pkgs := make([]string, len(packages))
+	for i, p := range packages {
+		pkgs[i] = p.Package["package"].(string)
+	}
+	return pkgs, nil
 }
 
 func callWorkspaceReferences(ctx context.Context, c *jsonrpc2.Conn, params lsext.WorkspaceReferencesParams) ([]string, error) {
