@@ -157,16 +157,11 @@ func index(ctx context.Context, wq *workQueue, repoName api.RepoURI, rev string)
 
 	// Global refs & packages indexing. Neither index forks.
 	if !repo.Fork() && LSPEnabled {
-		// Global refs stores and queries private repository data separately,
-		// so it is fine to index private repositories.
 		defErr := api.InternalClient.DefsRefreshIndex(ctx, repo.URI, commit)
 		if err != nil {
 			defErr = fmt.Errorf("Defs.RefreshIndex failed: %s", err)
 		}
 
-		// As part of package indexing, it's fine to index private repositories
-		// because backend.Pkgs.ListPackages is responsible for authentication
-		// checks.
 		pkgErr := api.InternalClient.PkgsRefreshIndex(ctx, repo.URI, commit)
 		if err != nil {
 			pkgErr = fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)

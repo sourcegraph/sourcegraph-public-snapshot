@@ -100,7 +100,7 @@ func TestRepos_Delete(t *testing.T) {
 		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
 	}}
 	if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-		return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, rp.ID)
+		return GlobalDeps.update(ctx, tx, "go", inputRefs, rp.ID)
 	}); err != nil {
 		t.Fatal(err)
 	}

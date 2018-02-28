@@ -140,6 +140,8 @@
 // ../../../../../migrations/1518581786_remove_site_config_telemetry.up.sql
 // ../../../../../migrations/1518581860_add_site_config_initialized.down.sql
 // ../../../../../migrations/1518581860_add_site_config_initialized.up.sql
+// ../../../../../migrations/1519507899_drop_global_dep_private.down.sql
+// ../../../../../migrations/1519507899_drop_global_dep_private.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3007,6 +3009,46 @@ func _1518581860_add_site_config_initializedUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1519507899_drop_global_dep_privateDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xcb\x31\x0a\x02\x31\x10\x46\xe1\x3e\xa7\xf8\x99\x4a\xc1\x1b\x58\x89\x6c\xb7\xac\x20\x6b\x1d\x26\x64\x88\x91\x30\x09\xd9\x51\x3c\xbe\x2c\xd8\xa4\xfe\xde\xbb\xde\xa7\xcb\x3a\xc1\x38\x14\x01\xa5\x52\x03\x17\x1f\xa5\xf9\xd6\xf3\x87\x4d\x08\x07\x07\x50\x61\x4d\x6f\x4e\x42\x30\xf9\x1a\x96\xdb\x8a\xe5\x31\xcf\xa7\xdd\xf6\x3a\xb2\x31\xe1\xb5\x55\x0d\x23\x76\x69\xd5\xe7\x48\xc8\x6a\x92\xa4\x8f\xfa\xcc\x6a\xdb\xff\x73\xc7\xb3\xfb\x05\x00\x00\xff\xff\x20\xec\x72\xf1\x8e\x00\x00\x00")
+
+func _1519507899_drop_global_dep_privateDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1519507899_drop_global_dep_privateDownSql,
+		"1519507899_drop_global_dep_private.down.sql",
+	)
+}
+
+func _1519507899_drop_global_dep_privateDownSql() (*asset, error) {
+	bytes, err := _1519507899_drop_global_dep_privateDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1519507899_drop_global_dep_private.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1519507899_drop_global_dep_privateUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xcb\x41\x0a\xc2\x30\x10\x05\xd0\x7d\x4f\xf1\x0f\x60\xbc\x80\x2b\x45\x77\x82\x22\xdd\x97\x29\xf9\x6d\x02\x69\xa6\x64\xa6\x4a\x6f\x2f\x74\xff\x5e\x08\xe8\x53\x36\xb8\x8c\x85\x48\x62\x18\xc9\x0a\x2e\xab\xef\x90\x1a\xb1\xd5\xcd\x18\x31\x69\x83\xe0\x97\x72\xe1\x09\xa6\xf0\xc4\x46\x64\x43\x55\x4c\x94\x06\x9d\x10\xc5\x05\x45\xcd\xba\x10\x8e\x5b\x15\x95\x8c\x70\xc5\x92\xe7\x26\x4e\x48\xdd\x0f\x77\xee\xee\x9f\xd7\x1b\xfd\xf5\xf6\x7c\x60\x2e\x3a\x4a\x19\x22\xd7\x61\x6d\xf9\x2b\xce\xcb\x3f\x00\x00\xff\xff\x5e\xbf\x0a\xf4\x98\x00\x00\x00")
+
+func _1519507899_drop_global_dep_privateUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1519507899_drop_global_dep_privateUpSql,
+		"1519507899_drop_global_dep_private.up.sql",
+	)
+}
+
+func _1519507899_drop_global_dep_privateUpSql() (*asset, error) {
+	bytes, err := _1519507899_drop_global_dep_privateUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1519507899_drop_global_dep_private.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3199,6 +3241,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1518581786_remove_site_config_telemetry.up.sql":              _1518581786_remove_site_config_telemetryUpSql,
 	"1518581860_add_site_config_initialized.down.sql":             _1518581860_add_site_config_initializedDownSql,
 	"1518581860_add_site_config_initialized.up.sql":               _1518581860_add_site_config_initializedUpSql,
+	"1519507899_drop_global_dep_private.down.sql":                 _1519507899_drop_global_dep_privateDownSql,
+	"1519507899_drop_global_dep_private.up.sql":                   _1519507899_drop_global_dep_privateUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3382,6 +3426,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1518581786_remove_site_config_telemetry.up.sql":              &bintree{_1518581786_remove_site_config_telemetryUpSql, map[string]*bintree{}},
 	"1518581860_add_site_config_initialized.down.sql":             &bintree{_1518581860_add_site_config_initializedDownSql, map[string]*bintree{}},
 	"1518581860_add_site_config_initialized.up.sql":               &bintree{_1518581860_add_site_config_initializedUpSql, map[string]*bintree{}},
+	"1519507899_drop_global_dep_private.down.sql":                 &bintree{_1519507899_drop_global_dep_privateDownSql, map[string]*bintree{}},
+	"1519507899_drop_global_dep_private.up.sql":                   &bintree{_1519507899_drop_global_dep_privateUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

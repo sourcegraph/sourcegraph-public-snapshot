@@ -66,21 +66,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.global_dep_private"
-```
-  Column  |  Type   | Modifiers 
-----------+---------+-----------
- language | text    | not null
- dep_data | jsonb   | not null
- repo_id  | integer | not null
- hints    | jsonb   | 
-Indexes:
-    "global_dep_private_idxgin" gin (dep_data jsonb_path_ops)
-    "global_dep_private_language" btree (language)
-    "global_dep_private_repo_id" btree (repo_id)
-
-```
-
 # Table "public.org_members"
 ```
    Column   |           Type           |                        Modifiers                         

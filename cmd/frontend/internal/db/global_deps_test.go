@@ -96,7 +96,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
 	}}
 	if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-		return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repo)
+		return GlobalDeps.update(ctx, tx, "go", inputRefs, repo)
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 
 	for repo, inputRefs := range inputRefs {
 		if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-			return GlobalDeps.update(ctx, tx, "global_dep", "go", inputRefs, repo)
+			return GlobalDeps.update(ctx, tx, "go", inputRefs, repo)
 		}); err != nil {
 			t.Fatal(err)
 		}

@@ -35,11 +35,6 @@ import (
 //   be used to optimized requests related to the dependency (e.g., which
 //   directory in a repository contains the dependency).
 //
-// `global_dep_private` is an identical table, except that instead of only
-// storing public repository data (like `global_dep` does), it only stores
-// private repository data. It includes all dependencies, public or private,
-// for all private repositories.
-//
 // For a detailed overview of the schema, see schema.txt.
 type globalDeps struct{}
 
@@ -317,9 +312,7 @@ func (g *globalDeps) doListTotalRefs(ctx context.Context, repo api.RepoID, lang 
 // doTotalRefsGo is the Go-specific implementation of total references, since we can extract package metadata directly
 // from Go repository URLs, without going through the `pkgs` table.
 func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, error) {
-	// TODO(sqs): also query global_dep_private table
-
-	// Because global_dep only store Go package paths, not repository URIs, we
+	// Because global_dep only stores Go package paths, not repository URIs, we
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
@@ -347,9 +340,7 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 // references, since we can extract package metadata directly from Go
 // repository URLs, without going through the `pkgs` table.
 func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]api.RepoID, error) {
-	// TODO(sqs): also query global_dep_private table
-
-	// Because global_dep only store Go package paths, not repository URIs, we
+	// Because global_dep only stores Go package paths, not repository URIs, we
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
@@ -401,7 +392,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 
 	err = Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		// Update the table.
-		err = g.update(ctx, tx, "global_dep", language, deps, repo.ID)
+		err = g.update(ctx, tx, language, deps, repo.ID)
 		if err != nil {
 			return errors.Wrap(err, "update global_dep")
 		}
@@ -438,23 +429,6 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 		return Mocks.GlobalDeps.Dependencies(ctx, op)
 	}
 
-	// Note: using global_dep_private first so those results always show up
-	// first, as the user will always be more interested in their private code.
-	for _, table := range []string{"global_dep_private", "global_dep"} {
-		v, err := g.queryDependencies(ctx, table, op)
-		if err != nil {
-			return nil, err
-		}
-		refs = append(refs, v...)
-	}
-
-	return refs, nil
-}
-
-// queryDependencies is invoked first for `global_dep_private` (private repos)
-// and then for `global_dep` (public repos). See the globalDeps type docstring
-// for more concrete information.
-func (g *globalDeps) queryDependencies(ctx context.Context, table string, op DependenciesOptions) (refs []*api.DependencyReference, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "db.Dependencies")
 	defer func() {
 		if err != nil {
@@ -465,7 +439,6 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	}()
 	span.SetTag("Language", op.Language)
 	span.SetTag("DepData", op.DepData)
-	span.SetTag("table", table)
 
 	var args []interface{}
 	arg := func(a interface{}) string {
@@ -491,7 +464,7 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	}
 
 	selectSQL := `SELECT dep_data, repo_id, hints`
-	fromSQL := `FROM ` + table + ` AS gd INNER JOIN repo AS r ON gd.repo_id=r.id`
+	fromSQL := `FROM global_dep AS gd INNER JOIN repo AS r ON gd.repo_id=r.id`
 	whereSQL := ""
 	if len(whereConds) > 0 {
 		whereSQL = `WHERE ` + strings.Join(whereConds, " AND ")
@@ -534,7 +507,7 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 }
 
 // updateGlobalDep updates the global_dep table.
-func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language string, deps []lspext.DependencyReference, indexRepo api.RepoID) (err error) {
+func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, deps []lspext.DependencyReference, indexRepo api.RepoID) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "updateGlobalDep "+language)
 	defer func() {
 		if err != nil {
@@ -544,10 +517,9 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 		span.Finish()
 	}()
 	span.SetTag("deps", len(deps))
-	span.SetTag("table", table)
 
 	// First, create a temporary table.
-	_, err = tx.ExecContext(ctx, `CREATE TEMPORARY TABLE new_`+table+` (
+	_, err = tx.ExecContext(ctx, `CREATE TEMPORARY TABLE new_global_dep (
 	    language text NOT NULL,
 	    dep_data jsonb NOT NULL,
 	    repo_id integer NOT NULL,
@@ -559,7 +531,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 	span.LogFields(otlog.String("event", "created temp table"))
 
 	// Copy the new deps into the temporary table.
-	copy, err := tx.Prepare(pq.CopyIn("new_"+table,
+	copy, err := tx.Prepare(pq.CopyIn("new_global_dep",
 		"language",
 		"dep_data",
 		"repo_id",
@@ -596,13 +568,13 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 	}
 	span.LogFields(otlog.String("event", "executed copy"))
 
-	if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM global_dep WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
 		return errors.Wrap(err, "executing table deletion")
 	}
 	span.LogFields(otlog.String("event", "executed table deletion"))
 
 	// Insert from temporary table into the real table.
-	_, err = tx.ExecContext(ctx, `INSERT INTO `+table+`(
+	_, err = tx.ExecContext(ctx, `INSERT INTO global_dep(
 		language,
 		dep_data,
 		repo_id,
@@ -611,7 +583,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 		d.dep_data,
 		d.repo_id,
 		d.hints
-	FROM new_`+table+` d;`)
+	FROM new_global_dep d;`)
 	if err != nil {
 		return errors.Wrap(err, "executing final insertion from temp table")
 	}
@@ -620,9 +592,6 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language str
 }
 
 func (g *globalDeps) Delete(ctx context.Context, repo api.RepoID) error {
-	if _, err := globalDB.ExecContext(ctx, `DELETE FROM global_dep WHERE repo_id=$1`, repo); err != nil {
-		return err
-	}
-	_, err := globalDB.ExecContext(ctx, `DELETE FROM global_dep_private WHERE repo_id=$1`, repo)
+	_, err := globalDB.ExecContext(ctx, `DELETE FROM global_dep WHERE repo_id=$1`, repo)
 	return err
 }
