@@ -31,8 +31,7 @@ var raw = func() string {
 	return string(data)
 }()
 
-// Raw returns the raw site configuration JSON. Its value is constant for the entire
-// lifetime of this process.
+// Raw returns the raw site configuration JSON.
 func Raw() string { return raw }
 
 // Get returns a copy of the configuration. The returned value should NEVER be modified.
@@ -98,14 +97,12 @@ func normalizeJSON(input string) []byte {
 	return output
 }
 
-// FilePath is the path to the configuration file, if any. The actual data is
-// always read from SOURCEGRAPH_CONFIG, not from this file, to avoid race conditions
-// (reloading config without a process restart is not yet supported).
+// FilePath is the path to the configuration file, if any.
 func FilePath() string { return configFilePath }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
-// or it's not editable, an error is returned. Currently restartToApply is always
-// true, to indicate that the server must be restarted to apply the updated config.
+// or it's not editable, an error is returned. restartToApply indicates whether
+// or not the server must be restarted to apply the updated config.
 func Write(input string) (restartToApply bool, err error) {
 	if !IsWritable() {
 		return false, errors.New("configuration is not writable")
@@ -122,7 +119,6 @@ func IsWritable() bool { return configFilePath != "" }
 
 // IsDirty reports whether the config has been changed since this process started.
 // This can occur when config is read from a file and the file has changed on disk.
-// Reloading config (without a process restart) is not currently supported.
 func IsDirty() bool {
 	if configFilePath == "" {
 		return false // env var config can't change
