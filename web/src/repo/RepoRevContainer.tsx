@@ -188,7 +188,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 />
                             }
                             popoverKey="repo-rev"
-                            hideOnChange={`${this.props.repo}:${this.props.rev}`}
+                            hideOnChange={`${this.props.repo.id}:${this.props.rev || ''}`}
                         >
                             {(this.props.rev && this.props.rev === this.state.resolvedRevOrError.commitID
                                 ? this.state.resolvedRevOrError.commitID.slice(0, 7)
