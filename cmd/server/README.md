@@ -63,7 +63,7 @@ It is important that the following steps be ran closely together, otherwise we w
 1. Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
 1. Update [CHANGELOG](../../CHANGELOG.md) and move any `Unreleased changes` under their own section for the new `VERSION` you have just released.
 1. Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseBuild` to the
-   timestamp and semver version string of the new version.
+   semver version string of the new version.
 1. Commit and `git push` this change directly to the `master` branch.
 
 You are done! Sourcegraph Server version `VERSION` has been released!
