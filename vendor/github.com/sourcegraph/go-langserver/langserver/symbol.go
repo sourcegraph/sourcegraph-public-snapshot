@@ -19,9 +19,9 @@ import (
 	"golang.org/x/tools/go/buildutil"
 
 	"github.com/neelance/parallel"
-	"github.com/sourcegraph/go-langserver/langserver/internal/tools"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	"github.com/sourcegraph/go-langserver/pkg/tools"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
