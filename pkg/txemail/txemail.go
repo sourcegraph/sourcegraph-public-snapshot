@@ -69,7 +69,7 @@ func Send(ctx context.Context, message Message) error {
 		return nil
 	}
 
-	conf := conf.GetTODO()
+	conf := conf.Get()
 	if conf.EmailAddress == "" {
 		return errors.New("no \"From\" email address configured (in email.address)")
 	}
