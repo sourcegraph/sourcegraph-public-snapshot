@@ -79,7 +79,8 @@ const SiteSchemaJSON = `{
     },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
-      "type": "boolean"
+      "type": "boolean",
+      "default": false
     },
     "disablePublicRepoRedirects": {
       "description":
@@ -186,7 +187,8 @@ const SiteSchemaJSON = `{
     },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
-      "type": "integer"
+      "type": "integer",
+      "default": 100
     },
     "gitOriginMap": {
       "description":
@@ -220,7 +222,8 @@ const SiteSchemaJSON = `{
     "repoListUpdateInterval": {
       "description":
         "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
-      "type": "integer"
+      "type": "integer",
+      "default": 1
     },
     "ssoUserHeader": {
       "description":
