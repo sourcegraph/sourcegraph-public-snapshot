@@ -14,6 +14,7 @@ import { currentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import './components/tooltip/Tooltip'
 import { Tooltip } from './components/tooltip/Tooltip'
+import { LinkExtension } from './extension/Link'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { updateUserSessionStores } from './marketing/util'
@@ -63,6 +64,7 @@ const Layout: React.SFC<LayoutProps> = props => {
                                         <Component {...props} {...routeComponentProps} isFullWidth={isFullWidth} />
                                     )}
                                     {route.render && route.render({ ...props, ...routeComponentProps })}
+                                    {!!props.user && <LinkExtension />}
                                 </div>
                             )}
                         />

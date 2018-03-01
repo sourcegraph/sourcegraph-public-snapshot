@@ -186,6 +186,7 @@ type SiteConfiguration struct {
 	AwsCodeCommit                  []AWSCodeCommitConnection  `json:"awsCodeCommit,omitempty"`
 	CorsOrigin                     string                     `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates          bool                       `json:"disableAutoGitUpdates,omitempty"`
+	DisableBrowserExtension        bool                       `json:"disableBrowserExtension,omitempty"`
 	DisableBuiltInSearches         bool                       `json:"disableBuiltInSearches,omitempty"`
 	DisableExampleSearches         bool                       `json:"disableExampleSearches,omitempty"`
 	DisablePublicRepoRedirects     bool                       `json:"disablePublicRepoRedirects,omitempty"`

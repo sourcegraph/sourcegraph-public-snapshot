@@ -58,8 +58,9 @@ var (
 
 	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
 
-	appURL     = conf.GetTODO().AppURL
-	corsOrigin = conf.GetTODO().CorsOrigin
+	appURL                  = conf.Get().AppURL
+	corsOrigin              = conf.Get().CorsOrigin
+	disableBrowserExtension = conf.Get().DisableBrowserExtension
 
 	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
 
@@ -69,6 +70,11 @@ var (
 	httpToHttpsRedirect = conf.GetTODO().HttpToHttpsRedirect
 
 	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
+
+	// dev browser browser extension ID. You can find this by going to chrome://extensions
+	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
+	// production browser extension ID. This is found by viewing our extension in the chrome store.
+	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
 
 func configureAppURL() (*url.URL, error) {
@@ -209,22 +215,25 @@ func Main() error {
 			// headers for security
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 			w.Header().Set("X-XSS-Protection", "1; mode=block")
-			// Open up X-Frame-Options for the chrome extension when running on github.com
-			url, _ := url.Parse(r.Referer())
-			if !strings.HasPrefix(r.URL.Path, "/.app/") && !(url != nil && url.Scheme == "https" && url.Host == "github.com") {
-				w.Header().Set("X-Frame-Options", "DENY")
-			}
+			w.Header().Set("X-Frame-Options", "DENY")
 			if v, _ := strconv.ParseBool(enableHSTS); v {
 				w.Header().Set("Strict-Transport-Security", "max-age=8640000")
 			}
-
 			// no cache by default
 			w.Header().Set("Cache-Control", "no-cache, max-age=0")
 
 			// CORS
-			if corsOrigin != "" {
+			// If the headerOrigin is the development or production Chrome Extension explictly set the Allow-Control-Allow-Origin
+			// to the incoming header URL. Otherwise use the configured CORS origin.
+			headerOrigin := r.Header.Get("Origin")
+			isExtensionRequest := (headerOrigin == devExtension || headerOrigin == prodExtension) && !disableBrowserExtension
+			if corsOrigin != "" || isExtensionRequest {
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
-				w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
+				allowOrigin := corsOrigin
+				if isExtensionRequest {
+					allowOrigin = headerOrigin
+				}
+				w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
 				if r.Method == "OPTIONS" {
 					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 					w.Header().Set("Access-Control-Allow-Headers", "X-Requested-With, X-Sourcegraph-Client, Content-Type")

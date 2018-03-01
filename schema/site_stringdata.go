@@ -68,6 +68,11 @@ const SiteSchemaJSON = `{
       "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
       "type": "string"
     },
+    "disableBrowserExtension": {
+      "type": "boolean",
+      "default": false,
+      "description": "Disable incoming connections from the Sourcegraph browser extension."
+    },
     "autoRepoAdd": {
       "description": "Automatically add external public repositories on demand when visited.",
       "type": "boolean"
