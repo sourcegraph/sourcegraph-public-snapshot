@@ -24,16 +24,23 @@ type prefixAndOrgin struct {
 }
 
 func init() {
-	// Setup original maps initially. Failure here is fatal.
 	if err := originMaps.setup(); err != nil {
 		log.Fatal(err)
 	}
+	first := true
 	conf.Watch(func() {
-		// Setup origin maps in response to config changes. Failure here should
-		// just be logged.
-		if err := originMaps.setup(); err != nil {
-			log.Println("error setting up origin maps", err)
+		err := originMaps.setup()
+		if err != nil {
+			if first {
+				// We setup original maps initially. Failure here is fatal.
+				log.Fatal(err)
+			} else {
+				// We setup origin maps in response to config changes. Failure
+				// here should just be logged.
+				log.Println("error setting up origin maps", err)
+			}
 		}
+		first = false
 	})
 }
 
