@@ -36,6 +36,7 @@ const Layout: React.SFC<LayoutProps> = props => {
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
     const hideNavbar = isSearchHomepage || isSiteInit
+    const canSyncBrowserExtension = localStorage.getItem('SYNC_BROWSER_EXT_TO_SERVER')
 
     return (
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
@@ -64,7 +65,7 @@ const Layout: React.SFC<LayoutProps> = props => {
                                         <Component {...props} {...routeComponentProps} isFullWidth={isFullWidth} />
                                     )}
                                     {route.render && route.render({ ...props, ...routeComponentProps })}
-                                    {!!props.user && <LinkExtension />}
+                                    {canSyncBrowserExtension && !!props.user && <LinkExtension />}
                                 </div>
                             )}
                         />
