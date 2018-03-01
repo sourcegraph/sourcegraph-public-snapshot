@@ -50,9 +50,9 @@ func TestMap(t *testing.T) {
 		},
 	}}
 
-	restoreOriginMap := originMap[:]
+	restoreOriginMap := originMaps.originMap[:]
 	defer func() {
-		originMap = restoreOriginMap
+		originMaps.originMap = restoreOriginMap
 	}()
 
 	for _, test := range tests {
@@ -65,7 +65,7 @@ func TestMap(t *testing.T) {
 			t.Errorf("on input %q, expected %s, but got %s", test.in, spew.Sdump(test.exp), spew.Sdump(actual))
 		}
 
-		originMap = actual
+		originMaps.originMap = actual
 		for _, mapping := range test.mappings {
 			if got := OriginMap(api.RepoURI(mapping[0])); got != mapping[1] {
 				t.Errorf("on input %q, input URI %q, got %q, but expected %q", test.in, mapping[0], got, mapping[1])
@@ -83,12 +83,12 @@ func TestDefaults(t *testing.T) {
 		{"bitbucket.org/gorilla/pat", "https://bitbucket.org/gorilla/pat.git"},
 	}
 
-	restoreOriginMap := originMap
+	restoreOriginMap := originMaps.originMap
 	defer func() {
-		originMap = restoreOriginMap
+		originMaps.originMap = restoreOriginMap
 	}()
-	originMap = nil
-	addGitHubDefaults()
+	originMaps.originMap = nil
+	originMaps.addGitHubDefaults()
 
 	for _, test := range tests {
 		got := OriginMap(test.repo)

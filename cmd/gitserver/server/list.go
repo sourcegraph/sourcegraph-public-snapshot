@@ -17,7 +17,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	case r.URL.RawQuery == "":
 		fallthrough // treat same as if the URL query was "gitolite" for backcompat
 	case query("gitolite"):
-		for _, entry := range gitoliteHostMap {
+		for _, entry := range originMaps.getGitoliteHostMap() {
 			out, err := exec.CommandContext(r.Context(), "ssh", entry.Origin, "info").CombinedOutput()
 			if err != nil {
 				log.Printf("listing gitolite failed: %s (Output: %q)", err, string(out))
