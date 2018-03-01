@@ -49,11 +49,7 @@ if [ -n "${USE_WEBPACK_DEV_SERVER-}" ]; then
 	export ASSETS_ROOT=http://localhost:3088
 fi
 
-export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE-"/tmp/sourcegraph-dev-config-$(date +"%s").json"}
-CURRENT_CONFIG_LINK=/tmp/sourcegraph-dev-config-current.json
-rm -rf "$CURRENT_CONFIG_LINK"
-ln -s "$SOURCEGRAPH_CONFIG_FILE" "$CURRENT_CONFIG_LINK"
-cp dev/config.json "$SOURCEGRAPH_CONFIG_FILE"
+export SOURCEGRAPH_CONFIG_FILE=./dev/config.json
 
 if ! [ -z "${ZOEKT-}" ]; then
 	export ZOEKT_HOST=localhost:6070
