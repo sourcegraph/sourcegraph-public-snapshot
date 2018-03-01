@@ -184,6 +184,7 @@ func Main() error {
 
 	go bg.ApplyUserOrgMap(context.Background())
 	go bg.MigrateAdminUsernames(context.Background())
+	go bg.MigrateOrgSlackWebhookURLs(context.Background())
 	go updatecheck.Start()
 	go useractivity.MigrateUserActivityData(context.Background())
 

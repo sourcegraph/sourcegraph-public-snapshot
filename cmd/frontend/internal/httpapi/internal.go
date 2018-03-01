@@ -383,13 +383,13 @@ func serveOrgsGetSlackWebhooks(w http.ResponseWriter, r *http.Request) error {
 	}
 	var webhooks []*string
 	for _, orgID := range orgIDs {
-		org, err := db.Orgs.GetByID(r.Context(), orgID)
+		settings, err := backend.Configuration.GetForSubject(r.Context(), api.ConfigurationSubject{Org: &orgID})
 		if err != nil {
-			return errors.Wrap(err, "Orgs.Get")
+			return errors.Wrap(err, "Configuration.GetForSubject")
 		}
 		var webhookURL *string
-		if org.SlackWebhookURL != "" {
-			webhookURL = &org.SlackWebhookURL
+		if settings != nil && settings.NotificationsSlack != nil {
+			webhookURL = &settings.NotificationsSlack.WebhookURL
 		}
 		webhooks = append(webhooks, webhookURL)
 	}

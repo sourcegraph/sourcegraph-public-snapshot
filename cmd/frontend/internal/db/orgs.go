@@ -26,7 +26,7 @@ type orgs struct{}
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (*orgs) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name, orgs.slack_webhook_url, orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
+	rows, err := globalDB.QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
 	if err != nil {
 		return []*types.Org{}, err
 	}
@@ -35,7 +35,7 @@ func (*orgs) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error
 	defer rows.Close()
 	for rows.Next() {
 		org := types.Org{}
-		err := rows.Scan(&org.ID, &org.Name, &org.DisplayName, &org.SlackWebhookURL, &org.CreatedAt, &org.UpdatedAt)
+		err := rows.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (*orgs) listSQL(opt OrgsListOptions) (conds []*sqlf.Query) {
 }
 
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT id, name, display_name, orgs.slack_webhook_url, created_at, updated_at FROM orgs "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([
 	defer rows.Close()
 	for rows.Next() {
 		org := types.Org{}
-		err := rows.Scan(&org.ID, &org.Name, &org.DisplayName, &org.SlackWebhookURL, &org.CreatedAt, &org.UpdatedAt)
+		err := rows.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -188,8 +188,8 @@ func (*orgs) Create(ctx context.Context, name, displayName string) (*types.Org, 
 	return &newOrg, nil
 }
 
-func (o *orgs) Update(ctx context.Context, id int32, displayName, slackWebhookURL *string) (*types.Org, error) {
-	if displayName == nil && slackWebhookURL == nil {
+func (o *orgs) Update(ctx context.Context, id int32, displayName *string) (*types.Org, error) {
+	if displayName == nil {
 		return nil, errors.New("no update values provided")
 	}
 
@@ -201,12 +201,6 @@ func (o *orgs) Update(ctx context.Context, id int32, displayName, slackWebhookUR
 	if displayName != nil {
 		org.DisplayName = displayName
 		if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
-			return nil, err
-		}
-	}
-	if slackWebhookURL != nil {
-		org.SlackWebhookURL = *slackWebhookURL
-		if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET slack_webhook_url=$1 WHERE id=$2 AND deleted_at IS NULL", org.SlackWebhookURL, id); err != nil {
 			return nil, err
 		}
 	}
@@ -231,4 +225,35 @@ func (o *orgs) Delete(ctx context.Context, id int32) error {
 		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
 	}
 	return nil
+}
+
+// TmpListAllOrgsWithSlackWebhookURL is a temporary method to support migrating
+// orgs.slack_webhook_url to the org's JSON settings. See bg.MigrateOrgSlackWebhookURLs.
+func (o *orgs) TmpListAllOrgsWithSlackWebhookURL(ctx context.Context) (orgIDsToWebhookURL map[int32]string, err error) {
+	rows, err := globalDB.QueryContext(ctx, "SELECT id, slack_webhook_url FROM orgs WHERE slack_webhook_url IS NOT NULL")
+	if err != nil {
+		return nil, err
+	}
+
+	orgIDsToWebhookURL = map[int32]string{}
+	defer rows.Close()
+	for rows.Next() {
+		var orgID int32
+		var slackWebhookURL string
+		if err := rows.Scan(&orgID, &slackWebhookURL); err != nil {
+			return nil, err
+		}
+		orgIDsToWebhookURL[orgID] = slackWebhookURL
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return orgIDsToWebhookURL, nil
+}
+
+// TmpRemoveOrgSlackWebhookURL is a temporary method to support migrating
+// orgs.slack_webhook_url to the org's JSON settings. See bg.MigrateOrgSlackWebhookURLs.
+func (o *orgs) TmpRemoveOrgSlackWebhookURL(ctx context.Context, orgID int32) error {
+	_, err := globalDB.ExecContext(ctx, "UPDATE orgs SET slack_webhook_url = null WHERE id=$1", orgID)
+	return err
 }

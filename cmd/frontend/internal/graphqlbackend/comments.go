@@ -170,8 +170,11 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		// errors swallowed because user is only needed for Slack notifications
 		log15.Error("graphqlbackend.AddCommentToThread: currentUser failed", "error", err)
 	} else if results != nil {
-		// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-		client := slack.New(org.SlackWebhookURL, true)
+		slackWebhookURL, err := getOrgSlackWebhookURL(ctx, org.ID)
+		if err != nil {
+			return nil, err
+		}
+		client := slack.New(slackWebhookURL, true)
 		commentURL := threadURL(thread.ID, &comment.ID, "slack")
 		go slack.NotifyOnComment(client, user, email, org, repo, thread, comment, results.emails, commentURL.String(), title)
 	}

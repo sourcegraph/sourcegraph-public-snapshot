@@ -22,7 +22,6 @@ interface Props extends RouteComponentProps<any> {
 }
 
 interface State {
-    slackWebhookURL: string
     displayName: string
     loading: boolean
     updated: boolean
@@ -41,7 +40,6 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
         super(props)
 
         this.state = {
-            slackWebhookURL: props.org.slackWebhookURL || '',
             displayName: props.org.displayName || '',
             loading: false,
             updated: false,
@@ -63,7 +61,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
             this.submits
                 .pipe(
                     switchMap(() =>
-                        updateOrg(this.props.org.id, this.state.displayName, this.state.slackWebhookURL).pipe(
+                        updateOrg(this.props.org.id, this.state.displayName).pipe(
                             mergeMap(() =>
                                 // Reset email, reenable submit button, flash "updated" text
                                 of<Partial<State>>({ loading: false, updated: true })
@@ -108,22 +106,6 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                             size={60}
                         />
                     </div>
-                    <div className="form-group">
-                        <label>Slack webhook URL</label>
-                        <input
-                            type="url"
-                            className="form-control org-settings-profile-page__slack-webhook-url"
-                            placeholder=""
-                            onChange={this.onSlackWebhookURLFieldChange}
-                            value={this.state.slackWebhookURL}
-                            spellCheck={false}
-                            size={60}
-                        />
-                        <small className="form-text">
-                            Integrate Sourcegraph's code comments and org updates with your team's Slack channel! Go to
-                            &lt;your-workspace-url&gt;.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks
-                        </small>
-                    </div>
                     <button
                         type="submit"
                         disabled={this.state.loading}
@@ -144,10 +126,6 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                 </form>
             </div>
         )
-    }
-
-    private onSlackWebhookURLFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({ slackWebhookURL: e.target.value })
     }
 
     private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {

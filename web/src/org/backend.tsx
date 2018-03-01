@@ -21,7 +21,6 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                 org(id: $id) {
                     id
                     name
-                    slackWebhookURL
                     displayName
                     latestSettings {
                         id
@@ -237,10 +236,9 @@ export function removeUserFromOrg(orgID: GQLID, userID: GQLID): Observable<never
  *
  * @param id The ID of the org
  * @param displayName The display name of the org
- * @param slackWebhookURL The Slack webhook URL to send Slack-formatted org actions/updates to
  * @return Observable that emits `undefined`, then completes
  */
-export function updateOrg(id: string, displayName: string, slackWebhookURL: string): Observable<void> {
+export function updateOrg(id: string, displayName: string): Observable<void> {
     return currentUser.pipe(
         take(1),
         mergeMap(user => {
@@ -251,12 +249,11 @@ export function updateOrg(id: string, displayName: string, slackWebhookURL: stri
             const variables = {
                 id,
                 displayName,
-                slackWebhookURL,
             }
             return mutateGraphQL(
                 gql`
-                    mutation updateOrg($id: ID!, $displayName: String, $slackWebhookURL: String) {
-                        updateOrg(id: $id, displayName: $displayName, slackWebhookURL: $slackWebhookURL) {
+                    mutation updateOrg($id: ID!, $displayName: String) {
+                        updateOrg(id: $id, displayName: $displayName) {
                             id
                         }
                     }
@@ -269,7 +266,6 @@ export function updateOrg(id: string, displayName: string, slackWebhookURL: stri
                 organization: {
                     update: {
                         display_name: displayName,
-                        slack_webhook_url: slackWebhookURL,
                     },
                     org_id: id,
                 },

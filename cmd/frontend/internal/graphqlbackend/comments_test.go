@@ -281,6 +281,9 @@ func TestComments_Create(t *testing.T) {
 	db.Mocks.Comments.GetAllForThread = func(context.Context, int32) ([]*types.Comment, error) { return nil, nil }
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &repo, nil)
 	db.Mocks.Threads.MockGet_Return(t, &thread, nil)
+	db.Mocks.Settings.GetLatest = func(context.Context, api.ConfigurationSubject) (*api.Settings, error) {
+		return &api.Settings{}, nil
+	}
 	called, calledWith := db.Mocks.Comments.MockCreate(t)
 	txemail.MockSend = func(context.Context, txemail.Message) error { return nil }
 
