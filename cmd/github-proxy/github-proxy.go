@@ -70,7 +70,8 @@ func main() {
 		authenticateRequest   func(query url.Values, header http.Header)
 	)
 	conf.Watch(func() {
-		if clientID, clientSecret := conf.Get().GithubClientID, conf.Get().GithubClientSecret; clientID != "" && clientSecret != "" {
+		cfg := conf.Get()
+		if clientID, clientSecret := cfg.GithubClientID, cfg.GithubClientSecret; clientID != "" && clientSecret != "" {
 			authenticateRequestMu.Lock()
 			authenticateRequest = func(query url.Values, header http.Header) {
 				query.Set("client_id", clientID)
