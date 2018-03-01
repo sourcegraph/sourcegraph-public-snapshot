@@ -25,22 +25,22 @@ For Linux users or if you don't want to use Homebrew on macOS.
 
 This is a streamlined setup for Mac machines.
 
-1. Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
-2. Install [Homebrew](http://brew.sh).
-3. Install Go, Node, PostgreSQL, Redis, Git.
+1.  Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
+2.  Install [Homebrew](http://brew.sh).
+3.  Install Go, Node, PostgreSQL, Redis, Git.
 
-   ```
-   brew install go node redis postgresql git gnu-sed
-   ```
+    ```
+    brew install go node redis postgresql git gnu-sed
+    ```
 
-4. Set up your [Go Workspace](https://golang.org/doc/code.html#Workspaces)
+4.  Set up your [Go Workspace](https://golang.org/doc/code.html#Workspaces)
 
-5. Configure PostgreSQL and Redis to start automatically
+5.  Configure PostgreSQL and Redis to start automatically
 
-   ```
-   brew services start postgresql
-   brew services start redis
-   ```
+    ```
+    brew services start postgresql
+    brew services start redis
+    ```
 
 ### Sourcegraph Editor
 

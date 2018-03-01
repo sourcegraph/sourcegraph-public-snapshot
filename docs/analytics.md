@@ -12,19 +12,19 @@ The goal of the `eventLogger` API is to be as simple as possible. If you ever wo
 
 To log an event on a "Find References" action (e.g. a button being clicked):
 
-1. Add the following import to your file (with the appropriate path):
+1.  Add the following import to your file (with the appropriate path):
 
 ```ts
 import { eventLogger } from '../tracking/eventLogger'
 ```
 
-2. Call:
+2.  Call:
 
 ```ts
 eventLogger.log('FindReferencesButtonClicked')
 ```
 
-3. Turn on event debug mode in your browser to confirm it's working as expected. In your browser's console, type: `localStorage.eventLogDebug="true"`. After this, make sure your console is displaying `All levels` of output, and not filtering debug messages. If you see the text: "X items hidden by filters," you likely need to select "Verbose" output using the dropdown menu next to it.
+3.  Turn on event debug mode in your browser to confirm it's working as expected. In your browser's console, type: `localStorage.eventLogDebug="true"`. After this, make sure your console is displaying `All levels` of output, and not filtering debug messages. If you see the text: "X items hidden by filters," you likely need to select "Verbose" output using the dropdown menu next to it.
 
 You should begin to see events stream into your console as you do actions.
 <BR><BR>
@@ -34,7 +34,7 @@ When you click your new "Find References" button, you should see the following a
 EVENT FindReferencesButtonClicked
 ```
 
-4. Test usage, and confirm that the event only occurs when you want it to. React's lifecycle can make this tricky — for example, never run `eventLogger.log(...)` directly inside of a `render` method!
+4.  Test usage, and confirm that the event only occurs when you want it to. React's lifecycle can make this tricky — for example, never run `eventLogger.log(...)` directly inside of a `render` method!
 
 That's it! Once your commit is deployed, events will begin being logged to our production BigQuery data store.
 

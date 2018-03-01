@@ -10,10 +10,10 @@ The following schemas are the sources of truth for Sourcegraph-related configura
 
 # Modifying a schema
 
-1. Edit the `*.schema.json` file in this directory.
-1. Run `go generate` to update the `*_stringdata.json` file.
-1. Commit the changes to both files.
-1. When the change is ready for release, [update the documentation](https://github.com/sourcegraph/website/blob/master/README.md#documentation-pages).
+1.  Edit the `*.schema.json` file in this directory.
+1.  Run `go generate` to update the `*_stringdata.json` file.
+1.  Commit the changes to both files.
+1.  When the change is ready for release, [update the documentation](https://github.com/sourcegraph/website/blob/master/README.md#documentation-pages).
 
 ## Known issues
 

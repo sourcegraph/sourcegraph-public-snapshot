@@ -17,9 +17,9 @@ commit;
 
 ## Deploy dogfood cluster helm chart
 
-1. Update image tags: https://sourcegraph.sgdev.org/github.com/sourcegraph/infrastructure@365d1fc3d3b6b2394d415ed7ff96e35c7156ab12/-/blob/kubernetes/cmd/sourcegraph-server-gen/generate.go#L330
-1. Regenerate helm chart by running this script: https://sourcegraph.sgdev.org/github.com/sourcegraph/infrastructure@master/-/blob/kubernetes/generate.sh
-1. (Verify your local git checkout has generated updates to the appropriate .yaml files)
+1.  Update image tags: https://sourcegraph.sgdev.org/github.com/sourcegraph/infrastructure@365d1fc3d3b6b2394d415ed7ff96e35c7156ab12/-/blob/kubernetes/cmd/sourcegraph-server-gen/generate.go#L330
+1.  Regenerate helm chart by running this script: https://sourcegraph.sgdev.org/github.com/sourcegraph/infrastructure@master/-/blob/kubernetes/generate.sh
+1.  (Verify your local git checkout has generated updates to the appropriate .yaml files)
 
 ```bash
 gcloud container clusters get-credentials dogfood-cluster-7 --zone=us-central1-a

@@ -18,19 +18,19 @@ Changes from current system:
 
 Try it out:
 
-1. Run `go test ./xlang -v` and see it run integration tests that perform full clones, dep fetches, and analysis of several real-world, large Go repositories. (Run with `-short` to just run the non-integration tests.)
-1. Run `localStorage.xlang=true` in a JavaScript console on http://localhost:3080 in your browser. You can verify it's set by seeing if the hovers issue `/hover-info` HTTP requests (xlang is NOT enabled) or `/xlang/initialize`, `/xlang/hover` requests (xlang IS enabled).
-1. Go to http://localhost:3080/github.com/golang/go@6129f37367686edf7c2732fbb5300d5f28203743/-/blob/src/strings/strings.go#L250 in your browser and mouse over some symbols. The full source build and analysis of the Go stdlib takes ~3.5s.
-1. Go to http://localhost:3080/github.com/coreos/fuze@7df4f06041d9daba45e4c68221b9b04203dff1d8/-/blob/config/convert.go#L48 in your browser. Mouse around.
-1. OK, well those don't have external deps...so let's try one that does: http://localhost:3080/github.com/fsouza/go-dockerclient@1123a1e9fcff4684f9ec2f488a430f8fefe5fab1/-/blob/container.go#L143.
-1. If you want to start from scratch, `rm -rf /tmp/xlang-git-clone-cache /tmp/github-cache` and restart the `./dev/start.sh` process. No state is retained when you start up again.
+1.  Run `go test ./xlang -v` and see it run integration tests that perform full clones, dep fetches, and analysis of several real-world, large Go repositories. (Run with `-short` to just run the non-integration tests.)
+1.  Run `localStorage.xlang=true` in a JavaScript console on http://localhost:3080 in your browser. You can verify it's set by seeing if the hovers issue `/hover-info` HTTP requests (xlang is NOT enabled) or `/xlang/initialize`, `/xlang/hover` requests (xlang IS enabled).
+1.  Go to http://localhost:3080/github.com/golang/go@6129f37367686edf7c2732fbb5300d5f28203743/-/blob/src/strings/strings.go#L250 in your browser and mouse over some symbols. The full source build and analysis of the Go stdlib takes ~3.5s.
+1.  Go to http://localhost:3080/github.com/coreos/fuze@7df4f06041d9daba45e4c68221b9b04203dff1d8/-/blob/config/convert.go#L48 in your browser. Mouse around.
+1.  OK, well those don't have external deps...so let's try one that does: http://localhost:3080/github.com/fsouza/go-dockerclient@1123a1e9fcff4684f9ec2f488a430f8fefe5fab1/-/blob/container.go#L143.
+1.  If you want to start from scratch, `rm -rf /tmp/xlang-git-clone-cache /tmp/github-cache` and restart the `./dev/start.sh` process. No state is retained when you start up again.
 
 Note: Go-to-def and hover are implemented for Go only right now. Find Local References is not implemented.
 
 To dig into the code:
 
-1. The Go bit is really 2 "LSP" servers: a Go build server, which wraps (and communicates LSP to/from) a Go language server. Read the Architecture section for more about those. The only deviation from LSP is that the Go build server sends some extra GOPATH, GOROOT, etc., initialize parameters to the Go lang server.
-1. The heavy lifting in the LSP proxy is in xlang/client_proxy.go (which frontend/internal/httpapi/xlang.go multiplexes web clients onto) and xlang/server_proxy.go (which manages build servers and routes client requests to the right build servers).
+1.  The Go bit is really 2 "LSP" servers: a Go build server, which wraps (and communicates LSP to/from) a Go language server. Read the Architecture section for more about those. The only deviation from LSP is that the Go build server sends some extra GOPATH, GOROOT, etc., initialize parameters to the Go lang server.
+1.  The heavy lifting in the LSP proxy is in xlang/client_proxy.go (which frontend/internal/httpapi/xlang.go multiplexes web clients onto) and xlang/server_proxy.go (which manages build servers and routes client requests to the right build servers).
 
 Diagram:
 
@@ -52,8 +52,8 @@ First, the user clicks to go-to-definition on "render" in the expression "ReactD
 
 The client (web browser) sends a series of LSP requests to the server:
 
-1. initialize rootPath=git://github.com/sourcegraph/sourcegraph?master
-1. textDocument/definition textDocument=git://github.com/sourcegraph/sourcegraph?master#ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20
+1.  initialize rootPath=git://github.com/sourcegraph/sourcegraph?master
+1.  textDocument/definition textDocument=git://github.com/sourcegraph/sourcegraph?master#ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20
 
 The HTTP API receives these requests and checks that the user can access the repo. It sends the following requests to the proxy:
 
@@ -213,11 +213,11 @@ Otherwise, just speak LSP and it'll work with both Sourcegraph and VS Code!
 
 ## Hooking up a build/lang server to Sourcegraph
 
-1. Figure out the mode ID of your language. Consult [the language ID table](https://code.visualstudio.com/docs/languages/overview#_language-id), or figure out what existing VSCode extensions are using. If you can't figure it out, just make something up and be consistent.
-1. Make sure our temporarily hacky `getModeByFilename` func in `EditorService.tsx` includes a branch for the language/mode with the proper file extensions.
-1. In the `sourcegraph/editor/Editor.tsx` file's `Editor` constructor, add an if-condition branch for the mode ID of the language so that the hover/def/ref providers are registered.
-1. Run Sourcegraph (`./dev/start.sh` or `src`) with environment variables of the form `LANGSERVER_xyz=addr-or-program`, where `xyz` is the mode (e.g., `typescript`) and `addr-or-program` is either `tcp://addr:port`, `unix:///path/to/socket`, or `/path/to/my/executable/program/that/speaks/over/stdio`.
-1. Open up Sourcegraph to a file in the language, and it will work. Check the JavaScript console for the LSP requests and responses.
+1.  Figure out the mode ID of your language. Consult [the language ID table](https://code.visualstudio.com/docs/languages/overview#_language-id), or figure out what existing VSCode extensions are using. If you can't figure it out, just make something up and be consistent.
+1.  Make sure our temporarily hacky `getModeByFilename` func in `EditorService.tsx` includes a branch for the language/mode with the proper file extensions.
+1.  In the `sourcegraph/editor/Editor.tsx` file's `Editor` constructor, add an if-condition branch for the mode ID of the language so that the hover/def/ref providers are registered.
+1.  Run Sourcegraph (`./dev/start.sh` or `src`) with environment variables of the form `LANGSERVER_xyz=addr-or-program`, where `xyz` is the mode (e.g., `typescript`) and `addr-or-program` is either `tcp://addr:port`, `unix:///path/to/socket`, or `/path/to/my/executable/program/that/speaks/over/stdio`.
+1.  Open up Sourcegraph to a file in the language, and it will work. Check the JavaScript console for the LSP requests and responses.
 
 Here's what I am running with:
 
@@ -227,11 +227,11 @@ LANGSERVER_JAVASCRIPT=tcp://localhost:2089 LANGSERVER_TYPESCRIPT=tcp://localhost
 
 Notes:
 
-1. `typescript` and `javascript` are separate modes in Monaco, so you'll have to register the JS/TS lang server twice, one for each mode (see the above example).
-1. Until the JS/TS lang server supports running in stdio, you need to register its TCP listen address, and you need to run it in a separate terminal (see its README.md for more info).
-1. The Go build/lang server currently runs in-process for simplicity, so you needn't register it. That will change soon.
-1. All you need to provide Sourcegraph is a single entrypoint. If you have separate build and lang servers (see the rest of this doc for the distinction), then you still only give Sourcegraph one entrypoint, since the build server wraps the lang server.
-1. VSCode/Monaco have a concept of "modes," which is basically a language. A mode's ID is a string like `go`, `javascript`, `python`, `typescript`, etc. We will reuse this existing taxonomy.
+1.  `typescript` and `javascript` are separate modes in Monaco, so you'll have to register the JS/TS lang server twice, one for each mode (see the above example).
+1.  Until the JS/TS lang server supports running in stdio, you need to register its TCP listen address, and you need to run it in a separate terminal (see its README.md for more info).
+1.  The Go build/lang server currently runs in-process for simplicity, so you needn't register it. That will change soon.
+1.  All you need to provide Sourcegraph is a single entrypoint. If you have separate build and lang servers (see the rest of this doc for the distinction), then you still only give Sourcegraph one entrypoint, since the build server wraps the lang server.
+1.  VSCode/Monaco have a concept of "modes," which is basically a language. A mode's ID is a string like `go`, `javascript`, `python`, `typescript`, etc. We will reuse this existing taxonomy.
 
 # Further work
 
