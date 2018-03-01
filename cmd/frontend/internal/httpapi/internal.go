@@ -11,7 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/jsonx"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
@@ -261,16 +260,6 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// normalizeJSON converts JSON with comments, trailing commas, and some types of syntax errors into
-// standard JSON.
-func normalizeJSON(input string) []byte {
-	output, _ := jsonx.Parse(string(input), jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-	if len(output) == 0 {
-		return []byte("{}")
-	}
-	return output
-}
-
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
 	settings, err := db.Settings.ListAll(r.Context())
@@ -281,7 +270,9 @@ func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
 	for _, settings := range settings {
 		var config api.PartialConfigSavedQueries
-		_ = json.Unmarshal(normalizeJSON(settings.Contents), &config)
+		if err := conf.UnmarshalJSON(settings.Contents, &config); err != nil {
+			return err
+		}
 		for _, query := range config.SavedQueries {
 			spec := api.SavedQueryIDSpec{Subject: settings.Subject, Key: query.Key}
 			queries = append(queries, api.SavedQuerySpecAndConfig{

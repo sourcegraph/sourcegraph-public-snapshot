@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
@@ -156,7 +156,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 	_, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 		// Compute the index so we can return it to the caller.
 		var config api.PartialConfigSavedQueries
-		if err := json.Unmarshal(normalizeJSON(oldConfig), &config); err != nil {
+		if err := conf.UnmarshalJSON(oldConfig, &config); err != nil {
 			return nil, err
 		}
 		index = len(config.SavedQueries)

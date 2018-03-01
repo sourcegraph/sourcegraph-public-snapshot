@@ -161,7 +161,7 @@ func (r *siteConfigurationResolver) ExtraValidationErrors(ctx context.Context) (
 	if err != nil {
 		return nil, err
 	}
-	return conf.ValidateCustom(normalizeJSON(contents))
+	return conf.ValidateCustom(conf.NormalizeJSON(contents))
 }
 
 func (r *siteConfigurationResolver) CanUpdate() bool {
