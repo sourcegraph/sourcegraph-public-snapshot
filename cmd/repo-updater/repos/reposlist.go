@@ -87,7 +87,7 @@ func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLo
 	}
 
 	repoNameLower := api.RepoURI(strings.ToLower(string(args.Repo)))
-	for _, repo := range conf.GetTODO().ReposList {
+	for _, repo := range conf.Get().ReposList {
 		if api.RepoURI(strings.ToLower(string(repo.Path))) == repoNameLower {
 			repoInfo := &protocol.RepoInfo{
 				URI:          api.RepoURI(repo.Path),
