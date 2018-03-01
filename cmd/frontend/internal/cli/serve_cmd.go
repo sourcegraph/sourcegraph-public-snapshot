@@ -58,9 +58,9 @@ var (
 
 	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
 
-	appURL                  = conf.Get().AppURL
-	corsOrigin              = conf.Get().CorsOrigin
-	disableBrowserExtension = conf.Get().DisableBrowserExtension
+	appURL                  = conf.GetTODO().AppURL
+	corsOrigin              = conf.GetTODO().CorsOrigin
+	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
 
 	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
 
