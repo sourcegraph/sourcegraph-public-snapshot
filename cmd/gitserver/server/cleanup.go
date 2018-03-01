@@ -107,8 +107,8 @@ func (s *Server) CleanupRepos() {
 			// TODO: this will not work for private repos which require authenticated
 			// access.
 			cmd := cloneCmd(ctx, remoteURL, tmpCloneRoot)
-			s.cloneLimiter.Acquire()
-			defer s.cloneLimiter.Release()
+			cloneLimiter := s.acquireCloneLimiter()
+			defer cloneLimiter.Release()
 			if output, err := cmd.CombinedOutput(); err != nil {
 				log15.Error("reclone failed", "error", err, "repo", uri, "output", string(output))
 				// Update the access time for the repo in the event of a clone failure.

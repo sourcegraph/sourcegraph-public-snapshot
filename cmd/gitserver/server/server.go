@@ -29,6 +29,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
@@ -65,11 +66,6 @@ type Server struct {
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
 
-	// MaxConcurrentClones controls the maximum number of clones that can
-	// happen at once. Used to prevent throttle limits from a code
-	// host. Defaults to 100.
-	MaxConcurrentClones int
-
 	// ctx is the context we use for all background jobs. It is done when the
 	// server is stopped. Do not directly call this, rather call
 	// Server.context()
@@ -85,8 +81,9 @@ type Server struct {
 	cloning   map[string]struct{}
 
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
-	// clones and ls-remotes respectively. Semaphore size is equal to
-	// MaxConcurrentClones.
+	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
+	// s.acquireClonableLimiter() instead of using these directly.
+	cloneLimitersMu  sync.RWMutex
 	cloneLimiter     *parallel.Run
 	cloneableLimiter *parallel.Run
 
@@ -141,11 +138,19 @@ func (s *Server) Handler() http.Handler {
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[api.RepoURI]*locks)
-	if s.MaxConcurrentClones == 0 {
-		s.MaxConcurrentClones = 100
-	}
-	s.cloneLimiter = parallel.NewRun(s.MaxConcurrentClones)
-	s.cloneableLimiter = parallel.NewRun(s.MaxConcurrentClones)
+	conf.Watch(func() {
+		// GitMaxConcurrentClones controls the maximum number of clones that
+		// can happen at once. Used to prevent throttle limits from a code
+		// host. Defaults to 100.
+		maxConcurrentClones := conf.Get().GitMaxConcurrentClones
+		if maxConcurrentClones == 0 {
+			maxConcurrentClones = 100
+		}
+		s.cloneLimitersMu.Lock()
+		s.cloneLimiter = parallel.NewRun(maxConcurrentClones)
+		s.cloneableLimiter = parallel.NewRun(maxConcurrentClones)
+		s.cloneLimitersMu.Unlock()
+	})
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/exec", s.handleExec)
@@ -194,6 +199,24 @@ func (s *Server) backgroundWithTimeout(timeout time.Duration) (context.Context, 
 			s.wg.Done()
 		}
 	}
+}
+
+func (s *Server) acquireCloneLimiter() *parallel.Run {
+	s.cloneLimitersMu.RLock()
+	cloneLimiter := s.cloneLimiter
+	s.cloneLimitersMu.RUnlock()
+
+	cloneLimiter.Acquire()
+	return cloneLimiter
+}
+
+func (s *Server) acquireCloneableLimiter() *parallel.Run {
+	s.cloneLimitersMu.RLock()
+	cloneableLimiter := s.cloneableLimiter
+	s.cloneLimitersMu.RUnlock()
+
+	cloneableLimiter.Acquire()
+	return cloneableLimiter
 }
 
 func cloneCmd(ctx context.Context, origin, dir string) *exec.Cmd {
@@ -463,8 +486,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	// checks being blocked by a few slow clones will lead to poor feedback to
 	// users. We can defer since the rest of the function does not block this
 	// goroutine.
-	s.cloneableLimiter.Acquire()
-	defer s.cloneableLimiter.Release()
+	cloneableLimiter := s.acquireCloneableLimiter()
+	defer cloneableLimiter.Release()
 	if err := s.isCloneable(ctx, url); err != nil {
 		return fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
 	}
@@ -487,8 +510,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	}
 
 	go func() {
-		s.cloneLimiter.Acquire()
-		defer s.cloneLimiter.Release()
+		cloneLimiter := s.acquireCloneLimiter()
+		defer cloneLimiter.Release()
 
 		// Create a new context because this is in a background goroutine.
 		ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
