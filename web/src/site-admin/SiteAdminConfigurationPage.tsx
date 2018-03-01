@@ -321,7 +321,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             window.confirm('Really discard edits?')
         ) {
             eventLogger.log('SiteConfigurationDiscarded')
-            this.setState({ contents: undefined })
+            this.setState({ contents: undefined, error: undefined })
         } else {
             eventLogger.log('SettingsFileDiscardCanceled')
         }

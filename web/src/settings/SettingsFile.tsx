@@ -23,6 +23,11 @@ interface Props {
     onDidCommit: (lastKnownSettingsID: number | null, contents: string) => void
 
     /**
+     * Called when the user discards changes to the settings file's contents.
+     */
+    onDidDiscard: () => void
+
+    /**
      * The error that occurred on the last call to the onDidCommit callback,
      * if any.
      */
@@ -232,6 +237,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 contents: undefined,
                 editingLastKnownSettingsID: undefined,
             })
+            this.props.onDidDiscard()
         } else {
             eventLogger.log('SettingsFileDiscardCanceled')
         }

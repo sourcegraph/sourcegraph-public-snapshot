@@ -66,6 +66,7 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
                         settings={this.state.settings}
                         commitError={this.state.commitError}
                         onDidCommit={this.onDidCommit}
+                        onDidDiscard={this.onDidDiscard}
                         history={this.props.history}
                         isLightTheme={this.props.isLightTheme}
                     />
@@ -100,4 +101,8 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
                     console.error(err)
                 }
             )
+
+    private onDidDiscard = (): void => {
+        this.setState({ commitError: undefined })
+    }
 }

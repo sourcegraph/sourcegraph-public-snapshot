@@ -51,6 +51,7 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
                     <SettingsFile
                         settings={this.state.settings}
                         onDidCommit={this.onDidCommit}
+                        onDidDiscard={this.onDidDiscard}
                         commitError={this.state.commitError}
                         history={this.props.history}
                         isLightTheme={this.props.isLightTheme}
@@ -89,5 +90,9 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
                 console.error(error)
             }
         )
+    }
+
+    private onDidDiscard = (): void => {
+        this.setState({ commitError: undefined })
     }
 }
