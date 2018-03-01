@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	xlang_lspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // RepoID is the unique identifier for a repository.
@@ -111,6 +112,13 @@ type PackageInfo struct {
 
 	// Pkg is the package metadata
 	Pkg map[string]interface{}
+
+	// Dependencies describes the package's dependencies.
+	//
+	// NOTE: This field is only set when listing packages directly from the language
+	// server. It may not be set when retrieving persisted package information; in that
+	// case, you need to separately query for the dependencies.
+	Dependencies []xlang_lspext.DependencyReference
 }
 
 // ListPackagesOp specifies a Pkgs.ListPackages operation

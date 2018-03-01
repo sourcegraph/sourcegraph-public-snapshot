@@ -183,6 +183,11 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []
 		r := api.PackageInfo{
 			RepoID: repo,
 			Lang:   lang,
+			// NOTE: Dependency info (in api.PackageInfo's Dependencies field) is not set
+			// here because it is stored separately in the global_dep table in a way that
+			// is slow and difficult to get in this code path. Currently callers that use
+			// DB-persisted package info do not need the dependency info, so this is
+			// acceptable.
 		}
 		if err := json.Unmarshal([]byte(pkg), &r.Pkg); err != nil {
 			return nil, errors.Wrap(err, "unmarshaling xdependencies metadata from sql scan")

@@ -69,6 +69,7 @@ func TestPackages_List(t *testing.T) {
 			"name":    "tspkg",
 			"version": "2.2.2",
 		},
+		Dependencies: []lspext.DependencyReference{},
 	}}
 	if !reflect.DeepEqual(pkgs, want) {
 		t.Errorf("got %+v, want %+v", pkgs, want)

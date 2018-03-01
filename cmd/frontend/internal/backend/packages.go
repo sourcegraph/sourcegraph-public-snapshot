@@ -112,9 +112,10 @@ func (packages) List(ctx context.Context, repo *types.Repo, rev api.CommitID) ([
 		}
 		for _, pkg := range pkgs {
 			allPkgs = append(allPkgs, &api.PackageInfo{
-				Lang:   lang,
-				RepoID: repo.ID,
-				Pkg:    pkg.Package,
+				Lang:         lang,
+				RepoID:       repo.ID,
+				Pkg:          pkg.Package,
+				Dependencies: pkg.Dependencies,
 			})
 		}
 	}
