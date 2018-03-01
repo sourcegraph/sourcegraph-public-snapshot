@@ -70,7 +70,7 @@ func updateRepo(ctx context.Context, repoConf schema.Repository) error {
 	if err != nil {
 		return errors.Wrap(err, "error checking if repo cloned")
 	}
-	if !conf.GetTODO().DisableAutoGitUpdates || !cloned {
+	if !conf.Get().DisableAutoGitUpdates || !cloned {
 		log15.Debug("fetching repos.list repo", "repo", uri, "cloned", cloned)
 		err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: repo.URI, URL: repoConf.Url})
 		if err != nil {
