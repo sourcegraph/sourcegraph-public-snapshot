@@ -13,6 +13,7 @@ import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../backend/graphql'
+import { OverviewItem, OverviewList } from '../components/Overview'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
@@ -49,116 +50,88 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
             <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
                 {!this.state.info && <Loader className="icon-inline" />}
-                <ul className="site-admin-overview-page__list">
+                <OverviewList>
                     {this.state.info && (
-                        <li className="site-admin-overview-page__item site-admin-overview-page__item">
-                            <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
-                                <Link
-                                    to="/site-admin/repositories"
-                                    className="site-admin-overview-page__item-header-link"
-                                >
-                                    <RepoIcon className="icon-inline site-admin-overview-page__item-header-icon" />
-                                    {this.state.info.repositories}&nbsp;
-                                    {this.state.info.repositories !== null
-                                        ? pluralize('repository', this.state.info.repositories, 'repositories')
-                                        : '?'}
-                                </Link>
-                            </div>
-                            <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
-                                <Link
-                                    to="/site-admin/configuration"
-                                    className="btn btn-primary btn-sm site-admin-overview-page__item-action"
-                                >
-                                    <GearIcon className="icon-inline" /> Configure repositories
-                                </Link>
-                                <Link
-                                    to="/site-admin/repositories"
-                                    className="btn btn-secondary btn-sm site-admin-overview-page__item-action"
-                                >
-                                    View all
-                                </Link>
-                            </div>
-                        </li>
+                        <OverviewItem
+                            link="/site-admin/repositories"
+                            icon={RepoIcon}
+                            actions={
+                                <>
+                                    <Link to="/site-admin/configuration" className="btn btn-primary btn-sm">
+                                        <GearIcon className="icon-inline" /> Configure repositories
+                                    </Link>
+                                    <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
+                                        View all
+                                    </Link>
+                                </>
+                            }
+                        >
+                            {this.state.info.repositories}&nbsp;
+                            {this.state.info.repositories !== null
+                                ? pluralize('repository', this.state.info.repositories, 'repositories')
+                                : '?'}
+                        </OverviewItem>
                     )}
                     {this.state.info && (
-                        <li className="site-admin-overview-page__item site-admin-overview-page__item">
-                            <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
-                                <Link to="/site-admin/users" className="site-admin-overview-page__item-header-link">
-                                    <UserIcon className="icon-inline site-admin-overview-page__item-header-icon" />
-                                    {this.state.info.users}&nbsp;{pluralize('user', this.state.info.users)}
-                                </Link>
-                            </div>
-                            <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
-                                <Link
-                                    to="/site-admin/invite-user"
-                                    className="btn btn-primary btn-sm site-admin-overview-page__item-action"
-                                >
-                                    <AddIcon className="icon-inline" /> Invite user
-                                </Link>
-                                <Link
-                                    to="/site-admin/configuration"
-                                    className="btn btn-secondary btn-sm site-admin-overview-page__item-action"
-                                >
-                                    <GearIcon className="icon-inline" /> Configure SSO
-                                </Link>
-                                <Link
-                                    to="/site-admin/users"
-                                    className="btn btn-secondary btn-sm site-admin-overview-page__item-action"
-                                >
-                                    View all
-                                </Link>
-                            </div>
-                        </li>
+                        <OverviewItem
+                            link="/site-admin/users"
+                            icon={UserIcon}
+                            actions={
+                                <>
+                                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm">
+                                        <AddIcon className="icon-inline" /> Invite user
+                                    </Link>
+                                    <Link to="/site-admin/configuration" className="btn btn-secondary btn-sm">
+                                        <GearIcon className="icon-inline" /> Configure SSO
+                                    </Link>
+                                    <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
+                                        View all
+                                    </Link>
+                                </>
+                            }
+                        >
+                            {this.state.info.users}&nbsp;{pluralize('user', this.state.info.users)}
+                        </OverviewItem>
                     )}
                     {this.state.info && (
-                        <li className="site-admin-overview-page__item site-admin-overview-page__item">
-                            <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
-                                <Link
-                                    to="/site-admin/organizations"
-                                    className="site-admin-overview-page__item-header-link"
-                                >
-                                    <CityIcon className="icon-inline site-admin-overview-page__item-header-icon" />
-                                    {this.state.info.orgs}&nbsp;{pluralize('organization', this.state.info.orgs)}
-                                </Link>
-                            </div>
-                            <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
-                                <Link
-                                    to="/organizations/new"
-                                    className="btn btn-primary btn-sm site-admin-overview-page__item-action"
-                                >
-                                    <AddIcon className="icon-inline" /> Create organization
-                                </Link>
-                                <Link
-                                    to="/site-admin/organizations"
-                                    className="btn btn-secondary btn-sm site-admin-overview-page__item-action"
-                                >
-                                    View all
-                                </Link>
-                            </div>
-                        </li>
+                        <OverviewItem
+                            link="/site-admin/organizations"
+                            icon={CityIcon}
+                            actions={
+                                <>
+                                    <Link to="/organizations/new" className="btn btn-primary btn-sm">
+                                        <AddIcon className="icon-inline" /> Create organization
+                                    </Link>
+                                    <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
+                                        View all
+                                    </Link>
+                                </>
+                            }
+                        >
+                            {this.state.info.orgs}&nbsp;{pluralize('organization', this.state.info.orgs)}
+                        </OverviewItem>
                     )}
                     {this.state.info &&
                         typeof this.state.info.repositories === 'number' && (
-                            <li className="site-admin-overview-page__item site-admin-overview-page__item">
-                                <div className="site-admin-overview-page__header site-admin-overview-page__item-header">
-                                    <GlobeIcon className="icon-inline site-admin-overview-page__item-header-icon" />
-                                    Code intelligence is {this.state.info.hasCodeIntelligence ? 'on' : 'off'}
-                                </div>
-                                <div className="site-admin-overview-page__info site-admin-overview-page__item-actions">
-                                    {!this.state.info.hasCodeIntelligence && (
+                            <OverviewItem
+                                icon={GlobeIcon}
+                                actions={
+                                    !this.state.info.hasCodeIntelligence && (
                                         <a
                                             href="https://about.sourcegraph.com/docs/code-intelligence/install?utm_source=server"
                                             target="_blank"
-                                            className="btn btn-primary btn-sm site-admin-overview-page__item-action"
+                                            className="btn btn-primary btn-sm"
                                             onClick={this.logEnableCodeIntelligenceClicked}
                                         >
                                             <CheckmarkIcon className="icon-inline" /> Enable code intelligence
                                         </a>
-                                    )}
-                                </div>
-                            </li>
+                                    )
+                                }
+                            >
+                                Code intelligence is {this.state.info.hasCodeIntelligence ? 'on' : 'off'}
+                            </OverviewItem>
                         )}
-                </ul>
+                </OverviewList>
             </div>
         )
     }
