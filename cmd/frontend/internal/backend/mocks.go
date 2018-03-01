@@ -13,9 +13,11 @@ var Mocks MockServices
 
 type MockServices struct {
 	Defs    MockDefs
-	Pkgs    MockPkgs
 	Repos   MockRepos
 	Symbols MockSymbols
+
+	Dependencies MockDependencies
+	Packages     MockPackages
 }
 
 // testContext creates a new context.Context for use by tests

@@ -14,8 +14,8 @@ import (
 func TestRepositoryResolver_Packages(t *testing.T) {
 	resetMocks()
 
-	db.Mocks.Pkgs.ListPackages = func(ctx context.Context, op *api.ListPackagesOp) ([]api.PackageInfo, error) {
-		return []api.PackageInfo{{
+	db.Mocks.Pkgs.ListPackages = func(ctx context.Context, op *api.ListPackagesOp) ([]*api.PackageInfo, error) {
+		return []*api.PackageInfo{{
 			RepoID: 1,
 			Lang:   "python",
 			Pkg: map[string]interface{}{

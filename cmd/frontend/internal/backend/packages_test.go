@@ -1,0 +1,76 @@
+package backend
+
+import (
+	"context"
+	"reflect"
+	"testing"
+
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+)
+
+func TestPackages_List(t *testing.T) {
+	ctx := testContext()
+
+	xlangDone := mockXLang(func(ctx context.Context, mode string, rootPath lsp.DocumentURI, method string, params, results interface{}) error {
+		switch method {
+		case "workspace/xpackages":
+			res, ok := results.(*[]lspext.PackageInformation)
+			if !ok {
+				t.Fatalf("attempted to call workspace/xpackages with invalid return type %T", results)
+			}
+			if rootPath != "git://r?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
+				t.Fatalf("unexpected rootPath: %q", rootPath)
+			}
+			switch mode {
+			case "typescript_bg":
+				*res = []lspext.PackageInformation{{
+					Package: map[string]interface{}{
+						"name":    "tspkg",
+						"version": "2.2.2",
+					},
+					Dependencies: []lspext.DependencyReference{},
+				}}
+			case "python_bg":
+				*res = []lspext.PackageInformation{{
+					Package: map[string]interface{}{
+						"name":    "pypkg",
+						"version": "3.3.3",
+					},
+					Dependencies: []lspext.DependencyReference{},
+				}}
+			default:
+				t.Fatalf("unexpected mode: %q", mode)
+			}
+		}
+		return nil
+	})
+	defer xlangDone()
+
+	Mocks.Repos.GetInventory = func(context.Context, *types.Repo, api.CommitID) (*inventory.Inventory, error) {
+		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
+	}
+
+	repo := &types.Repo{ID: 1, URI: "r"}
+	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	pkgs, err := Packages.List(ctx, repo, commitID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []*api.PackageInfo{{
+		RepoID: repo.ID,
+		Lang:   "typescript",
+		Pkg: map[string]interface{}{
+			"name":    "tspkg",
+			"version": "2.2.2",
+		},
+	}}
+	if !reflect.DeepEqual(pkgs, want) {
+		t.Errorf("got %+v, want %+v", pkgs, want)
+	}
+}

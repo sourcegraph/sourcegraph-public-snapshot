@@ -2,7 +2,6 @@ package db
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -10,11 +9,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -170,38 +165,12 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	xlangDone := mockXLang(func(ctx context.Context, mode string, rootPath lsp.DocumentURI, method string, params, results interface{}) error {
-		switch method {
-		case "workspace/xdependencies":
-			res, ok := results.(*[]lspext.DependencyReference)
-			if !ok {
-				t.Fatalf("attempted to call workspace/xpackages with invalid return type %T", results)
-			}
-			if rootPath != "git://myrepo?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
-				t.Fatalf("unexpected rootPath: %q", rootPath)
-			}
-			switch mode {
-			case "go_bg":
-				*res = []lspext.DependencyReference{{
-					Attributes: map[string]interface{}{
-						"name":   "github.com/gorilla/dep",
-						"vendor": true,
-					},
-				}}
-			default:
-				t.Fatalf("unexpected mode: %q", mode)
-			}
-		}
-		return nil
-	})
-	defer xlangDone()
-
-	reposGetInventory := func(context.Context, *types.Repo, api.CommitID) (*inventory.Inventory, error) {
-		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "Go"}}}, nil
-	}
-
-	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-	if err := GlobalDeps.RefreshIndex(ctx, repo, commitID, reposGetInventory); err != nil {
+	if err := GlobalDeps.UpdateIndexForLanguage(ctx, "go", repo, []lspext.DependencyReference{{
+		Attributes: map[string]interface{}{
+			"name":   "github.com/gorilla/dep",
+			"vendor": true,
+		},
+	}}); err != nil {
 		t.Fatal(err)
 	}
 

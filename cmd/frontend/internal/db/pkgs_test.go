@@ -9,11 +9,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -47,7 +44,7 @@ func TestPkgs_update_delete(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	expPkgs := []api.PackageInfo{{
+	expPkgs := []*api.PackageInfo{{
 		RepoID: rp.ID,
 		Lang:   "go",
 		Pkg:    map[string]interface{}{"name": "pkg"},
@@ -99,51 +96,19 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	xlangDone := mockXLang(func(ctx context.Context, mode string, rootPath lsp.DocumentURI, method string, params, results interface{}) error {
-		switch method {
-		case "workspace/xpackages":
-			res, ok := results.(*[]lspext.PackageInformation)
-			if !ok {
-				t.Fatalf("attempted to call workspace/xpackages with invalid return type %T", results)
-			}
-			if rootPath != "git://myrepo?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
-				t.Fatalf("unexpected rootPath: %q", rootPath)
-			}
-			switch mode {
-			case "typescript_bg":
-				*res = []lspext.PackageInformation{{
-					Package: map[string]interface{}{
-						"name":    "tspkg",
-						"version": "2.2.2",
-					},
-					Dependencies: []lspext.DependencyReference{},
-				}}
-			case "python_bg":
-				*res = []lspext.PackageInformation{{
-					Package: map[string]interface{}{
-						"name":    "pypkg",
-						"version": "3.3.3",
-					},
-					Dependencies: []lspext.DependencyReference{},
-				}}
-			default:
-				t.Fatalf("unexpected mode: %q", mode)
-			}
-		}
-		return nil
-	})
-	defer xlangDone()
-
-	reposGetInventory := func(context.Context, *types.Repo, api.CommitID) (*inventory.Inventory, error) {
-		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
-	}
-
-	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-	if err := Pkgs.RefreshIndex(ctx, rp, commitID, reposGetInventory); err != nil {
+	if err := Pkgs.UpdateIndexForLanguage(ctx, "typescript", rp, []lspext.PackageInformation{
+		{
+			Package: map[string]interface{}{
+				"name":    "tspkg",
+				"version": "2.2.2",
+			},
+			Dependencies: []lspext.DependencyReference{},
+		},
+	}); err != nil {
 		t.Fatal(err)
 	}
 
-	expPkgs := []api.PackageInfo{{
+	expPkgs := []*api.PackageInfo{{
 		RepoID: rp.ID,
 		Lang:   "typescript",
 		Pkg: map[string]interface{}{
@@ -200,7 +165,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 
 	{ // Test case 1
-		expPkgInfo := []api.PackageInfo{{
+		expPkgInfo := []*api.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
@@ -219,7 +184,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 2
-		expPkgInfo := []api.PackageInfo{{
+		expPkgInfo := []*api.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
@@ -238,7 +203,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 3
-		var expPkgInfo []api.PackageInfo
+		var expPkgInfo []*api.PackageInfo
 		op := &api.ListPackagesOp{
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg1", "version": "2"},
@@ -253,7 +218,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 4
-		expPkgInfo := []api.PackageInfo{{
+		expPkgInfo := []*api.PackageInfo{{
 			RepoID: 3,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
@@ -282,7 +247,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 5, filter by repo ID
-		expPkgInfo := []api.PackageInfo{{
+		expPkgInfo := []*api.PackageInfo{{
 			RepoID: 3,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
@@ -302,7 +267,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 }
 
-func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []api.PackageInfo, err error) {
+func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []*api.PackageInfo, err error) {
 	rows, err := db.QueryContext(ctx, "SELECT * FROM pkgs ORDER BY language ASC")
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
@@ -325,7 +290,7 @@ func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []api.Package
 		if err := json.Unmarshal([]byte(pkg), &p.Pkg); err != nil {
 			return nil, errors.Wrap(err, "unmarshaling package metadata from SQL scan")
 		}
-		packages = append(packages, p)
+		packages = append(packages, &p)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "rows error")

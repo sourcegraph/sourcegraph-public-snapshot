@@ -12,8 +12,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -37,41 +35,6 @@ import (
 //
 // For a detailed overview of the schema, see schema.txt.
 type globalDeps struct{}
-
-var globalDepEnabledLangs = map[string]struct{}{
-	"go":         struct{}{},
-	"php":        struct{}{},
-	"typescript": struct{}{},
-	"java":       struct{}{},
-	"python":     struct{}{},
-}
-
-// RefreshIndex refreshes the global deps index for the specified repo@commit.
-func (g *globalDeps) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api.CommitID, reposGetInventory func(context.Context, *types.Repo, api.CommitID) (*inventory.Inventory, error)) error {
-	inv, err := reposGetInventory(ctx, repo, commitID)
-	if err != nil {
-		return errors.Wrap(err, "Repos.GetInventory")
-	}
-
-	var errs []string
-	for _, lang := range inv.Languages {
-		langName := strings.ToLower(lang.Name)
-
-		if _, enabled := globalDepEnabledLangs[langName]; !enabled {
-			continue
-		}
-		if err := g.refreshIndexForLanguage(ctx, langName, repo, commitID); err != nil {
-			log15.Error("refreshing index failed", "language", langName, "error", err)
-			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", langName, err))
-		}
-	}
-	if len(errs) == 1 {
-		return errors.New(errs[0])
-	} else if len(errs) > 1 {
-		return errors.New(strings.Join(errs, "\n"))
-	}
-	return nil
-}
 
 func (g *globalDeps) TotalRefs(ctx context.Context, repo *types.Repo, langs []*inventory.Lang) (int, error) {
 	var sum int
@@ -366,30 +329,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]ap
 	return repos, nil
 }
 
-func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
-	vcs := "git" // TODO: store VCS type in *types.Repo object.
-
-	// Query all external dependencies for the repository. We do this using the
-	// "<language>_bg" mode which runs this request on a separate language
-	// server explicitly for background tasks such as workspace/xdependencies.
-	// This makes it such that indexing repositories does not interfere in
-	// terms of resource usage with real user requests.
-	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
-	var deps []lspext.DependencyReference
-	err = unsafeXLangCall(ctx, language+"_bg", rootURI, "workspace/xdependencies", map[string]string{}, &deps)
-	if err != nil {
-		return errors.Wrap(err, "LSP Call workspace/xdependencies")
-	}
-
+func (g *globalDeps) UpdateIndexForLanguage(ctx context.Context, language string, repo *types.Repo, deps []lspext.DependencyReference) (err error) {
 	err = Transaction(ctx, globalDB, func(tx *sql.Tx) error {
 		// Update the table.
 		err = g.update(ctx, tx, language, deps, repo.ID)

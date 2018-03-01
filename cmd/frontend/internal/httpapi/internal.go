@@ -190,15 +190,19 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 	if err != nil {
 		return err
 	}
-	deps, err := backend.Defs.Dependencies(r.Context(), repo)
+	commitID, err := backend.Repos.ResolveRev(r.Context(), repo, "")
 	if err != nil {
-		return fmt.Errorf("Defs.DependencyReferences failed: %s", err)
+		return err
+	}
+	deps, err := backend.Dependencies.List(r.Context(), repo, commitID)
+	if err != nil {
+		return fmt.Errorf("backend.Dependencies.List failed: %s", err)
 	}
 
 	// Filter out already-indexed dependencies
 	var unfetchedDeps []*api.DependencyReference
 	for _, dep := range deps {
-		pkgs, err := backend.Pkgs.ListPackages(r.Context(), &api.ListPackagesOp{Lang: args.Language, PkgQuery: depReferenceToPkgQuery(args.Language, dep), Limit: 1})
+		pkgs, err := db.Pkgs.ListPackages(r.Context(), &api.ListPackagesOp{Lang: args.Language, PkgQuery: depReferenceToPkgQuery(args.Language, dep), Limit: 1})
 		if err != nil {
 			return err
 		}
@@ -465,7 +469,7 @@ func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Defs.RefreshIndex(r.Context(), repo, args.CommitID)
+	err = backend.Dependencies.RefreshIndex(r.Context(), repo, args.CommitID)
 	if err != nil {
 		return nil
 	}
@@ -484,7 +488,7 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Pkgs.RefreshIndex(r.Context(), repo, args.CommitID)
+	err = backend.Packages.RefreshIndex(r.Context(), repo, args.CommitID)
 	if err != nil {
 		return nil
 	}

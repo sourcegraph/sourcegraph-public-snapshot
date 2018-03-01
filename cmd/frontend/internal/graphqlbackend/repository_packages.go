@@ -3,20 +3,19 @@ package graphqlbackend
 import (
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func (r *repositoryResolver) Packages(ctx context.Context) ([]*packageResolver, error) {
-	pkgs, err := backend.Pkgs.ListPackages(ctx, &api.ListPackagesOp{RepoID: r.repo.ID})
+	pkgs, err := db.Pkgs.ListPackages(ctx, &api.ListPackagesOp{RepoID: r.repo.ID})
 	if err != nil {
 		return nil, err
 	}
 	resolvers := make([]*packageResolver, len(pkgs))
 	for i, pkg := range pkgs {
-		resolvers[i] = &packageResolver{&pkg}
+		resolvers[i] = &packageResolver{pkg}
 	}
 	return resolvers, nil
 }

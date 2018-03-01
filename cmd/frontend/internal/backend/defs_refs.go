@@ -141,17 +141,6 @@ func (s *defs) ListTotalRefs(ctx context.Context, source api.RepoURI) (repos []a
 	return repos, nil
 }
 
-// Dependencies returns the dependency references for the given repo. I.e., the repo's dependencies.
-func (s *defs) Dependencies(ctx context.Context, repo *types.Repo) ([]*api.DependencyReference, error) {
-	if Mocks.Defs.Dependencies != nil {
-		return Mocks.Defs.Dependencies(ctx, repo)
-	}
-
-	return db.GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
-		Repo: repo.ID,
-	})
-}
-
 func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error) {
 	if Mocks.Defs.DependencyReferences != nil {
 		return Mocks.Defs.DependencyReferences(ctx, op)
@@ -225,22 +214,8 @@ func (s *defs) DependencyReferences(ctx context.Context, op types.DependencyRefe
 	}, nil
 }
 
-// RefreshIndex refreshes the global deps index for the specified
-// repository.
-func (s *defs) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api.CommitID) (err error) {
-	if Mocks.Defs.RefreshIndex != nil {
-		return Mocks.Defs.RefreshIndex(ctx, repo, commitID)
-	}
-
-	ctx, done := trace(ctx, "Defs", "RefreshIndex", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
-	defer done()
-	return db.GlobalDeps.RefreshIndex(ctx, repo, commitID, Repos.GetInventory)
-}
-
 type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source api.RepoURI) (res int, err error)
 	ListTotalRefs        func(ctx context.Context, source api.RepoURI) (repos []api.RepoID, err error)
 	DependencyReferences func(ctx context.Context, op types.DependencyReferencesOptions) (res *api.DependencyReferences, err error)
-	RefreshIndex         func(ctx context.Context, repo *types.Repo, commitID api.CommitID) error
-	Dependencies         func(ctx context.Context, repo *types.Repo) ([]*api.DependencyReference, error)
 }

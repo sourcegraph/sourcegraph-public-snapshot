@@ -7,5 +7,5 @@ import (
 )
 
 type MockPkgs struct {
-	ListPackages func(context.Context, *api.ListPackagesOp) ([]api.PackageInfo, error)
+	ListPackages func(context.Context, *api.ListPackagesOp) ([]*api.PackageInfo, error)
 }
