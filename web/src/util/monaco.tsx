@@ -1,5 +1,6 @@
 import { applyEdits } from '@sqs/jsonc-parser/lib/format'
 import { toMonacoEdits } from '../settings/MonacoSettingsEditor'
+import { ConfigInsertionFunction } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 
 export function addEditorAction(
@@ -7,7 +8,7 @@ export function addEditorAction(
     model: monaco.editor.IModel,
     label: string,
     id: string,
-    run: any
+    run: ConfigInsertionFunction
 ): void {
     inputEditor.addAction({
         label,
@@ -16,7 +17,7 @@ export function addEditorAction(
             eventLogger.log('SiteConfigurationActionExecuted', { id })
             editor.focus()
             editor.pushUndoStop()
-            const { edits, selectText } = run(editor.getValue())
+            const { edits, selectText, cursorOffset } = run(editor.getValue())
             const monacoEdits = toMonacoEdits(model, edits)
             let selection: monaco.Selection | undefined
             if (typeof selectText === 'string') {
@@ -24,10 +25,17 @@ export function addEditorAction(
                 let offset = afterText.slice(edits[0].offset).indexOf(selectText)
                 if (offset !== -1) {
                     offset += edits[0].offset
-                    selection = monaco.Selection.fromPositions(
-                        getPositionAt(afterText, offset),
-                        getPositionAt(afterText, offset + selectText.length)
-                    )
+                    if (typeof cursorOffset === 'number') {
+                        selection = monaco.Selection.fromPositions(
+                            getPositionAt(afterText, offset + cursorOffset),
+                            getPositionAt(afterText, offset + cursorOffset)
+                        )
+                    } else {
+                        selection = monaco.Selection.fromPositions(
+                            getPositionAt(afterText, offset),
+                            getPositionAt(afterText, offset + selectText.length)
+                        )
+                    }
                 }
             }
             if (!selection) {

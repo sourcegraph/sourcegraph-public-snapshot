@@ -16,7 +16,22 @@ import { createAggregateError } from '../util/errors'
  * A helper function that modifies site configuration to configure specific
  * common things, such as syncing GitHub repositories.
  */
-type ConfigHelper = (configJSON: string) => { edits: Edit[]; selectText?: string }
+export type ConfigInsertionFunction = (
+    configJSON: string
+) => {
+    /** The edits to make to the input configuration to insert the new configuration. */
+    edits: Edit[]
+
+    /** Select text in inserted JSON. */
+    selectText?: string
+
+    /**
+     * If set, the selection is an empty selection that begins at the left-hand match of selectText plus this
+     * offset. For example, if selectText is "foo" and cursorOffset is 2, then the final selection will be a cursor
+     * "|" positioned as "fo|o".
+     */
+    cursorOffset?: number
+}
 
 const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
@@ -24,7 +39,7 @@ const defaultFormattingOptions: FormattingOptions = {
     tabSize: 2,
 }
 
-const addGitHubDotCom: ConfigHelper = config => {
+const addGitHubDotCom: ConfigInsertionFunction = config => {
     const tokenPlaceholder = '<personal access token with repo scope (https://github.com/settings/tokens/new)>'
     const value: GitHubConnection = {
         token: tokenPlaceholder,
@@ -34,7 +49,7 @@ const addGitHubDotCom: ConfigHelper = config => {
     return { edits, selectText: tokenPlaceholder }
 }
 
-const addGitHubEnterprise: ConfigHelper = config => {
+const addGitHubEnterprise: ConfigInsertionFunction = config => {
     const tokenPlaceholder = '<personal access token with repo scope>'
     const value: GitHubConnection = {
         token: tokenPlaceholder,
@@ -44,7 +59,7 @@ const addGitHubEnterprise: ConfigHelper = config => {
     return { edits, selectText: tokenPlaceholder }
 }
 
-const addGitLab: ConfigHelper = config => {
+const addGitLab: ConfigInsertionFunction = config => {
     const tokenPlaceholder =
         '<personal access token with api scope (https://[your-gitlab-hostname]/profile/personal_access_tokens)>'
     const value: GitLabConnection = {
@@ -55,17 +70,17 @@ const addGitLab: ConfigHelper = config => {
     return { edits, selectText: tokenPlaceholder }
 }
 
-const addAWSCodeCommit: ConfigHelper = config => {
+const addAWSCodeCommit: ConfigInsertionFunction = config => {
     const value: AwsCodeCommitConnection = {
         region: '' as any,
         accessKeyID: '',
         secretAccessKey: '',
     }
     const edits = setProperty(config, ['awsCodeCommit', -1], value, defaultFormattingOptions)
-    return { edits, selectText: '""' }
+    return { edits, selectText: '""', cursorOffset: 1 }
 }
 
-const addOtherRepository: ConfigHelper = config => {
+const addOtherRepository: ConfigInsertionFunction = config => {
     const urlPlaceholder = '<git clone URL>'
     const value: Repository = {
         url: urlPlaceholder,
@@ -75,7 +90,7 @@ const addOtherRepository: ConfigHelper = config => {
     return { edits, selectText: urlPlaceholder }
 }
 
-const addSSOViaGSuite: ConfigHelper = config => {
+const addSSOViaGSuite: ConfigInsertionFunction = config => {
     const value: OpenIdConnectAuthProvider = {
         issuer: 'https://accounts.google.com',
         clientID: '<see documentation: https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials>',
@@ -92,7 +107,7 @@ const addSSOViaGSuite: ConfigHelper = config => {
     }
 }
 
-const addSSOViaSAML: ConfigHelper = config => {
+const addSSOViaSAML: ConfigInsertionFunction = config => {
     const value: SamlAuthProvider = {
         identityProviderMetadataURL: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
         serviceProviderCertificate: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
@@ -107,7 +122,7 @@ const addSSOViaSAML: ConfigHelper = config => {
     }
 }
 
-const addSearchScopeToSettings: ConfigHelper = config => {
+const addSearchScopeToSettings: ConfigInsertionFunction = config => {
     const value: { name: string; value: string } = {
         name: '<name>',
         value: '<partial query string that will be inserted when the scope is selected>',
@@ -119,7 +134,7 @@ const addSearchScopeToSettings: ConfigHelper = config => {
 export interface EditorAction {
     id: string
     label: string
-    run: ConfigHelper
+    run: ConfigInsertionFunction
 }
 
 export const settingsActions: EditorAction[] = [
