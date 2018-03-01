@@ -222,7 +222,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) {
 					time.Sleep(wait)
 				}
 				updateGitHubRepositories(ctx, c)
-				time.Sleep(updateInterval)
+				time.Sleep(getUpdateInterval())
 			}
 		}(c)
 	}

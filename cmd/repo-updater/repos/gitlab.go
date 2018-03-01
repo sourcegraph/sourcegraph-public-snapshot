@@ -171,7 +171,7 @@ func RunGitLabRepositorySyncWorker(ctx context.Context) {
 					time.Sleep(wait)
 				}
 				updateGitLabProjects(ctx, c)
-				time.Sleep(updateInterval)
+				time.Sleep(getUpdateInterval())
 			}
 		}(c)
 	}

@@ -138,7 +138,7 @@ func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
 
 			for {
 				updateAWSCodeCommitRepositories(ctx, c)
-				time.Sleep(updateInterval)
+				time.Sleep(getUpdateInterval())
 			}
 		}(c)
 	}

@@ -43,7 +43,7 @@ func RunRepositorySyncWorker(ctx context.Context) {
 				continue
 			}
 		}
-		time.Sleep(updateInterval)
+		time.Sleep(getUpdateInterval())
 	}
 }
 
