@@ -4,12 +4,13 @@ import (
 	"go/ast"
 
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	xlangext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // SymbolPackageDescriptor extracts the package descriptor from the
 // symbol descriptor for supported languages. Returns true for the
 // second return value if and only if the language is supported.
-func SymbolPackageDescriptor(sym lspext.SymbolDescriptor, lang string) (map[string]interface{}, bool) {
+func SymbolPackageDescriptor(sym lspext.SymbolDescriptor, lang string) (xlangext.PackageDescriptor, bool) {
 	subSelector, ok := subSelectors[lang]
 	if !ok {
 		return nil, false
@@ -20,7 +21,7 @@ func SymbolPackageDescriptor(sym lspext.SymbolDescriptor, lang string) (map[stri
 // PackageIdentifier extracts the part of the PackageDescriptor that
 // should be used to quasi-uniquely identify a package. Typically, it
 // leaves out things like package version.
-func PackageIdentifier(pkgDescriptor map[string]interface{}, lang string) (map[string]interface{}, bool) {
+func PackageIdentifier(pkgDescriptor xlangext.PackageDescriptor, lang string) (xlangext.PackageDescriptor, bool) {
 	pkgIDFn, ok := packageIdentifiers[lang]
 	if !ok {
 		return nil, false
@@ -89,59 +90,59 @@ func IsSymbolReferenceable(mode string, symbolDescriptor lspext.SymbolDescriptor
 // matched (using the jsonb containment operator) against the
 // `attributes` field of `DependenceReference` (output of
 // workspace/xdependencies).
-var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface{}{
-	"go": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		return map[string]interface{}{
+var subSelectors = map[string]func(lspext.SymbolDescriptor) xlangext.PackageDescriptor{
+	"go": func(symbol lspext.SymbolDescriptor) xlangext.PackageDescriptor {
+		return xlangext.PackageDescriptor{
 			"package": symbol["package"],
 		}
 	},
-	"php": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
+	"php": func(symbol lspext.SymbolDescriptor) xlangext.PackageDescriptor {
 		if _, ok := symbol["package"]; !ok {
 			// package can be missing if the symbol did not belong to a package, e.g. a project without
 			// a composer.json file. In this case, there are no external references to this symbol.
 			return nil
 		}
-		return packageIdentifiers["php"](symbol["package"].(map[string]interface{}))
+		return packageIdentifiers["php"](symbol["package"].(xlangext.PackageDescriptor))
 	},
-	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
+	"typescript": func(symbol lspext.SymbolDescriptor) xlangext.PackageDescriptor {
 		if _, ok := symbol["package"]; !ok {
 			return nil
 		}
-		return packageIdentifiers["typescript"](symbol["package"].(map[string]interface{}))
+		return packageIdentifiers["typescript"](symbol["package"].(xlangext.PackageDescriptor))
 	},
-	"java": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		if _, ok := symbol["package"].(map[string]interface{}); !ok {
+	"java": func(symbol lspext.SymbolDescriptor) xlangext.PackageDescriptor {
+		if _, ok := symbol["package"].(xlangext.PackageDescriptor); !ok {
 			return nil
 		}
-		return packageIdentifiers["java"](symbol["package"].(map[string]interface{}))
+		return packageIdentifiers["java"](symbol["package"].(xlangext.PackageDescriptor))
 	},
-	"python": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		if _, ok := symbol["package"].(map[string]interface{}); !ok {
+	"python": func(symbol lspext.SymbolDescriptor) xlangext.PackageDescriptor {
+		if _, ok := symbol["package"].(xlangext.PackageDescriptor); !ok {
 			return nil
 		}
-		return packageIdentifiers["python"](symbol["package"].(map[string]interface{}))
+		return packageIdentifiers["python"](symbol["package"].(xlangext.PackageDescriptor))
 	},
 }
 
-var packageIdentifiers = map[string]func(map[string]interface{}) map[string]interface{}{
-	"php": func(pkg map[string]interface{}) map[string]interface{} {
-		return map[string]interface{}{
+var packageIdentifiers = map[string]func(xlangext.PackageDescriptor) xlangext.PackageDescriptor{
+	"php": func(pkg xlangext.PackageDescriptor) xlangext.PackageDescriptor {
+		return xlangext.PackageDescriptor{
 			"name": pkg["name"],
 		}
 	},
-	"typescript": func(pkg map[string]interface{}) map[string]interface{} {
-		return map[string]interface{}{
+	"typescript": func(pkg xlangext.PackageDescriptor) xlangext.PackageDescriptor {
+		return xlangext.PackageDescriptor{
 			"name": pkg["name"],
 		}
 	},
-	"java": func(pkg map[string]interface{}) map[string]interface{} {
-		return map[string]interface{}{
+	"java": func(pkg xlangext.PackageDescriptor) xlangext.PackageDescriptor {
+		return xlangext.PackageDescriptor{
 			"id":   pkg["id"],
 			"type": pkg["type"],
 		}
 	},
-	"python": func(pkg map[string]interface{}) map[string]interface{} {
-		return map[string]interface{}{
+	"python": func(pkg xlangext.PackageDescriptor) xlangext.PackageDescriptor {
+		return xlangext.PackageDescriptor{
 			"name": pkg["name"],
 		}
 	},

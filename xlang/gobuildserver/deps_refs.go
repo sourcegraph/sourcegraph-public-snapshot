@@ -16,6 +16,8 @@ type goDependencyReference struct {
 }
 
 func (r *goDependencyReference) attributes() map[string]interface{} {
+	// Keep this in correspondence with toPackageInformation. The intersection of fields
+	// must identify the package.
 	return map[string]interface{}{
 		"package":  r.pkg,
 		"absolute": r.absolute,

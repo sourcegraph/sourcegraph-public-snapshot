@@ -857,11 +857,11 @@
     "langserver/internal/godef/go/parser",
     "langserver/internal/godef/go/types",
     "langserver/internal/refs",
-    "langserver/internal/tools",
     "pkg/lsp",
-    "pkg/lspext"
+    "pkg/lspext",
+    "pkg/tools"
   ]
-  revision = "51f47385a6570efb4b7ebd9aa859acf6d580b12d"
+  revision = "88717affe59d6766d01172443f358b7d33b2ecdf"
 
 [[projects]]
   branch = "master"

@@ -231,6 +231,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// requests.
 		return nil, nil
 
+	case req.Method == "workspace/xpackages":
+		return h.handleWorkspacePackages(ctx, conn, req)
+
 	case req.Method == "workspace/xdependencies":
 		// The same as h.fetchAndSendDepsOnce except it operates locally to the
 		// request.

@@ -49,6 +49,7 @@ func TestProxy(t *testing.T) {
 		wantSymbols       map[string][]string
 		wantXDependencies string
 		wantXReferences   map[*lsext.WorkspaceReferencesParams][]string
+		wantXPackages     []string
 		depFS             map[string]map[string]string // dep clone URL -> map VFS
 	}{
 		"go basic": {
@@ -101,6 +102,7 @@ func TestProxy(t *testing.T) {
 				"B":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:B:0:16"},
 				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:B:0:16"},
 			},
+			wantXPackages: []string{"test/pkg"},
 		},
 		"go detailed": {
 			rootURI: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -225,6 +227,7 @@ func TestProxy(t *testing.T) {
 					},
 				}: []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false"},
 			},
+			wantXPackages: []string{"test/pkg/d", "test/pkg/d/d2"},
 		},
 		"go multiple packages in dir": {
 			rootURI: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -261,6 +264,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:A:0:16"},
 				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:A:0:16"},
 			},
+			wantXPackages: []string{"test/pkg"},
 		},
 		"goroot": {
 			rootURI: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -328,6 +332,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:variable:_:0:32"},
 				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:A:0:16"},
 			},
+			wantXPackages: []string{"test/pkg/a", "test/pkg/b"},
 		},
 		"go vendored dep": {
 			rootURI: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -355,6 +360,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:_:0:43", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:function:V:0:23"},
 				"is:exported": []string{},
 			},
+			wantXPackages: []string{"test/pkg", "test/pkg/vendor/github.com/v/vendored"},
 		},
 		"go vendor symbols with same name": {
 			rootURI: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
@@ -624,7 +630,7 @@ func yza() {}
 				t.Fatal("initialize:", err)
 			}
 
-			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies, test.wantXReferences)
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies, test.wantXReferences, test.wantXPackages)
 		})
 	}
 }

@@ -39,6 +39,7 @@ func TestIntegration(t *testing.T) {
 		wantSymbols       map[string][]string
 		wantXDependencies string
 		wantXReferences   map[*lsext.WorkspaceReferencesParams][]string
+		wantXPackages     []string
 	}{
 		"git://github.com/gorilla/mux?0a192a193177452756c362c20087ddafcf6829c4": {
 			mode: "go",
@@ -55,6 +56,7 @@ func TestIntegration(t *testing.T) {
 				"mux.go:61:38": "git://github.com/golang/go?go1.7.1#src/net/http/request.go:76:6 id:net/http/-/Request name:Request package:net/http packageName:http recv: vendor:false",
 			},
 			wantXDependencies: "gorilla-mux.json",
+			wantXPackages:     []string{"github.com/gorilla/mux"},
 		},
 		"git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8": {
 			mode: "go",
@@ -247,7 +249,7 @@ func TestIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies, test.wantXReferences)
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies, test.wantXReferences, test.wantXPackages)
 
 			if err := c.Close(); err != nil {
 				t.Fatal(err)
