@@ -60,10 +60,12 @@ export class NavLinks extends React.Component<Props, State> {
             <div className="nav-links">
                 {this.props.onShowScopes &&
                     this.state.user && (
-                        <a className="nav-links__link nav-links__scopes-toggle" onClick={this.onShowScopes} href="">
-                            <span className="nav-links__scopes-toggle-text">
-                                {this.props.showScopes ? 'Hide scopes' : 'Show scopes'}
-                            </span>
+                        <a
+                            className="nav-links__link nav-links__scopes-toggle"
+                            onClick={this.onShowScopes}
+                            data-tooltip={this.props.showScopes ? 'Hide scopes' : 'Show scopes'}
+                            href=""
+                        >
                             {this.props.showScopes ? (
                                 <ChevronUpIcon className="icon-inline" />
                             ) : (

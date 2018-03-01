@@ -41,17 +41,7 @@
     }
 
     &__scopes-toggle {
-        min-width: 6.875rem;
-    }
-
-    @media (max-width: $media-lg) {
-        &__scopes-toggle {
-            min-width: 0;
-        }
-        &__widescreen-only,
-        &__scopes-toggle-text {
-            display: none;
-        }
+        margin-left: 0.25rem;
     }
 }
 
