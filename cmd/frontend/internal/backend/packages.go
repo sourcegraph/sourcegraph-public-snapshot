@@ -9,12 +9,14 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/jsonrpc2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 )
 
 // Packages contains backend methods related to code packages.
@@ -108,7 +110,11 @@ func (packages) List(ctx context.Context, repo *types.Repo, rev api.CommitID) ([
 	for _, lang := range langs {
 		pkgs, err := (packages{}).listForLanguageInRepo(ctx, lang, repo, rev)
 		if err != nil {
-			return nil, errors.Wrap(err, "listForLanguageInRepo "+lang)
+			if e, ok := errors.Cause(err).(*jsonrpc2.Error); ok && e.Code == proxy.CodeModeNotFound {
+				log15.Warn("Packages.List skipping language because no language server is registered", "lang", lang, "err", err)
+			} else {
+				return nil, errors.Wrap(err, "listForLanguageInRepo "+lang)
+			}
 		}
 		for _, pkg := range pkgs {
 			allPkgs = append(allPkgs, &api.PackageInfo{
