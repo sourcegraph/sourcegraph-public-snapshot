@@ -530,7 +530,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.query.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"symbol", "file", "path", "repo"}
+			resultTypes = []string{"symbol", "file", "path", "repo", "ref"}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
@@ -543,6 +543,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
+	suppressEmptyQueryAlertEvenIfNoResults := false
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
 		if _, seen := seenResultTypes[resultType]; seen {
@@ -588,6 +589,15 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			searchedFileContentsOrPaths = true
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
 				return searchFilesInRepos(ctx, &args, r.query)
+			})
+		case "ref":
+			refValues, _ := r.query.StringValues(searchquery.FieldRef)
+			if len(refValues) == 0 {
+				continue
+			}
+			suppressEmptyQueryAlertEvenIfNoResults = true
+			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
+				return searchReferencesInRepos(ctx, &args, r.query)
 			})
 		case "diff":
 			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
@@ -644,7 +654,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			results.alert.title = "Only diff search results from last month are shown"
 		}
 	}
-	if results.alert == nil && len(results.results) == 0 && args.query.Pattern == "" {
+	if results.alert == nil && len(results.results) == 0 && args.query.Pattern == "" && !suppressEmptyQueryAlertEvenIfNoResults {
 		results.alert = &searchAlert{
 			title:       "Type a query",
 			description: "What do you want to search for?",

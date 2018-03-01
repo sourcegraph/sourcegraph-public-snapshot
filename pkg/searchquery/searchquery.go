@@ -16,6 +16,11 @@ const (
 	FieldFile      = "file"
 	FieldType      = "type"
 
+	// For graph search only:
+	FieldRef   = "ref"
+	FieldHints = "hints"
+	FieldLang  = "lang" // TODO(sqs): make it usable in file search, not just graph search
+
 	// For diff and commit search only:
 	FieldBefore    = "before"
 	FieldAfter     = "after"
@@ -41,6 +46,11 @@ var (
 			FieldRepoGroup: types.FieldType{Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldFile:      regexpNegatableFieldType,
 			FieldType:      stringFieldType,
+			FieldLang:      stringFieldType,
+
+			FieldRef:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldHints: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+
 			FieldBefore:    stringFieldType,
 			FieldAfter:     stringFieldType,
 			FieldAuthor:    regexpNegatableFieldType,
@@ -53,13 +63,15 @@ var (
 			FieldSymbol: {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
 		},
 		FieldAliases: map[string]string{
-			"r":     FieldRepo,
-			"g":     FieldRepoGroup,
-			"f":     FieldFile,
-			"since": FieldAfter,
-			"until": FieldBefore,
-			"m":     FieldMessage,
-			"msg":   FieldMessage,
+			"r":        FieldRepo,
+			"g":        FieldRepoGroup,
+			"f":        FieldFile,
+			"l":        FieldLang,
+			"language": FieldLang,
+			"since":    FieldAfter,
+			"until":    FieldBefore,
+			"m":        FieldMessage,
+			"msg":      FieldMessage,
 		},
 	}
 )
