@@ -9,15 +9,15 @@ import (
 
 func TestAuthSAML(t *testing.T) {
 	tests := map[string]struct {
-		input schema.SiteConfiguration
+		input *schema.SiteConfiguration
 		want  *schema.SAMLAuthProvider
 	}{
 		"none": {
-			input: schema.SiteConfiguration{},
+			input: &schema.SiteConfiguration{},
 			want:  nil,
 		},
 		"old": {
-			input: schema.SiteConfiguration{
+			input: &schema.SiteConfiguration{
 				SamlIDProviderMetadataURL: "a",
 				SamlSPCert:                "b",
 				SamlSPKey:                 "c",
@@ -29,7 +29,7 @@ func TestAuthSAML(t *testing.T) {
 			},
 		},
 		"new": {
-			input: schema.SiteConfiguration{
+			input: &schema.SiteConfiguration{
 				AuthSaml: &schema.SAMLAuthProvider{
 					IdentityProviderMetadataURL: "a",
 					ServiceProviderCertificate:  "b",
@@ -43,7 +43,7 @@ func TestAuthSAML(t *testing.T) {
 			},
 		},
 		"both": {
-			input: schema.SiteConfiguration{
+			input: &schema.SiteConfiguration{
 				SamlIDProviderMetadataURL: "a",
 				SamlSPCert:                "b",
 				SamlSPKey:                 "c",

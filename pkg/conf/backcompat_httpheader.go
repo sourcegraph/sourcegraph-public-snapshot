@@ -7,7 +7,7 @@ import "sourcegraph.com/sourcegraph/sourcegraph/schema"
 // property is used.
 func AuthHTTPHeader() string { return authHTTPHeader(cfg) }
 
-func authHTTPHeader(input schema.SiteConfiguration) string {
+func authHTTPHeader(input *schema.SiteConfiguration) string {
 	// auth.userIdentityHTTPHeader property: higher precedence
 	if input.AuthUserIdentityHTTPHeader != "" {
 		return input.AuthUserIdentityHTTPHeader

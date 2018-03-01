@@ -39,10 +39,12 @@ func Raw() string {
 // exception rather than the rule. In general, ANY use of configuration should
 // be done in such a way that it responds to config changes while the process
 // is running.
-func Get() schema.SiteConfiguration {
+func Get() *schema.SiteConfiguration {
 	if MockGetData != nil {
-		return *MockGetData
+		return MockGetData
 	}
+	cfgMu.RLock()
+	defer cfgMu.RUnlock()
 	return cfg
 }
 
@@ -50,49 +52,82 @@ func Get() schema.SiteConfiguration {
 // The code may need to be updated to use conf.Watch, or it may already be e.g.
 // invoked only in response to a user action (in which case it does not need to
 // use conf.Watch). See Get documentation for more details.
-func GetTODO() schema.SiteConfiguration {
+func GetTODO() *schema.SiteConfiguration {
 	return Get()
 }
 
 // MockGetData is overridden in tests that need to mock site config.
 var MockGetData *schema.SiteConfiguration
 
-// Watch calls the given function whenever the configuration has changed. The
-// new configuration can be recieved by calling conf.Get.
+var (
+	watchersMu sync.Mutex
+	watchers   []chan struct{}
+)
+
+// Watch calls the given function in a separate goroutine whenever the
+// configuration has changed. The new configuration can be received by calling
+// conf.Get.
 //
 // Before Watch returns, it will invoke f to use the current configuration.
 func Watch(f func()) {
+	// Add the watcher channel now, rather than after invoking f below, in case
+	// an update were to happen while we were invoking f.
+	notify := make(chan struct{}, 1)
+	watchersMu.Lock()
+	watchers = append(watchers, notify)
+	watchersMu.Unlock()
+
 	// Call the function now, to use the current configuration.
 	f()
 
-	// Every five seconds, check if the configuration has changed and invoke f.
-	for {
-		time.Sleep(5 * time.Second)
-		if IsDirty() {
-			// Read the new configuration from disk.
-			//
-			// TODO(slimsag): This, combined with IsDirty reading the file from
-			// disk, means that a configuration change reads the file from disk
-			// numConfWatch*2 times. We can easily reduce the IO here.
-			if err := initConfig(); err != nil {
-				log.Printf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
-			}
-
+	go func() {
+		// Invoke f when the configuration has changed.
+		for {
+			<-notify
 			f()
 		}
-	}
+	}()
 }
 
-// cfg is initialized to configuration defaults.
-var cfg = schema.SiteConfiguration{
-	MaxReposToSearch: 500,
-}
+var (
+	cfgMu sync.RWMutex
+	cfg   *schema.SiteConfiguration
+)
 
 func init() {
 	// Read configuration initially.
 	if err := initConfig(); err != nil {
 		log.Fatalf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
 	}
+
+	// Every five seconds, check if the configuration has changed and notify
+	// watchers when it has.
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			if IsDirty() {
+				// Read the new configuration from disk.
+				if err := initConfig(); err != nil {
+					log.Printf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
+				}
+
+				watchersMu.Lock()
+				for _, watcher := range watchers {
+					// Perform a non-blocking send.
+					//
+					// Since the watcher channels that we are sending on have a
+					// buffer of 1, it is guaranteed the watcher will
+					// reconsider the config at some point in the future even
+					// if this send fails.
+					select {
+					case watcher <- struct{}{}:
+					default:
+					}
+				}
+				watchersMu.Unlock()
+			}
+		}
+	}()
 }
 
 func readConfig() (string, error) {
@@ -123,9 +158,14 @@ func initConfig() error {
 	raw = rawConfig
 	rawMu.Unlock()
 
+	// TODO(slimsag): MaxReposToSearch default value should be in our schema, not here?
+	tmpConfig := schema.SiteConfiguration{
+		MaxReposToSearch: 500,
+	}
+
 	// SOURCEGRAPH_CONFIG takes lowest precedence.
 	if raw != "" {
-		if err := jsonxUnmarshal(raw, &cfg); err != nil {
+		if err := jsonxUnmarshal(raw, &tmpConfig); err != nil {
 			return err
 		}
 	}
@@ -134,10 +174,14 @@ func initConfig() error {
 	if v, envVarNames, err := configFromEnv(); err != nil {
 		return err
 	} else if len(envVarNames) > 0 {
-		if err := json.Unmarshal(v, &cfg); err != nil {
+		if err := json.Unmarshal(v, &tmpConfig); err != nil {
 			return err
 		}
 	}
+
+	cfgMu.Lock()
+	cfg = &tmpConfig
+	cfgMu.Unlock()
 	return nil
 }
 

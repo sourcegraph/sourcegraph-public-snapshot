@@ -9,23 +9,23 @@ import (
 
 func TestAuthHTTPHeader(t *testing.T) {
 	tests := map[string]struct {
-		input schema.SiteConfiguration
+		input *schema.SiteConfiguration
 		want  string
 	}{
 		"none": {
-			input: schema.SiteConfiguration{},
+			input: &schema.SiteConfiguration{},
 			want:  "",
 		},
 		"old": {
-			input: schema.SiteConfiguration{SsoUserHeader: "a"},
+			input: &schema.SiteConfiguration{SsoUserHeader: "a"},
 			want:  "a",
 		},
 		"new": {
-			input: schema.SiteConfiguration{AuthUserIdentityHTTPHeader: "a"},
+			input: &schema.SiteConfiguration{AuthUserIdentityHTTPHeader: "a"},
 			want:  "a",
 		},
 		"both": {
-			input: schema.SiteConfiguration{
+			input: &schema.SiteConfiguration{
 				SsoUserHeader:              "a",
 				AuthUserIdentityHTTPHeader: "a2",
 			},

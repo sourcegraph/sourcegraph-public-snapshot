@@ -9,15 +9,15 @@ import (
 
 func TestAuthOpenIDConnect(t *testing.T) {
 	tests := map[string]struct {
-		input schema.SiteConfiguration
+		input *schema.SiteConfiguration
 		want  *schema.OpenIDConnectAuthProvider
 	}{
 		"none": {
-			input: schema.SiteConfiguration{},
+			input: &schema.SiteConfiguration{},
 			want:  nil,
 		},
 		"old": {
-			input: schema.SiteConfiguration{
+			input: &schema.SiteConfiguration{
 				OidcProvider:      "a",
 				OidcClientID:      "b",
 				OidcClientSecret:  "c",
@@ -33,7 +33,7 @@ func TestAuthOpenIDConnect(t *testing.T) {
 			},
 		},
 		"new": {
-			input: schema.SiteConfiguration{
+			input: &schema.SiteConfiguration{
 				AuthOpenIDConnect: &schema.OpenIDConnectAuthProvider{
 					Issuer:             "a",
 					ClientID:           "b",
@@ -51,7 +51,7 @@ func TestAuthOpenIDConnect(t *testing.T) {
 			},
 		},
 		"both": {
-			input: schema.SiteConfiguration{
+			input: &schema.SiteConfiguration{
 				OidcProvider:      "a",
 				OidcClientID:      "b",
 				OidcClientSecret:  "c",
