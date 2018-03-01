@@ -1,3 +1,5 @@
+@import '../symbols/SymbolIcon';
+
 .repo-rev-sidebar-symbols {
     flex: 1 1 auto;
     display: flex;
@@ -28,87 +30,6 @@
         &__path {
             &::before {
                 content: ' – ';
-            }
-        }
-
-        &__kind {
-            display: inline-block;
-            width: 0.6rem;
-            height: 0.6rem;
-            vertical-align: -5.5px;
-            margin-right: 0.325rem;
-
-            opacity: 0.8;
-
-            // These correspond to the GraphQL SymbolKind enum values.
-            &--unknown {
-                background-color: #888;
-            }
-            &--file {
-                background-color: #888;
-            }
-            &--module {
-                background-color: green;
-            }
-            &--namespace {
-                background-color: turquoise;
-            }
-            &--package {
-                background-color: palevioletred;
-            }
-            &--class {
-                background-color: purple;
-            }
-            &--method {
-                background-color: darkgoldenrod;
-            }
-            &--property {
-                background-color: darkorchid;
-            }
-            &--field {
-                background-color: darkviolet;
-            }
-            &--constructor {
-                background-color: darkcyan;
-            }
-            &--enum {
-                background-color: cyan;
-            }
-            &--interface {
-                background-color: violet;
-            }
-            &--function {
-                background-color: orangered;
-            }
-            &--variable {
-                background-color: rgb(19, 87, 233);
-            }
-            &--constant {
-                background-color: rgb(113, 98, 211);
-            }
-            &--string,
-            &--number,
-            &--boolean,
-            &--array,
-            &--object,
-            &--key,
-            &--null {
-                background-color: teal;
-            }
-            &--enummember {
-                background-color: blueviolet;
-            }
-            &--struct {
-                background-color: blueviolet;
-            }
-            &--event {
-                background-color: darksalmon;
-            }
-            &--operator {
-                background-color: mediumseagreen;
-            }
-            &--typeparameter {
-                background-color: yellowgreen;
             }
         }
     }

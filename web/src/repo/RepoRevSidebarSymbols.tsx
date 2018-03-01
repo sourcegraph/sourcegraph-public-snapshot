@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { fetchSymbols } from '../symbols/backend'
+import { SymbolIcon } from '../symbols/SymbolIcon'
 
 function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
     const currentHash = currentLocation.hash.replace('$references:external', '').replace('$references', '')
@@ -32,19 +33,12 @@ const SymbolNode: React.SFC<SymbolNodeProps> = ({ node, location }) => {
                 className="repo-rev-sidebar-symbols-node__link"
                 activeClassName="repo-rev-sidebar-symbols-node__link--active"
             >
-                <span
-                    className={`repo-rev-sidebar-symbols-node__kind repo-rev-sidebar-symbols-node__kind--${node.kind.toLowerCase() ||
-                        'unknown'}`}
-                >
-                    &nbsp;
-                </span>
+                <SymbolIcon kind={node.kind} className="icon-inline mr-1" />
                 <span className="repo-rev-sidebar-symbols-node__name">{node.name}</span>
-                {node.containerName ? (
+                {node.containerName && (
                     <span className="repo-rev-sidebar-symbols-node__container-name">
                         <small>{node.containerName}</small>
                     </span>
-                ) : (
-                    ''
                 )}
                 <span className="repo-rev-sidebar-symbols-node__path">
                     <small>{node.location.resource.path}</small>
