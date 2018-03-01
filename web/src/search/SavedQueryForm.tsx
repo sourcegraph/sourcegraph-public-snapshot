@@ -268,8 +268,11 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 {notifySlack &&
                     this.isOrgMissingSlackWebhook() && (
                         <div className="alert alert-warning mb-2">
-                            <strong>Warning:</strong> Slack webhook is not configured for this organization. Please{' '}
-                            <Link to={this.getConfigureSlackURL()}>configure one in the organization settings</Link>.
+                            <strong>Required:</strong>{' '}
+                            <Link target="_blank" to={this.getConfigureSlackURL()}>
+                                Configure a Slack webhook URL
+                            </Link>{' '}
+                            to receive Slack notifications.
                         </div>
                     )}
                 {error &&
