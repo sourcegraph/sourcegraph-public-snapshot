@@ -463,7 +463,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 		whereConds = append(whereConds, `repo_id = `+arg(op.Repo))
 	}
 
-	selectSQL := `SELECT dep_data, repo_id, hints`
+	selectSQL := `SELECT gd.language, dep_data, repo_id, hints`
 	fromSQL := `FROM global_dep AS gd INNER JOIN repo AS r ON gd.repo_id=r.id`
 	whereSQL := ""
 	if len(whereConds) > 0 {
@@ -483,14 +483,15 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 
 	for rows.Next() {
 		var (
-			depData, hints string
-			repo           api.RepoID
+			language, depData, hints string
+			repo                     api.RepoID
 		)
-		if err := rows.Scan(&depData, &repo, &hints); err != nil {
+		if err := rows.Scan(&language, &depData, &repo, &hints); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
 		r := &api.DependencyReference{
-			RepoID: repo,
+			RepoID:   repo,
+			Language: language,
 		}
 		if err := json.Unmarshal([]byte(depData), &r.DepData); err != nil {
 			return nil, errors.Wrap(err, "unmarshaling xdependencies metadata from sql scan")

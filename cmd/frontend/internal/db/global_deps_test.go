@@ -103,8 +103,9 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 
 	t.Log("update")
 	wantRefs := []*api.DependencyReference{{
-		DepData: map[string]interface{}{"name": "dep1", "vendor": true},
-		RepoID:  repo,
+		Language: "go",
+		DepData:  map[string]interface{}{"name": "dep1", "vendor": true},
+		RepoID:   repo,
 	}}
 	gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 		Language: "go",
@@ -205,8 +206,9 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	}
 
 	wantRefs := []*api.DependencyReference{{
-		DepData: map[string]interface{}{"name": "github.com/gorilla/dep", "vendor": true},
-		RepoID:  repo.ID,
+		Language: "go",
+		DepData:  map[string]interface{}{"name": "github.com/gorilla/dep", "vendor": true},
+		RepoID:   repo.ID,
 	}}
 	gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 		Language: "go",
@@ -260,8 +262,9 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 
 	{ // Test case 1
 		wantRefs := []*api.DependencyReference{{
-			DepData: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true},
-			RepoID:  repos[0],
+			Language: "go",
+			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true},
+			RepoID:   repos[0],
 		}}
 		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 			Language: "go",
@@ -279,8 +282,9 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 	{ // Test case 2
 		wantRefs := []*api.DependencyReference{{
-			DepData: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true},
-			RepoID:  repos[1],
+			Language: "go",
+			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true},
+			RepoID:   repos[1],
 		}}
 		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
 			Language: "go",
@@ -298,15 +302,18 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 	{ // Test case 3
 		wantRefs := []*api.DependencyReference{{
-			DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
-			RepoID:  repos[2],
+			Language: "go",
+			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
+			RepoID:   repos[2],
 		}, {
-			DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
-			RepoID:  repos[3],
+			Language: "go",
+			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
+			RepoID:   repos[3],
 		},
 			{
-				DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
-				RepoID:  repos[4],
+				Language: "go",
+				DepData:  map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
+				RepoID:   repos[4],
 			},
 		}
 		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{

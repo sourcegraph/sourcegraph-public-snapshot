@@ -89,9 +89,10 @@ type DependencyReferences struct {
 // DependencyReference effectively says that RepoID has made a reference to a
 // dependency.
 type DependencyReference struct {
-	DepData map[string]interface{} // includes additional information about the dependency, e.g. whether or not it is vendored for Go
-	RepoID                         // the repository who made the reference to the dependency.
-	Hints   map[string]interface{} // hints which should be passed to workspace/xreferences in order to more quickly find the definition.
+	Language string                 // the programming language of the dependency
+	DepData  map[string]interface{} // includes additional information about the dependency, e.g. whether or not it is vendored for Go
+	RepoID                          // the repository who made the reference to the dependency.
+	Hints    map[string]interface{} // hints which should be passed to workspace/xreferences in order to more quickly find the definition.
 }
 
 func (d *DependencyReference) String() string {
