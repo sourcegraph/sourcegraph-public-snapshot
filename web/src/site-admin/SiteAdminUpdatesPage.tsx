@@ -125,5 +125,10 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
 }
 
 function getUpdateChannel(cfgText: string): string | null {
-    return parseSiteConfiguration(cfgText)['update.channel'] || null
+    try {
+        return parseSiteConfiguration(cfgText)['update.channel'] || null
+    } catch (err) {
+        console.error(err)
+        return null
+    }
 }

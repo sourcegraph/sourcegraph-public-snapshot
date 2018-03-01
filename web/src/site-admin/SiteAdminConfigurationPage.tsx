@@ -212,6 +212,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         if (
             this.state.site &&
             this.state.site.configuration &&
+            this.state.site.configuration.extraValidationErrors &&
             this.state.site.configuration.extraValidationErrors.length > 0
         ) {
             alerts.push(
