@@ -387,7 +387,11 @@ func serveOrgsGetSlackWebhooks(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return errors.Wrap(err, "Orgs.Get")
 		}
-		webhooks = append(webhooks, org.SlackWebhookURL)
+		var webhookURL *string
+		if org.SlackWebhookURL != "" {
+			webhookURL = &org.SlackWebhookURL
+		}
+		webhooks = append(webhooks, webhookURL)
 	}
 	if err := json.NewEncoder(w).Encode(webhooks); err != nil {
 		return errors.Wrap(err, "Encode")

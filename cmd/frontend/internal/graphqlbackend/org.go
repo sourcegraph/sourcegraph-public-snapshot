@@ -75,7 +75,10 @@ func (o *orgResolver) DisplayName() *string {
 }
 
 func (o *orgResolver) SlackWebhookURL() *string {
-	return o.org.SlackWebhookURL
+	if o.org.SlackWebhookURL == "" {
+		return nil
+	}
+	return &o.org.SlackWebhookURL
 }
 
 func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }

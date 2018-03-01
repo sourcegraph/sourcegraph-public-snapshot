@@ -143,7 +143,7 @@ type Org struct {
 	ID              int32
 	Name            string
 	DisplayName     *string
-	SlackWebhookURL *string
+	SlackWebhookURL string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

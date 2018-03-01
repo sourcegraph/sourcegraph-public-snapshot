@@ -205,7 +205,7 @@ func (o *orgs) Update(ctx context.Context, id int32, displayName, slackWebhookUR
 		}
 	}
 	if slackWebhookURL != nil {
-		org.SlackWebhookURL = slackWebhookURL
+		org.SlackWebhookURL = *slackWebhookURL
 		if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET slack_webhook_url=$1 WHERE id=$2 AND deleted_at IS NULL", org.SlackWebhookURL, id); err != nil {
 			return nil, err
 		}

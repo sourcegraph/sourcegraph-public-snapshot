@@ -94,7 +94,6 @@ func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
 	}
 
 	for _, webhook := range webhooks {
-		webhook := webhook
 		if webhook == nil {
 			continue // org does not have one set
 		}
@@ -104,6 +103,6 @@ func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
 			if err != nil {
 				log15.Error("slack notify: failed", "error", err)
 			}
-		}()
+		}(*webhook)
 	}
 }
