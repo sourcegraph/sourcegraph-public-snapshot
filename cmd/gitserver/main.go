@@ -19,7 +19,6 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
@@ -48,8 +47,7 @@ func main() {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}
 	gitserver := server.Server{
-		ReposDir:            reposDir,
-		MaxConcurrentClones: conf.GetTODO().GitMaxConcurrentClones,
+		ReposDir: reposDir,
 	}
 	gitserver.RegisterMetrics()
 
