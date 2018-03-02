@@ -14,13 +14,20 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
-var (
-	reposListConf = conf.GetTODO().ReposList
-)
-
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) {
-	configs := reposListConf
+	var shutdown chan struct{}
+	conf.Watch(func() {
+		if shutdown != nil {
+			close(shutdown)
+		}
+		shutdown = make(chan struct{})
+		go startRepositorySyncWorker(ctx, shutdown)
+	})
+}
+
+func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {
+	configs := conf.Get().ReposList
 	if len(configs) == 0 {
 		return
 	}
@@ -43,7 +50,11 @@ func RunRepositorySyncWorker(ctx context.Context) {
 				continue
 			}
 		}
-		time.Sleep(getUpdateInterval())
+		select {
+		case <-shutdown:
+			return
+		case <-time.After(getUpdateInterval()):
+		}
 	}
 }
 
