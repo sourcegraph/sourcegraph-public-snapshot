@@ -135,10 +135,11 @@ func (w *worker) restart() {
 	w.start(w.context)
 }
 
-// start starts the worker with the given context.
+// start starts the worker with the given context. The work is done in a
+// separate goroutine.
 func (w *worker) start(ctx context.Context) {
 	shutdown := make(chan struct{})
 	w.shutdown = shutdown
 	w.context = ctx
-	w.work(ctx, shutdown)
+	go w.work(ctx, shutdown)
 }
