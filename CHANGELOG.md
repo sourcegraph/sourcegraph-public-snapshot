@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes (add your changes here!)
 
+### Added
+
+* Support for [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server) as a codehost. Configure via the `bitbucketServer` site config field.
+
 ### Configuration changes
 
 * Reduced the `gitMaxConcurrentClones` site config option's default value from 100 to 5, to help prevent too many concurrent clones from causing issues on code hosts.

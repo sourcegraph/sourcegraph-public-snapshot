@@ -2,6 +2,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Edit, FormattingOptions } from '@sqs/jsonc-parser/lib/format'
 import {
     AwsCodeCommitConnection,
+    BitbucketServerConnection,
     GitHubConnection,
     GitLabConnection,
     OpenIdConnectAuthProvider,
@@ -66,6 +67,17 @@ const addGitLab: ConfigInsertionFunction = config => {
         token: tokenPlaceholder,
     }
     const edits = setProperty(config, ['gitlab', -1], value, defaultFormattingOptions)
+    return { edits, selectText: tokenPlaceholder }
+}
+
+const addBitbucketServer: ConfigInsertionFunction = config => {
+    const tokenPlaceholder =
+        '<personal access token with read scope (https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add)>'
+    const value: BitbucketServerConnection = {
+        url: 'https://bitbucket.example.com',
+        token: tokenPlaceholder,
+    }
+    const edits = setProperty(config, ['bitbucketServer', -1], value, defaultFormattingOptions)
     return { edits, selectText: tokenPlaceholder }
 }
 
@@ -148,6 +160,7 @@ export const siteConfigActions: EditorAction[] = [
         run: addGitHubEnterprise,
     },
     { id: 'sourcegraph.site.addGitLab', label: 'Add GitLab projects', run: addGitLab },
+    { id: 'sourcegraph.site.addBitbucketServer', label: 'Add Bitbucket Server repositories', run: addBitbucketServer },
     { id: 'sourcegraph.site.addAWSCodeCommit', label: 'Add AWS CodeCommit repositories', run: addAWSCodeCommit },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
     { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },

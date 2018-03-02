@@ -126,7 +126,9 @@ func (r *fileResolver) ExternalURL(ctx context.Context) (*string, error) {
 				urlPattern = info.Repo.Links.Blob
 			}
 			if urlPattern != "" {
-				// TODO(sqs): use rev, not fully resolved commit ID
+				// TODO(sqs): use rev, not fully resolved commit ID. When we
+				// do this, we will need a way for templates to escape rev for
+				// path vs query string.
 				url := strings.NewReplacer("{rev}", string(r.commit.oid), "{path}", r.path).Replace(urlPattern)
 				return &url, nil
 			}

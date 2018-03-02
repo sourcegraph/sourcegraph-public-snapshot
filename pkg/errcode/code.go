@@ -104,7 +104,8 @@ func (e *Mock) NotFound() bool {
 
 // IsNotFound will check if err or one of its causes is a not found
 // error. Note: This will not check os.IsNotExist, but rather is returned by
-// methods like Repo.Get when the repo is not found.
+// methods like Repo.Get when the repo is not found. It will also *not* map
+// HTTPStatusCode into not found.
 func IsNotFound(err error) bool {
 	type notFounder interface {
 		NotFound() bool
@@ -112,6 +113,18 @@ func IsNotFound(err error) bool {
 	return isErrorPredicate(err, func(err error) bool {
 		e, ok := err.(notFounder)
 		return ok && e.NotFound()
+	})
+}
+
+// IsUnauthorized will check if err or one of its causes is an unauthorized
+// error.
+func IsUnauthorized(err error) bool {
+	type unauthorizeder interface {
+		Unauthorized() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(unauthorizeder)
+		return ok && e.Unauthorized()
 	})
 }
 

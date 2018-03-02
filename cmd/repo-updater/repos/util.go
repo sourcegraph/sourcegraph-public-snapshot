@@ -89,6 +89,20 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 	}
 }
 
+// addPasswordBestEffort adds the password to rawurl if the user is
+// specified. If anything fails, the original rawurl is returned.
+func addPasswordBestEffort(rawurl, password string) string {
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		return rawurl
+	}
+	if u.User == nil || u.User.Username() == "" {
+		return rawurl
+	}
+	u.User = url.UserPassword(u.User.Username(), password)
+	return u.String()
+}
+
 // atomicValue manages an atomic value.
 type atomicValue struct {
 	mu    sync.RWMutex

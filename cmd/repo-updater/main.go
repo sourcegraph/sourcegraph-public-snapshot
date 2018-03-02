@@ -65,6 +65,9 @@ func main() {
 	// Gitolite syncing thread
 	go repos.RunGitoliteRepositorySyncWorker(ctx)
 
+	// Bitbucket Server syncing thread
+	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
+
 	var repoupdater repoupdater.Server
 
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())

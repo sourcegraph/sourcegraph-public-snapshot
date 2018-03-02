@@ -171,6 +171,13 @@
         "$ref": "#/definitions/AWSCodeCommitConnection"
       }
     },
+    "bitbucketServer": {
+      "description": "JSON array of configuration for Bitbucket Server hosts.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/BitbucketServerConnection"
+      }
+    },
     "gitoliteHosts": {
       "description": "Space separated list of mappings from repo name prefix to gitolite hosts.",
       "type": "string"
@@ -514,6 +521,51 @@
         "initialRepositoryEnablement": {
           "description":
             "Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.",
+          "type": "boolean"
+        }
+      }
+    },
+    "BitbucketServerConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "token"],
+      "properties": {
+        "url": {
+          "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com",
+          "type": "string",
+          "pattern": "^https?://",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
+          "format": "uri"
+        },
+        "token": {
+          "description":
+            "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add",
+          "type": "string",
+          "pattern": "^[^<>]+$"
+        },
+        "gitURLType": {
+          "description":
+            "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/server/config/repositories#repositories-that-need-https-or-ssh-authentication.",
+          "type": "string",
+          "enum": ["http", "ssh"],
+          "default": "http"
+        },
+        "certificate": {
+          "description": "TLS certificate of a Bitbucket Server instance.",
+          "type": "string"
+        },
+        "repositoryPathPattern": {
+          "description":
+            "The pattern used to generate the corresponding Sourcegraph repository path for a Bitbucket Server repository.\n\n - \"{host}\" is replaced with the Bitbucket Server URL's host (such as bitbucket.example.com)\n - \"{projectKey}\" is replaced with the Bitbucket repository's parent project key (such as \"PRJ\")\n - \"{repositorySlug}\" is replaced with the Bitbucket repository's slug key (such as \"my-repo\").\n\nFor example, if your Bitbucket Server is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{projectKey}/{repositorySlug}\" would mean that a Bitbucket Server repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.",
+          "type": "string",
+          "default": "{host}/{projectKey}/{repositorySlug}"
+        },
+        "initialRepositoryEnablement": {
+          "description":
+            "Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.",
           "type": "boolean"
         }
       }
