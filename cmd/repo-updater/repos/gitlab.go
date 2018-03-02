@@ -187,7 +187,6 @@ var gitLabRepositorySyncWorker = &worker{
 				}
 			}(c)
 		}
-		select {}
 	},
 }
 

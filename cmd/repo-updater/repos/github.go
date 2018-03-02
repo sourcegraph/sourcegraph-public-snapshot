@@ -238,7 +238,6 @@ var gitHubRepositorySyncWorker = &worker{
 				}
 			}(c)
 		}
-		select {}
 	},
 }
 
