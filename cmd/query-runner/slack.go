@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"runtime"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -101,16 +99,6 @@ func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
 			continue // org does not have one set
 		}
 		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					// Same as net/http
-					const size = 64 << 10
-					buf := make([]byte, size)
-					buf = buf[:runtime.Stack(buf, false)]
-					log.Printf("slack notify: failed due to internal panic: %v\n%s", r, buf)
-				}
-			}()
-
 			client := slack.New(webhook, true)
 			err := slack.Post(payload, client.WebhookURL)
 			if err != nil {
