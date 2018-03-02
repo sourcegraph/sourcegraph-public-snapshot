@@ -188,7 +188,7 @@ const SiteSchemaJSON = `{
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
       "type": "integer",
-      "default": 100
+      "default": 5
     },
     "gitOriginMap": {
       "description":
