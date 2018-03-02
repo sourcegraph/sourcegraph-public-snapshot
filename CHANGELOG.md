@@ -7,6 +7,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * Support for [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server) as a codehost. Configure via the `bitbucketServer` site config field.
+* Prometheus gauges for git clone queue depth (`src_gitserver_clone_queue`) and git ls-remote queue depth (`src_gitserver_lsremote_queue`).
 
 ### Configuration changes
 

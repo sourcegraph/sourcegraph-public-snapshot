@@ -202,6 +202,9 @@ func (s *Server) backgroundWithTimeout(timeout time.Duration) (context.Context, 
 }
 
 func (s *Server) acquireCloneLimiter() *parallel.Run {
+	cloneQueue.Inc()
+	defer cloneQueue.Dec()
+
 	s.cloneLimitersMu.RLock()
 	cloneLimiter := s.cloneLimiter
 	s.cloneLimitersMu.RUnlock()
@@ -211,6 +214,9 @@ func (s *Server) acquireCloneLimiter() *parallel.Run {
 }
 
 func (s *Server) acquireCloneableLimiter() *parallel.Run {
+	lsRemoteQueue.Inc()
+	defer lsRemoteQueue.Dec()
+
 	s.cloneLimitersMu.RLock()
 	cloneableLimiter := s.cloneableLimiter
 	s.cloneLimitersMu.RUnlock()
@@ -567,23 +573,39 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 	return nil
 }
 
-var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "exec_running",
-	Help:      "number of gitserver.Command running concurrently.",
-}, []string{"cmd", "repo"})
-var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "exec_duration_seconds",
-	Help:      "gitserver.Command latencies in seconds.",
-	Buckets:   traceutil.UserLatencyBuckets,
-}, []string{"cmd", "repo", "status"})
+var (
+	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "exec_running",
+		Help:      "number of gitserver.Command running concurrently.",
+	}, []string{"cmd", "repo"})
+	execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "exec_duration_seconds",
+		Help:      "gitserver.Command latencies in seconds.",
+		Buckets:   traceutil.UserLatencyBuckets,
+	}, []string{"cmd", "repo", "status"})
+	cloneQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "clone_queue",
+		Help:      "number of repos waiting to be cloned.",
+	})
+	lsRemoteQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "lsremote_queue",
+		Help:      "number of repos waiting to check existance on remote code host (git ls-remote).",
+	})
+)
 
 func init() {
 	prometheus.MustRegister(execRunning)
 	prometheus.MustRegister(execDuration)
+	prometheus.MustRegister(cloneQueue)
+	prometheus.MustRegister(lsRemoteQueue)
 }
 
 func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
