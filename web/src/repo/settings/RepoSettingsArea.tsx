@@ -8,6 +8,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
+import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { fetchRepository } from './backend'
 import { RepoSettingsIndexPage } from './RepoSettingsIndexPage'
 import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
@@ -93,6 +94,14 @@ export class RepoSettingsArea extends React.Component<Props> {
 
         return (
             <div className="repo-settings-area area">
+                <RepoHeaderActionPortal
+                    position="nav"
+                    element={
+                        <span key="graph" className="repo-settings-area__header-item">
+                            Settings
+                        </span>
+                    }
+                />
                 <RepoSettingsSidebar className="area__sidebar" {...this.props} {...transferProps} />
                 <div className="area__content">
                     <Switch>

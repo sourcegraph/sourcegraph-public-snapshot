@@ -6,6 +6,10 @@
 
 .repo-settings-area {
     &__header {
+        &-item {
+            padding-left: 0.25rem;
+            font-weight: bold;
+        }
         &-btn {
             display: inline-flex;
         }
