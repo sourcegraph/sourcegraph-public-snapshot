@@ -145,6 +145,10 @@ func (w *worker) restart() {
 	// Shutdown the previously started workers.
 	close(w.shutdown)
 
+	// Note for the weary traveller: We do not wait for workers to stop, which
+	// could lead to workers doing duplicate work. I (Keegan) have a sneaky
+	// feeling for large installations this could be an issue.
+
 	// Start the new workers.
 	w.start(w.context)
 }
