@@ -97,7 +97,6 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(traceutil.TraceRoute(handler(serveSavedQueriesDeleteInfo)))
 	m.Get(apirouter.OrgsListUsers).Handler(traceutil.TraceRoute(handler(serveOrgsListUsers)))
 	m.Get(apirouter.OrgsGetByName).Handler(traceutil.TraceRoute(handler(serveOrgsGetByName)))
-	m.Get(apirouter.OrgsGetSlackWebhooks).Handler(traceutil.TraceRoute(handler(serveOrgsGetSlackWebhooks)))
 	m.Get(apirouter.UsersGetByUsername).Handler(traceutil.TraceRoute(handler(serveUsersGetByUsername)))
 	m.Get(apirouter.UserEmailsGetEmail).Handler(traceutil.TraceRoute(handler(serveUserEmailsGetEmail)))
 	m.Get(apirouter.AppURL).Handler(traceutil.TraceRoute(handler(serveAppURL)))

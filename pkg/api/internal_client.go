@@ -181,14 +181,6 @@ func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (org
 	return orgID, nil
 }
 
-func (c *internalClient) OrgsGetSlackWebhooks(ctx context.Context, orgIDs []int32) (webhooks []*string, err error) {
-	err = c.postInternal(ctx, "orgs/get-slack-webhooks", orgIDs, &webhooks)
-	if err != nil {
-		return nil, err
-	}
-	return webhooks, nil
-}
-
 func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {
 	err = c.postInternal(ctx, "users/get-by-username", username, &user)
 	if err != nil {

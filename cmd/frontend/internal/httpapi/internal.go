@@ -390,30 +390,6 @@ func serveOrgsGetByName(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveOrgsGetSlackWebhooks(w http.ResponseWriter, r *http.Request) error {
-	var orgIDs []int32
-	err := json.NewDecoder(r.Body).Decode(&orgIDs)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
-	}
-	var webhooks []*string
-	for _, orgID := range orgIDs {
-		settings, err := backend.Configuration.GetForSubject(r.Context(), api.ConfigurationSubject{Org: &orgID})
-		if err != nil {
-			return errors.Wrap(err, "Configuration.GetForSubject")
-		}
-		var webhookURL *string
-		if settings != nil && settings.NotificationsSlack != nil {
-			webhookURL = &settings.NotificationsSlack.WebhookURL
-		}
-		webhooks = append(webhooks, webhookURL)
-	}
-	if err := json.NewEncoder(w).Encode(webhooks); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
 func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {
 	var username string
 	err := json.NewDecoder(r.Body).Decode(&username)
