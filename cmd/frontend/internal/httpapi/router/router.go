@@ -18,6 +18,7 @@ const (
 	SavedQueriesGetInfo        = "internal.saved-queries.get-info"
 	SavedQueriesSetInfo        = "internal.saved-queries.set-info"
 	SavedQueriesDeleteInfo     = "internal.saved-queries.delete-info"
+	SettingsGetForSubject      = "internal.settings.get-for-subject"
 	OrgsListUsers              = "internal.orgs.list-users"
 	OrgsGetByName              = "internal.orgs.get-by-name"
 	OrgsGetSlackWebhooks       = "internal.orgs.get-slack-webhooks"
@@ -78,6 +79,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/saved-queries/get-info").Methods("POST").Name(SavedQueriesGetInfo)
 	base.Path("/saved-queries/set-info").Methods("POST").Name(SavedQueriesSetInfo)
 	base.Path("/saved-queries/delete-info").Methods("POST").Name(SavedQueriesDeleteInfo)
+	base.Path("/settings/get-for-subject").Methods("POST").Name(SettingsGetForSubject)
 	base.Path("/orgs/list-users").Methods("POST").Name(OrgsListUsers)
 	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)
 	base.Path("/orgs/get-slack-webhooks").Methods("POST").Name(OrgsGetSlackWebhooks)

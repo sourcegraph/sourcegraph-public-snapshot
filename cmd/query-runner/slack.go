@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"runtime"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -79,12 +81,30 @@ func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query ap
 }
 
 func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
-	webhooks, err := api.InternalClient.OrgsGetSlackWebhooks(ctx, orgsToNotify)
-	if err != nil {
-		log15.Error("slack notify: failed to get webhooks", "error", err)
-		return
+	for _, org := range orgsToNotify {
+		go func(org int32) {
+			defer func() {
+				if r := recover(); r != nil {
+					// Same as net/http
+					const size = 64 << 10
+					buf := make([]byte, size)
+					buf = buf[:runtime.Stack(buf, false)]
+					log.Printf("slack notify: failed due to internal panic: %v\n%s", r, buf)
+				}
+			}()
+			settings, _, err := api.InternalClient.SettingsGetForSubject(ctx, api.ConfigurationSubject{Org: &org})
+			if err != nil {
+				log15.Error("slack notify: failed to get org settings", "org", org, "error", err)
+				return
+			}
+			if settings.NotificationsSlack != nil && settings.NotificationsSlack.WebhookURL != "" {
+				slackNotifyOrg(ctx, settings.NotificationsSlack.WebhookURL, text)
+			}
+		}(org)
 	}
+}
 
+func slackNotifyOrg(ctx context.Context, webhookURL, text string) {
 	payload := &slack.Payload{
 		Username:    "saved-search-bot",
 		IconEmoji:   ":mag:",
@@ -92,17 +112,9 @@ func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
 		UnfurlMedia: false,
 		Text:        text,
 	}
-
-	for _, webhook := range webhooks {
-		if webhook == nil {
-			continue // org does not have one set
-		}
-		go func() {
-			client := slack.New(webhook, true)
-			err := slack.Post(payload, client.WebhookURL)
-			if err != nil {
-				log15.Error("slack notify: failed", "error", err)
-			}
-		}(*webhook)
+	client := slack.New(webhookURL, true)
+	err := slack.Post(payload, client.WebhookURL)
+	if err != nil {
+		log15.Error("slack notify: failed", "error", err)
 	}
 }

@@ -339,6 +339,21 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
+	var subject api.ConfigurationSubject
+	if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	settings, err := db.Settings.GetLatest(r.Context(), subject)
+	if err != nil {
+		return errors.Wrap(err, "Settings.GetLatest")
+	}
+	if err := json.NewEncoder(w).Encode(settings); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
 func serveOrgsListUsers(w http.ResponseWriter, r *http.Request) error {
 	var orgID int32
 	err := json.NewDecoder(r.Body).Decode(&orgID)
