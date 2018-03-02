@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
-	"runtime"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -24,16 +22,6 @@ func (n *notifier) emailNotify(ctx context.Context) {
 
 	// Send tx emails asynchronously.
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Same as net/http
-				const size = 64 << 10
-				buf := make([]byte, size)
-				buf = buf[:runtime.Stack(buf, false)]
-				log.Printf("email notify: failed due to internal panic: %v\n%s", r, buf)
-			}
-		}()
-
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
 
@@ -110,16 +98,6 @@ func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32,
 
 	// Send tx emails asynchronously.
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Same as net/http
-				const size = 64 << 10
-				buf := make([]byte, size)
-				buf = buf[:runtime.Stack(buf, false)]
-				log.Printf("email notify: failed due to internal panic: %v\n%s", r, buf)
-			}
-		}()
-
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
 

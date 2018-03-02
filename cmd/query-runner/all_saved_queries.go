@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
-	"runtime"
 	"sync"
 	"time"
 
@@ -126,15 +124,6 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	if !args.DisableSubscriptionNotifications {
 		// Inform any subscribers that they have been unsubscribed.
 		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					// Same as net/http
-					const size = 64 << 10
-					buf := make([]byte, size)
-					buf = buf[:runtime.Stack(buf, false)]
-					log.Printf("executor: failed due to internal panic: %v\n%s", r, buf)
-				}
-			}()
 			usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), query.Spec, query.Config)
 			emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, query, notifyUnsubscribedTemplate)
 			slackNotifyDeleted(context.Background(), orgsToNotify, query)
@@ -163,16 +152,6 @@ func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAn
 		return
 	}
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				// Same as net/http
-				const size = 64 << 10
-				buf := make([]byte, size)
-				buf = buf[:runtime.Stack(buf, false)]
-				log.Printf("executor: failed due to internal panic: %v\n%s", r, buf)
-			}
-		}()
-
 		if !exists {
 			// Saved query (newValue) was created.
 			usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), newValue.Spec, newValue.Config)
