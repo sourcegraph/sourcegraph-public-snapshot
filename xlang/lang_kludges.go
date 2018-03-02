@@ -112,25 +112,25 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) xlangext.PackageDesc
 			// a composer.json file. In this case, there are no external references to this symbol.
 			return nil
 		}
-		return packageIdentifiers["php"](symbol["package"].(xlangext.PackageDescriptor))
+		return packageIdentifiers["php"](symbol["package"].(map[string]interface{}))
 	},
 	"typescript": func(symbol lspext.SymbolDescriptor) xlangext.PackageDescriptor {
 		if _, ok := symbol["package"]; !ok {
 			return nil
 		}
-		return packageIdentifiers["typescript"](symbol["package"].(xlangext.PackageDescriptor))
+		return packageIdentifiers["typescript"](symbol["package"].(map[string]interface{}))
 	},
 	"java": func(symbol lspext.SymbolDescriptor) xlangext.PackageDescriptor {
-		if _, ok := symbol["package"].(xlangext.PackageDescriptor); !ok {
+		if _, ok := symbol["package"].(map[string]interface{}); !ok {
 			return nil
 		}
-		return packageIdentifiers["java"](symbol["package"].(xlangext.PackageDescriptor))
+		return packageIdentifiers["java"](symbol["package"].(map[string]interface{}))
 	},
 	"python": func(symbol lspext.SymbolDescriptor) xlangext.PackageDescriptor {
-		if _, ok := symbol["package"].(xlangext.PackageDescriptor); !ok {
+		if _, ok := symbol["package"].(map[string]interface{}); !ok {
 			return nil
 		}
-		return packageIdentifiers["python"](symbol["package"].(xlangext.PackageDescriptor))
+		return packageIdentifiers["python"](symbol["package"].(map[string]interface{}))
 	},
 }
 
