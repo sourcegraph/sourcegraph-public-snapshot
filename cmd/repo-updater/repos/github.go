@@ -36,10 +36,29 @@ func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.Exter
 	}
 }
 
-var githubConnections []*githubConnection
+type githubConnectionsT struct {
+	mu    sync.RWMutex
+	conns []*githubConnection
+}
 
-func init() {
-	githubConf := conf.GetTODO().Github
+func (g *githubConnectionsT) get() []*githubConnection {
+	g.mu.RLock()
+	conns := g.conns
+	g.mu.RUnlock()
+	return conns
+}
+
+func (g *githubConnectionsT) reconfigureAndRestart() {
+	g.reconfigure()
+
+	// TODO(slimsag): restart RunGitHubRepositorySyncWorker
+}
+
+func (g *githubConnectionsT) reconfigure() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.conns = nil
+	githubConf := conf.Get().Github
 
 	var hasGitHubDotComConnection bool
 	for _, c := range githubConf {
@@ -65,13 +84,20 @@ func init() {
 			log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
 			continue
 		}
-		githubConnections = append(githubConnections, conn)
+		g.conns = append(g.conns, conn)
 	}
+}
+
+var githubConnections = &githubConnectionsT{}
+
+func init() {
+	conf.Watch(githubConnections.reconfigureAndRestart)
 }
 
 // getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
 // the repository specified by the args.
 func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error) {
+	githubConnections := githubConnections.get()
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
 		// Look up by external repository spec.
 		skippedBecauseNoAuth := false
@@ -210,6 +236,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) {
+	githubConnections := githubConnections.get()
 	if len(githubConnections) == 0 {
 		return
 	}
