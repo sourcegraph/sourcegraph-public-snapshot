@@ -39,17 +39,38 @@ func AWSCodeCommitExternalRepoSpec(repo *awscodecommit.Repository, serviceID str
 	}
 }
 
-var awsCodeCommitConnections []*awsCodeCommitConnection
+type awsCodeCommitConnectionsT struct {
+	mu    sync.RWMutex
+	conns []*awsCodeCommitConnection
+}
 
-func init() {
-	for _, c := range conf.GetTODO().AwsCodeCommit {
+func (a *awsCodeCommitConnectionsT) get() []*awsCodeCommitConnection {
+	a.mu.RLock()
+	conns := a.conns
+	a.mu.RUnlock()
+	return conns
+}
+
+func (a *awsCodeCommitConnectionsT) reconfigure() {
+	a.mu.Lock()
+	a.conns = nil
+	for _, c := range conf.Get().AwsCodeCommit {
 		conn, err := newAWSCodeCommitConnection(c)
 		if err != nil {
 			log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "accessKeyID", c.AccessKeyID, "error", err)
 			continue
 		}
-		awsCodeCommitConnections = append(awsCodeCommitConnections, conn)
+		a.conns = append(a.conns, conn)
 	}
+	a.mu.Unlock()
+
+	awsCodeCommitRepositorySyncWorker.restart()
+}
+
+var awsCodeCommitConnections = &awsCodeCommitConnectionsT{}
+
+func init() {
+	conf.Watch(awsCodeCommitConnections.reconfigure)
 }
 
 // createAWSCodeCommitServiceID creates the repository external service ID. See
@@ -79,7 +100,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == AWSCodeCommitServiceType {
 		// Look up by external repository spec.
 		var err error
-		for _, conn := range awsCodeCommitConnections {
+		for _, conn := range awsCodeCommitConnections.get() {
 			var serviceID string
 			serviceID, err = conn.getServiceID()
 			if serviceID != "" && args.ExternalRepo.ServiceID == serviceID {
@@ -115,13 +136,32 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 	return nil, false, nil
 }
 
-// RunAWSCodeCommitRepositorySyncWorker runs the worker that syncs repositories from the configured AWSCodeCommit and AWSCodeCommit
-// Enterprise instances to Sourcegraph.
-func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
-	if len(awsCodeCommitConnections) == 0 {
+type awsCodeCommitRepositorySyncWorkerT struct {
+	shutdown chan struct{}
+	context  context.Context
+}
+
+func (a *awsCodeCommitRepositorySyncWorkerT) restart() {
+	if a.shutdown == nil {
+		return // not yet started
+	}
+
+	// Shutdown the previously started workers.
+	close(a.shutdown)
+
+	// Start the new workers.
+	a.start(a.context)
+}
+
+func (a *awsCodeCommitRepositorySyncWorkerT) start(ctx context.Context) {
+	shutdown := make(chan struct{})
+	a.shutdown = shutdown
+	a.context = ctx
+
+	if len(awsCodeCommitConnections.get()) == 0 {
 		return
 	}
-	for _, c := range awsCodeCommitConnections {
+	for _, c := range awsCodeCommitConnections.get() {
 		go func(c *awsCodeCommitConnection) {
 			// Hit the AWS API to determine our account ID (which is a fixed value but not derivable
 			// from the values in the Sourcegraph site config). Be robust to the API being
@@ -133,16 +173,31 @@ func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
 					break
 				}
 				log15.Error("Unable to reach AWS CodeCommit API to determine AWS account ID.", "region", c.config.Region, "accessKeyID", c.config.AccessKeyID, "error", err, "retryInterval", retryInterval)
-				time.Sleep(retryInterval)
+				select {
+				case <-shutdown:
+					return
+				case <-time.After(retryInterval):
+				}
 			}
 
 			for {
-				updateAWSCodeCommitRepositories(ctx, c)
-				time.Sleep(getUpdateInterval())
+				select {
+				case <-shutdown:
+					return
+				case <-time.After(getUpdateInterval()):
+					updateAWSCodeCommitRepositories(ctx, c)
+				}
 			}
 		}(c)
 	}
-	select {}
+}
+
+var awsCodeCommitRepositorySyncWorker = &awsCodeCommitRepositorySyncWorkerT{}
+
+// RunAWSCodeCommitRepositorySyncWorker runs the worker that syncs repositories from the configured AWSCodeCommit and AWSCodeCommit
+// Enterprise instances to Sourcegraph.
+func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
+	awsCodeCommitRepositorySyncWorker.start(ctx)
 }
 
 func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awscodecommit.Repository) api.RepoURI {
