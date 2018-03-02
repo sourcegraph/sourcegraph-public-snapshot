@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
-import { currentConfiguration, SavedQueryConfiguration } from '../settings/configuration'
+import { currentConfiguration } from '../settings/configuration'
 import { createAggregateError } from '../util/errors'
 import { SearchOptions } from './index'
 
@@ -283,17 +283,10 @@ const savedQueryFragment = gql`
     }
 `
 
-function savedQueriesEqual(a: SavedQueryConfiguration, b: SavedQueryConfiguration): boolean {
-    return isEqual(a, b)
-}
-
 export function observeSavedQueries(): Observable<GQL.ISavedQuery[]> {
     return currentConfiguration.pipe(
         map(config => config['search.savedQueries']),
-        distinctUntilChanged(
-            (a, b) =>
-                (!a && !b) || (!!a && !!b && a.length === b.length && a.every((q, i) => savedQueriesEqual(q, b[i])))
-        ),
+        distinctUntilChanged((a, b) => isEqual(a, b)),
         mergeMap(fetchSavedQueries)
     )
 }

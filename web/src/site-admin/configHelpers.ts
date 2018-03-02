@@ -1,6 +1,5 @@
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Edit, FormattingOptions } from '@sqs/jsonc-parser/lib/format'
-import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser/lib/main'
 import {
     AwsCodeCommitConnection,
     GitHubConnection,
@@ -10,7 +9,7 @@ import {
     SamlAuthProvider,
     SiteConfiguration,
 } from '../schema/site.schema'
-import { createAggregateError } from '../util/errors'
+import { parseJSON } from '../settings/configuration'
 
 /**
  * A helper function that modifies site configuration to configure specific
@@ -155,29 +154,13 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },
 ]
 
-/** Parses the JSON site configuration provided. */
-export function parseSiteConfiguration(text: string): SiteConfiguration {
-    const errors: ParseError[] = []
-    const o = parse(text, errors, { allowTrailingComma: true, disallowComments: false })
-    if (errors.length > 0) {
-        throw createAggregateError(
-            errors.map(v => ({
-                ...v,
-                code: ParseErrorCode[v.error],
-                message: `Configuration parse error, code: ${v.error} (offset: ${v.offset}, length: ${v.length})`,
-            }))
-        )
-    }
-    return o as SiteConfiguration
-}
-
 /**
  * Parses out the 'disableTelemetry' key from the JSON site config and returns the inverse.
  * If this config option is not set, or if the configuration has a parse error, default is true.
  */
 export function getTelemetryEnabled(text: string): boolean {
     try {
-        return !parseSiteConfiguration(text).disableTelemetry
+        return !(parseJSON(text) as SiteConfiguration).disableTelemetry
     } catch (err) {
         console.error(err)
         return true

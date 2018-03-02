@@ -9,9 +9,11 @@ import { Link } from 'react-router-dom'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
+import { SiteConfiguration } from '../schema/site.schema'
+import { parseJSON } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
-import { getTelemetryEnabled, parseSiteConfiguration } from './configHelpers'
+import { getTelemetryEnabled } from './configHelpers'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -126,7 +128,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
 
 function getUpdateChannel(cfgText: string): string | null {
     try {
-        return parseSiteConfiguration(cfgText)['update.channel'] || null
+        return (parseJSON(cfgText) as SiteConfiguration)['update.channel'] || null
     } catch (err) {
         console.error(err)
         return null
