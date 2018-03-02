@@ -19,11 +19,14 @@ import (
 	jaegermetrics "github.com/uber/jaeger-lib/metrics"
 )
 
-var lightstepAccessToken = conf.GetTODO().LightstepAccessToken
-var lightstepProject = conf.GetTODO().LightstepProject
-var lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
-
-var useJaeger = conf.GetTODO().UseJaeger
+// Note: these configuration options require service restarts to take effect.
+// Keep in sync with the pkg/conf.requireRestart list.
+var (
+	lightstepAccessToken         = conf.Get().LightstepAccessToken
+	lightstepProject             = conf.Get().LightstepProject
+	lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
+	useJaeger                    = conf.Get().UseJaeger
+)
 
 func Init(serviceName string) {
 	if useJaeger {
