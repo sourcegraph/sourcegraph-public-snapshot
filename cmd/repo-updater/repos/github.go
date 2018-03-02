@@ -36,68 +36,51 @@ func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.Exter
 	}
 }
 
-type githubConnectionsT struct {
-	mu    sync.RWMutex
-	conns []*githubConnection
-}
-
-func (g *githubConnectionsT) get() []*githubConnection {
-	g.mu.RLock()
-	conns := g.conns
-	g.mu.RUnlock()
-	return conns
-}
-
-func (g *githubConnectionsT) reconfigureAndRestart() {
-	g.reconfigure()
-
-	// TODO(slimsag): restart RunGitHubRepositorySyncWorker
-}
-
-func (g *githubConnectionsT) reconfigure() {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.conns = nil
-	githubConf := conf.Get().Github
-
-	var hasGitHubDotComConnection bool
-	for _, c := range githubConf {
-		u, _ := url.Parse(c.Url)
-		if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
-			hasGitHubDotComConnection = true
-			break
-		}
-	}
-	if !hasGitHubDotComConnection {
-		// Add a GitHub.com entry by default, to support navigating to URL paths like
-		// /github.com/foo/bar to auto-add that repository.
-		githubConf = append(githubConf, schema.GitHubConnection{
-			RepositoryQuery: []string{"none"}, // don't try to list all repositories during syncs
-			Url:             "https://github.com",
-			InitialRepositoryEnablement: true,
-		})
-	}
-
-	for _, c := range githubConf {
-		conn, err := newGitHubConnection(c)
-		if err != nil {
-			log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
-			continue
-		}
-		g.conns = append(g.conns, conn)
-	}
-}
-
-var githubConnections = &githubConnectionsT{}
+var githubConnections = &atomicValue{}
 
 func init() {
-	conf.Watch(githubConnections.reconfigureAndRestart)
+	conf.Watch(func() {
+		githubConnections.set(func() interface{} {
+			githubConf := conf.Get().Github
+
+			var hasGitHubDotComConnection bool
+			for _, c := range githubConf {
+				u, _ := url.Parse(c.Url)
+				if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
+					hasGitHubDotComConnection = true
+					break
+				}
+			}
+			if !hasGitHubDotComConnection {
+				// Add a GitHub.com entry by default, to support navigating to URL paths like
+				// /github.com/foo/bar to auto-add that repository.
+				githubConf = append(githubConf, schema.GitHubConnection{
+					RepositoryQuery: []string{"none"}, // don't try to list all repositories during syncs
+					Url:             "https://github.com",
+					InitialRepositoryEnablement: true,
+				})
+			}
+
+			var conns []*githubConnection
+			for _, c := range githubConf {
+				conn, err := newGitHubConnection(c)
+				if err != nil {
+					log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
+					continue
+				}
+				conns = append(conns, conn)
+			}
+			return conns
+		})
+
+		// TODO(slimsag): restart RunGitHubRepositorySyncWorker
+	})
 }
 
 // getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
 // the repository specified by the args.
 func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error) {
-	githubConnections := githubConnections.get()
+	githubConnections := githubConnections.get().([]*githubConnection)
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
 		// Look up by external repository spec.
 		skippedBecauseNoAuth := false
@@ -236,7 +219,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) {
-	githubConnections := githubConnections.get()
+	githubConnections := githubConnections.get().([]*githubConnection)
 	if len(githubConnections) == 0 {
 		return
 	}

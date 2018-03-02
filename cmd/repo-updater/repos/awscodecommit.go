@@ -39,38 +39,24 @@ func AWSCodeCommitExternalRepoSpec(repo *awscodecommit.Repository, serviceID str
 	}
 }
 
-type awsCodeCommitConnectionsT struct {
-	mu    sync.RWMutex
-	conns []*awsCodeCommitConnection
-}
-
-func (a *awsCodeCommitConnectionsT) get() []*awsCodeCommitConnection {
-	a.mu.RLock()
-	conns := a.conns
-	a.mu.RUnlock()
-	return conns
-}
-
-func (a *awsCodeCommitConnectionsT) reconfigure() {
-	a.mu.Lock()
-	a.conns = nil
-	for _, c := range conf.Get().AwsCodeCommit {
-		conn, err := newAWSCodeCommitConnection(c)
-		if err != nil {
-			log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "accessKeyID", c.AccessKeyID, "error", err)
-			continue
-		}
-		a.conns = append(a.conns, conn)
-	}
-	a.mu.Unlock()
-
-	awsCodeCommitRepositorySyncWorker.restart()
-}
-
-var awsCodeCommitConnections = &awsCodeCommitConnectionsT{}
+var awsCodeCommitConnections = &atomicValue{}
 
 func init() {
-	conf.Watch(awsCodeCommitConnections.reconfigure)
+	conf.Watch(func() {
+		awsCodeCommitConnections.set(func() interface{} {
+			var conns []*awsCodeCommitConnection
+			for _, c := range conf.Get().AwsCodeCommit {
+				conn, err := newAWSCodeCommitConnection(c)
+				if err != nil {
+					log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "accessKeyID", c.AccessKeyID, "error", err)
+					continue
+				}
+				conns = append(conns, conn)
+			}
+			return conns
+		})
+		awsCodeCommitRepositorySyncWorker.restart()
+	})
 }
 
 // createAWSCodeCommitServiceID creates the repository external service ID. See
@@ -100,7 +86,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == AWSCodeCommitServiceType {
 		// Look up by external repository spec.
 		var err error
-		for _, conn := range awsCodeCommitConnections.get() {
+		for _, conn := range awsCodeCommitConnections.get().([]*awsCodeCommitConnection) {
 			var serviceID string
 			serviceID, err = conn.getServiceID()
 			if serviceID != "" && args.ExternalRepo.ServiceID == serviceID {
@@ -158,10 +144,11 @@ func (a *awsCodeCommitRepositorySyncWorkerT) start(ctx context.Context) {
 	a.shutdown = shutdown
 	a.context = ctx
 
-	if len(awsCodeCommitConnections.get()) == 0 {
+	awsCodeCommitConnections := awsCodeCommitConnections.get().([]*awsCodeCommitConnection)
+	if len(awsCodeCommitConnections) == 0 {
 		return
 	}
-	for _, c := range awsCodeCommitConnections.get() {
+	for _, c := range awsCodeCommitConnections {
 		go func(c *awsCodeCommitConnection) {
 			// Hit the AWS API to determine our account ID (which is a fixed value but not derivable
 			// from the values in the Sourcegraph site config). Be robust to the API being

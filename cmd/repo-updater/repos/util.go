@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -86,4 +87,26 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 	for repo := range repoChan {
 		do(repo)
 	}
+}
+
+// atomicValue manages an atomic value.
+type atomicValue struct {
+	mu    sync.RWMutex
+	value interface{}
+}
+
+// get returns the current value.
+func (a *atomicValue) get() interface{} {
+	a.mu.RLock()
+	v := a.value
+	a.mu.RUnlock()
+	return v
+}
+
+// set changes the value to the result of f. The mutex is held for the entire
+// duration of the function call.
+func (a *atomicValue) set(f func() interface{}) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.value = f()
 }
