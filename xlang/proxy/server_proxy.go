@@ -581,8 +581,12 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
-		c.saveMessage(params)
-		c.clientBroadcast(ctx, req)
+		// When we start using stateful connections to the client again, we
+		// should consider the save + broadcast below.
+		// c.saveMessage(params)
+		// c.clientBroadcast(ctx, req)
+
+		logWithLevel(int(params.Type), "window/showMessage "+params.Message, c.id.contextID, "method", req.Method, "id", req.ID)
 		return nil, nil
 
 	case "window/logMessage":
