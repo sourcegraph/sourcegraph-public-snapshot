@@ -36,42 +36,50 @@ func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.Exter
 	}
 }
 
-var githubConnections []*githubConnection
+var githubConnections = &atomicValue{}
 
 func init() {
-	githubConf := conf.GetTODO().Github
+	conf.Watch(func() {
+		githubConnections.set(func() interface{} {
+			githubConf := conf.Get().Github
 
-	var hasGitHubDotComConnection bool
-	for _, c := range githubConf {
-		u, _ := url.Parse(c.Url)
-		if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
-			hasGitHubDotComConnection = true
-			break
-		}
-	}
-	if !hasGitHubDotComConnection {
-		// Add a GitHub.com entry by default, to support navigating to URL paths like
-		// /github.com/foo/bar to auto-add that repository.
-		githubConf = append(githubConf, schema.GitHubConnection{
-			RepositoryQuery: []string{"none"}, // don't try to list all repositories during syncs
-			Url:             "https://github.com",
-			InitialRepositoryEnablement: true,
+			var hasGitHubDotComConnection bool
+			for _, c := range githubConf {
+				u, _ := url.Parse(c.Url)
+				if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
+					hasGitHubDotComConnection = true
+					break
+				}
+			}
+			if !hasGitHubDotComConnection {
+				// Add a GitHub.com entry by default, to support navigating to URL paths like
+				// /github.com/foo/bar to auto-add that repository.
+				githubConf = append(githubConf, schema.GitHubConnection{
+					RepositoryQuery: []string{"none"}, // don't try to list all repositories during syncs
+					Url:             "https://github.com",
+					InitialRepositoryEnablement: true,
+				})
+			}
+
+			var conns []*githubConnection
+			for _, c := range githubConf {
+				conn, err := newGitHubConnection(c)
+				if err != nil {
+					log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
+					continue
+				}
+				conns = append(conns, conn)
+			}
+			return conns
 		})
-	}
-
-	for _, c := range githubConf {
-		conn, err := newGitHubConnection(c)
-		if err != nil {
-			log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
-			continue
-		}
-		githubConnections = append(githubConnections, conn)
-	}
+		gitHubRepositorySyncWorker.restart()
+	})
 }
 
 // getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
 // the repository specified by the args.
 func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error) {
+	githubConnections := githubConnections.get().([]*githubConnection)
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
 		// Look up by external repository spec.
 		skippedBecauseNoAuth := false
@@ -207,26 +215,37 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	return nil, true, fmt.Errorf("unable to look up GitHub repository (%+v)", args)
 }
 
+var gitHubRepositorySyncWorker = &worker{
+	work: func(ctx context.Context, shutdown chan struct{}) {
+		githubConnections := githubConnections.get().([]*githubConnection)
+		if len(githubConnections) == 0 {
+			return
+		}
+		for _, c := range githubConnections {
+			go func(c *githubConnection) {
+				for {
+					if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 200 {
+						wait := rateLimitReset + 10*time.Second
+						log15.Warn("GitHub API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
+						time.Sleep(wait)
+					}
+					updateGitHubRepositories(ctx, c)
+					select {
+					case <-shutdown:
+						return
+					case <-time.After(getUpdateInterval()):
+					}
+				}
+			}(c)
+		}
+		select {}
+	},
+}
+
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) {
-	if len(githubConnections) == 0 {
-		return
-	}
-	for _, c := range githubConnections {
-		go func(c *githubConnection) {
-			for {
-				if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 200 {
-					wait := rateLimitReset + 10*time.Second
-					log15.Warn("GitHub API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
-					time.Sleep(wait)
-				}
-				updateGitHubRepositories(ctx, c)
-				time.Sleep(getUpdateInterval())
-			}
-		}(c)
-	}
-	select {}
+	gitHubRepositorySyncWorker.start(ctx)
 }
 
 func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoURI {

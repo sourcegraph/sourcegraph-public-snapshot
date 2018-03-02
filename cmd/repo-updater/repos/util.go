@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -86,4 +87,59 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 	for repo := range repoChan {
 		do(repo)
 	}
+}
+
+// atomicValue manages an atomic value.
+type atomicValue struct {
+	mu    sync.RWMutex
+	value interface{}
+}
+
+// get returns the current value.
+func (a *atomicValue) get() interface{} {
+	a.mu.RLock()
+	v := a.value
+	a.mu.RUnlock()
+	return v
+}
+
+// set changes the value to the result of f. The mutex is held for the entire
+// duration of the function call.
+func (a *atomicValue) set(f func() interface{}) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.value = f()
+}
+
+// worker represents a worker that does work under some context and can be restarted.
+type worker struct {
+	// work is invoked to perform work under the given context. It should
+	// stop and return when the given shutdown channel is closed.
+	work func(ctx context.Context, shutdown chan struct{})
+
+	shutdown chan struct{}
+	context  context.Context
+}
+
+// restart restarts the worker. It only does so if the worker was previously
+// started.
+func (w *worker) restart() {
+	if w.shutdown == nil {
+		return // not yet started
+	}
+
+	// Shutdown the previously started workers.
+	close(w.shutdown)
+
+	// Start the new workers.
+	w.start(w.context)
+}
+
+// start starts the worker with the given context. The work is done in a
+// separate goroutine.
+func (w *worker) start(ctx context.Context) {
+	shutdown := make(chan struct{})
+	w.shutdown = shutdown
+	w.context = ctx
+	go w.work(ctx, shutdown)
 }

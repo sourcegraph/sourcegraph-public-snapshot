@@ -39,38 +39,24 @@ func AWSCodeCommitExternalRepoSpec(repo *awscodecommit.Repository, serviceID str
 	}
 }
 
-type awsCodeCommitConnectionsT struct {
-	mu    sync.RWMutex
-	conns []*awsCodeCommitConnection
-}
-
-func (a *awsCodeCommitConnectionsT) get() []*awsCodeCommitConnection {
-	a.mu.RLock()
-	conns := a.conns
-	a.mu.RUnlock()
-	return conns
-}
-
-func (a *awsCodeCommitConnectionsT) reconfigure() {
-	a.mu.Lock()
-	a.conns = nil
-	for _, c := range conf.Get().AwsCodeCommit {
-		conn, err := newAWSCodeCommitConnection(c)
-		if err != nil {
-			log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "accessKeyID", c.AccessKeyID, "error", err)
-			continue
-		}
-		a.conns = append(a.conns, conn)
-	}
-	a.mu.Unlock()
-
-	awsCodeCommitRepositorySyncWorker.restart()
-}
-
-var awsCodeCommitConnections = &awsCodeCommitConnectionsT{}
+var awsCodeCommitConnections = &atomicValue{}
 
 func init() {
-	conf.Watch(awsCodeCommitConnections.reconfigure)
+	conf.Watch(func() {
+		awsCodeCommitConnections.set(func() interface{} {
+			var conns []*awsCodeCommitConnection
+			for _, c := range conf.Get().AwsCodeCommit {
+				conn, err := newAWSCodeCommitConnection(c)
+				if err != nil {
+					log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "accessKeyID", c.AccessKeyID, "error", err)
+					continue
+				}
+				conns = append(conns, conn)
+			}
+			return conns
+		})
+		awsCodeCommitRepositorySyncWorker.restart()
+	})
 }
 
 // createAWSCodeCommitServiceID creates the repository external service ID. See
@@ -100,7 +86,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == AWSCodeCommitServiceType {
 		// Look up by external repository spec.
 		var err error
-		for _, conn := range awsCodeCommitConnections.get() {
+		for _, conn := range awsCodeCommitConnections.get().([]*awsCodeCommitConnection) {
 			var serviceID string
 			serviceID, err = conn.getServiceID()
 			if serviceID != "" && args.ExternalRepo.ServiceID == serviceID {
@@ -136,63 +122,43 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 	return nil, false, nil
 }
 
-type awsCodeCommitRepositorySyncWorkerT struct {
-	shutdown chan struct{}
-	context  context.Context
-}
-
-func (a *awsCodeCommitRepositorySyncWorkerT) restart() {
-	if a.shutdown == nil {
-		return // not yet started
-	}
-
-	// Shutdown the previously started workers.
-	close(a.shutdown)
-
-	// Start the new workers.
-	a.start(a.context)
-}
-
-func (a *awsCodeCommitRepositorySyncWorkerT) start(ctx context.Context) {
-	shutdown := make(chan struct{})
-	a.shutdown = shutdown
-	a.context = ctx
-
-	if len(awsCodeCommitConnections.get()) == 0 {
-		return
-	}
-	for _, c := range awsCodeCommitConnections.get() {
-		go func(c *awsCodeCommitConnection) {
-			// Hit the AWS API to determine our account ID (which is a fixed value but not derivable
-			// from the values in the Sourcegraph site config). Be robust to the API being
-			// unreachable when we start up.
-			const retryInterval = 20 * time.Second
-			for {
-				_, err := c.tryPopulateAWSAccountID()
-				if err == nil {
-					break
+var awsCodeCommitRepositorySyncWorker = &worker{
+	work: func(ctx context.Context, shutdown chan struct{}) {
+		awsCodeCommitConnections := awsCodeCommitConnections.get().([]*awsCodeCommitConnection)
+		if len(awsCodeCommitConnections) == 0 {
+			return
+		}
+		for _, c := range awsCodeCommitConnections {
+			go func(c *awsCodeCommitConnection) {
+				// Hit the AWS API to determine our account ID (which is a fixed value but not derivable
+				// from the values in the Sourcegraph site config). Be robust to the API being
+				// unreachable when we start up.
+				const retryInterval = 20 * time.Second
+				for {
+					_, err := c.tryPopulateAWSAccountID()
+					if err == nil {
+						break
+					}
+					log15.Error("Unable to reach AWS CodeCommit API to determine AWS account ID.", "region", c.config.Region, "accessKeyID", c.config.AccessKeyID, "error", err, "retryInterval", retryInterval)
+					select {
+					case <-shutdown:
+						return
+					case <-time.After(retryInterval):
+					}
 				}
-				log15.Error("Unable to reach AWS CodeCommit API to determine AWS account ID.", "region", c.config.Region, "accessKeyID", c.config.AccessKeyID, "error", err, "retryInterval", retryInterval)
-				select {
-				case <-shutdown:
-					return
-				case <-time.After(retryInterval):
-				}
-			}
 
-			for {
-				select {
-				case <-shutdown:
-					return
-				case <-time.After(getUpdateInterval()):
-					updateAWSCodeCommitRepositories(ctx, c)
+				for {
+					select {
+					case <-shutdown:
+						return
+					case <-time.After(getUpdateInterval()):
+						updateAWSCodeCommitRepositories(ctx, c)
+					}
 				}
-			}
-		}(c)
-	}
+			}(c)
+		}
+	},
 }
-
-var awsCodeCommitRepositorySyncWorker = &awsCodeCommitRepositorySyncWorkerT{}
 
 // RunAWSCodeCommitRepositorySyncWorker runs the worker that syncs repositories from the configured AWSCodeCommit and AWSCodeCommit
 // Enterprise instances to Sourcegraph.

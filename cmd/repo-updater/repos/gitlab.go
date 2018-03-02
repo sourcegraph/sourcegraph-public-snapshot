@@ -32,42 +32,50 @@ func GitLabExternalRepoSpec(proj *gitlab.Project, baseURL url.URL) *api.External
 	}
 }
 
-var gitlabConnections []*gitlabConnection
+var gitlabConnections = &atomicValue{}
 
 func init() {
-	gitlabConf := conf.GetTODO().Gitlab
+	conf.Watch(func() {
+		gitlabConnections.set(func() interface{} {
+			gitlabConf := conf.Get().Gitlab
 
-	var hasGitLabDotComConnection bool
-	for _, c := range gitlabConf {
-		u, _ := url.Parse(c.Url)
-		if u != nil && (u.Hostname() == "gitlab.com" || u.Hostname() == "www.gitlab.com") {
-			hasGitLabDotComConnection = true
-			break
-		}
-	}
-	if !hasGitLabDotComConnection {
-		// Add a GitLab.com entry by default, to support navigating to URL paths like
-		// /gitlab.com/foo/bar to auto-add that project.
-		gitlabConf = append(gitlabConf, schema.GitLabConnection{
-			ProjectQuery: []string{"none"}, // don't try to list all repositories during syncs
-			Url:          "https://gitlab.com",
-			InitialRepositoryEnablement: true,
+			var hasGitLabDotComConnection bool
+			for _, c := range gitlabConf {
+				u, _ := url.Parse(c.Url)
+				if u != nil && (u.Hostname() == "gitlab.com" || u.Hostname() == "www.gitlab.com") {
+					hasGitLabDotComConnection = true
+					break
+				}
+			}
+			if !hasGitLabDotComConnection {
+				// Add a GitLab.com entry by default, to support navigating to URL paths like
+				// /gitlab.com/foo/bar to auto-add that project.
+				gitlabConf = append(gitlabConf, schema.GitLabConnection{
+					ProjectQuery: []string{"none"}, // don't try to list all repositories during syncs
+					Url:          "https://gitlab.com",
+					InitialRepositoryEnablement: true,
+				})
+			}
+
+			var conns []*gitlabConnection
+			for _, c := range gitlabConf {
+				conn, err := newGitLabConnection(c)
+				if err != nil {
+					log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)
+					continue
+				}
+				conns = append(conns, conn)
+			}
+			return conns
 		})
-	}
-
-	for _, c := range gitlabConf {
-		conn, err := newGitLabConnection(c)
-		if err != nil {
-			log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)
-			continue
-		}
-		gitlabConnections = append(gitlabConnections, conn)
-	}
+		gitLabRepositorySyncWorker.restart()
+	})
 }
 
 // getGitLabConnection returns the GitLab connection (config + API client) that is responsible for
 // the repository specified by the args.
 func getGitLabConnection(args protocol.RepoLookupArgs) (*gitlabConnection, error) {
+	gitlabConnections := gitlabConnections.get().([]*gitlabConnection)
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitLabServiceType {
 		// Look up by external repository spec.
 		for _, conn := range gitlabConnections {
@@ -156,26 +164,37 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	return nil, true, fmt.Errorf("unable to look up GitLab repository (%+v)", args)
 }
 
+var gitLabRepositorySyncWorker = &worker{
+	work: func(ctx context.Context, shutdown chan struct{}) {
+		gitlabConnections := gitlabConnections.get().([]*gitlabConnection)
+		if len(gitlabConnections) == 0 {
+			return
+		}
+		for _, c := range gitlabConnections {
+			go func(c *gitlabConnection) {
+				for {
+					if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 50 {
+						wait := rateLimitReset + 10*time.Second
+						log15.Warn("GitLab API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
+						time.Sleep(wait)
+					}
+					updateGitLabProjects(ctx, c)
+					select {
+					case <-shutdown:
+						return
+					case <-time.After(getUpdateInterval()):
+					}
+				}
+			}(c)
+		}
+		select {}
+	},
+}
+
 // RunGitLabRepositorySyncWorker runs the worker that syncs projects from configured GitLab instances to
 // Sourcegraph.
 func RunGitLabRepositorySyncWorker(ctx context.Context) {
-	if len(gitlabConnections) == 0 {
-		return
-	}
-	for _, c := range gitlabConnections {
-		go func(c *gitlabConnection) {
-			for {
-				if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 50 {
-					wait := rateLimitReset + 10*time.Second
-					log15.Warn("GitLab API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
-					time.Sleep(wait)
-				}
-				updateGitLabProjects(ctx, c)
-				time.Sleep(getUpdateInterval())
-			}
-		}(c)
-	}
-	select {}
+	gitLabRepositorySyncWorker.start(ctx)
 }
 
 func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.RepoURI {

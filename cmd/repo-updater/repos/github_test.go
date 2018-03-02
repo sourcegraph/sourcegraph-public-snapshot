@@ -10,13 +10,16 @@ import (
 )
 
 func TestGetGitHubConnection(t *testing.T) {
-	orig := githubConnections
-	githubConnections = []*githubConnection{
-		{originalHostname: "github.com", baseURL: &url.URL{Scheme: "https", Host: "github.com", Path: "/"}, config: schema.GitHubConnection{Token: "t"}},
-		{originalHostname: "github.example.com", baseURL: &url.URL{Scheme: "https", Host: "github.example.com", Path: "/"}, config: schema.GitHubConnection{Token: "t"}},
-	}
-	defer func() { githubConnections = orig }()
+	orig := githubConnections.get()
+	githubConnections.set(func() interface{} {
+		return []*githubConnection{
+			{originalHostname: "github.com", baseURL: &url.URL{Scheme: "https", Host: "github.com", Path: "/"}, config: schema.GitHubConnection{Token: "t"}},
+			{originalHostname: "github.example.com", baseURL: &url.URL{Scheme: "https", Host: "github.example.com", Path: "/"}, config: schema.GitHubConnection{Token: "t"}},
+		}
+	})
+	defer func() { githubConnections.set(func() interface{} { return orig }) }()
 
+	githubConnections := githubConnections.get().([]*githubConnection)
 	t.Run("not github", func(t *testing.T) {
 		c, err := getGitHubConnection(protocol.RepoLookupArgs{})
 		if err != nil {
