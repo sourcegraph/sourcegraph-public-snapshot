@@ -68,8 +68,7 @@ func init() {
 			}
 			return conns
 		})
-
-		// TODO(slimsag): restart RunGitLabRepositorySyncWorker
+		gitLabRepositorySyncWorker.restart()
 	})
 }
 
@@ -165,27 +164,37 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	return nil, true, fmt.Errorf("unable to look up GitLab repository (%+v)", args)
 }
 
+var gitLabRepositorySyncWorker = &worker{
+	work: func(ctx context.Context, shutdown chan struct{}) {
+		gitlabConnections := gitlabConnections.get().([]*gitlabConnection)
+		if len(gitlabConnections) == 0 {
+			return
+		}
+		for _, c := range gitlabConnections {
+			go func(c *gitlabConnection) {
+				for {
+					if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 50 {
+						wait := rateLimitReset + 10*time.Second
+						log15.Warn("GitLab API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
+						time.Sleep(wait)
+					}
+					updateGitLabProjects(ctx, c)
+					select {
+					case <-shutdown:
+						return
+					case <-time.After(getUpdateInterval()):
+					}
+				}
+			}(c)
+		}
+		select {}
+	},
+}
+
 // RunGitLabRepositorySyncWorker runs the worker that syncs projects from configured GitLab instances to
 // Sourcegraph.
 func RunGitLabRepositorySyncWorker(ctx context.Context) {
-	gitlabConnections := gitlabConnections.get().([]*gitlabConnection)
-	if len(gitlabConnections) == 0 {
-		return
-	}
-	for _, c := range gitlabConnections {
-		go func(c *gitlabConnection) {
-			for {
-				if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 50 {
-					wait := rateLimitReset + 10*time.Second
-					log15.Warn("GitLab API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
-					time.Sleep(wait)
-				}
-				updateGitLabProjects(ctx, c)
-				time.Sleep(getUpdateInterval())
-			}
-		}(c)
-	}
-	select {}
+	gitLabRepositorySyncWorker.start(ctx)
 }
 
 func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.RepoURI {

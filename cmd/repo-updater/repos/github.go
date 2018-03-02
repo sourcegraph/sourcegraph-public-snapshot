@@ -72,8 +72,7 @@ func init() {
 			}
 			return conns
 		})
-
-		// TODO(slimsag): restart RunGitHubRepositorySyncWorker
+		gitHubRepositorySyncWorker.restart()
 	})
 }
 
@@ -216,27 +215,37 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	return nil, true, fmt.Errorf("unable to look up GitHub repository (%+v)", args)
 }
 
+var gitHubRepositorySyncWorker = &worker{
+	work: func(ctx context.Context, shutdown chan struct{}) {
+		githubConnections := githubConnections.get().([]*githubConnection)
+		if len(githubConnections) == 0 {
+			return
+		}
+		for _, c := range githubConnections {
+			go func(c *githubConnection) {
+				for {
+					if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 200 {
+						wait := rateLimitReset + 10*time.Second
+						log15.Warn("GitHub API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
+						time.Sleep(wait)
+					}
+					updateGitHubRepositories(ctx, c)
+					select {
+					case <-shutdown:
+						return
+					case <-time.After(getUpdateInterval()):
+					}
+				}
+			}(c)
+		}
+		select {}
+	},
+}
+
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) {
-	githubConnections := githubConnections.get().([]*githubConnection)
-	if len(githubConnections) == 0 {
-		return
-	}
-	for _, c := range githubConnections {
-		go func(c *githubConnection) {
-			for {
-				if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 200 {
-					wait := rateLimitReset + 10*time.Second
-					log15.Warn("GitHub API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
-					time.Sleep(wait)
-				}
-				updateGitHubRepositories(ctx, c)
-				time.Sleep(getUpdateInterval())
-			}
-		}(c)
-	}
-	select {}
+	gitHubRepositorySyncWorker.start(ctx)
 }
 
 func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoURI {
