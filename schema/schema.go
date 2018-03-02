@@ -27,7 +27,6 @@ type DatacenterOpsConfiguration struct {
 	DeploymentOverrides     map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
 	EnableSymbols           bool                            `json:"enableSymbols,omitempty"`
 	ExperimentIndexedSearch bool                            `json:"experimentIndexedSearch,omitempty"`
-	GitoliteIP              string                          `json:"gitoliteIP,omitempty"`
 	GitserverCount          int                             `json:"gitserverCount,omitempty"`
 	GitserverDiskSize       string                          `json:"gitserverDiskSize,omitempty"`
 	GitserverSSH            map[string]string               `json:"gitserverSSH,omitempty"`
@@ -41,9 +40,14 @@ type DatacenterOpsConfiguration struct {
 	LangSwift               bool                            `json:"langSwift,omitempty"`
 	LangTypeScript          bool                            `json:"langTypeScript,omitempty"`
 	NodeSSDPath             string                          `json:"nodeSSDPath,omitempty"`
-	PhabricatorIP           string                          `json:"phabricatorIP,omitempty"`
 	StorageClass            string                          `json:"storageClass,omitempty"`
 	UseRBAC                 bool                            `json:"useRBAC,omitempty"`
+
+	// Dogfood-specific params (should take these out at some point, as they're only for testing purposes)
+
+	PhabricatorIP string `json:"phabricatorIP,omitempty"`
+	GitoliteIP    string `json:"gitoliteIP,omitempty"`
+	PyPIIP        string `json:"pypiIP,omitempty"`
 }
 
 // DeploymentOverrides
