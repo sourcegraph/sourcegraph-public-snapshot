@@ -110,3 +110,35 @@ func (a *atomicValue) set(f func() interface{}) {
 	defer a.mu.Unlock()
 	a.value = f()
 }
+
+// worker represents a worker that does work under some context and can be restarted.
+type worker struct {
+	// work is invoked to perform work under the given context. It should
+	// stop and return when the given shutdown channel is closed.
+	work func(ctx context.Context, shutdown chan struct{})
+
+	shutdown chan struct{}
+	context  context.Context
+}
+
+// restart restarts the worker. It only does so if the worker was previously
+// started.
+func (w *worker) restart() {
+	if w.shutdown == nil {
+		return // not yet started
+	}
+
+	// Shutdown the previously started workers.
+	close(w.shutdown)
+
+	// Start the new workers.
+	w.start(w.context)
+}
+
+// start starts the worker with the given context.
+func (w *worker) start(ctx context.Context) {
+	shutdown := make(chan struct{})
+	w.shutdown = shutdown
+	w.context = ctx
+	w.work(ctx, shutdown)
+}
