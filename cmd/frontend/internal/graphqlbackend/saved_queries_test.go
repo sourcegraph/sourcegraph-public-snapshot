@@ -19,8 +19,8 @@ func TestSavedQueries(t *testing.T) {
 	uid := int32(1)
 
 	defer resetMocks()
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*types.Settings, error) {
-		return &types.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
+		return &api.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
 
 	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
@@ -58,12 +58,12 @@ func TestCreateSavedQuery(t *testing.T) {
 	defer resetMocks()
 	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsCreateIfUpToDate := false
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*types.Settings, error) {
-		return &types.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
+		return &api.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
-		return &types.Settings{ID: lastID + 1, Contents: `not used`}, nil
+		return &api.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
 
 	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {
@@ -125,16 +125,16 @@ func TestUpdateSavedQuery(t *testing.T) {
 	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: uid}, nil)
 	calledSettingsGetLatest := false
 	calledSettingsCreateIfUpToDate := false
-	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*types.Settings, error) {
+	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
 		calledSettingsGetLatest = true
 		if calledSettingsCreateIfUpToDate {
-			return &types.Settings{ID: lastID + 1, Contents: `{"search.savedQueries":[{"key":"a","description":"d2","query":"q"}]}`}, nil
+			return &api.Settings{ID: lastID + 1, Contents: `{"search.savedQueries":[{"key":"a","description":"d2","query":"q"}]}`}, nil
 		}
-		return &types.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
+		return &api.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
-		return &types.Settings{ID: lastID + 1, Contents: `not used`}, nil
+		return &api.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
 
 	mockConfigurationCascadeSubjects = func() ([]*configurationSubject, error) {

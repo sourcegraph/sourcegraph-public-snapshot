@@ -53,15 +53,6 @@ type DependencyReferencesOptions struct {
 	Limit int // e.g. 20
 }
 
-// Settings contains configuration settings for a subject.
-type Settings struct {
-	ID           int32
-	Subject      api.ConfigurationSubject
-	AuthorUserID int32
-	Contents     string
-	CreatedAt    time.Time
-}
-
 type SiteConfig struct {
 	SiteID      string
 	Email       string

@@ -15,7 +15,7 @@ import (
 
 type settingsResolver struct {
 	subject  *configurationSubject
-	settings *types.Settings
+	settings *api.Settings
 	user     *types.User
 }
 
@@ -137,7 +137,7 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 
 // like db.Settings.CreateIfUpToDate, except it handles notifying the
 // query-runner if any saved queries have changed.
-func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
+func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	subjectID, err := configurationSubjectID(subject)
 	if err != nil {
 		return nil, err

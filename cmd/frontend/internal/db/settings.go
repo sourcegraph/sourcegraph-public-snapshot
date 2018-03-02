@@ -8,13 +8,12 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *types.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorUserID, contents)
 	}
@@ -24,7 +23,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.Configurati
 		return nil, fmt.Errorf("invalid settings JSON: %v", errs)
 	}
 
-	s := types.Settings{
+	s := api.Settings{
 		Subject:      subject,
 		AuthorUserID: authorUserID,
 		Contents:     contents,
@@ -65,7 +64,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.Configurati
 	return latestSetting, nil
 }
 
-func (o *settings) GetLatest(ctx context.Context, subject api.ConfigurationSubject) (*types.Settings, error) {
+func (o *settings) GetLatest(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
 	if Mocks.Settings.GetLatest != nil {
 		return Mocks.Settings.GetLatest(ctx, subject)
 	}
@@ -77,7 +76,7 @@ func (o *settings) GetLatest(ctx context.Context, subject api.ConfigurationSubje
 //
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
-func (o *settings) ListAll(ctx context.Context) ([]*types.Settings, error) {
+func (o *settings) ListAll(ctx context.Context) ([]*api.Settings, error) {
 	q := sqlf.Sprintf(`
 		SELECT DISTINCT
 			ON (org_id, user_id, author_user_id)
@@ -92,7 +91,7 @@ func (o *settings) ListAll(ctx context.Context) ([]*types.Settings, error) {
 	return o.parseQueryRows(ctx, rows)
 }
 
-func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject api.ConfigurationSubject) (*types.Settings, error) {
+func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject api.ConfigurationSubject) (*api.Settings, error) {
 	var cond *sqlf.Query
 	switch {
 	case subject.Org != nil:
@@ -129,11 +128,11 @@ type queryable interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*types.Settings, error) {
-	settings := []*types.Settings{}
+func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.Settings, error) {
+	settings := []*api.Settings{}
 	defer rows.Close()
 	for rows.Next() {
-		s := types.Settings{}
+		s := api.Settings{}
 		err := rows.Scan(&s.ID, &s.Subject.Org, &s.Subject.User, &s.AuthorUserID, &s.Contents, &s.CreatedAt)
 		if err != nil {
 			return nil, err
