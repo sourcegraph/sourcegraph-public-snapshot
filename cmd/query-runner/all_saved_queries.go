@@ -127,7 +127,7 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), query.Spec, query.Config)
 			emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, query, notifyUnsubscribedTemplate)
-			slackNotifyDeleted(context.Background(), orgsToNotify, query)
+			slackNotifyDeleted(context.Background(), usersToNotify, orgsToNotify, query)
 		}()
 	}
 
@@ -157,28 +157,19 @@ func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAn
 			// Saved query (newValue) was created.
 			usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), newValue.Spec, newValue.Config)
 			emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, newValue, notifySubscribedTemplate)
-			slackNotifyCreated(context.Background(), orgsToNotify, newValue)
+			slackNotifyCreated(context.Background(), usersToNotify, orgsToNotify, newValue)
 			return
 		}
 
-		// Users may have been added or removed from the configuration. Notify them accordingly.
+		// Users and orgs may have been added or removed from the configuration. Notify them accordingly.
 		oldUsersToNotify, oldOrgsToNotify := int32MapDual(getUsersAndOrgsToNotify(context.Background(), oldValue.Spec, oldValue.Config))
 		newUsersToNotify, newOrgsToNotify := int32MapDual(getUsersAndOrgsToNotify(context.Background(), newValue.Spec, newValue.Config))
-		subscribed, unsubscribed := diffMap(oldUsersToNotify, newUsersToNotify)
-		if len(subscribed) > 0 {
-			emailNotifySubscribeUnsubscribe(context.Background(), subscribed, newValue, notifySubscribedTemplate)
-		}
-		if len(unsubscribed) > 0 {
-			emailNotifySubscribeUnsubscribe(context.Background(), unsubscribed, oldValue, notifyUnsubscribedTemplate)
-		}
-
+		subscribedUsers, unsubscribedUsers := diffMap(oldUsersToNotify, newUsersToNotify)
 		subscribedOrgs, unsubscribedOrgs := diffMap(oldOrgsToNotify, newOrgsToNotify)
-		if len(subscribedOrgs) > 0 {
-			slackNotifySubscribed(context.Background(), subscribedOrgs, newValue)
-		}
-		if len(unsubscribedOrgs) > 0 {
-			slackNotifyUnsubscribed(context.Background(), unsubscribedOrgs, oldValue)
-		}
+		emailNotifySubscribeUnsubscribe(context.Background(), subscribedUsers, newValue, notifySubscribedTemplate)
+		emailNotifySubscribeUnsubscribe(context.Background(), unsubscribedUsers, oldValue, notifyUnsubscribedTemplate)
+		slackNotifySubscribed(context.Background(), subscribedUsers, subscribedOrgs, newValue)
+		slackNotifyUnsubscribed(context.Background(), unsubscribedUsers, unsubscribedOrgs, oldValue)
 	}()
 }
 
@@ -232,7 +223,7 @@ func serveTestNotification(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), query.Spec, query.Config)
 		emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, query, notifySubscribedTemplate)
-		slackNotify(context.Background(), orgsToNotify,
+		slackNotify(context.Background(), usersToNotify, orgsToNotify,
 			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(query.Config.Query, utmSourceSlack), query.Config.Description))
 	}()
 

@@ -22,12 +22,12 @@ func (n *notifier) slackNotify(ctx context.Context) {
 		searchURL(n.newQuery, utmSourceSlack),
 		n.query.Description,
 	)
-	slackNotify(ctx, n.orgsToNotify, text)
+	slackNotify(ctx, n.usersToNotify, n.orgsToNotify, text)
 	logEvent("", "SavedSearchSlackNotificationSent", "results")
 }
 
-func slackNotifyCreated(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
-	if len(orgsToNotify) == 0 {
+func slackNotifyCreated(ctx context.Context, usersToNotify, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
+	if len(usersToNotify) == 0 && len(orgsToNotify) == 0 {
 		return
 	}
 
@@ -35,11 +35,11 @@ func slackNotifyCreated(ctx context.Context, orgsToNotify []int32, query api.Sav
 		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
-	slackNotify(ctx, orgsToNotify, text)
+	slackNotify(ctx, usersToNotify, orgsToNotify, text)
 	logEvent("", "SavedSearchSlackNotificationSent", "created")
 }
 
-func slackNotifyDeleted(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
+func slackNotifyDeleted(ctx context.Context, usersToNotify, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
 	if len(orgsToNotify) == 0 {
 		return
 	}
@@ -48,12 +48,12 @@ func slackNotifyDeleted(ctx context.Context, orgsToNotify []int32, query api.Sav
 		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
-	slackNotify(ctx, orgsToNotify, text)
+	slackNotify(ctx, usersToNotify, orgsToNotify, text)
 	logEvent("", "SavedSearchSlackNotificationSent", "deleted")
 }
 
-func slackNotifySubscribed(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
-	if len(orgsToNotify) == 0 {
+func slackNotifySubscribed(ctx context.Context, usersToNotify, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
+	if len(usersToNotify) == 0 && len(orgsToNotify) == 0 {
 		return
 	}
 
@@ -61,12 +61,12 @@ func slackNotifySubscribed(ctx context.Context, orgsToNotify []int32, query api.
 		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
-	slackNotify(ctx, orgsToNotify, text)
+	slackNotify(ctx, usersToNotify, orgsToNotify, text)
 	logEvent("", "SavedSearchSlackNotificationSent", "enabled")
 }
 
-func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
-	if len(orgsToNotify) == 0 {
+func slackNotifyUnsubscribed(ctx context.Context, usersToNotify, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
+	if len(usersToNotify) == 0 && len(orgsToNotify) == 0 {
 		return
 	}
 
@@ -74,36 +74,40 @@ func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query ap
 		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
-	slackNotify(ctx, orgsToNotify, text)
+	slackNotify(ctx, usersToNotify, orgsToNotify, text)
 	logEvent("", "SavedSearchSlackNotificationSent", "disabled")
 }
 
-func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
-	for _, org := range orgsToNotify {
-		go func(org int32) {
-			settings, _, err := api.InternalClient.SettingsGetForSubject(ctx, api.ConfigurationSubject{Org: &org})
-			if err != nil {
-				log15.Error("slack notify: failed to get org settings", "org", org, "error", err)
-				return
-			}
-			if settings.NotificationsSlack != nil && settings.NotificationsSlack.WebhookURL != "" {
-				slackNotifyOrg(ctx, settings.NotificationsSlack.WebhookURL, text)
-			}
-		}(org)
-	}
-}
+func slackNotify(ctx context.Context, usersToNotify, orgsToNotify []int32, text string) {
+	// send sends the Slack notification message. It is intended to be
+	// run in its own goroutine.
+	send := func(ctx context.Context, subject api.ConfigurationSubject, text string) {
+		settings, _, err := api.InternalClient.SettingsGetForSubject(ctx, subject)
+		if err != nil {
+			log15.Error("slack notify: failed to get settings", "subject", subject, "error", err)
+			return
+		}
+		if settings.NotificationsSlack == nil || settings.NotificationsSlack.WebhookURL == "" {
+			return
+		}
 
-func slackNotifyOrg(ctx context.Context, webhookURL, text string) {
-	payload := &slack.Payload{
-		Username:    "saved-search-bot",
-		IconEmoji:   ":mag:",
-		UnfurlLinks: false,
-		UnfurlMedia: false,
-		Text:        text,
+		payload := &slack.Payload{
+			Username:    "saved-search-bot",
+			IconEmoji:   ":mag:",
+			UnfurlLinks: false,
+			UnfurlMedia: false,
+			Text:        text,
+		}
+		client := slack.New(settings.NotificationsSlack.WebhookURL, true)
+		if err := slack.Post(payload, client.WebhookURL); err != nil {
+			log15.Error("slack notify: failed", "error", err)
+		}
 	}
-	client := slack.New(webhookURL, true)
-	err := slack.Post(payload, client.WebhookURL)
-	if err != nil {
-		log15.Error("slack notify: failed", "error", err)
+
+	for _, user := range usersToNotify {
+		go send(ctx, api.ConfigurationSubject{User: &user}, text)
+	}
+	for _, org := range orgsToNotify {
+		go send(ctx, api.ConfigurationSubject{Org: &org}, text)
 	}
 }

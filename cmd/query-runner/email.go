@@ -76,6 +76,10 @@ View the new result{{.PluralResults}} on Sourcegraph: {{.URL}}
 })
 
 func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32, query api.SavedQuerySpecAndConfig, template txemail.Templates) {
+	if len(usersToNotify) == 0 {
+		return
+	}
+
 	canSendEmail, err := api.InternalClient.CanSendEmail(ctx)
 	if err != nil {
 		log15.Warn("cannot send email notification about saved search (failed to retrieve email configuration)", "error", err)

@@ -399,9 +399,13 @@ func doGetUsersAndOrgsToNotify(ctx context.Context, spec api.SavedQueryIDSpec, q
 		if spec.Subject.User != nil {
 			addIndividualUsers(*spec.Subject.User)
 		}
-	} else if query.NotifySlack && spec.Subject.Org != nil {
-		// Notifying the config owner (org) via Slack.
-		orgsToNotify = append(orgsToNotify, *spec.Subject.Org)
+	} else if query.NotifySlack {
+		switch {
+		case spec.Subject.Org != nil:
+			orgsToNotify = append(orgsToNotify, *spec.Subject.Org)
+		case spec.Subject.User != nil:
+			addIndividualUsers(*spec.Subject.User)
+		}
 	}
 
 	individualUsers = toSlice(individualUsersMap)
