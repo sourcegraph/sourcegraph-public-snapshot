@@ -220,13 +220,15 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// that we don't block other search queries from running in sequence (which
 	// is done intentionally, to ensure no overloading of searcher/gitserver).
 	go func() {
-		if r := recover(); r != nil {
-			// Same as net/http
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			log.Printf("executor: failed due to internal panic: %v\n%s", r, buf)
-		}
+		defer func() {
+			if r := recover(); r != nil {
+				// Same as net/http
+				const size = 64 << 10
+				buf := make([]byte, size)
+				buf = buf[:runtime.Stack(buf, false)]
+				log.Printf("executor: failed due to internal panic: %v\n%s", r, buf)
+			}
+		}()
 		if err := notify(context.Background(), spec, query, newQuery, v); err != nil {
 			log15.Error("executor: failed to send notifications", "error", err)
 		}
