@@ -3,11 +3,9 @@ package app
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -18,20 +16,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
-// githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
-// This is used for the purposes of generating external GitHub enterprise links.
-var githubEnterpriseURLs = make(map[string]string)
 var reposListURLs = make(map[api.RepoURI]string)
 
 func init() {
-	githubConf := conf.GetTODO().Github
-	for _, c := range githubConf {
-		gheURL, err := url.Parse(c.Url)
-		if err != nil {
-			log15.Error("error parsing GitHub config", "error", err)
-		}
-		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
-	}
 	reposList := conf.GetTODO().ReposList
 	for _, r := range reposList {
 		if r.Links != nil && r.Links.Commit != "" {
@@ -68,7 +55,7 @@ func serveRepoExternalCommit(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	host := strings.Split(string(repo.URI), "/")[0]
-	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
 		http.Redirect(w, r, fmt.Sprintf("%s%s/commit/%s", gheURL, strings.TrimPrefix(string(repo.URI), host), commitID), http.StatusFound)
 		return nil
 	}

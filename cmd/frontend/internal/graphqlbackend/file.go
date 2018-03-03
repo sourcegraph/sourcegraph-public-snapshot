@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	repoupdaterprotocol "sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -165,7 +166,7 @@ func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
 	}
 
 	host := strings.Split(string(uri), "/")[0]
-	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
 		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
 		return &url, nil
 	}
@@ -201,7 +202,7 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 	}
 
 	host := strings.Split(string(uri), "/")[0]
-	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
 		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
 		return &url, nil
 	}

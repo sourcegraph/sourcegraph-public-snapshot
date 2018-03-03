@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 
 	"github.com/gorilla/csrf"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
@@ -27,22 +25,6 @@ import (
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
-
-var githubConf = conf.GetTODO().Github
-
-// githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
-// This can be used for the purposes of generating external GitHub enterprise links.
-var githubEnterpriseURLs = make(map[string]string)
-
-func init() {
-	for _, c := range githubConf {
-		gheURL, err := url.Parse(c.Url)
-		if err != nil {
-			log15.Error("error parsing GitHub config", "error", err)
-		}
-		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
-	}
-}
 
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
@@ -139,7 +121,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Version:              env.Version,
 		User:                 user,
 		DisableTelemetry:     conf.GetTODO().DisableTelemetry,
-		GithubEnterpriseURLs: githubEnterpriseURLs,
+		GithubEnterpriseURLs: conf.GitHubEnterpriseURLs(),
 		SentryDSN:            sentryDSNFrontend,
 		Debug:                envvar.DebugMode(),
 		SiteID:               siteID,

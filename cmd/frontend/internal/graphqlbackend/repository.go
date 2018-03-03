@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -173,7 +174,7 @@ func (r *repositoryResolver) ExternalURL(ctx context.Context) (*string, error) {
 	}
 
 	host := strings.Split(string(uri), "/")[0]
-	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
 		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(string(uri), host))
 		return &url, nil
 	}
@@ -204,7 +205,7 @@ func (r *repositoryResolver) HostType() *string {
 		return &host
 	}
 	host := strings.Split(string(uri), "/")[0]
-	if _, ok := githubEnterpriseURLs[host]; ok {
+	if _, ok := conf.GitHubEnterpriseURLs()[host]; ok {
 		host := "GitHub Enterprise"
 		return &host
 	}

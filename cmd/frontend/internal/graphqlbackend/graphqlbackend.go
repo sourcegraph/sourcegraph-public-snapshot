@@ -3,9 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
@@ -13,7 +11,6 @@ import (
 	"github.com/neelance/graphql-go/relay"
 	"github.com/neelance/graphql-go/trace"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -36,21 +33,10 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"type", "field", "error"})
 
-// githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
-// This is used for the purposes of generating external GitHub enterprise links.
-var githubEnterpriseURLs = make(map[string]string)
 var repoListConfigs = make(map[api.RepoURI]schema.Repository)
 
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
-	githubConf := conf.GetTODO().Github
-	for _, c := range githubConf {
-		gheURL, err := url.Parse(c.Url)
-		if err != nil {
-			log15.Error("error parsing GitHub config", "error", err)
-		}
-		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
-	}
 	reposList := conf.GetTODO().ReposList
 	for _, r := range reposList {
 		repoListConfigs[api.RepoURI(r.Path)] = r

@@ -129,6 +129,8 @@ func init() {
 			}
 		}
 	}()
+
+	addWatchers()
 }
 
 func readConfig() (string, error) {
