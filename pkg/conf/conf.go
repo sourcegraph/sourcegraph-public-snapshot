@@ -238,6 +238,8 @@ var doNotRequireRestart = []string{
 	"htmlBodyBottom",
 	"disableBuiltInSearches",
 	"disableExampleSearches",
+	"email.smtp",
+	"email.address",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
