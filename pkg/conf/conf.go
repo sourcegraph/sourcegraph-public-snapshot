@@ -230,6 +230,7 @@ var doNotRequireRestart = []string{
 	"gitOriginMap",
 	"githubClientID",
 	"githubClientSecret",
+	"settings",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown

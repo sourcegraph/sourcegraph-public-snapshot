@@ -223,7 +223,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	}
 
 	// TODO(sqs): make this use search scopes from global/org/user settings, not just site config.
-	if settings := conf.GetTODO().Settings; settings != nil {
+	if settings := conf.Get().Settings; settings != nil {
 		for _, scope := range settings.SearchScopes {
 			// Only propose using this scope if it narrows to fewer repos.
 			if !hasRepoOrRepoGroupFilter(scope.Value) {
