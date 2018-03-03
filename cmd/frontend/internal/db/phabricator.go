@@ -6,6 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -15,23 +16,24 @@ type errPhabricatorRepoNotFound struct {
 	args []interface{}
 }
 
-var (
-	phabricatorConfigs = conf.GetTODO().Phabricator
-	phabricatorRepos   map[api.RepoURI]*types.PhabricatorRepo
-)
+var phabricatorRepos = atomicvalue.New()
 
 func init() {
-	phabricatorRepos = map[api.RepoURI]*types.PhabricatorRepo{}
-
-	for _, config := range phabricatorConfigs {
-		for _, repo := range config.Repos {
-			phabricatorRepos[api.RepoURI(repo.Path)] = &types.PhabricatorRepo{
-				URI:      api.RepoURI(repo.Path),
-				Callsign: repo.Callsign,
-				URL:      config.Url,
+	conf.Watch(func() {
+		phabricatorRepos.Set(func() interface{} {
+			repos := map[api.RepoURI]*types.PhabricatorRepo{}
+			for _, config := range conf.Get().Phabricator {
+				for _, repo := range config.Repos {
+					repos[api.RepoURI(repo.Path)] = &types.PhabricatorRepo{
+						URI:      api.RepoURI(repo.Path),
+						Callsign: repo.Callsign,
+						URL:      config.Url,
+					}
+				}
 			}
-		}
-	}
+			return repos
+		})
+	})
 }
 
 func (err errPhabricatorRepoNotFound) Error() string {
@@ -99,6 +101,7 @@ func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...int
 }
 
 func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoURI) (*types.PhabricatorRepo, error) {
+	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoURI]*types.PhabricatorRepo)
 	if r := phabricatorRepos[uri]; r != nil {
 		return r, nil
 	}
