@@ -55,9 +55,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                             props.savedQuery.query.query,
                             props.savedQuery.showOnHomepage,
                             props.savedQuery.notify,
-                            props.savedQuery.notifySlack,
-                            props.savedQuery.notifyUsers,
-                            props.savedQuery.notifyOrganizations
+                            props.savedQuery.notifySlack
                         )
                     )
                 )

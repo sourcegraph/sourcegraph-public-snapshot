@@ -18,8 +18,6 @@ export interface SavedQueryFields {
     showOnHomepage: boolean
     notify: boolean
     notifySlack: boolean
-    notifyUsers: string[]
-    notifyOrganizations: string[]
 }
 
 interface Props {
@@ -65,8 +63,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 showOnHomepage: !!(defaultValues && defaultValues.showOnHomepage),
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
-                notifyUsers: (defaultValues && defaultValues.notifyUsers) || [],
-                notifyOrganizations: (defaultValues && defaultValues.notifyOrganizations) || [],
             },
             subjectOptions: [],
             isSubmitting: false,
@@ -115,16 +111,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
-            values: {
-                query,
-                description,
-                subject,
-                showOnHomepage,
-                notify,
-                notifySlack,
-                notifyUsers,
-                notifyOrganizations,
-            },
+            values: { query, description, subject, showOnHomepage, notify, notifySlack },
             subjectOptions,
             isSubmitting,
             error,
@@ -234,27 +221,13 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         </span>
                     </div>
                 </div>
-                {(notifyUsers.length > 0 || notifyOrganizations.length > 0) && (
-                    <div className="form-group">
-                        Note: also notifying{' '}
-                        <strong>
-                            {notifyUsers
-                                .map(user => `${user} (user)`)
-                                .concat(notifyOrganizations.map(org => `${org} (org)`))
-                                .join(', ')}
-                        </strong>{' '}
-                        <span data-tooltip="See `notifyUsers` and `notifyOrganizations` in the JSON configuration">
-                            due to manual configuration
-                        </span>
-                    </div>
-                )}
                 {this.isUnsupportedNotifyQuery(this.state.values) && (
                     <div className="alert alert-warning mb-2">
                         <strong>Warning:</strong> non-commit searches do not currently support notifications. Consider
                         adding <code>type:diff</code> or <code>type:commit</code> to your query.
                     </div>
                 )}
-                {(notify || notifyUsers.length > 0 || notifyOrganizations.length > 0) &&
+                {notify &&
                     !window.context.emailEnabled &&
                     !this.isUnsupportedNotifyQuery(this.state.values) && (
                         <div className="alert alert-warning mb-2">
@@ -297,7 +270,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
      * Tells if the query is unsupported for sending notifications.
      */
     private isUnsupportedNotifyQuery(v: SavedQueryFields): boolean {
-        const notifying = v.notify || v.notifySlack || v.notifyUsers.length > 0 || v.notifyOrganizations.length > 0
+        const notifying = v.notify || v.notifySlack
         return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
     }
 

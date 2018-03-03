@@ -275,8 +275,6 @@ const savedQueryFragment = gql`
         showOnHomepage
         notify
         notifySlack
-        notifyUsers
-        notifyOrganizations
         query {
             query
         }
@@ -316,8 +314,6 @@ export function createSavedQuery(
     showOnHomepage: boolean,
     notify: boolean,
     notifySlack: boolean,
-    notifyUsers: string[] = [],
-    notifyOrganizations: string[] = [],
     disableSubscriptionNotifications?: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
@@ -331,8 +327,6 @@ export function createSavedQuery(
                 $showOnHomepage: Boolean
                 $notify: Boolean
                 $notifySlack: Boolean
-                $notifyUsers: [String!]
-                $notifyOrganizations: [String!]
                 $disableSubscriptionNotifications: Boolean
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
@@ -342,8 +336,6 @@ export function createSavedQuery(
                         showOnHomepage: $showOnHomepage
                         notify: $notify
                         notifySlack: $notifySlack
-                        notifyUsers: $notifyUsers
-                        notifyOrganizations: $notifyOrganizations
                         disableSubscriptionNotifications: $disableSubscriptionNotifications
                     ) {
                         ...SavedQueryFields
@@ -358,8 +350,6 @@ export function createSavedQuery(
             showOnHomepage,
             notify,
             notifySlack,
-            notifyUsers,
-            notifyOrganizations,
             disableSubscriptionNotifications: disableSubscriptionNotifications || false,
         }
     ).pipe(
@@ -379,9 +369,7 @@ export function updateSavedQuery(
     query: string,
     showOnHomepage: boolean,
     notify: boolean,
-    notifySlack: boolean,
-    notifyUsers: string[] = [],
-    notifyOrganizations: string[] = []
+    notifySlack: boolean
 ): Observable<GQL.ISavedQuery> {
     return mutateConfigurationGraphQL(
         subject,
@@ -395,8 +383,6 @@ export function updateSavedQuery(
                 $showOnHomepage: Boolean
                 $notify: Boolean
                 $notifySlack: Boolean
-                $notifyUsers: [String!]
-                $notifyOrganizations: [String!]
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                     updateSavedQuery(
@@ -406,8 +392,6 @@ export function updateSavedQuery(
                         showOnHomepage: $showOnHomepage
                         notify: $notify
                         notifySlack: $notifySlack
-                        notifyUsers: $notifyUsers
-                        notifyOrganizations: $notifyOrganizations
                     ) {
                         ...SavedQueryFields
                     }
@@ -415,7 +399,7 @@ export function updateSavedQuery(
             }
             ${savedQueryFragment}
         `,
-        { id, description, query, showOnHomepage, notify, notifySlack, notifyUsers, notifyOrganizations }
+        { id, description, query, showOnHomepage, notify, notifySlack }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.configurationMutation || !data.configurationMutation.updateSavedQuery) {

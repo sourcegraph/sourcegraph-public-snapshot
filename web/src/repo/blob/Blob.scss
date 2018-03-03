@@ -1,5 +1,3 @@
-@import './RenderedFile';
-
 .blob {
     &--resizable {
         flex: 1 1 50%;
@@ -104,30 +102,5 @@
         .sg-highlighted {
             background-color: $color-light-bg-4 !important;
         }
-    }
-}
-
-.blob-page {
-    display: flex;
-    flex-direction: column;
-
-    &__placeholder {
-        flex: 1 1 50%;
-    }
-
-    &__panel {
-        &--resizable {
-            min-height: 10rem;
-            max-height: 80%;
-        }
-    }
-
-    &__blob {
-        flex: 1;
-        position: relative;
-    }
-
-    &__aborted {
-        margin: 2rem;
     }
 }
