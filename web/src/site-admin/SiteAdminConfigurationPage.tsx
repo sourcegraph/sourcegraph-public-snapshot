@@ -37,6 +37,7 @@ interface State {
     contents?: string
 
     saving?: boolean
+    restartToApply: boolean
     reloadStartedAt?: number
 }
 
@@ -48,6 +49,7 @@ const EXPECTED_RELOAD_WAIT = 4 * 1000 // 4 seconds
 export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public state: State = {
         loading: true,
+        restartToApply: false,
     }
 
     private remoteRefreshes = new Subject<void>()
@@ -92,7 +94,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 .pipe(
                     tap(() => this.setState({ saving: true, error: undefined })),
                     mergeMap(updateSiteConfiguration),
-                    tap(() => this.remoteRefreshes.next())
+                    tap(restartToApply => {
+                        this.setState({ restartToApply })
+                        this.remoteRefreshes.next()
+                    })
                 )
                 .subscribe(() => this.setState({ saving: false }), error => this.setState({ saving: false, error }))
         )
@@ -145,6 +150,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         const isReloading = typeof this.state.reloadStartedAt === 'number'
         const localContents = this.localContents
         const remoteDirty =
+            this.state.restartToApply &&
             this.state.site &&
             !this.state.reloadStartedAt &&
             this.state.site.configuration &&
