@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"runtime"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -83,15 +81,6 @@ func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query ap
 func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
 	for _, org := range orgsToNotify {
 		go func(org int32) {
-			defer func() {
-				if r := recover(); r != nil {
-					// Same as net/http
-					const size = 64 << 10
-					buf := make([]byte, size)
-					buf = buf[:runtime.Stack(buf, false)]
-					log.Printf("slack notify: failed due to internal panic: %v\n%s", r, buf)
-				}
-			}()
 			settings, _, err := api.InternalClient.SettingsGetForSubject(ctx, api.ConfigurationSubject{Org: &org})
 			if err != nil {
 				log15.Error("slack notify: failed to get org settings", "org", org, "error", err)

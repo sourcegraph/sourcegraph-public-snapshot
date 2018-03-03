@@ -31,6 +31,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
@@ -184,7 +185,9 @@ func Main() error {
 
 	go bg.ApplyUserOrgMap(context.Background())
 	go bg.MigrateAdminUsernames(context.Background())
-	go bg.MigrateOrgSlackWebhookURLs(context.Background())
+	goroutine.Go(func() {
+		bg.MigrateOrgSlackWebhookURLs(context.Background())
+	})
 	go updatecheck.Start()
 	go useractivity.MigrateUserActivityData(context.Background())
 

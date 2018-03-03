@@ -2,8 +2,6 @@ package bg
 
 import (
 	"context"
-	"log"
-	"runtime"
 	"time"
 
 	"github.com/sourcegraph/jsonx"
@@ -19,16 +17,6 @@ import (
 //
 // Storing org webhooks in the DB is no longer supported. The DB column will eventually be removed.
 func MigrateOrgSlackWebhookURLs(ctx context.Context) {
-	defer func() {
-		if r := recover(); r != nil {
-			// Same as net/http
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			log.Printf("MigrateOrgSlackWebhookURLs failed due to internal panic: %v\n%s", r, buf)
-		}
-	}()
-
 rerun:
 	orgIDsToWebhookURL, err := db.Orgs.TmpListAllOrgsWithSlackWebhookURL(ctx)
 	if err != nil {
