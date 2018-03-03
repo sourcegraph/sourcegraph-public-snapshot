@@ -82,7 +82,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		filePath := uri.Fragment
 		dest := &url.URL{
 			Path:     "/" + path.Join(string(repo.URI), "-/blob", filePath),
-			Fragment: fmt.Sprintf("L%d:%d$references", symbol.Location.Range.Start.Line+1, symbol.Location.Range.End.Character+1),
+			Fragment: fmt.Sprintf("L%d:%d$references", symbol.Location.Range.Start.Line+1, symbol.Location.Range.Start.Character+1),
 		}
 		http.Redirect(w, r, dest.String(), http.StatusFound)
 		return nil
