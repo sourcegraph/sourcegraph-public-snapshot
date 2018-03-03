@@ -29,7 +29,7 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 }
 
 func needsRepositoryConfiguration() bool {
-	cfg := conf.GetTODO()
+	cfg := conf.Get()
 	return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && len(cfg.AwsCodeCommit) == 0 && cfg.GitoliteHosts == "" && cfg.GitOriginMap == ""
 }
 
