@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/csrf"
 
@@ -59,6 +60,7 @@ type JSContext struct {
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
+	NeedServerRestart bool                     `json:"needServerRestart"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 }
@@ -133,6 +135,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		EmailEnabled:         conf.CanSendEmail(),
 		Site:                 publicSiteConfiguration,
 		LikelyDockerOnMac:    likelyDockerOnMac(),
+		NeedServerRestart:    NeedServerRestart(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
@@ -156,4 +159,25 @@ func likelyDockerOnMac() bool {
 		return false // permission errors, or maybe not a Linux OS, etc. Assume we're not docker for mac.
 	}
 	return bytes.Contains(data, []byte("mac")) || bytes.Contains(data, []byte("osx"))
+}
+
+var (
+	needRestartMu sync.RWMutex
+	needRestart   bool
+)
+
+// NeedServerRestart tells if the server needs to restart for pending configuration
+// changes to take effect.
+func NeedServerRestart() bool {
+	needRestartMu.RLock()
+	defer needRestartMu.RUnlock()
+	return needRestart
+}
+
+// MarkNeedServerRestart marks the server as needing a restart so that pending
+// configuration changes can take effect.
+func MarkNeedServerRestart() {
+	needRestartMu.Lock()
+	needRestart = true
+	needRestartMu.Unlock()
 }
