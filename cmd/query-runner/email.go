@@ -2,21 +2,29 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
-func (n *notifier) emailNotify(ctx context.Context) {
+func canSendEmail(ctx context.Context) error {
 	canSendEmail, err := api.InternalClient.CanSendEmail(ctx)
 	if err != nil {
-		log15.Warn("cannot send email notification about saved search (failed to retrieve email configuration)", "error", err)
-		return
+		return errors.Wrap(err, "InternalClient.CanSendEmail")
 	}
 	if !canSendEmail {
-		log15.Warn("cannot send email notification about saved search (SMTP server not in site configuration)")
+		return errors.New("SMTP server not set in site configuration")
+	}
+	return nil
+}
+
+func (n *notifier) emailNotify(ctx context.Context) {
+	if err := canSendEmail(ctx); err != nil {
+		log15.Error("Failed to send email notification for saved search.", "error", err)
 		return
 	}
 
@@ -25,9 +33,9 @@ func (n *notifier) emailNotify(ctx context.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
 
-		for _, userID := range n.usersToNotify {
+		for _, recipient := range n.recipients {
 			ownership := "the" // example: "new search results have been found for {{.Ownership}} saved search"
-			if n.spec.Subject.User != nil && *n.spec.Subject.User == userID {
+			if n.spec.Subject.User != nil && *n.spec.Subject.User == recipient.spec.userID {
 				ownership = "your"
 			}
 			if n.spec.Subject.Org != nil {
@@ -38,7 +46,7 @@ func (n *notifier) emailNotify(ctx context.Context) {
 			if n.results.Data.Search.Results.ApproximateResultCount != "1" {
 				plural = "s"
 			}
-			sendEmail(ctx, userID, "results", newSearchResultsEmailTemplates, struct {
+			if err := sendEmail(ctx, recipient.spec.userID, "results", newSearchResultsEmailTemplates, struct {
 				URL                    string
 				Description            string
 				Query                  string
@@ -52,7 +60,9 @@ func (n *notifier) emailNotify(ctx context.Context) {
 				ApproximateResultCount: n.results.Data.Search.Results.ApproximateResultCount,
 				Ownership:              ownership,
 				PluralResults:          plural,
-			})
+			}); err != nil {
+				log15.Error("Failed to send email notification for new saved search results.", "userID", recipient.spec.userID, "error", err)
+			}
 		}
 	}()
 }
@@ -75,19 +85,13 @@ View the new result{{.PluralResults}} on Sourcegraph: {{.URL}}
 `,
 })
 
-func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32, query api.SavedQuerySpecAndConfig, template txemail.Templates) {
-	if len(usersToNotify) == 0 {
-		return
+func emailNotifySubscribeUnsubscribe(ctx context.Context, recipient *recipient, query api.SavedQuerySpecAndConfig, template txemail.Templates) error {
+	if !recipient.email {
+		return nil
 	}
 
-	canSendEmail, err := api.InternalClient.CanSendEmail(ctx)
-	if err != nil {
-		log15.Warn("cannot send email notification about saved search (failed to retrieve email configuration)", "error", err)
-		return
-	}
-	if !canSendEmail {
-		log15.Warn("cannot send email notification about saved search (SMTP server not in site configuration)")
-		return
+	if err := canSendEmail(ctx); err != nil {
+		return err
 	}
 
 	var eventType string
@@ -100,41 +104,33 @@ func emailNotifySubscribeUnsubscribe(ctx context.Context, usersToNotify []int32,
 		eventType = "unknown"
 	}
 
-	// Send tx emails asynchronously.
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
 
-		for _, userID := range usersToNotify {
-			ownership := "the" // example: "new search results have been found for {{.Ownership}} saved search"
-			if query.Spec.Subject.User != nil && *query.Spec.Subject.User == userID {
-				ownership = "your"
-			}
-			if query.Spec.Subject.Org != nil {
-				ownership = "your organization's"
-			}
+	ownership := "the" // example: "new search results have been found for {{.Ownership}} saved search"
+	if query.Spec.Subject.User != nil && *query.Spec.Subject.User == recipient.spec.userID {
+		ownership = "your"
+	}
+	if query.Spec.Subject.Org != nil {
+		ownership = "your organization's"
+	}
 
-			sendEmail(ctx, userID, eventType, template, struct {
-				Ownership   string
-				Description string
-			}{
-				Ownership:   ownership,
-				Description: query.Config.Description,
-			})
-		}
-	}()
-	return
+	return sendEmail(ctx, recipient.spec.userID, eventType, template, struct {
+		Ownership   string
+		Description string
+	}{
+		Ownership:   ownership,
+		Description: query.Config.Description,
+	})
 }
 
-func sendEmail(ctx context.Context, userID int32, eventType string, template txemail.Templates, data interface{}) {
+func sendEmail(ctx context.Context, userID int32, eventType string, template txemail.Templates, data interface{}) error {
 	email, err := api.InternalClient.UserEmailsGetEmail(ctx, userID)
 	if err != nil {
-		log15.Error("email notify: failed to get user email", "user_id", userID, "error", err)
-		return
+		return errors.Wrap(err, fmt.Sprintf("InternalClient.UserEmailsGetEmail for userID=%d", userID))
 	}
 	if email == nil {
-		log15.Error("email notify: failed to get user email", "user_id", userID)
-		return
+		return fmt.Errorf("unable to send email to user ID %d with unknown email address", userID)
 	}
 
 	if err := api.InternalClient.SendEmail(ctx, txemail.Message{
@@ -142,10 +138,10 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txe
 		Template: template,
 		Data:     data,
 	}); err != nil {
-		log15.Error("email notify: failed to send email", "to", *email, "error", err)
-		return
+		return errors.Wrap(err, fmt.Sprintf("InternalClient.SendEmail to email=%q userID=%d", *email, userID))
 	}
 	logEvent(*email, "SavedSearchEmailNotificationSent", eventType)
+	return nil
 }
 
 var notifySubscribedTemplate = txemail.MustValidate(txemail.Templates{

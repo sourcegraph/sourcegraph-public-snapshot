@@ -165,7 +165,12 @@ func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject Conf
 	return parsed, settings, err
 }
 
+var MockOrgsListUsers func(orgID int32) (users []int32, err error)
+
 func (c *internalClient) OrgsListUsers(ctx context.Context, orgID int32) (users []int32, err error) {
+	if MockOrgsListUsers != nil {
+		return MockOrgsListUsers(orgID)
+	}
 	err = c.postInternal(ctx, "orgs/list-users", orgID, &users)
 	if err != nil {
 		return nil, err
