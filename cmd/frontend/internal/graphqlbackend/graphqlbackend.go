@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
@@ -33,14 +34,19 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"type", "field", "error"})
 
-var repoListConfigs = make(map[api.RepoURI]schema.Repository)
+var repoListConfigs = atomicvalue.New()
 
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
-	reposList := conf.GetTODO().ReposList
-	for _, r := range reposList {
-		repoListConfigs[api.RepoURI(r.Path)] = r
-	}
+	conf.Watch(func() {
+		repoListConfigs.Set(func() interface{} {
+			configs := make(map[api.RepoURI]schema.Repository)
+			for _, r := range conf.Get().ReposList {
+				configs[api.RepoURI(r.Path)] = r
+			}
+			return configs
+		})
+	})
 }
 
 type prometheusTracer struct {

@@ -22,6 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 type repositoryResolver struct {
@@ -157,6 +158,7 @@ func (r *repositoryResolver) URL() string { return "/" + string(r.repo.URI) }
 
 func (r *repositoryResolver) ExternalURL(ctx context.Context) (*string, error) {
 	uri := r.repo.URI
+	repoListConfigs := repoListConfigs.Get().(map[api.RepoURI]schema.Repository)
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Repository != "" {
 		return &rc.Links.Repository, nil
