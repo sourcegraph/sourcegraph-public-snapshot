@@ -57,6 +57,7 @@ func main() {
 
 	http.HandleFunc(queryrunnerapi.PathSavedQueryWasCreatedOrUpdated, serveSavedQueryWasCreatedOrUpdated)
 	http.HandleFunc(queryrunnerapi.PathSavedQueryWasDeleted, serveSavedQueryWasDeleted)
+	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
 
 	ctx := context.Background()
 

@@ -327,3 +327,20 @@ func generateUniqueSavedQueryKey(existing []api.ConfigSavedQuery) string {
 	}
 	panic(fmt.Sprintf("unable to generate unique saved query key after %d iterations (used %d unique keys)", maxIter, len(used)))
 }
+
+func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, args *struct {
+	ID graphql.ID
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Look it up to ensure the actor has access to it.
+	if _, err := savedQueryByID(ctx, args.ID); err != nil {
+		return nil, err
+	}
+
+	spec, err := unmarshalSavedQueryID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	go queryrunnerapi.Client.TestNotification(context.Background(), spec)
+	return &EmptyResponse{}, nil
+}

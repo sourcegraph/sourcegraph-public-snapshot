@@ -184,6 +184,14 @@ type Mutation {
     # example uri: "github.com/gorilla/mux"
     addPhabricatorRepo(callsign: String!, uri: String!, url: String!): EmptyResponse
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
+    # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
+    # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
+    #
+    # Only subscribers to this saved search may perform this action.
+    sendSavedSearchTestNotification(
+        # ID of the saved search.
+        id: ID!
+    ): EmptyResponse
     # All mutations that update configuration settings are under this field.
     configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
     # Updates the site configuration.

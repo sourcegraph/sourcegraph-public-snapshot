@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -209,4 +210,31 @@ func diffMap(oldIDs, newIDs map[int32]struct{}) (added, removed []int32) {
 		removed = append(removed, id)
 	}
 	return
+}
+
+func serveTestNotification(w http.ResponseWriter, r *http.Request) {
+	allSavedQueries.mu.Lock()
+	defer allSavedQueries.mu.Unlock()
+
+	var args *queryrunnerapi.TestNotificationArgs
+	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
+		writeError(w, errors.Wrap(err, "decoding JSON arguments"))
+		return
+	}
+
+	key := savedQueryIDSpecKey(args.Spec)
+	query, ok := allSavedQueries.allSavedQueries[key]
+	if !ok {
+		writeError(w, fmt.Errorf("no saved search found with key %q", key))
+		return
+	}
+
+	go func() {
+		usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), query.Spec, query.Config)
+		emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, query, notifySubscribedTemplate)
+		slackNotify(context.Background(), orgsToNotify,
+			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(query.Config.Query, utmSourceSlack), query.Config.Description))
+	}()
+
+	log15.Info("saved query test notification sent", "spec", args.Spec, "key", key)
 }

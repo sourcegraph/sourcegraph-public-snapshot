@@ -37,6 +37,7 @@ type ErrorResponse struct {
 const (
 	PathSavedQueryWasCreatedOrUpdated = "/saved-query-was-created-or-updated"
 	PathSavedQueryWasDeleted          = "/saved-query-was-deleted"
+	PathTestNotification              = "/test-notification"
 )
 
 type client struct {
@@ -72,6 +73,16 @@ func (c *client) SavedQueryWasDeleted(ctx context.Context, spec api.SavedQueryID
 		Spec: spec,
 		DisableSubscriptionNotifications: disableSubscriptionNotifications,
 	})
+}
+
+type TestNotificationArgs struct {
+	Spec api.SavedQueryIDSpec
+}
+
+// TestNotification is called to send a test notification for a saved search. Users may perform this
+// action to test that the configured notifications are working.
+func (c *client) TestNotification(ctx context.Context, spec api.SavedQueryIDSpec) error {
+	return c.post(PathTestNotification, &TestNotificationArgs{Spec: spec})
 }
 
 func (c *client) post(path string, data interface{}) error {
