@@ -15,6 +15,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/bitbucketserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -26,11 +27,11 @@ import (
 // Bitbucket Server instance.
 const bitbucketServerServiceType = "bitbucketServer"
 
-var bitbucketServerConnections = &atomicValue{}
+var bitbucketServerConnections = atomicvalue.New()
 
 func init() {
 	conf.Watch(func() {
-		bitbucketServerConnections.set(func() interface{} {
+		bitbucketServerConnections.Set(func() interface{} {
 			var conns []*bitbucketServerConnection
 			for _, c := range conf.Get().BitbucketServer {
 				conn, err := newBitbucketServerConnection(&c)
@@ -49,7 +50,7 @@ func init() {
 // getBitbucketServerConnection returns the BitbucketServer connection (config + API client) that is responsible for
 // the repository specified by the args.
 func getBitbucketServerConnection(args protocol.RepoLookupArgs) (*bitbucketServerConnection, error) {
-	conns := bitbucketServerConnections.get().([]*bitbucketServerConnection)
+	conns := bitbucketServerConnections.Get().([]*bitbucketServerConnection)
 
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == bitbucketServerServiceType {
 		// Look up by external repository spec.
@@ -194,7 +195,7 @@ func GetBitbucketServerRepository(ctx context.Context, args protocol.RepoLookupA
 
 var bitbucketServerWorker = &worker{
 	work: func(ctx context.Context, shutdown chan struct{}) {
-		for _, c := range bitbucketServerConnections.get().([]*bitbucketServerConnection) {
+		for _, c := range bitbucketServerConnections.Get().([]*bitbucketServerConnection) {
 			go func(c *bitbucketServerConnection) {
 				for {
 					updateBitbucketServerRepos(ctx, c)

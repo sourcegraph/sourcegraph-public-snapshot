@@ -13,6 +13,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -32,11 +33,11 @@ func GitLabExternalRepoSpec(proj *gitlab.Project, baseURL url.URL) *api.External
 	}
 }
 
-var gitlabConnections = &atomicValue{}
+var gitlabConnections = atomicvalue.New()
 
 func init() {
 	conf.Watch(func() {
-		gitlabConnections.set(func() interface{} {
+		gitlabConnections.Set(func() interface{} {
 			gitlabConf := conf.Get().Gitlab
 
 			var hasGitLabDotComConnection bool
@@ -75,7 +76,7 @@ func init() {
 // getGitLabConnection returns the GitLab connection (config + API client) that is responsible for
 // the repository specified by the args.
 func getGitLabConnection(args protocol.RepoLookupArgs) (*gitlabConnection, error) {
-	gitlabConnections := gitlabConnections.get().([]*gitlabConnection)
+	gitlabConnections := gitlabConnections.Get().([]*gitlabConnection)
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitLabServiceType {
 		// Look up by external repository spec.
 		for _, conn := range gitlabConnections {
@@ -166,7 +167,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 
 var gitLabRepositorySyncWorker = &worker{
 	work: func(ctx context.Context, shutdown chan struct{}) {
-		gitlabConnections := gitlabConnections.get().([]*gitlabConnection)
+		gitlabConnections := gitlabConnections.Get().([]*gitlabConnection)
 		if len(gitlabConnections) == 0 {
 			return
 		}

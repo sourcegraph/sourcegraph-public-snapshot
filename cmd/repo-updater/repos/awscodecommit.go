@@ -19,6 +19,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
@@ -39,11 +40,11 @@ func AWSCodeCommitExternalRepoSpec(repo *awscodecommit.Repository, serviceID str
 	}
 }
 
-var awsCodeCommitConnections = &atomicValue{}
+var awsCodeCommitConnections = atomicvalue.New()
 
 func init() {
 	conf.Watch(func() {
-		awsCodeCommitConnections.set(func() interface{} {
+		awsCodeCommitConnections.Set(func() interface{} {
 			var conns []*awsCodeCommitConnection
 			for _, c := range conf.Get().AwsCodeCommit {
 				conn, err := newAWSCodeCommitConnection(c)
@@ -86,7 +87,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == AWSCodeCommitServiceType {
 		// Look up by external repository spec.
 		var err error
-		for _, conn := range awsCodeCommitConnections.get().([]*awsCodeCommitConnection) {
+		for _, conn := range awsCodeCommitConnections.Get().([]*awsCodeCommitConnection) {
 			var serviceID string
 			serviceID, err = conn.getServiceID()
 			if serviceID != "" && args.ExternalRepo.ServiceID == serviceID {
@@ -124,7 +125,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 
 var awsCodeCommitRepositorySyncWorker = &worker{
 	work: func(ctx context.Context, shutdown chan struct{}) {
-		awsCodeCommitConnections := awsCodeCommitConnections.get().([]*awsCodeCommitConnection)
+		awsCodeCommitConnections := awsCodeCommitConnections.Get().([]*awsCodeCommitConnection)
 		if len(awsCodeCommitConnections) == 0 {
 			return
 		}

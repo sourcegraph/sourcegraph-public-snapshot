@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 
 	"github.com/pkg/errors"
@@ -36,11 +37,11 @@ func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.Exter
 	}
 }
 
-var githubConnections = &atomicValue{}
+var githubConnections = atomicvalue.New()
 
 func init() {
 	conf.Watch(func() {
-		githubConnections.set(func() interface{} {
+		githubConnections.Set(func() interface{} {
 			githubConf := conf.Get().Github
 
 			var hasGitHubDotComConnection bool
@@ -79,7 +80,7 @@ func init() {
 // getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
 // the repository specified by the args.
 func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error) {
-	githubConnections := githubConnections.get().([]*githubConnection)
+	githubConnections := githubConnections.Get().([]*githubConnection)
 	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == GitHubServiceType {
 		// Look up by external repository spec.
 		skippedBecauseNoAuth := false
@@ -217,7 +218,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 
 var gitHubRepositorySyncWorker = &worker{
 	work: func(ctx context.Context, shutdown chan struct{}) {
-		githubConnections := githubConnections.get().([]*githubConnection)
+		githubConnections := githubConnections.Get().([]*githubConnection)
 		if len(githubConnections) == 0 {
 			return
 		}
