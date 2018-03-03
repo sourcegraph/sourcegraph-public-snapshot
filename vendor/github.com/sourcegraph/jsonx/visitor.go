@@ -260,6 +260,9 @@ func (w *walker) parseArray() bool {
 			}
 			w.onSeparator(',')
 			w.scanNext() // consume comma
+			if w.scanner.Token() == CloseBracketToken && w.options.TrailingCommas {
+				break
+			}
 		} else if needsComma {
 			w.handleError(CommaExpected, nil, nil)
 		}

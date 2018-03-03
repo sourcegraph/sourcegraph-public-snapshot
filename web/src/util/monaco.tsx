@@ -1,4 +1,4 @@
-import { applyEdits } from '@sqs/jsonc-parser/lib/format'
+import { applyEdits } from '@sqs/jsonc-parser'
 import { toMonacoEdits } from '../settings/MonacoSettingsEditor'
 import { ConfigInsertionFunction } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'

@@ -928,7 +928,7 @@
   branch = "master"
   name = "github.com/sourcegraph/jsonx"
   packages = ["."]
-  revision = "df0433aaa1a57f4cabed487254393f5adc939681"
+  revision = "255da098122c4943c68ed854178a38ab5f3210af"
 
 [[projects]]
   branch = "master"

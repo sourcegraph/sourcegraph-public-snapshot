@@ -1,5 +1,5 @@
+import { Edit, FormattingOptions } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { Edit, FormattingOptions } from '@sqs/jsonc-parser/lib/format'
 import {
     AwsCodeCommitConnection,
     BitbucketServerConnection,

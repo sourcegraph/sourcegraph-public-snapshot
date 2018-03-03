@@ -1,4 +1,4 @@
-import * as jsoncFormat from '@sqs/jsonc-parser/lib/format'
+import * as jsonc from '@sqs/jsonc-parser'
 import * as React from 'react'
 import MonacoEditor from 'react-monaco-editor'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
@@ -204,7 +204,7 @@ export function isStandaloneCodeEditor(
 
 export function toMonacoEdits(
     model: monaco.editor.IModel,
-    edits: jsoncFormat.Edit[]
+    edits: jsonc.Edit[]
 ): monaco.editor.IIdentifiedSingleEditOperation[] {
     return edits.map(
         (edit, i) =>
