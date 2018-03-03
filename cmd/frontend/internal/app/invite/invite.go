@@ -20,7 +20,7 @@ type TokenPayload struct {
 }
 
 func getSecretKey() ([]byte, error) {
-	encoded := conf.GetTODO().SecretKey
+	encoded := conf.Get().SecretKey
 	if encoded == "" {
 		return nil, errors.New("secret key is not set in site config")
 	}
