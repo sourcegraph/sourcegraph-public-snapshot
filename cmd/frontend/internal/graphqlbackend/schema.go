@@ -238,8 +238,6 @@ type ConfigurationMutation {
         showOnHomepage: Boolean = false
         notify: Boolean = false
         notifySlack: Boolean = false
-        notifyUsers: [String!]! = []
-        notifyOrganizations: [String!]! = []
         disableSubscriptionNotifications: Boolean = false
     ): SavedQuery!
     # Update the saved query with the given ID in the configuration.
@@ -250,8 +248,6 @@ type ConfigurationMutation {
         showOnHomepage: Boolean = false
         notify: Boolean = false
         notifySlack: Boolean = false
-        notifyUsers: [String!]! = []
-        notifyOrganizations: [String!]! = []
     ): SavedQuery!
     # Delete the saved query with the given ID in the configuration.
     deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
@@ -398,8 +394,6 @@ type SavedQuery {
     showOnHomepage: Boolean!
     notify: Boolean!
     notifySlack: Boolean!
-    notifyUsers: [String!]!
-    notifyOrganizations: [String!]!
 }
 
 type SearchQueryDescription {

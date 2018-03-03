@@ -39,22 +39,6 @@ const SettingsSchemaJSON = `{
           "notifySlack": {
             "type": "boolean",
             "description": "Notify Slack via the organization's slack webhook URL when new results are available"
-          },
-          "notifyUsers": {
-            "type": "array",
-            "description": "List of users to notify via email when new results are available",
-            "items": {
-              "type": "string",
-              "description": "Username"
-            }
-          },
-          "notifyOrganizations": {
-            "type": "array",
-            "description": "List of organizations to notify via email when new results are available",
-            "items": {
-              "type": "string",
-              "description": "Organization name"
-            }
           }
         },
         "additionalProperties": false,

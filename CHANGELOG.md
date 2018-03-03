@@ -12,6 +12,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Configuration changes
 
 * Reduced the `gitMaxConcurrentClones` site config option's default value from 100 to 5, to help prevent too many concurrent clones from causing issues on code hosts.
+* Saved search notifications are now only sent to the owner of a saved search (all of an organization's members for an organization-level saved search, or a single user for a user-level saved search). The `notifyUsers` and `notifyOrganizations` properties underneath `search.savedQueries` have been removed.
 
 ### Bug fixes
 

@@ -134,7 +134,7 @@ func (e *executorT) run(ctx context.Context) error {
 // runQuery runs the given query if an appropriate amount of time has elapsed
 // since it last ran.
 func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery) error {
-	if !query.Notify && !query.NotifySlack && len(query.NotifyUsers) == 0 && len(query.NotifyOrganizations) == 0 {
+	if !query.Notify && !query.NotifySlack {
 		// No need to run this query because there will be nobody to notify.
 		return nil
 	}
@@ -374,38 +374,6 @@ func getUsersAndOrgsToNotify(ctx context.Context, spec api.SavedQueryIDSpec, que
 	} else if query.NotifySlack && spec.Subject.Org != nil {
 		// Notifying the config owner (org) via Slack.
 		orgsToNotify = append(orgsToNotify, *spec.Subject.Org)
-	}
-
-	for _, username := range query.NotifyUsers {
-		user, err := api.InternalClient.UsersGetByUsername(ctx, username)
-		if err != nil {
-			log15.Error("failed to send notification: failed to find user", "username", username, "error", err)
-			continue
-		}
-		if user == nil {
-			log15.Error("failed to send notification: no such user", "username", username)
-			continue
-		}
-		addUsers(*user)
-	}
-
-	for _, orgName := range query.NotifyOrganizations {
-		org, err := api.InternalClient.OrgsGetByName(ctx, orgName)
-		if err != nil {
-			log15.Error("failed to send notification: failed to find org", "org_name", orgName, "error", err)
-			continue
-		}
-		if org == nil {
-			log15.Error("failed to send notification: no such org", "org_name", orgName)
-			continue
-		}
-		orgsToNotify = append(orgsToNotify, *org)
-		orgUsers, err := api.InternalClient.OrgsListUsers(ctx, *org)
-		if err != nil {
-			log15.Error("failed to send notification: failed to get org users", "org_name", orgName, "error", err)
-		} else {
-			addUsers(orgUsers...)
-		}
 	}
 
 	if query.NotifySlack {
