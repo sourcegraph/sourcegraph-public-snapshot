@@ -12,6 +12,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Configuration changes
 
 * Reduced the `gitMaxConcurrentClones` site config option's default value from 100 to 5, to help prevent too many concurrent clones from causing issues on code hosts.
+* Changes to some site configuration options are now automatically detected and no longer require a server restart. After hitting Save in the UI, you will be informed if a server restart is required, per usual.
 
 ### Bug fixes
 
