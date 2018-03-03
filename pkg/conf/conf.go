@@ -299,7 +299,7 @@ func diff(before, after *schema.SiteConfiguration) (fields map[string]struct{}) 
 		tag := b.Type().Field(i).Tag.Get("json")
 		if tag == "" {
 			// should never happen, and if it does this diffing func cannot work.
-			panic(fmt.Sprintf("missing json struct field tag on schema.SiteConfiguratoin field %q", b.Type().Field(i).Name))
+			panic(fmt.Sprintf("missing json struct field tag on schema.SiteConfiguration field %q", b.Type().Field(i).Name))
 		}
 		if !reflect.DeepEqual(beforeField.Interface(), afterField.Interface()) {
 			fieldName := parseJSONTag(tag)
