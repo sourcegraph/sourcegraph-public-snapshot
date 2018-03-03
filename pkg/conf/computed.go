@@ -27,7 +27,7 @@ func CanSendEmail() bool {
 // HasGitHubDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func HasGitHubDotComToken() bool {
-	for _, c := range GetTODO().Github {
+	for _, c := range Get().Github {
 		u, err := url.Parse(c.Url)
 		if err != nil {
 			continue
