@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -211,6 +213,23 @@ var requireRestart = map[string][]string{
 	"useJaeger":            []string{"all"},
 }
 
+// doNotRequireRestart is a list of options that do not require a service restart.
+//
+// TODO(slimsag): eliminate the need for this once all conf.GetTODO are removed.
+var doNotRequireRestart = []string{
+	"github",
+	"gitlab",
+	"phabricator",
+	"awsCodeCommit",
+	"repos.list",
+	"gitMaxConcurrentClones",
+	"repoListUpdateInterval",
+	"gitoliteHosts",
+	"gitOriginMap",
+	"githubClientID",
+	"githubClientSecret",
+}
+
 // Write writes the JSON configuration to the config file. If the file is unknown
 // or it's not editable, an error is returned. restartToApply indicates whether
 // or not the server must be restarted to apply the updated config.
@@ -219,10 +238,29 @@ func Write(input string) (restartToApply bool, err error) {
 		return false, errors.New("configuration is not writable")
 	}
 
+	// Parse the configuration so that we can diff it (this also validates it
+	// is proper JSON).
+	after, err := parseConfig(input)
+	if err != nil {
+		return false, err
+	}
+
+	before := Get()
+	diff := diff(before, after)
+
+	// Delete fields that do not require a process restart from the diff. Then
+	// len(diff) > 0 tells us if we need to restart or not.
+	for _, option := range doNotRequireRestart {
+		if option == "repos.list" {
+			option = "reposlist"
+		}
+		delete(diff, strings.ToLower(option))
+	}
+
 	if err := ioutil.WriteFile(configFilePath, []byte(input), 0600); err != nil {
 		return false, err
 	}
-	return true, nil
+	return len(diff) > 0, nil
 }
 
 // IsWritable reports whether the config can be overwritten.
@@ -236,4 +274,35 @@ func IsDirty() bool {
 	}
 	data, err := ioutil.ReadFile(configFilePath)
 	return err != nil || string(data) != raw
+}
+
+// diff returns names of the Go fields that have different values between the
+// two configurations.
+func diff(before, after *schema.SiteConfiguration) (fields map[string]struct{}) {
+	fields = make(map[string]struct{})
+	b := reflect.ValueOf(before).Elem()
+	a := reflect.ValueOf(after).Elem()
+	for i := 0; i < b.NumField(); i++ {
+		beforeField := b.Field(i)
+		afterField := a.Field(i)
+
+		tag := b.Type().Field(i).Tag.Get("json")
+		if tag == "" {
+			// should never happen, and if it does this diffing func cannot work.
+			panic(fmt.Sprintf("missing json struct field tag on schema.SiteConfiguratoin field %q", b.Type().Field(i).Name))
+		}
+		if !reflect.DeepEqual(beforeField.Interface(), afterField.Interface()) {
+			fieldName := parseJSONTag(tag)
+			fields[fieldName] = struct{}{}
+		}
+	}
+	return fields
+}
+
+// parseJSONTag parses a JSON struct field tag to return the JSON field name.
+func parseJSONTag(tag string) string {
+	if idx := strings.Index(tag, ","); idx != -1 {
+		return tag[:idx]
+	}
+	return tag
 }
