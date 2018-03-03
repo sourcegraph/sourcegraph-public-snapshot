@@ -240,6 +240,7 @@ var doNotRequireRestart = []string{
 	"disableExampleSearches",
 	"email.smtp",
 	"email.address",
+	"disableAutoGitUpdates",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
