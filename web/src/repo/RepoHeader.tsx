@@ -14,6 +14,13 @@ import { RepositoriesPopover } from './RepositoriesPopover'
  */
 export interface RepoHeaderAction {
     position: 'nav' | 'left' | 'right'
+
+    /**
+     * Controls the relative order of header action items. The items are laid out from highest priority (at the
+     * beginning) to lowest priority (at the end). The default is 0.
+     */
+    priority: number
+
     element: React.ReactElement<any>
 }
 
@@ -116,17 +123,17 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 switch (action.position) {
                     case 'nav':
                         this.setState(prevState => ({
-                            navActions: (prevState.navActions || []).concat(action),
+                            navActions: (prevState.navActions || []).concat(action).sort(byPriority),
                         }))
                         break
                     case 'left':
                         this.setState(prevState => ({
-                            leftActions: (prevState.leftActions || []).concat(action),
+                            leftActions: (prevState.leftActions || []).concat(action).sort(byPriority),
                         }))
                         break
                     case 'right':
                         this.setState(prevState => ({
-                            rightActions: (prevState.rightActions || []).concat(action),
+                            rightActions: (prevState.rightActions || []).concat(action).sort(byPriority),
                         }))
                         break
                 }
@@ -229,4 +236,8 @@ export class RepoHeader extends React.PureComponent<Props, State> {
     private onClickRepoBasename = (e: React.MouseEvent<HTMLElement>): void => {
         e.stopPropagation()
     }
+}
+
+function byPriority(a: { priority: number }, b: { priority: number }): number {
+    return b.priority - a.priority
 }

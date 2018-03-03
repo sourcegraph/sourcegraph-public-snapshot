@@ -5,6 +5,12 @@ import { RepoHeader } from './RepoHeader'
 interface Props<C extends React.ReactElement<any>> {
     element: C
     position: 'nav' | 'left' | 'right'
+
+    /**
+     * Controls the relative order of header action items. The items are laid out from highest priority (at the
+     * beginning) to lowest priority (at the end). The default is 0.
+     */
+    priority?: number
 }
 
 /**
@@ -40,17 +46,23 @@ export class RepoHeaderActionPortal<C extends React.ReactElement<any>> extends R
 
         this.subscription = RepoHeader.addAction({
             position: this.props.position,
+            priority: this.props.priority || 0,
             element: this.props.element,
         })
     }
 
     public componentWillReceiveProps(props: Props<C>): void {
-        if (this.props.element !== props.element || this.props.position !== props.position) {
+        if (
+            this.props.element !== props.element ||
+            this.props.position !== props.position ||
+            this.props.priority !== props.priority
+        ) {
             if (this.subscription) {
                 this.subscription.unsubscribe()
             }
             this.subscription = RepoHeader.addAction({
                 position: props.position,
+                priority: props.priority || 0,
                 element: props.element,
             })
         }
