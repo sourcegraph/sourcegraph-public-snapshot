@@ -108,6 +108,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     quickSuggestions: true,
                     quickSuggestionsDelay: 200,
                     readOnly: this.props.readOnly,
+                    wordWrap: 'on',
                 }}
                 requireConfig={{ paths: { vs: '/.assets/scripts/vs' }, url: '/.assets/scripts/vs/loader.js' }}
             />
