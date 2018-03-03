@@ -1,6 +1,6 @@
 import formatDistance from 'date-fns/formatDistance'
-import { limitString } from '../util'
-import { parseCommitDateString } from '../util/time'
+import { limitString } from '../../../util'
+import { parseCommitDateString } from '../../../util/time'
 import { BlameData } from './index'
 
 /**

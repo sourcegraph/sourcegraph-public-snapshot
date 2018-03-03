@@ -5,8 +5,8 @@ import { fromEvent } from 'rxjs/observable/fromEvent'
 import { filter } from 'rxjs/operators/filter'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { Tooltip } from '../../components/tooltip/Tooltip'
-import { eventLogger } from '../../tracking/eventLogger'
+import { Tooltip } from '../../../components/tooltip/Tooltip'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 /**
  * A repository header action that toggles the line wrapping behavior for long lines in code files.
