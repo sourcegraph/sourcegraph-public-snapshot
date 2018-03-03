@@ -30,7 +30,7 @@ var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex 
 
 var githubConf = conf.GetTODO().Github
 
-// githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs.
+// githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
 // This can be used for the purposes of generating external GitHub enterprise links.
 var githubEnterpriseURLs = make(map[string]string)
 
