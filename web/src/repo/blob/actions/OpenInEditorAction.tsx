@@ -2,10 +2,10 @@ import PencilIcon from '@sourcegraph/icons/lib/Pencil'
 import * as H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../../auth'
-import { hasTagRecursive } from '../../settings/tags'
-import { eventLogger } from '../../tracking/eventLogger'
-import { parseHash, toEditorURL } from '../../util/url'
+import { currentUser } from '../../../auth'
+import { hasTagRecursive } from '../../../settings/tags'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { parseHash, toEditorURL } from '../../../util/url'
 
 /**
  * A repository header action that opens the current file in Sourcegraph Editor.

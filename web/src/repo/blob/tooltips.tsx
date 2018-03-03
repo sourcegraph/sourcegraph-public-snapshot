@@ -2,10 +2,10 @@ import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import unescape from 'lodash/unescape'
 import marked from 'marked'
 import { Hover, MarkedString } from 'vscode-languageserver-types'
-import { urlWithoutSearchOptions } from '../search'
-import { getModeFromExtension } from '../util'
-import { toAbsoluteBlobURL } from '../util/url'
-import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from './index'
+import { urlWithoutSearchOptions } from '../../search'
+import { getModeFromExtension } from '../../util'
+import { toAbsoluteBlobURL } from '../../util/url'
+import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from './../index'
 
 registerLanguage('go', require('highlight.js/lib/languages/go'))
 registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))

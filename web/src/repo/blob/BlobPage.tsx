@@ -26,21 +26,17 @@ import { zip } from 'rxjs/operators/zip'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Position, Range } from 'vscode-languageserver-types'
-import { gql, queryGraphQL } from '../backend/graphql'
-import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../backend/lsp'
-import { triggerBlame } from '../blame'
-import { HeroPage } from '../components/HeroPage'
-import { PageTitle } from '../components/PageTitle'
-import { Resizable } from '../components/Resizable'
-import { ReferencesWidget } from '../references/ReferencesWidget'
-import { eventLogger } from '../tracking/eventLogger'
-import { getPathExtension, supportedExtensions } from '../util'
-import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
-import { memoizeObservable } from '../util/memoize'
-import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
-import { OpenInEditorAction } from './actions/OpenInEditorAction'
-import { ToggleLineWrap } from './actions/ToggleLineWrap'
-import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
+import { gql, queryGraphQL } from '../../backend/graphql'
+import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
+import { HeroPage } from '../../components/HeroPage'
+import { PageTitle } from '../../components/PageTitle'
+import { Resizable } from '../../components/Resizable'
+import { ReferencesWidget } from '../../references/ReferencesWidget'
+import { eventLogger } from '../../tracking/eventLogger'
+import { getPathExtension, supportedExtensions } from '../../util'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { memoizeObservable } from '../../util/memoize'
+import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../../util/url'
 import {
     AbsoluteRepoFile,
     AbsoluteRepoFilePosition,
@@ -50,9 +46,13 @@ import {
     makeRepoURI,
     ParsedRepoURI,
     RenderMode,
-} from './index'
+} from '../index'
+import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { OpenInEditorAction } from './actions/OpenInEditorAction'
+import { ToggleLineWrap } from './actions/ToggleLineWrap'
+import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
+import { triggerBlame } from './blame'
 import { RenderedFile } from './RenderedFile'
-import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import {
     convertNode,
     createTooltips,

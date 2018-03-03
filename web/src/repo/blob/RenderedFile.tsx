@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Markdown } from '../components/Markdown'
+import { Markdown } from '../../components/Markdown'
 
 interface Props {
     /**
