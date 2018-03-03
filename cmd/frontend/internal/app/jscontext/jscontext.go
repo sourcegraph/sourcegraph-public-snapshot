@@ -120,7 +120,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AssetsRoot:           assets.URL("").String(),
 		Version:              env.Version,
 		User:                 user,
-		DisableTelemetry:     conf.GetTODO().DisableTelemetry,
+		DisableTelemetry:     conf.Get().DisableTelemetry,
 		GithubEnterpriseURLs: conf.GitHubEnterpriseURLs(),
 		SentryDSN:            sentryDSNFrontend,
 		Debug:                envvar.DebugMode(),
