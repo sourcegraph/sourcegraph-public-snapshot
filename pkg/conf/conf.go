@@ -147,6 +147,30 @@ func readConfig() (string, error) {
 	return string(data), nil
 }
 
+func parseConfig(data string) (*schema.SiteConfiguration, error) {
+	// TODO(slimsag): MaxReposToSearch default value should be in our schema, not here?
+	tmpConfig := schema.SiteConfiguration{
+		MaxReposToSearch: 500,
+	}
+
+	// SOURCEGRAPH_CONFIG takes lowest precedence.
+	if data != "" {
+		if err := UnmarshalJSON(data, &tmpConfig); err != nil {
+			return nil, err
+		}
+	}
+
+	// Env var config takes highest precedence but is deprecated.
+	if v, envVarNames, err := configFromEnv(); err != nil {
+		return nil, err
+	} else if len(envVarNames) > 0 {
+		if err := json.Unmarshal(v, &tmpConfig); err != nil {
+			return nil, err
+		}
+	}
+	return &tmpConfig, nil
+}
+
 func initConfig() error {
 	rawConfig, err := readConfig()
 	if err != nil {
@@ -157,29 +181,13 @@ func initConfig() error {
 	raw = rawConfig
 	rawMu.Unlock()
 
-	// TODO(slimsag): MaxReposToSearch default value should be in our schema, not here?
-	tmpConfig := schema.SiteConfiguration{
-		MaxReposToSearch: 500,
-	}
-
-	// SOURCEGRAPH_CONFIG takes lowest precedence.
-	if raw != "" {
-		if err := UnmarshalJSON(raw, &tmpConfig); err != nil {
-			return err
-		}
-	}
-
-	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := configFromEnv(); err != nil {
+	tmpConfig, err := parseConfig(rawConfig)
+	if err != nil {
 		return err
-	} else if len(envVarNames) > 0 {
-		if err := json.Unmarshal(v, &tmpConfig); err != nil {
-			return err
-		}
 	}
 
 	cfgMu.Lock()
-	cfg = &tmpConfig
+	cfg = tmpConfig
 	cfgMu.Unlock()
 	return nil
 }
