@@ -264,9 +264,6 @@ func Write(input string) (restartToApply bool, err error) {
 	// Delete fields that do not require a process restart from the diff. Then
 	// len(diff) > 0 tells us if we need to restart or not.
 	for _, option := range doNotRequireRestart {
-		if option == "repos.list" {
-			option = "reposlist"
-		}
 		delete(diff, strings.ToLower(option))
 	}
 
