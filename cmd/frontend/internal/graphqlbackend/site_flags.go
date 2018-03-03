@@ -76,6 +76,6 @@ var isExternalAuthEnabled = func() bool {
 
 func (*siteResolver) ExternalAuthEnabled() bool { return isExternalAuthEnabled }
 
-var disableBuiltInSearches = conf.GetTODO().DisableExampleSearches || conf.GetTODO().DisableBuiltInSearches
-
-func (*siteResolver) DisableBuiltInSearches() bool { return disableBuiltInSearches }
+func (*siteResolver) DisableBuiltInSearches() bool {
+	return conf.Get().DisableExampleSearches || conf.Get().DisableBuiltInSearches
+}

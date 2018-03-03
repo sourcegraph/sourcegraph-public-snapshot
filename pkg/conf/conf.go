@@ -236,6 +236,8 @@ var doNotRequireRestart = []string{
 	"htmlHeadBottom",
 	"htmlBodyTop",
 	"htmlBodyBottom",
+	"disableBuiltInSearches",
+	"disableExampleSearches",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
