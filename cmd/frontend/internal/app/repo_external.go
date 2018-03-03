@@ -11,20 +11,26 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
-var reposListURLs = make(map[api.RepoURI]string)
+var reposListURLs = atomicvalue.New()
 
 func init() {
-	reposList := conf.GetTODO().ReposList
-	for _, r := range reposList {
-		if r.Links != nil && r.Links.Commit != "" {
-			reposListURLs[api.RepoURI(r.Path)] = r.Links.Commit
-		}
-	}
+	conf.Watch(func() {
+		reposListURLs.Set(func() interface{} {
+			urls := make(map[api.RepoURI]string)
+			for _, r := range conf.Get().ReposList {
+				if r.Links != nil && r.Links.Commit != "" {
+					urls[api.RepoURI(r.Path)] = r.Links.Commit
+				}
+			}
+			return urls
+		})
+	})
 }
 
 // serveRepoExternalCommit resolves a commit for a given repo to a redirect to
@@ -36,6 +42,7 @@ func serveRepoExternalCommit(w http.ResponseWriter, r *http.Request) error {
 	}
 	commitID := mux.Vars(r)["commit"]
 
+	reposListURLs := reposListURLs.Get().(map[api.RepoURI]string)
 	if commitURL, ok := reposListURLs[repo.URI]; ok {
 		url := strings.Replace(commitURL, "{commit}", commitID, 1)
 		http.Redirect(w, r, url, http.StatusFound)
