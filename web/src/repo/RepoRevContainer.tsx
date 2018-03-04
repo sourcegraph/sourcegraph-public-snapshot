@@ -4,7 +4,7 @@ import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import isEqual from 'lodash/isEqual'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 import { defer } from 'rxjs/observable/defer'
 import { catchError } from 'rxjs/operators/catchError'
 import { delay } from 'rxjs/operators/delay'
@@ -31,12 +31,12 @@ import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
 import { RevisionsPopover } from './RevisionsPopover'
 
-interface RepoRevContainerProps extends RouteComponentProps<{ filePath: string }> {
+interface RepoRevContainerProps extends RouteComponentProps<{}> {
     repo: GQL.IRepository
     rev: string | undefined
     user: GQL.IUser | null
-    objectType: 'blob' | 'tree'
     isLightTheme: boolean
+    routePrefix: string
 }
 
 interface State {
@@ -198,20 +198,79 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         </PopoverButton>
                     }
                 />
-                {this.props.match.params.filePath && (
-                    <RepoHeaderActionPortal
-                        position="nav"
-                        element={
-                            <FilePathBreadcrumb
-                                key="path"
-                                repoPath={this.props.repo.uri}
-                                rev={this.props.rev}
-                                filePath={this.props.match.params.filePath}
-                                isDir={this.props.objectType === 'tree'}
-                            />
-                        }
-                    />
-                )}
+                <Switch>
+                    {['', '/-/:objectType(blob|tree)/:filePath+'].map(routePath => (
+                        <Route
+                            path={`${this.props.routePrefix}${routePath}`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={routePath === ''}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={(
+                                routeComponentProps: RouteComponentProps<{
+                                    objectType: 'blob' | 'tree' | undefined
+                                    filePath: string | undefined
+                                }>
+                            ) => {
+                                const objectType: 'blob' | 'tree' =
+                                    routeComponentProps.match.params.objectType || 'tree'
+                                return (
+                                    <>
+                                        {routeComponentProps.match.params.filePath && (
+                                            <RepoHeaderActionPortal
+                                                position="nav"
+                                                element={
+                                                    <FilePathBreadcrumb
+                                                        key="path"
+                                                        repoPath={this.props.repo.uri}
+                                                        rev={this.props.rev}
+                                                        filePath={routeComponentProps.match.params.filePath}
+                                                        isDir={objectType === 'tree'}
+                                                    />
+                                                }
+                                            />
+                                        )}
+                                        <RepoRevSidebar
+                                            className="repo-rev-container__sidebar"
+                                            repoID={this.props.repo.id}
+                                            repoPath={this.props.repo.uri}
+                                            rev={this.props.rev}
+                                            commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
+                                            filePath={routeComponentProps.match.params.filePath || ''}
+                                            defaultBranch={
+                                                (this.state.resolvedRevOrError as ResolvedRev).defaultBranch || 'HEAD'
+                                            }
+                                            history={this.props.history}
+                                            location={this.props.location}
+                                        />
+                                        <div className="repo-rev-container__content">
+                                            {objectType === 'blob' ? (
+                                                <BlobPage
+                                                    repoPath={this.props.repo.uri}
+                                                    commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
+                                                    rev={this.props.rev}
+                                                    filePath={routeComponentProps.match.params.filePath || ''}
+                                                    location={this.props.location}
+                                                    history={this.props.history}
+                                                    isLightTheme={this.props.isLightTheme}
+                                                />
+                                            ) : (
+                                                <DirectoryPage
+                                                    repoPath={this.props.repo.uri}
+                                                    repoDescription={this.props.repo.description}
+                                                    commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
+                                                    rev={this.props.rev}
+                                                    filePath={routeComponentProps.match.params.filePath || ''}
+                                                    location={this.props.location}
+                                                    history={this.props.history}
+                                                />
+                                            )}
+                                        </div>
+                                    </>
+                                )
+                            }}
+                        />
+                    ))}
+                </Switch>
                 <RepoHeaderActionPortal
                     position="left"
                     element={<CopyLinkAction key="copy-link" location={this.props.location} />}
@@ -228,41 +287,6 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         />
                     }
                 />
-                <RepoRevSidebar
-                    className="repo-rev-container__sidebar"
-                    repoID={this.props.repo.id}
-                    repoPath={this.props.repo.uri}
-                    rev={this.props.rev}
-                    commitID={this.state.resolvedRevOrError.commitID}
-                    filePath={this.props.match.params.filePath || ''}
-                    defaultBranch={this.state.resolvedRevOrError.defaultBranch || 'HEAD'}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
-                <div className="repo-rev-container__content">
-                    {this.props.objectType === 'tree' && (
-                        <DirectoryPage
-                            repoPath={this.props.repo.uri}
-                            repoDescription={this.props.repo.description}
-                            commitID={this.state.resolvedRevOrError.commitID}
-                            rev={this.props.rev}
-                            filePath={this.props.match.params.filePath || ''}
-                            location={this.props.location}
-                            history={this.props.history}
-                        />
-                    )}
-                    {this.props.objectType === 'blob' && (
-                        <BlobPage
-                            repoPath={this.props.repo.uri}
-                            commitID={this.state.resolvedRevOrError.commitID}
-                            rev={this.props.rev}
-                            filePath={this.props.match.params.filePath || ''}
-                            location={this.props.location}
-                            history={this.props.history}
-                            isLightTheme={this.props.isLightTheme}
-                        />
-                    )}
-                </div>
             </div>
         )
     }
