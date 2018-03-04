@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 
 	"github.com/felixfbecker/stringscore"
@@ -769,4 +770,48 @@ func (s searchResultSorter) Less(i, j int) bool {
 
 	// All else equal, sort alphabetically.
 	return a.label < b.label
+}
+
+// langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
+// and -lang: filter values in a search query. For example, a query containing "lang:go" should
+// include files whose paths match /\.go$/.
+func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
+	lookup := func(value string) *filelang.Language {
+		value = strings.ToLower(value)
+		for _, lang := range filelang.Langs {
+			if strings.ToLower(lang.Name) == value {
+				return lang
+			}
+			for _, alias := range lang.Aliases {
+				if alias == value {
+					return lang
+				}
+			}
+		}
+		return nil
+	}
+
+	do := func(values []string, patterns *[]string) error {
+		for _, value := range values {
+			lang := lookup(value)
+			if lang == nil {
+				return fmt.Errorf("unknown language: %q", value)
+			}
+			extPatterns := make([]string, len(lang.Extensions))
+			for i, ext := range lang.Extensions {
+				// Add `\.ext$` pattern to match files with the given extension.
+				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
+			}
+			*patterns = append(*patterns, unionRegExps(extPatterns))
+		}
+		return nil
+	}
+
+	if err := do(values, &includePatterns); err != nil {
+		return nil, nil, err
+	}
+	if err := do(negatedValues, &excludePatterns); err != nil {
+		return nil, nil, err
+	}
+	return includePatterns, excludePatterns, nil
 }

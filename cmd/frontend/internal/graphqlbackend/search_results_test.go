@@ -175,6 +175,31 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			PathPatternsAreRegExps: true,
 			ExcludePattern:         strptr("f1|f2"),
 		},
+		"p lang:graphql": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			IncludePatterns:        []string{`\.graphql$|\.gql$`},
+		},
+		"p lang:graphql file:f": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			IncludePatterns:        []string{"f", `\.graphql$|\.gql$`},
+		},
+		"p -lang:graphql file:f": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			IncludePatterns:        []string{"f"},
+			ExcludePattern:         strptr(`\.graphql$|\.gql$`),
+		},
+		"p -lang:graphql -file:f": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			ExcludePattern:         strptr(`f|(\.graphql$|\.gql$)`),
+		},
 	}
 	for queryStr, want := range tests {
 		t.Run(queryStr, func(t *testing.T) {
@@ -183,7 +208,10 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 				t.Fatal(err)
 			}
 			sr := searchResolver{query: *query}
-			p := sr.getPatternInfo()
+			p, err := sr.getPatternInfo()
+			if err != nil {
+				t.Fatal(err)
+			}
 			normalize(p)
 			normalize(&want)
 			if !reflect.DeepEqual(*p, want) {

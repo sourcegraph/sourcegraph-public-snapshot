@@ -100,7 +100,11 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		resolvers, err := searchSymbols(ctx, &repoSearchArgs{query: r.getPatternInfo(), repos: repoRevs}, r.query, 7)
+		p, err := r.getPatternInfo()
+		if err != nil {
+			return nil, err
+		}
+		resolvers, err := searchSymbols(ctx, &repoSearchArgs{query: p, repos: repoRevs}, r.query, 7)
 		if err != nil {
 			return nil, err
 		}
