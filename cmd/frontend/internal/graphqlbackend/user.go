@@ -7,10 +7,8 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
@@ -177,21 +175,6 @@ func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
 		userTagResolvers = append(userTagResolvers, &userTagResolver{tag})
 	}
 	return userTagResolvers, nil
-}
-
-func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, error) {
-	// 🚨 SECURITY:  only admins are allowed to use this endpoint
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-	if r.user == nil {
-		return nil, errors.New("Could not resolve activity on nil user")
-	}
-	activity, err := useractivity.GetByUserID(r.user.ID)
-	if err != nil {
-		return nil, err
-	}
-	return &userActivityResolver{activity}, nil
 }
 
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
