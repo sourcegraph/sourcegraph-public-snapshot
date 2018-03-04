@@ -144,8 +144,8 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                     <thead>
                         <tr>
                             <th className="org-settings-members-page__avatar-cell" />
-                            <th>Name</th>
                             <th>Username</th>
+                            <th>Name</th>
                             <th>Email</th>
                             <th className="org-settings-members-page__actions-cell" />
                         </tr>
@@ -156,8 +156,8 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                                 <td className="org-settings-members-page__avatar-cell">
                                     <UserAvatar user={member.user} size={64} />
                                 </td>
-                                <td>{member.user.displayName}</td>
                                 <td>{member.user.username}</td>
+                                <td>{member.user.displayName}</td>
                                 <td>{member.user.email}</td>
                                 <td className="org-settings-members-page__actions-cell">
                                     {this.props.user && (
