@@ -63,7 +63,7 @@ type dependencyConnectionResolver struct {
 
 func (r *dependencyConnectionResolver) compute(ctx context.Context) ([]*api.DependencyReference, error) {
 	r.once.Do(func() {
-		r.dependencies, r.err = backend.Dependencies.List(ctx, r.commit.repo.repo, api.CommitID(r.commit.oid))
+		r.dependencies, r.err = backend.Dependencies.List(ctx, r.commit.repo.repo, api.CommitID(r.commit.oid), false)
 
 		if len(r.dependencies) > 0 && r.query != nil {
 			// Filter to only those results matching the query.
