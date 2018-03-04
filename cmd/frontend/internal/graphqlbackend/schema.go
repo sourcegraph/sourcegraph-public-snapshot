@@ -299,6 +299,8 @@ type Query {
     currentUser: User
     # Look up a user by username.
     user(username: String!): User
+    # Look up an organization by name.
+    organization(name: String!): Org
     currentSiteSettings: Settings
     configuration: ConfigurationCascade!
     search(

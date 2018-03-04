@@ -22,6 +22,16 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
+func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*orgResolver, error) {
+	org, err := db.Orgs.GetByName(ctx, args.Name)
+	if err != nil {
+		return nil, err
+	}
+	return &orgResolver{org: org}, nil
+}
+
+// Org is DEPRECATED (but still in use by sourcegraph/src). Use Node to look up an org by its
+// graphql.ID instead.
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*orgResolver, error) {
@@ -37,11 +47,6 @@ func orgByID(ctx context.Context, id graphql.ID) (*orgResolver, error) {
 }
 
 func orgByIDInt32(ctx context.Context, orgID int32) (*orgResolver, error) {
-	// 🚨 SECURITY: Check that the current user is a member of the org (or a site admin).
-	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
-		return nil, err
-	}
-
 	org, err := db.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
