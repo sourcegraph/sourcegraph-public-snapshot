@@ -101,6 +101,11 @@ func (r *nodeResolver) ToComment() (*commentResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToDependency() (*dependencyResolver, bool) {
+	n, ok := r.node.(*dependencyResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
 	n, ok := r.node.(*gitRefResolver)
 	return n, ok
@@ -123,6 +128,11 @@ func (r *nodeResolver) ToOrg() (*orgResolver, bool) {
 
 func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
 	n, ok := r.node.(*gitCommitResolver)
+	return n, ok
+}
+
+func (r *nodeResolver) ToPackage() (*packageResolver, bool) {
+	n, ok := r.node.(*packageResolver)
 	return n, ok
 }
 
@@ -157,6 +167,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return gitRefByID(ctx, id)
 	case "Comment":
 		return commentByID(ctx, id)
+	case "Dependency":
+		return dependencyByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
 	case "User":
@@ -165,6 +177,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return orgByID(ctx, id)
 	case "GitCommit":
 		return gitCommitByID(ctx, id)
+	case "Package":
+		return packageByID(ctx, id)
 	case "SavedQuery":
 		return savedQueryByID(ctx, id)
 	case "Site":

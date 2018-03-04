@@ -28,6 +28,16 @@ func DependencySymbolQuery(depData map[string]interface{}, lang string) (lspext.
 	return f(depData), true
 }
 
+// SymbolsInPackage returns a symbol descriptor that matches all symbols defined in the
+// package.
+func SymbolsInPackage(pkg xlangext.PackageDescriptor, lang string) (lspext.SymbolDescriptor, bool) {
+	f, ok := symbolsInPackage[lang]
+	if !ok {
+		return nil, false
+	}
+	return f(pkg), true
+}
+
 // PackageIdentifier extracts the part of the PackageDescriptor that
 // should be used to quasi-uniquely identify a package. Typically, it
 // leaves out things like package version.
@@ -59,6 +69,7 @@ func SymbolRepoURL(symDescriptor lspext.SymbolDescriptor) string {
 // value returned from the LSP proxy, because that does not pass through the
 // value of the initialize result.
 var HasXDefinitionAndXPackages = map[string]struct{}{
+	"go":         struct{}{},
 	"javascript": struct{}{},
 	"typescript": struct{}{},
 	"java":       struct{}{},
@@ -138,6 +149,15 @@ var dependencySymbolQueries = map[string]func(map[string]interface{}) lspext.Sym
 	"go": func(depData map[string]interface{}) lspext.SymbolDescriptor {
 		return lspext.SymbolDescriptor{
 			"package": depData["package"],
+		}
+	},
+	// TODO(sqs): Support these for TypeScript, JavaScript, PHP, Java, and Python.
+}
+
+var symbolsInPackage = map[string]func(xlangext.PackageDescriptor) lspext.SymbolDescriptor{
+	"go": func(pkg xlangext.PackageDescriptor) lspext.SymbolDescriptor {
+		return lspext.SymbolDescriptor{
+			"package": pkg["package"],
 		}
 	},
 	// TODO(sqs): Support these for TypeScript, JavaScript, PHP, Java, and Python.
