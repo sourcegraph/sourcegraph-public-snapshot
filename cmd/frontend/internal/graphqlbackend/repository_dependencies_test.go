@@ -15,7 +15,7 @@ import (
 func TestRepositoryResolver_Dependencies(t *testing.T) {
 	resetMocks()
 
-	backend.Mocks.Dependencies.List = func(*types.Repo, api.CommitID) ([]*api.DependencyReference, error) {
+	backend.Mocks.Dependencies.List = func(*types.Repo, api.CommitID, bool) ([]*api.DependencyReference, error) {
 		return []*api.DependencyReference{{
 			Language: "go",
 			RepoID:   1,
