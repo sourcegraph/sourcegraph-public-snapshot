@@ -209,6 +209,15 @@ func (o *orgResolver) Repos(ctx context.Context) ([]*orgRepoResolver, error) {
 	return orgRepoResolvers, nil
 }
 
+func (o *orgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	if err := backend.CheckOrgAccess(ctx, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func getOrgSlackWebhookURL(ctx context.Context, id int32) (string, error) {
 	settings, err := backend.Configuration.GetForSubject(ctx, api.ConfigurationSubject{Org: &id})
 	if err != nil {
