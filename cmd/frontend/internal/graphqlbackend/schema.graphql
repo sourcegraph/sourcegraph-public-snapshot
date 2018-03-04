@@ -1272,17 +1272,35 @@ type OrgConnection {
     totalCount: Int!
 }
 
+# An organization, which is a group of users.
 type Org implements Node, ConfigurationSubject {
+    # The unique ID for the organization.
     id: ID!
-    orgID: Int!
+    # The numeric unique ID for the organization.
+    orgID: Int! @deprecated(reason: "use id instead")
+    # The organization's name. This is unique among all organizations on this Sourcegraph site.
     name: String!
+    # The organization's chosen display name.
     displayName: String
     # The date when the organization was created, in RFC 3339 format.
     createdAt: String!
+    # The organization's members.
     members: [OrgMember!]!
+    # The latest settings for the organization.
+    #
+    # Only organization members and site admins can access this field.
     latestSettings: Settings
+    # The repositories associated with the organization. This is an experimental feature.
+    #
+    # Only organization members and site admins can access this field.
     repos: [OrgRepo!]!
+    # Look up a repository associated with the organization. This is an experimental feature.
+    #
+    # Only organization members and site admins can access this field.
     repo(canonicalRemoteID: String!): OrgRepo
+    # Threads associated with the organization. This is an experimental feature.
+    #
+    # Only organization members and site admins can access this field.
     threads(
         # TODO(nick): remove repoCanonicalRemoteID
         repoCanonicalRemoteID: String
@@ -1291,6 +1309,9 @@ type Org implements Node, ConfigurationSubject {
         file: String
         limit: Int
     ): ThreadConnection!
+    # The internal tags associated with the organization. This is an internal site management feature.
+    #
+    # Only organization members and site admins can access this field.
     tags: [OrgTag!]!
 }
 

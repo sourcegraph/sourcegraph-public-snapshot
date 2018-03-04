@@ -80,7 +80,7 @@ func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
 		return nil, err
 	}
 
