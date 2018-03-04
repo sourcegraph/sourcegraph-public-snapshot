@@ -448,7 +448,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 }
 
-func (r *searchResolver) getPatternInfo() *patternInfo {
+func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 	var patternsToCombine []string
 	for _, v := range r.query.Values(searchquery.FieldDefault) {
 		// Treat quoted strings as literal strings to match, not regexps.
@@ -464,7 +464,18 @@ func (r *searchResolver) getPatternInfo() *patternInfo {
 		}
 		patternsToCombine = append(patternsToCombine, pattern)
 	}
+
+	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := r.query.RegexpPatterns(searchquery.FieldFile)
+
+	// Handle lang: and -lang: filters.
+	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(searchquery.FieldLang))
+	if err != nil {
+		return nil, err
+	}
+	includePatterns = append(includePatterns, langIncludePatterns...)
+	excludePatterns = append(excludePatterns, langExcludePatterns...)
+
 	patternInfo := &patternInfo{
 		IsRegExp:                     true,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
@@ -478,7 +489,7 @@ func (r *searchResolver) getPatternInfo() *patternInfo {
 		excludePattern := unionRegExps(excludePatterns)
 		patternInfo.ExcludePattern = &excludePattern
 	}
-	return patternInfo
+	return patternInfo, nil
 }
 
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResultsResolver, err error) {
@@ -514,8 +525,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return &searchResultsResolver{alert: alert}, nil
 	}
 
+	p, err := r.getPatternInfo()
+	if err != nil {
+		return nil, err
+	}
 	args := repoSearchArgs{
-		query: r.getPatternInfo(),
+		query: p,
 		repos: repos,
 	}
 	if err := args.query.validate(); err != nil {

@@ -9,6 +9,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Support for [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server) as a codehost. Configure via the `bitbucketServer` site config field.
 * Prometheus gauges for git clone queue depth (`src_gitserver_clone_queue`) and git ls-remote queue depth (`src_gitserver_lsremote_queue`).
 * Slack notifications for saved searches may now be added for individual users (not just organizations).
+* The new search filter `lang:` filters results by programming language (example: `foo lang:go` or `foo -lang:clojure`).
 
 ### Configuration changes
 

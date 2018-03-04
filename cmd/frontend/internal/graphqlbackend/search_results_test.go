@@ -8,6 +8,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -119,5 +120,103 @@ func TestRegexpPatternMatchingExprsInOrder(t *testing.T) {
 	got = regexpPatternMatchingExprsInOrder([]string{"a", "b|c"})
 	if want := "(a).*?(b|c)"; got != want {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestSearchResolver_getPatternInfo(t *testing.T) {
+	normalize := func(p *patternInfo) {
+		if len(p.IncludePatterns) == 0 {
+			p.IncludePatterns = nil
+		}
+		if p.FileMatchLimit == 0 {
+			p.FileMatchLimit = defaultMaxSearchResults
+		}
+	}
+
+	tests := map[string]patternInfo{
+		"p": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+		},
+		"p1 p2": {
+			Pattern:                "(p1).*?(p2)",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+		},
+		"p case:yes": {
+			Pattern:                      "p",
+			IsRegExp:                     true,
+			IsCaseSensitive:              true,
+			PathPatternsAreRegExps:       true,
+			PathPatternsAreCaseSensitive: true,
+		},
+		"p file:f": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			IncludePatterns:        []string{"f"},
+		},
+		"p file:f1 file:f2": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			IncludePatterns:        []string{"f1", "f2"},
+		},
+		"p -file:f": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			ExcludePattern:         strptr("f"),
+		},
+		"p -file:f1 -file:f2": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			ExcludePattern:         strptr("f1|f2"),
+		},
+		"p lang:graphql": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			IncludePatterns:        []string{`\.graphql$|\.gql$`},
+		},
+		"p lang:graphql file:f": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			IncludePatterns:        []string{"f", `\.graphql$|\.gql$`},
+		},
+		"p -lang:graphql file:f": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			IncludePatterns:        []string{"f"},
+			ExcludePattern:         strptr(`\.graphql$|\.gql$`),
+		},
+		"p -lang:graphql -file:f": {
+			Pattern:                "p",
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+			ExcludePattern:         strptr(`f|(\.graphql$|\.gql$)`),
+		},
+	}
+	for queryStr, want := range tests {
+		t.Run(queryStr, func(t *testing.T) {
+			query, err := searchquery.ParseAndCheck(queryStr)
+			if err != nil {
+				t.Fatal(err)
+			}
+			sr := searchResolver{query: *query}
+			p, err := sr.getPatternInfo()
+			if err != nil {
+				t.Fatal(err)
+			}
+			normalize(p)
+			normalize(&want)
+			if !reflect.DeepEqual(*p, want) {
+				t.Errorf("\ngot  %+v\nwant %+v", *p, want)
+			}
+		})
 	}
 }
