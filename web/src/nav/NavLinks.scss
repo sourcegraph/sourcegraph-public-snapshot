@@ -4,28 +4,28 @@
     justify-content: flex-end;
     align-items: center;
 
-    &__link {
+    &__link,
+    &__border-link {
+        margin-left: 0.375rem;
+        margin-right: 0.375rem;
         display: inline-block;
         text-decoration: none;
-        margin-left: 1rem;
+    }
+    &__link {
         white-space: nowrap;
         &-user {
             font-weight: bold;
         }
     }
-
-    &__help {
-        margin-left: 1rem;
-    }
-
     &__border-link {
-        display: inline-block;
-        text-decoration: none;
-        margin-left: 1rem;
         border: 1px #cad2e2;
         border-radius: 0.125rem;
         border-style: solid;
         padding: 0.3125rem;
+    }
+
+    &__theme-switcher {
+        margin-left: 0.25rem;
     }
 
     .avatar,
