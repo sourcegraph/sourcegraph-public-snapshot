@@ -27,6 +27,7 @@ import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev }
 import { BlobPage } from './blob/BlobPage'
 import { DirectoryPage } from './DirectoryPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
+import { RepositoryGraphArea } from './graph/RepositoryGraphArea'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
 import { RevisionsPopover } from './RevisionsPopover'
@@ -270,6 +271,22 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             }}
                         />
                     ))}
+                    <Route
+                        path={`${this.props.routePrefix}/-/graph`}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={(routeComponentProps: RouteComponentProps<{}>) => (
+                            <RepositoryGraphArea
+                                {...routeComponentProps}
+                                repo={this.props.repo}
+                                user={this.props.user}
+                                rev={this.props.rev}
+                                defaultBranch={(this.state.resolvedRevOrError as ResolvedRev).defaultBranch}
+                                commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
+                                routePrefix={this.props.routePrefix}
+                            />
+                        )}
+                    />
                 </Switch>
                 <RepoHeaderActionPortal
                     position="left"

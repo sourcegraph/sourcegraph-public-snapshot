@@ -17,6 +17,7 @@ import { queryUpdates } from '../search/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
+import { RepositoryGraphAction } from './graph/RepositoryGraphAction'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
@@ -47,6 +48,8 @@ interface State {
      */
     repoOrError?: GQL.IRepository | ErrorLike
 }
+
+const enableRepositoryGraph = localStorage.getItem('repositoryGraph') !== null
 
 /**
  * Renders a horizontal bar and content for a repository page.
@@ -174,6 +177,19 @@ export class RepoContainer extends React.Component<Props, State> {
                     location={this.props.location}
                     history={this.props.history}
                 />
+                {enableRepositoryGraph && (
+                    <RepoHeaderActionPortal
+                        position="right"
+                        priority={-1}
+                        element={
+                            <RepositoryGraphAction
+                                key="repository-graph"
+                                repo={this.state.repoOrError.uri}
+                                rev={this.state.rev}
+                            />
+                        }
+                    />
+                )}
                 <RepoHeaderActionPortal
                     position="right"
                     key="go-to-code-host"
@@ -191,7 +207,7 @@ export class RepoContainer extends React.Component<Props, State> {
                 />
                 {this.state.repoOrError.enabled || isSettingsPage ? (
                     <Switch>
-                        {['', `@${this.state.rev}`, '/-/blob', '/-/tree'].map(routePath => (
+                        {['', `@${this.state.rev}`, '/-/blob', '/-/tree', '/-/graph'].map(routePath => (
                             <Route
                                 path={`${repoMatchURL}${routePath}`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

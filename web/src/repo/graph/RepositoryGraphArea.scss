@@ -1,0 +1,14 @@
+@import '../../components/Area';
+@import './RepositoryGraphDependenciesPage';
+@import './RepositoryGraphOverviewPage';
+@import './RepositoryGraphPackagesPage';
+@import './RepositoryGraphSidebar';
+
+.repository-graph-area {
+    &__header {
+        &-item {
+            padding-left: 0.25rem;
+            font-weight: bold;
+        }
+    }
+}
