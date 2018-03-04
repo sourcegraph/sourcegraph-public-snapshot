@@ -32,7 +32,7 @@ func (packages) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api
 	}
 	var errs []string
 	for _, lang := range langs {
-		pkgs, err := (packages{}).listForLanguageInRepo(ctx, lang, repo, commitID)
+		pkgs, err := (packages{}).listForLanguageInRepo(ctx, lang, repo, commitID, true)
 		if err == nil {
 			err = db.Pkgs.UpdateIndexForLanguage(ctx, lang, repo, pkgs)
 		}
@@ -49,7 +49,7 @@ func (packages) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api
 	return nil
 }
 
-func (packages) listForLanguageInRepo(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID) (pkgs []lspext.PackageInformation, err error) {
+func (packages) listForLanguageInRepo(ctx context.Context, language string, repo *types.Repo, commitID api.CommitID, background bool) (pkgs []lspext.PackageInformation, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "listForLanguageInRepo "+language+" "+string(repo.URI))
 	defer func() {
 		if err != nil {
@@ -61,7 +61,7 @@ func (packages) listForLanguageInRepo(ctx context.Context, language string, repo
 
 	vcs := "git" // TODO: store VCS type in *types.Repo object.
 
-	// Query all external packages for the repository. We do this using the
+	// Query all external packages for the repository. If background is true, we do this using the
 	// "<language>_bg" mode which runs this request on a separate language
 	// server explicitly for background tasks such as workspace/xpackages.
 	// This makes it such that indexing repositories does not interfere in
@@ -71,9 +71,13 @@ func (packages) listForLanguageInRepo(ctx context.Context, language string, repo
 		// perform.
 		return nil, nil
 	}
+	var bgSuffix string
+	if background {
+		bgSuffix = "_bg"
+	}
 	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
 	var allPks []lspext.PackageInformation
-	err = unsafeXLangCall(ctx, language+"_bg", rootURI, "workspace/xpackages", map[string]string{}, &allPks)
+	err = unsafeXLangCall(ctx, language+bgSuffix, rootURI, "workspace/xpackages", map[string]string{}, &allPks)
 	if err != nil {
 		return nil, errors.Wrap(err, "LSP Call workspace/xpackages")
 	}
@@ -108,7 +112,7 @@ func (packages) List(ctx context.Context, repo *types.Repo, rev api.CommitID) ([
 
 	var allPkgs []*api.PackageInfo
 	for _, lang := range langs {
-		pkgs, err := (packages{}).listForLanguageInRepo(ctx, lang, repo, rev)
+		pkgs, err := (packages{}).listForLanguageInRepo(ctx, lang, repo, rev, false)
 		if err != nil {
 			if e, ok := errors.Cause(err).(*jsonrpc2.Error); ok && e.Code == proxy.CodeModeNotFound {
 				log15.Warn("Packages.List skipping language because no language server is registered", "lang", lang, "err", err)

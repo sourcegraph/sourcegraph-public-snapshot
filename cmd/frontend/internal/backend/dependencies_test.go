@@ -48,7 +48,7 @@ func TestDependencies_List(t *testing.T) {
 
 	repo := &types.Repo{ID: 1, URI: "r"}
 	commitID := api.CommitID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-	deps, err := Dependencies.List(ctx, repo, commitID)
+	deps, err := Dependencies.List(ctx, repo, commitID, true)
 	if err != nil {
 		t.Fatal(err)
 	}

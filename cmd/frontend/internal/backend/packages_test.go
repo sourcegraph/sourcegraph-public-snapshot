@@ -27,7 +27,7 @@ func TestPackages_List(t *testing.T) {
 				t.Fatalf("unexpected rootPath: %q", rootPath)
 			}
 			switch mode {
-			case "typescript_bg":
+			case "typescript":
 				*res = []lspext.PackageInformation{{
 					Package: map[string]interface{}{
 						"name":    "tspkg",
@@ -35,7 +35,7 @@ func TestPackages_List(t *testing.T) {
 					},
 					Dependencies: []lspext.DependencyReference{},
 				}}
-			case "python_bg":
+			case "python":
 				*res = []lspext.PackageInformation{{
 					Package: map[string]interface{}{
 						"name":    "pypkg",

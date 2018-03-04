@@ -193,7 +193,7 @@ func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) err
 	if err != nil {
 		return err
 	}
-	deps, err := backend.Dependencies.List(r.Context(), repo, commitID)
+	deps, err := backend.Dependencies.List(r.Context(), repo, commitID, true)
 	if err != nil {
 		return fmt.Errorf("backend.Dependencies.List failed: %s", err)
 	}
