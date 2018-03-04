@@ -18,7 +18,6 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	// 🚨 SECURITY: Only site admins can make other users site admins (or demote).
 	if user == nil || !user.SiteAdmin {
 		return errMustBeSiteAdmin
 	}

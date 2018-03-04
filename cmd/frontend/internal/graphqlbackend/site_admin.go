@@ -133,13 +133,15 @@ func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool
 }) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
+	// admin).
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	user, err := currentUser(ctx)
 	if err != nil {
 		return nil, err
-	}
-	// 🚨 SECURITY: Only site admins can make other users site admins (or demote).
-	if !user.SiteAdmin() {
-		return nil, errors.New("must be site admin to set users as site admins")
 	}
 	if user.ID() == args.UserID {
 		return nil, errors.New("refusing to set current user site admin status")

@@ -1202,25 +1202,52 @@ type UserConnection {
 type User implements Node, ConfigurationSubject {
     # The unique ID for the user.
     id: ID!
+    # The user's username.
+    username: String!
     authID: String! @deprecated(reason: "renamed to externalID - use that instead")
     auth0ID: String! @deprecated(reason: "use externalID instead")
+    # The external authentication system's ID for this user, if applicable. For example, if this user is
+    # authenticated via an SSO provider (using OpenID, SAML, etc.), then this is the ID from that provider.
+    #
+    # Only the user and site admins can access this field.
     externalID: String
-    sourcegraphID: Int!
+    # The unique numeric ID for the user.
+    sourcegraphID: Int! @deprecated(reason: "use id instead")
+    # The user's primary email address.
+    #
+    # Only the user and site admins can access this field.
     email: String! @deprecated(reason: "use emails instead")
+    # The display name chosen by the user.
     displayName: String
-    username: String!
+    # The URL of the user's avatar image.
     avatarURL: String
+    # The date when the user account was created on Sourcegraph.
     createdAt: String!
+    # The date when the user account was last updated on Sourcegraph.
     updatedAt: String
     # Whether the user is a site admin.
+    #
+    # Only the user and site admins can access this field.
     siteAdmin: Boolean!
     # The latest settings for the user.
+    #
+    # Only the user and site admins can access this field.
     latestSettings: Settings
+    # The organizations that this user is a member of.
     orgs: [Org!]!
+    # This user's organization memberships.
     orgMemberships: [OrgMember!]!
+    # The internal tags associated with the user. This is an internal site management feature.
+    #
+    # Only the user and site admins can access this field.
     tags: [UserTag!]!
+    # The user's usage activity on Sourcegraph.
+    #
+    # Only the user and site admins can access this field.
     activity: UserActivity!
     # The user's email addresses.
+    #
+    # Only the user and site admins can access this field.
     emails: [UserEmail!]!
 }
 

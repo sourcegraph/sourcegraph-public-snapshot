@@ -12,10 +12,11 @@ import (
 )
 
 func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, error) {
-	// 🚨 SECURITY:  only admins are allowed to use this endpoint
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only the user and site admins are allowed to access user activity.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
 		return nil, err
 	}
+
 	activity, err := useractivity.GetByUserID(r.user.ID)
 	if err != nil {
 		return nil, err
