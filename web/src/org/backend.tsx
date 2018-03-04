@@ -28,7 +28,7 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                             contents
                         }
                     }
-                    members {
+                    memberships {
                         id
                         createdAt
                         user {

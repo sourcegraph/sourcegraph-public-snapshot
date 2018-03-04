@@ -78,7 +78,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                         if (!user) {
                             return false
                         }
-                        if (member.org.members.length === 1) {
+                        if (member.org.memberships.length === 1) {
                             return confirm(
                                 [
                                     `You're the last member of ${member.org.displayName}. `,
@@ -101,7 +101,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                                         this.state.org &&
                                         ({
                                             ...this.state.org,
-                                            members: this.state.org.members.filter(
+                                            memberships: this.state.org.memberships.filter(
                                                 member => member.user.id !== memberToRemove.user.id
                                             ),
                                         } as GQL.IOrg),
@@ -151,7 +151,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                         </tr>
                     </thead>
                     <tbody>
-                        {this.state.org.members.map(member => (
+                        {this.state.org.memberships.map(member => (
                             <tr key={member.id}>
                                 <td className="org-settings-members-page__avatar-cell">
                                     <UserAvatar user={member.user} size={64} />

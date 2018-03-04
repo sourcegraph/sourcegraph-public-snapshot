@@ -1315,8 +1315,10 @@ type Org implements Node, ConfigurationSubject {
     displayName: String
     # The date when the organization was created, in RFC 3339 format.
     createdAt: String!
-    # The organization's members.
-    members: [OrgMember!]!
+    # A list of user memberships for this organization.
+    memberships: [OrgMember!]!
+    # A list of users who are members of this organization.
+    members: UserConnection!
     # The latest settings for the organization.
     #
     # Only organization members and site admins can access this field.

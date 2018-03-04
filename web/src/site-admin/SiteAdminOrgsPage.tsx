@@ -45,11 +45,12 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                 <ul className="site-admin-detail-list__info">
                     {this.props.node.createdAt && <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>}
                     {this.props.node.members &&
-                        this.props.node.members.length > 0 && (
+                        this.props.node.memberships.length > 0 && (
                             <li>
                                 Members:{' '}
-                                <span title={this.props.node.members.map(m => m.user.username).join(', ')}>
-                                    {this.props.node.members.length} {pluralize('user', this.props.node.members.length)}
+                                <span title={this.props.node.memberships.map(m => m.user.username).join(', ')}>
+                                    {this.props.node.memberships.length}{' '}
+                                    {pluralize('user', this.props.node.memberships.length)}
                                 </span>
                             </li>
                         )}

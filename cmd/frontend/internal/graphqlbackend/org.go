@@ -81,7 +81,7 @@ func (o *orgResolver) DisplayName() *string {
 
 func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
-func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error) {
+func (o *orgResolver) Memberships(ctx context.Context) ([]*orgMemberResolver, error) {
 	sgMembers, err := db.OrgMembers.GetByOrgID(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
@@ -93,6 +93,22 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 		members = append(members, member)
 	}
 	return members, nil
+}
+
+func (o *orgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
+	memberships, err := db.OrgMembers.GetByOrgID(ctx, o.org.ID)
+	if err != nil {
+		return nil, err
+	}
+	users := make([]*types.User, len(memberships))
+	for i, membership := range memberships {
+		user, err := db.Users.GetByID(ctx, membership.UserID)
+		if err != nil {
+			return nil, err
+		}
+		users[i] = user
+	}
+	return &staticUserConnectionResolver{users: users}, nil
 }
 
 func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
