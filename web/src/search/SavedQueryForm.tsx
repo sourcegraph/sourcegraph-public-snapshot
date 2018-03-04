@@ -7,8 +7,8 @@ import { catchError } from 'rxjs/operators/catchError'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
-import { fetchOrg } from '../org/backend'
-import { configurationCascade } from '../settings/configuration'
+import { Settings } from '../schema/settings.schema'
+import { configurationCascade, parseJSON } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
 
 export interface SavedQueryFields {
@@ -38,7 +38,7 @@ interface State {
     isFocused: boolean
     error?: any
     sawUnsupportedNotifyQueryWarning: boolean
-    slackWebhooks: Map<string, string | null> // org ID -> slack webhook
+    slackWebhooks: Map<GQLID, string | null> // subject GraphQL ID -> slack webhook
 }
 
 export class SavedQueryForm extends React.Component<Props, State> {
@@ -68,7 +68,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             isSubmitting: false,
             isFocused: false,
             sawUnsupportedNotifyQueryWarning: false,
-            slackWebhooks: new Map<string, string | null>(),
+            slackWebhooks: new Map<GQLID, string | null>(),
         }
     }
 
@@ -85,14 +85,21 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     },
                 }))
 
-                subjects.filter(subject => subject.__typename === 'Org').map(subject => {
-                    fetchOrg(subject.id).subscribe(org => {
-                        if (org) {
-                            this.setState(state => ({
-                                slackWebhooks: state.slackWebhooks.set(subject.id, org.slackWebhookURL),
-                            }))
+                subjects.map(subject => {
+                    if (subject.latestSettings) {
+                        let slackWebhookURL: string | null
+                        try {
+                            const settings = parseJSON(subject.latestSettings.configuration.contents) as Settings
+                            if (settings && settings['notifications.slack']) {
+                                slackWebhookURL = settings['notifications.slack']!.webhookURL
+                            }
+                        } catch {
+                            slackWebhookURL = null
                         }
-                    })
+                        this.setState(state => ({
+                            slackWebhooks: state.slackWebhooks.set(subject.id, slackWebhookURL),
+                        }))
+                    }
                 })
             })
         )
@@ -116,7 +123,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
             isSubmitting,
             error,
         } = this.state
-        const savingToOrg = this.savingToOrg()
 
         return (
             <form className="saved-query-form" onSubmit={this.handleSubmit}>
@@ -203,18 +209,13 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         </span>
                         <span className="saved-query-form__save-location-options">
                             <label
-                                data-tooltip={
-                                    savingToOrg
-                                        ? `Send slack notifications to config owner (${this.saveTargetName()})`
-                                        : 'Must save to org settings to enable Slack notifications'
-                                }
+                                data-tooltip={`Send Slack notifications to webhook defined in configuration for ${this.saveTargetName()}`}
                             >
                                 <input
                                     className="saved-query-form__save-location-input"
                                     type="checkbox"
                                     defaultChecked={notifySlack}
                                     onChange={this.handleNotifySlackChange}
-                                    disabled={!savingToOrg}
                                 />{' '}
                                 Slack notifications
                             </label>
@@ -239,7 +240,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         </div>
                     )}
                 {notifySlack &&
-                    this.isOrgMissingSlackWebhook() && (
+                    this.isSubjectMissingSlackWebhook() && (
                         <div className="alert alert-warning mb-2">
                             <strong>Required:</strong>{' '}
                             <Link target="_blank" to={this.getConfigureSlackURL()}>
@@ -274,14 +275,9 @@ export class SavedQueryForm extends React.Component<Props, State> {
         return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
     }
 
-    private savingToOrg = () => {
+    private isSubjectMissingSlackWebhook = () => {
         const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
-        return chosen && chosen.__typename === 'Org'
-    }
-
-    private isOrgMissingSlackWebhook = () => {
-        const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
-        if (!chosen || chosen.__typename !== 'Org') {
+        if (!chosen) {
             return false
         }
         return !this.state.slackWebhooks.get(chosen.id)
@@ -289,10 +285,16 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
     private getConfigureSlackURL = () => {
         const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
-        if (!chosen || chosen.__typename !== 'Org') {
+        if (!chosen) {
             return ''
         }
-        return `/organizations/${chosen.name}/settings/profile`
+        if (chosen.__typename === 'Org') {
+            return `/organizations/${chosen.name}/settings/configuration`
+        }
+        if (chosen.__typename === 'User') {
+            return `/settings/configuration`
+        }
+        return '' // unexpected
     }
 
     private saveTargetName = () => {

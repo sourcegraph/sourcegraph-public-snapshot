@@ -95,9 +95,15 @@ func serveSavedQueryWasCreatedOrUpdated(w http.ResponseWriter, r *http.Request) 
 			Config: query,
 		}
 
-		// Handle notifying users of saved query creation / deletion.
-		oldValue, exists := allSavedQueries.allSavedQueries[key]
-		notifySavedQueryWasCreatedOrUpdated(oldValue, newValue, exists, args.DisableSubscriptionNotifications)
+		oldValue := allSavedQueries.allSavedQueries[key]
+		if !args.DisableSubscriptionNotifications {
+			// Notify users of saved query creation and updates.
+			go func() {
+				if err := notifySavedQueryWasCreatedOrUpdated(oldValue, newValue); err != nil {
+					log15.Error("Failed to handle created/updated saved search.", "query", query, "error", err)
+				}
+			}()
+		}
 
 		allSavedQueries.allSavedQueries[key] = newValue
 	}
@@ -123,11 +129,11 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	delete(allSavedQueries.allSavedQueries, key)
 
 	if !args.DisableSubscriptionNotifications {
-		// Inform any subscribers that they have been unsubscribed.
+		// Notify users of saved query deletions.
 		go func() {
-			usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), query.Spec, query.Config)
-			emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, query, notifyUnsubscribedTemplate)
-			slackNotifyDeleted(context.Background(), orgsToNotify, query)
+			if err := notifySavedQueryWasCreatedOrUpdated(query, api.SavedQuerySpecAndConfig{}); err != nil {
+				log15.Error("Failed to handle created/updated saved search.", "query", query, "error", err)
+			}
 		}()
 	}
 
@@ -148,68 +154,45 @@ func serveSavedQueryWasDeleted(w http.ResponseWriter, r *http.Request) {
 	log15.Info("saved query deleted", "total_saved_queries", len(allSavedQueries.allSavedQueries))
 }
 
-func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAndConfig, exists, disableSubscriptionNotifications bool) {
-	if disableSubscriptionNotifications {
-		return
+func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAndConfig) error {
+	ctx := context.Background()
+
+	oldRecipients, err := getNotificationRecipients(ctx, oldValue.Spec, oldValue.Config)
+	if err != nil {
+		return err
 	}
-	go func() {
-		if !exists {
-			// Saved query (newValue) was created.
-			usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), newValue.Spec, newValue.Config)
-			emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, newValue, notifySubscribedTemplate)
-			slackNotifyCreated(context.Background(), orgsToNotify, newValue)
-			return
-		}
-
-		// Users may have been added or removed from the configuration. Notify them accordingly.
-		oldUsersToNotify, oldOrgsToNotify := int32MapDual(getUsersAndOrgsToNotify(context.Background(), oldValue.Spec, oldValue.Config))
-		newUsersToNotify, newOrgsToNotify := int32MapDual(getUsersAndOrgsToNotify(context.Background(), newValue.Spec, newValue.Config))
-		subscribed, unsubscribed := diffMap(oldUsersToNotify, newUsersToNotify)
-		if len(subscribed) > 0 {
-			emailNotifySubscribeUnsubscribe(context.Background(), subscribed, newValue, notifySubscribedTemplate)
-		}
-		if len(unsubscribed) > 0 {
-			emailNotifySubscribeUnsubscribe(context.Background(), unsubscribed, oldValue, notifyUnsubscribedTemplate)
-		}
-
-		subscribedOrgs, unsubscribedOrgs := diffMap(oldOrgsToNotify, newOrgsToNotify)
-		if len(subscribedOrgs) > 0 {
-			slackNotifySubscribed(context.Background(), subscribedOrgs, newValue)
-		}
-		if len(unsubscribedOrgs) > 0 {
-			slackNotifyUnsubscribed(context.Background(), unsubscribedOrgs, oldValue)
-		}
-	}()
-}
-
-func int32Map(v []int32) map[int32]struct{} {
-	m := make(map[int32]struct{}, len(v))
-	for _, v := range v {
-		m[v] = struct{}{}
+	newRecipients, err := getNotificationRecipients(ctx, newValue.Spec, newValue.Config)
+	if err != nil {
+		return err
 	}
-	return m
-}
 
-func int32MapDual(a, b []int32) (map[int32]struct{}, map[int32]struct{}) {
-	return int32Map(a), int32Map(b)
-}
-
-func diffMap(oldIDs, newIDs map[int32]struct{}) (added, removed []int32) {
-	for id := range newIDs {
-		_, didExist := oldIDs[id]
-		if didExist {
-			continue
+	removedRecipients, addedRecipients := diffNotificationRecipients(oldRecipients, newRecipients)
+	log15.Debug("Notifying for created/updated saved search", "removed", removedRecipients, "added", addedRecipients)
+	for _, removedRecipient := range removedRecipients {
+		if removedRecipient.email {
+			if err := emailNotifySubscribeUnsubscribe(ctx, removedRecipient, oldValue, notifyUnsubscribedTemplate); err != nil {
+				log15.Error("Failed to send unsubscribed email notification.", "recipient", removedRecipient, "error", err)
+			}
 		}
-		added = append(added, id)
-	}
-	for id := range oldIDs {
-		_, stillExists := newIDs[id]
-		if stillExists {
-			continue
+		if removedRecipient.slack {
+			if err := slackNotifyUnsubscribed(ctx, removedRecipient, oldValue); err != nil {
+				log15.Error("Failed to send unsubscribed Slack notification.", "recipient", removedRecipient, "error", err)
+			}
 		}
-		removed = append(removed, id)
 	}
-	return
+	for _, addedRecipient := range addedRecipients {
+		if addedRecipient.email {
+			if err := emailNotifySubscribeUnsubscribe(ctx, addedRecipient, newValue, notifySubscribedTemplate); err != nil {
+				log15.Error("Failed to send subscribed email notification.", "recipient", addedRecipient, "error", err)
+			}
+		}
+		if addedRecipient.slack {
+			if err := slackNotifySubscribed(ctx, addedRecipient, newValue); err != nil {
+				log15.Error("Failed to send subscribed Slack notification.", "recipient", addedRecipient, "error", err)
+			}
+		}
+	}
+	return nil
 }
 
 func serveTestNotification(w http.ResponseWriter, r *http.Request) {
@@ -229,12 +212,23 @@ func serveTestNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go func() {
-		usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(context.Background(), query.Spec, query.Config)
-		emailNotifySubscribeUnsubscribe(context.Background(), usersToNotify, query, notifySubscribedTemplate)
-		slackNotify(context.Background(), orgsToNotify,
-			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(query.Config.Query, utmSourceSlack), query.Config.Description))
-	}()
+	recipients, err := getNotificationRecipients(r.Context(), query.Spec, query.Config)
+	if err != nil {
+		writeError(w, fmt.Errorf("error computing recipients: %s", err))
+		return
+	}
+
+	for _, recipient := range recipients {
+		if err := emailNotifySubscribeUnsubscribe(r.Context(), recipient, query, notifySubscribedTemplate); err != nil {
+			writeError(w, fmt.Errorf("error sending email notifications to %s: %s", recipient.spec, err))
+			return
+		}
+		if err := slackNotify(context.Background(), recipient,
+			fmt.Sprintf(`It worked! This is a test notification for the Sourcegraph saved search <%s|"%s">.`, searchURL(query.Config.Query, utmSourceSlack), query.Config.Description)); err != nil {
+			writeError(w, fmt.Errorf("error sending email notifications to %s: %s", recipient.spec, err))
+			return
+		}
+	}
 
 	log15.Info("saved query test notification sent", "spec", args.Spec, "key", key)
 }

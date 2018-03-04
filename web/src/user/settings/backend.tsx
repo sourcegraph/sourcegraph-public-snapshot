@@ -34,6 +34,9 @@ const configurationCascadeFragment = gql`
             }
             latestSettings {
                 id
+                configuration {
+                    contents
+                }
             }
         }
         merged {

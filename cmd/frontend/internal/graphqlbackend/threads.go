@@ -458,8 +458,11 @@ func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThre
 			log15.Error("notifyNewComment failed", "error", err)
 		}
 		if results != nil {
-			// TODO(Dan): replace sourcegraphOrgWebhookURL with any customer/org-defined webhook
-			client := slack.New(org.SlackWebhookURL, true)
+			slackWebhookURL, err := getOrgSlackWebhookURL(ctx, org.ID)
+			if err != nil {
+				return nil, err
+			}
+			client := slack.New(slackWebhookURL, true)
 			commentURL := threadURL(newThread.ID, &comment.ID, "slack")
 			go slack.NotifyOnThread(client, currentUser, email, org, repo, newThread, comment, results.emails, commentURL.String())
 		}

@@ -11,9 +11,11 @@ import (
 
 	"golang.org/x/net/context/ctxhttp"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
@@ -155,7 +157,20 @@ func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query strin
 	return c.postInternal(ctx, "saved-queries/delete-info", query, nil)
 }
 
+func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject ConfigurationSubject) (parsed *schema.Settings, settings *Settings, err error) {
+	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
+	if err == nil {
+		err = conf.UnmarshalJSON(settings.Contents, &parsed)
+	}
+	return parsed, settings, err
+}
+
+var MockOrgsListUsers func(orgID int32) (users []int32, err error)
+
 func (c *internalClient) OrgsListUsers(ctx context.Context, orgID int32) (users []int32, err error) {
+	if MockOrgsListUsers != nil {
+		return MockOrgsListUsers(orgID)
+	}
 	err = c.postInternal(ctx, "orgs/list-users", orgID, &users)
 	if err != nil {
 		return nil, err
@@ -169,14 +184,6 @@ func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (org
 		return nil, err
 	}
 	return orgID, nil
-}
-
-func (c *internalClient) OrgsGetSlackWebhooks(ctx context.Context, orgIDs []int32) (webhooks []*string, err error) {
-	err = c.postInternal(ctx, "orgs/get-slack-webhooks", orgIDs, &webhooks)
-	if err != nil {
-		return nil, err
-	}
-	return webhooks, nil
 }
 
 func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {

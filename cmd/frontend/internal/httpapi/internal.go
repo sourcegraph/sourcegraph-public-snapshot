@@ -339,6 +339,21 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
+	var subject api.ConfigurationSubject
+	if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+	settings, err := db.Settings.GetLatest(r.Context(), subject)
+	if err != nil {
+		return errors.Wrap(err, "Settings.GetLatest")
+	}
+	if err := json.NewEncoder(w).Encode(settings); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
 func serveOrgsListUsers(w http.ResponseWriter, r *http.Request) error {
 	var orgID int32
 	err := json.NewDecoder(r.Body).Decode(&orgID)
@@ -370,26 +385,6 @@ func serveOrgsGetByName(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "Orgs.GetByName")
 	}
 	if err := json.NewEncoder(w).Encode(org.ID); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveOrgsGetSlackWebhooks(w http.ResponseWriter, r *http.Request) error {
-	var orgIDs []int32
-	err := json.NewDecoder(r.Body).Decode(&orgIDs)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
-	}
-	var webhooks []*string
-	for _, orgID := range orgIDs {
-		org, err := db.Orgs.GetByID(r.Context(), orgID)
-		if err != nil {
-			return errors.Wrap(err, "Orgs.Get")
-		}
-		webhooks = append(webhooks, org.SlackWebhookURL)
-	}
-	if err := json.NewEncoder(w).Encode(webhooks); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil

@@ -22,67 +22,49 @@ func (n *notifier) slackNotify(ctx context.Context) {
 		searchURL(n.newQuery, utmSourceSlack),
 		n.query.Description,
 	)
-	slackNotify(ctx, n.orgsToNotify, text)
+	for _, recipient := range n.recipients {
+		if err := slackNotify(ctx, recipient, text); err != nil {
+			log15.Error("Failed to post Slack notification message.", "recipient", recipient, "text", text, "error", err)
+		}
+	}
 	logEvent("", "SavedSearchSlackNotificationSent", "results")
 }
 
-func slackNotifyCreated(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
-	if len(orgsToNotify) == 0 {
-		return
-	}
-
-	text := fmt.Sprintf(`Notifications for the new saved search <%s|"%s"> will be sent here when new results are available.`,
-		searchURL(query.Config.Query, utmSourceSlack),
-		query.Config.Description,
-	)
-	slackNotify(ctx, orgsToNotify, text)
-	logEvent("", "SavedSearchSlackNotificationSent", "created")
-}
-
-func slackNotifyDeleted(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
-	if len(orgsToNotify) == 0 {
-		return
-	}
-
-	text := fmt.Sprintf(`Saved search <%s|"%s"> has been deleted.`,
-		searchURL(query.Config.Query, utmSourceSlack),
-		query.Config.Description,
-	)
-	slackNotify(ctx, orgsToNotify, text)
-	logEvent("", "SavedSearchSlackNotificationSent", "deleted")
-}
-
-func slackNotifySubscribed(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
-	if len(orgsToNotify) == 0 {
-		return
-	}
-
+func slackNotifySubscribed(ctx context.Context, recipient *recipient, query api.SavedQuerySpecAndConfig) error {
 	text := fmt.Sprintf(`Slack notifications enabled for the saved search <%s|"%s">. Notifications will be sent here when new results are available.`,
 		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
-	slackNotify(ctx, orgsToNotify, text)
+	if err := slackNotify(ctx, recipient, text); err != nil {
+		return err
+	}
 	logEvent("", "SavedSearchSlackNotificationSent", "enabled")
+	return nil
 }
 
-func slackNotifyUnsubscribed(ctx context.Context, orgsToNotify []int32, query api.SavedQuerySpecAndConfig) {
-	if len(orgsToNotify) == 0 {
-		return
-	}
-
+func slackNotifyUnsubscribed(ctx context.Context, recipient *recipient, query api.SavedQuerySpecAndConfig) error {
 	text := fmt.Sprintf(`Slack notifications for the saved search <%s|"%s"> disabled.`,
 		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
-	slackNotify(ctx, orgsToNotify, text)
+	if err := slackNotify(ctx, recipient, text); err != nil {
+		return err
+	}
 	logEvent("", "SavedSearchSlackNotificationSent", "disabled")
+	return nil
 }
 
-func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
-	webhooks, err := api.InternalClient.OrgsGetSlackWebhooks(ctx, orgsToNotify)
+func slackNotify(ctx context.Context, recipient *recipient, text string) error {
+	if !recipient.slack {
+		return nil
+	}
+
+	settings, _, err := api.InternalClient.SettingsGetForSubject(ctx, recipient.subject())
 	if err != nil {
-		log15.Error("slack notify: failed to get webhooks", "error", err)
-		return
+		return err
+	}
+	if settings.NotificationsSlack == nil || settings.NotificationsSlack.WebhookURL == "" {
+		return fmt.Errorf("unable to send Slack notification because recipient (%s) has no Slack webhook URL configured", recipient.spec)
 	}
 
 	payload := &slack.Payload{
@@ -92,18 +74,6 @@ func slackNotify(ctx context.Context, orgsToNotify []int32, text string) {
 		UnfurlMedia: false,
 		Text:        text,
 	}
-
-	for _, webhook := range webhooks {
-		webhook := webhook
-		if webhook == nil {
-			continue // org does not have one set
-		}
-		go func() {
-			client := slack.New(webhook, true)
-			err := slack.Post(payload, client.WebhookURL)
-			if err != nil {
-				log15.Error("slack notify: failed", "error", err)
-			}
-		}()
-	}
+	client := slack.New(settings.NotificationsSlack.WebhookURL, true)
+	return slack.Post(payload, client.WebhookURL)
 }

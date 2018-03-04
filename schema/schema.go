@@ -174,9 +174,10 @@ type SearchScope struct {
 
 // Settings Configuration settings for users and organizations on Sourcegraph Server.
 type Settings struct {
-	SearchRepositoryGroups map[string][]string  `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries     []SearchSavedQueries `json:"search.savedQueries,omitempty"`
-	SearchScopes           []SearchScope        `json:"search.scopes,omitempty"`
+	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
+	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries     []SearchSavedQueries      `json:"search.savedQueries,omitempty"`
+	SearchScopes           []SearchScope             `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration Configuration for a Sourcegraph Server site.
@@ -252,4 +253,9 @@ type SiteConfiguration struct {
 	TlsLetsencrypt                 string                      `json:"tls.letsencrypt,omitempty"`
 	UpdateChannel                  string                      `json:"update.channel,omitempty"`
 	UseJaeger                      bool                        `json:"useJaeger,omitempty"`
+}
+
+// SlackNotificationsConfig Configuration for sending notifications to Slack.
+type SlackNotificationsConfig struct {
+	WebhookURL string `json:"webhookURL"`
 }

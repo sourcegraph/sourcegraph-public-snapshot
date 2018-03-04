@@ -21,12 +21,12 @@ var SourcegraphOrgWebhookURL = env.Get("SLACK_COMMENTS_BOT_HOOK", "", "Webhook f
 
 // Client is capable of posting a message to a Slack webhook
 type Client struct {
-	WebhookURL            *string
+	WebhookURL            string
 	AlsoSendToSourcegraph bool
 }
 
 // New creates a new Slack client
-func New(webhookURL *string, alsoSendToSourcegraph bool) *Client {
+func New(webhookURL string, alsoSendToSourcegraph bool) *Client {
 	return &Client{WebhookURL: webhookURL, AlsoSendToSourcegraph: alsoSendToSourcegraph}
 }
 
@@ -70,8 +70,8 @@ type Field struct {
 // Post sends payload to a Slack channel defined by the provided webhookURL
 // This function should not be called directly — rather, it should be called
 // through a helper Notify* function on a slack.Client object.
-func Post(payload *Payload, webhookURL *string) error {
-	if webhookURL == nil || *webhookURL == "" {
+func Post(payload *Payload, webhookURL string) error {
+	if webhookURL == "" {
 		return nil
 	}
 
@@ -79,7 +79,7 @@ func Post(payload *Payload, webhookURL *string) error {
 	if err != nil {
 		return errors.Wrap(err, "slack: marshal json")
 	}
-	req, err := http.NewRequest("POST", *webhookURL, bytes.NewReader(payloadJSON))
+	req, err := http.NewRequest("POST", webhookURL, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return errors.Wrap(err, "slack: create post request")
 	}

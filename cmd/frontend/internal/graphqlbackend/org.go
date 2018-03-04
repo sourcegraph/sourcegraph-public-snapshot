@@ -74,10 +74,6 @@ func (o *orgResolver) DisplayName() *string {
 	return o.org.DisplayName
 }
 
-func (o *orgResolver) SlackWebhookURL() *string {
-	return o.org.SlackWebhookURL
-}
-
 func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
 func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error) {
@@ -176,6 +172,17 @@ func (o *orgResolver) Repos(ctx context.Context) ([]*orgRepoResolver, error) {
 	return orgRepoResolvers, nil
 }
 
+func getOrgSlackWebhookURL(ctx context.Context, id int32) (string, error) {
+	settings, err := backend.Configuration.GetForSubject(ctx, api.ConfigurationSubject{Org: &id})
+	if err != nil {
+		return "", err
+	}
+	if settings.NotificationsSlack != nil {
+		return settings.NotificationsSlack.WebhookURL, nil
+	}
+	return "", nil
+}
+
 func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	Name        string
 	DisplayName string
@@ -218,9 +225,8 @@ func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 }
 
 func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
-	ID              graphql.ID
-	DisplayName     *string
-	SlackWebhookURL *string
+	ID          graphql.ID
+	DisplayName *string
 }) (*orgResolver, error) {
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.ID, &orgID); err != nil {
@@ -233,9 +239,9 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	log15.Info("updating org", "org", args.ID, "display name", args.DisplayName, "webhook URL", args.SlackWebhookURL)
+	log15.Info("updating org", "org", args.ID, "display name", args.DisplayName)
 
-	updatedOrg, err := db.Orgs.Update(ctx, orgID, args.DisplayName, args.SlackWebhookURL)
+	updatedOrg, err := db.Orgs.Update(ctx, orgID, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -363,7 +369,11 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		}
 	}
 
-	client := slack.New(org.SlackWebhookURL, true)
+	slackWebhookURL, err := getOrgSlackWebhookURL(ctx, org.ID)
+	if err != nil {
+		return nil, err
+	}
+	client := slack.New(slackWebhookURL, true)
 	go slack.NotifyOnInvite(client, currentUser, email, org, args.Email)
 
 	return &inviteUserResult{acceptInviteURL: inviteURL}, nil
@@ -398,7 +408,11 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	client := slack.New(org.SlackWebhookURL, true)
+	slackWebhookURL, err := getOrgSlackWebhookURL(ctx, org.ID)
+	if err != nil {
+		return nil, err
+	}
+	client := slack.New(slackWebhookURL, true)
 	go slack.NotifyOnAcceptedInvite(client, currentUser, email, org)
 
 	return &EmptyResponse{}, nil

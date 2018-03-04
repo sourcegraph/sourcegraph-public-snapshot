@@ -46,7 +46,7 @@ func NotifyOnComment(
 	// comment to the Sourcegraph-internal webhook. In these instances, set censored
 	// to true to ensure that the private contents of the comment remain private.
 	if c.AlsoSendToSourcegraph && slack.SourcegraphOrgWebhookURL != "" && org.Name != "Sourcegraph" {
-		err := notifyOnComments(c, false, user, userEmail, org, orgRepo, thread, comment, recipients, deepURL, threadTitle, &slack.SourcegraphOrgWebhookURL, true)
+		err := notifyOnComments(c, false, user, userEmail, org, orgRepo, thread, comment, recipients, deepURL, threadTitle, slack.SourcegraphOrgWebhookURL, true)
 		if err != nil {
 			log15.Error("slack.NotifyOnThread failed", "error", err)
 		}
@@ -76,7 +76,7 @@ func NotifyOnThread(
 	// comment to the Sourcegraph-internal webhook. In these instances, set censored
 	// to true to ensure that the private contents of the comment remain private.
 	if c.AlsoSendToSourcegraph && slack.SourcegraphOrgWebhookURL != "" && org.Name != "Sourcegraph" {
-		err := notifyOnComments(c, true, user, userEmail, org, orgRepo, thread, comment, recipients, deepURL, "", &slack.SourcegraphOrgWebhookURL, true)
+		err := notifyOnComments(c, true, user, userEmail, org, orgRepo, thread, comment, recipients, deepURL, "", slack.SourcegraphOrgWebhookURL, true)
 		if err != nil {
 			log15.Error("slack.NotifyOnThread failed", "error", err)
 		}
@@ -95,7 +95,7 @@ func notifyOnComments(
 	recipients []string,
 	deepURL string,
 	threadTitle string,
-	webhookURL *string,
+	webhookURL string,
 	censored bool,
 ) error {
 	color := "good"
@@ -212,7 +212,7 @@ func NotifyOnInvite(c *slack.Client, user User, userEmail string, org *types.Org
 	// Next, if the action was by an external Sourcegraph customer, also send the
 	// notification to the Sourcegraph-internal webhook
 	if c.AlsoSendToSourcegraph && slack.SourcegraphOrgWebhookURL != "" && org.Name != "Sourcegraph" {
-		err := slack.Post(payload, &slack.SourcegraphOrgWebhookURL)
+		err := slack.Post(payload, slack.SourcegraphOrgWebhookURL)
 		if err != nil {
 			log15.Error("slack.NotifyOnInvite failed", "error", err)
 		}
@@ -257,7 +257,7 @@ func NotifyOnAcceptedInvite(c *slack.Client, user User, userEmail string, org *t
 	// Next, if the action was by an external Sourcegraph customer, also send the
 	// notification to the Sourcegraph-internal webhook
 	if c.AlsoSendToSourcegraph && slack.SourcegraphOrgWebhookURL != "" && org.Name != "Sourcegraph" {
-		err := slack.Post(payload, &slack.SourcegraphOrgWebhookURL)
+		err := slack.Post(payload, slack.SourcegraphOrgWebhookURL)
 		if err != nil {
 			log15.Error("slack.NotifyOnAcceptedInvite failed", "error", err)
 		}

@@ -279,16 +279,18 @@ func notify(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSave
 	log15.Info("sending notifications", "new_results", len(results.Data.Search.Results.Results), "description", query.Description)
 
 	// Determine which users to notify.
-	usersToNotify, orgsToNotify := getUsersAndOrgsToNotify(ctx, spec, query)
+	recipients, err := getNotificationRecipients(ctx, spec, query)
+	if err != nil {
+		return err
+	}
 
 	// Send slack notifications.
 	n := &notifier{
-		spec:          spec,
-		query:         query,
-		newQuery:      newQuery,
-		results:       results,
-		usersToNotify: usersToNotify,
-		orgsToNotify:  orgsToNotify,
+		spec:       spec,
+		query:      query,
+		newQuery:   newQuery,
+		results:    results,
+		recipients: recipients,
 	}
 
 	// Send Slack and email notifications.
@@ -298,11 +300,11 @@ func notify(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSave
 }
 
 type notifier struct {
-	spec                        api.SavedQueryIDSpec
-	query                       api.ConfigSavedQuery
-	newQuery                    string
-	results                     *gqlSearchResponse
-	usersToNotify, orgsToNotify []int32
+	spec       api.SavedQueryIDSpec
+	query      api.ConfigSavedQuery
+	newQuery   string
+	results    *gqlSearchResponse
+	recipients recipients
 }
 
 const (
@@ -332,54 +334,6 @@ func searchURL(query, utmSource string) string {
 	q.Set("utm_source", utmSource)
 	u.RawQuery = q.Encode()
 	return u.String()
-}
-
-func getUsersToNotify(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery) []int32 {
-	users, _ := getUsersAndOrgsToNotify(ctx, spec, query)
-	return users
-}
-
-// getUsersAndOrgsToNotify returns a list of all the user (IDs) and orgs that
-// should be notified of new search results according to the query
-// configuration.
-func getUsersAndOrgsToNotify(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery) (users, orgs []int32) {
-	// Ensures users are not added twice to the list.
-	addedUsers := map[int32]struct{}{}
-	addUsers := func(usersToAdd ...int32) {
-		for _, userID := range usersToAdd {
-			if _, ok := addedUsers[userID]; ok {
-				continue // already added
-			}
-			addedUsers[userID] = struct{}{}
-			users = append(users, userID)
-		}
-	}
-
-	// If the query.Notify option is set, then notify the owner of the
-	// configuration (the user or the entire organization).
-	var orgsToNotify []int32
-	if query.Notify {
-		if spec.Subject.Org != nil {
-			orgsToNotify = append(orgsToNotify, *spec.Subject.Org)
-			orgUsers, err := api.InternalClient.OrgsListUsers(ctx, *spec.Subject.Org)
-			if err != nil {
-				log15.Error("failed to send notification: failed to get org users", "org_id", *spec.Subject.Org, "error", err)
-			} else {
-				addUsers(orgUsers...)
-			}
-		}
-		if spec.Subject.User != nil {
-			addUsers(*spec.Subject.User)
-		}
-	} else if query.NotifySlack && spec.Subject.Org != nil {
-		// Notifying the config owner (org) via Slack.
-		orgsToNotify = append(orgsToNotify, *spec.Subject.Org)
-	}
-
-	if query.NotifySlack {
-		return users, orgsToNotify
-	}
-	return users, nil
 }
 
 func logEvent(email, eventName, eventType string) {

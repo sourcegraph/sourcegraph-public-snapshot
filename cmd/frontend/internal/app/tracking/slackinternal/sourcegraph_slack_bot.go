@@ -48,5 +48,5 @@ func NotifyOnSignup(avatarURL *string, email string, hubSpotProps *hubspot.Conta
 		},
 	}
 
-	return slack.Post(payload, &signupsWebhookURL)
+	return slack.Post(payload, signupsWebhookURL)
 }

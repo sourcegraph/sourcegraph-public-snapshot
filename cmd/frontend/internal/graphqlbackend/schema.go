@@ -116,7 +116,7 @@ type Mutation {
     shareThread(threadID: ID!): String!
     shareComment(commentID: ID!): String!
     createOrg(name: String!, displayName: String!): Org!
-    updateOrg(id: ID!, displayName: String, slackWebhookURL: String): Org!
+    updateOrg(id: ID!, displayName: String): Org!
     updateOrgSettings(
         # The ID of the org whose settings should be updated.
         id: ID
@@ -1254,7 +1254,6 @@ type Org implements Node, ConfigurationSubject {
     orgID: Int!
     name: String!
     displayName: String
-    slackWebhookURL: String
     # The date when the organization was created, in RFC 3339 format.
     createdAt: String!
     members: [OrgMember!]!
