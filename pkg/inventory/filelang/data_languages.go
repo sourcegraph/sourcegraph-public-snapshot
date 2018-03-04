@@ -2143,20 +2143,6 @@ var Langs = (Languages)(Languages{
 		Filenames:    ([]string)(nil),
 	}),
 	(*Language)(&Language{
-		Name:    (string)("GCC Machine Description"),
-		Type:    (string)("programming"),
-		Aliases: ([]string)(nil),
-		Wrap:    (bool)(false),
-		Extensions: ([]string)([]string{
-			(string)(".md"),
-		}),
-		Interpreters: ([]string)(nil),
-		Searchable:   (bool)(false),
-		Color:        (string)(""),
-		Group:        (string)(""),
-		Filenames:    ([]string)(nil),
-	}),
-	(*Language)(&Language{
 		Name:    (string)("GDB"),
 		Type:    (string)("programming"),
 		Aliases: ([]string)(nil),

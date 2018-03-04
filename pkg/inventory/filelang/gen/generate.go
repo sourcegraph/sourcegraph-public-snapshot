@@ -11,8 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/shurcooL/go-goon"
-
+	goon "github.com/shurcooL/go-goon"
 	"gopkg.in/yaml.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 )
@@ -48,6 +47,7 @@ func generateLanguages() error {
 	if err := yaml.Unmarshal(input, &langs); err != nil {
 		return err
 	}
+	langs = removeOmittedLanguages(langs)
 	src, err := generateCode("Langs", "Langs is a highly comprehensive list of programming languages.", langs)
 	if err != nil {
 		return err
@@ -109,4 +109,20 @@ func generateCode(varName, doc string, data interface{}) ([]byte, error) {
 func printHeader(w io.Writer) {
 	fmt.Fprintln(w, header)
 	fmt.Fprintf(w, "package %s\n\n", *pkg)
+}
+
+// omitLanguages contains the name of languages to omit because they are extremely rare and/or have file extensions that conflict with more popular languages.
+var omitLanguages = map[string]struct{}{
+	"GCC Machine Description": struct{}{}, // has file extension .md that conflicts with Markdown
+}
+
+func removeOmittedLanguages(langs filelang.Languages) filelang.Languages {
+	keep := langs[:0]
+	for _, lang := range langs {
+		if _, omit := omitLanguages[lang.Name]; omit {
+			continue
+		}
+		keep = append(keep, lang)
+	}
+	return keep
 }
