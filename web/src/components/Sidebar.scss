@@ -12,16 +12,14 @@
         padding: 0.5rem;
         vertical-align: middle;
         background: #1c2736;
-    }
-
-    &__header-title {
-        flex: 0 1 auto;
-    }
-
-    &__header-icon {
-        flex: 0 0 auto;
-        margin-right: 0.5rem;
-        display: flex;
+        &-title {
+            flex: 0 1 auto;
+        }
+        &-icon {
+            flex: 0 0 auto;
+            margin-right: 0.5rem;
+            display: flex;
+        }
     }
 
     &__items,
