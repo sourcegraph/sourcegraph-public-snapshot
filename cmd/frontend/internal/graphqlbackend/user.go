@@ -98,15 +98,6 @@ func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	return &settingsResolver{&configurationSubject{user: r}, settings, nil}, nil
 }
 
-func (r *userResolver) Verified(ctx context.Context) (bool, error) {
-	_, verified, err := db.UserEmails.GetEmail(ctx, r.user.ID)
-	if err != nil {
-		return false, err
-	}
-
-	return verified, nil
-}
-
 func (r *userResolver) SiteAdmin() bool { return r.user.SiteAdmin }
 
 func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
