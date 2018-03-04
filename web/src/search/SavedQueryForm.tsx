@@ -126,7 +126,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         return (
             <form className="saved-query-form" onSubmit={this.handleSubmit}>
-                <button className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
+                <button type="reset" className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
                     <CloseIcon />
                 </button>
                 <h2 className="saved-query-form__title">{title}</h2>
