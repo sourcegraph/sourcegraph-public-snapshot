@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -16,9 +15,6 @@ func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, err
 	// 🚨 SECURITY:  only admins are allowed to use this endpoint
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
-	}
-	if r.user == nil {
-		return nil, errors.New("Could not resolve activity on nil user")
 	}
 	activity, err := useractivity.GetByUserID(r.user.ID)
 	if err != nil {
