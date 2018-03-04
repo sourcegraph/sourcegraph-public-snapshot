@@ -16,7 +16,7 @@ import (
 // A Language represents a programming or markup language.
 //
 // See
-// https://github.com/github/filelang/blob/master/lib/filelang/languages.yml
+// https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
 // for a description of each field.
 type Language struct {
 	Name string `yaml:"-"`
