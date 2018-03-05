@@ -168,6 +168,11 @@ func TestSearchSuggestions(t *testing.T) {
 				"sample": []*types.Repo{{URI: "foo-repo1"}, {URI: "repo3"}},
 			}, nil
 		}
+		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
+			// TODO test symbol suggestions
+			return nil, nil
+		}
+		defer func() { mockSearchSymbols = nil }()
 		testSuggestions(t, "repogroup:sample foo", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
 		if !calledReposListReposInGroup {
 			t.Error("!calledReposListReposInGroup")
