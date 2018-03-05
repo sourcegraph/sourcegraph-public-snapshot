@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import { assert } from 'chai'
 import { Browser, connect, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
 
@@ -127,7 +127,7 @@ describe('e2e test suite', () => {
             assert.equal(currentThemes.length, 1, 'Expected 1 theme')
             const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
             await page.click('.theme-switcher')
-            assert.deepStrictEqual(
+            assert.deepEqual(
                 await page.evaluate(() =>
                     Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
                 ),
@@ -605,7 +605,9 @@ describe('e2e test suite', () => {
                 const label: string = await page.evaluate(
                     () => document.querySelector('.search-results__header-stats')!.textContent
                 )
-                assert.equal(label.startsWith('66 results'), true, 'incorrect number of search results')
+                const match = /(\d+) results/.exec(label)
+                const numberOfResults = parseInt(match![1], 10)
+                assert.isAbove(numberOfResults, 0, 'Expected >0 search results')
             })
         })
     })
