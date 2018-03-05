@@ -312,11 +312,15 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 }
 
 func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
-	UserID int32
+	UserID graphql.ID
 	OrgID  graphql.ID
 }) (*EmptyResponse, error) {
-	var orgID int32
-	if err := relay.UnmarshalSpec(args.OrgID, &orgID); err != nil {
+	orgID, err := unmarshalOrgID(args.OrgID)
+	if err != nil {
+		return nil, err
+	}
+	userID, err := unmarshalUserID(args.UserID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -326,8 +330,8 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	log15.Info("removing user from org", "user", args.UserID, "org", orgID)
-	return nil, db.OrgMembers.Remove(ctx, orgID, args.UserID)
+	log15.Info("removing user from org", "user", userID, "org", orgID)
+	return nil, db.OrgMembers.Remove(ctx, orgID, userID)
 }
 
 type inviteUserResult struct {
