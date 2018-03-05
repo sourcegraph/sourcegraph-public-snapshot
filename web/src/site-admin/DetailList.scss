@@ -20,6 +20,10 @@
         flex: 0 1 auto;
         min-width: 10rem;
         padding-right: 1.5rem;
+        &--center {
+            display: flex;
+            align-items: center;
+        }
     }
 
     &__info {
