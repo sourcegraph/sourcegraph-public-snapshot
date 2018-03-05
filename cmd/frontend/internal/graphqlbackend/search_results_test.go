@@ -57,10 +57,12 @@ func TestSearchResults(t *testing.T) {
 			return []*types.Repo{{URI: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
+
 		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
+
 		testCallResults(t, `repo:r repo:p`, []string{"repo:repo"})
 		if !calledReposList {
 			t.Error("!calledReposList")
@@ -68,6 +70,7 @@ func TestSearchResults(t *testing.T) {
 	})
 
 	t.Run("multiple terms", func(t *testing.T) {
+
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -76,12 +79,16 @@ func TestSearchResults(t *testing.T) {
 			}
 			return []*types.Repo{{URI: "repo"}}, nil
 		}
+		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
+
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error) {
 			calledSearchRepositories = true
 			return nil, &searchResultsCommon{}, nil
 		}
+		defer func() { mockSearchRepositories = nil }()
+
 		calledSearchSymbols := false
 		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
 			calledSearchSymbols = true
@@ -91,6 +98,8 @@ func TestSearchResults(t *testing.T) {
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil
 		}
+		defer func() { mockSearchSymbols = nil }()
+
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
@@ -102,6 +111,7 @@ func TestSearchResults(t *testing.T) {
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
+
 		testCallResults(t, `foo\d "bar*"`, []string{"dir/file:123"})
 		if !calledReposList {
 			t.Error("!calledReposList")

@@ -144,9 +144,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		return results, nil
 	}
-	if r.query.BoolValue(searchquery.FieldSymbol) {
-		suggesters = append(suggesters, showSymbolMatches)
-	}
+	suggesters = append(suggesters, showSymbolMatches)
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
 		// If terms are specified, then show files that have text matches. Set an aggressive timeout
@@ -216,7 +214,11 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}(suggester)
 	}
 	if err := par.Wait(); err != nil {
-		return nil, err
+		if len(allSuggestions) == 0 {
+			return nil, err
+		}
+		// If we got partial results, only log the error and return partial results
+		log15.Error("error getting search suggestions: ", "error", err)
 	}
 
 	// Eliminate duplicates.

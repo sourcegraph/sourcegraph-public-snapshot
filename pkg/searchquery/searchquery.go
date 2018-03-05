@@ -29,9 +29,8 @@ const (
 	FieldMessage   = "message"
 
 	// Temporary experimental fields:
-	FieldIndex  = "index"
-	FieldMax    = "max"    // maximum number of search results
-	FieldSymbol = "symbol" // opt into symbol search (symbol:yes)
+	FieldIndex = "index"
+	FieldMax   = "max" // maximum number of search results
 )
 
 var (
@@ -58,9 +57,8 @@ var (
 			FieldMessage:   regexpNegatableFieldType,
 
 			// Experimental fields:
-			FieldIndex:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldMax:    {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldSymbol: {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
+			FieldIndex: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldMax:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 		},
 		FieldAliases: map[string]string{
 			"r":        FieldRepo,
