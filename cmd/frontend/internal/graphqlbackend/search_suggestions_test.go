@@ -11,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 )
 
 func TestSearchSuggestions(t *testing.T) {
@@ -71,6 +72,8 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
+		defer func() { db.Mocks = db.MockStores{} }()
+
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
@@ -82,6 +85,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
+
 		testSuggestions(t, "foo", []string{"repo:foo-repo", "file:dir/file"})
 		if !calledReposListAll {
 			t.Error("!calledReposListAll")
@@ -121,8 +125,10 @@ func TestSearchSuggestions(t *testing.T) {
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
 		}
+		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
+
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
@@ -135,8 +141,9 @@ func TestSearchSuggestions(t *testing.T) {
 				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", repo: &types.Repo{URI: "repo"}, commitID: "rev"},
 			}, &searchResultsCommon{}, nil
 		}
-		var calledSearchFilesFoo, calledSearchFilesRepo3 bool
 		defer func() { mockSearchFilesInRepos = nil }()
+
+		var calledSearchFilesFoo, calledSearchFilesRepo3 bool
 		mockSearchFilesForRepo = func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
 			mu.Lock()
 			defer mu.Unlock()
@@ -158,8 +165,8 @@ func TestSearchSuggestions(t *testing.T) {
 			return nil, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()
+
 		calledResolveRepoGroups := false
-		defer func() { mockResolveRepoGroups = nil }()
 		mockResolveRepoGroups = func() (map[string][]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
@@ -168,11 +175,14 @@ func TestSearchSuggestions(t *testing.T) {
 				"sample": []*types.Repo{{URI: "foo-repo1"}, {URI: "repo3"}},
 			}, nil
 		}
+		defer func() { mockResolveRepoGroups = nil }()
+
 		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
 			// TODO test symbol suggestions
 			return nil, nil
 		}
 		defer func() { mockSearchSymbols = nil }()
+
 		testSuggestions(t, "repogroup:sample foo", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
 		if !calledReposListReposInGroup {
 			t.Error("!calledReposListReposInGroup")
@@ -231,6 +241,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 	t.Run("repo: and file: field", func(t *testing.T) {
 		var mu sync.Mutex
+
 		calledReposList := false
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
@@ -241,6 +252,8 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{URI: "foo-repo"}}, nil
 		}
+		defer func() { db.Mocks = db.MockStores{} }()
+
 		calledSearchFiles := false
 		mockSearchFilesForRepo = func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
 			calledSearchFiles = true
@@ -255,6 +268,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()
+
 		testSuggestions(t, "repo:foo file:bar", []string{"file:dir/bar-file"})
 		if !calledReposList {
 			t.Error("!calledReposList")
