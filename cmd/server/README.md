@@ -26,7 +26,7 @@ parts will be automated. You will need to complete four main steps.
 
 1.  Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
 1.  Update `../cmd/frontend/internal/app/pkg/updatecheck/handler.go`'s `ProductVersion` to the
-    semver version string of the new version (**DO NOT update `latestReleaseVersion` yet**).
+    semver version string of the new version (**DO NOT update `latestReleaseServerBuild` yet**).
 1.  Commit and `git push` this change directly to the `master` branch.
 1.  `git push origin -f origin/master:docker-images/server`
 
@@ -62,7 +62,7 @@ It is important that the following steps be ran closely together, otherwise we w
 1.  Merge the PR that you previously prepared to the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
 1.  Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
 1.  Update [CHANGELOG](../../CHANGELOG.md) and move any `Unreleased changes` under their own section for the new `VERSION` you have just released.
-1.  Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseBuild` to the
+1.  Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseServerBuild` to the
     semver version string of the new version.
 1.  Commit and `git push` this change directly to the `master` branch.
 
