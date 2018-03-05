@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -50,6 +52,65 @@ func normalizeUserEmails(userEmails []*UserEmail) {
 			v.VerifiedAt = &tmp
 		}
 	}
+}
+
+func TestUserEmails_SetVerified(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	const email = "a@example.com"
+	user, err := Users.Create(ctx, NewUser{
+		Email:     email,
+		Username:  "u2",
+		Password:  "pw",
+		EmailCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if verified, err := isUserEmailVerified(ctx, user.ID, email); err != nil {
+		t.Fatal(err)
+	} else if want := false; verified != want {
+		t.Fatalf("before SetVerified, got verified %v, want %v", verified, want)
+	}
+
+	if err := UserEmails.SetVerified(ctx, user.ID, email, true); err != nil {
+		t.Fatal(err)
+	}
+	if verified, err := isUserEmailVerified(ctx, user.ID, email); err != nil {
+		t.Fatal(err)
+	} else if want := true; verified != want {
+		t.Fatalf("after SetVerified true, got verified %v, want %v", verified, want)
+	}
+
+	if err := UserEmails.SetVerified(ctx, user.ID, email, false); err != nil {
+		t.Fatal(err)
+	}
+	if verified, err := isUserEmailVerified(ctx, user.ID, email); err != nil {
+		t.Fatal(err)
+	} else if want := false; verified != want {
+		t.Fatalf("after SetVerified false, got verified %v, want %v", verified, want)
+	}
+
+	if err := UserEmails.SetVerified(ctx, user.ID, "otheremail@example.com", false); err == nil {
+		t.Fatal("got err == nil for SetVerified on bad email")
+	}
+}
+
+func isUserEmailVerified(ctx context.Context, userID int32, email string) (bool, error) {
+	userEmails, err := UserEmails.ListByUser(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	for _, v := range userEmails {
+		if v.Email == email {
+			return v.VerifiedAt != nil, nil
+		}
+	}
+	return false, fmt.Errorf("email not found: %s", email)
 }
 
 func strptr(s string) *string {

@@ -172,6 +172,11 @@ type Mutation {
     # Randomize a user's password so that they need to reset it before they can sign in again.
     # Only site admins may perform this mutation.
     randomizeUserPasswordBySiteAdmin(user: ID!): RandomizeUserPasswordBySiteAdminResult!
+    # Manually set the verification status of a user's email, without going through the normal verification process
+    # (of clicking on a link in the email with a verification code).
+    #
+    # Only site admins may perform this mutation.
+    setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
     # Deletes a user account. Only site admins may perform this mutation.
     deleteUser(user: ID!): EmptyResponse
     inviteUser(email: String!, orgID: ID!): InviteUserResult
@@ -1275,6 +1280,9 @@ type UserEmail {
     verificationPending: Boolean!
     # The user associated with this email address.
     user: User!
+    # Whether the viewer has privileges to manually mark this email address as verified (without the user going
+    # through the normal verification process). Only site admins have this privilege.
+    viewerCanManuallyVerify: Boolean!
 }
 
 # A list of organizations.

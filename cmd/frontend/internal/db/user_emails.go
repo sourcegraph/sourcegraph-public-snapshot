@@ -50,6 +50,31 @@ func (*userEmails) ValidateEmail(ctx context.Context, id int32, userCode string)
 	return true, nil
 }
 
+// SetVerified bypasses the normal email verification code process and manually sets the verified
+// status for an email.
+func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
+	var res sql.Result
+	var err error
+	if verified {
+		// Mark as verified.
+		res, err = globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+	} else {
+		// Mark as unverified.
+		res, err = globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=null WHERE user_id=$1 AND email=$2", userID, email)
+	}
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errors.New("user email not found")
+	}
+	return nil
+}
+
 // getBySQL returns user emails matching the SQL query, if any exist.
 func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
 	rows, err := globalDB.QueryContext(ctx,

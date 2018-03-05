@@ -3,10 +3,10 @@ package graphqlbackend
 import (
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-
+	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 func (u *userResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
@@ -41,3 +41,33 @@ func (r *userEmailResolver) VerificationPending() bool {
 	return !r.Verified() && conf.EmailVerificationRequired()
 }
 func (r *userEmailResolver) User() *userResolver { return r.user }
+
+func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct {
+	User     graphql.ID
+	Email    string
+	Verified bool
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email verification
+	// status. Users themselves must go through the normal email verification process.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := unmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+	if err := db.UserEmails.SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}
