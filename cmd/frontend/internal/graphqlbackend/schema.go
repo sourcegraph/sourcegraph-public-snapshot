@@ -177,6 +177,10 @@ type Mutation {
     #
     # Only the user and site admins may perform this mutation.
     addUserEmail(user: ID!, email: String!): EmptyResponse!
+    # Removes an email address from the user's account.
+    #
+    # Only the user and site admins may perform this mutation.
+    removeUserEmail(user: ID!, email: String!): EmptyResponse!
     # Manually set the verification status of a user's email, without going through the normal verification process
     # (of clicking on a link in the email with a verification code).
     #

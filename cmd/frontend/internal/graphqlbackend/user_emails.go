@@ -73,6 +73,26 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
+func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
+	User  graphql.ID
+	Email string
+}) (*EmptyResponse, error) {
+	userID, err := unmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the user and site admins can remove an email address from a user.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	if err := db.UserEmails.Remove(ctx, userID, args.Email); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}
+
 func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct {
 	User     graphql.ID
 	Email    string

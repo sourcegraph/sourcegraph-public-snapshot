@@ -39,6 +39,22 @@ func (*userEmails) Add(ctx context.Context, userID int32, email string, verifica
 	return err
 }
 
+// Remove removes a user email. It returns an error if there is no such email associated with the user.
+func (*userEmails) Remove(ctx context.Context, userID int32, email string) error {
+	res, err := globalDB.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errors.New("user email not found")
+	}
+	return nil
+}
+
 func (*userEmails) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
 	var dbCode sql.NullString
 	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1", id).Scan(&dbCode); err != nil {

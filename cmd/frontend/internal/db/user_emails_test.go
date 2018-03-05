@@ -54,7 +54,7 @@ func normalizeUserEmails(userEmails []*UserEmail) {
 	}
 }
 
-func TestUserEmails_Add(t *testing.T) {
+func TestUserEmails_Add_Remove(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -80,12 +80,39 @@ func TestUserEmails_Add(t *testing.T) {
 	} else if want := false; verified != want {
 		t.Fatalf("got verified %v, want %v", verified, want)
 	}
+	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+		t.Fatal(err)
+	} else if want := 2; len(emails) != want {
+		t.Errorf("got %d emails, want %d", len(emails), want)
+	}
 
 	if err := UserEmails.Add(ctx, user.ID, emailB, nil); err == nil {
 		t.Fatal("got err == nil for Add on existing email")
 	}
 	if err := UserEmails.Add(ctx, 12345 /* bad user ID */, "foo@example.com", nil); err == nil {
 		t.Fatal("got err == nil for Add on bad user ID")
+	}
+	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+		t.Fatal(err)
+	} else if want := 2; len(emails) != want {
+		t.Errorf("got %d emails, want %d", len(emails), want)
+	}
+
+	// Remove.
+	if err := UserEmails.Remove(ctx, user.ID, emailB); err != nil {
+		t.Fatal(err)
+	}
+	if emails, err := UserEmails.ListByUser(ctx, user.ID); err != nil {
+		t.Fatal(err)
+	} else if want := 1; len(emails) != want {
+		t.Errorf("got %d emails (after removing), want %d", len(emails), want)
+	}
+
+	if err := UserEmails.Remove(ctx, user.ID, "foo@example.com"); err == nil {
+		t.Fatal("got err == nil for Remove on nonexistent email")
+	}
+	if err := UserEmails.Remove(ctx, 12345 /* bad user ID */, "foo@example.com"); err == nil {
+		t.Fatal("got err == nil for Remove on bad user ID")
 	}
 }
 
