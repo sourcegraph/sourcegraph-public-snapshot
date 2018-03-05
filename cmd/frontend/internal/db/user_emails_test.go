@@ -33,18 +33,22 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	normalizeUserEmails(userEmails)
+	if want := []*UserEmail{
+		{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c")},
+		{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
+	}; !reflect.DeepEqual(userEmails, want) {
+		t.Errorf("got  %s\n\nwant %s", toJSON(userEmails), toJSON(want))
+	}
+}
+
+func normalizeUserEmails(userEmails []*UserEmail) {
 	for _, v := range userEmails {
 		v.CreatedAt = time.Time{}
 		if v.VerifiedAt != nil {
 			tmp := v.VerifiedAt.Round(time.Second).UTC()
 			v.VerifiedAt = &tmp
 		}
-	}
-	if want := []*UserEmail{
-		{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c")},
-		{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
-	}; !reflect.DeepEqual(userEmails, want) {
-		t.Errorf("got  %s\n\nwant %s", toJSON(userEmails), toJSON(want))
 	}
 }
 
