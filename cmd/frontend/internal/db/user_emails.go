@@ -33,6 +33,12 @@ func (*userEmails) GetEmail(ctx context.Context, id int32) (email string, verifi
 	return email, verified, nil
 }
 
+// Add adds new user email. When added, it is always unverified.
+func (*userEmails) Add(ctx context.Context, userID int32, email string, verificationCode *string) error {
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES($1, $2, $3)", userID, email, verificationCode)
+	return err
+}
+
 func (*userEmails) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
 	var dbCode sql.NullString
 	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1", id).Scan(&dbCode); err != nil {

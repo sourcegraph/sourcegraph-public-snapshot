@@ -172,6 +172,11 @@ type Mutation {
     # Randomize a user's password so that they need to reset it before they can sign in again.
     # Only site admins may perform this mutation.
     randomizeUserPasswordBySiteAdmin(user: ID!): RandomizeUserPasswordBySiteAdminResult!
+    # Adds an email address to the user's account. The email address will be marked as unverified until the user
+    # has followed the email verification process.
+    #
+    # Only the user and site admins may perform this mutation.
+    addUserEmail(user: ID!, email: String!): EmptyResponse!
     # Manually set the verification status of a user's email, without going through the normal verification process
     # (of clicking on a link in the email with a verification code).
     #

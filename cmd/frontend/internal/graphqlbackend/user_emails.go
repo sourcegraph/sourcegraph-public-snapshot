@@ -51,6 +51,28 @@ func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, 
 	return true, nil
 }
 
+func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
+	User  graphql.ID
+	Email string
+}) (*EmptyResponse, error) {
+	userID, err := unmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	// TODO(sqs): this should send an email verification email to the user, but that code is in the
+	// ../app package and needs to be extracted.
+	if err := db.UserEmails.Add(ctx, userID, args.Email, nil); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}
+
 func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct {
 	User     graphql.ID
 	Email    string

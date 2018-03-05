@@ -54,6 +54,41 @@ func normalizeUserEmails(userEmails []*UserEmail) {
 	}
 }
 
+func TestUserEmails_Add(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	const emailA = "a@example.com"
+	const emailB = "b@example.com"
+	user, err := Users.Create(ctx, NewUser{
+		Email:     emailA,
+		Username:  "u2",
+		Password:  "pw",
+		EmailCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := UserEmails.Add(ctx, user.ID, emailB, nil); err != nil {
+		t.Fatal(err)
+	}
+	if verified, err := isUserEmailVerified(ctx, user.ID, emailB); err != nil {
+		t.Fatal(err)
+	} else if want := false; verified != want {
+		t.Fatalf("got verified %v, want %v", verified, want)
+	}
+
+	if err := UserEmails.Add(ctx, user.ID, emailB, nil); err == nil {
+		t.Fatal("got err == nil for Add on existing email")
+	}
+	if err := UserEmails.Add(ctx, 12345 /* bad user ID */, "foo@example.com", nil); err == nil {
+		t.Fatal("got err == nil for Add on bad user ID")
+	}
+}
+
 func TestUserEmails_SetVerified(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
