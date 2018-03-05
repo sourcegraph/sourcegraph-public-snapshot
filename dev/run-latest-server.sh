@@ -12,12 +12,17 @@ if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
     rm -rf $DATA
 fi
 
-echo "deleting old docker images"
+echo "deleting old docker images..."
 docker rmi us.gcr.io/sourcegraph-dev/server
 
-echo "starting server"
+echo "creating lsp network bridge..."
+docker network create --driver bridge lsp
+
+echo "starting server..."
 gcloud docker -- run \
  --publish 7080:7080 --rm \
+ --network lsp \
+ --name sourcegraph \
  --volume $DATA/config:/etc/sourcegraph \
  --volume $DATA/data:/var/opt/sourcegraph \
  us.gcr.io/sourcegraph-dev/server:latest
