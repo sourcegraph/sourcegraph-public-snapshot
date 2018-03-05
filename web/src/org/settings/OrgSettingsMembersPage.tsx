@@ -1,119 +1,184 @@
-import CloseIcon from '@sourcegraph/icons/lib/Close'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
-import { Redirect, RouteComponentProps } from 'react-router'
-import { concat } from 'rxjs/operators/concat'
+import { RouteComponentProps } from 'react-router'
+import { Observable } from 'rxjs/Observable'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
-import { mergeMap } from 'rxjs/operators/mergeMap'
+import { map } from 'rxjs/operators/map'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
-import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../../auth'
+import { gql, queryGraphQL } from '../../backend/graphql'
+import { FilteredConnection } from '../../components/FilteredConnection'
+import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserAvatar } from '../../user/UserAvatar'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { removeUserFromOrg } from '../backend'
 import { InviteForm } from '../invite/InviteForm'
 
-interface Props extends RouteComponentProps<any> {
+interface UserNodeProps {
+    /** The user to display in this list item. */
+    node: GQL.IUser
+
+    /** The organization being displayed. */
     org: GQL.IOrg
-    user: GQL.IUser
+
+    /** The currently authenticated user. */
+    authenticatedUser: GQL.IUser | null
+
+    /** Called when the user is updated by an action in this list item. */
+    onDidUpdate?: () => void
+}
+
+interface UserNodeState {
+    /** Undefined means in progress, null means done or not started. */
+    removalOrError?: null | ErrorLike
+}
+
+class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
+    public state: UserNodeState = {
+        removalOrError: null,
+    }
+
+    private removes = new Subject<void>()
+    private subscriptions = new Subscription()
+
+    private get isSelf(): boolean {
+        return this.props.authenticatedUser !== null && this.props.node.id === this.props.authenticatedUser.id
+    }
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.removes
+                .pipe(
+                    filter(() =>
+                        window.confirm(
+                            this.isSelf
+                                ? 'Really leave the organization?'
+                                : `Really remove the user ${this.props.node.username}?`
+                        )
+                    ),
+                    switchMap(() => {
+                        type PartialStateUpdate = Pick<UserNodeState, 'removalOrError'>
+                        const result = removeUserFromOrg(this.props.org.id, this.props.node.id).pipe(
+                            catchError(error => [error]),
+                            map(c => ({ removalOrError: c })),
+                            tap(() => {
+                                if (this.props.onDidUpdate) {
+                                    this.props.onDidUpdate()
+                                }
+                            }),
+                            publishReplay<PartialStateUpdate>(),
+                            refCount()
+                        )
+                        return merge(of({ removalOrError: null }), result)
+                    })
+                )
+                .subscribe(
+                    stateUpdate => {
+                        this.setState(stateUpdate)
+                    },
+                    error => console.error(error)
+                )
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
+    public render(): JSX.Element | null {
+        const loading = this.state.removalOrError === undefined
+        return (
+            <li className="site-admin-detail-list__item site-admin-all-users-page__item-container">
+                <div className="site-admin-all-users-page__item">
+                    <div className="site-admin-detail-list__header">
+                        <span className="site-admin-detail-list__name">{this.props.node.username}</span>
+                        {this.props.node.displayName && (
+                            <>
+                                <br />
+                                <span className="site-admin-detail-list__display-name">
+                                    {this.props.node.displayName}
+                                </span>
+                            </>
+                        )}
+                    </div>
+                    <div className="site-admin-detail-list__actions">
+                        {this.props.authenticatedUser &&
+                            this.props.org.viewerCanAdminister && (
+                                <button
+                                    className="btn btn-secondary btn-sm site-admin-detail-list__action"
+                                    onClick={this.remove}
+                                    disabled={loading}
+                                >
+                                    {this.isSelf ? 'Leave organization' : 'Remove from organization'}
+                                </button>
+                            )}
+                        {isErrorLike(this.state.removalOrError) && (
+                            <p className="site-admin-detail-list__error">
+                                {upperFirst(this.state.removalOrError.message)}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </li>
+        )
+    }
+
+    private remove = () => this.removes.next()
+}
+
+interface Props extends RouteComponentProps<{}> {
+    org: GQL.IOrg
+    user?: GQL.IUser
 }
 
 interface State {
     /**
-     * The org from props, possibly modified optimistically to reflect remote operations.
+     * Whether the viewer can administer this org. This is updated whenever a member is added or removed, so that
+     * we can detect if the currently authenticated user is no longer able to administer the org (e.g., because
+     * they removed themselves and they are not a site admin).
      */
-    org: GQL.IOrg
-
-    /** Whether the user just left the org */
-    left: boolean
-    error?: string
+    viewerCanAdminister: boolean
 }
 
+class FilteredUserConnection extends FilteredConnection<
+    GQL.IUser,
+    Pick<UserNodeProps, 'org' | 'authenticatedUser' | 'onDidUpdate'>
+> {}
+
 /**
- * The organizations members settings page
+ * The organizations members page
  */
 export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
     private orgChanges = new Subject<GQL.IOrg>()
-    private memberRemoves = new Subject<GQL.IOrgMember>()
+    private userUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
-
-        this.state = {
-            left: false,
-            org: this.props.org,
-        }
+        this.state = { viewerCanAdminister: props.org.viewerCanAdminister }
     }
 
     public componentDidMount(): void {
         this.subscriptions.add(
             this.orgChanges
                 .pipe(
-                    distinctUntilChanged(),
-                    tap(org => eventLogger.logViewEvent('OrgSettingsMembers', { organization: { org_name: org.name } }))
+                    distinctUntilChanged((a, b) => a.id === b.id),
+                    tap(org => eventLogger.logViewEvent('OrgMembers', { organization: { org_name: org.name } }))
                 )
-                .subscribe(org => this.setState({ org }))
-        )
-        this.orgChanges.next(this.props.org)
-
-        this.subscriptions.add(
-            this.memberRemoves
-                .pipe(
-                    tap(member =>
-                        eventLogger.log('RemoveOrgMemberClicked', {
-                            organization: {
-                                remove: {
-                                    external_id: member.user,
-                                },
-                                org_id: member.org.id,
-                            },
-                        })
-                    ),
-                    withLatestFrom(currentUser),
-                    filter(([member, user]) => {
-                        if (!user) {
-                            return false
-                        }
-                        if (member.org.memberships.length === 1) {
-                            return confirm(
-                                [
-                                    `You're the last member of ${member.org.displayName}. `,
-                                    `Leaving will delete the ${member.org.displayName} organization. `,
-                                    `Leave this organization?`,
-                                ].join('')
-                            )
-                        }
-                        if (user.id === member.user.id) {
-                            return confirm(`Leave this organization?`)
-                        }
-                        return confirm(`Remove ${member.user.displayName} from this organization?`)
-                    }),
-                    mergeMap(([memberToRemove, user]) =>
-                        removeUserFromOrg(memberToRemove.org.id, memberToRemove.user.id).pipe(
-                            concat([
-                                {
-                                    left: memberToRemove.user.id === user!.id,
-                                    org:
-                                        this.state.org &&
-                                        ({
-                                            ...this.state.org,
-                                            memberships: this.state.org.memberships.filter(
-                                                member => member.user.id !== memberToRemove.user.id
-                                            ),
-                                        } as GQL.IOrg),
-                                },
-                            ])
-                        )
-                    )
-                )
-                .subscribe(
-                    ({ left, org }) => this.setState({ left, org }),
-                    err => this.setState({ error: err.message })
-                )
+                .subscribe(org => {
+                    this.setState({ viewerCanAdminister: org.viewerCanAdminister })
+                    this.userUpdates.next()
+                })
         )
     }
 
@@ -128,54 +193,73 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        // If the current user just left the org, redirect to settings start page
-        if (this.state.left) {
-            return <Redirect to="/settings/profile" />
+        if (!this.props.user) {
+            return (
+                <HeroPage icon={ErrorIcon} title="Error" subtitle="Must be logged in to view organization members." />
+            )
+        }
+
+        const nodeProps: Pick<UserNodeProps, 'org' | 'authenticatedUser' | 'onDidUpdate'> = {
+            org: { ...this.props.org, viewerCanAdminister: this.state.viewerCanAdminister },
+            authenticatedUser: this.props.user,
+            onDidUpdate: this.onDidUpdateUser,
         }
 
         return (
             <div className="org-settings-members-page">
                 <PageTitle title={`Members - ${this.props.org.name}`} />
-                <div className="org-settings-members-page__header">
-                    <h2>Members</h2>
-                </div>
                 <InviteForm orgID={this.props.org.id} />
-                <table className="table table-hover org-settings-members-page__table">
-                    <thead>
-                        <tr>
-                            <th className="org-settings-members-page__avatar-cell" />
-                            <th>Username</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th className="org-settings-members-page__actions-cell" />
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {this.state.org.memberships.map(member => (
-                            <tr key={member.id}>
-                                <td className="org-settings-members-page__avatar-cell">
-                                    <UserAvatar user={member.user} size={64} />
-                                </td>
-                                <td>{member.user.username}</td>
-                                <td>{member.user.displayName}</td>
-                                <td>{member.user.email}</td>
-                                <td className="org-settings-members-page__actions-cell">
-                                    {this.props.user && (
-                                        <button
-                                            className="btn btn-icon"
-                                            title={this.props.user.id === member.user.id ? 'Leave' : 'Remove'}
-                                            // tslint:disable-next-line:jsx-no-lambda
-                                            onClick={() => this.memberRemoves.next({ ...member, org: this.state.org })}
-                                        >
-                                            <CloseIcon className="icon-inline" />
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <FilteredUserConnection
+                    className="site-admin-page__filtered-connection"
+                    noun="member"
+                    pluralNoun="members"
+                    queryConnection={this.fetchOrgMembers}
+                    nodeComponent={UserNode}
+                    nodeComponentProps={nodeProps}
+                    noShowMore={true}
+                    hideFilter={true}
+                    updates={this.userUpdates}
+                    history={this.props.history}
+                    location={this.props.location}
+                />
             </div>
         )
     }
+
+    private onDidUpdateUser = () => this.userUpdates.next()
+
+    private fetchOrgMembers = (args: {}): Observable<GQL.IUserConnection> =>
+        queryGraphQL(
+            gql`
+                query OrganizationMembers($id: ID!) {
+                    node(id: $id) {
+                        ... on Org {
+                            viewerCanAdminister
+                            members {
+                                nodes {
+                                    id
+                                    username
+                                    displayName
+                                    avatarURL
+                                }
+                                totalCount
+                            }
+                        }
+                    }
+                }
+            `,
+            { ...args, id: this.props.org.id }
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.node) {
+                    throw createAggregateError(errors)
+                }
+                const org = data.node as GQL.IOrg
+                if (!org.members) {
+                    throw createAggregateError(errors)
+                }
+                this.setState({ viewerCanAdminister: org.viewerCanAdminister })
+                return org.members
+            })
+        )
 }
