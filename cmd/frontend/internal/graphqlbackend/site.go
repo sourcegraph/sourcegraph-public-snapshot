@@ -11,6 +11,7 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
@@ -70,7 +71,7 @@ func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationRes
 func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 	// The site configuration (which is only visible to admins) contains a field "settings"
 	// that is visible to all users. So, this does not need a permissions check.
-	siteConfigJSON, err := json.MarshalIndent(conf.GetTODO().Settings, "", "  ")
+	siteConfigJSON, err := json.MarshalIndent(conf.Get().Settings, "", "  ")
 	if err != nil {
 		return nil, err
 	}
@@ -185,15 +186,20 @@ func (r *siteConfigurationResolver) Source() string {
 
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	Input string
-}) (*EmptyResponse, error) {
+}) (bool, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+		return false, err
+	}
+	applyToRestart, err := conf.Write(args.Input)
+	if err != nil {
+		return false, err
 	}
 
-	if _, err := conf.Write(args.Input); err != nil {
-		return nil, err
+	// Update global "needs restart" state.
+	if applyToRestart {
+		jscontext.MarkNeedServerRestart()
 	}
-	return &EmptyResponse{}, nil
+	return jscontext.NeedServerRestart(), err
 }

@@ -19,10 +19,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	repoupdaterprotocol "sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 type fileResolver struct {
@@ -143,6 +145,7 @@ func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
 		return nil, err
 	}
 	uri, rev := repo.repo.URI, string(r.commit.oid)
+	repoListConfigs := repoListConfigs.Get().(map[api.RepoURI]schema.Repository)
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Tree != "" {
 		url := strings.Replace(strings.Replace(rc.Links.Tree, "{rev}", rev, 1), "{path}", r.path, 1)
@@ -165,7 +168,7 @@ func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
 	}
 
 	host := strings.Split(string(uri), "/")[0]
-	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
 		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
 		return &url, nil
 	}
@@ -179,6 +182,7 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 		return nil, err
 	}
 	uri, rev := repo.repo.URI, string(r.commit.oid)
+	repoListConfigs := repoListConfigs.Get().(map[api.RepoURI]schema.Repository)
 	rc, ok := repoListConfigs[uri]
 	if ok && rc.Links != nil && rc.Links.Blob != "" {
 		url := strings.Replace(strings.Replace(rc.Links.Blob, "{rev}", rev, 1), "{path}", r.path, 1)
@@ -201,7 +205,7 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 	}
 
 	host := strings.Split(string(uri), "/")[0]
-	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
 		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
 		return &url, nil
 	}

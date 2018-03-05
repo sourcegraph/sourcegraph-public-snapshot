@@ -33,13 +33,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-var (
-	injectedHTMLHeadTop    = conf.GetTODO().HtmlHeadTop
-	injectedHTMLHeadBottom = conf.GetTODO().HtmlHeadTop
-	injectedHTMLBodyTop    = conf.GetTODO().HtmlBodyTop
-	injectedHTMLBodyBottom = conf.GetTODO().HtmlBodyTop
-)
-
 type InjectedHTML struct {
 	HeadTop    template.HTML
 	HeadBottom template.HTML
@@ -99,10 +92,10 @@ func repoShortName(uri api.RepoURI) string {
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
 	common := &Common{
 		Injected: InjectedHTML{
-			HeadTop:    template.HTML(injectedHTMLHeadTop),
-			HeadBottom: template.HTML(injectedHTMLHeadBottom),
-			BodyTop:    template.HTML(injectedHTMLBodyTop),
-			BodyBottom: template.HTML(injectedHTMLBodyBottom),
+			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
+			HeadBottom: template.HTML(conf.Get().HtmlHeadBottom),
+			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
+			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
 		// InjectedHTMLHeadTop: template.HTML(injectedHTMLHeadTop),
 		Context:  jscontext.NewJSContextFromRequest(r),

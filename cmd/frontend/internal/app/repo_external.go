@@ -3,41 +3,34 @@ package app
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
-// githubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
-// This is used for the purposes of generating external GitHub enterprise links.
-var githubEnterpriseURLs = make(map[string]string)
-var reposListURLs = make(map[api.RepoURI]string)
+var reposListURLs = atomicvalue.New()
 
 func init() {
-	githubConf := conf.GetTODO().Github
-	for _, c := range githubConf {
-		gheURL, err := url.Parse(c.Url)
-		if err != nil {
-			log15.Error("error parsing GitHub config", "error", err)
-		}
-		githubEnterpriseURLs[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
-	}
-	reposList := conf.GetTODO().ReposList
-	for _, r := range reposList {
-		if r.Links != nil && r.Links.Commit != "" {
-			reposListURLs[api.RepoURI(r.Path)] = r.Links.Commit
-		}
-	}
+	conf.Watch(func() {
+		reposListURLs.Set(func() interface{} {
+			urls := make(map[api.RepoURI]string)
+			for _, r := range conf.Get().ReposList {
+				if r.Links != nil && r.Links.Commit != "" {
+					urls[api.RepoURI(r.Path)] = r.Links.Commit
+				}
+			}
+			return urls
+		})
+	})
 }
 
 // serveRepoExternalCommit resolves a commit for a given repo to a redirect to
@@ -49,6 +42,7 @@ func serveRepoExternalCommit(w http.ResponseWriter, r *http.Request) error {
 	}
 	commitID := mux.Vars(r)["commit"]
 
+	reposListURLs := reposListURLs.Get().(map[api.RepoURI]string)
 	if commitURL, ok := reposListURLs[repo.URI]; ok {
 		url := strings.Replace(commitURL, "{commit}", commitID, 1)
 		http.Redirect(w, r, url, http.StatusFound)
@@ -68,7 +62,7 @@ func serveRepoExternalCommit(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	host := strings.Split(string(repo.URI), "/")[0]
-	if gheURL, ok := githubEnterpriseURLs[host]; ok {
+	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
 		http.Redirect(w, r, fmt.Sprintf("%s%s/commit/%s", gheURL, strings.TrimPrefix(string(repo.URI), host), commitID), http.StatusFound)
 		return nil
 	}

@@ -187,8 +187,9 @@ type Mutation {
     ): EmptyResponse
     # All mutations that update configuration settings are under this field.
     configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
-    # Updates the site configuration.
-    updateSiteConfiguration(input: String!): EmptyResponse
+    # Updates the site configuration. Returns whether or not a restart is
+    # needed for the update to be applied
+    updateSiteConfiguration(input: String!): Boolean!
     # Sets whether the user with the specified user ID is a site admin.
     #
     # 🚨 SECURITY: Only trusted users should be given site admin permissions.

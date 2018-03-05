@@ -70,7 +70,7 @@ func updateRepo(ctx context.Context, repoConf schema.Repository) error {
 	if err != nil {
 		return errors.Wrap(err, "error checking if repo cloned")
 	}
-	if !conf.GetTODO().DisableAutoGitUpdates || !cloned {
+	if !conf.Get().DisableAutoGitUpdates || !cloned {
 		log15.Debug("fetching repos.list repo", "repo", uri, "cloned", cloned)
 		err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: repo.URI, URL: repoConf.Url})
 		if err != nil {
@@ -87,7 +87,7 @@ func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLo
 	}
 
 	repoNameLower := api.RepoURI(strings.ToLower(string(args.Repo)))
-	for _, repo := range conf.GetTODO().ReposList {
+	for _, repo := range conf.Get().ReposList {
 		if api.RepoURI(strings.ToLower(string(repo.Path))) == repoNameLower {
 			repoInfo := &protocol.RepoInfo{
 				URI:          api.RepoURI(repo.Path),

@@ -8,29 +8,50 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // Adapted from github.com/golang/gddo/gosrc.
 
-// noGoGetDomains is a list of domains we do not attempt standard go vanity
-// import resolution. Instead we take an educated guess based on the URL how
-// to create the directory struct.
-var noGoGetDomains = strings.Split(conf.GetTODO().NoGoGetDomains, ",")
+type noGoGetDomainsT struct {
+	mu      sync.RWMutex
+	domains []string
+}
 
-func init() {
+func (n *noGoGetDomainsT) get() []string {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+	return n.domains
+}
+
+func (n *noGoGetDomainsT) reconfigure() {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.domains = strings.Split(conf.Get().NoGoGetDomains, ",")
+
 	// Clean-up noGoGetDomains to avoid needing to validate them when
 	// resolving static import paths
 	i := 0
-	for _, s := range noGoGetDomains {
+	for _, s := range n.domains {
 		s = strings.TrimSpace(s)
 		if s != "" {
-			noGoGetDomains[i] = s
+			n.domains[i] = s
 			i++
 		}
 	}
-	noGoGetDomains = noGoGetDomains[:i]
+	n.domains = n.domains[:i]
+}
+
+// noGoGetDomains is a list of domains we do not attempt standard go vanity
+// import resolution. Instead we take an educated guess based on the URL how
+// to create the directory struct.
+var noGoGetDomains = &noGoGetDomainsT{}
+
+func init() {
+	conf.Watch(noGoGetDomains.reconfigure)
 }
 
 type directory struct {
@@ -78,7 +99,7 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 	// non-go-gettable, i.e. standard git repositories. Some on-prem customers
 	// use setups like this, where they directly import non-go-gettable git
 	// repository URLs like "mygitolite.aws.me.org/mux.git/subpkg"
-	for _, domain := range noGoGetDomains {
+	for _, domain := range noGoGetDomains.get() {
 		if !strings.HasPrefix(importPath, domain) {
 			continue
 		}

@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -128,6 +130,8 @@ func init() {
 			}
 		}
 	}()
+
+	addWatchers()
 }
 
 func readConfig() (string, error) {
@@ -148,6 +152,30 @@ func readConfig() (string, error) {
 	return string(data), nil
 }
 
+func parseConfig(data string) (*schema.SiteConfiguration, error) {
+	// TODO(slimsag): MaxReposToSearch default value should be in our schema, not here?
+	tmpConfig := schema.SiteConfiguration{
+		MaxReposToSearch: 500,
+	}
+
+	// SOURCEGRAPH_CONFIG takes lowest precedence.
+	if data != "" {
+		if err := UnmarshalJSON(data, &tmpConfig); err != nil {
+			return nil, err
+		}
+	}
+
+	// Env var config takes highest precedence but is deprecated.
+	if v, envVarNames, err := configFromEnv(); err != nil {
+		return nil, err
+	} else if len(envVarNames) > 0 {
+		if err := json.Unmarshal(v, &tmpConfig); err != nil {
+			return nil, err
+		}
+	}
+	return &tmpConfig, nil
+}
+
 func initConfig() error {
 	rawConfig, err := readConfig()
 	if err != nil {
@@ -158,35 +186,63 @@ func initConfig() error {
 	raw = rawConfig
 	rawMu.Unlock()
 
-	// TODO(slimsag): MaxReposToSearch default value should be in our schema, not here?
-	tmpConfig := schema.SiteConfiguration{
-		MaxReposToSearch: 500,
-	}
-
-	// SOURCEGRAPH_CONFIG takes lowest precedence.
-	if raw != "" {
-		if err := UnmarshalJSON(raw, &tmpConfig); err != nil {
-			return err
-		}
-	}
-
-	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := configFromEnv(); err != nil {
+	tmpConfig, err := parseConfig(rawConfig)
+	if err != nil {
 		return err
-	} else if len(envVarNames) > 0 {
-		if err := json.Unmarshal(v, &tmpConfig); err != nil {
-			return err
-		}
 	}
 
 	cfgMu.Lock()
-	cfg = &tmpConfig
+	cfg = tmpConfig
 	cfgMu.Unlock()
 	return nil
 }
 
 // FilePath is the path to the configuration file, if any.
 func FilePath() string { return configFilePath }
+
+// requireRestart is a list of configuration properties that require restarting
+// the given services to take effect.
+//
+// TODO(slimsag): make use of this list.
+var requireRestart = map[string][]string{
+	// These properties initialize global tracers that cannot be swapped out at
+	// runtime. They affect basically all services.
+	//
+	// TODO(slimsag): We could change this at runtime if we made a patch to
+	// opentracing that made SetGlobalTracer atomic, but it may be hard to get
+	// that accepted.
+	"lightstepAccessToken": []string{"all"},
+	"lightstepProject":     []string{"all"},
+	"useJaeger":            []string{"all"},
+}
+
+// doNotRequireRestart is a list of options that do not require a service restart.
+//
+// TODO(slimsag): eliminate the need for this once all conf.GetTODO are removed.
+var doNotRequireRestart = []string{
+	"github",
+	"gitlab",
+	"phabricator",
+	"awsCodeCommit",
+	"repos.list",
+	"gitMaxConcurrentClones",
+	"repoListUpdateInterval",
+	"gitoliteHosts",
+	"gitOriginMap",
+	"githubClientID",
+	"githubClientSecret",
+	"settings",
+	"secretKey",
+	"htmlHeadTop",
+	"htmlHeadBottom",
+	"htmlBodyTop",
+	"htmlBodyBottom",
+	"disableBuiltInSearches",
+	"disableExampleSearches",
+	"email.smtp",
+	"email.address",
+	"disableAutoGitUpdates",
+}
 
 // Write writes the JSON configuration to the config file. If the file is unknown
 // or it's not editable, an error is returned. restartToApply indicates whether
@@ -196,10 +252,26 @@ func Write(input string) (restartToApply bool, err error) {
 		return false, errors.New("configuration is not writable")
 	}
 
+	// Parse the configuration so that we can diff it (this also validates it
+	// is proper JSON).
+	after, err := parseConfig(input)
+	if err != nil {
+		return false, err
+	}
+
+	before := Get()
+	diff := diff(before, after)
+
+	// Delete fields that do not require a process restart from the diff. Then
+	// len(diff) > 0 tells us if we need to restart or not.
+	for _, option := range doNotRequireRestart {
+		delete(diff, strings.ToLower(option))
+	}
+
 	if err := ioutil.WriteFile(configFilePath, []byte(input), 0600); err != nil {
 		return false, err
 	}
-	return true, nil
+	return len(diff) > 0, nil
 }
 
 // IsWritable reports whether the config can be overwritten.
@@ -213,4 +285,35 @@ func IsDirty() bool {
 	}
 	data, err := ioutil.ReadFile(configFilePath)
 	return err != nil || string(data) != raw
+}
+
+// diff returns names of the Go fields that have different values between the
+// two configurations.
+func diff(before, after *schema.SiteConfiguration) (fields map[string]struct{}) {
+	fields = make(map[string]struct{})
+	b := reflect.ValueOf(before).Elem()
+	a := reflect.ValueOf(after).Elem()
+	for i := 0; i < b.NumField(); i++ {
+		beforeField := b.Field(i)
+		afterField := a.Field(i)
+
+		tag := b.Type().Field(i).Tag.Get("json")
+		if tag == "" {
+			// should never happen, and if it does this diffing func cannot work.
+			panic(fmt.Sprintf("missing json struct field tag on schema.SiteConfiguration field %q", b.Type().Field(i).Name))
+		}
+		if !reflect.DeepEqual(beforeField.Interface(), afterField.Interface()) {
+			fieldName := parseJSONTag(tag)
+			fields[fieldName] = struct{}{}
+		}
+	}
+	return fields
+}
+
+// parseJSONTag parses a JSON struct field tag to return the JSON field name.
+func parseJSONTag(tag string) string {
+	if idx := strings.Index(tag, ","); idx != -1 {
+		return tag[:idx]
+	}
+	return tag
 }

@@ -113,6 +113,12 @@ interface SourcegraphContext {
      * Likely running within a Docker container under a Mac host OS.
      */
     likelyDockerOnMac: boolean
+
+    /**
+     * Whether or not the server needs to restart in order to apply a pending
+     * configuration change.
+     */
+    needServerRestart: boolean
 }
 
 declare module '*.json' {

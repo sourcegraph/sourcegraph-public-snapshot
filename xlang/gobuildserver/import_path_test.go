@@ -33,8 +33,8 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestResolveImportPath(t *testing.T) {
-	defer func(orig []string) { noGoGetDomains = orig }(noGoGetDomains)
-	noGoGetDomains = []string{"mygitolite.aws.me.org"}
+	defer func(orig []string) { noGoGetDomains.domains = orig }(noGoGetDomains.domains)
+	noGoGetDomains.domains = []string{"mygitolite.aws.me.org"}
 
 	tests := []struct {
 		importPath string

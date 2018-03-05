@@ -444,23 +444,24 @@ export function updateSiteSettings(lastKnownSettingsID: number | null, contents:
 
 /**
  * Updates the site's configuration.
+ *
+ * @returns An observable indicating whether or not a service restart is
+ * required for the update to be applied.
  */
-export function updateSiteConfiguration(input: string): Observable<void> {
+export function updateSiteConfiguration(input: string): Observable<boolean> {
     return mutateGraphQL(
         gql`
             mutation UpdateSiteConfiguration($input: String!) {
-                updateSiteConfiguration(input: $input) {
-                    alwaysNil
-                }
+                updateSiteConfiguration(input: $input)
             }
         `,
         { input }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.updateSiteConfiguration) {
+            if (!data) {
                 throw createAggregateError(errors)
             }
-            return data.updateSiteConfiguration as any
+            return data.updateSiteConfiguration as boolean
         })
     )
 }
