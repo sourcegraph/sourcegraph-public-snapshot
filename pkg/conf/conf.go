@@ -30,8 +30,9 @@ func Raw() string {
 //
 // Important: The configuration can change while the process is running! Code
 // should only call this in response to conf.Watch OR it should invoke it
-// periodically to ensure it responds to configuration changes while the
-// process is running.
+// periodically or in direct response to a user action (e.g. inside an HTTP
+// handler) to ensure it responds to configuration changes while the process
+// is running.
 //
 // There are a select few configuration options that do restart the server (for
 // example, TLS or which port the frontend listens on) but these are the
