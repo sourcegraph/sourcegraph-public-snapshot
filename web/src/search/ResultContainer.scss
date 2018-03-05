@@ -1,10 +1,9 @@
 .result-container {
-    // Make sure the 1px border is visible
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    margin-bottom: 1px;
+    margin-bottom: 0.5rem;
+    border-radius: 2px;
 
     &__header {
-        padding: 0.25rem 0.5rem 0.25rem 1rem;
+        padding: 0.25rem 0.5rem;
         user-select: none;
 
         display: flex;
@@ -36,13 +35,9 @@
 
 .theme-light {
     .result-container {
-        margin-bottom: 0;
-
+        border: 1px solid $color-light-border;
         &__header {
             background-color: $color-light-bg-2;
-            border-left: 1px solid $color-light-border;
-            border-right: 1px solid $color-light-border;
-            border-bottom: 1px solid $color-light-border;
 
             &:hover {
                 background-color: $color-light-bg-4;

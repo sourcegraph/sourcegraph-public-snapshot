@@ -30,25 +30,16 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                 __typename
                                 resource
                                 limitHit
+                                symbols {
+                                    name
+                                    containerName
+                                    url
+                                    kind
+                                }
                                 lineMatches {
                                     preview
                                     lineNumber
                                     offsetAndLengths
-                                }
-                            }
-                            ... on Symbol {
-                                __typename
-                                name
-                                containerName
-                                url
-                                kind
-                                location {
-                                    resource {
-                                        path
-                                        repository {
-                                            uri
-                                        }
-                                    }
                                 }
                             }
                             ... on CommitSearchResult {

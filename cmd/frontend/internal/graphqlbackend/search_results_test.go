@@ -57,7 +57,7 @@ func TestSearchResults(t *testing.T) {
 			return []*types.Repo{{URI: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
-		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -82,15 +82,24 @@ func TestSearchResults(t *testing.T) {
 			calledSearchRepositories = true
 			return nil, &searchResultsCommon{}, nil
 		}
+		calledSearchSymbols := false
+		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
+			calledSearchSymbols = true
+			if want := `(foo\d).*?(bar\*)`; args.query.Pattern != want {
+				t.Errorf("got %q, want %q", args.query.Pattern, want)
+			}
+			// TODO return mock results here and assert that they are output as results
+			return nil, nil
+		}
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := `(foo\d).*?(bar\*)`; args.query.Pattern != want {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
-			return fileMatchesToSearchResults([]*fileMatchResolver{
+			return []*fileMatchResolver{
 				{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},
-			}), &searchResultsCommon{}, nil
+			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 		testCallResults(t, `foo\d "bar*"`, []string{"dir/file:123"})
@@ -102,6 +111,9 @@ func TestSearchResults(t *testing.T) {
 		}
 		if !calledSearchFilesInRepos {
 			t.Error("!calledSearchFilesInRepos")
+		}
+		if !calledSearchSymbols {
+			t.Error("!calledSearchSymbols")
 		}
 	})
 }

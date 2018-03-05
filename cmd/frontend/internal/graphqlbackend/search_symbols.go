@@ -7,14 +7,21 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 )
 
+var mockSearchSymbols func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error)
+
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
+//
+// May return partial results and an error
 func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
+	if mockSearchSymbols != nil {
+		return mockSearchSymbols(ctx, args, query, limit)
+	}
+
 	if args.query.Pattern == "" {
 		return nil, nil
 	}
@@ -49,7 +56,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 				return
 			}
 			symbols, err := backend.Symbols.List(ctx, repoRevs.repo.URI, commitID, "tags", params)
-			if err != nil && err != context.Canceled && err != context.DeadlineExceeded && ctx.Err() != nil {
+			if err != nil && err != context.Canceled && err != context.DeadlineExceeded && ctx.Err() == nil {
 				run.Error(err)
 				return
 			}
@@ -75,12 +82,10 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 			}
 		}(repoRevs)
 	}
-	if err := run.Wait(); err != nil {
-		log15.Warn("Error getting symbol search results.", "error", err)
-	}
+	err = run.Wait()
 
 	if len(symbolResolvers) > limit {
 		symbolResolvers = symbolResolvers[:limit]
 	}
-	return symbolResolvers, nil
+	return symbolResolvers, err
 }

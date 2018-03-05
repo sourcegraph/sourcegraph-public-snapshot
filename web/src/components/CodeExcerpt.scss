@@ -1,14 +1,4 @@
 .code-excerpt {
-    td.line {
-        &::before {
-            // draw line number with css so it cannot be copied to clipboard
-            content: attr(data-line);
-            color: #31445e;
-        }
-
-        color: #31445e;
-    }
-
     .line,
     .code {
         // stylelint-disable-next-line declaration-property-unit-whitelist
@@ -20,6 +10,11 @@
     .line {
         min-width: 1.5rem;
         text-align: right;
+        &::before {
+            // draw line number with css so it cannot be copied to clipboard
+            content: attr(data-line);
+            color: $color-text-1;
+        }
     }
 
     .code {

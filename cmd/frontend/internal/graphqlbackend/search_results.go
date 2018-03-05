@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -21,6 +22,7 @@ import (
 	"golang.org/x/net/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -298,9 +300,10 @@ func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 	// sparkline.
 loop:
 	for _, r := range sr.results {
+		r := r // shadow so it doesn't change in the goroutine
 		switch {
-		case r.repo != nil || r.symbol != nil:
-			// We don't care about repo or symbol results here.
+		case r.repo != nil:
+			// We don't care about repo results here.
 			continue
 		case r.diff != nil:
 			// Diff searches are cheap, because we implicitly have author date info.
@@ -317,13 +320,8 @@ loop:
 			}
 
 			run.Acquire()
-			go func(r *searchResultResolver) {
-				defer func() {
-					if r := recover(); r != nil {
-						run.Error(fmt.Errorf("recover: %v", r))
-					}
-					run.Release()
-				}()
+			goroutine.Go(func() {
+				defer run.Release()
 
 				// Blame the file match in order to retrieve date informatino.
 				var err error
@@ -333,7 +331,7 @@ loop:
 					return
 				}
 				addPoint(t)
-			}(r)
+			})
 		default:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
@@ -538,7 +536,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	// Determine which types of results to return.
-	var searchFuncs []func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error)
 	var resultTypes []string
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
@@ -558,99 +555,199 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
+	var (
+		wg         sync.WaitGroup
+		results    []*searchResultResolver
+		resultsMu  sync.Mutex
+		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
+		commonMu   sync.Mutex
+		multiErr   *multierror.Error
+		multiErrMu sync.Mutex
+		// fileMatches is a map from git:// URI of the file to FileMatch resolver
+		// to merge multiple results of different types for the same file
+		fileMatches   = make(map[string]*fileMatchResolver)
+		fileMatchesMu sync.Mutex
+	)
+
 	suppressEmptyQueryAlertEvenIfNoResults := false
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
+		resultType := resultType // shadow so it doesn't change in the goroutine
 		if _, seen := seenResultTypes[resultType]; seen {
 			continue
 		}
 		seenResultTypes[resultType] = struct{}{}
+		wg.Add(1)
 		switch resultType {
 		case "repo":
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
-				return searchRepositories(ctx, &args, r.query)
+			// Search for repos
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.query)
+				if err != nil {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, err)
+					multiErrMu.Unlock()
+				}
+				if repoResults != nil {
+					resultsMu.Lock()
+					results = append(results, repoResults...)
+					resultsMu.Unlock()
+				}
+				if repoCommon != nil {
+					commonMu.Lock()
+					common.update(*repoCommon)
+					commonMu.Unlock()
+				}
 			})
 		case "symbol":
-			// TODO remove `symbol:yes` requirement
-			if !r.query.BoolValue(searchquery.FieldSymbol) {
-				continue
-			}
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
-				// Only show a small amount of symbols at the top of the result list
-				// if not explicitly searching for *only* symbols
-				symbolsLimit := 7
-				if len(resultTypes) == 1 { // *only* searching for "symbol" results
-					// Otherwise use text search result default limit
-					// or whatever is specified in the query with `max:`
-					symbolsLimit = int(r.maxResults())
-				}
+			goroutine.Go(func() {
+				defer wg.Done()
 
-				symbolResolvers, err := searchSymbols(ctx, &args, r.query, symbolsLimit)
+				symbolResolvers, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
 				if err != nil {
-					return nil, nil, err
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, err)
+					multiErrMu.Unlock()
 				}
-
-				searchResultResolvers := make([]*searchResultResolver, len(symbolResolvers))
-				for i, symbolResolver := range symbolResolvers {
-					searchResultResolvers[i] = &searchResultResolver{symbol: symbolResolver}
+				for _, s := range symbolResolvers {
+					key := fmt.Sprintf("git:/%s#%s", s.location.resource.commit.repo.URL(), s.location.resource.path)
+					fileMatchesMu.Lock()
+					m, ok := fileMatches[key]
+					if ok {
+						m.symbols = append(m.symbols, s)
+					} else {
+						m = &fileMatchResolver{
+							symbols:  []*symbolResolver{s},
+							uri:      key,
+							repo:     s.location.resource.commit.repo.repo,
+							commitID: api.CommitID(s.location.resource.commit.oid),
+						}
+						fileMatches[key] = m
+						resultsMu.Lock()
+						results = append(results, &searchResultResolver{fileMatch: m})
+						resultsMu.Unlock()
+					}
+					fileMatchesMu.Unlock()
 				}
-				return searchResultResolvers, nil, nil
+				// TODO update common properly
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths {
 				// type:file and type:path use same searchFilesInRepos, so don't call 2x.
+				wg.Done()
 				continue
 			}
 			searchedFileContentsOrPaths = true
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
-				return searchFilesInRepos(ctx, &args, r.query)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.query)
+				if err != nil {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, err)
+					multiErrMu.Unlock()
+				}
+				for _, r := range fileResults {
+					key := r.uri
+					fileMatchesMu.Lock()
+					m, ok := fileMatches[key]
+					if ok {
+						// merge line match results with an existing symbol result
+						m.JLimitHit = m.JLimitHit || r.JLimitHit
+						m.JLineMatches = r.JLineMatches
+					} else {
+						fileMatches[key] = r
+						resultsMu.Lock()
+						results = append(results, &searchResultResolver{fileMatch: r})
+						resultsMu.Unlock()
+					}
+					fileMatchesMu.Unlock()
+				}
+				if fileCommon != nil {
+					commonMu.Lock()
+					common.update(*fileCommon)
+					commonMu.Unlock()
+				}
 			})
 		case "ref":
 			refValues, _ := r.query.StringValues(searchquery.FieldRef)
 			if len(refValues) == 0 {
+				wg.Done()
 				continue
 			}
 			suppressEmptyQueryAlertEvenIfNoResults = true
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
-				return searchReferencesInRepos(ctx, &args, r.query)
+			goroutine.Go(func() {
+				defer wg.Done()
+				refResults, refCommon, err := searchReferencesInRepos(ctx, &args, r.query)
+				if err != nil {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, err)
+					multiErrMu.Unlock()
+				}
+				if refResults != nil {
+					resultsMu.Lock()
+					results = append(results, refResults...)
+					resultsMu.Unlock()
+				}
+				if refCommon != nil {
+					commonMu.Lock()
+					common.update(*refCommon)
+					commonMu.Unlock()
+				}
 			})
 		case "diff":
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
-				return searchCommitDiffsInRepos(ctx, &args, r.query)
+			goroutine.Go(func() {
+				defer wg.Done()
+				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args, r.query)
+				if err != nil {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, err)
+					multiErrMu.Unlock()
+				}
+				if diffResults != nil {
+					resultsMu.Lock()
+					results = append(results, diffResults...)
+					resultsMu.Unlock()
+				}
+				if diffCommon != nil {
+					commonMu.Lock()
+					common.update(*diffCommon)
+					commonMu.Unlock()
+				}
 			})
 		case "commit":
-			searchFuncs = append(searchFuncs, func(ctx context.Context) ([]*searchResultResolver, *searchResultsCommon, error) {
-				return searchCommitLogInRepos(ctx, &args, r.query)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args, r.query)
+				if err != nil {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, err)
+					multiErrMu.Unlock()
+				}
+				if commitResults != nil {
+					resultsMu.Lock()
+					results = append(results, commitResults...)
+					resultsMu.Unlock()
+				}
+				if commitCommon != nil {
+					commonMu.Lock()
+					common.update(*commitCommon)
+					commonMu.Unlock()
+				}
 			})
 		}
 	}
+	wg.Wait()
 
-	// Run all search funcs.
-	results := searchResultsResolver{
-		maxResultsCount:     r.maxResults(),
-		start:               start,
-		searchResultsCommon: searchResultsCommon{maxResultsCount: r.maxResults()},
-	}
-	for _, searchFunc := range searchFuncs {
-		results1, common1, err := searchFunc(ctx)
-		if results1 != nil {
-			results.results = append(results.results, results1...)
-			// TODO(sqs): combine diff and commit results that refer to the same underlying
-			// commit (and match on the commit's diff and message, respectively).
-		}
-		if common1 != nil {
-			results.searchResultsCommon.update(*common1)
-		}
-		if err != nil {
-			// Return partial results if an error occurs.
-			return &results, err
-		}
-	}
+	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results.results), results.searchResultsCommon.limitHit, len(results.searchResultsCommon.cloning), len(results.searchResultsCommon.missing), len(results.searchResultsCommon.timedout))
-
-	if _, isDiff := seenResultTypes["diff"]; isDiff && results.alert == nil && !results.limitHit && len(r.query.Values("before")) == 0 && len(r.query.Values("after")) == 0 {
-		results.alert = &searchAlert{
+	// alert is a potential alert shown to the user
+	var alert *searchAlert
+	if _, isDiff := seenResultTypes["diff"]; isDiff && alert == nil && !common.limitHit && len(r.query.Values("before")) == 0 && len(r.query.Values("after")) == 0 {
+		alert = &searchAlert{
 			description: "Diff search limited to last month by default. Use after: to search older commits.",
 			proposedQueries: []*searchQueryDescription{
 				{
@@ -663,14 +760,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				},
 			},
 		}
-		if len(results.results) == 0 {
-			results.alert.title = "No results found"
+		if len(results) == 0 {
+			alert.title = "No results found"
 		} else {
-			results.alert.title = "Only diff search results from last month are shown"
+			alert.title = "Only diff search results from last month are shown"
 		}
 	}
-	if results.alert == nil && len(results.results) == 0 && args.query.Pattern == "" && !suppressEmptyQueryAlertEvenIfNoResults {
-		results.alert = &searchAlert{
+	if alert == nil && len(results) == 0 && args.query.Pattern == "" && !suppressEmptyQueryAlertEvenIfNoResults {
+		alert = &searchAlert{
 			title:       "Type a query",
 			description: "What do you want to search for?",
 			proposedQueries: []*searchQueryDescription{
@@ -686,17 +783,31 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		}
 	}
 	if len(missingRepoRevs) > 0 {
-		results.alert = r.alertForMissingRepoRevs(missingRepoRevs)
+		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
-	return &results, nil
+	// If we have some results, only log the error instead of returning it,
+	// because otherwise the client would not receive the partial results
+	if len(results) > 0 && multiErr != nil {
+		log15.Error("Errors during search", "error", multiErr)
+		multiErr = nil
+	}
+
+	resultsResolver := searchResultsResolver{
+		maxResultsCount:     r.maxResults(),
+		start:               start,
+		searchResultsCommon: common,
+		results:             results,
+		alert:               alert,
+	}
+
+	return &resultsResolver, multiErr.ErrorOrNil()
 }
 
 // searchResultResolver is a resolver for the GraphQL union type `SearchResult`
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type searchResultResolver struct {
-	symbol    *symbolResolver             // symbol match
 	repo      *repositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
@@ -704,9 +815,6 @@ type searchResultResolver struct {
 
 func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
 	return g.repo, g.repo != nil
-}
-func (g *searchResultResolver) ToSymbol() (*symbolResolver, bool) {
-	return g.symbol, g.symbol != nil
 }
 func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
 	return g.fileMatch, g.fileMatch != nil

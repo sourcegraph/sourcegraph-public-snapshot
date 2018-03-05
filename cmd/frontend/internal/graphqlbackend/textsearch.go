@@ -112,13 +112,22 @@ type fileMatchResolver struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
+	symbols      []*symbolResolver
 	uri          string
 	repo         *types.Repo
 	commitID     api.CommitID // or empty for default branch
 }
 
+func (fm *fileMatchResolver) Key() string {
+	return fm.uri
+}
+
 func (fm *fileMatchResolver) Resource() string {
 	return fm.uri
+}
+
+func (fm *fileMatchResolver) Symbols() []*symbolResolver {
+	return fm.symbols
 }
 
 func (fm *fileMatchResolver) LineMatches() []*lineMatch {
@@ -605,10 +614,10 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 	return indexed, unindexed, nil
 }
 
-var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResultResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -782,7 +791,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	}
 
 	flattened := flattenFileMatches(unflattened, int(args.query.FileMatchLimit))
-	return fileMatchesToSearchResults(flattened), common, nil
+	return flattened, common, nil
 }
 
 func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) []*fileMatchResolver {

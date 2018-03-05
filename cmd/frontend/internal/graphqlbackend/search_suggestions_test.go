@@ -72,14 +72,14 @@ func TestSearchSuggestions(t *testing.T) {
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := "foo"; args.query.Pattern != want {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
-			return fileMatchesToSearchResults([]*fileMatchResolver{
+			return []*fileMatchResolver{
 				{uri: "git://repo?rev#dir/file", JPath: "dir/file", repo: &types.Repo{URI: "repo"}, commitID: "rev"},
-			}), &searchResultsCommon{}, nil
+			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 		testSuggestions(t, "foo", []string{"repo:foo-repo", "file:dir/file"})
@@ -124,16 +124,16 @@ func TestSearchSuggestions(t *testing.T) {
 		db.Mocks.Repos.MockGetByURI(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
 			if want := "foo"; args.query.Pattern != want {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
 			}
-			return fileMatchesToSearchResults([]*fileMatchResolver{
+			return []*fileMatchResolver{
 				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", repo: &types.Repo{URI: "repo"}, commitID: "rev"},
-			}), &searchResultsCommon{}, nil
+			}, &searchResultsCommon{}, nil
 		}
 		var calledSearchFilesFoo, calledSearchFilesRepo3 bool
 		defer func() { mockSearchFilesInRepos = nil }()

@@ -52,10 +52,9 @@ small {
 
 // Apply the same focus outline to links as to buttons
 a {
-    border-radius: $border-radius;
-
     &:focus,
     &.focus {
+        border-radius: $border-radius;
         outline: 0;
         box-shadow: $btn-focus-box-shadow;
     }

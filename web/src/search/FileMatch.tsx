@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { CodeExcerpt } from '../components/CodeExcerpt'
 import { RepoFileLink } from '../components/RepoFileLink'
+import { SymbolIcon } from '../symbols/SymbolIcon'
 import { pluralize } from '../util/strings'
 import { toPrettyBlobURL } from '../util/url'
 import { CodeExcerpt2 } from './CodeExcerpt2'
@@ -9,6 +10,7 @@ import { ResultContainer } from './ResultContainer'
 
 export interface IFileMatch {
     resource: string
+    symbols?: GQL.ISymbol[]
     lineMatches: ILineMatch[]
     limitHit?: boolean
 }
@@ -103,6 +105,20 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
 
         return (
             <div className="file-match__list">
+                {/* Symbols */}
+                {(props.result.symbols || []).map(symbol => (
+                    <Link
+                        to={symbol.url}
+                        className="file-match__item"
+                        key={`symbol:${symbol.name}${symbol.containerName}${symbol.url}`}
+                    >
+                        <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
+                        <code>
+                            {symbol.name}{' '}
+                            {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
+                        </code>
+                    </Link>
+                ))}
                 {showItems.map((item, i) => {
                     const uri = new URL(item.uri)
                     const position = { line: item.line + 1, character: item.highlightRanges[0].start + 1 }

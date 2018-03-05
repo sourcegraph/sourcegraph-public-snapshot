@@ -324,7 +324,7 @@ type Search {
     stats: SearchResultsStats!
 }
 
-union SearchResult = FileMatch | CommitSearchResult | Repository | Symbol
+union SearchResult = FileMatch | CommitSearchResult | Repository
 
 type SearchResults {
     results: [SearchResult!]!
@@ -1148,6 +1148,8 @@ type File implements TreeEntry {
 
 type FileMatch {
     resource: String!
+    # The symbols found in this file that match the query
+    symbols: [Symbol!]!
     lineMatches: [LineMatch!]!
     limitHit: Boolean!
 }

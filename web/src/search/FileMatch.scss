@@ -1,8 +1,9 @@
 .file-match {
     &__item {
         text-decoration: none; // don't use cascading link style
-        display: block;
-        padding: 0.5rem 0.75rem;
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
         overflow-x: auto;
         overflow-y: hidden;
         background-color: #070a0d;
@@ -18,6 +19,16 @@
 
         &:not(:first-child) {
             border-top: 1px solid #2a3a51;
+        }
+
+        .theme-light & {
+            background-color: $color-light-bg-1;
+            border-top: 1px solid $color-light-border;
+
+            &:hover {
+                background-color: $color-light-bg-4;
+                text-decoration: none;
+            }
         }
     }
 
@@ -38,27 +49,7 @@
                 display: inline-block;
             }
         }
-    }
-}
-
-.theme-light {
-    .file-match {
-        &__item {
-            background-color: $color-light-bg-1;
-            border-left: 1px solid $color-light-border;
-            border-right: 1px solid $color-light-border;
-            border-color: $color-light-border;
-
-            &:hover {
-                background-color: $color-light-bg-4;
-                text-decoration: none;
-            }
-
-            &:last-child {
-                border-bottom: 1px solid $color-light-border;
-            }
-        }
-        &__code {
+        .theme-light & {
             border-bottom-color: $color-light-border;
         }
     }

@@ -32,7 +32,6 @@ import { RepoSearchResult } from './RepoSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
 import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SearchAlert } from './SearchAlert'
-import { SymbolSearchResult } from './SymbolSearchResult'
 
 interface Props {
     user: GQL.IUser | null
@@ -57,8 +56,6 @@ interface State {
     didSave?: boolean
     user?: GQL.IUser | null
 }
-
-const showSymbols = localStorage.getItem('symbols') === 'true'
 
 export class SearchResults extends React.Component<Props, State> {
     private static SHOW_MISSING = true
@@ -309,7 +306,6 @@ export class SearchResults extends React.Component<Props, State> {
                         !this.state.loading &&
                         showDotComMarketing && <ServerBanner />}
                 </div>
-                {this.state.results.length > 0 && <div className="search-results__header-border-bottom" />}
                 {SearchResults.SHOW_MISSING &&
                     this.state.missing.map((repoPath, i) => (
                         <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
@@ -352,8 +348,6 @@ export class SearchResults extends React.Component<Props, State> {
                         isLightTheme={this.props.isLightTheme}
                     />
                 )
-            case 'Symbol':
-                return showSymbols && <SymbolSearchResult key={key} result={result} />
             case 'CommitSearchResult':
                 return (
                     <CommitSearchResult
