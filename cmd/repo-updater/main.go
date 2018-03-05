@@ -43,6 +43,14 @@ func main() {
 		log.Printf("Profiler available on %s/pprof", profBindAddr)
 	}
 
+	// Start up handler that frontend relies on
+	var repoupdater repoupdater.Server
+	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
+	log15.Info("repo-updater: listening", "addr", ":3182")
+	srv := &http.Server{Addr: ":3182", Handler: handler}
+	go func() { log.Fatal(srv.ListenAndServe()) }()
+
+	// Sync relies on access to frontend, so wait until it has started up.
 	waitForFrontend(ctx)
 
 	// Repos List syncing thread
@@ -68,12 +76,7 @@ func main() {
 	// Bitbucket Server syncing thread
 	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
 
-	var repoupdater repoupdater.Server
-
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
-	log15.Info("repo-updater: listening", "addr", ":3182")
-	srv := &http.Server{Addr: ":3182", Handler: handler}
-	log.Fatal(srv.ListenAndServe())
+	select {}
 }
 
 func waitForFrontend(ctx context.Context) {

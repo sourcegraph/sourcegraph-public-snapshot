@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
@@ -32,12 +33,14 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	t := time.Now()
 	result, err := repoLookup(r.Context(), args)
 	if err != nil {
-		log15.Error("repoLookup failed", "args", args, "error", err)
+		log15.Error("repoLookup failed", "args", &args, "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	log15.Debug("TRACE repoLookup", "args", &args, "result", result, "duration", time.Since(t))
 
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

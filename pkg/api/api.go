@@ -83,6 +83,10 @@ type ExternalRepoSpec struct {
 	ServiceID string
 }
 
+func (r *ExternalRepoSpec) String() string {
+	return fmt.Sprintf("ExternalRepoSpec{%s %s %s}", r.ServiceID, r.ServiceType, r.ID)
+}
+
 type DependencyReferences struct {
 	References []*DependencyReference
 	Location   lspext.SymbolLocationInformation

@@ -1,6 +1,9 @@
 package protocol
 
 import (
+	"fmt"
+	"strings"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -16,6 +19,13 @@ type RepoLookupArgs struct {
 	ExternalRepo *api.ExternalRepoSpec
 }
 
+func (a *RepoLookupArgs) String() string {
+	if a.ExternalRepo != nil {
+		return fmt.Sprintf("RepoLookupArgs{%s}", a.ExternalRepo)
+	}
+	return fmt.Sprintf("RepoLookupArgs{%s}", a.Repo)
+}
+
 // RepoLookupResult is the response to a repository information request (RepoLookupArgs).
 type RepoLookupResult struct {
 	// Repo contains information about the repository, if it is found. If an error occurred, it is nil.
@@ -23,6 +33,20 @@ type RepoLookupResult struct {
 
 	// Known types of errors.
 	ErrorNotFound, ErrorUnauthorized bool
+}
+
+func (r *RepoLookupResult) String() string {
+	var parts []string
+	if r.Repo != nil {
+		parts = append(parts, "repo="+r.Repo.String())
+	}
+	if r.ErrorNotFound {
+		parts = append(parts, "notfound")
+	}
+	if r.ErrorUnauthorized {
+		parts = append(parts, "unauthorized")
+	}
+	return fmt.Sprintf("RepoLookupResult{%s}", strings.Join(parts, " "))
 }
 
 // RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).
@@ -44,6 +68,10 @@ type RepoInfo struct {
 	// TODO(sqs): make this required (non-pointer) when both sides have been upgraded to use it. It is only
 	// optional during the transition period.
 	ExternalRepo *api.ExternalRepoSpec
+}
+
+func (r *RepoInfo) String() string {
+	return fmt.Sprintf("RepoInfo{%s}", r.URI)
 }
 
 // VCSInfo describes how to access an external repository's Git data (to clone or update it).
