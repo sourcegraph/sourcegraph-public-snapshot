@@ -221,6 +221,7 @@ var doNotRequireRestart = []string{
 	"gitlab",
 	"phabricator",
 	"awsCodeCommit",
+	"bitbucketServer",
 	"repos.list",
 	"gitMaxConcurrentClones",
 	"repoListUpdateInterval",
