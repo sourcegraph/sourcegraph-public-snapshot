@@ -19,7 +19,7 @@ var Symbols = &symbols{}
 
 type symbols struct{}
 
-// List resolves a symbol in a repository.
+// List returns symbol in a repository from language servers.
 //
 // Use the (lspext.WorkspaceSymbolParams).Symbol field to resolve symbols given a global ID. This is how Go symbol
 // URLs (e.g., from godoc.org) are resolved.
@@ -28,28 +28,20 @@ func (symbols) List(ctx context.Context, repo api.RepoURI, commitID api.CommitID
 		return Mocks.Symbols.List(ctx, repo, commitID, mode, params)
 	}
 
-	if mode == "tags" {
-		return (symbols{}).listTags(ctx, repo, commitID, params)
-	}
-
 	var symbols []lsp.SymbolInformation
 	rootURI := lsp.DocumentURI("git://" + string(repo) + "?" + string(commitID))
 	err := xlang.UnsafeOneShotClientRequest(ctx, mode, rootURI, "workspace/symbol", params, &symbols)
 	return symbols, err
 }
 
-func (symbols) listTags(ctx context.Context, repo api.RepoURI, commitID api.CommitID, params lspext.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
-	result, err := symbolsclient.DefaultClient.Search(ctx, protocol.SearchArgs{
-		Repo:     repo,
-		CommitID: commitID,
-		Query:    params.Query,
-		First:    params.Limit,
-	})
+// ListTags returns symbols in a repository from ctags.
+func (symbols) ListTags(ctx context.Context, args protocol.SearchArgs) ([]lsp.SymbolInformation, error) {
+	result, err := symbolsclient.DefaultClient.Search(ctx, args)
 	if err != nil {
 		return nil, err
 	}
 
-	baseURI, err := uri.Parse("git://" + string(repo) + "?" + string(commitID))
+	baseURI, err := uri.Parse("git://" + string(args.Repo) + "?" + string(args.CommitID))
 	if err != nil {
 		return nil, err
 	}

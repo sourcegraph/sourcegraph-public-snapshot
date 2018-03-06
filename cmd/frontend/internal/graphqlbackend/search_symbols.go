@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/neelance/parallel"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 )
 
 var mockSearchSymbols func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error)
@@ -24,11 +24,6 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 
 	if args.query.Pattern == "" {
 		return nil, nil
-	}
-
-	params := lspext.WorkspaceSymbolParams{
-		Limit: limit,
-		Query: args.query.Pattern, // TODO!(sqs): support all options here
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 1000*time.Millisecond)
@@ -55,7 +50,20 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 				run.Error(err)
 				return
 			}
-			symbols, err := backend.Symbols.List(ctx, repoRevs.repo.URI, commitID, "tags", params)
+			var excludePattern string
+			if args.query.ExcludePattern != nil {
+				excludePattern = *args.query.ExcludePattern
+			}
+			symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
+				Repo:            repoRevs.repo.URI,
+				CommitID:        commitID,
+				Query:           args.query.Pattern,
+				IsCaseSensitive: args.query.IsCaseSensitive,
+				IsRegExp:        args.query.IsRegExp,
+				IncludePatterns: args.query.IncludePatterns,
+				ExcludePattern:  excludePattern,
+				First:           limit,
+			})
 			if err != nil && err != context.Canceled && err != context.DeadlineExceeded && ctx.Err() == nil {
 				run.Error(err)
 				return

@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
+
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"golang.org/x/net/trace"
@@ -79,18 +81,35 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 	}
 
 	result = &protocol.SearchResult{}
-	if args.Query == "" {
+	if args.Query == "" && len(args.IncludePatterns) == 0 && args.ExcludePattern == "" {
+		// No filters were provided, save iterating the symbols and return a slice
 		if args.First != 0 && len(symbols) > args.First {
 			symbols = symbols[:args.First]
 		}
 		result.Symbols = symbols
 	} else {
-		query, err := regexp.Compile("(?i:" + args.Query + ")")
+		query := args.Query
+		if !args.IsRegExp {
+			query = regexp.QuoteMeta(query)
+		}
+		if !args.IsCaseSensitive {
+			query = "(?i:" + query + ")"
+		}
+		queryRegex, err := regexp.Compile(query)
 		if err != nil {
 			return nil, err
 		}
+
+		fileFilter, err := pathmatch.CompilePathPatterns(args.IncludePatterns, args.ExcludePattern, pathmatch.CompileOptions{
+			CaseSensitive: args.IsCaseSensitive,
+			RegExp:        args.IsRegExp,
+		})
+		if err != nil {
+			return nil, err
+		}
+
 		for _, symbol := range symbols {
-			if !query.MatchString(symbol.Name) {
+			if !fileFilter.MatchPath(symbol.Path) || !queryRegex.MatchString(symbol.Name) {
 				continue
 			}
 			result.Symbols = append(result.Symbols, symbol)
