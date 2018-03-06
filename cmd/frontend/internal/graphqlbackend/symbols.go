@@ -5,15 +5,15 @@ import (
 	"strings"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -77,32 +77,63 @@ func (r *symbolConnectionResolver) limitOrDefault() int {
 
 func (r *symbolConnectionResolver) compute(ctx context.Context) ([]*symbolResolver, error) {
 	r.once.Do(func() {
+		var wg sync.WaitGroup
+		var mu sync.Mutex // protects r.symbols and r.err
+
+		limit := r.limitOrDefault() + 1 // add 1 so we can determine PageInfo.hasNextPage
+
+		// Get ctag symbols
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			searchArgs := protocol.SearchArgs{
+				CommitID: api.CommitID(r.commit.oid),
+				First:    limit,
+				Repo:     r.commit.repo.repo.URI,
+			}
+			if r.query != nil {
+				searchArgs.Query = *r.query
+			}
+			symbols, err := backend.Symbols.ListTags(ctx, searchArgs)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil && r.err == nil && ctx.Err() == nil {
+				r.err = err
+			}
+			resolvers := make([]*symbolResolver, 0, len(symbols))
+			for _, symbol := range symbols {
+				// TODO return the actual language here that we get from ctags
+				// it is currently discarded because SymbolInformation has no field for it
+				resolver := toSymbolResolver(symbol, "tags", r.commit)
+				if resolver != nil {
+					resolvers = append(resolvers, resolver)
+				}
+			}
+			r.symbols = append(r.symbols, resolvers...)
+		})
+
+		// Get LSP symbols
 		inv, err := backend.Repos.GetInventory(ctx, r.commit.repo.repo, api.CommitID(r.commit.oid))
 		if err != nil {
 			r.err = err
 			return
 		}
-
 		params := lspext.WorkspaceSymbolParams{
-			Limit: r.limitOrDefault() + 1, // add 1 so we can determine PageInfo.hasNextPage
+			Limit: limit,
 		}
 		if r.query != nil {
 			params.Query = *r.query
 		}
-
-		// HACK(sqs) TODO!(sqs)
-		inv.Languages = []*inventory.Lang{{Type: "programming", Name: "tags"}}
-
-		var wg sync.WaitGroup
-		var mu sync.Mutex // protects r.symbols and r.err
 		for _, lang := range inv.Languages {
 			if lang.Type != "programming" {
 				continue
 			}
 			wg.Add(1)
-			go func(lang string) {
+			lang := lang
+			goroutine.Go(func() {
 				defer wg.Done()
-				symbols, listErr := backend.Symbols.List(ctx, r.commit.repo.repo.URI, api.CommitID(r.commit.oid), lang, params)
+				langName := strings.ToLower(lang.Name)
+				symbols, listErr := backend.Symbols.List(ctx, r.commit.repo.repo.URI, api.CommitID(r.commit.oid), langName, params)
 				if listErr != nil {
 					if jsonrpc2Err, ok := errors.Cause(listErr).(*jsonrpc2.Error); ok && jsonrpc2Err.Code == proxy.CodeModeNotFound {
 						return
@@ -112,7 +143,7 @@ func (r *symbolConnectionResolver) compute(ctx context.Context) ([]*symbolResolv
 				if listErr == nil {
 					resolvers = make([]*symbolResolver, 0, len(symbols))
 					for _, symbol := range symbols {
-						resolver := toSymbolResolver(symbol, lang, r.commit)
+						resolver := toSymbolResolver(symbol, langName, r.commit)
 						if resolver != nil {
 							resolvers = append(resolvers, resolver)
 						}
@@ -124,7 +155,7 @@ func (r *symbolConnectionResolver) compute(ctx context.Context) ([]*symbolResolv
 					r.err = errors.Wrapf(listErr, "Symbols.List for repo %q commit %q lang %q params %+v", r.commit.repo.repo.URI, r.commit.oid, lang, params)
 				}
 				r.symbols = append(r.symbols, resolvers...)
-			}(strings.ToLower(lang.Name))
+			})
 		}
 		wg.Wait()
 	})
