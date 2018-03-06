@@ -52,6 +52,7 @@ type DatacenterOpsConfiguration struct {
 	LangTypeScript          bool                            `json:"langTypeScript,omitempty"`
 	NodeSSDPath             string                          `json:"nodeSSDPath,omitempty"`
 	PhabricatorIP           string                          `json:"phabricatorIP,omitempty"`
+	PyPIIP                  string                          `json:"pyPIIP,omitempty"`
 	StorageClass            string                          `json:"storageClass,omitempty"`
 	UseRBAC                 bool                            `json:"useRBAC,omitempty"`
 }

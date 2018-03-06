@@ -17,7 +17,7 @@
     },
     "authProxyIP": {
       "type": "string",
-      "description": "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+      "description": "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication."
     },
     "authProxyPassword": {
       "type": "string",
@@ -32,7 +32,7 @@
     },
     "gitoliteIP": {
       "type": "string",
-      "description": "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+      "description": "External IP address for dogfood gitolite instance."
     },
     "gitserverCount": {
       "type": "integer",
@@ -95,7 +95,11 @@
     },
     "phabricatorIP": {
       "type": "string",
-      "description": "External IP address to proxy HTTP traffic to sourcegraph-frontend with basic authentication"
+      "description": "External IP address for dogfood Phabricator instance."
+    },
+    "pyPIIP": {
+      "type": "string",
+      "description": "External IP address for dogfood PyPI instance."
     },
     "storageClass": {
       "type": "string",
