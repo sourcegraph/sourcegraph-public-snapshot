@@ -307,8 +307,9 @@ const SiteSchemaJSON = `{
     },
     "maxReposToSearch": {
       "description":
-        "The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value 0 means unlimited.",
-      "type": "integer"
+        "The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
+      "type": "integer",
+      "default": 500
     },
     "adminUsernames": {
       "description":
