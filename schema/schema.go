@@ -59,8 +59,9 @@ type DatacenterOpsConfiguration struct {
 
 // DeploymentOverrides
 type DeploymentOverrides struct {
-	Containers map[string]*ContainerOverrides `json:"containers,omitempty"`
-	Replicas   *int                           `json:"replicas,omitempty"`
+	Containers   map[string]*ContainerOverrides `json:"containers,omitempty"`
+	NodeSelector map[string]string              `json:"nodeSelector,omitempty"`
+	Replicas     *int                           `json:"replicas,omitempty"`
 }
 
 // GitHubConnection

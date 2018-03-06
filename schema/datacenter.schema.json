@@ -142,6 +142,14 @@
         "replicas": {
           "type": ["integer", "null"],
           "description": "Number of replicas"
+        },
+        "nodeSelector": {
+          "type": ["object"],
+          "description":
+            "Map of Kubernetes nodeSelector key-value pairs describing constraints that must be true for the deployment's pods to be scheduled on a node. See https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector.",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false,
