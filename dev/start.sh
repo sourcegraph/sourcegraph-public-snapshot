@@ -42,6 +42,7 @@ export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
 export NPM_CONFIG_LOGLEVEL=silent
+export ENABLE_SYMBOLS=true
 
 # To use webpack-dev-server for auto-reloading, use:
 #   export USE_WEBPACK_DEV_SERVER=1

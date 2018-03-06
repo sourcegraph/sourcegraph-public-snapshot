@@ -182,6 +182,9 @@ func TestSearchSuggestions(t *testing.T) {
 			return nil, nil
 		}
 		defer func() { mockSearchSymbols = nil }()
+		prevEnableSymbols := enableSymbols
+		enableSymbols = true
+		defer func() { enableSymbols = prevEnableSymbols }()
 
 		testSuggestions(t, "repogroup:sample foo", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
 		if !calledReposListReposInGroup {

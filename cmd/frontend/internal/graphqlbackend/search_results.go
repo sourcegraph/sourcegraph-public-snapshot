@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -32,6 +33,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
+
+var enableSymbols, _ = strconv.ParseBool(os.Getenv("ENABLE_SYMBOLS"))
 
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
@@ -577,10 +580,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			continue
 		}
 		seenResultTypes[resultType] = struct{}{}
-		wg.Add(1)
 		switch resultType {
 		case "repo":
 			// Search for repos
+			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
 
@@ -602,6 +605,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "symbol":
+			if !enableSymbols {
+				continue
+			}
+			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
 
@@ -636,10 +643,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		case "file", "path":
 			if searchedFileContentsOrPaths {
 				// type:file and type:path use same searchFilesInRepos, so don't call 2x.
-				wg.Done()
 				continue
 			}
 			searchedFileContentsOrPaths = true
+			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
 
@@ -674,10 +681,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		case "ref":
 			refValues, _ := r.query.StringValues(searchquery.FieldRef)
 			if len(refValues) == 0 {
-				wg.Done()
 				continue
 			}
 			suppressEmptyQueryAlertEvenIfNoResults = true
+			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
 				refResults, refCommon, err := searchReferencesInRepos(ctx, &args, r.query)
@@ -698,6 +705,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "diff":
+			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
 				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args, r.query)
@@ -718,6 +726,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "commit":
+			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
 
