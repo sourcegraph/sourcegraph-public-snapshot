@@ -8,4 +8,4 @@ WORKDIR /src
 RUN pipenv install --deploy 
 
 EXPOSE 2087
-CMD ["pipenv", "run", "python", "-X", "faulthandler", "python-langserver.py", "--mode", "tcp", "--addr", "2087", "--lightstep_token", "d60b0b2477a7ccb05d7783917f648816"]
+CMD ["pipenv", "run", "python", "-X", "faulthandler", "python-langserver.py", "--mode", "tcp", "--addr", "2087"]
