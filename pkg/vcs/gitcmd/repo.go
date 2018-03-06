@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	pathpkg "path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -959,7 +960,6 @@ func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path strin
 		return nil, &os.PathError{Op: "git ls-tree", Path: path, Err: os.ErrNotExist}
 	}
 
-	prefixLen := strings.LastIndexByte(strings.TrimPrefix(path, "./"), '/') + 1
 	lines := strings.Split(string(out), "\x00")
 	fis := make([]os.FileInfo, len(lines)-1)
 	for i, line := range lines {
@@ -1024,7 +1024,7 @@ func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path strin
 		}
 
 		fis[i] = &util.FileInfo{
-			Name_: name[prefixLen:],
+			Name_: pathpkg.Base(name),
 			Mode_: os.FileMode(mode),
 			Size_: size,
 			Sys_:  sys,
