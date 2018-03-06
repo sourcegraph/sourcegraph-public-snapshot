@@ -38,6 +38,9 @@ var (
 
 func init() {
 	if maxReposToSearch == 0 {
+		// Not specified OR specified as literal zero. Use our default value.
+		maxReposToSearch = 500
+	} else if maxReposToSearch == -1 {
 		// Default to a very large number that will not overflow if incremented.
 		maxReposToSearch = int(math.MaxInt32 >> 1)
 	}

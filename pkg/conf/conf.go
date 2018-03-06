@@ -153,10 +153,7 @@ func readConfig() (string, error) {
 }
 
 func parseConfig(data string) (*schema.SiteConfiguration, error) {
-	// TODO(slimsag): MaxReposToSearch default value should be in our schema, not here?
-	tmpConfig := schema.SiteConfiguration{
-		MaxReposToSearch: 500,
-	}
+	var tmpConfig schema.SiteConfiguration
 
 	// SOURCEGRAPH_CONFIG takes lowest precedence.
 	if data != "" {
