@@ -8,10 +8,13 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/gregjones/httpcache"
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
 
 // normalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant
@@ -26,19 +29,25 @@ func normalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
-// transportWithCertTrusted returns an http.Transport that trusts the provided PEM cert, or http.DefaultTransport
-// if it is empty.
-func transportWithCertTrusted(cert string) (http.RoundTripper, error) {
-	if cert == "" {
-		return http.DefaultTransport, nil
+// cachedTransportWithCertTrusted returns an http.Transport that trusts the
+// provided PEM cert, or http.DefaultTransport if it is empty. The transport
+// is also using our redis backed cache.
+func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
+	transport := http.DefaultTransport
+	if cert != "" {
+		certPool := x509.NewCertPool()
+		if ok := certPool.AppendCertsFromPEM([]byte(cert)); !ok {
+			return nil, errors.New("invalid certificate value")
+		}
+		transport = &http.Transport{
+			TLSClientConfig: &tls.Config{RootCAs: certPool},
+		}
 	}
 
-	certPool := x509.NewCertPool()
-	if ok := certPool.AppendCertsFromPEM([]byte(cert)); !ok {
-		return nil, errors.New("invalid certificate value")
-	}
-	return &http.Transport{
-		TLSClientConfig: &tls.Config{RootCAs: certPool},
+	return &httpcache.Transport{
+		Transport:           &nethttp.Transport{RoundTripper: transport},
+		Cache:               httputil.Cache,
+		MarkCachedResponses: true, // so we avoid using cached rate limit info
 	}, nil
 }
 

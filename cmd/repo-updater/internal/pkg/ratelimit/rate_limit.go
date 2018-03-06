@@ -84,6 +84,11 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 
 // Update updates the monitor's rate limit information based on the HTTP response headers.
 func (c *Monitor) Update(h http.Header) {
+	if cached := h.Get("X-From-Cache"); cached != "" {
+		// Cached responses have stale RateLimit headers.
+		return
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

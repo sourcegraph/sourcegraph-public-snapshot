@@ -9,13 +9,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/httpcache"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -236,8 +234,7 @@ func newGitLabConnection(config schema.GitLabConnection) (*gitlabConnection, err
 	}
 	baseURL = normalizeBaseURL(baseURL)
 
-	transport := httpcache.NewTransport(httputil.Cache)
-	transport.Transport, err = transportWithCertTrusted(config.Certificate)
+	transport, err := cachedTransportWithCertTrusted(config.Certificate)
 	if err != nil {
 		return nil, err
 	}

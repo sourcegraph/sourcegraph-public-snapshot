@@ -9,15 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gregjones/httpcache"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/bitbucketserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -251,8 +248,7 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bi
 	}
 	baseURL = normalizeBaseURL(baseURL)
 
-	transport := httpcache.NewTransport(httputil.Cache)
-	transport.Transport, err = transportWithCertTrusted(config.Certificate)
+	transport, err := cachedTransportWithCertTrusted(config.Certificate)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +259,7 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bi
 			URL:   baseURL,
 			Token: config.Token,
 			HTTPClient: &http.Client{
-				Transport: &nethttp.Transport{RoundTripper: transport},
+				Transport: transport,
 			},
 		},
 	}, nil

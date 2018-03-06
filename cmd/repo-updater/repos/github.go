@@ -14,12 +14,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/httpcache"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
@@ -303,13 +301,9 @@ func newGitHubConnection(config schema.GitHubConnection) (*githubConnection, err
 		}
 	}
 
-	transport := httpcache.NewTransport(httputil.Cache)
-	if config.Certificate != "" {
-		var err error
-		transport.Transport, err = transportWithCertTrusted(config.Certificate)
-		if err != nil {
-			return nil, err
-		}
+	transport, err := cachedTransportWithCertTrusted(config.Certificate)
+	if err != nil {
+		return nil, err
 	}
 
 	return &githubConnection{
