@@ -39,9 +39,10 @@
   ],
   "repos.list": [{ "path": "github.com/sgtest/jump", "url": "https://github.com/sgtest/jump" }],
   "bitbucketServer": [
+    // creds: admin / WhYw6x9GSxmbmg4m
     {
       "url": "https://bitbucket.sgdev.org",
-      "token": "NTE0MDUxMDg4Njg2Ooru/1Ifl8qmpbTLycyxqSyG52Ik"
+      "token": "NDczNDE0NDg0OTk3OrfPrmh/lmU2c3P7Xat+d/aOoZb/"
     }
   ],
   "awsCodeCommit": [
