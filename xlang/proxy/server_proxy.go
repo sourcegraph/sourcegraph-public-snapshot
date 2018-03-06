@@ -431,7 +431,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 		rootPath = "file:///"
 	}
 
-	return c.conn.Call(ctx, "initialize", lspext.InitializeParams{
+	initParams := lspext.InitializeParams{
 		InitializeParams: lsp.InitializeParams{
 			// TODO(sqs): rootPath is deprecated but some lang servers may still need it
 			RootPath: rootPath,
@@ -446,7 +446,11 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 		OriginalRootURI:  lsp.DocumentURI(c.id.rootURI.String()),
 		OriginalRootPath: c.id.rootURI.String(), // TODO(sqs): this is deprecated, can be removed (see field docstring)
 		Mode:             c.id.mode,
-	}, nil, addTraceMeta(ctx))
+	}
+	if initOps := getInitializationOptions(c.id.mode); initOps != nil {
+		initParams.InitializationOptions = initOps
+	}
+	return c.conn.Call(ctx, "initialize", initParams, nil, addTraceMeta(ctx))
 }
 
 // callServer sends an LSP request to the specified server

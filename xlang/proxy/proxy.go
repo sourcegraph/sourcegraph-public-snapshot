@@ -1,7 +1,9 @@
 package proxy
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"log"
 	"net"
 	"runtime"
@@ -10,6 +12,8 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 const (
@@ -104,6 +108,30 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 			}
 		}
 	}()
+
+	// Watch for LS conf changes and restart if anything changes
+	var lsConfMu sync.Mutex
+	lsConf, err := json.Marshal(conf.Get().Langservers)
+	if err != nil {
+		return err
+	}
+	conf.Watch(func() {
+		newLSConf, err := json.Marshal(conf.Get().Langservers)
+		if err != nil {
+			log15.Error("Error marshaling new langserver config", "err", err)
+			return
+		}
+
+		lsConfMu.Lock()
+		defer lsConfMu.Unlock()
+
+		if bytes.Equal(lsConf, newLSConf) {
+			return
+		}
+		lsConf = newLSConf
+		log15.Info("Shutting down all language servers due to config change")
+		p.shutdownServers(ctx, func(*serverProxyConn) bool { return true })
+	})
 
 	for {
 		nc, err := lis.Accept()

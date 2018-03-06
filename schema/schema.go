@@ -89,8 +89,9 @@ type GitLabConnection struct {
 
 // Langservers
 type Langservers struct {
-	Address  string `json:"address,omitempty"`
-	Language string `json:"language,omitempty"`
+	Address               string                 `json:"address,omitempty"`
+	InitializationOptions map[string]interface{} `json:"initializationOptions,omitempty"`
+	Language              string                 `json:"language,omitempty"`
 }
 
 // Links

@@ -404,6 +404,36 @@ const SiteSchemaJSON = `{
             "type": "string",
             "pattern": "^tcp://",
             "format": "uri"
+          },
+          "initializationOptions": {
+            "description":
+              "LSP initialization options. This object will be set as the ` + "`" + `initializationOptions` + "`" + ` field in LSP initialize requests (https://microsoft.github.io/language-server-protocol/specification#initialize).",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object"
+                },
+                {
+                  "type": "array"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
           }
         }
       }

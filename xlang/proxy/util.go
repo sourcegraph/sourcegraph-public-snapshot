@@ -3,6 +3,8 @@ package proxy
 import (
 	"fmt"
 	"sync"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type errorList struct {
@@ -29,4 +31,15 @@ func (e *errorList) error() error {
 	default:
 		return fmt.Errorf("%s [and %d more errors]", e.errors[0], len(e.errors)-1)
 	}
+}
+
+// getInitializationOptions returns the initializationOptions value to use in an LSP
+// initialize request.
+func getInitializationOptions(lang string) map[string]interface{} {
+	for _, ls := range conf.Get().Langservers {
+		if ls.Language == lang {
+			return ls.InitializationOptions
+		}
+	}
+	return nil
 }
