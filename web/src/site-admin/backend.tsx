@@ -458,7 +458,7 @@ export function updateSiteConfiguration(input: string): Observable<boolean> {
         { input }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data) {
+            if (!data || errors) {
                 throw createAggregateError(errors)
             }
             return data.updateSiteConfiguration as boolean
