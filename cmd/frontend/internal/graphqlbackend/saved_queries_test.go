@@ -17,6 +17,7 @@ func TestSavedQueries(t *testing.T) {
 	ctx := context.Background()
 
 	uid := int32(1)
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 
 	defer resetMocks()
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {

@@ -37,8 +37,8 @@ func orgByID(ctx context.Context, id graphql.ID) (*orgResolver, error) {
 }
 
 func orgByIDInt32(ctx context.Context, orgID int32) (*orgResolver, error) {
-	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
+	// 🚨 SECURITY: Check that the current user is a member of the org (or a site admin).
+	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
 		return nil, err
 	}
 
@@ -91,6 +91,12 @@ func (o *orgResolver) Members(ctx context.Context) ([]*orgMemberResolver, error)
 }
 
 func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+	// 🚨 SECURITY: Only organization members and site admins may access the settings, because they
+	// may contains secrets or other sensitive data.
+	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
+		return nil, err
+	}
+
 	settings, err := db.Settings.GetLatest(ctx, api.ConfigurationSubject{Org: &o.org.ID})
 	if err != nil {
 		return nil, err
@@ -108,6 +114,12 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	File                  *string
 	Limit                 *int32
 }) (*threadConnectionResolver, error) {
+	// 🚨 SECURITY: Only organization members and site admins may access the threads, because they
+	// may contain secrets or other sensitive data.
+	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
+		return nil, err
+	}
+
 	var canonicalRemoteIDs []api.RepoURI
 	if args.CanonicalRemoteIDs != nil {
 		for _, canonicalRemoteID := range *args.CanonicalRemoteIDs {
@@ -129,6 +141,11 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 }
 
 func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
+	// 🚨 SECURITY: Only organization members and site admins may access the tags.
+	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
+		return nil, err
+	}
+
 	tags, err := db.OrgTags.GetByOrgID(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
@@ -143,6 +160,11 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
 func (o *orgResolver) Repo(ctx context.Context, args *struct {
 	CanonicalRemoteID string
 }) (*orgRepoResolver, error) {
+	// 🚨 SECURITY: Only organization members and site admins may access the organization's repositories..
+	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
+		return nil, err
+	}
+
 	orgRepo, err := getOrgRepo(ctx, o.org.ID, api.RepoURI(args.CanonicalRemoteID))
 	if err != nil {
 		return nil, err
@@ -151,6 +173,11 @@ func (o *orgResolver) Repo(ctx context.Context, args *struct {
 }
 
 func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID api.RepoURI) (*types.OrgRepo, error) {
+	// 🚨 SECURITY: Only organization members and site admins may access the organization's repositories..
+	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
+		return nil, err
+	}
+
 	orgRepo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
 	if errcode.IsNotFound(err) {
 		// We don't want to create org repos just because an org member queried for threads
@@ -161,6 +188,11 @@ func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID api.RepoURI)
 }
 
 func (o *orgResolver) Repos(ctx context.Context) ([]*orgRepoResolver, error) {
+	// 🚨 SECURITY: Only organization members and site admins may access the organization's repositories..
+	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
+		return nil, err
+	}
+
 	repos, err := db.OrgRepos.GetByOrg(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
@@ -235,7 +267,7 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
 		return nil, err
 	}
 
@@ -260,7 +292,7 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
 		return nil, err
 	}
 
@@ -285,7 +317,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that the user is being invited to.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, orgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
 		return nil, err
 	}
 

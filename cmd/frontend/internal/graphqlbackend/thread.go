@@ -34,7 +34,7 @@ func threadByIDInt32(ctx context.Context, threadID int32) (*threadResolver, erro
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, org.ID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, org.ID); err != nil {
 		return nil, err
 	}
 

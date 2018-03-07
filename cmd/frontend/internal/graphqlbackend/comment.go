@@ -39,7 +39,7 @@ func commentByIDInt32(ctx context.Context, commentID int32) (*commentResolver, e
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, org.ID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, org.ID); err != nil {
 		return nil, err
 	}
 

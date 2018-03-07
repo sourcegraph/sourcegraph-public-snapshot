@@ -5,10 +5,24 @@ import (
 	"fmt"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 )
+
+func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, error) {
+	// 🚨 SECURITY: Only the user and site admins are allowed to access user activity.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return nil, err
+	}
+
+	activity, err := useractivity.GetByUserID(r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &userActivityResolver{activity}, nil
+}
 
 type userActivityResolver struct {
 	userActivity *types.UserActivity

@@ -327,7 +327,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// 🚨 SECURITY: verify that the current user is in the org.
-		if err := backend.CheckCurrentUserIsOrgMember(r.Context(), orgRepo.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(r.Context(), orgRepo.OrgID); err != nil {
 			// User is not in the org. We don't want to produce a 500, because we
 			// want to render a nice error page on the frontend. But it's important
 			// that we do not leak information about the shared item (e.g. through

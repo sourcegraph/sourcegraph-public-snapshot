@@ -104,7 +104,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 	if args.ULID == "" {
 		// Plain case (adding a comment to a thread from the editor).
 		// 🚨 SECURITY: Check that the current user is a member of the org.
-		if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, repo.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -123,7 +123,7 @@ func (s *schemaResolver) addCommentToThread(ctx context.Context, args *struct {
 		}
 		if !item.Public {
 			// 🚨 SECURITY: Check that the current user is a member of the org.
-			if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
+			if err := backend.CheckOrgAccess(ctx, repo.OrgID); err != nil {
 				return nil, err
 			}
 		}
@@ -244,7 +244,7 @@ func (*schemaResolver) shareCommentInternal(ctx context.Context, commentID int32
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, repo.OrgID); err != nil {
 		return nil, err
 	}
 

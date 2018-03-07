@@ -63,7 +63,7 @@ func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 
 		if !item.Public {
 			// 🚨 SECURITY: Check that the current user is a member of the org.
-			if err := backend.CheckCurrentUserIsOrgMember(ctx, orgRepo.OrgID); err != nil {
+			if err := backend.CheckOrgAccess(ctx, orgRepo.OrgID); err != nil {
 				return nil, err
 			}
 		}
@@ -90,7 +90,7 @@ func (r *schemaResolver) SharedItem(ctx context.Context, args *struct {
 
 		if !item.Public {
 			// 🚨 SECURITY: Check that the current user is a member of the org.
-			if err := backend.CheckCurrentUserIsOrgMember(ctx, orgRepo.OrgID); err != nil {
+			if err := backend.CheckOrgAccess(ctx, orgRepo.OrgID); err != nil {
 				return nil, err
 			}
 		}

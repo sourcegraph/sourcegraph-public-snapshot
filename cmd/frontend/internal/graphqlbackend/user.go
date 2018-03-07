@@ -10,7 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
@@ -45,27 +44,33 @@ func unmarshalUserID(id graphql.ID) (userID int32, err error) {
 	return
 }
 
-func (r *userResolver) ExternalID() *string { return r.user.ExternalID }
-
-func (r *userResolver) AuthID() string {
-	id := r.ExternalID()
-	if id == nil {
-		return ""
+func (r *userResolver) ExternalID(ctx context.Context) (*string, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to access the external ID, because it might
+	// leak authentication-related secrets.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return nil, err
 	}
-	return *id
+	return r.user.ExternalID, nil
 }
 
-func (r *userResolver) Auth0ID() string {
-	id := r.ExternalID()
-	if id == nil {
-		return ""
+func (r *userResolver) AuthID(ctx context.Context) (string, error) {
+	id, err := r.ExternalID(ctx)
+	if err != nil || id == nil {
+		return "", err
 	}
-	return *id
+	return *id, nil
 }
+
+func (r *userResolver) Auth0ID(ctx context.Context) (string, error) { return r.AuthID(ctx) }
 
 func (r *userResolver) SourcegraphID() int32 { return r.user.ID }
 
 func (r *userResolver) Email(ctx context.Context) (string, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return "", err
+	}
+
 	email, _, err := db.UserEmails.GetEmail(ctx, r.user.ID)
 	if err != nil {
 		return "", err
@@ -90,6 +95,12 @@ func (r *userResolver) UpdatedAt() *string {
 }
 
 func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's settings, because they
+	// may contain secrets or other sensitive data.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return nil, err
+	}
+
 	settings, err := db.Settings.GetLatest(ctx, api.ConfigurationSubject{User: &r.user.ID})
 	if err != nil {
 		return nil, err
@@ -100,16 +111,14 @@ func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	return &settingsResolver{&configurationSubject{user: r}, settings, nil}, nil
 }
 
-func (r *userResolver) Verified(ctx context.Context) (bool, error) {
-	_, verified, err := db.UserEmails.GetEmail(ctx, r.user.ID)
-	if err != nil {
+func (r *userResolver) SiteAdmin(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
 		return false, err
 	}
 
-	return verified, nil
+	return r.user.SiteAdmin, nil
 }
-
-func (r *userResolver) SiteAdmin() bool { return r.user.SiteAdmin }
 
 func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	Username    *string
@@ -165,9 +174,11 @@ func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver
 }
 
 func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
-	if r.user == nil {
-		return nil, errors.New("Could not resolve tags on nil user")
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's tags.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return nil, err
 	}
+
 	tags, err := db.UserTags.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
@@ -177,21 +188,6 @@ func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
 		userTagResolvers = append(userTagResolvers, &userTagResolver{tag})
 	}
 	return userTagResolvers, nil
-}
-
-func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, error) {
-	// 🚨 SECURITY:  only admins are allowed to use this endpoint
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-	if r.user == nil {
-		return nil, errors.New("Could not resolve activity on nil user")
-	}
-	activity, err := useractivity.GetByUserID(r.user.ID)
-	if err != nil {
-		return nil, err
-	}
-	return &userActivityResolver{activity}, nil
 }
 
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {

@@ -375,7 +375,7 @@ func (s *schemaResolver) CreateThread2(ctx context.Context, args *struct {
 
 func (s *schemaResolver) createThreadInput(ctx context.Context, args *createThreadInput) (*threadResolver, error) {
 	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, args.OrgID.int32Value); err != nil {
+	if err := backend.CheckOrgAccess(ctx, args.OrgID.int32Value); err != nil {
 		return nil, err
 	}
 
@@ -489,7 +489,7 @@ func (s *schemaResolver) UpdateThread(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, repo.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -550,7 +550,7 @@ func (*schemaResolver) shareThreadInternal(ctx context.Context, threadID int32, 
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckCurrentUserIsOrgMember(ctx, repo.OrgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, repo.OrgID); err != nil {
 		return nil, err
 	}
 
