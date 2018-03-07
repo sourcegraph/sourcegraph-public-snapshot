@@ -516,7 +516,7 @@
     -webkit-box-pack: center;
         -ms-flex-pack: center;
             justify-content: center;
-    border-radius: 0 0 0.25rem; }
+    border-radius: 0.25rem; }
     .repo-rev-sidebar-toggle .icon {
       width: 1.125rem;
       height: 1.125rem; }
