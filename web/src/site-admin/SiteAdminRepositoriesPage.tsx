@@ -295,7 +295,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
             label: 'Cloned',
             id: 'cloned',
             tooltip: 'Show cloned repositories only',
-            args: { cloned: true, cloneInProgress: false, notCloned: false },
+            args: { disabled: true, cloned: true, cloneInProgress: false, notCloned: false },
         },
         {
             label: 'Cloning',
