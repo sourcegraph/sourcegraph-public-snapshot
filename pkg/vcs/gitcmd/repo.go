@@ -959,7 +959,8 @@ func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path strin
 		return nil, &os.PathError{Op: "git ls-tree", Path: path, Err: os.ErrNotExist}
 	}
 
-	prefixLen := strings.LastIndexByte(strings.TrimPrefix(path, "./"), '/') + 1
+	trimPath := strings.TrimPrefix(path, "./")
+	prefixLen := strings.LastIndexByte(trimPath, '/') + 1
 	lines := strings.Split(string(out), "\x00")
 	fis := make([]os.FileInfo, len(lines)-1)
 	for i, line := range lines {
@@ -974,6 +975,11 @@ func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path strin
 		}
 		info := strings.SplitN(line[:tabPos], " ", 4)
 		name := line[tabPos+1:]
+		if len(name) < len(trimPath) {
+			// This is in a submodule; return the original path to avoid a slice out of bounds panic
+			// when setting the FileInfo._Name below.
+			name = trimPath
+		}
 
 		if len(info) != 4 {
 			return nil, fmt.Errorf("invalid `git ls-tree` output: %q", out)
@@ -1024,6 +1030,9 @@ func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path strin
 		}
 
 		fis[i] = &util.FileInfo{
+			// This returns the full relative path (e.g. "path/to/file.go") when the path arg is "./"
+			// This behavior is necessary to construct the file tree.
+			// In all other cases, it returns the basename (e.g. "file.go").
 			Name_: name[prefixLen:],
 			Mode_: os.FileMode(mode),
 			Size_: size,
