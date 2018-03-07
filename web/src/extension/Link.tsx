@@ -6,6 +6,27 @@ const extensionUrl = 'chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack'
 // Dev extension url
 // const extensionUrl = 'chrome-extension://bmfbcejdknlknpncfpeloejonjoledha'
 
-export const LinkExtension: React.SFC<{}> = () => (
-    <embed className="link-extension" src={`${extensionUrl}/link.html?sourceurl=${window.location.origin}`} />
+interface Props {
+    user: GQL.IUser
+}
+
+/**
+ * Returns the URL used to link the browser extension to a
+ * Sourcegraph Server instance.
+ *
+ * @param email the email address of the authenticated user.
+ */
+const getExtensionLinkURL = (email: string): string => {
+    const url = new URL(`${extensionUrl}/link.html`)
+    url.searchParams.set('sourceurl', location.origin)
+    url.searchParams.set('userId', email)
+    return url.toString()
+}
+
+/**
+ * Embeds an iframe responsible for passing the current user
+ * and Sourcegraph Server URL to the browser extension.
+ */
+export const LinkExtension: React.SFC<Props> = props => (
+    <iframe className="link-extension" src={getExtensionLinkURL(props.user.email)} />
 )

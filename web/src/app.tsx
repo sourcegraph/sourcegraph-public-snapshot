@@ -65,7 +65,7 @@ const Layout: React.SFC<LayoutProps> = props => {
                                         <Component {...props} {...routeComponentProps} isFullWidth={isFullWidth} />
                                     )}
                                     {route.render && route.render({ ...props, ...routeComponentProps })}
-                                    {canSyncBrowserExtension && !!props.user && <LinkExtension />}
+                                    {canSyncBrowserExtension && !!props.user && <LinkExtension user={props.user} />}
                                 </div>
                             )}
                         />
