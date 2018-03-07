@@ -2,6 +2,8 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { catchError } from 'rxjs/operators/catchError'
+import { concatMap } from 'rxjs/operators/concatMap'
 import { delay } from 'rxjs/operators/delay'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { retryWhen } from 'rxjs/operators/retryWhen'
@@ -93,10 +95,26 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.remoteUpdates
                 .pipe(
                     tap(() => this.setState({ saving: true, error: undefined })),
-                    mergeMap(updateSiteConfiguration),
+                    concatMap(event =>
+                        updateSiteConfiguration(event).pipe(
+                            catchError(error => {
+                                console.error(error)
+                                this.setState({ saving: false, error })
+                                return []
+                            })
+                        )
+                    ),
                     tap(restartToApply => {
                         if (restartToApply) {
                             window.context.needServerRestart = restartToApply
+                        } else {
+                            // Server does not need to restart to apply the configuration,
+                            // but some other elements on this page assume the page will
+                            // be reloaded in order to e.g. update the global site banner
+                            // from "Configure repositories and code hosts [...]" to
+                            // "Select repositories to enable [...]". So do the same thing
+                            // that we would do below if the user clicked "restart server".
+                            window.location.reload() // brute force way to reload view state
                         }
                         this.setState({ restartToApply })
                         this.remoteRefreshes.next()
