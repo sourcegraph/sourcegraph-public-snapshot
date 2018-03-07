@@ -81,7 +81,7 @@ func (r *repositoryResolver) RedirectURL() *string {
 
 func (r *repositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		if err == db.ErrNoCurrentUser {
+		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
 			return false, nil // not an error
 		}
 		return false, err

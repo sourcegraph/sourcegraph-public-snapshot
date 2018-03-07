@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	store "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -41,9 +41,9 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 }
 
 func currentUser(ctx context.Context) (*types.User, error) {
-	user, err := store.Users.GetByCurrentAuthUser(ctx)
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		if errcode.IsNotFound(err) {
+		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
 			return nil, nil
 		}
 		return nil, err
