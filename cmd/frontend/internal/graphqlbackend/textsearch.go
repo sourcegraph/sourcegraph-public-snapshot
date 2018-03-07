@@ -15,8 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/trace"
-
 	"github.com/pkg/errors"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -34,7 +32,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	zoektpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/zoekt"
 )
@@ -177,13 +175,9 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
 
-	traceName, ctx := traceutil.TraceName(ctx, "searcher.client")
-	tr := trace.New(traceName, fmt.Sprintf("%s@%s", repo.Name, commit))
+	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo.Name, commit))
 	defer func() {
-		if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-		}
+		tr.SetError(err)
 		tr.Finish()
 	}()
 
@@ -393,13 +387,9 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	}
 	finalQuery := zoektquery.NewAnd(repoSet, queryExceptRepos)
 
-	traceName, ctx := traceutil.TraceName(ctx, "zoekt.Search")
-	tr := trace.New(traceName, fmt.Sprintf("%d %+v", len(repoSet.Set), finalQuery.String()))
+	tr, ctx := trace.New(ctx, "zoekt.Search", fmt.Sprintf("%d %+v", len(repoSet.Set), finalQuery.String()))
 	defer func() {
-		if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-		}
+		tr.SetError(err)
 		if len(fm) > 0 {
 			tr.LazyPrintf("%d file matches", len(fm))
 		}
@@ -622,13 +612,9 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		return mockSearchFilesInRepos(args)
 	}
 
-	traceName, ctx := traceutil.TraceName(ctx, "searchFilesInRepos")
-	tr := trace.New(traceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
 	defer func() {
-		if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-		}
+		tr.SetError(err)
 		tr.Finish()
 	}()
 

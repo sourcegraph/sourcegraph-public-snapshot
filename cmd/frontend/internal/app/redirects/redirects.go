@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // redirects is a mapping from old URL path to new destination
@@ -47,14 +47,14 @@ func RedirectsMiddleware(next http.Handler) http.Handler {
 			path = strings.TrimSuffix(path, "/")
 		}
 		if dest, present := redirects[path]; present {
-			traceutil.SetRouteName(r, "middleware.redirects")
+			trace.SetRouteName(r, "middleware.redirects")
 			http.Redirect(w, r, dest, http.StatusMovedPermanently)
 			return
 		}
 
 		// Redirect all other /blog/* URLs to the main blog page.
 		if r.URL.Path == "/blog" || strings.HasPrefix(r.URL.Path, "/blog/") {
-			traceutil.SetRouteName(r, "middleware.redirects")
+			trace.SetRouteName(r, "middleware.redirects")
 			http.Redirect(w, r, "https://text.sourcegraph.com", http.StatusSeeOther)
 			return
 		}

@@ -22,7 +22,7 @@ import (
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -271,7 +271,7 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 		span.SetTag("jsonrpc2.method", req.Method)
 		ctx = opentracing.ContextWithSpan(ctx, span)
 		meta := map[string]string{
-			"X-Trace": traceutil.SpanURL(span),
+			"X-Trace": trace.SpanURL(span),
 		}
 
 		err := p.roundTrip(ctx, replyWithMeta{conn, meta}, p.server, req)

@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // BlackHole is a middleware which returns StatusGone on removed URLs that
@@ -15,7 +15,7 @@ func BlackHole(next http.Handler) http.Handler {
 			return
 		}
 
-		traceutil.SetRouteName(r, "middleware.blackhole")
+		trace.SetRouteName(r, "middleware.blackhole")
 		w.WriteHeader(http.StatusGone)
 	})
 }

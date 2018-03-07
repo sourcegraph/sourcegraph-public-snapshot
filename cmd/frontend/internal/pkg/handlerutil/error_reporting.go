@@ -14,7 +14,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 var ravenClient *raven.Client
@@ -73,7 +73,7 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 
 	// Add appdash span ID.
 	if span := opentracing.SpanFromContext(r.Context()); span != nil {
-		pkt.Extra["trace"] = traceutil.SpanURL(span)
+		pkt.Extra["trace"] = trace.SpanURL(span)
 	}
 
 	// Add request context tags.

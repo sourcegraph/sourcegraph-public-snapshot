@@ -18,7 +18,7 @@ import (
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // NewHandler returns a new API handler that uses the provided API
@@ -31,14 +31,14 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.StrictSlash(true)
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoShield).Handler(traceutil.TraceRoute(handler(serveRepoShield)))
+	m.Get(apirouter.RepoShield).Handler(trace.TraceRoute(handler(serveRepoShield)))
 
-	m.Get(apirouter.Telemetry).Handler(traceutil.TraceRoute(telemetryReverseProxy))
+	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryReverseProxy))
 
-	m.Get(apirouter.XLang).Handler(traceutil.TraceRoute(handler(serveXLang)))
+	m.Get(apirouter.XLang).Handler(trace.TraceRoute(handler(serveXLang)))
 
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(traceutil.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
+		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
 	// 🚨 SECURITY: The LSP endpoints specifically allows cookie authorization 🚨
@@ -52,9 +52,9 @@ func NewHandler(m *mux.Router) http.Handler {
 	//
 	// You can read more about this security issue here:
 	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
-	m.Get(apirouter.LSP).Handler(traceutil.TraceRoute(session.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
+	m.Get(apirouter.LSP).Handler(trace.TraceRoute(session.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
 
-	m.Get(apirouter.GraphQL).Handler(traceutil.TraceRoute(handler(serveGraphQL)))
+	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -83,30 +83,30 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	}
 	m.StrictSlash(true)
 
-	m.Get(apirouter.PhabricatorRepoCreate).Handler(traceutil.TraceRoute(handler(servePhabricatorRepoCreate)))
-	m.Get(apirouter.ReposCreateIfNotExists).Handler(traceutil.TraceRoute(handler(serveReposCreateIfNotExists)))
-	m.Get(apirouter.ReposUpdateIndex).Handler(traceutil.TraceRoute(handler(serveReposUpdateIndex)))
-	m.Get(apirouter.ReposUnindexedDependencies).Handler(traceutil.TraceRoute(handler(serveReposUnindexedDependencies)))
-	m.Get(apirouter.ReposInventoryUncached).Handler(traceutil.TraceRoute(handler(serveReposInventoryUncached)))
-	m.Get(apirouter.ReposList).Handler(traceutil.TraceRoute(handler(serveReposList)))
-	m.Get(apirouter.ReposGetByURI).Handler(traceutil.TraceRoute(handler(serveReposGetByURI)))
-	m.Get(apirouter.SettingsGetForSubject).Handler(traceutil.TraceRoute(handler(serveSettingsGetForSubject)))
-	m.Get(apirouter.SavedQueriesListAll).Handler(traceutil.TraceRoute(handler(serveSavedQueriesListAll)))
-	m.Get(apirouter.SavedQueriesGetInfo).Handler(traceutil.TraceRoute(handler(serveSavedQueriesGetInfo)))
-	m.Get(apirouter.SavedQueriesSetInfo).Handler(traceutil.TraceRoute(handler(serveSavedQueriesSetInfo)))
-	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(traceutil.TraceRoute(handler(serveSavedQueriesDeleteInfo)))
-	m.Get(apirouter.OrgsListUsers).Handler(traceutil.TraceRoute(handler(serveOrgsListUsers)))
-	m.Get(apirouter.OrgsGetByName).Handler(traceutil.TraceRoute(handler(serveOrgsGetByName)))
-	m.Get(apirouter.UsersGetByUsername).Handler(traceutil.TraceRoute(handler(serveUsersGetByUsername)))
-	m.Get(apirouter.UserEmailsGetEmail).Handler(traceutil.TraceRoute(handler(serveUserEmailsGetEmail)))
-	m.Get(apirouter.AppURL).Handler(traceutil.TraceRoute(handler(serveAppURL)))
-	m.Get(apirouter.CanSendEmail).Handler(traceutil.TraceRoute(handler(serveCanSendEmail)))
-	m.Get(apirouter.SendEmail).Handler(traceutil.TraceRoute(handler(serveSendEmail)))
-	m.Get(apirouter.DefsRefreshIndex).Handler(traceutil.TraceRoute(handler(serveDefsRefreshIndex)))
-	m.Get(apirouter.PkgsRefreshIndex).Handler(traceutil.TraceRoute(handler(servePkgsRefreshIndex)))
-	m.Get(apirouter.GitoliteUpdateRepos).Handler(traceutil.TraceRoute(handler(serveGitoliteUpdateRepos)))
-	m.Get(apirouter.GitInfoRefs).Handler(traceutil.TraceRoute(handler(serveGitInfoRefs)))
-	m.Get(apirouter.GitUploadPack).Handler(traceutil.TraceRoute(handler(serveGitUploadPack)))
+	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
+	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
+	m.Get(apirouter.ReposUpdateIndex).Handler(trace.TraceRoute(handler(serveReposUpdateIndex)))
+	m.Get(apirouter.ReposUnindexedDependencies).Handler(trace.TraceRoute(handler(serveReposUnindexedDependencies)))
+	m.Get(apirouter.ReposInventoryUncached).Handler(trace.TraceRoute(handler(serveReposInventoryUncached)))
+	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(serveReposList)))
+	m.Get(apirouter.ReposGetByURI).Handler(trace.TraceRoute(handler(serveReposGetByURI)))
+	m.Get(apirouter.SettingsGetForSubject).Handler(trace.TraceRoute(handler(serveSettingsGetForSubject)))
+	m.Get(apirouter.SavedQueriesListAll).Handler(trace.TraceRoute(handler(serveSavedQueriesListAll)))
+	m.Get(apirouter.SavedQueriesGetInfo).Handler(trace.TraceRoute(handler(serveSavedQueriesGetInfo)))
+	m.Get(apirouter.SavedQueriesSetInfo).Handler(trace.TraceRoute(handler(serveSavedQueriesSetInfo)))
+	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(trace.TraceRoute(handler(serveSavedQueriesDeleteInfo)))
+	m.Get(apirouter.OrgsListUsers).Handler(trace.TraceRoute(handler(serveOrgsListUsers)))
+	m.Get(apirouter.OrgsGetByName).Handler(trace.TraceRoute(handler(serveOrgsGetByName)))
+	m.Get(apirouter.UsersGetByUsername).Handler(trace.TraceRoute(handler(serveUsersGetByUsername)))
+	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.TraceRoute(handler(serveUserEmailsGetEmail)))
+	m.Get(apirouter.AppURL).Handler(trace.TraceRoute(handler(serveAppURL)))
+	m.Get(apirouter.CanSendEmail).Handler(trace.TraceRoute(handler(serveCanSendEmail)))
+	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
+	m.Get(apirouter.DefsRefreshIndex).Handler(trace.TraceRoute(handler(serveDefsRefreshIndex)))
+	m.Get(apirouter.PkgsRefreshIndex).Handler(trace.TraceRoute(handler(servePkgsRefreshIndex)))
+	m.Get(apirouter.GitoliteUpdateRepos).Handler(trace.TraceRoute(handler(serveGitoliteUpdateRepos)))
+	m.Get(apirouter.GitInfoRefs).Handler(trace.TraceRoute(handler(serveGitInfoRefs)))
+	m.Get(apirouter.GitUploadPack).Handler(trace.TraceRoute(handler(serveGitUploadPack)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +169,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	traceSpan := opentracing.SpanFromContext(r.Context())
 	var spanURL string
 	if traceSpan != nil {
-		spanURL = traceutil.SpanURL(traceSpan)
+		spanURL = trace.SpanURL(traceSpan)
 	}
 	if status < 200 || status >= 500 {
 		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)

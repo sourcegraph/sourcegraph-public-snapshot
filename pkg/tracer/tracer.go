@@ -9,7 +9,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -46,7 +46,7 @@ func Init(serviceName string) {
 			log.Printf("Could not initialize jaeger tracer: %s", err.Error())
 			return
 		}
-		traceutil.SpanURL = jaegerSpanURL
+		trace.SpanURL = jaegerSpanURL
 		return
 	}
 
@@ -60,7 +60,18 @@ func Init(serviceName string) {
 			},
 			DropSpanLogs: !lightstepIncludeSensitive,
 		}))
-		traceutil.SpanURL = lightStepSpanURL
+		trace.SpanURL = lightStepSpanURL
+
+		// Ignore warnings from the tracer about SetTag calls with unrecognized value types. The
+		// github.com/lightstep/lightstep-tracer-go package calls fmt.Sprintf("%#v", ...) on them, which is fine.
+		defaultHandler := lightstep.NewEventLogOneError()
+		lightstep.SetGlobalEventHandler(func(e lightstep.Event) {
+			if _, ok := e.(lightstep.EventUnsupportedValue); ok {
+				// ignore
+			} else {
+				defaultHandler(e)
+			}
+		})
 	}
 }
 

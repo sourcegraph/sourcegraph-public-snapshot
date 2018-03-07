@@ -9,7 +9,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // Handler is a wrapper func for app HTTP handlers that enables app
@@ -23,7 +23,7 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 				if span := opentracing.SpanFromContext(req.Context()); span != nil {
 					ext.Error.Set(span, true)
 					span.SetTag("err", err)
-					spanURL = traceutil.SpanURL(span)
+					spanURL = trace.SpanURL(span)
 				}
 				log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
 			}

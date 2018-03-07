@@ -21,7 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 const (
@@ -313,7 +313,7 @@ func handler(f func(w http.ResponseWriter, r *http.Request) error) http.Handler 
 			serveError(w, r, err, http.StatusInternalServerError)
 		}
 	})
-	return traceutil.TraceRoute(gziphandler.GzipHandler(h))
+	return trace.TraceRoute(gziphandler.GzipHandler(h))
 }
 
 type recoverError struct {
@@ -359,7 +359,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 		ext.Error.Set(span, true)
 		span.SetTag("err", err)
 		span.SetTag("error-id", errorID)
-		spanURL = traceutil.SpanURL(span)
+		spanURL = trace.SpanURL(span)
 	}
 	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", spanURL)
 

@@ -15,7 +15,6 @@ import (
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
@@ -60,8 +59,7 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 		span.Finish()
 	}()
 
-	traceName, ctx := traceutil.TraceName(ctx, "Symbols.search")
-	tr := trace.New(traceName, fmt.Sprintf("args:%+v", args))
+	tr := trace.New("symbols.search", fmt.Sprintf("args:%+v", args))
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)

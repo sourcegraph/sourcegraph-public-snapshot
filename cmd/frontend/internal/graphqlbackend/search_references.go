@@ -11,14 +11,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	"golang.org/x/net/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -54,13 +53,9 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, query se
 		language = langValues[0]
 	}
 
-	traceName, ctx := traceutil.TraceName(ctx, "searchReferencesInRepos")
-	tr := trace.New(traceName, fmt.Sprintf("language: %s, symbol: %+v, numRepoRevs: %d", language, symbol, len(args.repos)))
+	tr, ctx := trace.New(ctx, "searchReferencesInRepos", fmt.Sprintf("language: %s, symbol: %+v, numRepoRevs: %d", language, symbol, len(args.repos)))
 	defer func() {
-		if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-		}
+		tr.SetError(err)
 		tr.Finish()
 	}()
 

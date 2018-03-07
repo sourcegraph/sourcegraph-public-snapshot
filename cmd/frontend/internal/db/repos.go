@@ -14,13 +14,11 @@ import (
 
 	"context"
 
-	"golang.org/x/net/trace"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 type repoNotFoundErr struct {
@@ -228,13 +226,9 @@ type ReposListOptions struct {
 // The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo URI that matches the regexp `q.*u.*e.*r.*y`
 func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
-	traceName, ctx := traceutil.TraceName(ctx, "repos.List")
-	tr := trace.New(traceName, "")
+	tr, ctx := trace.New(ctx, "repos.List", "")
 	defer func() {
-		if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-		}
+		tr.SetError(err)
 		tr.Finish()
 	}()
 

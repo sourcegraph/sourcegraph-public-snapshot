@@ -20,7 +20,6 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"golang.org/x/net/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
@@ -30,7 +29,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -494,13 +493,9 @@ func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 }
 
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResultsResolver, err error) {
-	traceName, ctx := traceutil.TraceName(ctx, "graphql.SearchResults")
-	tr := trace.New(traceName, r.rawQuery())
+	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
-		if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-		}
+		tr.SetError(err)
 		tr.Finish()
 	}()
 

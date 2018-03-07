@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // Actor represents an agent that accesses resources. It can represent
@@ -46,7 +46,7 @@ func FromContext(ctx context.Context) *Actor {
 
 func WithActor(ctx context.Context, a *Actor) context.Context {
 	if a != nil && a.UID != 0 {
-		traceutil.TraceUser(ctx, a.UID)
+		trace.TraceUser(ctx, a.UID)
 	}
 	return context.WithValue(ctx, actorKey, a)
 }

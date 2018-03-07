@@ -1,4 +1,4 @@
-package traceutil
+package trace
 
 // UserLatencyBuckets is a recommended list of buckets for use in prometheus
 // histograms when measuring latency to users.

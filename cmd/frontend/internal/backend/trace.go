@@ -11,7 +11,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	tracepkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 var metricLabels = []string{"method", "success"}
@@ -20,7 +20,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "backend",
 	Name:      "client_request_duration_seconds",
 	Help:      "Total time spent on backend endpoints.",
-	Buckets:   traceutil.UserLatencyBuckets,
+	Buckets:   tracepkg.UserLatencyBuckets,
 }, metricLabels)
 var requestGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -64,7 +64,7 @@ func trace(ctx context.Context, server, method string, arg interface{}, err *err
 		if err != nil && *err != nil {
 			errStr = (*err).Error()
 		}
-		log15.Debug("TRACE backend", "rpc", name, "uid", uid, "trace", traceutil.SpanURL(span), "error", errStr, "duration", elapsed)
+		log15.Debug("TRACE backend", "rpc", name, "uid", uid, "trace", tracepkg.SpanURL(span), "error", errStr, "duration", elapsed)
 	}
 
 	return ctx, done

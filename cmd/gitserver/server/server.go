@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go"
-	"golang.org/x/net/trace"
+	nettrace "golang.org/x/net/trace"
 
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
@@ -33,7 +33,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
@@ -359,7 +359,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		}
 		args := strings.Join(req.Args, " ")
 
-		tr := trace.New("exec."+cmd, string(req.Repo))
+		tr := nettrace.New("exec."+cmd, string(req.Repo))
 		tr.LazyPrintf("args: %s", args)
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
@@ -581,7 +581,7 @@ var (
 		Subsystem: "gitserver",
 		Name:      "exec_duration_seconds",
 		Help:      "gitserver.Command latencies in seconds.",
-		Buckets:   traceutil.UserLatencyBuckets,
+		Buckets:   trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
 	cloneQueue = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",

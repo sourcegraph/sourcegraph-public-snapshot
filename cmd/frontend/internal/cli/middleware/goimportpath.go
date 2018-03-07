@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // goImportMetaTag represents a go-import meta tag.
@@ -46,7 +46,7 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 			return
 		}
 
-		traceutil.SetRouteName(req, "middleware.go-get")
+		trace.SetRouteName(req, "middleware.go-get")
 		if !strings.HasPrefix(req.URL.Path, "/") {
 			err := fmt.Errorf("req.URL.Path doesn't have a leading /: %q", req.URL.Path)
 			log.Println(err)

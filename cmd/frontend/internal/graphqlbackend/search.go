@@ -11,11 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/net/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 
 	"github.com/felixfbecker/stringscore"
 	"github.com/pkg/errors"
@@ -174,12 +173,10 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*repositoryRevisions, repoResults []*searchSuggestionResolver, overLimit bool, err error) {
-	traceName, ctx := traceutil.TraceName(ctx, "graphql.resolveRepositories")
-	tr := trace.New(traceName, fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
+	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
 	defer func() {
 		if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
+			tr.SetError(err)
 		} else {
 			tr.LazyPrintf("numRepoRevs: %d, numMissingRepoRevs: %d, numRepoResults: %d, overLimit: %v", len(repoRevs), len(missingRepoRevs), len(repoResults), overLimit)
 		}
@@ -214,13 +211,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 }
 
 func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
-	traceName, ctx := traceutil.TraceName(ctx, "resolveRepositories")
-	tr := trace.New(traceName, fmt.Sprintf("repoFilters: %v, minusRepoFilters: %v, repoGroupFilters: %v", repoFilters, minusRepoFilters, repoGroupFilters))
+	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("repoFilters: %v, minusRepoFilters: %v, repoGroupFilters: %v", repoFilters, minusRepoFilters, repoGroupFilters))
 	defer func() {
-		if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-		}
+		tr.SetError(err)
 		tr.Finish()
 	}()
 
