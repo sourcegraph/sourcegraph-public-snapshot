@@ -14,6 +14,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
+func (r *schemaResolver) User(ctx context.Context, args struct{ Username string }) (*userResolver, error) {
+	user, err := db.Users.GetByUsername(ctx, args.Username)
+	if err != nil {
+		return nil, err
+	}
+	return &userResolver{user: user}, nil
+}
+
 // userResolver resolves a Sourcegraph user.
 type userResolver struct {
 	user *types.User

@@ -297,6 +297,8 @@ type Query {
     repository(uri: String!): Repository
     phabricatorRepo(uri: String!): PhabricatorRepo
     currentUser: User
+    # Look up a user by username.
+    user(username: String!): User
     currentSiteSettings: Settings
     configuration: ConfigurationCascade!
     search(

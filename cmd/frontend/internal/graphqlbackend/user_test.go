@@ -9,6 +9,33 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
+func TestUser(t *testing.T) {
+	resetMocks()
+	db.Mocks.Users.GetByUsername = func(context.Context, string) (*types.User, error) {
+		return &types.User{ID: 1, Username: "alice"}, nil
+	}
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: GraphQLSchema,
+			Query: `
+				{
+					user(username: "alice") {
+						username
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"user": {
+						"username": "alice"
+					}
+				}
+			`,
+		},
+	})
+}
+
 func TestNode_User(t *testing.T) {
 	resetMocks()
 	db.Mocks.Users.MockGetByID_Return(t, &types.User{ID: 1, Username: "alice"}, nil)
