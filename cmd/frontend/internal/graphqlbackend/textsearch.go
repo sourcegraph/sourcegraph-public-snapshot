@@ -78,6 +78,10 @@ type patternInfo struct {
 	PatternMatchesPath    bool
 }
 
+func (p *patternInfo) isEmpty() bool {
+	return p.Pattern == "" && p.ExcludePattern == nil && len(p.IncludePatterns) == 0 && p.IncludePattern == nil
+}
+
 func (p *patternInfo) validate() error {
 	if p.IsRegExp {
 		if _, err := syntax.Parse(p.Pattern, syntax.Perl); err != nil {
@@ -640,7 +644,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		common.repos[i] = repo.repo.URI
 	}
 
-	if isEmptyQuery := args.query.Pattern == "" && args.query.ExcludePattern == nil && len(args.query.IncludePatterns) == 0; isEmptyQuery {
+	if args.query.isEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil, common, nil
 	}
