@@ -106,6 +106,14 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     tap(restartToApply => {
                         if (restartToApply) {
                             window.context.needServerRestart = restartToApply
+                        } else {
+                            // Server does not need to restart to apply the configuration,
+                            // but some other elements on this page assume the page will
+                            // be reloaded in order to e.g. update the global site banner
+                            // from "Configure repositories and code hosts [...]" to
+                            // "Select repositories to enable [...]". So do the same thing
+                            // that we would do below if the user clicked "restart server".
+                            window.location.reload() // brute force way to reload view state
                         }
                         this.setState({ restartToApply })
                         this.remoteRefreshes.next()
