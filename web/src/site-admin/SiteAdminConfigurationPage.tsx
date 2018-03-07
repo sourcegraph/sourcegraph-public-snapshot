@@ -3,6 +3,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { catchError } from 'rxjs/operators/catchError'
+import { concatMap } from 'rxjs/operators/concatMap'
 import { delay } from 'rxjs/operators/delay'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { retryWhen } from 'rxjs/operators/retryWhen'
@@ -94,7 +95,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.remoteUpdates
                 .pipe(
                     tap(() => this.setState({ saving: true, error: undefined })),
-                    mergeMap(event =>
+                    concatMap(event =>
                         updateSiteConfiguration(event).pipe(
                             catchError(error => {
                                 console.error(error)
