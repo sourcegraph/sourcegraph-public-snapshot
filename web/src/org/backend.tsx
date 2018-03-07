@@ -28,7 +28,7 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                             contents
                         }
                     }
-                    members {
+                    memberships {
                         id
                         createdAt
                         user {
@@ -197,7 +197,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<v
  * @param userID The user's ID to remove
  * @return An Observable that does emits `undefined` when done, then completes
  */
-export function removeUserFromOrg(orgID: GQLID, userID: GQLID): Observable<never> {
+export function removeUserFromOrg(orgID: GQLID, userID: GQLID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation removeUserFromOrg($userID: ID!, $orgID: ID!) {
@@ -226,7 +226,7 @@ export function removeUserFromOrg(orgID: GQLID, userID: GQLID): Observable<never
             }
             eventLogger.log('OrgMemberRemoved', eventData)
             // Reload user data
-            return refreshCurrentUser()
+            return refreshCurrentUser().pipe(concat([void 0]))
         })
     )
 }

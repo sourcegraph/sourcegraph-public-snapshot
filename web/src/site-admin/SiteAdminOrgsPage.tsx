@@ -1,4 +1,6 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
+import GearIcon from '@sourcegraph/icons/lib/Gear'
+import UserIcon from '@sourcegraph/icons/lib/User'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -7,6 +9,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
 import { deleteOrganization, fetchAllOrgs } from './backend'
@@ -38,18 +41,24 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
         return (
             <li className="site-admin-detail-list__item">
                 <div className="site-admin-detail-list__header">
-                    <span className="site-admin-detail-list__name">{this.props.node.name}</span>
+                    <Link
+                        to={`${orgURL(this.props.node.name)}/settings/members`}
+                        className="site-admin-detail-list__name"
+                    >
+                        {this.props.node.name}
+                    </Link>
                     <br />
                     <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
                 </div>
                 <ul className="site-admin-detail-list__info">
                     {this.props.node.createdAt && <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>}
                     {this.props.node.members &&
-                        this.props.node.members.length > 0 && (
+                        this.props.node.memberships.length > 0 && (
                             <li>
                                 Members:{' '}
-                                <span title={this.props.node.members.map(m => m.user.username).join(', ')}>
-                                    {this.props.node.members.length} {pluralize('user', this.props.node.members.length)}
+                                <span title={this.props.node.memberships.map(m => m.user.username).join(', ')}>
+                                    {this.props.node.memberships.length}{' '}
+                                    {pluralize('user', this.props.node.memberships.length)}
                                 </span>
                             </li>
                         )}
@@ -67,6 +76,21 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         )}
                 </ul>
                 <div className="site-admin-detail-list__actions">
+                    <Link
+                        to={`${orgURL(this.props.node.name)}/members`}
+                        className="btn btn-secondary site-admin-detail-list__action"
+                        data-tooltip="Organization members"
+                    >
+                        <UserIcon className="icon-inline" />{' '}
+                        {this.props.node.memberships && this.props.node.memberships.length}
+                    </Link>
+                    <Link
+                        to={`${orgURL(this.props.node.name)}/settings`}
+                        className="btn btn-secondary site-admin-detail-list__action"
+                        data-tooltip="Organization settings"
+                    >
+                        <GearIcon className="icon-inline" />
+                    </Link>
                     <button
                         key="deleteOrg"
                         className="btn btn-secondary btn-sm site-admin-detail-list__action"

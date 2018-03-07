@@ -5,6 +5,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func (r *siteResolver) Users(args *struct {
@@ -52,3 +53,19 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 	count, err := db.Users.Count(ctx, r.opt)
 	return int32(count), err
 }
+
+// staticUserConnectionResolver implements the GraphQL type UserConnection based on an underlying
+// list of users that is computed statically.
+type staticUserConnectionResolver struct {
+	users []*types.User
+}
+
+func (r *staticUserConnectionResolver) Nodes() []*userResolver {
+	resolvers := make([]*userResolver, len(r.users))
+	for i, user := range r.users {
+		resolvers[i] = &userResolver{user: user}
+	}
+	return resolvers
+}
+
+func (r *staticUserConnectionResolver) TotalCount() int32 { return int32(len(r.users)) }
