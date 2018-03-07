@@ -74,7 +74,7 @@ func (c *Client) url(key key) (string, error) {
 
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args protocol.SearchArgs) (result *protocol.SearchResult, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.Search")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "symbols.Client.Search")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -101,7 +101,7 @@ func (c *Client) Search(ctx context.Context, args protocol.SearchArgs) (result *
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, key key, payload interface{}) (resp *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "symbols.Client.httpPost")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
