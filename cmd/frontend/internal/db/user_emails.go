@@ -33,6 +33,28 @@ func (*userEmails) GetEmail(ctx context.Context, id int32) (email string, verifi
 	return email, verified, nil
 }
 
+// Add adds new user email. When added, it is always unverified.
+func (*userEmails) Add(ctx context.Context, userID int32, email string, verificationCode *string) error {
+	_, err := globalDB.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES($1, $2, $3)", userID, email, verificationCode)
+	return err
+}
+
+// Remove removes a user email. It returns an error if there is no such email associated with the user.
+func (*userEmails) Remove(ctx context.Context, userID int32, email string) error {
+	res, err := globalDB.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errors.New("user email not found")
+	}
+	return nil
+}
+
 func (*userEmails) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
 	var dbCode sql.NullString
 	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1", id).Scan(&dbCode); err != nil {
@@ -48,6 +70,31 @@ func (*userEmails) ValidateEmail(ctx context.Context, id int32, userCode string)
 		return false, err
 	}
 	return true, nil
+}
+
+// SetVerified bypasses the normal email verification code process and manually sets the verified
+// status for an email.
+func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
+	var res sql.Result
+	var err error
+	if verified {
+		// Mark as verified.
+		res, err = globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+	} else {
+		// Mark as unverified.
+		res, err = globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=null WHERE user_id=$1 AND email=$2", userID, email)
+	}
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errors.New("user email not found")
+	}
+	return nil
 }
 
 // getBySQL returns user emails matching the SQL query, if any exist.

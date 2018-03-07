@@ -20,6 +20,10 @@
         flex: 0 1 auto;
         min-width: 10rem;
         padding-right: 1.5rem;
+        &--center {
+            display: flex;
+            align-items: center;
+        }
     }
 
     &__info {
@@ -39,9 +43,11 @@
     }
 
     &__actions {
+        flex: 1;
         display: flex;
-        flex-direction: column;
-        align-items: flex-end;
+        flex-direction: row-reverse;
+        align-items: center;
+        flex-wrap: wrap;
         margin: -0.25rem;
     }
 
