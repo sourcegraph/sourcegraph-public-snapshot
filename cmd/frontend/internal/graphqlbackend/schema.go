@@ -299,6 +299,8 @@ type Query {
     currentUser: User
     # Look up a user by username.
     user(username: String!): User
+    # Look up an organization by name.
+    organization(name: String!): Org
     currentSiteSettings: Settings
     configuration: ConfigurationCascade!
     search(
@@ -1322,6 +1324,9 @@ type Org implements Node, ConfigurationSubject {
     #
     # Only organization members and site admins can access this field.
     tags: [OrgTag!]!
+    # Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
+    # have admin privileges on the organization.
+    viewerCanAdminister: Boolean!
 }
 
 type OrgMember {
