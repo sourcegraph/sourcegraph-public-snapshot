@@ -28,17 +28,6 @@ export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
                             contents
                         }
                     }
-                    memberships {
-                        id
-                        createdAt
-                        user {
-                            id
-                            username
-                            email
-                            displayName
-                            avatarURL
-                        }
-                    }
                     tags {
                         name
                     }

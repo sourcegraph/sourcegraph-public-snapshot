@@ -169,18 +169,6 @@ func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
 	return orgResolvers, nil
 }
 
-func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
-	members, err := db.OrgMembers.GetByUserID(ctx, r.user.ID)
-	if err != nil {
-		return nil, err
-	}
-	orgMemberResolvers := []*orgMemberResolver{}
-	for _, member := range members {
-		orgMemberResolvers = append(orgMemberResolvers, &orgMemberResolver{nil, member, nil})
-	}
-	return orgMemberResolvers, nil
-}
-
 func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's tags.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {

@@ -81,20 +81,6 @@ func (o *orgResolver) DisplayName() *string {
 
 func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
-func (o *orgResolver) Memberships(ctx context.Context) ([]*orgMemberResolver, error) {
-	sgMembers, err := db.OrgMembers.GetByOrgID(ctx, o.org.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	members := []*orgMemberResolver{}
-	for _, sgMember := range sgMembers {
-		member := &orgMemberResolver{o.org, sgMember, nil}
-		members = append(members, member)
-	}
-	return members, nil
-}
-
 func (o *orgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
 	memberships, err := db.OrgMembers.GetByOrgID(ctx, o.org.ID)
 	if err != nil {

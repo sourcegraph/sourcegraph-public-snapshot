@@ -1289,8 +1289,6 @@ type User implements Node, ConfigurationSubject {
     latestSettings: Settings
     # The organizations that this user is a member of.
     orgs: [Org!]!
-    # This user's organization memberships.
-    orgMemberships: [OrgMember!]!
     # The internal tags associated with the user. This is an internal site management feature.
     #
     # Only the user and site admins can access this field.
@@ -1344,8 +1342,6 @@ type Org implements Node, ConfigurationSubject {
     displayName: String
     # The date when the organization was created, in RFC 3339 format.
     createdAt: String!
-    # A list of user memberships for this organization.
-    memberships: [OrgMember!]!
     # A list of users who are members of this organization.
     members: UserConnection!
     # The latest settings for the organization.
@@ -1378,14 +1374,6 @@ type Org implements Node, ConfigurationSubject {
     # Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
     # have admin privileges on the organization.
     viewerCanAdminister: Boolean!
-}
-
-type OrgMember {
-    id: Int!
-    org: Org!
-    user: User!
-    createdAt: String!
-    updatedAt: String!
 }
 
 type InviteUserResult {

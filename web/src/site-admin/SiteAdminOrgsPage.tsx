@@ -63,7 +63,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         data-tooltip="Organization members"
                     >
                         <UserIcon className="icon-inline" />{' '}
-                        {this.props.node.memberships && this.props.node.memberships.length}
+                        {this.props.node.members && this.props.node.members.totalCount}
                     </Link>
                     <Link
                         to={`${orgURL(this.props.node.name)}/settings`}

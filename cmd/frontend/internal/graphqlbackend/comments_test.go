@@ -271,7 +271,7 @@ func TestComments_Create(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: 1, DisplayName: "Alice"}, nil
 	}
-	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMember{}, nil)
+	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMembership{}, nil)
 	mockEmailsToNotify = func(ctx context.Context, comments []*types.Comment, author types.User, org types.Org) ([]string, error) {
 		return []string{"a@example.com"}, nil
 	}
