@@ -86,12 +86,18 @@ func (r *symbolConnectionResolver) compute(ctx context.Context) ([]*symbolResolv
 		}
 		resolvers := make([]*symbolResolver, 0, len(symbols))
 		for _, symbol := range symbols {
-			// TODO return the actual language here that we get from ctags
-			// it is currently discarded because SymbolInformation has no field for it
-			resolver := toSymbolResolver(symbol, "tags", r.commit)
-			if resolver != nil {
-				resolvers = append(resolvers, resolver)
+			baseURI, err := uri.Parse("git://" + string(r.commit.repo.repo.URI) + "?" + string(r.commit.oid))
+			if err != nil && r.err == nil && ctx.Err() == nil {
+				r.err = err
 			}
+			if baseURI == nil {
+				continue
+			}
+			resolver := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), r.commit)
+			if resolver == nil {
+				continue
+			}
+			resolvers = append(resolvers, resolver)
 		}
 		r.symbols = append(r.symbols, resolvers...)
 	})
@@ -167,6 +173,8 @@ func (r *symbolResolver) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// TODO(sqs): if we have references for this lang, then add "$references" to the URL for convenience
+	if backend.IsLanguageSupported(r.language) {
+		url += "$references"
+	}
 	return url, nil
 }

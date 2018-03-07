@@ -51,3 +51,10 @@ func languagesForRepo(ctx context.Context, repo *types.Repo, commitID api.Commit
 	}
 	return languages, nil
 }
+
+// IsLanguageSupported returns true if we have LSP-based
+// code intelligence support for the given language, false otherwise
+func IsLanguageSupported(lang string) bool {
+	_, supported := xlangSupportedLanguages[lang]
+	return supported
+}
