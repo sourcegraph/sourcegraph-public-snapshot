@@ -11,6 +11,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Slack notifications for saved searches may now be added for individual users (not just organizations).
 * The new search filter `lang:` filters results by programming language (example: `foo lang:go` or `foo -lang:clojure`).
 * Dynamic filters: filters generated from your search results to help refine your results.
+* Search queries that consist only of `file:` now show files whose path matches the filters (instead of no results).
 
 ### Configuration changes
 

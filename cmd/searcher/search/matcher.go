@@ -63,7 +63,7 @@ const (
 //
 // TODO(keegan) return search statistics
 type readerGrep struct {
-	// re is the regexp to match.
+	// re is the regexp to match, or nil if empty ("match all files' content").
 	re *regexp.Regexp
 
 	// ignoreCase if true means we need to do case insensitive matching.
@@ -82,32 +82,37 @@ type readerGrep struct {
 
 // compile returns a readerGrep for matching p.
 func compile(p *protocol.PatternInfo) (*readerGrep, error) {
-	var (
-		expr       = p.Pattern
-		ignoreCase bool
-	)
-	if !p.IsRegExp {
-		expr = regexp.QuoteMeta(expr)
-	}
-	if p.IsWordMatch {
-		expr = `\b` + expr + `\b`
-	}
-	if p.IsRegExp {
-		// We don't do the search line by line, therefore we want the
-		// regex engine to consider newlines for anchors (^$).
-		expr = "(?m:" + expr + ")"
-	}
-	if !p.IsCaseSensitive {
-		// We don't just use (?i) because regexp library doesn't seem
-		// to contain good optimizations for case insensitive
-		// search. Instead we lowercase the input and pattern.
-		re, err := syntax.Parse(expr, syntax.Perl)
+	var re *regexp.Regexp
+	if p.Pattern != "" {
+		expr := p.Pattern
+		if !p.IsRegExp {
+			expr = regexp.QuoteMeta(expr)
+		}
+		if p.IsWordMatch {
+			expr = `\b` + expr + `\b`
+		}
+		if p.IsRegExp {
+			// We don't do the search line by line, therefore we want the
+			// regex engine to consider newlines for anchors (^$).
+			expr = "(?m:" + expr + ")"
+		}
+		if !p.IsCaseSensitive {
+			// We don't just use (?i) because regexp library doesn't seem
+			// to contain good optimizations for case insensitive
+			// search. Instead we lowercase the input and pattern.
+			re, err := syntax.Parse(expr, syntax.Perl)
+			if err != nil {
+				return nil, err
+			}
+			lowerRegexpASCII(re)
+			expr = re.String()
+		}
+
+		var err error
+		re, err = regexp.Compile(expr)
 		if err != nil {
 			return nil, err
 		}
-		lowerRegexpASCII(re)
-		expr = re.String()
-		ignoreCase = true
 	}
 
 	pathOptions := pathmatch.CompileOptions{
@@ -119,13 +124,9 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		return nil, err
 	}
 
-	re, err := regexp.Compile(expr)
-	if err != nil {
-		return nil, err
-	}
 	return &readerGrep{
 		re:         re,
-		ignoreCase: ignoreCase,
+		ignoreCase: !p.IsCaseSensitive,
 		matchPath:  matchPath,
 	}, nil
 }
@@ -143,6 +144,9 @@ func (rg *readerGrep) Copy() *readerGrep {
 // matchString returns whether rg's regexp pattern matches s. It is intended to be
 // used to match file paths.
 func (rg *readerGrep) matchString(s string) bool {
+	if rg.re == nil {
+		return true
+	}
 	if rg.ignoreCase {
 		s = strings.ToLower(s)
 	}
@@ -256,7 +260,9 @@ func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile) (protocol.FileMatch, erro
 func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
-	span.SetTag("re", rg.re.String())
+	if rg.re != nil {
+		span.SetTag("re", rg.re.String())
+	}
 	span.SetTag("path", rg.matchPath.String())
 	defer func() {
 		if err != nil {
@@ -285,8 +291,9 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 		matches   = []protocol.FileMatch{}
 	)
 
-	if !patternMatchesContent {
-		// Fast path for only matching file paths.
+	if patternMatchesPaths && (!patternMatchesContent || rg.re == nil) {
+		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
+		// so is effectively matching only on file paths).
 		for _, f := range files {
 			if rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name) {
 				if len(matches) < fileMatchLimit {

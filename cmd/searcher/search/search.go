@@ -202,9 +202,6 @@ func validateParams(p *protocol.Request) error {
 	if len(p.Commit) != 40 {
 		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
 	}
-	if p.Pattern == "" {
-		return errors.New("Pattern must be non-empty")
-	}
 	return nil
 }
 

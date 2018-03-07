@@ -640,7 +640,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		common.repos[i] = repo.repo.URI
 	}
 
-	if args.query.Pattern == "" {
+	if isEmptyQuery := args.query.Pattern == "" && args.query.ExcludePattern == nil && len(args.query.IncludePatterns) == 0; isEmptyQuery {
 		// Empty query isn't an error, but it has no results.
 		return nil, common, nil
 	}
