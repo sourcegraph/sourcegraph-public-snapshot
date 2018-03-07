@@ -23,6 +23,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * Only cross reference index enabled repositories.
 * Fixed an issue where search would return results with empty file contents for matches in submodules with indexing enabled. Searching over submodules is not supported yet, so these (empty) results have been removed.
+* Fixed an issue where match highlighting would be incorrect on lines that contained multibyte characters.
 
 ## 2.5.16, 2.5.17
 

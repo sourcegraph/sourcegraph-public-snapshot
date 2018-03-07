@@ -1175,6 +1175,7 @@ type FileMatch {
 type LineMatch {
     preview: String!
     lineNumber: Int!
+    # Tuples of [offset, length] measured in characters (not bytes)
     offsetAndLengths: [[Int!]!]!
     limitHit: Boolean!
 }

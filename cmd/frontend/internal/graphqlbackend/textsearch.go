@@ -461,11 +461,15 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 					l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
 				}
 				offsets := make([][]int32, len(l.LineFragments))
+				line := string(l.Line)
 				for k, m := range l.LineFragments {
-					offsets[k] = []int32{int32(m.LineOffset), int32(m.MatchLength)}
+					// Convert offset and length to character based (instead of byte based)
+					offset := len([]rune(line[:m.LineOffset]))
+					length := len([]rune(line[m.LineOffset : m.LineOffset+m.MatchLength]))
+					offsets[k] = []int32{int32(offset), int32(length)}
 				}
 				lines = append(lines, &lineMatch{
-					JPreview:          string(l.Line),
+					JPreview:          line,
 					JLineNumber:       int32(l.LineNumber - 1),
 					JOffsetAndLengths: offsets,
 				})
