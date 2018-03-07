@@ -1,4 +1,5 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
+import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import * as React from 'react'
@@ -48,6 +49,14 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                     <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
                 </div>
                 <div className="site-admin-detail-list__actions">
+                    <button
+                        className="btn btn-outline-danger site-admin-detail-list__action"
+                        onClick={this.deleteOrg}
+                        disabled={this.state.loading}
+                        data-tooltip="Delete organization"
+                    >
+                        <DeleteIcon className="icon-inline" />
+                    </button>
                     <Link
                         to={`${orgURL(this.props.node.name)}/settings/members`}
                         className="btn btn-secondary site-admin-detail-list__action"
@@ -63,14 +72,6 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                     >
                         <GearIcon className="icon-inline" />
                     </Link>
-                    <button
-                        key="deleteOrg"
-                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                        onClick={this.deleteOrg}
-                        disabled={this.state.loading}
-                    >
-                        Delete organization
-                    </button>
                     {this.state.errorDescription && (
                         <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
                     )}
