@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -164,7 +165,7 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKInterface
 	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command":
 		return lsp.SKFunction
-	case "variable", "var", "functionVar", "define":
+	case "variable", "var", "functionVar", "define", "alias":
 		return lsp.SKVariable
 	case "constant", "const":
 		return lsp.SKConstant
@@ -192,9 +193,7 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKOperator
 	case "type parameter":
 		return lsp.SKTypeParameter
-	case "unknown", "":
-		return 0
 	}
-	// log.Printf("Unknown ctags kind: %q", kind)
-	return 0 // unknown
+	log.Printf("Unknown ctags kind: %q", kind)
+	return 0
 }
