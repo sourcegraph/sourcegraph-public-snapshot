@@ -31,6 +31,9 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 		return nil, nil
 	}
 
+	ctx, cancelAll := context.WithCancel(ctx)
+	defer cancelAll()
+
 	var (
 		run               = parallel.NewRun(20)
 		symbolResolversMu sync.Mutex
@@ -94,7 +97,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 					symbolResolvers = append(symbolResolvers, toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit))
 				}
 				if len(symbolResolvers) > limit {
-					cancel()
+					cancelAll()
 				}
 			}
 		}(repoRevs)
