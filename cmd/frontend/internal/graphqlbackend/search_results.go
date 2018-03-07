@@ -631,7 +631,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		fileMatchesMu sync.Mutex
 	)
 
-	suppressEmptyQueryAlertEvenIfNoResults := false
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
 		resultType := resultType // shadow so it doesn't change in the goroutine
@@ -742,7 +741,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			if len(refValues) == 0 {
 				continue
 			}
-			suppressEmptyQueryAlertEvenIfNoResults = true
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
@@ -832,22 +830,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			alert.title = "No results found"
 		} else {
 			alert.title = "Only diff search results from last month are shown"
-		}
-	}
-	if alert == nil && len(results) == 0 && args.query.isEmpty() && !suppressEmptyQueryAlertEvenIfNoResults {
-		alert = &searchAlert{
-			title:       "Type a query",
-			description: "What do you want to search for?",
-			proposedQueries: []*searchQueryDescription{
-				{
-					description: "Files containing the string \"func\"",
-					query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " func"},
-				},
-				{
-					description: "Files containing the string \"open(\"",
-					query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " \"open(\""},
-				},
-			},
 		}
 	}
 	if len(missingRepoRevs) > 0 {
