@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-var errMustBeSiteAdmin = errors.New("must be site admin")
+var ErrMustBeSiteAdmin = errors.New("must be site admin")
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
 func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
@@ -18,8 +18,11 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if user == nil || !user.SiteAdmin {
-		return errMustBeSiteAdmin
+	if user == nil {
+		return ErrNotAuthenticated
+	}
+	if !user.SiteAdmin {
+		return ErrMustBeSiteAdmin
 	}
 	return nil
 }
@@ -34,12 +37,7 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	if actor.IsAuthenticated() && actor.UID == subjectUserID {
 		return nil
 	}
-	if err := CheckCurrentUserIsSiteAdmin(ctx); err == errMustBeSiteAdmin {
-		return errors.New("must be site admin or the self user")
-	} else if err != nil {
-		return err
-	}
-	return nil
+	return CheckCurrentUserIsSiteAdmin(ctx)
 }
 
 func currentUser(ctx context.Context) (*types.User, error) {

@@ -198,6 +198,15 @@ func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
 	return userTagResolvers, nil
 }
 
+func (r *userResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string

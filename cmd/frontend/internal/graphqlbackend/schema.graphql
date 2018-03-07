@@ -1253,6 +1253,9 @@ type User implements Node, ConfigurationSubject {
     #
     # Only the user and site admins can access this field.
     emails: [UserEmail!]!
+    # Whether the viewer has admin privileges on this user. The user had admin privileges on their own user, and
+    # site admins have admin privileges on all users.
+    viewerCanAdminister: Boolean!
 }
 
 # A user's email address.
