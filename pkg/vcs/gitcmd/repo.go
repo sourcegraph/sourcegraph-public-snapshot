@@ -37,9 +37,10 @@ var (
 		"blame":  []string{"--root", "--incremental", "--"},
 		"branch": []string{"-r", "-a", "--contains"},
 
-		"rev-parse": []string{"--abbrev-ref", "--symbolic-full-name"},
-		"rev-list":  []string{"--max-parents", "--reverse", "--max-count"},
-		"ls-remote": []string{"--get-url"},
+		"rev-parse":    []string{"--abbrev-ref", "--symbolic-full-name"},
+		"rev-list":     []string{"--max-parents", "--reverse", "--max-count"},
+		"ls-remote":    []string{"--get-url"},
+		"symbolic-ref": []string{"--short"},
 	}
 
 	// `git log` and `git show` share a large common set of whitelisted args.
@@ -386,10 +387,10 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	}
 
 	cmd := r.command("git", args...)
-	data, err := cmd.CombinedOutput(ctx)
+	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(data), string(opt.Head)) {
+		if isBadObjectErr(string(stderr), string(opt.Head)) {
 			return nil, vcs.ErrRevisionNotFound
 		}
 		return nil, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
