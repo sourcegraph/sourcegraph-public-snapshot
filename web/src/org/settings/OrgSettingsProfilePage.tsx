@@ -12,9 +12,9 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
-import { updateOrg } from './backend'
+import { PageTitle } from '../../components/PageTitle'
+import { eventLogger } from '../../tracking/eventLogger'
+import { updateOrg } from '../backend'
 
 interface Props extends RouteComponentProps<any> {
     org: GQL.IOrg
@@ -51,7 +51,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
             this.orgChanges
                 .pipe(
                     distinctUntilChanged(),
-                    tap(org => eventLogger.logViewEvent('OrgProfile', { organization: { org_name: org.name } }))
+                    tap(org => eventLogger.logViewEvent('OrgSettingsProfile', { organization: { org_name: org.name } }))
                 )
                 .subscribe()
         )

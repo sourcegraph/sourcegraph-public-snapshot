@@ -2,8 +2,8 @@ import UserIcon from '@sourcegraph/icons/lib/User'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../auth'
-import { OrgAvatar } from '../org/OrgAvatar'
+import { currentUser } from '../../auth'
+import { OrgAvatar } from '../OrgAvatar'
 
 interface Props extends RouteComponentProps<{ orgName: string }> {
     className: string
@@ -14,9 +14,9 @@ interface State {
 }
 
 /**
- * Sidebar for org pages
+ * Sidebar for org settings pages
  */
-export class OrgSidebar extends React.Component<Props, State> {
+export class OrgSettingsSidebar extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
@@ -38,13 +38,13 @@ export class OrgSidebar extends React.Component<Props, State> {
             this.state.orgs && this.state.orgs.find(org => org.name === this.props.match.params.orgName)
 
         if (!this.state.orgs) {
-            return <div className={`sidebar org-sidebar ${this.props.className}`} />
+            return <div className={`sidebar org-settings-sidebar ${this.props.className}`} />
         } else if (!org) {
             return null
         }
 
         return (
-            <div className={`sidebar org-sidebar ${this.props.className}`}>
+            <div className={`sidebar org-settings-sidebar ${this.props.className}`}>
                 <ul className="sidebar__items">
                     <div className="sidebar__header">
                         <div className="sidebar__header-icon">

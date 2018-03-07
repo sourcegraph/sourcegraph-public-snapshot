@@ -3,8 +3,8 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
-import { NewOrganizationPage } from '../org/NewOrganizationPage'
-import { OrgArea } from './OrgArea'
+import { NewOrganizationPage } from '../org/new/NewOrganizationPage'
+import { OrgSettingsArea } from './settings/OrgSettingsArea'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -37,7 +37,7 @@ export class OrgsArea extends React.Component<Props> {
                 <div className="orgs-area__content">
                     <Switch>
                         <Route path={`${this.props.match.url}/new`} component={NewOrganizationPage} exact={true} />
-                        <Route path={`${this.props.match.url}/:orgName`} render={this.renderOrgArea} />
+                        <Route path={`${this.props.match.url}/:orgName`} render={this.renderOrgSettingsArea} />
                         <Route component={NotFoundPage} />
                     </Switch>
                 </div>
@@ -45,7 +45,7 @@ export class OrgsArea extends React.Component<Props> {
         )
     }
 
-    private renderOrgArea = (routeComponentProps: RouteComponentProps<any>) => (
-        <OrgArea {...this.props} {...routeComponentProps} />
+    private renderOrgSettingsArea = (routeComponentProps: RouteComponentProps<any>) => (
+        <OrgSettingsArea {...this.props} {...routeComponentProps} />
     )
 }

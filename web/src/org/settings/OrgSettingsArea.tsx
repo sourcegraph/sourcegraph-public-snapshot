@@ -7,13 +7,13 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../auth'
-import { HeroPage } from '../components/HeroPage'
-import { OrgSettingsConfigurationPage } from '../org/OrgSettingsConfigurationPage'
-import { OrgSettingsProfilePage } from '../org/OrgSettingsProfilePage'
-import { fetchOrg } from './backend'
-import { OrgSidebar } from './OrgSidebar'
-import { OrgSettingsMembersPage } from './settings/OrgSettingsMembersPage'
+import { currentUser } from '../../auth'
+import { HeroPage } from '../../components/HeroPage'
+import { fetchOrg } from '../backend'
+import { OrgSettingsConfigurationPage } from './OrgSettingsConfigurationPage'
+import { OrgSettingsMembersPage } from './OrgSettingsMembersPage'
+import { OrgSettingsProfilePage } from './OrgSettingsProfilePage'
+import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -35,9 +35,9 @@ interface State {
 
 /**
  * Renders a layout of a sidebar and a content area to display pages related to
- * a single specific organization.
+ * an organization's settings.
  */
-export class OrgArea extends React.Component<Props> {
+export class OrgSettingsArea extends React.Component<Props> {
     public state: State = {}
 
     private routeMatchChanges = new Subject<{ orgName: string }>()
@@ -95,8 +95,8 @@ export class OrgArea extends React.Component<Props> {
         const transferProps = { user: this.state.user, org: this.state.org, isLightTheme: this.props.isLightTheme }
 
         return (
-            <div className="org-area area">
-                <OrgSidebar className="area__sidebar" {...this.props} />
+            <div className="org-settings-area area">
+                <OrgSettingsSidebar className="area__sidebar" {...this.props} />
                 <div className="area__content">
                     <Switch>
                         <Route

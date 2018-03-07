@@ -5,11 +5,11 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { PageTitle } from '../components/PageTitle'
-import { SettingsFile } from '../settings/SettingsFile'
-import { eventLogger } from '../tracking/eventLogger'
-import { refreshConfiguration } from '../user/settings/backend'
-import { fetchOrg, updateOrgSettings } from './backend'
+import { PageTitle } from '../../components/PageTitle'
+import { SettingsFile } from '../../settings/SettingsFile'
+import { eventLogger } from '../../tracking/eventLogger'
+import { refreshConfiguration } from '../../user/settings/backend'
+import { fetchOrg, updateOrgSettings } from '../backend'
 
 interface Props extends RouteComponentProps<any> {
     org: GQL.IOrg

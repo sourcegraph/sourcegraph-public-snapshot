@@ -14,7 +14,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { removeUserFromOrg } from '../backend'
-import { InviteForm } from './InviteForm'
+import { InviteForm } from '../invite/InviteForm'
 
 interface Props extends RouteComponentProps<any> {
     org: GQL.IOrg
