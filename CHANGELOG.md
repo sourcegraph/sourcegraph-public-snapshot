@@ -21,6 +21,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Bug fixes
 
+* Only cross reference index enabled repositories.
+
 ## 2.5.16, 2.5.17
 
 * Version bump to keep Data Center and Server versions in sync.

@@ -219,7 +219,7 @@ func refreshRepo(ctx context.Context, repo *types.Repo) error {
 	if skipRefresh {
 		return nil
 	}
-	return backend.Repos.RefreshIndex(ctx, repo.URI)
+	return backend.Repos.RefreshIndex(ctx, repo)
 }
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*userResolver, error) {

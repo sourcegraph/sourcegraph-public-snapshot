@@ -57,7 +57,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := backend.Repos.RefreshIndex(ctx, repoURI); err != nil {
+	if err := backend.Repos.RefreshIndex(ctx, repo); err != nil {
 		return err
 	}
 

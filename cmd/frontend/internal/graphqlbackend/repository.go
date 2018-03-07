@@ -39,7 +39,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	if err != nil {
 		return nil, err
 	}
-	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
+	if err := backend.Repos.RefreshIndex(ctx, repo); err != nil {
 		return nil, err
 	}
 	return &repositoryResolver{repo: repo}, nil
@@ -50,7 +50,7 @@ func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryRes
 	if err != nil {
 		return nil, err
 	}
-	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
+	if err := backend.Repos.RefreshIndex(ctx, repo); err != nil {
 		return nil, err
 	}
 	return &repositoryResolver{repo: repo}, nil

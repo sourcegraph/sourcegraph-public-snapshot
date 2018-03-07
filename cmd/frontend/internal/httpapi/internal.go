@@ -495,6 +495,10 @@ func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	if !repo.Enabled {
+		return errors.Errorf("repo is not enabled: %s", repo.URI)
+	}
+
 	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
 	cmd.Repo = gitserver.Repo{Name: repo.URI}
 	refs, err := cmd.Output(r.Context())

@@ -24,7 +24,7 @@ type MockRepos struct {
 	ListDeps             func(v0 context.Context, v1 []api.RepoURI) ([]api.RepoURI, error)
 	GetInventory         func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
-	RefreshIndex         func(ctx context.Context, repo api.RepoURI) (err error)
+	RefreshIndex         func(ctx context.Context, repo *types.Repo) (err error)
 	VCS                  func(repo api.RepoURI) (vcs.Repository, error)
 }
 

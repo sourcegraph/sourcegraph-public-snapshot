@@ -197,13 +197,17 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, comm
 
 var indexerAddr = env.Get("SRC_INDEXER", "indexer:3179", "The address of the indexer service.")
 
-func (s *repos) RefreshIndex(ctx context.Context, repo api.RepoURI) (err error) {
+func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) {
 	if Mocks.Repos.RefreshIndex != nil {
 		return Mocks.Repos.RefreshIndex(ctx, repo)
 	}
 
+	if !repo.Enabled {
+		return nil
+	}
+
 	go func() {
-		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo))
+		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo.URI))
 		if err != nil {
 			log15.Error("RefreshIndex failed", "error", err)
 			return
