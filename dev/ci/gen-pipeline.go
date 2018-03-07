@@ -232,6 +232,7 @@ func main() {
 	switch {
 	case branch == "master":
 		addDockerImageStep("frontend", true)
+		addDockerImageStep("server", true)
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
@@ -254,10 +255,6 @@ func main() {
 			Env("VERSION", version),
 			Cmd("./dev/ci/deploy-staging.sh"))
 		pipeline.AddWait()
-
-	case branch == "docker-images/server":
-		// Special case server to prevent a failing deploy to dogfood/prod
-		addDockerImageStep(branch[14:], true)
 
 	case strings.HasPrefix(branch, "docker-images/"):
 		addDockerImageStep(branch[14:], true)
