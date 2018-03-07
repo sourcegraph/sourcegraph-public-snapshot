@@ -31,9 +31,6 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 		return nil, nil
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 1000*time.Millisecond)
-	defer cancel()
-
 	var (
 		run               = parallel.NewRun(20)
 		symbolResolversMu sync.Mutex
@@ -55,6 +52,10 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 				run.Error(err)
 				return
 			}
+
+			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
+
 			var excludePattern string
 			if args.query.ExcludePattern != nil {
 				excludePattern = *args.query.ExcludePattern
