@@ -25,7 +25,6 @@ import (
 )
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
-var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
 
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
@@ -51,7 +50,6 @@ type JSContext struct {
 	SentryDSN            string                `json:"sentryDSN"`
 	SiteID               string                `json:"siteID"`
 	Debug                bool                  `json:"debug"`
-	RepoHomeRegexFilter  string                `json:"repoHomeRegexFilter"`
 	SessionID            string                `json:"sessionID"`
 	License              *license.License      `json:"license"`
 	LicenseStatus        license.LicenseStatus `json:"licenseStatus"`
@@ -127,7 +125,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		SentryDSN:            sentryDSNFrontend,
 		Debug:                envvar.DebugMode(),
 		SiteID:               siteID,
-		RepoHomeRegexFilter:  repoHomeRegexFilter,
 		SessionID:            sessionID,
 		License:              license,
 		LicenseStatus:        licenseStatus,

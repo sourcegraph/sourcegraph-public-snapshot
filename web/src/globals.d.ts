@@ -72,12 +72,6 @@ interface SourcegraphContext {
     siteID: string
 
     /**
-     * repoHomePageRegex filter is for on-premises deployments, to ensure that only organization repos appear on the home page.
-     * For instance, on node.aws.sgdev.org, it is set to ^gitolite\.aws\.sgdev\.org.
-     */
-    repoHomeRegexFilter: string
-
-    /**
      * githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs for outbound GitHub links.
      */
     githubEnterpriseURLs: { [key: string]: string }
