@@ -2,11 +2,9 @@
 
 .area {
     display: flex;
-    justify-content: center;
     flex: 1 1 auto;
-    padding-top: 1.5rem;
-    overflow-y: scroll;
-    min-height: calc(100vh - $navbar-search-height - 1.5rem);
+    justify-content: center;
+    padding-top: 0.5rem;
 
     @media (max-width: $media-sm) {
         // Stacked layout on narrow screens.
@@ -35,17 +33,6 @@
 
     &__content {
         flex: 1 1 auto;
-
-        @media (max-width: $media-md) {
-            width: 100%;
-        }
-
-        @media (min-width: $media-md) and (max-width: $media-lg) {
-            max-width: 48rem;
-        }
-
-        @media (min-width: $media-lg) {
-            max-width: 54rem;
-        }
+        max-width: 64rem;
     }
 }
