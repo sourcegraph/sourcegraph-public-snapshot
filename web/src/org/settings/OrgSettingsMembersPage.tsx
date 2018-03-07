@@ -228,7 +228,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     private onDidUpdateUser = () => this.userUpdates.next()
 
-    private fetchOrgMembers = (args: {}): Observable<GQL.IUserConnection> =>
+    private fetchOrgMembers = (): Observable<GQL.IUserConnection> =>
         queryGraphQL(
             gql`
                 query OrganizationMembers($id: ID!) {
@@ -248,7 +248,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                     }
                 }
             `,
-            { ...args, id: this.props.org.id }
+            { id: this.props.org.id }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
