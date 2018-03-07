@@ -74,6 +74,9 @@ interface TabsProps<T extends string> {
     id?: string
     className?: string
     tabClassName?: string
+
+    /** Optional handler when a tab is selected */
+    onSelectTab?: (tab: T) => void
 }
 
 interface TabState<T extends string> {
@@ -133,6 +136,10 @@ export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, Ta
         )
     }
 
-    private onSelectTab = (tab: T) =>
+    private onSelectTab = (tab: T) => {
+        if (this.props.onSelectTab) {
+            this.props.onSelectTab(tab)
+        }
         this.setState({ activeTab: tab }, () => Tabs.saveToLocalStorage(this.props.storageKey, tab))
+    }
 }

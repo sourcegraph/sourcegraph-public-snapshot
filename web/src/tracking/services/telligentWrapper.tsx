@@ -59,6 +59,11 @@ class TelligentWrapper {
                               : undefined,
                           results: eventProps.code_search.results,
                           source: eventProps.code_search.source,
+                          suggestion: eventProps.code_search.suggestion
+                              ? {
+                                    type: eventProps.code_search.suggestion.type,
+                                }
+                              : undefined,
                       }
                     : undefined,
                 id: eventProps.id,

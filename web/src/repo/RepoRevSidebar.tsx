@@ -11,6 +11,7 @@ import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, Tabs } from '../components/Tabs'
+import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
@@ -159,6 +160,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
                         } ${showSymbols ? '' : 'repo-rev-sidebar--no-symbols'}`}
                         tabClassName="repo-rev-sidebar__tab"
+                        onSelectTab={this.onSelectTab}
                     >
                         {this.state.files && (
                             <Tree
@@ -195,5 +197,13 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             localStorage.removeItem(RepoRevSidebar.HIDDEN_STORAGE_KEY)
         }
         this.setState(state => ({ showSidebar: !state.showSidebar }))
+    }
+
+    private onSelectTab = (tab: string) => {
+        if (tab === 'symbols') {
+            eventLogger.log('SidebarSymbolsTabSelected')
+        } else if (tab === 'files') {
+            eventLogger.log('SidebarFilesTabSelected')
+        }
     }
 }
