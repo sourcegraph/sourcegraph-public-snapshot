@@ -569,10 +569,10 @@ describe('e2e test suite', () => {
             await page.goto(
                 baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
             )
-            await page.waitForSelector('.search-results__header-stats')
+            await page.waitForSelector('.search-results__stats')
             await retry(async () => {
                 const label: string = await page.evaluate(
-                    () => document.querySelector('.search-results__header-stats')!.textContent
+                    () => document.querySelector('.search-results__stats')!.textContent
                 )
                 assert.equal(label.includes('results'), true, 'incorrect label for search results')
             })
@@ -600,10 +600,10 @@ describe('e2e test suite', () => {
             // Submit the search
             await page.click('button')
 
-            await page.waitForSelector('.search-results__header-stats')
+            await page.waitForSelector('.search-results__stats')
             await retry(async () => {
                 const label: string = await page.evaluate(
-                    () => document.querySelector('.search-results__header-stats')!.textContent
+                    () => document.querySelector('.search-results__stats')!.textContent
                 )
                 const match = /(\d+) results/.exec(label)
                 const numberOfResults = parseInt(match![1], 10)

@@ -9,9 +9,35 @@
 
 .search-results {
     width: 100%;
-    padding: 0.25rem 5rem;
+    display: flex;
+    flex-direction: column;
 
-    &__header {
+    &__filters {
+        display: flex;
+        flex: 0 0 auto;
+        color: #93a9c8;
+        background: $color-bg-1;
+        border-bottom: 1px solid $color-border;
+        padding-left: 1rem;
+        align-items: center;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        &-list {
+            margin-left: 1rem;
+            flex: 0 0 auto;
+        }
+    }
+
+    &__list {
+        overflow-y: auto;
+        padding: 0.25rem 5rem;
+    }
+
+    &__info {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -36,7 +62,7 @@
         padding-left: 0;
         padding-right: 0;
 
-        &__header,
+        &__filters,
         &__alert {
             padding-left: 0.5rem;
             padding-right: 0.5rem;
@@ -52,8 +78,10 @@
 
 .theme-light {
     .search-results {
-        &__header {
+        &__filters {
             color: $color-light-text-2;
+            background: $color-light-bg-1;
+            border-bottom: 1px solid $color-light-border;
         }
     }
 }

@@ -44,3 +44,22 @@ export function queryIndexOfScope(query: string, scope: string): number {
     }
     return idx
 }
+
+/**
+ * Toggles the given search scope by adding or removing it from the current
+ * user query string.
+ *
+ * @param query The current user query.
+ * @param searchFilter The search scope (sub query) or dynamic filter to toggle (add/remove) from the current user query.
+ * @returns The new query.
+ */
+export function toggleSearchFilter(query: string, searchFilter: string): string {
+    const idx = queryIndexOfScope(query, searchFilter)
+    if (idx === -1) {
+        // Scope doesn't exist in search query, so add it now.
+        return [query.trim(), searchFilter].filter(s => s).join(' ') + ' '
+    }
+
+    // Scope exists in the search query, so remove it now.
+    return (query.substring(0, idx).trim() + ' ' + query.substring(idx + searchFilter.length).trim()).trim()
+}

@@ -10,6 +10,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Prometheus gauges for git clone queue depth (`src_gitserver_clone_queue`) and git ls-remote queue depth (`src_gitserver_lsremote_queue`).
 * Slack notifications for saved searches may now be added for individual users (not just organizations).
 * The new search filter `lang:` filters results by programming language (example: `foo lang:go` or `foo -lang:clojure`).
+* Dynamic filters: filters generated from your search results to help refine your results.
 
 ### Configuration changes
 

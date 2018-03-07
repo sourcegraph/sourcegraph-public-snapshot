@@ -13,7 +13,7 @@ import { SearchButton } from './SearchButton'
 interface Props {
     location: H.Location
     history: H.History
-    userQuery: string
+    navbarSearchQuery: string
     onChange: (newValue: string) => void
 }
 /**
@@ -73,7 +73,7 @@ export class SearchNavbarItem extends React.Component<Props> {
             <form className="search search--navbar-item" onSubmit={this.onSubmit}>
                 <QueryInput
                     {...this.props}
-                    value={this.props.userQuery}
+                    value={this.props.navbarSearchQuery}
                     onChange={this.props.onChange}
                     autoFocus={autoFocus ? 'cursor-at-end' : undefined}
                     hasGlobalQueryBehavior={true}
@@ -87,7 +87,7 @@ export class SearchNavbarItem extends React.Component<Props> {
         // Store the last-used search options ('q' and 'sq' query parameters) in the location
         // state if we're navigating to a URL that lacks them, so that we can preserve them without
         // storing them in the URL (which is ugly) and across page reloads in the same tab.
-        const oldSearch: SearchOptions = { query: this.props.userQuery }
+        const oldSearch: SearchOptions = { query: this.props.navbarSearchQuery }
         const locationStateNeedsUpdate =
             !location.state || !searchOptionsEqual(location.state as SearchOptions, oldSearch)
         const newSearch = parseSearchURLQuery(location.search)
@@ -106,7 +106,7 @@ export class SearchNavbarItem extends React.Component<Props> {
         submitSearch(
             this.props.history,
             {
-                query: this.props.userQuery,
+                query: this.props.navbarSearchQuery,
             },
             'nav'
         )

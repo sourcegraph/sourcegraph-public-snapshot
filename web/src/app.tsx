@@ -21,12 +21,16 @@ import { updateUserSessionStores } from './marketing/util'
 import { Navbar } from './nav/Navbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
+import { toggleSearchFilter } from './search/helpers'
 import { eventLogger } from './tracking/eventLogger'
 
 interface LayoutProps extends RouteComponentProps<any> {
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
+    navbarSearchQuery: string
+    onNavbarQueryChange: (query: string) => void
+    onFilterChosen: (filter: string) => void
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -84,6 +88,11 @@ interface AppState {
      * Whether the light theme is enabled or not
      */
     isLightTheme: boolean
+
+    /**
+     * The current search query in the navbar.
+     */
+    navbarSearchQuery: string
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -94,6 +103,7 @@ const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 class App extends React.Component<{}, AppState> {
     public state: AppState = {
         isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
+        navbarSearchQuery: '',
     }
 
     private subscriptions = new Subscription()
@@ -166,6 +176,9 @@ class App extends React.Component<{}, AppState> {
             user={this.state.user as GQL.IUser | null}
             isLightTheme={this.state.isLightTheme}
             onThemeChange={this.onThemeChange}
+            navbarSearchQuery={this.state.navbarSearchQuery}
+            onNavbarQueryChange={this.onNavbarQueryChange}
+            onFilterChosen={this.onFilterChosen}
         />
     )
 
@@ -176,6 +189,15 @@ class App extends React.Component<{}, AppState> {
                 eventLogger.log(this.state.isLightTheme ? 'LightThemeClicked' : 'DarkThemeClicked')
             }
         )
+    }
+
+    private onNavbarQueryChange = (query: string) => {
+        this.setState(state => ({ navbarSearchQuery: query }))
+    }
+
+    // Used for search scopes and dynamic filters
+    private onFilterChosen = (searchFilter: string): void => {
+        this.setState(state => ({ navbarSearchQuery: toggleSearchFilter(state.navbarSearchQuery, searchFilter) }))
     }
 }
 

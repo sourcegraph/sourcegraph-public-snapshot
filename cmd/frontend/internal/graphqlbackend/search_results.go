@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -162,6 +163,69 @@ func (sr *searchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *searchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
+}
+
+func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
+	filters := map[string]*searchFilterResolver{}
+	addRepoFilter := func(uri string) {
+		value := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
+		sf, ok := filters[value]
+		if !ok {
+			sf = &searchFilterResolver{
+				value: value,
+			}
+			filters[value] = sf
+		}
+		sf.score++
+	}
+	addFileFilter := func(filematchPath string) {
+		if path.Ext(filematchPath) == "" {
+			return
+		}
+		value := fmt.Sprintf(`file:%s$`, regexp.QuoteMeta(path.Ext(filematchPath)))
+		sf, ok := filters[value]
+		if !ok {
+			sf = &searchFilterResolver{
+				value: value,
+			}
+			filters[value] = sf
+		}
+		sf.score++
+	}
+	for _, result := range sr.results {
+		if result.fileMatch != nil {
+			addRepoFilter(string(result.fileMatch.repo.URI))
+			addFileFilter(result.fileMatch.JPath)
+		}
+		if result.repo != nil {
+			addRepoFilter(result.repo.URI())
+		}
+	}
+
+	filterSlice := make([]*searchFilterResolver, 0, len(filters))
+	for _, f := range filters {
+		filterSlice = append(filterSlice, f)
+	}
+	sort.Slice(filterSlice, func(i, j int) bool {
+		return filterSlice[j].score < filterSlice[i].score
+	})
+
+	// limit amount of dynamic filters to be rendered arbitrarily to 12
+	if len(filterSlice) > 12 {
+		filterSlice = filterSlice[:12]
+	}
+	return filterSlice
+}
+
+type searchFilterResolver struct {
+	value string
+
+	// score is used to select potential filters
+	score int
+}
+
+func (sf *searchFilterResolver) Value() string {
+	return sf.value
 }
 
 // blameFileMatchCache caches Repos.Get, Repos.ResolveRev, and RepoVCS.Open operations.

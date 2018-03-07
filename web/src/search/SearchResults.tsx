@@ -25,6 +25,7 @@ import { pluralize } from '../util/strings'
 import { search } from './backend'
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileMatch } from './FileMatch'
+import { FilterChip } from './FilterChip'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { ModalContainer } from './ModalContainer'
 import { queryTelemetryData } from './queryTelemetry'
@@ -38,6 +39,8 @@ interface Props {
     location: H.Location
     history: H.History
     isLightTheme: boolean
+    onFilterChosen: (filter: string) => void
+    navbarSearchQuery: string
 }
 
 interface State {
@@ -55,6 +58,7 @@ interface State {
     showModal?: boolean
     didSave?: boolean
     user?: GQL.IUser | null
+    dynamicFilters: GQL.ISearchFilter[]
 }
 
 export class SearchResults extends React.Component<Props, State> {
@@ -70,6 +74,7 @@ export class SearchResults extends React.Component<Props, State> {
         timedout: [],
         didSave: false,
         showModal: false,
+        dynamicFilters: [],
     }
 
     private componentUpdates = new Subject<Props>()
@@ -135,6 +140,7 @@ export class SearchResults extends React.Component<Props, State> {
                                     loading: false,
                                     didSave: false,
                                     showModal: false,
+                                    dynamicFilters: [],
                                 },
                             ])
                         )
@@ -142,7 +148,6 @@ export class SearchResults extends React.Component<Props, State> {
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
         )
-
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -167,6 +172,7 @@ export class SearchResults extends React.Component<Props, State> {
                         loading: true,
                         didSave: false,
                         showModal: false,
+                        dynamicFilters: [],
                     }))
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
@@ -239,93 +245,122 @@ export class SearchResults extends React.Component<Props, State> {
 
         return (
             <div className="search-results">
-                {this.state.showModal && (
-                    <ModalContainer
-                        onClose={this.onModalClose}
-                        component={
-                            <SavedQueryCreateForm
-                                user={this.props.user}
-                                values={{ query: parsedQuery ? parsedQuery.query : '' }}
-                                onDidCancel={this.onModalClose}
-                                onDidCreate={this.onDidCreateSavedQuery}
-                            />
-                        }
-                    />
+                {this.state.results.length > 0 && (
+                    <div className="search-results__filters">
+                        Filters:
+                        <div className="search-results__filters-list">
+                            {this.state.dynamicFilters
+                                .filter(filter => filter.value !== '')
+                                .map((filter, i) => (
+                                    <FilterChip
+                                        query={this.props.navbarSearchQuery}
+                                        onFilterChosen={this.props.onFilterChosen}
+                                        key={i}
+                                        value={filter.value}
+                                    />
+                                ))}
+                        </div>
+                    </div>
                 )}
-                <div className="search-results__header">
-                    {(this.state.timedout.length > 0 ||
-                        this.state.cloning.length > 0 ||
-                        this.state.results.length > 0) && (
-                        <small className="search-results__header-row">
-                            {(this.state.timedout.length > 0 || this.state.cloning.length > 0) && (
-                                <span className="search-results__header-notice">
-                                    <HourglassIcon className="icon-inline" />
-                                    {this.state.timedout.length > 0 && (
-                                        <span title={this.state.timedout.join('\n')}>
-                                            {this.state.timedout.length}&nbsp;
-                                            {pluralize('repository', this.state.timedout.length, 'repositories')} timed
-                                            out
-                                        </span>
-                                    )}
-                                    {this.state.timedout.length > 0 &&
-                                        this.state.cloning.length > 0 && <span>&nbsp;and&nbsp;</span>}
-                                    {this.state.cloning.length > 0 && (
-                                        <span title={this.state.cloning.join('\n')}>
-                                            {this.state.cloning.length}&nbsp;
-                                            {pluralize('repository', this.state.cloning.length, 'repositories')} cloning
-                                        </span>
-                                    )}
-                                    &nbsp;(reload to try again)
-                                </span>
-                            )}
-                            {typeof this.state.approximateResultCount === 'string' &&
-                                typeof this.state.resultCount === 'number' && (
-                                    <span className="search-results__header-stats">
-                                        {this.state.approximateResultCount}{' '}
-                                        {pluralize('result', this.state.resultCount)}
-                                        {typeof this.state.elapsedMilliseconds === 'number' && (
-                                            <> in {(this.state.elapsedMilliseconds / 1000).toFixed(2)} seconds</>
+                <div className="search-results__list">
+                    {this.state.showModal && (
+                        <ModalContainer
+                            onClose={this.onModalClose}
+                            component={
+                                <SavedQueryCreateForm
+                                    user={this.props.user}
+                                    values={{ query: parsedQuery ? parsedQuery.query : '' }}
+                                    onDidCancel={this.onModalClose}
+                                    onDidCreate={this.onDidCreateSavedQuery}
+                                />
+                            }
+                        />
+                    )}
+                    <div className="search-results__info">
+                        {(this.state.timedout.length > 0 ||
+                            this.state.cloning.length > 0 ||
+                            this.state.results.length > 0) && (
+                            <small className="search-results__info-row">
+                                {(this.state.timedout.length > 0 || this.state.cloning.length > 0) && (
+                                    <span className="search-results__info-notice">
+                                        <HourglassIcon className="icon-inline" />
+                                        {this.state.timedout.length > 0 && (
+                                            <span title={this.state.timedout.join('\n')}>
+                                                {this.state.timedout.length}&nbsp;
+                                                {pluralize(
+                                                    'repository',
+                                                    this.state.timedout.length,
+                                                    'repositories'
+                                                )}{' '}
+                                                timed out
+                                            </span>
                                         )}
+                                        {this.state.timedout.length > 0 &&
+                                            this.state.cloning.length > 0 && <span>&nbsp;and&nbsp;</span>}
+                                        {this.state.cloning.length > 0 && (
+                                            <span title={this.state.cloning.join('\n')}>
+                                                {this.state.cloning.length}&nbsp;
+                                                {pluralize(
+                                                    'repository',
+                                                    this.state.cloning.length,
+                                                    'repositories'
+                                                )}{' '}
+                                                cloning
+                                            </span>
+                                        )}
+                                        &nbsp;(reload to try again)
                                     </span>
                                 )}
-                            {!this.state.didSave &&
-                                this.state.user && (
-                                    <button onClick={this.showSaveQueryModal} className="btn btn-link">
-                                        <SaveIcon className="icon-inline" /> Save this search query
-                                    </button>
+                                {typeof this.state.approximateResultCount === 'string' &&
+                                    typeof this.state.resultCount === 'number' && (
+                                        <span className="search-results__stats">
+                                            {this.state.approximateResultCount}{' '}
+                                            {pluralize('result', this.state.resultCount)}
+                                            {typeof this.state.elapsedMilliseconds === 'number' && (
+                                                <> in {(this.state.elapsedMilliseconds / 1000).toFixed(2)} seconds</>
+                                            )}
+                                        </span>
+                                    )}
+                                {!this.state.didSave &&
+                                    this.state.user && (
+                                        <button onClick={this.showSaveQueryModal} className="btn btn-link">
+                                            <SaveIcon className="icon-inline" /> Save this search query
+                                        </button>
+                                    )}
+                                {this.state.didSave && (
+                                    <span>
+                                        <CheckmarkIcon className="icon-inline" /> Query saved
+                                    </span>
                                 )}
-                            {this.state.didSave && (
-                                <span>
-                                    <CheckmarkIcon className="icon-inline" /> Query saved
-                                </span>
-                            )}
-                        </small>
+                            </small>
+                        )}
+                        {!this.state.alert &&
+                            !this.state.error &&
+                            !this.state.loading &&
+                            showDotComMarketing && <ServerBanner />}
+                    </div>
+                    {this.state.results.length > 0}
+                    {SearchResults.SHOW_MISSING &&
+                        this.state.missing.map((repoPath, i) => (
+                            <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
+                        ))}
+                    {this.state.loading && <Loader className="icon-inline" />}
+                    {this.state.results.slice(0, 75).map((result, i) => this.renderResult(i, result, i <= 15))}
+                    {this.state.limitHit && (
+                        <button className="btn btn-link search-results__more" onClick={this.showMoreResults}>
+                            Show more
+                        </button>
                     )}
-                    {!this.state.alert &&
-                        !this.state.error &&
-                        !this.state.loading &&
-                        showDotComMarketing && <ServerBanner />}
+                    {alert && (
+                        <SearchAlert
+                            className="search-results__alert"
+                            title={alert.title}
+                            description={alert.description || undefined}
+                            proposedQueries={this.state.alert ? this.state.alert.proposedQueries : undefined}
+                            location={this.props.location}
+                        />
+                    )}
                 </div>
-                {SearchResults.SHOW_MISSING &&
-                    this.state.missing.map((repoPath, i) => (
-                        <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
-                    ))}
-                {this.state.loading && <Loader className="icon-inline" />}
-                {this.state.results.slice(0, 75).map((result, i) => this.renderResult(i, result, i <= 15))}
-                {this.state.limitHit && (
-                    <button className="btn btn-link search-results__more" onClick={this.showMoreResults}>
-                        Show more
-                    </button>
-                )}
-                {alert && (
-                    <SearchAlert
-                        className="search-results__alert"
-                        title={alert.title}
-                        description={alert.description || undefined}
-                        proposedQueries={this.state.alert ? this.state.alert.proposedQueries : undefined}
-                        location={this.props.location}
-                    />
-                )}
             </div>
         )
     }

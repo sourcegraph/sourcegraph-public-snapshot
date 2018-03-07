@@ -21,6 +21,9 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                         missing
                         cloning
                         timedout
+                        dynamicFilters {
+                            value
+                        }
                         results {
                             ... on Repository {
                                 __typename

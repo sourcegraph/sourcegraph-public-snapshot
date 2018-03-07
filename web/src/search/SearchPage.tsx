@@ -9,8 +9,8 @@ import { parseSearchURLQuery } from './index'
 import { QueryInput } from './QueryInput'
 import { SavedQueries } from './SavedQueries'
 import { SearchButton } from './SearchButton'
+import { SearchFilterChips } from './SearchFilterChips'
 import { SearchHelp } from './SearchHelp'
-import { SearchSuggestionChips } from './SearchSuggestionChips'
 
 interface Props {
     user: GQL.IUser | null
@@ -81,9 +81,9 @@ export class SearchPage extends React.Component<Props, State> {
                         <SearchHelp className="search-page__help" />
                     </div>
                     <div className="search-page__input-sub-container">
-                        <SearchSuggestionChips
+                        <SearchFilterChips
                             location={this.props.location}
-                            onSuggestionChosen={this.onSuggestionChosen}
+                            onFilterChosen={this.onFilterChosen}
                             query={this.state.userQuery}
                         />
                     </div>
@@ -95,7 +95,7 @@ export class SearchPage extends React.Component<Props, State> {
         )
     }
 
-    private onSuggestionChosen = (scope: string) => {
+    private onFilterChosen = (scope: string) => {
         const idx = queryIndexOfScope(this.state.userQuery, scope)
         if (idx === -1) {
             this.addScopeToQuery(scope)

@@ -13,9 +13,8 @@ import { currentUser } from '../auth'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { routes } from '../routes'
 import { currentConfiguration } from '../settings/configuration'
-import { eventLogger } from '../tracking/eventLogger'
 import { fetchSearchScopes } from './backend'
-import { queryIndexOfScope } from './helpers'
+import { FilterChip } from './FilterChip'
 
 interface Props {
     location: H.Location
@@ -28,11 +27,10 @@ interface Props {
     /**
      * Called when there is a suggestion to be added to the search query.
      */
-    onSuggestionChosen: (query: string) => void
+    onFilterChosen: (query: string) => void
 }
 
 interface ISearchScope {
-    name: string
     value: string
 }
 
@@ -44,7 +42,7 @@ interface State {
     user: GQL.IUser | null
 }
 
-export class SearchSuggestionChips extends React.PureComponent<Props, State> {
+export class SearchFilterChips extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
@@ -96,37 +94,28 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
         const scopes = this.getScopes()
 
         return (
-            <div className="search-suggestion-chips">
+            <div className="search-filter-chips">
                 {/* Filtering out empty strings because old configurations have "All repositories" with empty value, which is useless with new chips design. */}
-                {scopes.filter(scope => scope.value !== '').map((scope, i) => (
-                    <button
-                        className={
-                            'btn btn-sm search-suggestion-chips__chip' +
-                            (this.isScopeSelected(this.props.query, scope.value)
-                                ? ' search-suggestion-chips__chip--selected'
-                                : '')
-                        }
-                        key={i}
-                        value={scope.value}
-                        data-tooltip={
-                            this.isScopeSelected(this.props.query, scope.value) ? 'Scope already in query' : scope.value
-                        }
-                        onMouseDown={this.onMouseDown}
-                        onClick={this.onClick}
-                    >
-                        {scope.name}
-                    </button>
-                ))}
+                {scopes
+                    .filter(scope => scope.value !== '')
+                    .map((scope, i) => (
+                        <FilterChip
+                            query={this.props.query}
+                            onFilterChosen={this.props.onFilterChosen}
+                            key={i}
+                            value={scope.value}
+                        />
+                    ))}
                 {this.state.user && (
-                    <div className="search-suggestion-chips__edit">
+                    <div className="search-filter-chips__edit">
                         <NavLink
-                            className="search-suggestion-chips__add-edit"
+                            className="search-filter-chips__add-edit"
                             to="/settings/configuration"
                             data-tooltip={scopes.length > 0 ? 'Edit search scopes' : undefined}
                         >
-                            <small className="search-suggestion-chips__center">
+                            <small className="search-filter-chips__center">
                                 {scopes.length === 0 ? (
-                                    <span className="search-suggestion-chips__add-scopes">
+                                    <span className="search-filter-chips__add-scopes">
                                         Add search scopes for quick filtering
                                     </span>
                                 ) : (
@@ -138,17 +127,6 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                 )}
             </div>
         )
-    }
-
-    private onMouseDown: React.MouseEventHandler<HTMLButtonElement> = event => {
-        // prevent clicking on chips from taking focus away from the search input.
-        event.preventDefault()
-    }
-
-    private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
-        eventLogger.log('SearchSuggestionClicked', { code_search: { suggestion_chip: event.currentTarget.value } })
-        event.preventDefault()
-        this.props.onSuggestionChosen(event.currentTarget.value)
     }
 
     private getScopes(): ISearchScope[] {
@@ -164,10 +142,6 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
 
         allScopes.push(...this.getScopesForCurrentRoute())
         return allScopes
-    }
-
-    private isScopeSelected(query: string, scope: string): boolean {
-        return queryIndexOfScope(query, scope) !== -1
     }
 
     /**
@@ -198,7 +172,6 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                         const [repoPath] = match.params.repoRev!.split('@')
 
                         scopes.push({
-                            name: `This repository (${path.basename(repoPath)})`,
                             value: `repo:^${escapeRegexp(repoPath)}$`,
                         })
 
@@ -206,7 +179,6 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
                             const dirname = isTree ? match.params.filePath : path.dirname(match.params.filePath)
                             if (dirname !== '.') {
                                 scopes.push({
-                                    name: `This directory (${path.basename(dirname)})`,
                                     value: `repo:^${escapeRegexp(repoPath)}$ file:^${escapeRegexp(dirname)}/`,
                                 })
                             }
@@ -224,7 +196,6 @@ export class SearchSuggestionChips extends React.PureComponent<Props, State> {
 
 function scopeForRepo(repoPath: string): ISearchScope {
     return {
-        name: `This repository (${path.basename(repoPath)})`,
         value: `repo:^${escapeRegexp(repoPath)}$`,
     }
 }

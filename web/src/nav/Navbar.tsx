@@ -1,10 +1,9 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { queryIndexOfScope } from '../search/helpers'
 import { parseSearchURLQuery, SearchOptions } from '../search/index'
+import { SearchFilterChips } from '../search/SearchFilterChips'
 import { SearchNavbarItem } from '../search/SearchNavbarItem'
-import { SearchSuggestionChips } from '../search/SearchSuggestionChips'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
 
@@ -13,10 +12,12 @@ interface Props {
     location: H.Location
     isLightTheme: boolean
     onThemeChange: () => void
+    navbarSearchQuery: string
+    onNavbarQueryChange: (query: string) => void
+    onFilterChosen: (filter: string) => void
 }
 
 interface State {
-    userQuery: string
     showScopes: boolean
 }
 
@@ -32,16 +33,16 @@ export class Navbar extends React.Component<Props, State> {
         const options = parseSearchURLQuery(props.location.search || '')
         if (options) {
             this.state = {
-                userQuery: options.query,
                 showScopes: localStorage.getItem(SHOW_SCOPES_LOCAL_STORAGE_KEY) === 'true',
             }
+            props.onNavbarQueryChange(options.query)
         } else {
             // If we have no component state, then we may have gotten unmounted during a route change.
             const state: SearchOptions | undefined = props.location.state
             this.state = {
-                userQuery: state ? state.query : '',
                 showScopes: localStorage.getItem(SHOW_SCOPES_LOCAL_STORAGE_KEY) === 'true',
             }
+            props.onNavbarQueryChange(state ? state.query : '')
         }
     }
 
@@ -61,17 +62,17 @@ export class Navbar extends React.Component<Props, State> {
                     <div className="navbar__search-box-container">
                         <SearchNavbarItem
                             {...this.props}
-                            userQuery={this.state.userQuery}
-                            onChange={this.onUserQueryChange}
+                            navbarSearchQuery={this.props.navbarSearchQuery}
+                            onChange={this.props.onNavbarQueryChange}
                         />
                     </div>
                     <NavLinks {...this.props} onShowScopes={this.onShowScopes} showScopes={this.state.showScopes} />
                 </div>
                 <div className={'navbar__scopesbar' + (this.state.showScopes ? '' : ' navbar__scopesbar--hidden')}>
-                    <SearchSuggestionChips
+                    <SearchFilterChips
                         location={this.props.location}
-                        onSuggestionChosen={this.onSuggestionChosen}
-                        query={this.state.userQuery}
+                        onFilterChosen={this.props.onFilterChosen}
+                        query={this.props.navbarSearchQuery}
                     />
                 </div>
             </div>
@@ -81,32 +82,5 @@ export class Navbar extends React.Component<Props, State> {
     private onShowScopes = () => {
         eventLogger.log('ScopesBarToggled', { code_search: { scopes_bar_toggled: !this.state.showScopes } })
         this.setState(({ showScopes }) => ({ showScopes: !showScopes }))
-    }
-
-    private onUserQueryChange = (userQuery: string) => {
-        this.setState({ userQuery })
-    }
-
-    private onSuggestionChosen = (scope: string): void => {
-        const idx = queryIndexOfScope(this.state.userQuery, scope)
-        if (idx === -1) {
-            this.addScopeToQuery(scope)
-        } else {
-            this.removeScopeFromQuery(scope, idx)
-        }
-    }
-
-    private addScopeToQuery(scope: string): void {
-        this.setState(state => ({ userQuery: [state.userQuery.trim(), scope].filter(s => s).join(' ') + ' ' }))
-    }
-
-    private removeScopeFromQuery(scope: string, idx: number): void {
-        this.setState(state => ({
-            userQuery: (
-                state.userQuery.substring(0, idx).trim() +
-                ' ' +
-                state.userQuery.substring(idx + scope.length).trim()
-            ).trim(),
-        }))
     }
 }
