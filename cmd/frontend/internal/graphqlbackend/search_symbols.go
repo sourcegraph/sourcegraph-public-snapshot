@@ -82,9 +82,13 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 
 			inputRev := repoRevs.revspecs()[0]
 			span.SetTag("rev", inputRev)
-			commitID, err := backend.Repos.ResolveRev(ctx, repoRevs.repo, inputRev)
+			// Do not trigger a repo-updater lookup (e.g.,
+			// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
+			// down by a lot (if we're looping over many repos). This means that it'll fail if a
+			// repo is not on gitserver.
+			vcsrepo := backend.Repos.VCS(repoRevs.gitserverRepo)
+			commitID, err := vcsrepo.ResolveRevision(ctx, inputRev, nil)
 			if err != nil {
-				run.Error(err)
 				return err
 			}
 			span.SetTag("commit", string(commitID))
