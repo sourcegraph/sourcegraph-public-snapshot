@@ -498,7 +498,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         return (
             <div className={`filtered-connection ${compactnessClass} ${this.props.className || ''}`}>
                 {!this.props.hideFilter && (
-                    <form className="filtered-connection__form">
+                    <form className="filtered-connection__form" onSubmit={this.onSubmit}>
                         <input
                             className="form-control filtered-connection__filter"
                             type="search"
@@ -564,6 +564,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.filterRef) {
             this.filterRef.focus()
         }
+    }
+
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => {
+        // Do nothing. The <input onChange> handler will pick up any changes shortly.
+        e.preventDefault()
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
