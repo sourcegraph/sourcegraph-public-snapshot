@@ -11,6 +11,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"unicode"
+	"unicode/utf8"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
@@ -217,12 +218,10 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 		if len(locs) > 0 {
 			lineLimitHit := len(locs) == maxOffsets
 			offsetAndLengths := make([][]int, len(locs))
-			line := string(lineBuf)
 			for i, match := range locs {
 				start, end := match[0], match[1]
-				// Convert offset and length to character based (instead of byte based)
-				offset := len([]rune(line[:start]))
-				length := len([]rune(line[start:end]))
+				offset := utf8.RuneCount(lineBuf[:start])
+				length := utf8.RuneCount(lineBuf[start:end])
 				offsetAndLengths[i] = []int{offset, length}
 			}
 			matches = append(matches, protocol.LineMatch{
@@ -232,7 +231,7 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 				// TODO: consider moving the call to Close until after we are
 				// done with Preview, and stop making a copy here.
 				// Special care must be taken to call Close on all possible paths, including error paths.
-				Preview:          line,
+				Preview:          string(lineBuf),
 				LineNumber:       i,
 				OffsetAndLengths: offsetAndLengths,
 				LimitHit:         lineLimitHit,
