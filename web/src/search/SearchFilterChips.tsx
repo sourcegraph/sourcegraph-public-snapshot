@@ -31,6 +31,7 @@ interface Props {
 }
 
 interface ISearchScope {
+    name?: string
     value: string
 }
 
@@ -104,6 +105,7 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
                             onFilterChosen={this.props.onFilterChosen}
                             key={i}
                             value={scope.value}
+                            name={scope.name}
                         />
                     ))}
                 {this.state.user && (

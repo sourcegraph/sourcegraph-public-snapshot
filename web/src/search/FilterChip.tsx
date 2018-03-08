@@ -2,6 +2,7 @@ import * as React from 'react'
 import { queryIndexOfScope } from './helpers'
 
 interface Props {
+    name?: string
     value: string
     query: string
     onFilterChosen: (filter: string) => void
@@ -24,7 +25,7 @@ export class FilterChip extends React.PureComponent<Props> {
                 onMouseDown={this.onMouseDown}
                 onClick={this.onClick}
             >
-                {this.props.value}
+                {this.props.name || this.props.value}
             </button>
         )
     }
