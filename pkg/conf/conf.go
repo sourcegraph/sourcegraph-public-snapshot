@@ -240,6 +240,7 @@ var doNotRequireRestart = []string{
 	"email.smtp",
 	"email.address",
 	"disableAutoGitUpdates",
+	"corsOrigin",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown

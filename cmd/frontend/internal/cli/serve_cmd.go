@@ -60,7 +60,6 @@ var (
 	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
 
 	appURL                  = conf.GetTODO().AppURL
-	corsOrigin              = conf.GetTODO().CorsOrigin
 	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
 
 	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
@@ -231,12 +230,14 @@ func Main() error {
 			// to the incoming header URL. Otherwise use the configured CORS origin.
 			headerOrigin := r.Header.Get("Origin")
 			isExtensionRequest := (headerOrigin == devExtension || headerOrigin == prodExtension) && !disableBrowserExtension
-			if corsOrigin != "" || isExtensionRequest {
+			if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
+
 				allowOrigin := corsOrigin
-				if isExtensionRequest {
+				if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
 					allowOrigin = headerOrigin
 				}
+
 				w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
 				if r.Method == "OPTIONS" {
 					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -430,4 +431,13 @@ func (s *httpServers) Close() {
 // Wait waits until all servers are closed.
 func (s *httpServers) Wait() {
 	s.wg.Wait()
+}
+
+func isAllowedOrigin(origin string, allowedOrigins []string) bool {
+	for _, o := range allowedOrigins {
+		if o == origin {
+			return true
+		}
+	}
+	return false
 }
