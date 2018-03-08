@@ -153,7 +153,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		case "foo/timedout":
 			return nil, false, context.DeadlineExceeded
 		case "foo/no-rev":
-			return nil, false, vcs.ErrRevisionNotFound
+			return nil, false, &vcs.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -199,8 +199,8 @@ func TestSearchFilesInRepos(t *testing.T) {
 		repos: makeRepositoryRevisions("foo/no-rev@dev"),
 	}
 	_, _, err = searchFilesInRepos(context.Background(), args, *query)
-	if errors.Cause(err) != vcs.ErrRevisionNotFound {
-		t.Fatalf("searching non-existent rev expected to fail with %v got: %v", vcs.ErrRevisionNotFound, err)
+	if !vcs.IsRevisionNotFound(errors.Cause(err)) {
+		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }
 

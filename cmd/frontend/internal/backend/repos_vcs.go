@@ -111,8 +111,8 @@ func quickGitserverRepoInfo(repo api.RepoURI) *gitserver.Repo {
 // If no rev is specified, HEAD is used.
 // Error cases:
 // * Repo does not exist: vcs.RepoNotExistError
-// * Commit does not exist: vcs.ErrRevisionNotFound
-// * Empty repository: vcs.ErrRevisionNotFound
+// * Commit does not exist: vcs.RevisionNotFoundError
+// * Empty repository: vcs.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
 func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {

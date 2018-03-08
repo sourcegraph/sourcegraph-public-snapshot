@@ -101,8 +101,8 @@ func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 // If spec is empty, HEAD is used.
 // Error cases:
 // * Repo does not exist: vcs.RepoNotExistError
-// * Commit does not exist: vcs.ErrRevisionNotFound
-// * Empty repository: vcs.ErrRevisionNotFound
+// * Commit does not exist: vcs.RevisionNotFoundError
+// * Empty repository: vcs.RevisionNotFoundError
 // * Other unexpected errors.
 func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
@@ -138,7 +138,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", vcs.ErrRevisionNotFound
+			return "", &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
 		}
 		return "", fmt.Errorf("exec `git rev-parse` failed: %s. Stderr was:\n\n%s", err, stderr)
 	}
@@ -149,7 +149,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", vcs.ErrRevisionNotFound
+			return "", &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
 		}
 		return "", fmt.Errorf("ResolveRevision: got bad commit %q for repo %q at revision %q", commit, r.repoURI, spec)
 	}
@@ -391,7 +391,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), string(opt.Head)) {
-			return nil, vcs.ErrRevisionNotFound
+			return nil, &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: string(opt.Head)}
 		}
 		return nil, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
 	}
@@ -520,8 +520,11 @@ func (r *Repository) Diff(ctx context.Context, base, head api.CommitID, opt *vcs
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		out = bytes.TrimSpace(out)
-		if isBadObjectErr(string(out), string(base)) || isBadObjectErr(string(out), string(head)) || isInvalidRevisionRangeError(string(out), string(base)) || isInvalidRevisionRangeError(string(out), string(head)) {
-			return nil, vcs.ErrRevisionNotFound
+		if isBadObjectErr(string(out), string(base)) || isInvalidRevisionRangeError(string(out), string(base)) {
+			return nil, &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: string(base)}
+		}
+		if isBadObjectErr(string(out), string(head)) || isInvalidRevisionRangeError(string(out), string(head)) {
+			return nil, &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: string(head)}
 		}
 		return nil, fmt.Errorf("exec `git diff` failed: %s. Output was:\n\n%s", err, out)
 	}

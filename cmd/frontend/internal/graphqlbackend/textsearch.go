@@ -358,7 +358,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		}
 	} else if errcode.IsNotFound(searchErr) {
 		common.missing = append(common.missing, repoRev.repo.URI)
-	} else if searchErr == vcs.ErrRevisionNotFound && (len(repoRev.revs) == 0 || len(repoRev.revs) == 1 && repoRev.revs[0].revspec == "") {
+	} else if vcs.IsRevisionNotFound(searchErr) && (len(repoRev.revs) == 0 || len(repoRev.revs) == 1 && repoRev.revs[0].revspec == "") {
 		// If we didn't specify an input revision, then the repo is empty and can be ignored.
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
 		common.timedout = append(common.timedout, repoRev.repo.URI)

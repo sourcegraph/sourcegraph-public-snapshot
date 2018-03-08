@@ -36,7 +36,7 @@ func FetchTar(ctx context.Context, client *Client, repo Repo, commit api.CommitI
 	cmd.EnsureRevision = string(commit)
 	r, err = StdoutReader(ctx, cmd)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) || err == vcs.ErrRevisionNotFound {
+		if vcs.IsRepoNotExist(err) || vcs.IsRevisionNotFound(err) {
 			err = badRequestError{err.Error()}
 		}
 		return nil, err

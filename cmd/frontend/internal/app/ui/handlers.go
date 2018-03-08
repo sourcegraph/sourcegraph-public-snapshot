@@ -134,7 +134,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				serveError(w, r, err, http.StatusUnauthorized)
 				return nil, nil
 			}
-			if errors.Cause(err) == vcs.ErrRevisionNotFound {
+			if vcs.IsRevisionNotFound(errors.Cause(err)) {
 				// Revision does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil

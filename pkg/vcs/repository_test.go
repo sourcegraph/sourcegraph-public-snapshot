@@ -109,18 +109,18 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	tests := map[string]struct {
 		repo    vcs.Repository
 		branch  string
-		wantErr error
+		wantErr func(error) bool
 	}{
 		"git cmd": {
 			repo:    makeGitRepositoryCmd(t, gitCommands...),
 			branch:  "doesntexist",
-			wantErr: vcs.ErrRevisionNotFound,
+			wantErr: vcs.IsRevisionNotFound,
 		},
 	}
 
 	for label, test := range tests {
 		commitID, err := test.repo.ResolveRevision(ctx, test.branch, nil)
-		if err != test.wantErr {
+		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
 		}
@@ -172,18 +172,18 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	tests := map[string]struct {
 		repo    vcs.Repository
 		tag     string
-		wantErr error
+		wantErr func(error) bool
 	}{
 		"git cmd": {
 			repo:    makeGitRepositoryCmd(t, gitCommands...),
 			tag:     "doesntexist",
-			wantErr: vcs.ErrRevisionNotFound,
+			wantErr: vcs.IsRevisionNotFound,
 		},
 	}
 
 	for label, test := range tests {
 		commitID, err := test.repo.ResolveRevision(ctx, test.tag, nil)
-		if err != test.wantErr {
+		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
 		}
@@ -509,9 +509,9 @@ func TestRepository_GetCommit(t *testing.T) {
 			t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
 		}
 
-		// Test that trying to get a nonexistent commit returns ErrRevisionNotFound.
-		if _, err := test.repo.GetCommit(ctx, nonexistentCommitID); err != vcs.ErrRevisionNotFound {
-			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrRevisionNotFound)
+		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
+		if _, err := test.repo.GetCommit(ctx, nonexistentCommitID); !vcs.IsRevisionNotFound(err) {
+			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 	}
 }
@@ -592,9 +592,9 @@ func TestRepository_Commits(t *testing.T) {
 			}
 		}
 
-		// Test that trying to get a nonexistent commit returns ErrRevisionNotFound.
-		if _, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: nonexistentCommitID}); err != vcs.ErrRevisionNotFound {
-			t.Errorf("%s: for nonexistent commit: got err %v, want %v", label, err, vcs.ErrRevisionNotFound)
+		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
+		if _, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: nonexistentCommitID}); !vcs.IsRevisionNotFound(err) {
+			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 	}
 }

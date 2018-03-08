@@ -80,13 +80,13 @@ func TestRepository_Diff(t *testing.T) {
 			t.Errorf("%s: diff != wantDiff\n\ndiff ==========\n%s\n\nwantDiff ==========\n%s", label, asJSON(diff), asJSON(test.wantDiff))
 		}
 
-		if _, err := test.repo.Diff(ctx, nonexistentCommitID, headCommitID, test.opt); err != vcs.ErrRevisionNotFound {
-			t.Errorf("%s: Diff with bad base commit ID: want ErrRevisionNotFound, got %v", label, err)
+		if _, err := test.repo.Diff(ctx, nonexistentCommitID, headCommitID, test.opt); !vcs.IsRevisionNotFound(err) {
+			t.Errorf("%s: Diff with bad base commit ID: want RevisionNotFoundError, got %v", label, err)
 			continue
 		}
 
-		if _, err := test.repo.Diff(ctx, baseCommitID, nonexistentCommitID, test.opt); err != vcs.ErrRevisionNotFound {
-			t.Errorf("%s: Diff with bad head commit ID: want ErrRevisionNotFound, got %v", label, err)
+		if _, err := test.repo.Diff(ctx, baseCommitID, nonexistentCommitID, test.opt); !vcs.IsRevisionNotFound(err) {
+			t.Errorf("%s: Diff with bad head commit ID: want RevisionNotFoundError, got %v", label, err)
 			continue
 		}
 	}
@@ -159,13 +159,13 @@ func TestRepository_Diff_rename(t *testing.T) {
 			t.Errorf("%s: diff != wantDiff\n\ndiff ==========\n%s\n\nwantDiff ==========\n%s", label, asJSON(diff), asJSON(test.wantDiff))
 		}
 
-		if _, err := test.repo.Diff(ctx, nonexistentCommitID, headCommitID, test.opt); err != vcs.ErrRevisionNotFound {
-			t.Errorf("%s: Diff with bad base commit ID: want ErrRevisionNotFound, got %v", label, err)
+		if _, err := test.repo.Diff(ctx, nonexistentCommitID, headCommitID, test.opt); !vcs.IsRevisionNotFound(err) {
+			t.Errorf("%s: Diff with bad base commit ID: want RevisionNotFoundError, got %v", label, err)
 			continue
 		}
 
-		if _, err := test.repo.Diff(ctx, baseCommitID, nonexistentCommitID, test.opt); err != vcs.ErrRevisionNotFound {
-			t.Errorf("%s: Diff with bad head commit ID: want ErrRevisionNotFound, got %v", label, err)
+		if _, err := test.repo.Diff(ctx, baseCommitID, nonexistentCommitID, test.opt); !vcs.IsRevisionNotFound(err) {
+			t.Errorf("%s: Diff with bad head commit ID: want RevisionNotFoundError, got %v", label, err)
 			continue
 		}
 	}

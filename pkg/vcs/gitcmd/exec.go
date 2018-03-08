@@ -29,7 +29,7 @@ func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, com
 		} else if err != nil && err != context.DeadlineExceeded {
 			data = bytes.TrimSpace(data)
 			if isBadObjectErr(string(data), "") || isInvalidRevisionRangeError(string(data), "") {
-				return nil, true, vcs.ErrRevisionNotFound
+				return nil, true, &vcs.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: "UNKNOWN"}
 			}
 			if len(data) > 100 {
 				data = append(data[:100], []byte("... (truncated)")...)

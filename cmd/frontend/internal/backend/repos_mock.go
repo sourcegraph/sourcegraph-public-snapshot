@@ -107,7 +107,7 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", vcs.ErrRevisionNotFound
+		return "", &vcs.RevisionNotFoundError{Repo: repo.URI, Spec: rev}
 	}
 	return
 }

@@ -3,6 +3,7 @@ package vcs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -31,6 +32,22 @@ func IsRepoNotExist(err error) bool {
 
 var ErrRepoExist = errors.New("repository already exists")
 
+// RevisionNotFoundError is an error that reports a revision doesn't exist.
+type RevisionNotFoundError struct {
+	Repo api.RepoURI
+	Spec string
+}
+
+func (e *RevisionNotFoundError) Error() string {
+	return fmt.Sprintf("revision not found: %s@%s", e.Repo, e.Spec)
+}
+
+// IsRevisionNotFound reports if err is a RevisionNotFoundError.
+func IsRevisionNotFound(err error) bool {
+	_, ok := err.(*RevisionNotFoundError)
+	return ok
+}
+
 // A Repository is a VCS repository.
 type Repository interface {
 	String() string
@@ -39,7 +56,7 @@ type Repository interface {
 	// specifier resolves to, or a non-nil error if there is no such
 	// revision.
 	//
-	// Implementations may choose to return ErrRevisionNotFound in all
+	// Implementations may choose to return RevisionNotFoundError in all
 	// cases where the revision is not found, or more specific errors
 	// (such as ErrCommitNotFound) if spec can be partially resolved
 	// or determined to be a certain kind of revision specifier.
@@ -123,10 +140,6 @@ type Hunk struct {
 	Author  Signature
 	Message string
 }
-
-var (
-	ErrRevisionNotFound = errors.New("revision not found")
-)
 
 // CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
 type CommitsOptions struct {

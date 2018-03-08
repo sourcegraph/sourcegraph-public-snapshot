@@ -96,7 +96,7 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
-		if err == vcs.ErrRevisionNotFound {
+		if vcs.IsRevisionNotFound(err) {
 			return nil, nil
 		}
 		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
