@@ -1,6 +1,8 @@
 package gobuildserver
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -116,6 +118,9 @@ func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []st
 	if paths := detectVSCodeGOPATH(ctx, fs); len(paths) > 0 {
 		gopaths = append(gopaths, paths...)
 	}
+	if paths := detectEnvRCGOPATH(ctx, fs); len(paths) > 0 {
+		gopaths = append(gopaths, paths...)
+	}
 	return
 }
 
@@ -145,6 +150,73 @@ func detectVSCodeGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
 		paths = append(paths, p[len("${workspaceRoot}"):])
 	}
 	return paths
+}
+
+// detectEnvRCGOPATH tries to detect monorepos which require their own custom
+// GOPATH. We want to support monorepos such as the ones described in
+// http://tammersaleh.com/posts/manage-your-gopath-with-direnv/ We use
+// $REPO_ROOT/.envrc to be informed of the custom GOPATH. We support any line
+// matching one of two formats below (because we do not want to actually
+// execute .envrc):
+//
+// 	export GOPATH=VALUE
+// 	GOPATH_add VALUE
+//
+// Where "VALUE" may be any of:
+//
+// 	some/relative/path
+// 	${PWD}/path
+// 	$(PWD)/path
+// 	`pwd`/path
+//
+// Or any of the above with double or single quotes wrapped around them. We
+// will ignore any absolute path values.
+func detectEnvRCGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []string) {
+	b, err := ctxvfs.ReadFile(ctx, fs, "/.envrc")
+	if err != nil {
+		return nil
+	}
+	scanner := bufio.NewScanner(bytes.NewReader(b))
+	for scanner.Scan() {
+		value := ""
+		line := scanner.Text()
+		if prefixStr := "export GOPATH="; strings.HasPrefix(line, prefixStr) {
+			value = strings.TrimSpace(strings.TrimPrefix(line, prefixStr))
+		} else if prefixStr := "GOPATH_add "; strings.HasPrefix(line, prefixStr) {
+			value = strings.TrimSpace(strings.TrimPrefix(line, prefixStr))
+		} else {
+			continue // no value
+		}
+		value = unquote(value, `"`) // remove double quotes
+		value = unquote(value, `'`) // remove single quotes
+		if strings.HasPrefix(value, "/") {
+			// Not interested in absolute paths.
+			continue
+		}
+
+		// Replace any form of PWD with an empty string (so we get a path
+		// relative to repo root).
+		value = strings.Replace(value, "${PWD}", "", -1)
+		value = strings.Replace(value, "$(PWD)", "", -1)
+		value = strings.Replace(value, "`pwd`", "", -1)
+		if !strings.HasPrefix(value, "/") {
+			value = "/" + value
+		}
+		gopaths = append(gopaths, value)
+	}
+	_ = scanner.Err() // discarded intentionally
+	return
+}
+
+// unquote removes the given quote string (either `'` or `"`) from the given
+// string if it is wrapped in them.
+func unquote(s, quote string) string {
+	if !strings.HasPrefix(s, quote) && !strings.HasSuffix(s, quote) {
+		return s
+	}
+	s = strings.TrimPrefix(s, quote)
+	s = strings.TrimSuffix(s, quote)
+	return s
 }
 
 // determineRootImportPath determines the root import path for the Go
