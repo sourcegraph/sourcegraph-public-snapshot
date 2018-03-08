@@ -78,7 +78,7 @@ func (c *Client) Search(ctx context.Context, args protocol.SearchArgs) (result *
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.LogFields(otlog.Error(err))
 		}
 		span.Finish()
 	}()

@@ -8,6 +8,9 @@ import (
 	"sync"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/trace"
@@ -36,6 +39,17 @@ func (s *Service) startParsers() error {
 }
 
 func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "parseUncached")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("repo", string(repo))
+	span.SetTag("commit", string(commitID))
+
 	tr := trace.New("parseUncached", string(repo))
 	tr.LazyPrintf("commitID: %s", commitID)
 

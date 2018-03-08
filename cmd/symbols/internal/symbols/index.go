@@ -8,12 +8,24 @@ import (
 	"io"
 	"io/ioutil"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/net/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 )
 
 func (s *Service) indexedSymbols(ctx context.Context, repo api.RepoURI, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "indexedSymbols")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
+
 	key := string(repo) + ":" + string(commitID) + ":v1" // suffix is index format version (vN)
 
 	tr := trace.New("indexedSymbols", string(repo))
@@ -52,12 +64,14 @@ func (s *Service) indexedSymbols(ctx context.Context, repo api.RepoURI, commitID
 			size = fi.Size()
 		}
 		tr.LazyPrintf("decode bytes=%d", size)
-		symbols, err = decodeSymbols(f)
+		symbols, err = decodeSymbols(ctx, f)
 		tr.LazyPrintf("decode (done) symbols=%d", len(symbols))
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	span.LogFields(otlog.String("event", "result"), otlog.Int("count", len(symbols)))
 	return symbols, nil
 }
 
@@ -74,14 +88,22 @@ func encodeSymbols(symbols []protocol.Symbol) (io.ReadCloser, error) {
 	return ioutil.NopCloser(&buf), nil
 }
 
-func decodeSymbols(r io.Reader) ([]protocol.Symbol, error) {
+func decodeSymbols(ctx context.Context, r io.Reader) (symbols []protocol.Symbol, err error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "decodeSymbols")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
+
 	zr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, err
 	}
 	defer zr.Close()
 	dec := gob.NewDecoder(zr)
-	var symbols []protocol.Symbol
 	err = dec.Decode(&symbols)
 	return symbols, err
 }

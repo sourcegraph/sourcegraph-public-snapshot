@@ -7,6 +7,9 @@ import (
 	"sync"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"github.com/neelance/parallel"
@@ -26,6 +29,15 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, query, limit)
 	}
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
 
 	if args.query.Pattern == "" {
 		return nil, nil
@@ -47,17 +59,35 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 			continue
 		}
 		run.Acquire()
-		go func(repoRevs *repositoryRevisions) {
-			defer run.Release()
-			inputRev := repoRevs.revspecs()[0]
-			commitID, err := backend.Repos.ResolveRev(ctx, repoRevs.repo, inputRev)
-			if err != nil {
-				run.Error(err)
-				return
-			}
+		go func(repoRevs *repositoryRevisions) (err error) {
+			defer func() {
+				if err != nil {
+					run.Error(err)
+				}
+				run.Release()
+			}()
 
 			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
+
+			span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
+			defer func() {
+				if err != nil {
+					ext.Error.Set(span, true)
+					span.LogFields(otlog.Error(err))
+				}
+				span.Finish()
+			}()
+			span.SetTag("repo", string(repoRevs.repo.URI))
+
+			inputRev := repoRevs.revspecs()[0]
+			span.SetTag("rev", inputRev)
+			commitID, err := backend.Repos.ResolveRev(ctx, repoRevs.repo, inputRev)
+			if err != nil {
+				run.Error(err)
+				return err
+			}
+			span.SetTag("commit", string(commitID))
 
 			var excludePattern string
 			if args.query.ExcludePattern != nil {
@@ -74,13 +104,11 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 				First:           limit,
 			})
 			if err != nil && err != context.Canceled && err != context.DeadlineExceeded && ctx.Err() == nil {
-				run.Error(err)
-				return
+				return err
 			}
 			baseURI, err := uri.Parse("git://" + string(repoRevs.repo.URI) + "?" + string(commitID))
 			if err != nil {
-				run.Error(err)
-				return
+				return err
 			}
 			if len(symbols) > 0 {
 				symbolResolversMu.Lock()
@@ -100,6 +128,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 					cancelAll()
 				}
 			}
+			return nil
 		}(repoRevs)
 	}
 	err = run.Wait()

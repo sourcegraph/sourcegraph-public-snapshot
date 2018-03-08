@@ -12,6 +12,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
@@ -46,7 +47,7 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 
 	log15.Debug("Symbol search", "repo", args.Repo, "query", args.Query)
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Symbols.search")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "search")
 	span.SetTag("repo", args.Repo)
 	span.SetTag("commitID", args.CommitID)
 	span.SetTag("query", args.Query)
@@ -54,7 +55,7 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.LogFields(otlog.Error(err))
 		}
 		span.Finish()
 	}()
@@ -86,35 +87,56 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 		}
 		result.Symbols = symbols
 	} else {
-		query := args.Query
-		if !args.IsRegExp {
-			query = regexp.QuoteMeta(query)
-		}
-		if !args.IsCaseSensitive {
-			query = "(?i:" + query + ")"
-		}
-		queryRegex, err := regexp.Compile(query)
+		res, err := filterSymbols(ctx, symbols, args)
 		if err != nil {
 			return nil, err
 		}
-
-		fileFilter, err := pathmatch.CompilePathPatterns(args.IncludePatterns, args.ExcludePattern, pathmatch.CompileOptions{
-			CaseSensitive: args.IsCaseSensitive,
-			RegExp:        args.IsRegExp,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		for _, symbol := range symbols {
-			if !fileFilter.MatchPath(symbol.Path) || !queryRegex.MatchString(symbol.Name) {
-				continue
-			}
-			result.Symbols = append(result.Symbols, symbol)
-			if args.First > 0 && len(result.Symbols) == args.First {
-				break
-			}
-		}
+		result.Symbols = res
 	}
 	return result, nil
+}
+
+func filterSymbols(ctx context.Context, symbols []protocol.Symbol, args protocol.SearchArgs) (res []protocol.Symbol, err error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "filterSymbols")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("before", len(symbols))
+
+	query := args.Query
+	if !args.IsRegExp {
+		query = regexp.QuoteMeta(query)
+	}
+	if !args.IsCaseSensitive {
+		query = "(?i:" + query + ")"
+	}
+	queryRegex, err := regexp.Compile(query)
+	if err != nil {
+		return nil, err
+	}
+
+	fileFilter, err := pathmatch.CompilePathPatterns(args.IncludePatterns, args.ExcludePattern, pathmatch.CompileOptions{
+		CaseSensitive: args.IsCaseSensitive,
+		RegExp:        args.IsRegExp,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, symbol := range symbols {
+		if !fileFilter.MatchPath(symbol.Path) || !queryRegex.MatchString(symbol.Name) {
+			continue
+		}
+		res = append(res, symbol)
+		if args.First > 0 && len(res) == args.First {
+			break
+		}
+	}
+
+	span.SetTag("after", len(res))
+	return res, nil
 }
