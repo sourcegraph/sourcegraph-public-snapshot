@@ -108,13 +108,25 @@ func determineEnvironment(ctx context.Context, fs ctxvfs.FileSystem, params lspe
 }
 
 // detectCustomGOPATH tries to detect monorepos which require their own custom
+// GOPATH.
+//
+// This is best-effort. If any errors occur or we do not detect a custom
+// gopath, an empty result is returned.
+func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []string) {
+	if paths := detectVSCodeGOPATH(ctx, fs); len(paths) > 0 {
+		gopaths = append(gopaths, paths...)
+	}
+	return
+}
+
+// detectVSCodeGOPATH tries to detect monorepos which require their own custom
 // GOPATH. We want to support monorepos as described in
 // https://blog.gopheracademy.com/advent-2015/go-in-a-monorepo/ We use
 // .vscode/settings.json to be informed of the custom GOPATH.
 //
 // This is best-effort. If any errors occur or we do not detect a custom
 // gopath, an empty result is returned.
-func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
+func detectVSCodeGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
 	b, err := ctxvfs.ReadFile(ctx, fs, "/.vscode/settings.json")
 	if err != nil {
 		return nil
