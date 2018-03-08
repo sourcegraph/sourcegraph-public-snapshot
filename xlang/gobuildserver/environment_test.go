@@ -82,6 +82,16 @@ GOPATH_add /absolute
 `,
 			},
 		},
+
+		{
+			Name:           "monorepo_sourcegraph_config",
+			RootURI:        "git://github.com/kim/monorepo",
+			WantImportPath: "",
+			WantGoPath:     "/workspace/third_party:/workspace/code:/",
+			FS: map[string]string{
+				".sourcegraph/config.json": `{"go": {"GOPATH": ["/third_party", "code"]}}`,
+			},
+		},
 	}
 
 	for _, tc := range cases {

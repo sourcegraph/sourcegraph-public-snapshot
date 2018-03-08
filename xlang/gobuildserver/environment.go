@@ -121,6 +121,9 @@ func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []st
 	if paths := detectEnvRCGOPATH(ctx, fs); len(paths) > 0 {
 		gopaths = append(gopaths, paths...)
 	}
+	if paths := detectSourcegraphGOPATH(ctx, fs); len(paths) > 0 {
+		gopaths = append(gopaths, paths...)
+	}
 	return
 }
 
@@ -217,6 +220,44 @@ func unquote(s, quote string) string {
 	s = strings.TrimPrefix(s, quote)
 	s = strings.TrimSuffix(s, quote)
 	return s
+}
+
+// detectSourcegraphGOPATH tries to detect monorepos which require their own custom
+// GOPATH. We want to support monorepos as described in
+// https://blog.gopheracademy.com/advent-2015/go-in-a-monorepo/
+//
+// Here we detect a .sourcegraph/config.json file with the following
+// contents:
+//
+// 	{
+// 	  "go": {
+// 	    "GOPATH": ["gopathdir", "gopathdir2"]
+// 	  }
+// 	}
+//
+// It is assumed each GOPATH string value is a path relative to the repository
+// root. This is best-effort. If any errors occur or we do not detect a custom
+// gopath, an empty result is returned.
+func detectSourcegraphGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []string) {
+	b, err := ctxvfs.ReadFile(ctx, fs, "/.sourcegraph/config.json")
+	if err != nil {
+		return nil
+	}
+	config := struct {
+		Go struct {
+			GOPATH []string
+		} `json:"go"`
+	}{}
+	_ = json.Unmarshal(b, &config)
+
+	for _, p := range config.Go.GOPATH {
+		if !strings.HasPrefix(p, "/") {
+			// Assume all paths are relative to repo root.
+			p = "/" + p
+		}
+		gopaths = append(gopaths, p)
+	}
+	return
 }
 
 // determineRootImportPath determines the root import path for the Go
