@@ -218,7 +218,8 @@
       "type": "boolean"
     },
     "noGoGetDomains": {
-      "description": "List of domains to NOT perform go get on. Separated by ','.",
+      "description":
+        "List of domains in import paths to NOT perform `go get` on, but instead treat as standard Git repositories. Separated by ','.\n\nFor example, if your code imports non-go-gettable packages like `\"mygitolite.aws.me.org/mux.git/subpkg\"` you may set this option to `\"mygitolite.aws.me.org\"` and Sourcegraph will effectively run `git clone mygitolite.aws.me.org/mux.git` instead of performing the usual `go get` dependency resolution behavior.",
       "type": "string"
     },
     "repoListUpdateInterval": {
