@@ -1,6 +1,8 @@
 package gobuildserver
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -108,13 +110,35 @@ func determineEnvironment(ctx context.Context, fs ctxvfs.FileSystem, params lspe
 }
 
 // detectCustomGOPATH tries to detect monorepos which require their own custom
+// GOPATH.
+//
+// This is best-effort. If any errors occur or we do not detect a custom
+// gopath, an empty result is returned.
+func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []string) {
+	// If we detect any .sorucegraph/config.json GOPATHs then they take
+	// absolute precedence and override all others.
+	if paths := detectSourcegraphGOPATH(ctx, fs); len(paths) > 0 {
+		return paths
+	}
+
+	// Check .vscode/config.json and .envrc files, giving them equal precedence.
+	if paths := detectVSCodeGOPATH(ctx, fs); len(paths) > 0 {
+		gopaths = append(gopaths, paths...)
+	}
+	if paths := detectEnvRCGOPATH(ctx, fs); len(paths) > 0 {
+		gopaths = append(gopaths, paths...)
+	}
+	return
+}
+
+// detectVSCodeGOPATH tries to detect monorepos which require their own custom
 // GOPATH. We want to support monorepos as described in
 // https://blog.gopheracademy.com/advent-2015/go-in-a-monorepo/ We use
 // .vscode/settings.json to be informed of the custom GOPATH.
 //
 // This is best-effort. If any errors occur or we do not detect a custom
 // gopath, an empty result is returned.
-func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
+func detectVSCodeGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
 	b, err := ctxvfs.ReadFile(ctx, fs, "/.vscode/settings.json")
 	if err != nil {
 		return nil
@@ -133,6 +157,114 @@ func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
 		paths = append(paths, p[len("${workspaceRoot}"):])
 	}
 	return paths
+}
+
+// detectEnvRCGOPATH tries to detect monorepos which require their own custom
+// GOPATH. We want to support monorepos such as the ones described in
+// http://tammersaleh.com/posts/manage-your-gopath-with-direnv/ We use
+// $REPO_ROOT/.envrc to be informed of the custom GOPATH. We support any line
+// matching one of two formats below (because we do not want to actually
+// execute .envrc):
+//
+// 	export GOPATH=VALUE
+// 	GOPATH_add VALUE
+//
+// Where "VALUE" may be any of:
+//
+// 	some/relative/path
+// 	one/:two:three/
+// 	${PWD}/path
+// 	$(PWD)/path
+// 	`pwd`/path
+//
+// Or any of the above with double or single quotes wrapped around them. We
+// will ignore any absolute path values.
+func detectEnvRCGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []string) {
+	b, err := ctxvfs.ReadFile(ctx, fs, "/.envrc")
+	if err != nil {
+		return nil
+	}
+	scanner := bufio.NewScanner(bytes.NewReader(b))
+	for scanner.Scan() {
+		value := ""
+		line := scanner.Text()
+		if prefixStr := "export GOPATH="; strings.HasPrefix(line, prefixStr) {
+			value = strings.TrimSpace(strings.TrimPrefix(line, prefixStr))
+		} else if prefixStr := "GOPATH_add "; strings.HasPrefix(line, prefixStr) {
+			value = strings.TrimSpace(strings.TrimPrefix(line, prefixStr))
+		} else {
+			continue // no value
+		}
+		value = unquote(value, `"`) // remove double quotes
+		value = unquote(value, `'`) // remove single quotes
+		for _, value := range strings.Split(value, ":") {
+			if strings.HasPrefix(value, "/") {
+				// Not interested in absolute paths.
+				continue
+			}
+
+			// Replace any form of PWD with an empty string (so we get a path
+			// relative to repo root).
+			value = strings.Replace(value, "${PWD}", "", -1)
+			value = strings.Replace(value, "$(PWD)", "", -1)
+			value = strings.Replace(value, "`pwd`", "", -1)
+			if !strings.HasPrefix(value, "/") {
+				value = "/" + value
+			}
+			gopaths = append(gopaths, value)
+		}
+	}
+	_ = scanner.Err() // discarded intentionally
+	return
+}
+
+// unquote removes the given quote string (either `'` or `"`) from the given
+// string if it is wrapped in them.
+func unquote(s, quote string) string {
+	if !strings.HasPrefix(s, quote) && !strings.HasSuffix(s, quote) {
+		return s
+	}
+	s = strings.TrimPrefix(s, quote)
+	s = strings.TrimSuffix(s, quote)
+	return s
+}
+
+// detectSourcegraphGOPATH tries to detect monorepos which require their own custom
+// GOPATH. We want to support monorepos as described in
+// https://blog.gopheracademy.com/advent-2015/go-in-a-monorepo/
+//
+// Here we detect a .sourcegraph/config.json file with the following
+// contents:
+//
+// 	{
+// 	  "go": {
+// 	    "GOPATH": ["gopathdir", "gopathdir2"]
+// 	  }
+// 	}
+//
+// It is assumed each GOPATH string value is a path relative to the repository
+// root. This is best-effort. If any errors occur or we do not detect a custom
+// gopath, an empty result is returned.
+func detectSourcegraphGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []string) {
+	b, err := ctxvfs.ReadFile(ctx, fs, "/.sourcegraph/config.json")
+	if err != nil {
+		return nil
+	}
+	config := struct {
+		Go struct {
+			GOPATH []string
+		} `json:"go"`
+	}{}
+	_ = json.Unmarshal(b, &config)
+
+	for _, p := range config.Go.GOPATH {
+		if !strings.HasPrefix(p, "/") {
+			// Assume all paths are relative to repo root.
+			p = "/" + p
+		}
+		gopaths = append(gopaths, p)
+	}
+	return
 }
 
 // determineRootImportPath determines the root import path for the Go

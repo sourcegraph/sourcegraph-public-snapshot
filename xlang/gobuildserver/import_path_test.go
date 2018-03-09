@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/ctxvfs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type testTransport map[string]string
@@ -35,6 +36,10 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func TestResolveImportPath(t *testing.T) {
 	defer func(orig []string) { noGoGetDomains.domains = orig }(noGoGetDomains.domains)
 	noGoGetDomains.domains = []string{"mygitolite.aws.me.org"}
+
+	conf := conf.Get()
+	defer func(orig []string) { conf.BlacklistGoGet = orig }(conf.BlacklistGoGet)
+	conf.BlacklistGoGet = []string{"nohttp.google.com"}
 
 	tests := []struct {
 		importPath string
@@ -106,6 +111,9 @@ func TestResolveImportPath(t *testing.T) {
 			cloneURL:    "http://mygitolite.aws.me.org/org/repo",
 			vcs:         "git",
 		}},
+
+		// BlacklistGoGet
+		{"nohttp.google.com/pkg", nil},
 
 		// dynamic (see client setup below)
 		{"alice.org/pkg", &directory{

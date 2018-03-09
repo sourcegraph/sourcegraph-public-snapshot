@@ -227,6 +227,12 @@ const SiteSchemaJSON = `{
         "List of domains in import paths to NOT perform ` + "`" + `go get` + "`" + ` on, but instead treat as standard Git repositories. Separated by ','.\n\nFor example, if your code imports non-go-gettable packages like ` + "`" + `\"mygitolite.aws.me.org/mux.git/subpkg\"` + "`" + ` you may set this option to ` + "`" + `\"mygitolite.aws.me.org\"` + "`" + ` and Sourcegraph will effectively run ` + "`" + `git clone mygitolite.aws.me.org/mux.git` + "`" + ` instead of performing the usual ` + "`" + `go get` + "`" + ` dependency resolution behavior.",
       "type": "string"
     },
+    "blacklistGoGet": {
+      "description":
+        "List of domains to blacklist dependency fetching from. Separated by ','.\n\nUnlike ` + "`" + `noGoGetDomains` + "`" + ` (which tries to use a hueristic to determine where to clone the dependencies from), this option outright prevents fetching of dependencies with the given domain name. This will prevent code intelligence from working on these dependencies, so most users should not use this option.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "repoListUpdateInterval": {
       "description":
         "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",

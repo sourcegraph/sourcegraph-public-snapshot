@@ -65,6 +65,33 @@ func TestDetermineEnvironment(t *testing.T) {
 				".vscode/settings.json": `{"go.gopath":"${workspaceRoot}/third_party:${workspaceRoot}/code"}`,
 			},
 		},
+
+		{
+			Name:           "monorepo_envrc",
+			RootURI:        "git://github.com/janet/monorepo",
+			WantImportPath: "",
+			WantGoPath:     "/workspace/third_party:/workspace/third_party2:/workspace/code:/workspace/code2:/workspace/included/intentionally:/",
+			FS: map[string]string{
+				".envrc": `junk
+unparsable
+export GOPATH=${PWD}/third_party:$(PWD)/third_party2
+GOPATH_add code:code2
+GOPATH_add /absolute
+` + "export GOPATH=   \"`pwd`included/intentionally\"" + `
+123\more/junk
+`,
+			},
+		},
+
+		{
+			Name:           "monorepo_sourcegraph_config",
+			RootURI:        "git://github.com/kim/monorepo",
+			WantImportPath: "",
+			WantGoPath:     "/workspace/third_party:/workspace/code:/",
+			FS: map[string]string{
+				".sourcegraph/config.json": `{"go": {"GOPATH": ["/third_party", "code"]}}`,
+			},
+		},
 	}
 
 	for _, tc := range cases {
