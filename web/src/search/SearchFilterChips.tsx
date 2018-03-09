@@ -13,6 +13,7 @@ import { currentUser } from '../auth'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { routes } from '../routes'
 import { currentConfiguration } from '../settings/configuration'
+import { eventLogger } from '../tracking/eventLogger'
 import { fetchSearchScopes } from './backend'
 import { FilterChip } from './FilterChip'
 
@@ -25,9 +26,9 @@ interface Props {
     query: string
 
     /**
-     * Called when there is a suggestion to be added to the search query.
+     * Called when there is a filter to be added to the search query.
      */
-    onFilterChosen: (query: string) => void
+    onFilterChosen: (value: string) => void
 }
 
 interface ISearchScope {
@@ -102,7 +103,7 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
                     .map((scope, i) => (
                         <FilterChip
                             query={this.props.query}
-                            onFilterChosen={this.props.onFilterChosen}
+                            onFilterChosen={this.onSearchScopeClicked}
                             key={i}
                             value={scope.value}
                             name={scope.name}
@@ -193,6 +194,15 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
         }
 
         return scopes
+    }
+
+    private onSearchScopeClicked = (value: string) => {
+        eventLogger.log('SearchScopeClicked', {
+            search_filter: {
+                value,
+            },
+        })
+        this.props.onFilterChosen(value)
     }
 }
 

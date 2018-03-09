@@ -12,7 +12,7 @@
     display: flex;
     flex-direction: column;
 
-    &__filters {
+    &__filters-bar {
         display: flex;
         flex: 0 0 auto;
         color: #93a9c8;
@@ -20,15 +20,15 @@
         border-bottom: 1px solid $color-border;
         padding-left: 1rem;
         align-items: center;
-        flex-wrap: nowrap;
+    }
+
+    &__filters {
+        margin-left: 0.5rem;
+        display: flex;
         overflow-x: auto;
+
         &::-webkit-scrollbar {
             display: none;
-        }
-
-        &-list {
-            margin-left: 1rem;
-            flex: 0 0 auto;
         }
     }
 
@@ -58,11 +58,13 @@
 
     // In narrow windows, make the results flush with the left/right sides,
     // but we still need padding for the header and alerts.
-    @media (max-width: $media-lg) {
-        padding-left: 0;
-        padding-right: 0;
+    @include media-breakpoint-down(lg) {
+        &__list {
+            padding-left: 0;
+            padding-right: 0;
+        }
 
-        &__filters,
+        &__filters-bar,
         &__alert {
             padding-left: 0.5rem;
             padding-right: 0.5rem;
@@ -78,7 +80,7 @@
 
 .theme-light {
     .search-results {
-        &__filters {
+        &__filters-bar {
             color: $color-light-text-2;
             background: $color-light-bg-1;
             border-bottom: 1px solid $color-light-border;

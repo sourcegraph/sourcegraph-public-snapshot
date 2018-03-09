@@ -14,7 +14,7 @@ interface Props {
     onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
-    onFilterChosen: (filter: string) => void
+    onFilterChosen: (value: string) => void
 }
 
 interface State {

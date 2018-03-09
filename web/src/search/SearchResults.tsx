@@ -39,7 +39,7 @@ interface Props {
     location: H.Location
     history: H.History
     isLightTheme: boolean
-    onFilterChosen: (filter: string) => void
+    onFilterChosen: (value: string) => void
     navbarSearchQuery: string
 }
 
@@ -246,15 +246,15 @@ export class SearchResults extends React.Component<Props, State> {
         return (
             <div className="search-results">
                 {this.state.results.length > 0 && (
-                    <div className="search-results__filters">
+                    <div className="search-results__filters-bar">
                         Filters:
-                        <div className="search-results__filters-list">
+                        <div className="search-results__filters">
                             {this.state.dynamicFilters
                                 .filter(filter => filter.value !== '')
                                 .map((filter, i) => (
                                     <FilterChip
                                         query={this.props.navbarSearchQuery}
-                                        onFilterChosen={this.props.onFilterChosen}
+                                        onFilterChosen={this.onDynamicFilterClicked}
                                         key={i}
                                         value={filter.value}
                                     />
@@ -415,6 +415,15 @@ export class SearchResults extends React.Component<Props, State> {
         }
         params.set('q', query)
         this.props.history.replace({ search: params.toString() })
+    }
+
+    private onDynamicFilterClicked = (value: string) => {
+        eventLogger.log('DynamicFilterClicked', {
+            search_filter: {
+                value,
+            },
+        })
+        this.props.onFilterChosen(value)
     }
 }
 
