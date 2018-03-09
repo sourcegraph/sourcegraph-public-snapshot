@@ -17,6 +17,7 @@ interface Props {
     onThemeChange: () => void
     showScopes?: boolean
     onShowScopes?: () => void
+    className?: string
 }
 
 interface State {
@@ -57,7 +58,7 @@ export class NavLinks extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="nav-links">
+            <div className={`nav-links ${this.props.className || ''}`}>
                 {this.props.onShowScopes &&
                     this.state.user && (
                         <a

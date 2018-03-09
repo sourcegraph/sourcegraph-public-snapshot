@@ -66,7 +66,12 @@ export class Navbar extends React.Component<Props, State> {
                             onChange={this.props.onNavbarQueryChange}
                         />
                     </div>
-                    <NavLinks {...this.props} onShowScopes={this.onShowScopes} showScopes={this.state.showScopes} />
+                    <NavLinks
+                        {...this.props}
+                        className="navbar__nav-links"
+                        onShowScopes={this.onShowScopes}
+                        showScopes={this.state.showScopes}
+                    />
                 </div>
                 <div className={'navbar__scopesbar' + (this.state.showScopes ? '' : ' navbar__scopesbar--hidden')}>
                     <SearchFilterChips
