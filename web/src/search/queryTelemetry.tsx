@@ -116,6 +116,14 @@ function queryStringTelemetryData(q: string): { [key: string]: any } {
                       value_glob: count(q, /(^|\s)-?r(epo)?:[^\s]*(\*\.|\.\{[a-zA-Z]|\*\*|\/\*)/g),
                   }
                 : undefined,
+        field_lang:
+            q.includes('lang:') || q.includes('l:')
+                ? {
+                      count: count(q, /(^|\s)l(ang)?:/g),
+                      count_negated: count(q, /(^|\s)-l(ang)?:/g),
+                      count_alias: count(q, /(^|\s)-?l:/g),
+                  }
+                : undefined,
         field_case: {
             count: count(q, /(^|\s)case: /g),
         },
