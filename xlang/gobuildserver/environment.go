@@ -172,6 +172,7 @@ func detectVSCodeGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
 // Where "VALUE" may be any of:
 //
 // 	some/relative/path
+// 	one/:two:three/
 // 	${PWD}/path
 // 	$(PWD)/path
 // 	`pwd`/path
@@ -196,20 +197,22 @@ func detectEnvRCGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []str
 		}
 		value = unquote(value, `"`) // remove double quotes
 		value = unquote(value, `'`) // remove single quotes
-		if strings.HasPrefix(value, "/") {
-			// Not interested in absolute paths.
-			continue
-		}
+		for _, value := range strings.Split(value, ":") {
+			if strings.HasPrefix(value, "/") {
+				// Not interested in absolute paths.
+				continue
+			}
 
-		// Replace any form of PWD with an empty string (so we get a path
-		// relative to repo root).
-		value = strings.Replace(value, "${PWD}", "", -1)
-		value = strings.Replace(value, "$(PWD)", "", -1)
-		value = strings.Replace(value, "`pwd`", "", -1)
-		if !strings.HasPrefix(value, "/") {
-			value = "/" + value
+			// Replace any form of PWD with an empty string (so we get a path
+			// relative to repo root).
+			value = strings.Replace(value, "${PWD}", "", -1)
+			value = strings.Replace(value, "$(PWD)", "", -1)
+			value = strings.Replace(value, "`pwd`", "", -1)
+			if !strings.HasPrefix(value, "/") {
+				value = "/" + value
+			}
+			gopaths = append(gopaths, value)
 		}
-		gopaths = append(gopaths, value)
 	}
 	_ = scanner.Err() // discarded intentionally
 	return

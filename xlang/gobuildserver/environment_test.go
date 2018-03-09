@@ -70,12 +70,12 @@ func TestDetermineEnvironment(t *testing.T) {
 			Name:           "monorepo_envrc",
 			RootURI:        "git://github.com/janet/monorepo",
 			WantImportPath: "",
-			WantGoPath:     "/workspace/third_party:/workspace/code:/workspace/included/intentionally:/",
+			WantGoPath:     "/workspace/third_party:/workspace/third_party2:/workspace/code:/workspace/code2:/workspace/included/intentionally:/",
 			FS: map[string]string{
 				".envrc": `junk
 unparsable
-export GOPATH=${PWD}/third_party
-GOPATH_add code
+export GOPATH=${PWD}/third_party:$(PWD)/third_party2
+GOPATH_add code:code2
 GOPATH_add /absolute
 ` + "export GOPATH=   \"`pwd`included/intentionally\"" + `
 123\more/junk
