@@ -94,6 +94,11 @@ func Watch(f func()) {
 var (
 	cfgMu sync.RWMutex
 	cfg   *schema.SiteConfiguration
+
+	// fileWrite signals when our app writes to the configuration file. The
+	// secondary channel is closed when conf.Get() would return the new
+	// configuration that has been written to disk.
+	fileWrite = make(chan chan struct{}, 1)
 )
 
 func init() {
@@ -106,11 +111,20 @@ func init() {
 	// watchers when it has.
 	go func() {
 		for {
-			time.Sleep(5 * time.Second)
+			var signalDoneReading chan struct{}
+			select {
+			case signalDoneReading = <-fileWrite:
+				// File was changed on FS, so check now.
+			case <-time.After(5 * time.Second):
+				// File possibly changed on FS, so check now.
+			}
 			if IsDirty() {
 				// Read the new configuration from disk.
 				if err := initConfig(); err != nil {
 					log.Printf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
+				}
+				if signalDoneReading != nil {
+					close(signalDoneReading)
 				}
 
 				watchersMu.Lock()
@@ -270,6 +284,14 @@ func Write(input string) (restartToApply bool, err error) {
 	if err := ioutil.WriteFile(configFilePath, []byte(input), 0600); err != nil {
 		return false, err
 	}
+
+	// Wait for the change to the configuration file to be detected. Otherwise
+	// we would return to the caller earlier than conf.Get() would return the
+	// new configuration.
+	doneReading := make(chan struct{}, 1)
+	fileWrite <- doneReading
+	<-doneReading
+
 	return len(diff) > 0, nil
 }
 
