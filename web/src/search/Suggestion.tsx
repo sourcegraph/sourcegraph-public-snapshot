@@ -62,7 +62,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                     type: 'dir',
                     title: item.name,
                     description: descriptionParts.join(' — '),
-                    url: `/${item.repository.uri}/-/tree/${item.path}`,
+                    url: item.url,
                     urlLabel: 'go to dir',
                 }
             }
@@ -70,7 +70,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                 type: 'file',
                 title: item.name,
                 description: descriptionParts.join(' — '),
-                url: `/${item.repository.uri}/-/blob/${item.path}`,
+                url: item.url,
                 urlLabel: 'go to file',
             }
         }

@@ -160,6 +160,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                             path
                             name
                             isDirectory
+                            url
                             repository {
                                 uri
                             }
