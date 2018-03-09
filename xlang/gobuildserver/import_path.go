@@ -98,6 +98,20 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 		}, nil
 	}
 
+	// This allows users to set a list of domains that we should NEVER perform
+	// go get or git clone against. This is useful when e.g. a user has not
+	// correctly configured a monorepo and we are constantly hitting their
+	// production website to resolve import paths like "facebook.com/pkg/util"
+	// and skewing their own 404 metrics. This DOES mean these imports will be
+	// broken until they do correctly configure their monorepo (so we can
+	// identify its GOPATH), but it gives them a quick escape hatch that is
+	// better than "turn off the Sourcegraph server".
+	for _, domain := range parseCommaSeparatedList(conf.Get().BlacklistGoGet) {
+		if strings.HasPrefix(importPath, domain) {
+			return nil, errors.New("import path in blacklistGoGet configuration")
+		}
+	}
+
 	// This allows a user to set a list of domains that are considered to be
 	// non-go-gettable, i.e. standard git repositories. Some on-prem customers
 	// use setups like this, where they directly import non-go-gettable git
