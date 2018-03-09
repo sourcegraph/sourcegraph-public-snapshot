@@ -38,8 +38,8 @@ func TestResolveImportPath(t *testing.T) {
 	noGoGetDomains.domains = []string{"mygitolite.aws.me.org"}
 
 	conf := conf.Get()
-	defer func(orig string) { conf.BlacklistGoGet = orig }(conf.BlacklistGoGet)
-	conf.BlacklistGoGet = "nohttp.google.com"
+	defer func(orig []string) { conf.BlacklistGoGet = orig }(conf.BlacklistGoGet)
+	conf.BlacklistGoGet = []string{"nohttp.google.com"}
 
 	tests := []struct {
 		importPath string

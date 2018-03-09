@@ -197,7 +197,7 @@ type SiteConfiguration struct {
 	AutoRepoAdd                    bool                        `json:"autoRepoAdd,omitempty"`
 	AwsCodeCommit                  []AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
 	BitbucketServer                []BitbucketServerConnection `json:"bitbucketServer,omitempty"`
-	BlacklistGoGet                 string                      `json:"blacklistGoGet,omitempty"`
+	BlacklistGoGet                 []string                    `json:"blacklistGoGet,omitempty"`
 	CorsOrigin                     string                      `json:"corsOrigin,omitempty"`
 	DisableAutoGitUpdates          bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBrowserExtension        bool                        `json:"disableBrowserExtension,omitempty"`

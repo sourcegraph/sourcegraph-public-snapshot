@@ -106,7 +106,7 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 	// broken until they do correctly configure their monorepo (so we can
 	// identify its GOPATH), but it gives them a quick escape hatch that is
 	// better than "turn off the Sourcegraph server".
-	for _, domain := range parseCommaSeparatedList(conf.Get().BlacklistGoGet) {
+	for _, domain := range conf.Get().BlacklistGoGet {
 		if strings.HasPrefix(importPath, domain) {
 			return nil, errors.New("import path in blacklistGoGet configuration")
 		}
