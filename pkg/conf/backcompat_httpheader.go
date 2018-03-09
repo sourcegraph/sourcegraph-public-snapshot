@@ -8,6 +8,10 @@ import "sourcegraph.com/sourcegraph/sourcegraph/schema"
 func AuthHTTPHeader() string { return authHTTPHeader(cfg) }
 
 func authHTTPHeader(input *schema.SiteConfiguration) string {
+	if input.AuthProvider != "http-header" {
+		return ""
+	}
+
 	// auth.userIdentityHTTPHeader property: higher precedence
 	if input.AuthUserIdentityHTTPHeader != "" {
 		return input.AuthUserIdentityHTTPHeader

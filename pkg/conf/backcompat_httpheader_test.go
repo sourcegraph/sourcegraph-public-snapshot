@@ -12,20 +12,25 @@ func TestAuthHTTPHeader(t *testing.T) {
 		input *schema.SiteConfiguration
 		want  string
 	}{
+		"provider not set": {
+			input: &schema.SiteConfiguration{AuthUserIdentityHTTPHeader: "a"},
+			want:  "",
+		},
 		"none": {
-			input: &schema.SiteConfiguration{},
+			input: &schema.SiteConfiguration{AuthProvider: "http-header"},
 			want:  "",
 		},
 		"old": {
-			input: &schema.SiteConfiguration{SsoUserHeader: "a"},
+			input: &schema.SiteConfiguration{AuthProvider: "http-header", SsoUserHeader: "a"},
 			want:  "a",
 		},
 		"new": {
-			input: &schema.SiteConfiguration{AuthUserIdentityHTTPHeader: "a"},
+			input: &schema.SiteConfiguration{AuthProvider: "http-header", AuthUserIdentityHTTPHeader: "a"},
 			want:  "a",
 		},
 		"both": {
 			input: &schema.SiteConfiguration{
+				AuthProvider:               "http-header",
 				SsoUserHeader:              "a",
 				AuthUserIdentityHTTPHeader: "a2",
 			},

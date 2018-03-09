@@ -12,8 +12,18 @@ func TestAuthSAML(t *testing.T) {
 		input *schema.SiteConfiguration
 		want  *schema.SAMLAuthProvider
 	}{
+		"provider not set": {
+			input: &schema.SiteConfiguration{
+				AuthSaml: &schema.SAMLAuthProvider{
+					IdentityProviderMetadataURL: "a",
+					ServiceProviderCertificate:  "b",
+					ServiceProviderPrivateKey:   "c",
+				},
+			},
+			want: nil,
+		},
 		"none": {
-			input: &schema.SiteConfiguration{},
+			input: &schema.SiteConfiguration{AuthProvider: "saml"},
 			want:  nil,
 		},
 		"old": {
@@ -30,6 +40,7 @@ func TestAuthSAML(t *testing.T) {
 		},
 		"new": {
 			input: &schema.SiteConfiguration{
+				AuthProvider: "saml",
 				AuthSaml: &schema.SAMLAuthProvider{
 					IdentityProviderMetadataURL: "a",
 					ServiceProviderCertificate:  "b",
@@ -44,6 +55,7 @@ func TestAuthSAML(t *testing.T) {
 		},
 		"both": {
 			input: &schema.SiteConfiguration{
+				AuthProvider:              "saml",
 				SamlIDProviderMetadataURL: "a",
 				SamlSPCert:                "b",
 				SamlSPKey:                 "c",

@@ -19,7 +19,7 @@ func authOpenIDConnect(input *schema.SiteConfiguration) (p *schema.OpenIDConnect
 	}
 
 	// auth.openIDConnect next (higher precedence)
-	if input.AuthOpenIDConnect != nil {
+	if input.AuthProvider == "openidconnect" && input.AuthOpenIDConnect != nil {
 		p = input.AuthOpenIDConnect
 	}
 

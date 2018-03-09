@@ -17,7 +17,7 @@ func authSAML(input *schema.SiteConfiguration) (p *schema.SAMLAuthProvider) {
 	}
 
 	// auth.saml next (higher precedence)
-	if input.AuthSaml != nil {
+	if input.AuthProvider == "saml" && input.AuthSaml != nil {
 		p = input.AuthSaml
 	}
 
