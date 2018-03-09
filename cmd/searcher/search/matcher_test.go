@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"reflect"
 	"regexp/syntax"
+	"sort"
 	"strconv"
 	"testing"
 	"testing/iotest"
@@ -456,6 +458,75 @@ func TestMaxMatches(t *testing.T) {
 			}
 		}
 	}
+}
+
+// Tests that:
+//
+// - IncludePatterns can match the path in any order
+// - A path must match all (not any) of the IncludePatterns
+// - An empty pattern is allowed
+func TestPathMatches(t *testing.T) {
+	zipData, err := createZip(map[string]string{
+		"a":   "",
+		"a/b": "",
+		"a/c": "",
+		"ab":  "",
+		"b/a": "",
+		"ba":  "",
+		"c/d": "",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf, err := mockZipFile(zipData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rg, err := compile(&protocol.PatternInfo{
+		Pattern:                "",
+		IncludePatterns:        []string{"a", "b"},
+		PathPatternsAreRegExps: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fileMatches, _, err := concurrentFind(context.Background(), rg, zf, 10, true, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"a/b", "ab", "b/a", "ba"}
+	got := make([]string, len(fileMatches))
+	for i, fm := range fileMatches {
+		got[i] = fm.Path
+	}
+	sort.Strings(got)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got file matches %v, want %v", got, want)
+	}
+}
+
+func createZip(files map[string]string) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	zw := zip.NewWriter(buf)
+	for name, body := range files {
+		w, err := zw.CreateHeader(&zip.FileHeader{
+			Name:   name,
+			Method: zip.Store,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if _, err := w.Write([]byte(body)); err != nil {
+			return nil, err
+		}
+	}
+	if err := zw.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+
 }
 
 // githubStore fetches from github and caches across test runs.

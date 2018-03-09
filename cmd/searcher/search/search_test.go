@@ -168,13 +168,6 @@ main.go:6:	fmt.Println("Hello world")
 
 func TestSearch_badrequest(t *testing.T) {
 	cases := []protocol.Request{
-		// Empty pattern
-		{
-			Repo:   "foo",
-			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-		},
-
 		// Bad regexp
 		{
 			Repo:   "foo",
