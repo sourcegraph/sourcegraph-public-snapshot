@@ -207,15 +207,11 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
             )
         }
-        if (
-            this.state.site &&
-            this.state.site.configuration &&
-            !this.state.site.configuration.canUpdate &&
-            localDirty
-        ) {
+        if (this.state.site && this.state.site.configuration && !this.state.site.configuration.canUpdate) {
             alerts.push(
                 <div key="volatile" className="alert alert-danger site-admin-configuration-page__alert">
                     <p>
+                        Use this editor as a scratch area for composing Sourcegraph site configuration.{' '}
                         <strong>Changes will NOT be saved</strong> and will be lost when you leave this page.
                     </p>
                     <p>
