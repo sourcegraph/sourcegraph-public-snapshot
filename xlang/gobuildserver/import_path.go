@@ -30,19 +30,22 @@ func (n *noGoGetDomainsT) reconfigure() {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	n.domains = strings.Split(conf.Get().NoGoGetDomains, ",")
-
-	// Clean-up noGoGetDomains to avoid needing to validate them when
+	// Parse noGoGetDomains to avoid needing to validate them when
 	// resolving static import paths
+	n.domains = parseCommaSeparatedList(conf.Get().NoGoGetDomains)
+}
+
+func parseCommaSeparatedList(list string) []string {
+	split := strings.Split(list, ",")
 	i := 0
-	for _, s := range n.domains {
+	for _, s := range split {
 		s = strings.TrimSpace(s)
 		if s != "" {
-			n.domains[i] = s
+			split[i] = s
 			i++
 		}
 	}
-	n.domains = n.domains[:i]
+	return split[:i]
 }
 
 // noGoGetDomains is a list of domains we do not attempt standard go vanity
