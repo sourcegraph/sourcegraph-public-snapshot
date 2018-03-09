@@ -115,13 +115,17 @@ func determineEnvironment(ctx context.Context, fs ctxvfs.FileSystem, params lspe
 // This is best-effort. If any errors occur or we do not detect a custom
 // gopath, an empty result is returned.
 func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []string) {
+	// If we detect any .sorucegraph/config.json GOPATHs then they take
+	// absolute precedence and override all others.
+	if paths := detectSourcegraphGOPATH(ctx, fs); len(paths) > 0 {
+		return paths
+	}
+
+	// Check .vscode/config.json and .envrc files, giving them equal precedence.
 	if paths := detectVSCodeGOPATH(ctx, fs); len(paths) > 0 {
 		gopaths = append(gopaths, paths...)
 	}
 	if paths := detectEnvRCGOPATH(ctx, fs); len(paths) > 0 {
-		gopaths = append(gopaths, paths...)
-	}
-	if paths := detectSourcegraphGOPATH(ctx, fs); len(paths) > 0 {
 		gopaths = append(gopaths, paths...)
 	}
 	return
