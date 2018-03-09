@@ -34,7 +34,7 @@ const definitionIconSVG =
 export interface TooltipData extends Partial<Hover> {
     target: HTMLElement
     ctx: AbsoluteRepoFilePosition
-    defUrl?: string
+    defUrlOrError?: string | Error
     loading?: boolean
 }
 
@@ -135,17 +135,19 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
     tooltipActions.style.display = docked ? 'flex' : 'none'
 
     j2dAction.style.display = 'block'
-    j2dAction.href = data.defUrl ? data.defUrl : ''
+    j2dAction.href = data.defUrlOrError && typeof data.defUrlOrError === 'string' ? data.defUrlOrError : ''
 
     // Omit the current location's search options when comparing, as those are cleared
     // when we navigate.
     const destinationIsCurrentLocation = j2dAction.href === urlWithoutSearchOptions(window.location)
-    if (data.defUrl && !destinationIsCurrentLocation) {
+    if (data.defUrlOrError && typeof data.defUrlOrError === 'string' && !destinationIsCurrentLocation) {
         j2dAction.style.cursor = 'pointer'
-        j2dAction.onclick = actions.definition(parseBrowserRepoURL(data.defUrl) as AbsoluteRepoFilePosition)
+        j2dAction.onclick = actions.definition(parseBrowserRepoURL(data.defUrlOrError) as AbsoluteRepoFilePosition)
+        j2dAction.title = ''
     } else {
         j2dAction.style.cursor = 'not-allowed'
         j2dAction.onclick = () => false
+        j2dAction.title = data.defUrlOrError && typeof data.defUrlOrError !== 'string' ? data.defUrlOrError.message : ''
     }
 
     findRefsAction.style.display = 'block'

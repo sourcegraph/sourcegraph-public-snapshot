@@ -22,6 +22,7 @@ import { Position, Range } from 'vscode-languageserver-types'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getPathExtension, supportedExtensions } from '../../util'
+import { asError } from '../../util/errors'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../../util/url'
 import {
     AbsoluteRepoFile,
@@ -331,10 +332,11 @@ export class Blob extends React.Component<Props, State> {
                             }
                             const { target, ctx } = data
                             return this.getTooltip(target, ctx).pipe(
-                                zip(this.getDefinition(ctx)),
-                                map(
-                                    ([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined } as TooltipData)
-                                ),
+                                zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
+                                map(([tooltip, defResponse]) => ({
+                                    ...tooltip,
+                                    defUrlOrError: defResponse || undefined,
+                                })),
                                 catchError(err => {
                                     if (err.code !== EMODENOTFOUND) {
                                         console.error(err)
@@ -379,8 +381,8 @@ export class Blob extends React.Component<Props, State> {
                         switchMap(({ target, ctx }) => {
                             const tooltip = this.getTooltip(target, ctx)
                             const tooltipWithJ2D: Observable<TooltipData> = tooltip.pipe(
-                                zip(this.getDefinition(ctx)),
-                                map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
+                                zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
+                                map(([tooltip, defResponse]) => ({ ...tooltip, defUrl: defResponse || undefined }))
                             )
                             const loading = this.getLoadingTooltip(target, ctx, tooltip)
                             return merge(loading, tooltip, tooltipWithJ2D).pipe(
@@ -654,7 +656,7 @@ export class Blob extends React.Component<Props, State> {
                 eventLogger.log('SymbolHoveredLoading')
                 // Don't log tooltips with no content
             } else if (!isEmpty(data.contents)) {
-                eventLogger.log('SymbolHovered', { hoverHasDefUrl: data.defUrl !== undefined })
+                eventLogger.log('SymbolHovered', { hoverHasDefUrl: data.defUrlOrError !== undefined })
             }
         }
     }
