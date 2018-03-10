@@ -16,7 +16,7 @@ var signupsWebhookURL = env.Get("SLACK_SIGNUPS_BOT_HOOK", "", "Webhook for posti
 
 // NotifyOnSignup posts a message to the Slack channel #bot-signups
 // when a user signs up for Sourcegraph
-func NotifyOnSignup(avatarURL *string, email string, hubSpotProps *hubspot.ContactProperties, response *hubspot.ContactResponse) error {
+func NotifyOnSignup(avatarURL, email string, hubSpotProps *hubspot.ContactProperties, response *hubspot.ContactResponse) error {
 	var links []string
 	if hubSpotProps.LookerLink != "" {
 		links = append(links, fmt.Sprintf("<%s|View on Looker>", hubSpotProps.LookerLink))
@@ -25,18 +25,13 @@ func NotifyOnSignup(avatarURL *string, email string, hubSpotProps *hubspot.Conta
 		links = append(links, fmt.Sprintf("<https://app.hubspot.com/contacts/2762526/contact/%v|View on HubSpot>", response.VID))
 	}
 
-	var avatarURL2 string
-	if avatarURL != nil {
-		avatarURL2 = *avatarURL
-	}
-
 	payload := &slack.Payload{
 		Attachments: []*slack.Attachment{
 			&slack.Attachment{
 				Fallback: fmt.Sprintf("%s just signed up!", email),
 				Title:    fmt.Sprintf("%s just signed up!", email),
 				Color:    "good",
-				ThumbURL: avatarURL2,
+				ThumbURL: avatarURL,
 				Fields: []*slack.Field{
 					&slack.Field{
 						Title: "User profile links",

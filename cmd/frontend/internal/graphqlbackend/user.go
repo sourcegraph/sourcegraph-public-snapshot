@@ -96,7 +96,12 @@ func (r *userResolver) DisplayName() *string {
 	return &r.user.DisplayName
 }
 
-func (r *userResolver) AvatarURL() *string { return r.user.AvatarURL }
+func (r *userResolver) AvatarURL() *string {
+	if r.user.AvatarURL == "" {
+		return nil
+	}
+	return &r.user.AvatarURL
+}
 
 func (r *userResolver) CreatedAt() string {
 	return r.user.CreatedAt.Format(time.RFC3339)

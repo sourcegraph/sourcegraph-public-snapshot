@@ -67,7 +67,7 @@ type User struct {
 	Username         string
 	ExternalProvider string
 	DisplayName      string
-	AvatarURL        *string
+	AvatarURL        string
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	SiteAdmin        bool

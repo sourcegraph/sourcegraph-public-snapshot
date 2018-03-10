@@ -299,8 +299,8 @@ func (u *users) Update(ctx context.Context, id int32, username *string, displayN
 		}
 	}
 	if avatarURL != nil {
-		user.AvatarURL = avatarURL
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET avatar_url=$1 WHERE id=$2", *user.AvatarURL, id); err != nil {
+		user.AvatarURL = *avatarURL
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET avatar_url=$1 WHERE id=$2", user.AvatarURL, id); err != nil {
 			return nil, err
 		}
 	}
@@ -511,7 +511,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 			u.ExternalProvider = dbExternalProvider.String
 		}
 		if avatarURL.Valid {
-			u.AvatarURL = &avatarURL.String
+			u.AvatarURL = avatarURL.String
 		}
 		users = append(users, &u)
 	}
