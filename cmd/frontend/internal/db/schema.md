@@ -410,7 +410,8 @@ Foreign-key constraints:
  verification_code | text                     | 
  verified_at       | timestamp with time zone | 
 Indexes:
-    "user_emails_email_key" UNIQUE CONSTRAINT, btree (email)
+    "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
+    "user_emails_unique_verified_email" EXCLUDE USING btree (email WITH =) WHERE (verified_at IS NOT NULL)
 Foreign-key constraints:
     "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
