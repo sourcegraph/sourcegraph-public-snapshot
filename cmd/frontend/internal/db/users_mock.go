@@ -9,6 +9,7 @@ import (
 
 type MockUsers struct {
 	Create               func(ctx context.Context, info NewUser) (newUser *types.User, err error)
+	Update               func(userID int32, update UserUpdate) error
 	GetByID              func(ctx context.Context, id int32) (*types.User, error)
 	GetByUsername        func(ctx context.Context, username string) (*types.User, error)
 	GetByExternalID      func(ctx context.Context, provider, id string) (*types.User, error)

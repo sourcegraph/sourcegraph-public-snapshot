@@ -285,6 +285,10 @@ type UserUpdate struct {
 
 // Update updates a user's profile information.
 func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
+	if Mocks.Users.Update != nil {
+		return Mocks.Users.Update(id, update)
+	}
+
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
 	}
