@@ -55,7 +55,7 @@ func TestUsers_MatchUsernameRegex(t *testing.T) {
 	}
 }
 
-func TestUsers_Create_InitialSiteAdminOrFail(t *testing.T) {
+func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -67,11 +67,10 @@ func TestUsers_Create_InitialSiteAdminOrFail(t *testing.T) {
 
 	// Create site admin.
 	user, err := Users.Create(ctx, NewUser{
-		Email:                  "a@a.com",
-		Username:               "u",
-		Password:               "p",
-		EmailCode:              "c",
-		InitialSiteAdminOrFail: true,
+		Email:     "a@a.com",
+		Username:  "u",
+		Password:  "p",
+		EmailCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -80,13 +79,26 @@ func TestUsers_Create_InitialSiteAdminOrFail(t *testing.T) {
 		t.Fatal("!user.SiteAdmin")
 	}
 
-	// Disallow creating a site admin now that the site has already been initialized.
+	// Creating a non-site-admin now that the site has already been initialized.
+	u2, err := Users.Create(ctx, NewUser{
+		Email:     "a2@a2.com",
+		Username:  "u2",
+		Password:  "p2",
+		EmailCode: "c2",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u2.SiteAdmin {
+		t.Fatal("want u2 not site admin because site is already initialized")
+	}
+	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
 	_, err = Users.Create(ctx, NewUser{
-		Email:                  "a2@a2.com",
-		Username:               "u2",
-		Password:               "p2",
-		EmailCode:              "c2",
-		InitialSiteAdminOrFail: true,
+		Email:                "a3@a3.com",
+		Username:             "u3",
+		Password:             "p3",
+		EmailCode:            "c3",
+		FailIfNotInitialUser: true,
 	})
 	if want := (errCannotCreateUser{"site_already_initialized"}); err != want {
 		t.Fatalf("got error %v, want %v", err, want)
@@ -101,12 +113,28 @@ func TestUsers_Create_InitialSiteAdminOrFail(t *testing.T) {
 	if _, err := globalDB.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
 		t.Fatal(err)
 	}
+	u4, err := Users.Create(ctx, NewUser{
+		Email:     "a4@a4.com",
+		Username:  "u4",
+		Password:  "p4",
+		EmailCode: "c4",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u4.SiteAdmin {
+		t.Fatal("want u4 not site admin because site is already initialized")
+	}
+	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
+	if _, err := globalDB.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
+		t.Fatal(err)
+	}
 	_, err = Users.Create(ctx, NewUser{
-		Email:                  "a3@a3.com",
-		Username:               "u3",
-		Password:               "p3",
-		EmailCode:              "c3",
-		InitialSiteAdminOrFail: true,
+		Email:                "a5@a5.com",
+		Username:             "u5",
+		Password:             "p5",
+		EmailCode:            "c5",
+		FailIfNotInitialUser: true,
 	})
 	if want := (errCannotCreateUser{"initial_site_admin_must_be_first_user"}); err != want {
 		t.Fatalf("got error %v, want %v", err, want)

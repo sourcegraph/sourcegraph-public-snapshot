@@ -45,6 +45,9 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 
 // serveSiteInit handles submission of the site initialization form, where the initial site admin user is created.
 func serveSiteInit(w http.ResponseWriter, r *http.Request) {
+	// This only succeeds if the site is not yet initialized nad there are no users yet. It doesn't
+	// allow signups after those conditions become true, so we don't need to check auth.allowSignup
+	// in site config.
 	doServeSignUp(w, r, true)
 }
 
@@ -54,7 +57,7 @@ func serveSiteInit(w http.ResponseWriter, r *http.Request) {
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
-func doServeSignUp(w http.ResponseWriter, r *http.Request, initialSiteAdminOrFail bool) {
+func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -67,18 +70,16 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, initialSiteAdminOrFai
 
 	// Create the user.
 	//
-	// Note that in the case of initialSiteAdminOrFail == true, db.Users.Create
-	// will refuse to create the user entirely, not just an admin user. i.e.
-	// this will not create a normal user account if initialSiteAdminOrFail == true
-	// and the initial site admin account already exists. This is tested in
-	// db/users_test.go TestUsers_Create_InitialSiteAdminOrFail.
+	// We don't need to check auth.allowSignup because we assume the caller of doServeSignUp checks
+	// it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which case the only signup
+	// allowed is that of the initial site admin).
 	emailCode := backend.MakeEmailVerificationCode()
 	usr, err := db.Users.Create(r.Context(), db.NewUser{
-		Email:                  creds.Email,
-		Username:               creds.Username,
-		Password:               creds.Password,
-		EmailCode:              emailCode,
-		InitialSiteAdminOrFail: initialSiteAdminOrFail,
+		Email:                creds.Email,
+		Username:             creds.Username,
+		Password:             creds.Password,
+		EmailCode:            emailCode,
+		FailIfNotInitialUser: failIfNewUserIsNotInitialSiteAdmin,
 	})
 	if err != nil {
 		var (
@@ -125,7 +126,7 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, initialSiteAdminOrFai
 		}
 	}
 
-	if initialSiteAdminOrFail {
+	if usr.SiteAdmin {
 		// Record initial site admin email.
 		if err := db.SiteConfig.UpdateConfiguration(r.Context(), creds.Email); err != nil {
 			log15.Warn("Failed to save initial site admin email.", "error", err)

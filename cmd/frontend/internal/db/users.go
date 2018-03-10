@@ -90,17 +90,10 @@ type NewUser struct {
 	Password         string
 	EmailCode        string
 
-	// InitialSiteAdminOrFail indicates that the newly created user should be made the site's initial site admin if
-	// the following are all true: (1) this user would be the first and only user on the server, and (2) the site
-	// has not yet been initialized. Otherwise, the (users).Create call fails and no new user is created.
-	//
-	// If the call with InitialSiteAdminOrFail == true succeeds, it marks the site as being initialized in the DB
-	// so that subsequent calls with InitialSiteAdminOrFail == true will fail.
-	//
-	// It is used to create the initial site admin user during site initialization, and it's implemented as part of
-	// the (users).Create call to avoid a race condition where multiple initial site admins could be created or
-	// zero site admins could be created.
-	InitialSiteAdminOrFail bool `json:"-"` // forbid this field being set by JSON, just in case
+	// FailIfNotInitialUser causes the (users).Create call to return an error and not create the
+	// user if at least one of the following is true: (1) the site has already been initialized or
+	// (2) any other user account already exists.
+	FailIfNotInitialUser bool `json:"-"` // forbid this field being set by JSON, just in case
 }
 
 // Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
@@ -110,6 +103,19 @@ type NewUser struct {
 //
 // Builtin users must also specify a password and email verification code upon creation. When the user's email is
 // verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
+//
+// CREATION OF SITE ADMINS
+//
+// The new user is made to be a site admin if the following are both true: (1) this user would be
+// the first and only user on the server, and (2) the site has not yet been initialized. Otherwise,
+// the user is created as a normal (non-site-admin) user. After the call, the site is marked as
+// having been initialized (so that no subsequent (users).Create calls will yield a site
+// admin). This is used to create the initial site admin user during site initialization.
+//
+// It's implemented as part of the (users).Create call instead of relying on the caller to do it in
+// order to avoid a race condition where multiple initial site admins could be created or zero site
+// admins could be created.
+
 func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
@@ -168,17 +174,17 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		err = tx.Commit()
 	}()
 
-	if info.InitialSiteAdminOrFail {
-		// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
-		// would see this initialized value as false.
-		var siteInitialized bool
-		if err := tx.QueryRowContext(ctx, `SELECT initialized FROM site_config FOR UPDATE LIMIT 1`).Scan(&siteInitialized); err != nil {
-			return nil, err
-		}
-		if siteInitialized {
-			return nil, errCannotCreateUser{"site_already_initialized"}
-		}
+	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
+	// would see this initialized value as false.
+	var siteInitialized bool
+	if err := tx.QueryRowContext(ctx, `SELECT initialized FROM site_config FOR UPDATE LIMIT 1`).Scan(&siteInitialized); err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if siteInitialized && info.FailIfNotInitialUser {
+		return nil, errCannotCreateUser{"site_already_initialized"}
+	}
 
+	if !siteInitialized {
 		// Creating the initial site admin user is equivalent to initializing the site. This prevents other initial
 		// site admin users from being created (to prevent a race condition where an attacker could create a site
 		// admin account simultaneously with the real site admin).
@@ -191,7 +197,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 	err = tx.QueryRowContext(
 		ctx,
 		"INSERT INTO users(external_id, username, display_name, external_provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
-		dbExternalID, info.Username, info.DisplayName, dbExternalProvider, createdAt, updatedAt, passwd, info.InitialSiteAdminOrFail).Scan(&id, &siteAdmin)
+		dbExternalID, info.Username, info.DisplayName, dbExternalProvider, createdAt, updatedAt, passwd, !siteInitialized).Scan(&id, &siteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -203,7 +209,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		}
 		return nil, err
 	}
-	if info.InitialSiteAdminOrFail && !siteAdmin {
+	if info.FailIfNotInitialUser && !siteAdmin {
 		// Refuse to make the user the initial site admin if there are other existing users.
 		return nil, errCannotCreateUser{"initial_site_admin_must_be_first_user"}
 	}
