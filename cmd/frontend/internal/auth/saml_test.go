@@ -160,6 +160,13 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		}
 		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
 	}
+	db.Mocks.Users.Update = func(userID int32, update db.UserUpdate) error {
+		if userID != mockedUserID {
+			t.Errorf("got userID %d, want %d", userID, mockedUserID)
+		}
+		return nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
 
 	// Set SAML global parameters
 	var err error

@@ -18,7 +18,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 // SAML App creation vars
@@ -117,52 +116,46 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 	subject := r.Header.Get("X-Saml-Subject") // this header is set by the SAML library after extracting the value from the JWT cookie
 	externalID := samlToExternalID(idpID, subject)
 
-	usr, err := db.Users.GetByExternalID(ctx, idpID, externalID)
-	if errcode.IsNotFound(err) {
-		email := r.Header.Get("X-Saml-Email")
-		if email == "" && mightBeEmail(subject) {
-			email = subject
-		}
-		login := r.Header.Get("X-Saml-Login")
-		if login == "" {
-			login = r.Header.Get("X-Saml-Uid")
-		}
-		displayName := r.Header.Get("X-Saml-DisplayName")
-		if displayName == "" {
-			displayName = login
-		}
-		if displayName == "" {
-			displayName = email
-		}
-		if displayName == "" {
-			displayName = subject
-		}
-		if login == "" {
-			login = email
-		}
-		if login == "" {
-			return nil, fmt.Errorf("could not create user, because SAML assertion did not contain email attribute statement")
-		}
-
-		login, err = NormalizeUsername(login)
-		if err != nil {
-			return nil, err
-		}
-
-		usr, err = db.Users.Create(ctx, db.NewUser{
-			ExternalID:       externalID,
-			Email:            email,
-			Username:         login,
-			DisplayName:      displayName,
-			ExternalProvider: idpID,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("could not create user with externalID %q, login %q: %s", externalID, login, err)
-		}
-	} else if err != nil {
-		return nil, fmt.Errorf("could not get user with externalID %q: %s", externalID, err)
+	email := r.Header.Get("X-Saml-Email")
+	if email == "" && mightBeEmail(subject) {
+		email = subject
 	}
-	return actor.FromUser(usr.ID), nil
+	login := r.Header.Get("X-Saml-Login")
+	if login == "" {
+		login = r.Header.Get("X-Saml-Uid")
+	}
+	displayName := r.Header.Get("X-Saml-DisplayName")
+	if displayName == "" {
+		displayName = login
+	}
+	if displayName == "" {
+		displayName = email
+	}
+	if displayName == "" {
+		displayName = subject
+	}
+	if login == "" {
+		login = email
+	}
+	if login == "" {
+		return nil, fmt.Errorf("could not create user, because SAML assertion did not contain email attribute statement")
+	}
+	login, err := NormalizeUsername(login)
+	if err != nil {
+		return nil, err
+	}
+
+	userID, err := createOrUpdateUser(ctx, db.NewUser{
+		ExternalProvider: idpID,
+		ExternalID:       externalID,
+		Username:         login,
+		Email:            email,
+		DisplayName:      displayName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return actor.FromUser(userID), nil
 }
 
 func samlToExternalID(idpID, subject string) string {

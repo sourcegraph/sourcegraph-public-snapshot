@@ -19,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/gorilla/csrf"
@@ -313,21 +312,17 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		return nil, err
 	}
 
-	usr, err := db.Users.GetByExternalID(ctx, provider, externalID)
-	if errcode.IsNotFound(err) {
-		usr, err = db.Users.Create(ctx, db.NewUser{
-			ExternalID:       externalID,
-			Email:            email,
-			Username:         login,
-			DisplayName:      displayName,
-			ExternalProvider: provider,
-		})
-	}
+	userID, err := createOrUpdateUser(ctx, db.NewUser{
+		ExternalProvider: provider,
+		ExternalID:       externalID,
+		Username:         login,
+		Email:            email,
+		DisplayName:      displayName,
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	return actor.FromUser(usr.ID), nil
+	return actor.FromUser(userID), nil
 }
 
 func ssoErrMsg(err string, description interface{}) string {
