@@ -22,6 +22,7 @@ function queryStringTelemetryData(q: string): { [key: string]: any } {
                   value_file: count(q, /(^|\s)type:file(\s|$)/g),
                   value_diff: count(q, /(^|\s)type:diff(\s|$)/g),
                   value_commit: count(q, /(^|\s)type:commit(\s|$)/g),
+                  value_symbol: count(q, /(^|\s)type:symbol(\s|$)/g),
               }
             : undefined,
         field_author: q.includes('author:')
