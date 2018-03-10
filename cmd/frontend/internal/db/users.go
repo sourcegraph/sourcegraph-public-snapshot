@@ -271,45 +271,35 @@ func orgsForAllUsersToJoin(userOrgMap map[string][]string) ([]string, []error) {
 	return nil, errors
 }
 
-func (u *users) Update(ctx context.Context, id int32, username *string, displayName *string, avatarURL *string) (*types.User, error) {
-	if username == nil && displayName == nil && avatarURL == nil {
-		return nil, errors.New("no update values provided")
-	}
-
-	user, err := u.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
+func (u *users) Update(ctx context.Context, id int32, username *string, displayName *string, avatarURL *string) error {
 	if username != nil {
-		user.Username = *username
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET username=$1 WHERE id=$2", user.Username, id); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET username=$1 WHERE id=$2", username, id); err != nil {
 			if pqErr, ok := err.(*pq.Error); ok {
 				if pqErr.Constraint == "users_username_key" {
-					return nil, errors.New("username already exists")
+					return errors.New("username already exists")
 				}
-				return nil, err
+				return err
 			}
 		}
 	}
 	if displayName != nil {
-		user.DisplayName = *displayName
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET display_name=$1 WHERE id=$2", user.DisplayName, id); err != nil {
-			return nil, err
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET display_name=$1 WHERE id=$2", displayName, id); err != nil {
+			return err
 		}
 	}
 	if avatarURL != nil {
-		user.AvatarURL = *avatarURL
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET avatar_url=$1 WHERE id=$2", user.AvatarURL, id); err != nil {
-			return nil, err
+		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET avatar_url=$1 WHERE id=$2", avatarURL, id); err != nil {
+			return err
 		}
 	}
-	user.UpdatedAt = time.Now()
-	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET updated_at=$1 WHERE id=$2", user.UpdatedAt, id); err != nil {
-		return nil, err
+	if res, err := globalDB.ExecContext(ctx, "UPDATE users SET updated_at=now() WHERE id=$1", id); err != nil {
+		return err
+	} else if nrows, err := res.RowsAffected(); err != nil {
+		return err
+	} else if nrows == 0 {
+		return userNotFoundErr{args: []interface{}{id}}
 	}
-
-	return user, nil
+	return nil
 }
 
 func (u *users) Delete(ctx context.Context, id int32) error {

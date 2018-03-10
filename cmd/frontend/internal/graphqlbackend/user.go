@@ -148,12 +148,16 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	updatedUser, err := db.Users.Update(ctx, user.ID, args.Username, args.DisplayName, args.AvatarURL)
-	if err != nil {
+	if err := db.Users.Update(ctx, user.ID, args.Username, args.DisplayName, args.AvatarURL); err != nil {
 		return nil, err
 	}
 
-	return &userResolver{user: updatedUser}, nil
+	// Get updated user.
+	user, err = db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &userResolver{user: user}, nil
 }
 
 func currentUser(ctx context.Context) (*userResolver, error) {

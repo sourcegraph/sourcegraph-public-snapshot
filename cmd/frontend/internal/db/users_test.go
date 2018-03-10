@@ -222,6 +222,60 @@ func TestUsers_Count(t *testing.T) {
 	}
 }
 
+func TestUsers_Update(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	user, err := Users.Create(ctx, NewUser{
+		Email:     "a@a.com",
+		Username:  "u",
+		Password:  "p",
+		EmailCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := Users.Update(ctx, user.ID, strptr("u1"), strptr("d1"), strptr("a1")); err != nil {
+		t.Fatal(err)
+	}
+
+	user, err = Users.GetByID(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "u1"; user.Username != want {
+		t.Errorf("got username %q, want %q", user.Username, want)
+	}
+	if want := "d1"; user.DisplayName != want {
+		t.Errorf("got display name %q, want %q", user.DisplayName, want)
+	}
+	if want := "a1"; user.AvatarURL != want {
+		t.Errorf("got avatar URL %q, want %q", user.AvatarURL, want)
+	}
+
+	// Can't update to duplicate username.
+	user2, err := Users.Create(ctx, NewUser{
+		Email:     "a2@a.com",
+		Username:  "u2",
+		Password:  "p2",
+		EmailCode: "c2",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Users.Update(ctx, user2.ID, strptr("u1"), nil, nil); err == nil {
+		t.Fatal("want error when updating user to existing username")
+	}
+
+	// Can't update nonexistent user.
+	if err := Users.Update(ctx, 12345, strptr("u12345"), nil, nil); err == nil {
+		t.Fatal("want error when updating nonexistent user")
+	}
+}
+
 func TestUsers_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
