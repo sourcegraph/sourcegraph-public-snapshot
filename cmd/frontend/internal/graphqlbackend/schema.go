@@ -1091,7 +1091,6 @@ type Person {
     email: String!
     # The name if set; otherwise the email username.
     displayName: String!
-    gravatarHash: String!
     avatarURL: String!
 }
 

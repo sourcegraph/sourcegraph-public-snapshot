@@ -28,7 +28,6 @@ export const fetchBlameFile = memoizeObservable(
                                         person {
                                             name
                                             email
-                                            gravatarHash
                                         }
                                         date
                                     }
