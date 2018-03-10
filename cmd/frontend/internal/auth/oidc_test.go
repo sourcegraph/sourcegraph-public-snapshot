@@ -84,7 +84,8 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 			"sub": %q,
 			"profile": "This is a profile",
 			"email": "bob@foo.com",
-			"email_verified": true
+			"email_verified": true,
+			"picture": "https://example.com/picture.png"
 		}`, testOIDCUser)))
 	})
 
@@ -93,7 +94,12 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 	// Mock user
 	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
 		if provider == oidcProvider.Issuer && id == srv.URL+":"+testOIDCUser {
-			return &types.User{ID: 123, ExternalID: &id, Username: id}, nil
+			return &types.User{
+				ID:         123,
+				ExternalID: &id,
+				Username:   id,
+				AvatarURL:  "https://example.com/picture.png",
+			}, nil
 		}
 		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
 	}

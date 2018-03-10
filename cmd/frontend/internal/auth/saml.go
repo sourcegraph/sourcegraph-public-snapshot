@@ -151,6 +151,7 @@ func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
 		Username:         login,
 		Email:            email,
 		DisplayName:      displayName,
+		// SAML has no standard way of providing an avatar URL.
 	})
 	if err != nil {
 		return nil, err

@@ -25,6 +25,9 @@ func createOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser) (userI
 	if usr.DisplayName != newOrUpdatedUser.DisplayName {
 		userUpdate.DisplayName = &newOrUpdatedUser.DisplayName
 	}
+	if usr.AvatarURL != newOrUpdatedUser.AvatarURL {
+		userUpdate.AvatarURL = &newOrUpdatedUser.AvatarURL
+	}
 	if userUpdate != (db.UserUpdate{}) {
 		if err := db.Users.Update(ctx, usr.ID, userUpdate); err != nil {
 			return 0, err

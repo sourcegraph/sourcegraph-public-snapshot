@@ -36,6 +36,7 @@ type UserClaims struct {
 	GivenName         string `json:"given_name"`
 	FamilyName        string `json:"family_name"`
 	PreferredUsername string `json:"preferred_username"`
+	Picture           string `json:"picture"`
 }
 
 // newOIDCAuthHandler wraps the passed in handler with OpenID Connect (OIDC) authentication, adding endpoints
@@ -318,6 +319,7 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		Username:         login,
 		Email:            email,
 		DisplayName:      displayName,
+		AvatarURL:        claims.Picture,
 	})
 	if err != nil {
 		return nil, err

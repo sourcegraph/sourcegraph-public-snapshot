@@ -89,6 +89,7 @@ type NewUser struct {
 	ExternalProvider string
 	Password         string
 	EmailCode        string
+	AvatarURL        string // the new user's avatar URL, if known
 
 	// FailIfNotInitialUser causes the (users).Create call to return an error and not create the
 	// user if at least one of the following is true: (1) the site has already been initialized or
@@ -149,6 +150,11 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		}
 	}
 
+	var avatarURL *string
+	if info.AvatarURL != "" {
+		avatarURL = &info.AvatarURL
+	}
+
 	dbExternalID := sql.NullString{String: info.ExternalID}
 	dbExternalID.Valid = info.ExternalID != ""
 
@@ -196,8 +202,8 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 	var siteAdmin bool
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(external_id, username, display_name, external_provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
-		dbExternalID, info.Username, info.DisplayName, dbExternalProvider, createdAt, updatedAt, passwd, !siteInitialized).Scan(&id, &siteAdmin)
+		"INSERT INTO users(external_id, username, display_name, avatar_url, external_provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+		dbExternalID, info.Username, info.DisplayName, avatarURL, dbExternalProvider, createdAt, updatedAt, passwd, !siteInitialized).Scan(&id, &siteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
@@ -249,6 +255,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		ExternalID:       &info.ExternalID,
 		Username:         info.Username,
 		DisplayName:      info.DisplayName,
+		AvatarURL:        info.AvatarURL,
 		ExternalProvider: info.ExternalProvider,
 		CreatedAt:        createdAt,
 		UpdatedAt:        updatedAt,
