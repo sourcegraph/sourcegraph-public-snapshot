@@ -89,7 +89,12 @@ func (r *userResolver) Email(ctx context.Context) (string, error) {
 
 func (r *userResolver) Username() string { return r.user.Username }
 
-func (r *userResolver) DisplayName() *string { return &r.user.DisplayName }
+func (r *userResolver) DisplayName() *string {
+	if r.user.DisplayName == "" {
+		return nil
+	}
+	return &r.user.DisplayName
+}
 
 func (r *userResolver) AvatarURL() *string { return r.user.AvatarURL }
 
