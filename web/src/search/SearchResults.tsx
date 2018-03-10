@@ -285,7 +285,7 @@ export class SearchResults extends React.Component<Props, State> {
                                     <span className="search-results__info-notice">
                                         <HourglassIcon className="icon-inline" />
                                         {this.state.timedout.length > 0 && (
-                                            <span title={this.state.timedout.join('\n')}>
+                                            <span data-tooltip={this.state.timedout.join('\n')}>
                                                 {this.state.timedout.length}&nbsp;
                                                 {pluralize(
                                                     'repository',
@@ -298,7 +298,7 @@ export class SearchResults extends React.Component<Props, State> {
                                         {this.state.timedout.length > 0 &&
                                             this.state.cloning.length > 0 && <span>&nbsp;and&nbsp;</span>}
                                         {this.state.cloning.length > 0 && (
-                                            <span title={this.state.cloning.join('\n')}>
+                                            <span data-tooltip={this.state.cloning.join('\n')}>
                                                 {this.state.cloning.length}&nbsp;
                                                 {pluralize(
                                                     'repository',

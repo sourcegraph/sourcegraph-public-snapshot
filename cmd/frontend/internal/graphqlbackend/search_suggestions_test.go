@@ -177,9 +177,9 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockResolveRepoGroups = nil }()
 
-		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, common *searchResultsCommon, err error) {
 			// TODO test symbol suggestions
-			return nil, nil
+			return nil, nil, nil
 		}
 		defer func() { mockSearchSymbols = nil }()
 		prevEnableSymbols := enableSymbols

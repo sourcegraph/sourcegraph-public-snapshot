@@ -14,18 +14,19 @@ import (
 
 	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-var mockSearchSymbols func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error)
+var mockSearchSymbols func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, common *searchResultsCommon, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
+func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, common *searchResultsCommon, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, query, limit)
 	}
@@ -40,18 +41,19 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 	}()
 
 	if args.query.Pattern == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
+	common = &searchResultsCommon{}
 	var (
-		run               = parallel.NewRun(20)
-		symbolResolversMu sync.Mutex
-		symbolResolvers   []*symbolResolver
+		run = parallel.NewRun(20)
+		mu  sync.Mutex
 	)
 	for _, repoRevs := range args.repos {
+		repoRevs := repoRevs
 		if ctx.Err() != nil {
 			break
 		}
@@ -59,86 +61,91 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 			continue
 		}
 		run.Acquire()
-		go func(repoRevs *repositoryRevisions) (err error) {
-			defer func() {
-				if err != nil {
-					run.Error(err)
-				}
-				run.Release()
-			}()
-
-			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-			defer cancel()
-
-			span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
-			defer func() {
-				if err != nil {
-					ext.Error.Set(span, true)
-					span.LogFields(otlog.Error(err))
-				}
-				span.Finish()
-			}()
-			span.SetTag("repo", string(repoRevs.repo.URI))
-
-			inputRev := repoRevs.revspecs()[0]
-			span.SetTag("rev", inputRev)
-			// Do not trigger a repo-updater lookup (e.g.,
-			// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
-			// down by a lot (if we're looping over many repos). This means that it'll fail if a
-			// repo is not on gitserver.
-			vcsrepo := backend.Repos.VCS(repoRevs.gitserverRepo)
-			commitID, err := vcsrepo.ResolveRevision(ctx, inputRev, nil)
-			if err != nil {
-				return err
+		goroutine.Go(func() {
+			defer run.Release()
+			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.query, query, limit)
+			mu.Lock()
+			defer mu.Unlock()
+			limitHit := len(res) > limit
+			repoErr = handleRepoSearchResult(common, *repoRevs, false, limitHit, repoErr)
+			if repoErr != nil {
+				run.Error(repoErr)
+			} else {
+				common.searched = append(common.searched, repoRevs.repo.URI)
 			}
-			span.SetTag("commit", string(commitID))
-
-			var excludePattern string
-			if args.query.ExcludePattern != nil {
-				excludePattern = *args.query.ExcludePattern
-			}
-			symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
-				Repo:            repoRevs.repo.URI,
-				CommitID:        commitID,
-				Query:           args.query.Pattern,
-				IsCaseSensitive: args.query.IsCaseSensitive,
-				IsRegExp:        args.query.IsRegExp,
-				IncludePatterns: args.query.IncludePatterns,
-				ExcludePattern:  excludePattern,
-				First:           limit,
-			})
-			if err != nil && err != context.Canceled && err != context.DeadlineExceeded && ctx.Err() == nil {
-				return err
-			}
-			baseURI, err := uri.Parse("git://" + string(repoRevs.repo.URI) + "?" + string(commitID))
-			if err != nil {
-				return err
-			}
-			if len(symbols) > 0 {
-				symbolResolversMu.Lock()
-				defer symbolResolversMu.Unlock()
-				for _, symbol := range symbols {
-					commit := &gitCommitResolver{
-						repo: &repositoryResolver{repo: repoRevs.repo},
-						oid:  gitObjectID(commitID),
-						// NOTE: Not all fields are set, for performance.
-					}
-					if inputRev != "" {
-						commit.inputRev = &inputRev
-					}
-					symbolResolvers = append(symbolResolvers, toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit))
-				}
-				if len(symbolResolvers) > limit {
+			if repoSymbols != nil {
+				res = append(res, repoSymbols...)
+				if limitHit {
 					cancelAll()
 				}
 			}
-			return nil
-		}(repoRevs)
+		})
 	}
 	err = run.Wait()
 
-	if len(symbolResolvers) > limit {
-		symbolResolvers = symbolResolvers[:limit]
+	if len(res) > limit {
+		common.limitHit = true
+		res = res[:limit]
+	}
+	return res, common, err
+}
+
+func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, patternInfo *patternInfo, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("repo", string(repoRevs.repo.URI))
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	inputRev := repoRevs.revspecs()[0]
+	span.SetTag("rev", inputRev)
+	// Do not trigger a repo-updater lookup (e.g.,
+	// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
+	// down by a lot (if we're looping over many repos). This means that it'll fail if a
+	// repo is not on gitserver.
+	vcsrepo := backend.Repos.VCS(repoRevs.gitserverRepo)
+	commitID, err := vcsrepo.ResolveRevision(ctx, inputRev, nil)
+	if err != nil {
+		return nil, err
+	}
+	span.SetTag("commit", string(commitID))
+
+	var excludePattern string
+	if patternInfo.ExcludePattern != nil {
+		excludePattern = *patternInfo.ExcludePattern
+	}
+	symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
+		Repo:            repoRevs.repo.URI,
+		CommitID:        commitID,
+		Query:           patternInfo.Pattern,
+		IsCaseSensitive: patternInfo.IsCaseSensitive,
+		IsRegExp:        patternInfo.IsRegExp,
+		IncludePatterns: patternInfo.IncludePatterns,
+		ExcludePattern:  excludePattern,
+		First:           limit,
+	})
+	baseURI, uriParseErr := uri.Parse("git://" + string(repoRevs.repo.URI) + "?" + string(commitID))
+	if uriParseErr != nil {
+		return nil, uriParseErr
+	}
+	symbolResolvers := make([]*symbolResolver, 0, len(symbols))
+	for _, symbol := range symbols {
+		commit := &gitCommitResolver{
+			repo: &repositoryResolver{repo: repoRevs.repo},
+			oid:  gitObjectID(commitID),
+			// NOTE: Not all fields are set, for performance.
+		}
+		if inputRev != "" {
+			commit.inputRev = &inputRev
+		}
+		symbolResolvers = append(symbolResolvers, toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit))
 	}
 	return symbolResolvers, err
 }

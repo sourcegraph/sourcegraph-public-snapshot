@@ -34,7 +34,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	zoektpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/zoekt"
 )
 
@@ -340,37 +339,6 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 type repoSearchArgs struct {
 	query *patternInfo
 	repos []*repositoryRevisions
-}
-
-// handleRepoSearchResult handles the limitHit and searchErr returned by a call to searcher or
-// gitserver, updating common as to reflect that new information. If searchErr is a fatal error,
-// it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
-// nil error.
-//
-// Callers should use it as follows:
-//
-//  if fatalErr := handleRepoSearchResult(common, repoRev, limitHit, timedOut, searchErr); fatalErr != nil {
-//     err = errors.Wrapf(searchErr, "failed to search %s because foo", ...) // return this error
-//     cancel() // cancel any other in-flight operations
-//	}
-func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevisions, limitHit, timedOut bool, searchErr error) (fatalErr error) {
-	common.limitHit = common.limitHit || limitHit
-	if e, ok := searchErr.(vcs.RepoNotExistError); ok {
-		if e.CloneInProgress {
-			common.cloning = append(common.cloning, repoRev.repo.URI)
-		} else {
-			common.missing = append(common.missing, repoRev.repo.URI)
-		}
-	} else if errcode.IsNotFound(searchErr) {
-		common.missing = append(common.missing, repoRev.repo.URI)
-	} else if vcs.IsRevisionNotFound(searchErr) && (len(repoRev.revs) == 0 || len(repoRev.revs) == 1 && repoRev.revs[0].revspec == "") {
-		// If we didn't specify an input revision, then the repo is empty and can be ignored.
-	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		common.timedout = append(common.timedout, repoRev.repo.URI)
-	} else if searchErr != nil {
-		return searchErr
-	}
-	return nil
 }
 
 func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) (fm []*fileMatchResolver, limitHit bool, err error) {

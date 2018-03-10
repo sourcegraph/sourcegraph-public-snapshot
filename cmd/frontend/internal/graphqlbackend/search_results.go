@@ -670,7 +670,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				symbolResolvers, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
+				symbolResolvers, symbolsCommon, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
 				if err != nil {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, err)
@@ -696,7 +696,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					}
 					fileMatchesMu.Unlock()
 				}
-				// TODO update common properly
+				if symbolsCommon != nil {
+					commonMu.Lock()
+					common.update(*symbolsCommon)
+					commonMu.Unlock()
+				}
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths {

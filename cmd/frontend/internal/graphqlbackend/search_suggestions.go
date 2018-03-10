@@ -108,7 +108,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		resolvers, err := searchSymbols(ctx, &repoSearchArgs{query: p, repos: repoRevs}, r.query, 7)
+		resolvers, _, err := searchSymbols(ctx, &repoSearchArgs{query: p, repos: repoRevs}, r.query, 7)
 		if err != nil {
 			return nil, err
 		}
