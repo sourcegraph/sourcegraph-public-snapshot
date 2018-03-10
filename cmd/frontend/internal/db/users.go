@@ -520,19 +520,17 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u types.User
 		var displayName, dbExternalID, dbExternalProvider, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &dbExternalID, &u.Username, &displayName, &dbExternalProvider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
+		err := rows.Scan(&u.ID, &dbExternalID, &u.Username, &displayName, &dbExternalProvider, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
 		u.DisplayName = displayName.String
+		u.AvatarURL = avatarURL.String
 		if dbExternalID.Valid {
 			u.ExternalID = &dbExternalID.String
 		}
 		if dbExternalProvider.Valid {
 			u.ExternalProvider = dbExternalProvider.String
-		}
-		if avatarURL.Valid {
-			u.AvatarURL = avatarURL.String
 		}
 		users = append(users, &u)
 	}
