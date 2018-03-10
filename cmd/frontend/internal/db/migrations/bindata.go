@@ -144,6 +144,8 @@
 // ../../../../../migrations/1519507899_drop_global_dep_private.up.sql
 // ../../../../../migrations/1520588597_user_emails_unique_verified_only.down.sql
 // ../../../../../migrations/1520588597_user_emails_unique_verified_only.up.sql
+// ../../../../../migrations/1520708880_users_display_name_nullable.down.sql
+// ../../../../../migrations/1520708880_users_display_name_nullable.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3091,6 +3093,46 @@ func _1520588597_user_emails_unique_verified_onlyUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1520708880_users_display_name_nullableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x0a\x0d\x70\x71\x0c\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x08\x76\x0d\x51\x48\xc9\x2c\x2e\xc8\x49\xac\x8c\xcf\x4b\xcc\x4d\xb5\x55\x57\x57\x08\xf7\x70\x0d\x72\x45\x11\x55\xf0\x0c\x56\xf0\x0b\xf5\xf1\xb1\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x81\x99\x00\x11\x71\xf6\xf7\x09\xf5\xf5\x43\xd5\x04\x32\xdb\xcf\x3f\x04\xaa\x13\x10\x00\x00\xff\xff\x5b\xb4\x20\x40\x77\x00\x00\x00")
+
+func _1520708880_users_display_name_nullableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1520708880_users_display_name_nullableDownSql,
+		"1520708880_users_display_name_nullable.down.sql",
+	)
+}
+
+func _1520708880_users_display_name_nullableDownSql() (*asset, error) {
+	bytes, err := _1520708880_users_display_name_nullableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1520708880_users_display_name_nullable.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1520708880_users_display_name_nullableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x80\x88\x38\xfb\xfb\x84\xfa\xfa\x29\xa4\x64\x16\x17\xe4\x24\x56\xc6\xe7\x25\xe6\xa6\x2a\xb8\x04\xf9\x07\x28\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\x58\x73\x85\x06\xb8\x38\x86\xc0\x74\x05\xbb\x86\xa0\x28\xb6\x05\xa9\x51\x08\xf7\x70\x0d\x72\x45\x15\x57\x57\xb7\xe6\x02\x04\x00\x00\xff\xff\x2f\x46\xf4\x56\x75\x00\x00\x00")
+
+func _1520708880_users_display_name_nullableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1520708880_users_display_name_nullableUpSql,
+		"1520708880_users_display_name_nullable.up.sql",
+	)
+}
+
+func _1520708880_users_display_name_nullableUpSql() (*asset, error) {
+	bytes, err := _1520708880_users_display_name_nullableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1520708880_users_display_name_nullable.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3287,6 +3329,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1519507899_drop_global_dep_private.up.sql":                   _1519507899_drop_global_dep_privateUpSql,
 	"1520588597_user_emails_unique_verified_only.down.sql":        _1520588597_user_emails_unique_verified_onlyDownSql,
 	"1520588597_user_emails_unique_verified_only.up.sql":          _1520588597_user_emails_unique_verified_onlyUpSql,
+	"1520708880_users_display_name_nullable.down.sql":             _1520708880_users_display_name_nullableDownSql,
+	"1520708880_users_display_name_nullable.up.sql":               _1520708880_users_display_name_nullableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3474,6 +3518,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1519507899_drop_global_dep_private.up.sql":                   &bintree{_1519507899_drop_global_dep_privateUpSql, map[string]*bintree{}},
 	"1520588597_user_emails_unique_verified_only.down.sql":        &bintree{_1520588597_user_emails_unique_verified_onlyDownSql, map[string]*bintree{}},
 	"1520588597_user_emails_unique_verified_only.up.sql":          &bintree{_1520588597_user_emails_unique_verified_onlyUpSql, map[string]*bintree{}},
+	"1520708880_users_display_name_nullable.down.sql":             &bintree{_1520708880_users_display_name_nullableDownSql, map[string]*bintree{}},
+	"1520708880_users_display_name_nullable.up.sql":               &bintree{_1520708880_users_display_name_nullableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

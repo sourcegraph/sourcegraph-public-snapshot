@@ -271,32 +271,51 @@ func orgsForAllUsersToJoin(userOrgMap map[string][]string) ([]string, []error) {
 	return nil, errors
 }
 
-func (u *users) Update(ctx context.Context, id int32, username *string, displayName *string, avatarURL *string) error {
-	if username != nil {
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET username=$1 WHERE id=$2", username, id); err != nil {
-			if pqErr, ok := err.(*pq.Error); ok {
-				if pqErr.Constraint == "users_username_key" {
-					return errors.New("username already exists")
-				}
-				return err
-			}
-		}
+// UserUpdate describes user fields to update.
+type UserUpdate struct {
+	Username string // update the Username to this value (if non-zero)
+
+	// For the following fields:
+	//
+	// - If nil, the value in the DB is unchanged.
+	// - If pointer to "" (empty string), the value in the DB is set to null.
+	// - If pointer to a non-empty string, the value in the DB is set to the string.
+	DisplayName, AvatarURL *string
+}
+
+// Update updates a user's profile information.
+func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
+	fieldUpdates := []*sqlf.Query{
+		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
 	}
-	if displayName != nil {
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET display_name=$1 WHERE id=$2", displayName, id); err != nil {
-			return err
-		}
+	if update.Username != "" {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("username=%s", update.Username))
 	}
-	if avatarURL != nil {
-		if _, err := globalDB.ExecContext(ctx, "UPDATE users SET avatar_url=$1 WHERE id=$2", avatarURL, id); err != nil {
-			return err
+	strOrNil := func(s string) *string {
+		if s == "" {
+			return nil
 		}
+		return &s
 	}
-	if res, err := globalDB.ExecContext(ctx, "UPDATE users SET updated_at=now() WHERE id=$1", id); err != nil {
+	if update.DisplayName != nil {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("display_name=%s", strOrNil(*update.DisplayName)))
+	}
+	if update.AvatarURL != nil {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("avatar_url=%s", strOrNil(*update.AvatarURL)))
+	}
+	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
+	res, err := globalDB.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "users_username_key" {
+			return errors.New("username already exists")
+		}
 		return err
-	} else if nrows, err := res.RowsAffected(); err != nil {
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
 		return err
-	} else if nrows == 0 {
+	}
+	if nrows == 0 {
 		return userNotFoundErr{args: []interface{}{id}}
 	}
 	return nil
@@ -489,11 +508,12 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	defer rows.Close()
 	for rows.Next() {
 		var u types.User
-		var dbExternalID, dbExternalProvider, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &dbExternalID, &u.Username, &u.DisplayName, &dbExternalProvider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
+		var displayName, dbExternalID, dbExternalProvider, avatarURL sql.NullString
+		err := rows.Scan(&u.ID, &dbExternalID, &u.Username, &displayName, &dbExternalProvider, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
+		u.DisplayName = displayName.String
 		if dbExternalID.Valid {
 			u.ExternalID = &dbExternalID.String
 		}

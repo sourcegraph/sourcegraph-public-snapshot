@@ -238,10 +238,13 @@ func TestUsers_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := Users.Update(ctx, user.ID, strptr("u1"), strptr("d1"), strptr("a1")); err != nil {
+	if err := Users.Update(ctx, user.ID, UserUpdate{
+		Username:    "u1",
+		DisplayName: strptr("d1"),
+		AvatarURL:   strptr("a1"),
+	}); err != nil {
 		t.Fatal(err)
 	}
-
 	user, err = Users.GetByID(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -251,6 +254,25 @@ func TestUsers_Update(t *testing.T) {
 	}
 	if want := "d1"; user.DisplayName != want {
 		t.Errorf("got display name %q, want %q", user.DisplayName, want)
+	}
+	if want := "a1"; user.AvatarURL != want {
+		t.Errorf("got avatar URL %q, want %q", user.AvatarURL, want)
+	}
+
+	if err := Users.Update(ctx, user.ID, UserUpdate{
+		DisplayName: strptr(""),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	user, err = Users.GetByID(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "u1"; user.Username != want {
+		t.Errorf("got username %q, want %q", user.Username, want)
+	}
+	if user.DisplayName != "" {
+		t.Errorf("got display name %q, want nil", user.DisplayName)
 	}
 	if want := "a1"; user.AvatarURL != want {
 		t.Errorf("got avatar URL %q, want %q", user.AvatarURL, want)
@@ -266,12 +288,12 @@ func TestUsers_Update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Users.Update(ctx, user2.ID, strptr("u1"), nil, nil); err == nil {
+	if err := Users.Update(ctx, user2.ID, UserUpdate{Username: "u1"}); err == nil {
 		t.Fatal("want error when updating user to existing username")
 	}
 
 	// Can't update nonexistent user.
-	if err := Users.Update(ctx, 12345, strptr("u12345"), nil, nil); err == nil {
+	if err := Users.Update(ctx, 12345, UserUpdate{Username: "u12345"}); err == nil {
 		t.Fatal("want error when updating nonexistent user")
 	}
 }

@@ -441,7 +441,7 @@ Foreign-key constraints:
  id                | integer                  | not null default nextval('users_id_seq'::regclass)
  external_id       | text                     | 
  username          | citext                   | not null
- display_name      | text                     | not null
+ display_name      | text                     | 
  avatar_url        | text                     | 
  created_at        | timestamp with time zone | not null default now()
  updated_at        | timestamp with time zone | not null default now()

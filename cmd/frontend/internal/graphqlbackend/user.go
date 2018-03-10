@@ -148,7 +148,14 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := db.Users.Update(ctx, user.ID, args.Username, args.DisplayName, args.AvatarURL); err != nil {
+	update := db.UserUpdate{
+		DisplayName: args.DisplayName,
+		AvatarURL:   args.AvatarURL,
+	}
+	if args.Username != nil {
+		update.Username = *args.Username
+	}
+	if err := db.Users.Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 
