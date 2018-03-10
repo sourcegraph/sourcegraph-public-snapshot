@@ -56,7 +56,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                 <div className="site-admin-detail-list__header site-admin-repositories-page__repo-header">
                     <RepoLink
                         repoPath={this.props.node.uri}
-                        to={`/${this.props.node.uri}/-/settings`}
+                        to={`/${this.props.node.uri}`}
                         className="site-admin-repositories-page__repo-link"
                     />
                     {this.props.node.enabled ? (
