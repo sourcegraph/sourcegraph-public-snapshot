@@ -52,8 +52,6 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
-var TestDisableExternalRepoBackfillInReposGetByURI bool
-
 // GetByURI retrieves the repository with the given URI. If the URI refers to a repository on a known external
 // service (such as a code host) that is not yet present in the database, it will automatically look up the
 // repository externally and add it to the database before returning it.
@@ -66,9 +64,7 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	defer done()
 
 	repo, err := db.Repos.GetByURI(ctx, uri)
-	// TEMPORARY: Backfill external repo info for (mostly auto-added) GitHub.com repositories.
-	needsExternalRepoBackfill := !TestDisableExternalRepoBackfillInReposGetByURI && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") && repo != nil && repo.ExternalRepo == nil
-	if (err != nil && conf.GetTODO().AutoRepoAdd) || needsExternalRepoBackfill {
+	if err != nil && conf.GetTODO().AutoRepoAdd {
 		// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 		// limit) for repositories that don't exist or private repositories that people attempt to
 		// access.
