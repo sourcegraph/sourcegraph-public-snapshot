@@ -24,6 +24,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Slack webhook URLs are now defined in user/organization JSON settings, not on the organization profile page. Previously defined organization Slack webhook URLs are automatically migrated to the organization's JSON settings.
 * The "unlimited" value for `maxReposToSearch` is now `-1` instead of `0`, and `0` now means to use the default.
 * `auth.provider` must be set (`builtin`, `openidconnect`, `saml`, `http-header`, etc.) to configure an authentication provider. Previously you could just set the detailed configuration property (`"auth.openIDConnect": {...}`, etc.) and it would implicitly enable that authentication provider.
+* The `autoRepoAdd` site configuration property was removed. Site admins can add repositories via site configuration.
 
 ### Bug fixes
 

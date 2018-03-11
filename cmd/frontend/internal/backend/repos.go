@@ -64,7 +64,8 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	defer done()
 
 	repo, err := db.Repos.GetByURI(ctx, uri)
-	if err != nil && conf.GetTODO().AutoRepoAdd {
+	if err != nil && envvar.SourcegraphDotComMode() {
+		// Automatically add repositories on Sourcegraph.com.
 		if err := s.Add(ctx, uri); err != nil {
 			return nil, err
 		}
