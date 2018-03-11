@@ -10,11 +10,12 @@ import (
 )
 
 type MockRepos struct {
-	Get      func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
-	GetByURI func(ctx context.Context, repo api.RepoURI) (*types.Repo, error)
-	List     func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
-	Delete   func(ctx context.Context, repo api.RepoID) error
-	Count    func(ctx context.Context, opt ReposListOptions) (int, error)
+	Get          func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
+	GetByURI     func(ctx context.Context, repo api.RepoURI) (*types.Repo, error)
+	List         func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
+	Delete       func(ctx context.Context, repo api.RepoID) error
+	Count        func(ctx context.Context, opt ReposListOptions) (int, error)
+	TryInsertNew func(api.InsertRepoOp) error
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
