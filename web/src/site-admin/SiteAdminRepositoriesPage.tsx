@@ -18,11 +18,11 @@ import {
     FilteredConnectionQueryArgs,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { fetchRepository } from '../repo/backend'
 import { RepoLink } from '../repo/RepoLink'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import {
+    addRepository,
     fetchAllRepositoriesAndPollIfAnyCloning,
     setAllRepositoriesEnabled,
     setRepositoryEnabled,
@@ -183,8 +183,8 @@ export class AddPublicRepositoryForm extends React.PureComponent<
             this.submits
                 .pipe(
                     mergeMap(({ repoName }) =>
-                        fetchRepository({ repoPath: `github.com/${repoName}` }).pipe(
-                            switchMap(repo => setRepositoryEnabled(repo.id, true)),
+                        addRepository(`github.com/${repoName}`).pipe(
+                            switchMap(({ id }) => setRepositoryEnabled(id, true)),
                             catchError(error => {
                                 console.error(error)
                                 eventLogger.log('PublicRepositoryAdditionFailed', {
