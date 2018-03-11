@@ -307,13 +307,19 @@ export function updateAllMirrorRepositories(): Observable<void> {
     )
 }
 
-export function checkMirrorRepositoryConnection(args: {
-    repository: GQLID
-}): Observable<GQL.ICheckMirrorRepositoryConnectionResult> {
+export function checkMirrorRepositoryConnection(
+    args:
+        | {
+              repository: GQLID
+          }
+        | {
+              name: string
+          }
+): Observable<GQL.ICheckMirrorRepositoryConnectionResult> {
     return mutateGraphQL(
         gql`
-            mutation CheckMirrorRepositoryConnection($repository: ID!) {
-                checkMirrorRepositoryConnection(repository: $repository) {
+            mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
+                checkMirrorRepositoryConnection(repository: $repository, name: $name) {
                     error
                 }
             }

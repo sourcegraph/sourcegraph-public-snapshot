@@ -277,8 +277,15 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo Repo) error {
 	return nil
 }
 
+// MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
+var MockIsRepoCloneable func(Repo) error
+
 // IsRepoCloneable returns nil if the repository is cloneable.
 func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
+	if MockIsRepoCloneable != nil {
+		return MockIsRepoCloneable(repo)
+	}
+
 	req := &protocol.IsRepoCloneableRequest{
 		Repo: repo.Name,
 		URL:  repo.URL,

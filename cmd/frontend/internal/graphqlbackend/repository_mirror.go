@@ -10,6 +10,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
@@ -94,7 +96,8 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*string, 
 }
 
 func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, args *struct {
-	Repository graphql.ID
+	Repository *graphql.ID
+	Name       *string
 }) (*checkMirrorRepositoryConnectionResult, error) {
 	// 🚨 SECURITY: This is an expensive operation and the errors may contain secrets,
 	// so only site admins may run it.
@@ -102,12 +105,27 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, err
 	}
 
-	repo, err := repositoryByID(ctx, args.Repository)
-	if err != nil {
-		return nil, err
+	if (args.Repository != nil && args.Name != nil) || (args.Repository == nil && args.Name == nil) {
+		return nil, errors.New("exactly one of the repository and name arguments must be set")
 	}
 
-	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
+	var repo *types.Repo
+	switch {
+	case args.Repository != nil:
+		repoID, err := unmarshalRepositoryID(*args.Repository)
+		if err != nil {
+			return nil, err
+		}
+		repo, err = backend.Repos.Get(ctx, repoID)
+		if err != nil {
+			return nil, err
+		}
+	case args.Name != nil:
+		// GitserverRepoInfo will use just the URI to look up the repository from repo-updater.
+		repo = &types.Repo{URI: api.RepoURI(*args.Name)}
+	}
+
+	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
