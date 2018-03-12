@@ -148,9 +148,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		return results, nil
 	}
-	if enableSymbols {
-		suggesters = append(suggesters, showSymbolMatches)
-	}
+	suggesters = append(suggesters, showSymbolMatches)
 
 	showFilesWithTextMatches := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
 		// If terms are specified, then show files that have text matches. Set an aggressive timeout

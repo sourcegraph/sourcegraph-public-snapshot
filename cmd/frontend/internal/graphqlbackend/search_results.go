@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path"
 	"regexp"
 	"sort"
@@ -33,8 +32,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
-
-var enableSymbols, _ = strconv.ParseBool(os.Getenv("ENABLE_SYMBOLS"))
 
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
@@ -663,9 +660,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "symbol":
-			if !enableSymbols {
-				continue
-			}
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
