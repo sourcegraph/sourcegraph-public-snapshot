@@ -2,6 +2,7 @@ import * as React from 'react'
 
 interface HeroPageProps {
     icon: React.ComponentType
+    className?: string
     title?: string | JSX.Element
     subtitle?: string | JSX.Element
     cta?: JSX.Element
@@ -10,7 +11,7 @@ interface HeroPageProps {
 export class HeroPage extends React.Component<HeroPageProps, {}> {
     public render(): JSX.Element | null {
         return (
-            <div className="hero-page">
+            <div className={`hero-page ${this.props.className || ''}`}>
                 <div className="hero-page__icon">
                     <this.props.icon />
                 </div>
