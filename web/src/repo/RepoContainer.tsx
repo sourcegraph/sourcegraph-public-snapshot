@@ -23,8 +23,7 @@ import { RepositoryGraphAction } from './graph/RepositoryGraphAction'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
-import { RepositoryDisabledPage } from './RepositoryDisabledPage'
-import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
+import { RepositoryErrorPage } from './RepositoryErrorPage'
 import { RepoSettingsArea } from './settings/RepoSettingsArea'
 
 const RepoPageNotFound: React.SFC = () => (
@@ -147,16 +146,18 @@ export class RepoContainer extends React.Component<Props, State> {
         const { repoPath, filePath, position, range } = parseBrowserRepoURL(
             location.pathname + location.search + location.hash
         )
+        const viewerCanAdminister = !!this.props.user && this.props.user.siteAdmin
 
         if (isErrorLike(this.state.repoOrError)) {
             // Display error page
             switch (this.state.repoOrError.code) {
                 case EREPONOTFOUND:
                     return (
-                        <RepositoryNotFoundPage
+                        <RepositoryErrorPage
                             repo={repoPath}
-                            notFoundError={this.state.repoOrError}
-                            viewerCanAddRepository={!!this.props.user && this.props.user.siteAdmin}
+                            repoID={null}
+                            error={this.state.repoOrError}
+                            viewerCanAdminister={viewerCanAdminister}
                             onDidAddRepository={this.onDidAddRepository}
                         />
                     )
@@ -248,8 +249,11 @@ export class RepoContainer extends React.Component<Props, State> {
                         <Route key="hardcoded-key" component={RepoPageNotFound} />
                     </Switch>
                 ) : (
-                    <RepositoryDisabledPage
-                        repo={this.state.repoOrError}
+                    <RepositoryErrorPage
+                        repo={this.state.repoOrError.uri}
+                        repoID={this.state.repoOrError.id}
+                        error="disabled"
+                        viewerCanAdminister={viewerCanAdminister}
                         onDidUpdateRepository={this.onDidUpdateRepository}
                     />
                 )}
