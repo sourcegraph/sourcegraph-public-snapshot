@@ -67,6 +67,8 @@ func generateConfigFile(path string) (configJSON string, err error) {
 		AuthProvider:     "builtin",
 		UpdateChannel:    "release",
 		MaxReposToSearch: 50,
+
+		DisablePublicRepoRedirects: true,
 	}
 
 	data, err := json.MarshalIndent(defaultSiteConfig, "", "  ")
