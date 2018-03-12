@@ -901,7 +901,7 @@
   branch = "master"
   name = "github.com/sourcegraph/godockerize"
   packages = ["."]
-  revision = "803643664f8be2062add16ed8a2f8967a4d66663"
+  revision = "b64780c1e218bb4b8f01d138a5298c898e79b871"
 
 [[projects]]
   branch = "master"

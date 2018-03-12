@@ -1,3 +1,5 @@
+// +build go1.10
+
 package main
 
 import (
@@ -179,7 +181,7 @@ func doBuild(c *cli.Context) error {
 
 	for _, importPath := range packages {
 		fmt.Printf("godockerize: Building Go binary %s...\n", path.Base(importPath))
-		cmd := exec.Command("go", "build", "-buildmode", "exe", "-tags", "dist", "-a", "-o", path.Base(importPath), importPath)
+		cmd := exec.Command("go", "build", "-buildmode", "exe", "-tags", "dist", "-o", path.Base(importPath), importPath)
 		cmd.Dir = tmpdir
 		cmd.Env = []string{
 			"GOARCH=amd64",

@@ -303,7 +303,6 @@ type SymbolKind int
 
 // The SymbolKind values are defined at https://microsoft.github.io/language-server-protocol/specification.
 const (
-	SKUnknown       SymbolKind = 0
 	SKFile          SymbolKind = 1
 	SKModule        SymbolKind = 2
 	SKNamespace     SymbolKind = 3
@@ -337,7 +336,6 @@ func (s SymbolKind) String() string {
 }
 
 var symbolKindName = map[SymbolKind]string{
-	SKUnknown:       "Unknown",
 	SKFile:          "File",
 	SKModule:        "Module",
 	SKNamespace:     "Namespace",
