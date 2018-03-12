@@ -32,6 +32,13 @@
                 content: ' – ';
             }
         }
+
+        &__container-name,
+        &__path {
+            .theme-dark & {
+                color: #566e9f;
+            }
+        }
     }
 }
 
