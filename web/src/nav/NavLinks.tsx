@@ -59,21 +59,18 @@ export class NavLinks extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className={`nav-links ${this.props.className || ''}`}>
-                {this.props.onShowScopes &&
-                    this.state.user && (
-                        <a
-                            className="nav-links__link nav-links__scopes-toggle"
-                            onClick={this.onShowScopes}
-                            data-tooltip={this.props.showScopes ? 'Hide scopes' : 'Show scopes'}
-                            href=""
-                        >
-                            {this.props.showScopes ? (
-                                <ChevronUpIcon className="icon-inline" />
-                            ) : (
-                                <ChevronDownIcon className="icon-inline" />
-                            )}
-                        </a>
+                <a
+                    className="nav-links__link nav-links__scopes-toggle"
+                    onClick={this.onShowScopes}
+                    data-tooltip={this.props.showScopes ? 'Hide scopes' : 'Show scopes'}
+                    href=""
+                >
+                    {this.props.showScopes ? (
+                        <ChevronUpIcon className="icon-inline" />
+                    ) : (
+                        <ChevronDownIcon className="icon-inline" />
                     )}
+                </a>
                 {showDotComMarketing && (
                     <a
                         href="https://about.sourcegraph.com"
