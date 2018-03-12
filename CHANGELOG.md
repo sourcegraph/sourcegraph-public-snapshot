@@ -17,6 +17,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * A new `"blacklistGoGet": ["mydomain.org,myseconddomain.com"]` offers users a quick escape hatch in the event that Sourcegraph is making unwanted `go get` or `git clone` requests to their website due to incorrectly-configured monorepos. Most users will never use this option.
 * Search suggestions and results now include symbol results. The new filter `type:symbol` causes only symbol results to be shown.
   Additionally, symbols for a repository can be browsed in the new symbols sidebar.
+* You can now expand and collapse all items on a search results page or selectively expand and collapse individual items.
 
 ### Configuration changes
 

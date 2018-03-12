@@ -29,6 +29,8 @@ interface Props {
      * Whether this diff should be rendered as expanded.
      */
     expanded: boolean
+
+    allExpanded?: boolean
 }
 
 export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props) => {

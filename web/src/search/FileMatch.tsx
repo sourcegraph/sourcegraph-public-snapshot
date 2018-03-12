@@ -49,6 +49,8 @@ interface Props {
     showAllMatches: boolean
 
     isLightTheme: boolean
+
+    allExpanded?: boolean
 }
 
 const subsetMatches = 2
@@ -149,7 +151,6 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
             </div>
         )
     }
-
     if (props.showAllMatches) {
         return (
             <ResultContainer
@@ -158,6 +159,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                 icon={props.icon}
                 title={title}
                 expandedChildren={getChildren(true)}
+                allExpanded={props.allExpanded}
             />
         )
     } else {
@@ -175,6 +177,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                     items.length - subsetMatches,
                     'matches'
                 )}`}
+                allExpanded={props.allExpanded}
             />
         )
     }

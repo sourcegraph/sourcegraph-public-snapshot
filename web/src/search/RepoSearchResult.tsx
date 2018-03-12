@@ -12,8 +12,15 @@ interface Props {
      * The icon to show left to the title.
      */
     icon: React.ComponentType<{ className: string }>
+
+    allExpanded?: boolean
 }
 
 export const RepoSearchResult: React.StatelessComponent<Props> = (props: Props) => (
-    <ResultContainer collapsible={false} icon={props.icon} title={<RepoFileLink repoPath={props.repoPath} />} />
+    <ResultContainer
+        collapsible={false}
+        icon={props.icon}
+        title={<RepoFileLink repoPath={props.repoPath} />}
+        allExpanded={props.allExpanded}
+    />
 )

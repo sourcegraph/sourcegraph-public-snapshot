@@ -58,6 +58,9 @@ interface Props {
      * This component does not accept children.
      */
     children?: never
+
+    /** Expand all results */
+    allExpanded?: boolean
 }
 
 interface State {
@@ -73,7 +76,21 @@ interface State {
 export class ResultContainer extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
-        this.state = { expanded: this.props.defaultExpanded }
+        this.state = { expanded: this.props.allExpanded || this.props.defaultExpanded }
+    }
+
+    public componentWillReceiveProps(nextProps: Props): void {
+        if (this.state.expanded === this.props.allExpanded && this.props.allExpanded !== nextProps.allExpanded) {
+            this.setState({ expanded: nextProps.allExpanded })
+        }
+
+        if (this.state.expanded === this.props.allExpanded && this.props.allExpanded === nextProps.allExpanded) {
+            this.setState({ expanded: !this.state.expanded })
+        }
+
+        if (this.state.expanded !== this.props.allExpanded && this.props.allExpanded !== nextProps.allExpanded) {
+            this.setState({ expanded: nextProps.allExpanded })
+        }
     }
 
     public render(): JSX.Element | null {

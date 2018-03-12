@@ -53,7 +53,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+
+            &-left {
+                display: flex;
+            }
         }
+    }
+
+    &__stats {
+        margin-left: 0.5rem;
     }
 
     // In narrow windows, make the results flush with the left/right sides,
@@ -62,6 +70,10 @@
         &__list {
             padding-left: 0;
             padding-right: 0;
+        }
+
+        &__info-row-left {
+            margin-left: 0.5rem;
         }
 
         &__filters-bar,

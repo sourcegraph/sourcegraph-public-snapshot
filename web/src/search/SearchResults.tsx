@@ -1,3 +1,5 @@
+import ArrowCollapseVerticalIcon from '@sourcegraph/icons/lib/ArrowCollapseVertical'
+import ArrowExpandVerticalIcon from '@sourcegraph/icons/lib/ArrowExpandVertical'
 import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import DocumentIcon from '@sourcegraph/icons/lib/Document'
 import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
@@ -59,7 +61,10 @@ interface State {
     didSave?: boolean
     user?: GQL.IUser | null
     dynamicFilters: GQL.ISearchFilter[]
+    allExpanded?: boolean
 }
+
+const ALL_EXPANDED_LOCAL_STORAGE_KEY = 'allExpanded'
 
 export class SearchResults extends React.Component<Props, State> {
     private static SHOW_MISSING = true
@@ -75,6 +80,7 @@ export class SearchResults extends React.Component<Props, State> {
         didSave: false,
         showModal: false,
         dynamicFilters: [],
+        allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) !== 'false',
     }
 
     private componentUpdates = new Subject<Props>()
@@ -141,6 +147,7 @@ export class SearchResults extends React.Component<Props, State> {
                                     didSave: false,
                                     showModal: false,
                                     dynamicFilters: [],
+                                    allExpanded: false,
                                 },
                             ])
                         )
@@ -173,6 +180,7 @@ export class SearchResults extends React.Component<Props, State> {
                         didSave: false,
                         showModal: false,
                         dynamicFilters: [],
+                        allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) !== 'false',
                     }))
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
@@ -182,6 +190,10 @@ export class SearchResults extends React.Component<Props, State> {
 
     public componentWillReceiveProps(newProps: Props): void {
         this.componentUpdates.next(newProps)
+    }
+
+    public componentDidUpdate(): void {
+        localStorage.setItem(ALL_EXPANDED_LOCAL_STORAGE_KEY, this.state.allExpanded + '')
     }
 
     public componentWillUnmount(): void {
@@ -281,57 +293,73 @@ export class SearchResults extends React.Component<Props, State> {
                             this.state.cloning.length > 0 ||
                             this.state.results.length > 0) && (
                             <small className="search-results__info-row">
-                                {(this.state.timedout.length > 0 || this.state.cloning.length > 0) && (
-                                    <span className="search-results__info-notice">
-                                        <HourglassIcon className="icon-inline" />
-                                        {this.state.timedout.length > 0 && (
-                                            <span data-tooltip={this.state.timedout.join('\n')}>
-                                                {this.state.timedout.length}&nbsp;
-                                                {pluralize(
-                                                    'repository',
-                                                    this.state.timedout.length,
-                                                    'repositories'
-                                                )}{' '}
-                                                timed out
-                                            </span>
-                                        )}
-                                        {this.state.timedout.length > 0 &&
-                                            this.state.cloning.length > 0 && <span>&nbsp;and&nbsp;</span>}
-                                        {this.state.cloning.length > 0 && (
-                                            <span data-tooltip={this.state.cloning.join('\n')}>
-                                                {this.state.cloning.length}&nbsp;
-                                                {pluralize(
-                                                    'repository',
-                                                    this.state.cloning.length,
-                                                    'repositories'
-                                                )}{' '}
-                                                cloning
-                                            </span>
-                                        )}
-                                        &nbsp;(reload to try again)
-                                    </span>
-                                )}
-                                {typeof this.state.approximateResultCount === 'string' &&
-                                    typeof this.state.resultCount === 'number' && (
-                                        <span className="search-results__stats">
-                                            {this.state.approximateResultCount}{' '}
-                                            {pluralize('result', this.state.resultCount)}
-                                            {typeof this.state.elapsedMilliseconds === 'number' && (
-                                                <> in {(this.state.elapsedMilliseconds / 1000).toFixed(2)} seconds</>
+                                <div className="search-results__info-row-left">
+                                    {(this.state.timedout.length > 0 || this.state.cloning.length > 0) && (
+                                        <span className="search-results__info-notice">
+                                            <HourglassIcon className="icon-inline" />
+                                            {this.state.timedout.length > 0 && (
+                                                <span data-tooltip={this.state.timedout.join('\n')}>
+                                                    {this.state.timedout.length}&nbsp;
+                                                    {pluralize(
+                                                        'repository',
+                                                        this.state.timedout.length,
+                                                        'repositories'
+                                                    )}{' '}
+                                                    timed out
+                                                </span>
                                             )}
+                                            {this.state.timedout.length > 0 &&
+                                                this.state.cloning.length > 0 && <span>&nbsp;and&nbsp;</span>}
+                                            {this.state.cloning.length > 0 && (
+                                                <span data-tooltip={this.state.cloning.join('\n')}>
+                                                    {this.state.cloning.length}&nbsp;
+                                                    {pluralize(
+                                                        'repository',
+                                                        this.state.cloning.length,
+                                                        'repositories'
+                                                    )}{' '}
+                                                    cloning
+                                                </span>
+                                            )}
+                                            &nbsp;(reload to try again)
                                         </span>
                                     )}
-                                {!this.state.didSave &&
-                                    this.state.user && (
-                                        <button onClick={this.showSaveQueryModal} className="btn btn-link">
-                                            <SaveIcon className="icon-inline" /> Save this search query
+                                    {typeof this.state.approximateResultCount === 'string' &&
+                                        typeof this.state.resultCount === 'number' && (
+                                            <span className="search-results__stats">
+                                                {this.state.approximateResultCount}{' '}
+                                                {pluralize('result', this.state.resultCount)}
+                                                {typeof this.state.elapsedMilliseconds === 'number' && (
+                                                    <>
+                                                        {' '}
+                                                        in {(this.state.elapsedMilliseconds / 1000).toFixed(2)} seconds
+                                                    </>
+                                                )}
+                                            </span>
+                                        )}
+                                </div>
+                                <div className="search-results__info-row-right">
+                                    {this.state.allExpanded ? (
+                                        <button onClick={this.expandAllResults} className="btn btn-link">
+                                            <ArrowCollapseVerticalIcon className="icon-inline" />Collapse all results
+                                        </button>
+                                    ) : (
+                                        <button onClick={this.expandAllResults} className="btn btn-link">
+                                            <ArrowExpandVerticalIcon className="icon-inline" />Expand all results
                                         </button>
                                     )}
-                                {this.state.didSave && (
-                                    <span>
-                                        <CheckmarkIcon className="icon-inline" /> Query saved
-                                    </span>
-                                )}
+                                    {!this.state.didSave &&
+                                        this.state.user && (
+                                            <button onClick={this.showSaveQueryModal} className="btn btn-link">
+                                                <SaveIcon className="icon-inline" /> Save this search query
+                                            </button>
+                                        )}
+                                    {this.state.didSave && (
+                                        <span>
+                                            <CheckmarkIcon className="icon-inline" /> Query saved
+                                        </span>
+                                    )}
+                                </div>
                             </small>
                         )}
                         {!this.state.alert &&
@@ -381,6 +409,7 @@ export class SearchResults extends React.Component<Props, State> {
                         expanded={false}
                         showAllMatches={false}
                         isLightTheme={this.props.isLightTheme}
+                        allExpanded={this.state.allExpanded}
                     />
                 )
             case 'CommitSearchResult':
@@ -391,6 +420,7 @@ export class SearchResults extends React.Component<Props, State> {
                         result={result}
                         onSelect={this.logEvent}
                         expanded={expanded}
+                        allExpanded={this.state.allExpanded}
                     />
                 )
         }
@@ -415,6 +445,15 @@ export class SearchResults extends React.Component<Props, State> {
         }
         params.set('q', query)
         this.props.history.replace({ search: params.toString() })
+    }
+
+    private expandAllResults = () => {
+        this.setState(
+            state => ({ allExpanded: !state.allExpanded }),
+            () => {
+                eventLogger.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+            }
+        )
     }
 
     private onDynamicFilterClicked = (value: string) => {
