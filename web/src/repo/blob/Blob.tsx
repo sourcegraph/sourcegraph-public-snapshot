@@ -332,6 +332,21 @@ export class Blob extends React.Component<Props, State> {
                             }
                             const { target, ctx } = data
                             return this.getTooltip(target, ctx).pipe(
+                                tap(tooltip => {
+                                    if (!tooltip) {
+                                        this.setFixedTooltip()
+                                        return
+                                    }
+
+                                    const contents = tooltip.contents
+                                    if (!contents || isEmptyHover({ contents })) {
+                                        this.setFixedTooltip()
+                                        return
+                                    }
+
+                                    this.setFixedTooltip(tooltip)
+                                    updateTooltip(tooltip, true, this.tooltipActions(ctx))
+                                }),
                                 zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
                                 map(([tooltip, defResponse]) => ({
                                     ...tooltip,
@@ -508,6 +523,12 @@ export class Blob extends React.Component<Props, State> {
         )
     }
 
+    /**
+     * A fixed tooltip is one that is docked. In the web UI, this means the user has
+     * clicked on the symbol corresponding to the tooltip. getTooltip and getDefinition
+     * is called on the current fixedTooltip, so this should be called whenever there is
+     * a new symbol clicked/the tooltip we need information for changes.
+     */
     private setFixedTooltip = (data?: TooltipData) => {
         for (const el of document.querySelectorAll('.blob .selection-highlight')) {
             el.classList.remove('selection-highlight')
