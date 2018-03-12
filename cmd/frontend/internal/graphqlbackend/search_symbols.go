@@ -15,18 +15,19 @@ import (
 	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-var mockSearchSymbols func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, common *searchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*symbolResolver, common *searchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, query, limit)
 	}
@@ -90,7 +91,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 	return res, common, err
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, patternInfo *patternInfo, query searchquery.Query, limit int) (res []*symbolResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, patternInfo *patternInfo, query searchquery.Query, limit int) (res []*fileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -135,7 +136,8 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	if uriParseErr != nil {
 		return nil, uriParseErr
 	}
-	symbolResolvers := make([]*symbolResolver, 0, len(symbols))
+	fileMatchesByURI := make(map[string]*fileMatchResolver)
+	fileMatches := make([]*fileMatchResolver, 0)
 	for _, symbol := range symbols {
 		commit := &gitCommitResolver{
 			repo: &repositoryResolver{repo: repoRevs.repo},
@@ -145,9 +147,32 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 		if inputRev != "" {
 			commit.inputRev = &inputRev
 		}
-		symbolResolvers = append(symbolResolvers, toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit))
+		symbolRes := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit)
+		uri := makeFileMatchUriFromSymbol(symbolRes, inputRev)
+		if fileMatch, ok := fileMatchesByURI[uri]; ok {
+			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
+		} else {
+			fileMatch := &fileMatchResolver{
+				symbols:  []*symbolResolver{symbolRes},
+				uri:      uri,
+				repo:     symbolRes.location.resource.commit.repo.repo,
+				commitID: api.CommitID(symbolRes.location.resource.commit.oid),
+			}
+			fileMatchesByURI[uri] = fileMatch
+			fileMatches = append(fileMatches, fileMatch)
+		}
 	}
-	return symbolResolvers, err
+	return fileMatches, err
+}
+
+// makeFileMatchUriFromSymbol makes a git://repo?rev#path URI from a symbolResolver to use in a fileMatchResolver
+func makeFileMatchUriFromSymbol(symbolResolver *symbolResolver, inputRev string) string {
+	uri := "git:/" + string(symbolResolver.location.resource.commit.repo.URL())
+	if inputRev != "" {
+		uri += "?" + inputRev
+	}
+	uri += "#" + symbolResolver.location.resource.path
+	return uri
 }
 
 // symbolToLSPSymbolInformation converts a symbols service Symbol struct to an LSP SymbolInformation

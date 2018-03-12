@@ -670,28 +670,21 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				symbolResolvers, symbolsCommon, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
+				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
 				if err != nil {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, err)
 					multiErrMu.Unlock()
 				}
-				for _, s := range symbolResolvers {
-					key := fmt.Sprintf("git:/%s#%s", s.location.resource.commit.repo.URL(), s.location.resource.path)
+				for _, symbolFileMatch := range symbolFileMatches {
+					key := symbolFileMatch.uri
 					fileMatchesMu.Lock()
-					m, ok := fileMatches[key]
-					if ok {
-						m.symbols = append(m.symbols, s)
+					if m, ok := fileMatches[key]; ok {
+						m.symbols = symbolFileMatch.symbols
 					} else {
-						m = &fileMatchResolver{
-							symbols:  []*symbolResolver{s},
-							uri:      key,
-							repo:     s.location.resource.commit.repo.repo,
-							commitID: api.CommitID(s.location.resource.commit.oid),
-						}
-						fileMatches[key] = m
+						fileMatches[key] = symbolFileMatch
 						resultsMu.Lock()
-						results = append(results, &searchResultResolver{fileMatch: m})
+						results = append(results, &searchResultResolver{fileMatch: symbolFileMatch})
 						resultsMu.Unlock()
 					}
 					fileMatchesMu.Unlock()

@@ -108,30 +108,32 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		resolvers, _, err := searchSymbols(ctx, &repoSearchArgs{query: p, repos: repoRevs}, r.query, 7)
+		fileMatches, _, err := searchSymbols(ctx, &repoSearchArgs{query: p, repos: repoRevs}, r.query, 7)
 		if err != nil {
 			return nil, err
 		}
 
-		results = make([]*searchSuggestionResolver, len(resolvers))
-		for i, sr := range resolvers {
-			score := 20
-			if sr.symbol.ContainerName == "" {
-				score++
+		results = make([]*searchSuggestionResolver, 0)
+		for _, fileMatch := range fileMatches {
+			for _, sr := range fileMatch.symbols {
+				score := 20
+				if sr.symbol.ContainerName == "" {
+					score++
+				}
+				if len(sr.symbol.Name) < 12 {
+					score++
+				}
+				switch sr.symbol.Kind {
+				case lsp.SKFunction, lsp.SKMethod:
+					score += 2
+				case lsp.SKClass:
+					score += 3
+				}
+				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(string(sr.symbol.Location.URI)), strings.ToLower(sr.symbol.Name)) {
+					score++
+				}
+				results = append(results, newSearchResultResolver(sr, score))
 			}
-			if len(sr.symbol.Name) < 12 {
-				score++
-			}
-			switch sr.symbol.Kind {
-			case lsp.SKFunction, lsp.SKMethod:
-				score += 2
-			case lsp.SKClass:
-				score += 3
-			}
-			if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(string(sr.symbol.Location.URI)), strings.ToLower(sr.symbol.Name)) {
-				score++
-			}
-			results[i] = newSearchResultResolver(sr, score)
 		}
 
 		sort.Sort(searchResultSorter(results))
