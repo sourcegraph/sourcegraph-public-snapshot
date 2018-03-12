@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/diskcache"
 )
 
@@ -33,6 +35,7 @@ type cachedFile struct {
 func (f *cachedFile) Evict() {
 	// Best-effort. Ignore error
 	_ = os.Remove(f.path)
+	cachedFileEvict.Inc()
 }
 
 // cachedFetch will open a file from the local cache with key. If missing,
@@ -61,4 +64,15 @@ func zipNewFileReader(f *os.File) (*zip.Reader, error) {
 		return nil, err
 	}
 	return zip.NewReader(f, fi.Size())
+}
+
+var cachedFileEvict = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "xlang",
+	Subsystem: "vfs",
+	Name:      "cached_file_evict",
+	Help:      "Total number of evictions to cachedFetch archives.",
+})
+
+func init() {
+	prometheus.MustRegister(cachedFileEvict)
 }
