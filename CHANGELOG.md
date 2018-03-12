@@ -15,6 +15,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Sourcegraph now automatically detects basic `$GOPATH` configurations found in `.envrc` files in the root of repositories.
 * You can now configure the effective `$GOPATH`s of a repository by adding a `.sourcegraph/config.json` file to your repository with the contents `{"go": {"GOPATH": ["mygopath"]}}`.
 * A new `"blacklistGoGet": ["mydomain.org,myseconddomain.com"]` offers users a quick escape hatch in the event that Sourcegraph is making unwanted `go get` or `git clone` requests to their website due to incorrectly-configured monorepos. Most users will never use this option.
+* Search suggestions and results now include symbol results. The new filter `type:symbol` causes only symbol results to be shown.
 
 ### Configuration changes
 
