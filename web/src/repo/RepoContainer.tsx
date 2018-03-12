@@ -3,15 +3,17 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { merge } from 'rxjs/observable/merge'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
+import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { parseRepoRev, redirectToExternalHost } from '.'
 import { parseBrowserRepoURL } from '.'
+import { parseRepoRev, redirectToExternalHost } from '.'
 import { HeroPage } from '../components/HeroPage'
 import { queryUpdates } from '../search/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
@@ -21,7 +23,7 @@ import { RepositoryGraphAction } from './graph/RepositoryGraphAction'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
-import { RepositoryDisabledPage } from './RepositoryDisabledPage'
+import { RepositoryErrorPage } from './RepositoryErrorPage'
 import { RepoSettingsArea } from './settings/RepoSettingsArea'
 
 const RepoPageNotFound: React.SFC = () => (
@@ -57,6 +59,7 @@ const enableRepositoryGraph = localStorage.getItem('repositoryGraph') !== null
 export class RepoContainer extends React.Component<Props, State> {
     private routeMatchChanges = new Subject<{ repoRevAndRest: string }>()
     private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
+    private repositoryAdds = new Subject<void>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -73,11 +76,13 @@ export class RepoContainer extends React.Component<Props, State> {
         )
 
         // Fetch repository.
+        const repositoryChanges = parsedRouteChanges.pipe(map(({ repoPath }) => repoPath), distinctUntilChanged())
         this.subscriptions.add(
-            parsedRouteChanges
+            merge(
+                repositoryChanges,
+                this.repositoryAdds.pipe(withLatestFrom(repositoryChanges), map(([, repoPath]) => repoPath))
+            )
                 .pipe(
-                    map(({ repoPath }) => repoPath),
-                    distinctUntilChanged(),
                     tap(() => this.setState({ repoOrError: undefined })),
                     switchMap(repoPath =>
                         fetchRepository({ repoPath }).pipe(
@@ -138,15 +143,22 @@ export class RepoContainer extends React.Component<Props, State> {
             return null
         }
 
+        const { repoPath, filePath, position, range } = parseBrowserRepoURL(
+            location.pathname + location.search + location.hash
+        )
+        const viewerCanAdminister = !!this.props.user && this.props.user.siteAdmin
+
         if (isErrorLike(this.state.repoOrError)) {
             // Display error page
             switch (this.state.repoOrError.code) {
                 case EREPONOTFOUND:
                     return (
-                        <HeroPage
-                            icon={DirectionalSignIcon}
-                            title="404: Not Found"
-                            subtitle="The repository was not found."
+                        <RepositoryErrorPage
+                            repo={repoPath}
+                            repoID={null}
+                            error={this.state.repoOrError}
+                            viewerCanAdminister={viewerCanAdminister}
+                            onDidAddRepository={this.onDidAddRepository}
                         />
                     )
                 default:
@@ -161,7 +173,6 @@ export class RepoContainer extends React.Component<Props, State> {
         }
 
         const repoMatchURL = `/${this.state.repoOrError.uri}`
-        const { filePath, position, range } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
 
         const isSettingsPage =
             location.pathname === `${repoMatchURL}/-/settings` ||
@@ -238,8 +249,11 @@ export class RepoContainer extends React.Component<Props, State> {
                         <Route key="hardcoded-key" component={RepoPageNotFound} />
                     </Switch>
                 ) : (
-                    <RepositoryDisabledPage
-                        repo={this.state.repoOrError}
+                    <RepositoryErrorPage
+                        repo={this.state.repoOrError.uri}
+                        repoID={this.state.repoOrError.id}
+                        error="disabled"
+                        viewerCanAdminister={viewerCanAdminister}
                         onDidUpdateRepository={this.onDidUpdateRepository}
                     />
                 )}
@@ -248,6 +262,7 @@ export class RepoContainer extends React.Component<Props, State> {
     }
 
     private onDidUpdateRepository = (update: Partial<GQL.IRepository>) => this.repositoryUpdates.next(update)
+    private onDidAddRepository = () => this.repositoryAdds.next()
 }
 
 /**

@@ -49,8 +49,15 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
+// MockRepoLookup mocks (*Client).RepoLookup for tests.
+var MockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
+
 // RepoLookup retrieves information about the repository on repoupdater.
 func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
+	if MockRepoLookup != nil {
+		return MockRepoLookup(args)
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.RepoLookup")
 	defer func() {
 		if result != nil {

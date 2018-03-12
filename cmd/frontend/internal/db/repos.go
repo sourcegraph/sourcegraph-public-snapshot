@@ -512,6 +512,10 @@ INSERT INTO repo(uri, description, fork, language, enabled, external_id, externa
 // TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
 // with the given uri already exists.
 func (s *repos) TryInsertNew(ctx context.Context, op api.InsertRepoOp) error {
+	if Mocks.Repos.TryInsertNew != nil {
+		return Mocks.Repos.TryInsertNew(op)
+	}
+
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
 	_, err := globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, op.Enabled, spec.id, spec.serviceType, spec.serviceID)
 	return err

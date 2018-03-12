@@ -73,10 +73,6 @@ const SiteSchemaJSON = `{
       "default": false,
       "description": "Disable incoming connections from the Sourcegraph browser extension."
     },
-    "autoRepoAdd": {
-      "description": "Automatically add external public repositories on demand when visited.",
-      "type": "boolean"
-    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",

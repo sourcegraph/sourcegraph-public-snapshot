@@ -194,7 +194,6 @@ type SiteConfiguration struct {
 	AuthSaml                       *SAMLAuthProvider           `json:"auth.saml,omitempty"`
 	AuthUserIdentityHTTPHeader     string                      `json:"auth.userIdentityHTTPHeader,omitempty"`
 	AuthUserOrgMap                 map[string][]string         `json:"auth.userOrgMap,omitempty"`
-	AutoRepoAdd                    bool                        `json:"autoRepoAdd,omitempty"`
 	AwsCodeCommit                  []AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
 	BitbucketServer                []BitbucketServerConnection `json:"bitbucketServer,omitempty"`
 	BlacklistGoGet                 []string                    `json:"blacklistGoGet,omitempty"`

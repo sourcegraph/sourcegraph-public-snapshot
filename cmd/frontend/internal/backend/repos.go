@@ -52,8 +52,6 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
-var TestDisableExternalRepoBackfillInReposGetByURI bool
-
 // GetByURI retrieves the repository with the given URI. If the URI refers to a repository on a known external
 // service (such as a code host) that is not yet present in the database, it will automatically look up the
 // repository externally and add it to the database before returning it.
@@ -66,41 +64,10 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	defer done()
 
 	repo, err := db.Repos.GetByURI(ctx, uri)
-	// TEMPORARY: Backfill external repo info for (mostly auto-added) GitHub.com repositories.
-	needsExternalRepoBackfill := !TestDisableExternalRepoBackfillInReposGetByURI && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") && repo != nil && repo.ExternalRepo == nil
-	if (err != nil && conf.GetTODO().AutoRepoAdd) || needsExternalRepoBackfill {
-		// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
-		// limit) for repositories that don't exist or private repositories that people attempt to
-		// access.
-		if gitserverRepo := quickGitserverRepoInfo(uri); gitserverRepo != nil {
-			if isRepoCloneableErr := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); isRepoCloneableErr == gitserver.ErrNotCloneable || errors.Cause(isRepoCloneableErr) == gitserver.ErrNotCloneable {
-				if err == nil {
-					return nil, isRepoCloneableErr
-				}
-				return nil, err // return original error (likely "not found") if repository is not cloneable
-			} else if isRepoCloneableErr != nil {
-				return nil, isRepoCloneableErr
-			}
-		}
-
-		// Try to look up and auto-add the repo.
-		result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: uri})
-		if err != nil {
+	if err != nil && envvar.SourcegraphDotComMode() {
+		// Automatically add repositories on Sourcegraph.com.
+		if err := s.Add(ctx, uri); err != nil {
 			return nil, err
-		}
-		if result.Repo != nil {
-			// Allow anonymous users on Sourcegraph.com to enable repositories just by visiting them, but
-			// everywhere else, require server admins to explicitly enable repositories.
-			enableAutoAddedRepos := envvar.SourcegraphDotComMode()
-			if err := s.TryInsertNew(ctx, api.InsertRepoOp{
-				URI:          result.Repo.URI,
-				Description:  result.Repo.Description,
-				Fork:         result.Repo.Fork,
-				Enabled:      enableAutoAddedRepos,
-				ExternalRepo: result.Repo.ExternalRepo,
-			}); err != nil {
-				return nil, err
-			}
 		}
 		return db.Repos.GetByURI(ctx, uri)
 	} else if err != nil {
@@ -111,6 +78,53 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 	}
 
 	return repo, nil
+}
+
+// Add adds the repository with the given URI. The URI is mapped to a repository by consulting the
+// repo-updater, which contains information about all configured code hosts and the URIs that they
+// handle.
+func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
+	if Mocks.Repos.Add != nil {
+		return Mocks.Repos.Add(uri)
+	}
+
+	ctx, done := trace(ctx, "Repos", "Add", uri, &err)
+	defer done()
+
+	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
+	// limit) for repositories that don't exist or private repositories that people attempt to
+	// access.
+	if gitserverRepo := quickGitserverRepoInfo(uri); gitserverRepo != nil {
+		if isRepoCloneableErr := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); isRepoCloneableErr == gitserver.ErrNotCloneable || errors.Cause(isRepoCloneableErr) == gitserver.ErrNotCloneable {
+			if err == nil {
+				return isRepoCloneableErr
+			}
+			return err // return original error (likely "not found") if repository is not cloneable
+		} else if isRepoCloneableErr != nil {
+			return isRepoCloneableErr
+		}
+	}
+
+	// Try to look up and add the repo.
+	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: uri})
+	if err != nil {
+		return err
+	}
+	if result.Repo != nil {
+		// Allow anonymous users on Sourcegraph.com to enable repositories just by visiting them, but
+		// everywhere else, require server admins to explicitly enable repositories.
+		enableAutoAddedRepos := envvar.SourcegraphDotComMode()
+		if err := s.TryInsertNew(ctx, api.InsertRepoOp{
+			URI:          result.Repo.URI,
+			Description:  result.Repo.Description,
+			Fork:         result.Repo.Fork,
+			Enabled:      enableAutoAddedRepos,
+			ExternalRepo: result.Repo.ExternalRepo,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *repos) TryInsertNew(ctx context.Context, op api.InsertRepoOp) error {

@@ -218,6 +218,25 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*pageInfo,
 	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(repos) > r.opt.Limit}, nil
 }
 
+func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {
+	Name string
+}) (*repositoryResolver, error) {
+	// 🚨 SECURITY: Only site admins can add repositories.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	uri := api.RepoURI(args.Name)
+	if err := backend.Repos.Add(ctx, uri); err != nil {
+		return nil, err
+	}
+	repo, err := backend.Repos.GetByURI(ctx, uri)
+	if err != nil {
+		return nil, err
+	}
+	return &repositoryResolver{repo: repo}, nil
+}
+
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
 	Repository graphql.ID
 	Enabled    bool

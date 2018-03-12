@@ -1,0 +1,24 @@
+.repository-error-page {
+    width: 100vw;
+    max-width: 36rem;
+    padding: 2rem;
+
+    &__section {
+        width: 100%;
+        &-inner {
+            width: 100%;
+            display: flex;
+        }
+        &-description {
+            text-align: left;
+            margin-right: 2rem;
+            flex: 1;
+        }
+        &-action {
+            flex: 0 auto;
+        }
+    }
+    &__alert {
+        width: 100%;
+    }
+}

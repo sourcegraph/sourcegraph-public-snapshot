@@ -18,6 +18,7 @@ import (
 type MockRepos struct {
 	Get                  func(v0 context.Context, id api.RepoID) (*types.Repo, error)
 	GetByURI             func(v0 context.Context, uri api.RepoURI) (*types.Repo, error)
+	Add                  func(uri api.RepoURI) error
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 	GetCommit            func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*vcs.Commit, error)
 	ResolveRev           func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)

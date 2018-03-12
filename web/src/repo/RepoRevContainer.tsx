@@ -136,6 +136,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 .split('/')
                                 .slice(1)
                                 .join('/')}
+                            className="repository-cloning-page"
                             subtitle="Cloning in progress"
                         />
                     )

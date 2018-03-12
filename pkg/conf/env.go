@@ -19,8 +19,7 @@ var legacyEnvToFieldName = map[string]string{
 	"SiteID":         "TRACKING_APP_ID", // this env var name is used in many other places, can't be updated to TRACKING_SITE_ID yet
 	"AppURL":         "SRC_APP_URL",
 	// AuthUserOrgMap has no env var
-	"AutoRepoAdd": "AUTO_REPO_ADD",
-	"CorsOrigin":  "CORS_ORIGIN",
+	"CorsOrigin": "CORS_ORIGIN",
 	// DisablePublicRepoRedirects is handled specially (inverted PUBLIC_REPO_REDIRECTS)
 	"DisableTelemetry":               "DISABLE_TELEMETRY",
 	"ExecuteGradleOriginalRootPaths": "EXECUTE_GRADLE_ORIGINAL_ROOT_PATHS",

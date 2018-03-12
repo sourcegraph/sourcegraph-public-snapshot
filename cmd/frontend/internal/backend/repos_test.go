@@ -6,6 +6,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -53,6 +56,44 @@ func TestReposService_List(t *testing.T) {
 	}
 	if !reflect.DeepEqual(repos, wantRepos) {
 		t.Errorf("got %+v, want %+v", repos, wantRepos)
+	}
+}
+
+func TestRepos_Add(t *testing.T) {
+	var s repos
+	ctx := testContext()
+
+	const repoURI = "my/repo"
+
+	calledRepoLookup := false
+	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		calledRepoLookup = true
+		if args.Repo != repoURI {
+			t.Errorf("got %q, want %q", args.Repo, repoURI)
+		}
+		return &protocol.RepoLookupResult{
+			Repo: &protocol.RepoInfo{URI: repoURI, Description: "d"},
+		}, nil
+	}
+	defer func() { repoupdater.MockRepoLookup = nil }()
+
+	calledTryInsertNew := false
+	db.Mocks.Repos.TryInsertNew = func(op api.InsertRepoOp) error {
+		calledTryInsertNew = true
+		if want := (api.InsertRepoOp{URI: repoURI, Description: "d"}); !reflect.DeepEqual(op, want) {
+			t.Errorf("got %+v, want %+v", op, want)
+		}
+		return nil
+	}
+
+	if err := s.Add(ctx, repoURI); err != nil {
+		t.Fatal(err)
+	}
+	if !calledRepoLookup {
+		t.Error("!calledRepoLookup")
+	}
+	if !calledTryInsertNew {
+		t.Error("!calledTryInsertNew")
 	}
 }
 
