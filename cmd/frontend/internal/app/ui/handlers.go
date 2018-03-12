@@ -144,8 +144,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				dangerouslyServeError(w, r, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
-			if e, ok := err.(vcs.RepoNotExistError); ok {
-				if e.CloneInProgress {
+			if vcs.IsRepoNotExist(err) {
+				if vcs.IsCloneInProgress(err) {
 					// Repo is cloning.
 					return common, nil
 				}

@@ -556,7 +556,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 	if err != nil {
 		return nil, err
 	}
-	if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+	if vcs.IsCloneInProgress(err) {
 		// TODO report a cloning repo
 		return res, nil
 	}
@@ -819,8 +819,8 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 // nil error.
 func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevisions, limitHit, timedOut bool, searchErr error) (fatalErr error) {
 	common.limitHit = common.limitHit || limitHit
-	if e, ok := searchErr.(vcs.RepoNotExistError); ok {
-		if e.CloneInProgress {
+	if vcs.IsRepoNotExist(searchErr) {
+		if vcs.IsCloneInProgress(searchErr) {
 			common.cloning = append(common.cloning, repoRev.repo.URI)
 		} else {
 			common.missing = append(common.missing, repoRev.repo.URI)

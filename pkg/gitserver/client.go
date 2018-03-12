@@ -108,7 +108,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 			return nil, nil, err
 		}
 		resp.Body.Close()
-		return nil, nil, vcs.RepoNotExistError{CloneInProgress: payload.CloneInProgress}
+		return nil, nil, &vcs.RepoNotExistError{Repo: repoURI, CloneInProgress: payload.CloneInProgress}
 
 	default:
 		resp.Body.Close()

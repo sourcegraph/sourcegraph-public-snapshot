@@ -99,7 +99,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		if vcs.IsRevisionNotFound(err) {
 			return nil, nil
 		}
-		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+		if vcs.IsCloneInProgress(err) {
 			return nil, err
 		}
 		return nil, err
@@ -128,7 +128,7 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error)
 
 	// If we fail to get the default branch due to cloning, we return nothing.
 	if err != nil {
-		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+		if vcs.IsCloneInProgress(err) {
 			return nil, nil
 		}
 		return nil, err

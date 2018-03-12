@@ -145,9 +145,9 @@ func TestSearchFilesInRepos(t *testing.T) {
 		case "foo/empty":
 			return nil, false, nil
 		case "foo/cloning":
-			return nil, false, vcs.RepoNotExistError{CloneInProgress: true}
+			return nil, false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
 		case "foo/missing":
-			return nil, false, vcs.RepoNotExistError{}
+			return nil, false, &vcs.RepoNotExistError{Repo: repoName}
 		case "foo/missing-db":
 			return nil, false, &errcode.Mock{Message: "repo not found: foo/missing-db", IsNotFound: true}
 		case "foo/timedout":

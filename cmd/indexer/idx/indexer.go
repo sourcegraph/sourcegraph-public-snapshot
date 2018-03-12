@@ -128,7 +128,7 @@ func index(ctx context.Context, wq *workQueue, repoName api.RepoURI, rev string)
 			return nil
 		}
 		// If clone is in progress, re-enqueue after 5 seconds
-		if _, ok := err.(vcs.RepoNotExistError); ok && err.(vcs.RepoNotExistError).CloneInProgress {
+		if vcs.IsCloneInProgress(err) {
 			go func() {
 				time.Sleep(5 * time.Second)
 				wq.Enqueue(repoName, rev)

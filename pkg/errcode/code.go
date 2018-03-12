@@ -34,9 +34,9 @@ func HTTP(err error) int {
 
 	if vcs.IsRevisionNotFound(err) {
 		return http.StatusNotFound
-	} else if (vcs.IsRepoNotExist(err) && err.(vcs.RepoNotExistError).CloneInProgress) || strings.Contains(err.Error(), vcs.RepoNotExistError{CloneInProgress: true}.Error()) {
+	} else if vcs.IsCloneInProgress(err) || strings.Contains(err.Error(), (&vcs.RepoNotExistError{CloneInProgress: true}).Error()) {
 		return http.StatusAccepted
-	} else if (vcs.IsRepoNotExist(err) && !err.(vcs.RepoNotExistError).CloneInProgress) || strings.Contains(err.Error(), vcs.RepoNotExistError{}.Error()) {
+	} else if vcs.IsRepoNotExist(err) || strings.Contains(err.Error(), (&vcs.RepoNotExistError{}).Error()) {
 		return http.StatusNotFound
 	} else if err == vcs.ErrRepoExist {
 		return http.StatusConflict
