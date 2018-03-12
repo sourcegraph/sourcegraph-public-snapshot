@@ -9,6 +9,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
@@ -53,8 +54,12 @@ func languagesForRepo(ctx context.Context, repo *types.Repo, commitID api.Commit
 }
 
 // IsLanguageSupported returns true if we have LSP-based
-// code intelligence support for the given language, false otherwise
+// code intelligence support for the given language and the language server is configured, false otherwise
 func IsLanguageSupported(lang string) bool {
-	_, supported := xlangSupportedLanguages[lang]
-	return supported
+	for _, langserver := range conf.GetTODO().Langservers {
+		if langserver.Language == lang {
+			return true
+		}
+	}
+	return false
 }
