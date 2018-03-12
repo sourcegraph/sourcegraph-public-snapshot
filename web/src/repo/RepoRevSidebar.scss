@@ -28,12 +28,6 @@
         flex: 0 0 auto;
         padding-right: 0.125rem;
     }
-    // While the symbols tab is feature-flagged, don't show it or any indication that there are multiple tabs.
-    &--no-symbols &__tab,
-    &--no-symbols .tab-bar__spacer,
-    &--no-symbols &__close-button {
-        border: none !important;
-    }
 
     &-toggle {
         width: 1.25rem;

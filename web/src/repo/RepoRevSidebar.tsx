@@ -51,8 +51,6 @@ const fetchTree = memoizeObservable(
     makeRepoURI
 )
 
-const showSymbols = localStorage.getItem('symbols') !== null
-
 type SidebarTabID = 'files' | 'symbols'
 
 interface Props {
@@ -86,10 +84,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     private static LAST_TAB_STORAGE_KEY = 'repo-rev-sidebar-last-tab'
     private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
 
-    private static TABS: Tab<SidebarTabID>[] = ([
-        { id: 'files', label: 'Files' },
-        { id: 'symbols', label: 'Symbols' },
-    ] as Tab<SidebarTabID>[]).slice(0, showSymbols ? 2 : 1)
+    private static TABS: Tab<SidebarTabID>[] = [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }]
 
     public state: State = {
         loading: true,
@@ -158,7 +153,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         id="explorer"
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
-                        } ${showSymbols ? '' : 'repo-rev-sidebar--no-symbols'}`}
+                        }`}
                         tabClassName="repo-rev-sidebar__tab"
                         onSelectTab={this.onSelectTab}
                     >
@@ -173,7 +168,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 paths={this.state.files}
                             />
                         )}
-                        {showSymbols ? (
+                        {
                             <RepoRevSidebarSymbols
                                 key="symbols"
                                 repoID={this.props.repoID}
@@ -181,9 +176,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 history={this.props.history}
                                 location={this.props.location}
                             />
-                        ) : (
-                            undefined
-                        )}
+                        }
                     </Tabs>
                 }
             />

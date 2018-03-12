@@ -99,9 +99,6 @@ func TestSearchResults(t *testing.T) {
 			return nil, nil, nil
 		}
 		defer func() { mockSearchSymbols = nil }()
-		prevEnableSymbols := enableSymbols
-		enableSymbols = true
-		defer func() { enableSymbols = prevEnableSymbols }()
 
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
