@@ -111,7 +111,7 @@ func TestProxy(t *testing.T) {
 				"a.go": "package p; type T struct { F string }",
 			},
 			wantHover: map[string]string{
-			// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
+				// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
 			},
 			wantSymbols: map[string][]string{
 				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16"},
