@@ -52,7 +52,7 @@ Verify your email address {{printf "%q" .Email}} on Sourcegraph by following thi
   {{.URL}}
 `,
 		HTML: `
-<p>Verify your email address {{printf "%q" .Email}} on Sourcegraph to finish signing up.</p>
+<p>Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:</p>
 
 <p><strong><a href="{{.URL}}">Verify email address</a></p>
 `,
