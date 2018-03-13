@@ -185,31 +185,31 @@ func main() {
 		Cmd("./dev/check/all.sh"))
 
 	pipeline.AddStep(":lipstick:",
-		Cmd("npm install"),
+		Cmd("npm ci"),
 		Cmd("npm run prettier"))
 
 	pipeline.AddStep(":typescript:",
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
-		Cmd("npm install"),
+		Cmd("npm ci"),
 		Cmd("npm run tslint"))
 
 	pipeline.AddStep(":stylelint:",
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
-		Cmd("npm install"),
+		Cmd("npm ci"),
 		Cmd("npm run stylelint -- --quiet"))
 
 	pipeline.AddStep(":webpack:",
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
-		Cmd("npm install"),
+		Cmd("npm ci"),
 		Cmd("NODE_ENV=production npm run build"))
 
 	pipeline.AddStep(":mocha:",
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
-		Cmd("npm install"),
+		Cmd("npm ci"),
 		Cmd("npm run cover"),
 		Cmd("node_modules/.bin/nyc report -r json"),
 		ArtifactPaths("web/coverage/coverage-final.json"))
