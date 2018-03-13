@@ -35,6 +35,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where search would return results with empty file contents for matches in submodules with indexing enabled. Searching over submodules is not supported yet, so these (empty) results have been removed.
 * Fixed an issue where match highlighting would be incorrect on lines that contained multibyte characters.
 * Fixed an issue where search suggestions would always link to master (and 404) even if the file only existed on a branch. Now suggestions always link to the revision that is being searched over.
+* Fixed an issue where all file and repo links on the search results page (for all search results types) would always link to master branch, even if the results only existed in another branch. Now search results links always link to the revision that is being searched over.
 * The first user to sign up for a (not-yet-initialized) server is made the site admin, even if they signed up using SSO. Previously if the first user signed up using SSO, they would not be a site admin and no site admin could be created.
 
 ## 2.5.16, 2.5.17

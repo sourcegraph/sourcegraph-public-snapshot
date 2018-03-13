@@ -74,7 +74,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
         repoURI: repoPath,
     }))
 
-    const title = <RepoFileLink repoPath={repoPath} filePath={filePath} />
+    const title = <RepoFileLink repoPath={repoPath} rev={rev} filePath={filePath} />
 
     const getChildren = (allMatches: boolean) => {
         const showItems = items
