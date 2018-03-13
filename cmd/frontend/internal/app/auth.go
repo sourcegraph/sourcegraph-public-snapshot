@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -106,22 +105,7 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 	actor := &actor.Actor{UID: usr.ID}
 
 	if conf.EmailVerificationRequired() {
-		// Send verify email
-		q := make(url.Values)
-		q.Set("code", emailCode)
-		verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
-		if err := txemail.Send(r.Context(), txemail.Message{
-			To:       []string{creds.Email},
-			Template: verifyEmailTemplates,
-			Data: struct {
-				URL string
-			}{
-				URL: globals.AppURL.ResolveReference(&url.URL{
-					Path:     verifyEmailPath.Path,
-					RawQuery: q.Encode(),
-				}).String(),
-			},
-		}); err != nil {
+		if err := backend.SendUserEmailVerificationEmail(r.Context(), creds.Email, emailCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
 		}
 	}
@@ -145,22 +129,6 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, "SignupCompleted")
 	}
 }
-
-var (
-	verifyEmailTemplates = txemail.MustValidate(txemail.Templates{
-		Subject: `Verify your email on Sourcegraph`,
-		Text: `
-Verify your email address on Sourcegraph by following this link:
-
-  {{.URL}}
-`,
-		HTML: `
-<p>Verify your email address on Sourcegraph to finish signing up.</p>
-
-<p><strong><a href="{{.URL}}">Verify email address</a></p>
-`,
-	})
-)
 
 func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.User, error) {
 	if strings.Contains(emailOrUsername, "@") {
