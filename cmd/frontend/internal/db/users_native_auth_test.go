@@ -63,10 +63,10 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if verified {
 		t.Fatal("new user should not be verified")
 	}
-	if isValid, err := UserEmails.Verify(ctx, usr.ID, "wrong_email-code"); err == nil && isValid {
-		t.Fatal("should validate email with wrong code")
+	if isValid, err := UserEmails.Verify(ctx, usr.ID, "foo@bar.com", "wrong_email-code"); err == nil && isValid {
+		t.Fatal("should not validate email with wrong code")
 	}
-	if isValid, err := UserEmails.Verify(ctx, usr.ID, "email-code"); err != nil || !isValid {
+	if isValid, err := UserEmails.Verify(ctx, usr.ID, "foo@bar.com", "email-code"); err != nil || !isValid {
 		t.Fatal("couldn't vaidate email")
 	}
 	usr, err = Users.GetByID(ctx, usr.ID)

@@ -84,12 +84,12 @@ func (*userEmails) Remove(ctx context.Context, userID int32, email string) error
 	return nil
 }
 
-// Verify verifies the user's primary email address given the email verification code. If the code
-// is not correct (not the one originally used when creating the user or adding the user email),
-// then it returns false.
-func (*userEmails) Verify(ctx context.Context, id int32, code string) (bool, error) {
+// Verify verifies the user's email address given the email verification code. If the code is not
+// correct (not the one originally used when creating the user or adding the user email), then it
+// returns false.
+func (*userEmails) Verify(ctx context.Context, userID int32, email, code string) (bool, error) {
 	var dbCode sql.NullString
-	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1", id).Scan(&dbCode); err != nil {
+	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1 AND email=$2", userID, email).Scan(&dbCode); err != nil {
 		return false, err
 	}
 	if !dbCode.Valid {
@@ -99,7 +99,7 @@ func (*userEmails) Verify(ctx context.Context, id int32, code string) (bool, err
 	if len(dbCode.String) != len(code) || subtle.ConstantTimeCompare([]byte(dbCode.String), []byte(code)) != 1 {
 		return false, nil
 	}
-	if _, err := globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1", id); err != nil {
+	if _, err := globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email); err != nil {
 		return false, err
 	}
 	return true, nil
