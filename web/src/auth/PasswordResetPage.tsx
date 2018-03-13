@@ -3,6 +3,7 @@ import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { eventLogger } from '../tracking/eventLogger'
 import { PasswordInput } from './SignInSignUpCommon'
 
 interface State {
@@ -148,6 +149,10 @@ class PasswordResetForm extends React.Component<{}, State> {
  * A landing page for the user request a password reset.
  */
 export class PasswordResetPage extends React.Component {
+    public componentDidMount(): void {
+        eventLogger.logViewEvent('PasswordReset')
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className="password-reset-page">
