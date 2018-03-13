@@ -86,7 +86,7 @@ func TestComments_emailsToNotify(t *testing.T) {
 		return nil, fmt.Errorf("user with ID %d not found", id)
 	}
 
-	db.Mocks.UserEmails.GetEmail = func(ctx context.Context, id int32) (string, bool, error) {
+	db.Mocks.UserEmails.GetPrimaryEmail = func(ctx context.Context, id int32) (string, bool, error) {
 		for _, u := range testUsers {
 			if u.ID == id {
 				return u.Username + "@sourcegraph.com", true, nil
@@ -276,7 +276,7 @@ func TestComments_Create(t *testing.T) {
 		return []string{"a@example.com"}, nil
 	}
 	defer func() { mockEmailsToNotify = nil }()
-	db.Mocks.UserEmails.GetEmail = func(ctx context.Context, id int32) (string, bool, error) { return "b@example.com", true, nil }
+	db.Mocks.UserEmails.GetPrimaryEmail = func(ctx context.Context, id int32) (string, bool, error) { return "b@example.com", true, nil }
 	db.Mocks.Orgs.MockGetByID_Return(t, &types.Org{}, nil)
 	db.Mocks.Comments.GetAllForThread = func(context.Context, int32) ([]*types.Comment, error) { return nil, nil }
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &repo, nil)

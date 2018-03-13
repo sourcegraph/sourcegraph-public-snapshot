@@ -56,7 +56,7 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, verified, err := UserEmails.GetEmail(ctx, usr.ID)
+	_, verified, err := UserEmails.GetPrimaryEmail(ctx, usr.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, verified, err := UserEmails.GetEmail(ctx, usr.ID); err != nil {
+	if _, verified, err := UserEmails.GetPrimaryEmail(ctx, usr.ID); err != nil {
 		t.Fatal(err)
 	} else if !verified {
 		t.Fatal("user should not be verified")

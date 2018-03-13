@@ -198,7 +198,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, alreadyVerified, err := db.UserEmails.GetEmail(ctx, usr.ID)
+	email, alreadyVerified, err := db.UserEmails.GetPrimaryEmail(ctx, usr.ID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("No email found for user %d", usr.ID), http.StatusBadRequest)
 		return

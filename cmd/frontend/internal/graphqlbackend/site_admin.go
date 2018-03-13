@@ -68,7 +68,7 @@ func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, arg
 		return nil, err
 	}
 
-	email, _, err := db.UserEmails.GetEmail(ctx, userID)
+	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

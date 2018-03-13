@@ -385,7 +385,7 @@ func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	email, _, err := db.UserEmails.GetEmail(r.Context(), userID)
+	email, _, err := db.UserEmails.GetPrimaryEmail(r.Context(), userID)
 	if err != nil {
 		return errors.Wrap(err, "UserEmails.GetEmail")
 	}

@@ -20,9 +20,10 @@ type UserEmail struct {
 // userEmails provides access to the `user_emails` table.
 type userEmails struct{}
 
-func (*userEmails) GetEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
-	if Mocks.UserEmails.GetEmail != nil {
-		return Mocks.UserEmails.GetEmail(ctx, id)
+// GetPrimaryEmail gets the oldest email associated with the user.
+func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
+	if Mocks.UserEmails.GetPrimaryEmail != nil {
+		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
 	}
 
 	if err := globalDB.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY created_at ASC, email ASC LIMIT 1",
