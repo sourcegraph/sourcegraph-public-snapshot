@@ -17,6 +17,19 @@ type UserEmail struct {
 	VerifiedAt       *time.Time
 }
 
+// userEmailNotFoundError is the error that is returned when a user email is not found.
+type userEmailNotFoundError struct {
+	args []interface{}
+}
+
+func (err userEmailNotFoundError) Error() string {
+	return fmt.Sprintf("user email not found: %v", err.args)
+}
+
+func (err userEmailNotFoundError) NotFound() bool {
+	return true
+}
+
 // userEmails provides access to the `user_emails` table.
 type userEmails struct{}
 
@@ -32,6 +45,20 @@ func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string,
 		return "", false, userNotFoundErr{[]interface{}{fmt.Sprintf("id %d", id)}}
 	}
 	return email, verified, nil
+}
+
+// Get gets information about the user's associated email address.
+func (*userEmails) Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error) {
+	if Mocks.UserEmails.Get != nil {
+		return Mocks.UserEmails.Get(userID, email)
+	}
+
+	if err := globalDB.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
+		userID, email,
+	).Scan(&emailCanonicalCase, &verified); err != nil {
+		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("userID %d email %q", userID, email)}}
+	}
+	return emailCanonicalCase, verified, nil
 }
 
 // Add adds new user email. When added, it is always unverified.
