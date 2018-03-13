@@ -74,11 +74,15 @@ func restartProc(proc string) error {
 	return startProc(proc)
 }
 
-// spawn all procs.
-func startProcs() error {
+// startProcs starts the processes.
+func startProcs() {
 	for proc := range procs {
 		startProc(proc)
 	}
+}
+
+// waitProcs waits for processes to complete.
+func waitProcs() error {
 	sc := make(chan os.Signal, 10)
 	go func() {
 		wg.Wait()

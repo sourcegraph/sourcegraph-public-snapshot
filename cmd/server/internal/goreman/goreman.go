@@ -62,5 +62,6 @@ func Start(rpcAddr string, contents []byte) error {
 	if err := startServer(rpcAddr); err != nil {
 		return err
 	}
-	return startProcs()
+	startProcs()
+	return waitProcs()
 }

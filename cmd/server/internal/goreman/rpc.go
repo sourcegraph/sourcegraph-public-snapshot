@@ -15,12 +15,18 @@ func (Goreman) RestartAll(args struct{}, ret *string) (err error) {
 		}
 	}()
 
-	// Prevent the server from shutting down (which it does when all processes are stopped).
+	// Stop and start the processes. We do this with an artificially
+	// incremented wg, so that the server does not shutdown when stopProcs
+	// completes (the server shuts down when all processes are stopped).
+	//
+	// Note that we do not invoke waitProcs, as the original waitProcs
+	// invocation is still running and is still valid.
 	wg.Add(1)
 	defer wg.Done()
-
 	stopProcs(false)
-	return startProcs()
+	startProcs()
+
+	return nil
 }
 
 // start rpc server.
