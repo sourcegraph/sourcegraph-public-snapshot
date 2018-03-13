@@ -4,11 +4,14 @@ import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
+import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { gql, mutateGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { createAggregateError } from '../util/errors'
 import { deleteUser, fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
@@ -102,9 +105,39 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 <strong>Site admin</strong>
                             </li>
                         )}
-                        {this.props.node.email && (
+                        {this.props.node.emails && (
                             <li>
-                                Email: <a href={`mailto:${this.props.node.email}`}>{this.props.node.email}</a>
+                                Emails:{' '}
+                                {this.props.node.emails.length === 0 ? (
+                                    '(none)'
+                                ) : (
+                                    <ul className="ml-3">
+                                        {this.props.node.emails.map(({ email, verified, verificationPending }, i) => (
+                                            <li key={i} className="site-admin-all-users-page__item-email pr-2">
+                                                <span
+                                                    data-tooltip={
+                                                        verificationPending ? 'Verification pending' : 'Verified'
+                                                    }
+                                                >
+                                                    {email}
+                                                </span>{' '}
+                                                &ndash;{' '}
+                                                {(verificationPending || verified) && (
+                                                    <a
+                                                        href=""
+                                                        // tslint:disable-next-line:jsx-no-lambda
+                                                        onClick={e => {
+                                                            e.preventDefault()
+                                                            this.markEmailAsVerified(email, !verified)
+                                                        }}
+                                                    >
+                                                        Mark as {verificationPending ? 'verified' : 'unverified'}
+                                                    </a>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </li>
                         )}
                         {this.props.node.createdAt && (
@@ -147,6 +180,42 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 )}
             </li>
         )
+    }
+
+    private markEmailAsVerified = (email: string, verified: boolean) => {
+        this.setState({
+            errorDescription: undefined,
+            resetPasswordURL: undefined,
+            loading: true,
+        })
+
+        mutateGraphQL(
+            gql`
+                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { user: this.props.node.id, email, verified }
+        )
+            .pipe(
+                map(({ data, errors }) => {
+                    if (!data || (errors && errors.length > 0)) {
+                        throw createAggregateError(errors)
+                    }
+                })
+            )
+            .toPromise()
+            .then(
+                () => {
+                    this.setState({ loading: false })
+                    if (this.props.onDidUpdate) {
+                        this.props.onDidUpdate()
+                    }
+                },
+                err => this.setState({ loading: false, errorDescription: err.message })
+            )
     }
 
     private promoteToSiteAdmin = () => this.setSiteAdmin(true)
