@@ -58,7 +58,6 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                             className="btn btn-sm btn-secondary site-admin-detail-list__action"
                             onClick={this.props.node.verified ? this.setAsUnverified : this.setAsVerified}
                             disabled={this.state.loading}
-                            data-tooltip="Only site admins may perform this action"
                         >
                             {this.props.node.verified ? 'Mark as unverified' : 'Mark as verified'}
                         </button>
