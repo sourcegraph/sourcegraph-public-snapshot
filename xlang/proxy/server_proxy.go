@@ -379,10 +379,10 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 				err = errors.Wrap(err, otherGoroutineMessage)
 			}
 		}
-		c = nil
+		return nil, err
 	}
 
-	return c, err
+	return c, nil
 }
 
 func (p *Proxy) shouldUseLargeServer(mode string, repo api.RepoURI) bool {
