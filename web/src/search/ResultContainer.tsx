@@ -84,10 +84,6 @@ export class ResultContainer extends React.PureComponent<Props, State> {
             this.setState({ expanded: nextProps.allExpanded })
         }
 
-        if (this.state.expanded !== this.props.allExpanded && this.props.allExpanded === nextProps.allExpanded) {
-            this.setState({ expanded: !this.state.expanded })
-        }
-
         if (this.state.expanded !== this.props.allExpanded && this.props.allExpanded !== nextProps.allExpanded) {
             this.setState({ expanded: nextProps.allExpanded })
         }
