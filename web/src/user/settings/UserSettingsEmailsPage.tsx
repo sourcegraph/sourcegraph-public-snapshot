@@ -8,6 +8,8 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { SiteFlags } from '../../site'
+import { siteFlags } from '../../site/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { AddUserEmailForm } from './AddUserEmailForm'
@@ -150,6 +152,10 @@ interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
 }
 
+interface State {
+    siteFlags?: SiteFlags
+}
+
 /** We fake a XyzConnection type because our GraphQL API doesn't have one (or need one) for user emails. */
 interface UserEmailConnection {
     nodes: GQL.IUserEmail[]
@@ -161,12 +167,16 @@ class FilteredUserEmailConnection extends FilteredConnection<
     Pick<UserEmailNodeProps, 'user' | 'onDidUpdate'>
 > {}
 
-export class UserSettingsEmailsPage extends React.Component<Props> {
+export class UserSettingsEmailsPage extends React.Component<Props, State> {
+    public state: State = {}
+
     private userEmailUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsEmails')
+
+        this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
     }
 
     public componentWillUnmount(): void {
@@ -183,6 +193,13 @@ export class UserSettingsEmailsPage extends React.Component<Props> {
             <div className="site-admin-detail-list user-settings-emails-page">
                 <PageTitle title="Emails" />
                 <h2 className="site-admin-page__header-title">Emails</h2>
+                {this.state.siteFlags &&
+                    !this.state.siteFlags.sendsEmailVerificationEmails && (
+                        <div className="alert alert-warning mt-2 mb-3">
+                            Sourcegraph is not configured to send email verifications. Newly added email addresses must
+                            be manually verified by a site admin.
+                        </div>
+                    )}
                 <FilteredUserEmailConnection
                     className="site-admin-page__filtered-connection"
                     noun="email address"

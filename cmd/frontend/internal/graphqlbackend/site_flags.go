@@ -79,3 +79,5 @@ func (*siteResolver) ExternalAuthEnabled() bool { return isExternalAuthEnabled }
 func (*siteResolver) DisableBuiltInSearches() bool {
 	return conf.Get().DisableExampleSearches || conf.Get().DisableBuiltInSearches
 }
+
+func (*siteResolver) SendsEmailVerificationEmails() bool { return conf.EmailVerificationRequired() }

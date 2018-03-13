@@ -5,5 +5,6 @@ export type SiteFlags = Pick<
     | 'hasCodeIntelligence'
     | 'externalAuthEnabled'
     | 'disableBuiltInSearches'
+    | 'sendsEmailVerificationEmails'
     | 'updateCheck'
 >
