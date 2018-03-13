@@ -247,13 +247,26 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	repo, err := unmarshalRepositoryID(args.Repository)
+	repo, err := repositoryByID(ctx, args.Repository)
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Repos.SetEnabled(ctx, repo, args.Enabled); err != nil {
+	if err := db.Repos.SetEnabled(ctx, repo.repo.ID, args.Enabled); err != nil {
 		return nil, err
 	}
+
+	// Trigger updates.
+	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
+	if err != nil {
+		return nil, err
+	}
+	if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		return nil, err
+	}
+	if err := backend.Repos.RefreshIndex(ctx, repo.repo); err != nil {
+		return nil, err
+	}
+
 	return &EmptyResponse{}, nil
 }
 
