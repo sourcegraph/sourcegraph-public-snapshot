@@ -182,6 +182,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 
 func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	email := r.URL.Query().Get("email")
 	verifyCode := r.URL.Query().Get("code")
 	actr := actor.FromContext(ctx)
 	if !actr.IsAuthenticated() {
@@ -198,13 +199,13 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, alreadyVerified, err := db.UserEmails.GetPrimaryEmail(ctx, usr.ID)
+	email, alreadyVerified, err := db.UserEmails.Get(ctx, usr.ID, email)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("No email found for user %d", usr.ID), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("No email %q found for user %d", email, usr.ID), http.StatusBadRequest)
 		return
 	}
 	if alreadyVerified {
-		http.Error(w, fmt.Sprintf("User %s already verified", email), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("User %d email %q is already verified", usr.ID, email), http.StatusBadRequest)
 		return
 	}
 	verified, err := db.UserEmails.Verify(ctx, usr.ID, email, verifyCode)
@@ -214,7 +215,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !verified {
-		http.Error(w, "Could not verify user. Code did not match email.", http.StatusUnauthorized)
+		http.Error(w, "Could not verify user email. Email verification code did not match.", http.StatusUnauthorized)
 		return
 	}
 

@@ -25,13 +25,16 @@ func MakeEmailVerificationCode() string {
 func SendUserEmailVerificationEmail(ctx context.Context, email, code string) error {
 	q := make(url.Values)
 	q.Set("code", code)
+	q.Set("email", email)
 	verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
 	return txemail.Send(ctx, txemail.Message{
 		To:       []string{email},
 		Template: verifyEmailTemplates,
 		Data: struct {
-			URL string
+			Email string
+			URL   string
 		}{
+			Email: email,
 			URL: globals.AppURL.ResolveReference(&url.URL{
 				Path:     verifyEmailPath.Path,
 				RawQuery: q.Encode(),
@@ -44,12 +47,12 @@ var (
 	verifyEmailTemplates = txemail.MustValidate(txemail.Templates{
 		Subject: `Verify your email on Sourcegraph`,
 		Text: `
-Verify your email address on Sourcegraph by following this link:
+Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:
 
   {{.URL}}
 `,
 		HTML: `
-<p>Verify your email address on Sourcegraph to finish signing up.</p>
+<p>Verify your email address {{printf "%q" .Email}} on Sourcegraph to finish signing up.</p>
 
 <p><strong><a href="{{.URL}}">Verify email address</a></p>
 `,

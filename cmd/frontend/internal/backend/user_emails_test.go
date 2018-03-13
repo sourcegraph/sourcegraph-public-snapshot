@@ -26,7 +26,13 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 		FromName: "",
 		To:       []string{"a@example.com"},
 		Template: verifyEmailTemplates,
-		Data:     struct{ URL string }{URL: "http://example.com/-/verify-email?code=c"},
+		Data: struct {
+			Email string
+			URL   string
+		}{
+			Email: "a@example.com",
+			URL:   "http://example.com/-/verify-email?code=c&email=a%40example.com",
+		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
 	}
