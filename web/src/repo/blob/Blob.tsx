@@ -21,7 +21,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { Position, Range } from 'vscode-languageserver-types'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
-import { getPathExtension, supportedExtensions } from '../../util'
+import { getPathExtension, scrollIntoView, supportedExtensions } from '../../util'
 import { asError } from '../../util/errors'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../../util/url'
 import {
@@ -88,7 +88,8 @@ function updateAndScrollToLine(
     cell: HTMLElement | HTMLElement[],
     history: H.History,
     ctx: AbsoluteRepoFileRange,
-    clickEvent?: MouseEvent
+    clickEvent?: MouseEvent,
+    scrollIfNeeded?: boolean
 ): void {
     if (!cell) {
         return
@@ -101,9 +102,13 @@ function updateAndScrollToLine(
     }
 
     updateLine(cell, history, ctx, clickEvent)
-
-    // Scroll to the line.
-    scrollToCell(cell[0])
+    // Scroll to the line if outside viewport.
+    if (scrollIfNeeded) {
+        const scrollingElement = document.querySelector('.blob')! as HTMLElement
+        scrollIntoView(scrollingElement, cell[0])
+    } else {
+        scrollToCell(cell[0])
+    }
 }
 
 function scrollToCell(cell: HTMLElement): void {
@@ -137,14 +142,13 @@ export class Blob extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentWillReceiveProps(nextProps: Props): void {
-        const hash = parseHash(nextProps.location.hash)
-        if (this.props.location.pathname !== nextProps.location.pathname && !hash.line) {
+        const nextHash = parseHash(nextProps.location.hash)
+        if (this.props.location.pathname !== nextProps.location.pathname && !nextHash.line) {
             if (this.blobElement) {
                 this.blobElement.scrollTop = 0
             }
         }
         const thisHash = parseHash(this.props.location.hash)
-        const nextHash = parseHash(nextProps.location.hash)
         if (thisHash.modal !== nextHash.modal && this.props.location.pathname === nextProps.location.pathname) {
             // When updating references mode in the same file, scroll. Wait just a moment to make sure the references
             // panel is shown, since the scroll offset is calculated based on the height of the blob.
@@ -161,6 +165,7 @@ export class Blob extends React.Component<Props, State> {
         ) {
             if (!nextHash.modal) {
                 this.fixedTooltip.next(nextProps)
+                this.scrollToLine(nextProps, true)
             } else {
                 // If showing modal, remove any tooltip then highlight the element for the given start position.
                 this.setFixedTooltip()
@@ -545,25 +550,31 @@ export class Blob extends React.Component<Props, State> {
         this.setState({ fixedTooltip: data || undefined })
     }
 
-    private scrollToLine = (props: Props) => {
+    private scrollToLine = (props: Props, scrollOnlyIfNeeded?: boolean) => {
         const parsed = parseHash(props.location.hash)
         const { line, character, endLine, endCharacter, modalMode } = parsed
         if (line) {
             const cells = getCodeCells(line, endLine)
-            updateAndScrollToLine(cells, props.history, {
-                repoPath: props.repoPath,
-                rev: props.rev,
-                commitID: props.commitID,
-                filePath: props.filePath,
-                range: {
-                    start: { line, character: character || 0 },
-                    end: endLine
-                        ? { line: endLine, character: endCharacter || 0 }
-                        : { line, character: character || 0 },
+            updateAndScrollToLine(
+                cells,
+                props.history,
+                {
+                    repoPath: props.repoPath,
+                    rev: props.rev,
+                    commitID: props.commitID,
+                    filePath: props.filePath,
+                    range: {
+                        start: { line, character: character || 0 },
+                        end: endLine
+                            ? { line: endLine, character: endCharacter || 0 }
+                            : { line, character: character || 0 },
+                    },
+                    referencesMode: modalMode,
+                    renderMode: props.renderMode,
                 },
-                referencesMode: modalMode,
-                renderMode: props.renderMode,
-            })
+                undefined,
+                scrollOnlyIfNeeded
+            )
         }
     }
 
