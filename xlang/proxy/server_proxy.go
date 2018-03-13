@@ -278,6 +278,23 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	c.initOnce.Do(func() {
 		didWeInit = true
 
+		// Best effort cleanup of resources when we fail to connect.
+		var rwc io.ReadWriteCloser
+		defer func() {
+			if c.initErr == nil {
+				return
+			}
+			if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
+				_ = fs.Close()
+			}
+			if c.conn != nil {
+				_ = c.conn.Close()
+			}
+			if rwc != nil {
+				_ = rwc.Close()
+			}
+		}()
+
 		// SECURITY NOTE: We assume that the caller to the LSP client
 		// proxy has already checked the user's permissions to read
 		// this repo, so we don't need to check permissions again
@@ -303,7 +320,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			mode = strings.TrimSuffix(mode, "_bg")
 		}
 
-		rwc, err := connectToServer(ctx, mode)
+		rwc, err = connectToServer(ctx, mode)
 		if err != nil {
 			c.initErr = err
 			return
@@ -317,22 +334,23 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
 
 		if err := c.lspInitialize(ctx); err != nil {
-			// Ignore cleanup errors (best effort).
-			if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
-				_ = fs.Close()
-			}
-			_ = c.conn.Close()
-			_ = rwc.Close()
 			c.initErr = err
 			return
 		}
 		c.updateLastTime()
 
+		// When the connection goes away remove from the connection list and
+		// free up associated resources (e.g., if the VFS is backed by a file
+		// on disk, this will close the file).
 		go func() {
 			select {
 			case <-c.conn.DisconnectNotify():
 			}
+
 			p.removeServerConn(c)
+			if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
+				_ = fs.Close()
+			}
 		}()
 	})
 
@@ -767,14 +785,6 @@ func (c *serverProxyConn) shutdownAndExit(ctx context.Context) error {
 	case <-done:
 	case <-ctx.Done():
 		if err := ctx.Err(); err != nil {
-			errs.add(err)
-		}
-	}
-
-	// Close file system to free up resources (e.g., if the VFS is
-	// backed by a file on disk, this will close the file).
-	if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
-		if err := fs.Close(); err != nil {
 			errs.add(err)
 		}
 	}
