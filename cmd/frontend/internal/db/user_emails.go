@@ -83,7 +83,10 @@ func (*userEmails) Remove(ctx context.Context, userID int32, email string) error
 	return nil
 }
 
-func (*userEmails) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
+// Verify verifies the user's primary email address given the email verification code. If the code
+// is not correct (not the one originally used when creating the user or adding the user email),
+// then it returns false.
+func (*userEmails) Verify(ctx context.Context, id int32, userCode string) (bool, error) {
 	var dbCode sql.NullString
 	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1", id).Scan(&dbCode); err != nil {
 		return false, err
