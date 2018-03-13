@@ -4,7 +4,6 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes (add your changes here!)
 
-
 ## 2.6.0
 
 ### Added
