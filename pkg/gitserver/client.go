@@ -247,10 +247,25 @@ func (c *cmdReader) Close() error {
 }
 
 // ListGitolite lists Gitolite repositories.
-func (c *Client) ListGitolite(ctx context.Context) ([]string, error) {
+func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) ([]string, error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
-	return doListOne(ctx, "?gitolite", c.Addrs[0])
+	return doListOne(ctx, "?gitolite="+url.QueryEscape(gitoliteHost), c.Addrs[0])
+}
+
+// GetGitolitePhabricatorMetadata returns Phabricator metadata for a
+// Gitolite repository fetched via a user-provided command.
+func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repo string) (*protocol.GitolitePhabricatorMetadataResponse, error) {
+	u := "http://" + c.Addrs[0] + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(repo)
+	resp, err := ctxhttp.Get(ctx, nil, u)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var metadata protocol.GitolitePhabricatorMetadataResponse
+	err = json.NewDecoder(resp.Body).Decode(&metadata)
+	return &metadata, err
 }
 
 func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, error) {

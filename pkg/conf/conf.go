@@ -238,7 +238,7 @@ var doNotRequireRestart = []string{
 	"repos.list",
 	"gitMaxConcurrentClones",
 	"repoListUpdateInterval",
-	"gitoliteHosts",
+	"gitolite",
 	"gitOriginMap",
 	"githubClientID",
 	"githubClientSecret",

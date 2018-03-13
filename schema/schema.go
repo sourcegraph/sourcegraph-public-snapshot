@@ -87,6 +87,14 @@ type GitLabConnection struct {
 	Url                         string   `json:"url"`
 }
 
+// GitoliteConnection
+type GitoliteConnection struct {
+	Blacklist                  string `json:"blacklist,omitempty"`
+	Host                       string `json:"host"`
+	PhabricatorMetadataCommand string `json:"phabricatorMetadataCommand,omitempty"`
+	Prefix                     string `json:"prefix"`
+}
+
 // Langservers
 type Langservers struct {
 	Address               string                 `json:"address,omitempty"`
@@ -216,8 +224,7 @@ type SiteConfiguration struct {
 	GithubEnterpriseURL            string                      `json:"githubEnterpriseURL,omitempty"`
 	GithubPersonalAccessToken      string                      `json:"githubPersonalAccessToken,omitempty"`
 	Gitlab                         []GitLabConnection          `json:"gitlab,omitempty"`
-	GitoliteHosts                  string                      `json:"gitoliteHosts,omitempty"`
-	GitoliteRepoBlacklist          string                      `json:"gitoliteRepoBlacklist,omitempty"`
+	Gitolite                       []GitoliteConnection        `json:"gitolite,omitempty"`
 	HtmlBodyBottom                 string                      `json:"htmlBodyBottom,omitempty"`
 	HtmlBodyTop                    string                      `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom                 string                      `json:"htmlHeadBottom,omitempty"`

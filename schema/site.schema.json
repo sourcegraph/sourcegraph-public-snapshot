@@ -174,14 +174,12 @@
         "$ref": "#/definitions/BitbucketServerConnection"
       }
     },
-    "gitoliteHosts": {
-      "description": "Space separated list of mappings from repo name prefix to gitolite hosts.",
-      "type": "string"
-    },
-    "gitoliteRepoBlacklist": {
-      "description":
-        "Regular expression to filter repos from auto-discovery, so they will not get cloned automatically.",
-      "type": "string"
+    "gitolite": {
+      "description": "JSON array of configuration for Gitolite hosts.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GitoliteConnection"
+      }
     },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
@@ -651,6 +649,32 @@
           "description":
             "Defines whether repositories from AWS CodeCommit should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable AWS CodeCommit repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by AWS); site admins can still disable them explicitly, and they'll remain disabled.",
           "type": "boolean"
+        }
+      }
+    },
+    "GitoliteConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefix", "host"],
+      "properties": {
+        "prefix": {
+          "description":
+            "Repository URI prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., \"gitolite.example.com/\".",
+          "type": "string"
+        },
+        "host": {
+          "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com).",
+          "type": "string"
+        },
+        "blacklist": {
+          "description":
+            "Regular expression to filter repos from auto-discovery, so they will not get cloned automatically.",
+          "type": "string"
+        },
+        "phabricatorMetadataCommand": {
+          "description":
+            "Bash command to run to fetch Phabricator metadata for a Gitolite repository. This will be run with an environment variable $REPO set to the URI of the repository. It should print out the Phabricator callsign.",
+          "type": "string"
         }
       }
     },

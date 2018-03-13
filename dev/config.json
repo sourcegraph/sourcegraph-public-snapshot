@@ -28,7 +28,13 @@
   // To test with Gitolite, set up SSH authentication for gitolite.sgdev.org using
   // this private key: https://sourcegraph.sgdev.org/github.com/sourcegraph/infrastructure/-/blob/on-prem/dogfood/id_rsa.
   //
-  // "gitoliteHosts": "gitolite.sgdev.org/!git@gitolite.sgdev.org",
+  // "gitolite": [
+  //   {
+  //     "host": "git@gitolite.sgdev.org",
+  //     "prefix": "gitolite.sgdev.org/",
+  //     "blacklist": "blacklist",
+  //   }
+  // ],
   "corsOrigin": "https://github.com http://phabricator.sgdev.org",
   "github": [
     {

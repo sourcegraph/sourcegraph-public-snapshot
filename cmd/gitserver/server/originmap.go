@@ -90,10 +90,13 @@ func (o *originMapsT) setup() error {
 		return err
 	}
 
-	o.gitoliteHostMap, err = parse(conf.Get().GitoliteHosts, 0)
-	if err != nil {
-		return err
+	for _, gitoliteConf := range conf.Get().Gitolite {
+		o.gitoliteHostMap = append(o.gitoliteHostMap, prefixAndOrgin{
+			Prefix: gitoliteConf.Prefix,
+			Origin: gitoliteConf.Host,
+		})
 	}
+
 	for _, entry := range o.gitoliteHostMap {
 		o.originMap = append(o.originMap, prefixAndOrgin{Prefix: entry.Prefix, Origin: entry.Origin + ":%"})
 	}

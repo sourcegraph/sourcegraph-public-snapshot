@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -21,21 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
-
-var gitoliteRepoBlacklist = compileGitoliteRepoBlacklist()
-
-func compileGitoliteRepoBlacklist() *regexp.Regexp {
-	expr := conf.GetTODO().GitoliteRepoBlacklist
-	if expr == "" {
-		return nil
-	}
-	r, err := regexp.Compile(expr)
-	if err != nil {
-		log15.Error("Invalid regexp for gitolite repo blacklist", "expr", expr, "err", err)
-		os.Exit(1)
-	}
-	return r
-}
 
 func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 	uri := api.RepoURI(mux.Vars(r)["RepoURI"])
@@ -53,62 +37,65 @@ func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
+	// Get complete list of Gitolite repositories
 	log15.Debug("serveGitoliteUpdateRepos")
-	list, err := gitserver.DefaultClient.ListGitolite(r.Context())
-	if err != nil {
-		return err
-	}
 
-	var whitelist, blacklist []string
-	for _, uri := range list {
-		if strings.Contains(uri, "..*") || (gitoliteRepoBlacklist != nil && gitoliteRepoBlacklist.MatchString(uri)) {
-			blacklist = append(blacklist, uri)
-			continue
-		}
-		whitelist = append(whitelist, uri)
+	type indexedGitoliteRepo struct {
+		conf         schema.GitoliteConnection
+		uri          api.RepoURI
+		gitoliteName string
 	}
+	var reposWithPhab []indexedGitoliteRepo
 
-	if len(blacklist) != 0 {
-		if len(blacklist) > 5 {
-			log15.Info("blacklisted gitolite repos", "size", len(blacklist))
-		} else {
-			log15.Info("blacklisted gitolite repos", "blacklist", strings.Join(blacklist, ", "))
-		}
-	}
-
-	log15.Debug("serveGitoliteUpdateRepos", "totalCount", len(list), "whitelistCount", len(whitelist))
-
-	insertRepoOps := make([]api.InsertRepoOp, len(whitelist))
-	for i, entry := range whitelist {
-		insertRepoOps[i] = api.InsertRepoOp{URI: api.RepoURI(entry), Enabled: true}
-	}
-	if err := backend.Repos.TryInsertNewBatch(r.Context(), insertRepoOps); err != nil {
-		log15.Warn("TryInsertNewBatch failed", "numRepos", len(insertRepoOps), "err", err)
-	}
-
-	for i, entry := range whitelist {
-		uri := api.RepoURI(entry)
-		repo, err := backend.Repos.GetByURI(r.Context(), uri)
+	for _, gconf := range conf.Get().Gitolite {
+		rlist, err := gitserver.DefaultClient.ListGitolite(r.Context(), gconf.Host)
 		if err != nil {
-			log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
-			continue
+			return err
 		}
 
-		// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
-		cloned, err := gitserver.DefaultClient.IsRepoCloned(r.Context(), uri)
-		if err != nil {
-			log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
-			continue
+		insertRepoOps := make([]api.InsertRepoOp, len(rlist))
+		for i, entry := range rlist {
+			insertRepoOps[i] = api.InsertRepoOp{URI: api.RepoURI(entry), Enabled: true}
 		}
-		if !conf.Get().DisableAutoGitUpdates || !cloned {
-			log15.Info("fetching Gitolite repo", "repo", uri, "cloned", cloned, "i", i, "total", len(whitelist))
-			// TODO!(sqs): derive gitolite clone URL
-			err := gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), gitserver.Repo{Name: repo.URI})
+		if err := backend.Repos.TryInsertNewBatch(r.Context(), insertRepoOps); err != nil {
+			log15.Warn("TryInsertNewBatch failed", "numRepos", len(insertRepoOps), "err", err)
+		}
+
+		// Assert existence of and initiate clone of each inserted repository
+		for i, entry := range rlist {
+			uri := api.RepoURI(entry)
+			repo, err := backend.Repos.GetByURI(r.Context(), uri)
+			if err != nil {
+				log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
+				continue
+			}
+
+			// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
+			cloned, err := gitserver.DefaultClient.IsRepoCloned(r.Context(), uri)
 			if err != nil {
 				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 				continue
 			}
+			if !conf.Get().DisableAutoGitUpdates || !cloned {
+				log15.Info("fetching Gitolite repo", "repo", uri, "cloned", cloned, "i", i, "total", len(rlist))
+				// TODO!(sqs): derive gitolite clone URL
+				err := gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), gitserver.Repo{Name: repo.URI})
+				if err != nil {
+					log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
+					continue
+				}
+			}
+
+			if gconf.PhabricatorMetadataCommand != "" {
+				reposWithPhab = append(reposWithPhab, indexedGitoliteRepo{conf: gconf, uri: uri, gitoliteName: entry})
+			}
 		}
+	}
+
+	// Best-effort update Phabricator metadata (i.e., callsigns) if applicable. Do this *after* all other operations,
+	// because the performance of the user-defined command may be questionable.
+	for _, rp := range reposWithPhab {
+		tryUpdateGitolitePhabricatorMetadata(r.Context(), rp.conf, rp.uri, rp.gitoliteName)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
