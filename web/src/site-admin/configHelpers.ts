@@ -183,7 +183,11 @@ export const siteConfigActions: EditorAction[] = [
  */
 export function getTelemetryEnabled(text: string): boolean {
     try {
-        return !(parseJSON(text) as SiteConfiguration).disableTelemetry
+        const parsedConfig = parseJSON(text) as SiteConfiguration
+        if (!parsedConfig) {
+            return false
+        }
+        return !parsedConfig.disableTelemetry
     } catch (err) {
         console.error(err)
         return true
