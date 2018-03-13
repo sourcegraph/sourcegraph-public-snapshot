@@ -189,24 +189,28 @@ func main() {
 		Cmd("npm run prettier"))
 
 	pipeline.AddStep(":typescript:",
+		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
 		Cmd("npm ci"),
 		Cmd("npm run tslint"))
 
 	pipeline.AddStep(":stylelint:",
+		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
 		Cmd("npm ci"),
 		Cmd("npm run stylelint -- --quiet"))
 
 	pipeline.AddStep(":webpack:",
+		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
 		Cmd("npm ci"),
 		Cmd("NODE_ENV=production npm run build"))
 
 	pipeline.AddStep(":mocha:",
+		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
 		Cmd("npm ci"),
