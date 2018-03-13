@@ -80,7 +80,7 @@ export class SearchResults extends React.Component<Props, State> {
         didSave: false,
         showModal: false,
         dynamicFilters: [],
-        allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) !== 'false',
+        allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
     }
 
     private componentUpdates = new Subject<Props>()
@@ -180,7 +180,7 @@ export class SearchResults extends React.Component<Props, State> {
                         didSave: false,
                         showModal: false,
                         dynamicFilters: [],
-                        allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) !== 'false',
+                        allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
                     }))
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
@@ -190,10 +190,6 @@ export class SearchResults extends React.Component<Props, State> {
 
     public componentWillReceiveProps(newProps: Props): void {
         this.componentUpdates.next(newProps)
-    }
-
-    public componentDidUpdate(): void {
-        localStorage.setItem(ALL_EXPANDED_LOCAL_STORAGE_KEY, this.state.allExpanded + '')
     }
 
     public componentWillUnmount(): void {
@@ -341,11 +337,14 @@ export class SearchResults extends React.Component<Props, State> {
                                 <div className="search-results__info-row-right">
                                     {this.state.allExpanded ? (
                                         <button onClick={this.expandAllResults} className="btn btn-link">
-                                            <ArrowCollapseVerticalIcon className="icon-inline" />Collapse all results
+                                            <ArrowCollapseVerticalIcon
+                                                className="icon-inline"
+                                                data-tooltip="Collapse"
+                                            />
                                         </button>
                                     ) : (
                                         <button onClick={this.expandAllResults} className="btn btn-link">
-                                            <ArrowExpandVerticalIcon className="icon-inline" />Expand all results
+                                            <ArrowExpandVerticalIcon className="icon-inline" data-tooltip="Expand" />
                                         </button>
                                     )}
                                     {!this.state.didSave &&
@@ -448,10 +447,12 @@ export class SearchResults extends React.Component<Props, State> {
     }
 
     private expandAllResults = () => {
+        const allExpanded = !this.state.allExpanded
+        localStorage.setItem(ALL_EXPANDED_LOCAL_STORAGE_KEY, allExpanded + '')
         this.setState(
-            state => ({ allExpanded: !state.allExpanded }),
+            state => ({ allExpanded }),
             () => {
-                eventLogger.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+                eventLogger.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
             }
         )
     }
