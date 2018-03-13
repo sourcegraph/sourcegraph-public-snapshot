@@ -161,10 +161,6 @@ class FilteredUserEmailConnection extends FilteredConnection<
     Pick<UserEmailNodeProps, 'user' | 'onDidUpdate'>
 > {}
 
-// TODO(sqs): this is feature-flagged because it doesn't yet send verification emails, which is confusing. See TODO
-// in graphqlbackend AddUserEmail method.
-const enableAddUserEmail = localStorage.getItem('addUserEmail') !== null
-
 export class UserSettingsEmailsPage extends React.Component<Props> {
     private userEmailUpdates = new Subject<void>()
     private subscriptions = new Subscription()
@@ -200,9 +196,7 @@ export class UserSettingsEmailsPage extends React.Component<Props> {
                     history={this.props.history}
                     location={this.props.location}
                 />
-                {enableAddUserEmail && (
-                    <AddUserEmailForm className="mt-4" user={this.props.user.id} onDidAdd={this.onDidUpdateUserEmail} />
-                )}
+                <AddUserEmailForm className="mt-4" user={this.props.user.id} onDidAdd={this.onDidUpdateUserEmail} />
             </div>
         )
     }
