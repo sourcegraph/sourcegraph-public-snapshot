@@ -219,7 +219,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/settings/profile", http.StatusFound)
+	http.Redirect(w, r, "/settings/emails", http.StatusFound)
 }
 
 // serveResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
