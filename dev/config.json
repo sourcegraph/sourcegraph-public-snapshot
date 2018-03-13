@@ -35,7 +35,6 @@
   //     "blacklist": "blacklist",
   //   }
   // ],
-  "corsOrigin": "https://github.com http://phabricator.sgdev.org",
   "github": [
     {
       "url": "https://ghe.sgdev.org",
@@ -58,6 +57,13 @@
       "accessKeyID": "AKIAIG7POXJDKGNQXCPA",
       "secretAccessKey": "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",
       "repositoryPathPattern": "git-codecommit.us-west-1.amazonaws.com/{name}"
+    }
+  ],
+  "gitlab": [
+    {
+      // This access token belongs to keegan+gitlabbot@sourcegraph.com
+      "url": "https://gitlab.com",
+      "token": "Ama8LCe_mrrCThZWvr78"
     }
   ],
   "githubClientID": "6f2a43bd8877ff5fd1d5",
@@ -112,11 +118,5 @@
     ]
   },
   "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK",
-  "gitlab": [
-    {
-      // This access token belongs to keegan+gitlabbot@sourcegraph.com
-      "url": "https://gitlab.com",
-      "token": "Ama8LCe_mrrCThZWvr78"
-    }
-  ]
+  "corsOrigin": "https://github.com http://phabricator.sgdev.org"
 }
