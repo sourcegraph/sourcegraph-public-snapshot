@@ -225,6 +225,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		} else {
 			idToken, err = verifier.Verify(ctx, rawIDToken)
 			if err != nil {
+				log15.Error("ID Token verification failure", "error", err)
 				http.Error(w, ssoErrMsg("ID Token verification failed", ""), http.StatusUnauthorized)
 				return
 			}
