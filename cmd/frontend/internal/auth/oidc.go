@@ -125,13 +125,9 @@ func startAnonUserSession(ctx context.Context, w http.ResponseWriter, r *http.Re
 //
 // 🚨 SECURITY
 func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
-	// Prevent a very slow OIDC provider from blocking frontend server startup for too long (better
-	// to make it fatal sooner).
-	const createTimeout = 20 * time.Second
-	createCtx, cancel := context.WithTimeout(createCtx, createTimeout)
-	defer cancel()
-	// Log when fetching the OIDC config from the provider is slow. (This blocks frontend startup.)
-	timer := time.AfterFunc(1500*time.Millisecond, func() {
+	// Log when fetching the OIDC config from the provider is slow. (It blocks frontend startup.)
+	// This can happen on very high latency connections, or when the provider is unreachable.
+	timer := time.AfterFunc(5*time.Second, func() {
 		log15.Warn("Retrieving OpenID Connect metadata for SSO authentication is taking longer than expected.", "url", oidcProvider.Issuer)
 	})
 	provider, err := oidc.NewProvider(createCtx, oidcProvider.Issuer)
