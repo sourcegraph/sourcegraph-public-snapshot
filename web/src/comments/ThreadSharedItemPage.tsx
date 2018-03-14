@@ -9,6 +9,7 @@ import { scan } from 'rxjs/operators/scan'
 import { Subject } from 'rxjs/Subject'
 import { PageTitle } from '../components/PageTitle'
 import { ToggleLineWrap } from '../repo/blob/actions/ToggleLineWrap'
+import { FilePathBreadcrumb } from '../repo/FilePathBreadcrumb'
 import { RepoHeader } from '../repo/RepoHeader'
 import { RepoHeaderActionPortal } from '../repo/RepoHeaderActionPortal'
 import { eventLogger } from '../tracking/eventLogger'
@@ -145,6 +146,8 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                     eventLogger.log('OpenInNativeAppClicked')
                 }
 
+                const repoPath = item.thread.repo.repository ? item.thread.repo.repository.uri : itemRepo
+
                 return (
                     <div className="comments-page">
                         <PageTitle title={getPageTitle(item)} />
@@ -168,7 +171,7 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                             element={
                                 <ThreadRevisionAction
                                     key="item.thread-revision"
-                                    repoPath={item.thread.repo.repository ? item.thread.repo.repository.uri : itemRepo}
+                                    repoPath={repoPath}
                                     branch={item.thread.branch || undefined}
                                     rev={item.thread.repoRevision}
                                     link={!!item.thread.repo.repository}
@@ -180,6 +183,20 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                             key="toggle-line-wrap"
                             element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={nextWrapCodeChange} />}
                         />
+                        {item.thread.file && (
+                            <RepoHeaderActionPortal
+                                position="nav"
+                                element={
+                                    <FilePathBreadcrumb
+                                        key="path"
+                                        repoPath={repoPath}
+                                        rev={item.thread.repoRevision}
+                                        filePath={item.thread.file}
+                                        isDir={false}
+                                    />
+                                }
+                            />
+                        )}
                         {item &&
                             !item.thread.linesRevision && (
                                 <div className="comments-page__no-revision">

@@ -21,11 +21,11 @@ export const ThreadRevisionAction: React.SFC<Props> = ({ repoPath, branch, rev, 
     const contents = `@ ${branch} (${abbreviateOID(rev)})`
 
     return link ? (
-        <Link className="" to={`/${repoPath}@${rev}`} title={'View files at revision'}>
+        <Link className="ml-2" to={`/${repoPath}@${rev}`} data-tooltip="View files at revision">
             {contents}
         </Link>
     ) : (
-        <span>{contents}</span>
+        <span className="ml-2">{contents}</span>
     )
 }
 
