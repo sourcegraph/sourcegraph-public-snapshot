@@ -90,13 +90,13 @@ const config: webpack.Configuration = {
         extensions: ['.ts', '.tsx', '.js'],
     },
     stats: 'minimal',
-    module: {
-        loaders: [
-            {
+    module: ((): webpack.NewModule => ({
+        rules: [
+            ((): webpack.NewUseRule => ({
                 test: /\.tsx?$/,
-                loaders: [
+                use: [
                     'babel-loader',
-                    {
+                    ((): webpack.NewLoader => ({
                         loader: 'ts-loader',
                         options: {
                             compilerOptions: {
@@ -105,17 +105,17 @@ const config: webpack.Configuration = {
                             },
                             transpileOnly: process.env.DISABLE_TYPECHECKING === 'true',
                         },
-                    },
+                    }))(),
                 ],
-            },
-            {
+            }))(),
+            ((): webpack.NewLoaderRule => ({
                 test: /\.jsx?$/,
                 loader: 'babel-loader',
-            },
-            {
+            }))(),
+            ((): webpack.NewUseRule => ({
                 // sass / scss loader for webpack
                 test: /\.(css|sass|scss)$/,
-                loader: ExtractTextPlugin.extract([
+                use: ExtractTextPlugin.extract([
                     {
                         loader: 'css-loader',
                         options: {
@@ -134,9 +134,9 @@ const config: webpack.Configuration = {
                         },
                     },
                 ]),
-            },
+            }))(),
         ],
-    } as webpack.OldModule,
+    }))(),
 }
 
 export default config
