@@ -22,6 +22,11 @@ func (configuration) GetForSubject(ctx context.Context, subject api.Configuratio
 		return nil, err
 	}
 
+	if settings == nil {
+		// Settings have never been saved for this subject; equivalent to `{}`.
+		return &schema.Settings{}, nil
+	}
+
 	var v schema.Settings
 	if err := conf.UnmarshalJSON(settings.Contents, &v); err != nil {
 		return nil, err
