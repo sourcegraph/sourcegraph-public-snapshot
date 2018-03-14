@@ -117,6 +117,10 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
+	baseURI, err := uri.Parse("git://" + string(repoRevs.repo.URI) + "?" + inputRev)
+	if err != nil {
+		return nil, err
+	}
 
 	var excludePattern string
 	if patternInfo.ExcludePattern != nil {
@@ -132,10 +136,6 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 		ExcludePattern:  excludePattern,
 		First:           limit,
 	})
-	baseURI, uriParseErr := uri.Parse("git://" + string(repoRevs.repo.URI) + "?" + inputRev)
-	if uriParseErr != nil {
-		return nil, uriParseErr
-	}
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
 	fileMatches := make([]*fileMatchResolver, 0)
 	for _, symbol := range symbols {
