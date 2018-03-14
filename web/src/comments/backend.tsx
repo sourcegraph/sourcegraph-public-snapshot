@@ -53,6 +53,7 @@ const sharedItemThreadFragment = gql`
             remoteUri
             repository {
                 uri
+                enabled
                 viewerCanAdminister
             }
         }
@@ -67,6 +68,7 @@ const threadFragment = gql`
             canonicalRemoteID
             repository {
                 uri
+                enabled
                 viewerCanAdminister
             }
         }
