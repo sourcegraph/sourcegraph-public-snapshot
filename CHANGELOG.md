@@ -4,6 +4,13 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes (add your changes here!)
 
+## 2.6.1
+
+### Bug fixes
+
+* Fixes a bug where typing in the search query field would modify the expanded state of file search results.
+* Fixes a bug where new logins via OpenID Connect would fail with the error `SSO error: ID Token verification failed`.
+
 ## 2.6.0
 
 ### Added
