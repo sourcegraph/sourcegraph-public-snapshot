@@ -241,6 +241,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	verified, err := db.UserEmails.ValidateEmail(ctx, usr.ID, verifyCode)
 	if err != nil {
+		log15.Error("Unexpected error when verifying user", "error", err)
 		http.Error(w, "Unexpected error when verifying user.", http.StatusInternalServerError)
 		return
 	}

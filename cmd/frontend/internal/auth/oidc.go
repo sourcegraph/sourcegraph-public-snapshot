@@ -70,6 +70,7 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	return session.CookieOrSessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if oidcProvider.OverrideToken != "" && r.Header.Get("X-Oidc-Override") == oidcProvider.OverrideToken {
 			if err := startAnonUserSession(createCtx, w, r); err != nil {
+				log15.Error("Error initializing anonymous user", "error", err)
 				http.Error(w, "Error initializing anonymous user", http.StatusInternalServerError)
 				return
 			}
@@ -170,6 +171,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 	r.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if authError := r.URL.Query().Get("error"); authError != "" {
+			log15.Error("Authentication error returned by SSO provider", "error", authError, "description", r.URL.Query().Get("error_description"))
 			http.Error(w, ssoErrMsg(authError, r.URL.Query().Get("error_description")), http.StatusUnauthorized)
 			return
 		}
@@ -182,9 +184,11 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		}
 		stateCookie, err := r.Cookie(oidcStateCookieName)
 		if err == http.ErrNoCookie {
+			log15.Error("No OIDC state cookie found - possible request forgery", "error", err)
 			http.Error(w, ssoErrMsg("No OIDC state cookie found", "possible request forgery"), http.StatusBadRequest)
 			return
 		} else if err != nil {
+			log15.Error("Could not read OIDC state cookie", "error", err)
 			http.Error(w, "Could not read OIDC state cookie", http.StatusInternalServerError)
 			return
 		}
@@ -196,6 +200,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		// Decode state param value
 		var state authnState
 		if err := state.Decode(stateParam); err != nil {
+			log15.Error("OIDC state parameter was invalid", "error", err)
 			http.Error(w, ssoErrMsg("OIDC state parameter was invalid", ""), http.StatusBadRequest)
 			return
 		}
@@ -203,6 +208,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		// Exchange the code for an access token. See http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
 		oauth2Token, err := oauth2Config.Exchange(ctx, r.URL.Query().Get("code"))
 		if err != nil {
+			log15.Error("Failed to obtain access token from OpenID Provider", "error", err)
 			http.Error(w, ssoErrMsg("Failed to obtain access token from OpenID Provider", err), http.StatusUnauthorized)
 			return
 		}
@@ -221,7 +227,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 		} else {
 			idToken, err = verifier.Verify(ctx, rawIDToken)
 			if err != nil {
-				log15.Error("ID Token verification failure", "error", err)
+				log15.Error("ID Token verification failed", "error", err)
 				http.Error(w, ssoErrMsg("ID Token verification failed", ""), http.StatusUnauthorized)
 				return
 			}
@@ -237,6 +243,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 
 		userInfo, err := provider.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
 		if err != nil {
+			log15.Error("Failed to get userinfo", "error", err)
 			http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -257,6 +264,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 			return
 		}
 		if err := session.StartNewSession(w, r, actr, 0); err != nil {
+			log15.Error("Could not initiate session", "error", err)
 			http.Error(w, ssoErrMsg("Could not initiate session", err), http.StatusInternalServerError)
 			return
 		}

@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes (add your changes here!)
 
+### Added
+
+* More detailed logging to help diagnose errors with third-party authentication providers.
+
 ## 2.6.1
 
 ### Bug fixes
