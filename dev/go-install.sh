@@ -12,4 +12,4 @@ if [ -n "$DELVE" ]; then
 	TAGS="$TAGS delve"
 fi
 
-go install -v -gcflags="$GCFLAGS" -tags="$TAGS" sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,query-runner,github-proxy,xlang-go,lsp-proxy,searcher,frontend,repo-updater,symbols}
+go install -race -v -gcflags="$GCFLAGS" -tags="$TAGS" sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,query-runner,github-proxy,xlang-go,lsp-proxy,searcher,frontend,repo-updater,symbols}
