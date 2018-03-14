@@ -149,7 +149,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 			commit.inputRev = &inputRev
 		}
 		symbolRes := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit)
-		uri := makeFileMatchUriFromSymbol(symbolRes, inputRev)
+		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
@@ -166,8 +166,8 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	return fileMatches, err
 }
 
-// makeFileMatchUriFromSymbol makes a git://repo?rev#path URI from a symbolResolver to use in a fileMatchResolver
-func makeFileMatchUriFromSymbol(symbolResolver *symbolResolver, inputRev string) string {
+// makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbolResolver to use in a fileMatchResolver
+func makeFileMatchURIFromSymbol(symbolResolver *symbolResolver, inputRev string) string {
 	uri := "git:/" + string(symbolResolver.location.resource.commit.repo.URL())
 	if inputRev != "" {
 		uri += "?" + inputRev
