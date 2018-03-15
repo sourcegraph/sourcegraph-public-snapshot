@@ -82,6 +82,11 @@ func (o *orgResolver) DisplayName() *string {
 func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
 func (o *orgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
+	// 🚨 SECURITY: Only org members can list the org members.
+	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
+		return nil, err
+	}
+
 	memberships, err := db.OrgMembers.GetByOrgID(ctx, o.org.ID)
 	if err != nil {
 		return nil, err

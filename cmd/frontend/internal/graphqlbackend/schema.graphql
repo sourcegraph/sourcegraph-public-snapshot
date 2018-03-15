@@ -1282,6 +1282,8 @@ type User implements Node, ConfigurationSubject {
     latestSettings: Settings
     # The organizations that this user is a member of.
     orgs: [Org!]!
+    # This user's organization memberships.
+    orgMemberships: [OrgMembership!]!
     # The internal tags associated with the user. This is an internal site management feature.
     #
     # Only the user and site admins can access this field.
@@ -1297,6 +1299,14 @@ type User implements Node, ConfigurationSubject {
     # Whether the viewer has admin privileges on this user. The user had admin privileges on their own user, and
     # site admins have admin privileges on all users.
     viewerCanAdminister: Boolean!
+}
+
+type OrgMembership {
+    id: Int!
+    org: Org!
+    user: User!
+    createdAt: String!
+    updatedAt: String!
 }
 
 # A user's email address.
