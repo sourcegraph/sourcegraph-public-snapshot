@@ -1,7 +1,7 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
+import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import UserIcon from '@sourcegraph/icons/lib/User'
-import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -11,9 +11,7 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
-import { pluralize } from '../util/strings'
 import { deleteOrganization, fetchAllOrgs } from './backend'
-import { SettingsInfo } from './util/SettingsInfo'
 
 interface OrgNodeProps {
     /**
@@ -50,39 +48,22 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                     <br />
                     <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
                 </div>
-                <ul className="site-admin-detail-list__info">
-                    {this.props.node.createdAt && <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>}
-                    {this.props.node.members &&
-                        this.props.node.memberships.length > 0 && (
-                            <li>
-                                Members:{' '}
-                                <span title={this.props.node.memberships.map(m => m.user.username).join(', ')}>
-                                    {this.props.node.memberships.length}{' '}
-                                    {pluralize('user', this.props.node.memberships.length)}
-                                </span>
-                            </li>
-                        )}
-                    {this.props.node.latestSettings && (
-                        <li>
-                            <SettingsInfo
-                                settings={this.props.node.latestSettings}
-                                filename={`this.props.org-settings-${this.props.node.id}.json`}
-                            />
-                        </li>
-                    )}
-                    {this.props.node.tags &&
-                        this.props.node.tags.length > 0 && (
-                            <li>Tags: {this.props.node.tags.map(tag => tag.name).join(', ')}</li>
-                        )}
-                </ul>
                 <div className="site-admin-detail-list__actions">
+                    <button
+                        className="btn btn-outline-danger site-admin-detail-list__action"
+                        onClick={this.deleteOrg}
+                        disabled={this.state.loading}
+                        data-tooltip="Delete organization"
+                    >
+                        <DeleteIcon className="icon-inline" />
+                    </button>
                     <Link
-                        to={`${orgURL(this.props.node.name)}/members`}
+                        to={`${orgURL(this.props.node.name)}/settings/members`}
                         className="btn btn-secondary site-admin-detail-list__action"
                         data-tooltip="Organization members"
                     >
                         <UserIcon className="icon-inline" />{' '}
-                        {this.props.node.memberships && this.props.node.memberships.length}
+                        {this.props.node.members && this.props.node.members.totalCount}
                     </Link>
                     <Link
                         to={`${orgURL(this.props.node.name)}/settings`}
@@ -91,14 +72,6 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                     >
                         <GearIcon className="icon-inline" />
                     </Link>
-                    <button
-                        key="deleteOrg"
-                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                        onClick={this.deleteOrg}
-                        disabled={this.state.loading}
-                    >
-                        Delete organization
-                    </button>
                     {this.state.errorDescription && (
                         <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
                     )}

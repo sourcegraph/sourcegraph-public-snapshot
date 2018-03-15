@@ -24,7 +24,7 @@ func TestThreads_Create(t *testing.T) {
 	db.Mocks.UserEmails.GetEmail = func(ctx context.Context, id int32) (string, bool, error) {
 		return "alice@example.com", true, nil
 	}
-	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMember{}, nil)
+	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMembership{}, nil)
 	db.Mocks.OrgRepos.MockGetByCanonicalRemoteID_Return(t, nil, &errcode.Mock{Message: "repo not found", IsNotFound: true})
 	repoCreateCalled, repoCreateCalledWith := db.Mocks.OrgRepos.MockCreate_Return(t, &types.OrgRepo{
 		ID:                1,
@@ -87,7 +87,7 @@ func TestThreads_Update(t *testing.T) {
 	db.Mocks.Threads.MockGet_Return(t, &types.Thread{OrgRepoID: 1, AuthorUserID: 1}, nil)
 	db.Mocks.OrgRepos.MockGetByID_Return(t, &wantRepo, nil)
 	called := db.Mocks.Threads.MockUpdate_Return(t, &types.Thread{OrgRepoID: 1, ArchivedAt: &time.Time{}}, nil)
-	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMember{}, nil)
+	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMembership{}, nil)
 	db.Mocks.Comments.GetAllForThread = func(ctx context.Context, threadID int32) ([]*types.Comment, error) {
 		return []*types.Comment{
 			{AuthorUserID: 2},

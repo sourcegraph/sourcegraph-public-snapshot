@@ -147,7 +147,7 @@ type Org struct {
 	UpdatedAt   time.Time
 }
 
-type OrgMember struct {
+type OrgMembership struct {
 	ID        int32
 	OrgID     int32
 	UserID    int32

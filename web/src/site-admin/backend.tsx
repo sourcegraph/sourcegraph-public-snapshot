@@ -74,10 +74,8 @@ export function fetchAllOrgs(args: { first?: number; query?: string }): Observab
                                     contents
                                 }
                             }
-                            memberships {
-                                user {
-                                    username
-                                }
+                            members {
+                                totalCount
                             }
                             tags {
                                 name
