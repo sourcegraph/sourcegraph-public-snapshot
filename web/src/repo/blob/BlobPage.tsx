@@ -227,7 +227,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
             ),
             this.state.blobOrError.richHTML &&
                 renderMode === 'rendered' && (
-                    <RenderedFile key="rendered-file" dangerousInnerHTML={this.state.blobOrError.richHTML} />
+                    <RenderedFile
+                        key="rendered-file"
+                        dangerousInnerHTML={this.state.blobOrError.richHTML}
+                        location={this.props.location}
+                    />
                 ),
             (renderMode === 'code' || !this.state.blobOrError.richHTML) &&
                 !this.state.blobOrError.highlight.aborted && (

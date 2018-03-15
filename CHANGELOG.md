@@ -7,6 +7,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * More detailed logging to help diagnose errors with third-party authentication providers.
+* Anchors (such as `#my-section`) in rendered Markdown files are now supported.
 
 ### Bug fixes
 

@@ -230,8 +230,13 @@ func (r *fileResolver) RichHTML(ctx context.Context) (string, error) {
 func renderMarkdown(content string) string {
 	unsafeHTML := gfm.Markdown([]byte(content))
 
-	// The recommended policy at https://github.com/russross/blackfriday#extensions
 	p := bluemonday.UGCPolicy()
+	p.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
+	p.AllowAttrs("rel").Matching(regexp.MustCompile(`^nofollow$`)).OnElements("a")
+	p.AllowAttrs("class").Matching(regexp.MustCompile(`^anchor$`)).OnElements("a")
+	p.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
+	p.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
+	p.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
 	p.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
 	return string(p.SanitizeBytes(unsafeHTML))
 }

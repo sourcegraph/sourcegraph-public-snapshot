@@ -12,6 +12,19 @@
         display: table;
         border-bottom: 1px solid #2b3750;
         padding-bottom: 0.5rem;
+
+        a.anchor {
+            opacity: 0;
+            font-size: $font-size-base;
+            margin-left: -1rem;
+            padding: 0.125rem;
+            &::before {
+                content: '#';
+            }
+        }
+        &:hover a.anchor {
+            opacity: 1;
+        }
     }
 
     table,
