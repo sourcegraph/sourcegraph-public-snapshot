@@ -3,7 +3,7 @@
 mkdir -p .bin
 export GOBIN=$PWD/.bin
 
-go get sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
+go install sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
 
 TAGS='all=dev'
 if [ -n "$DELVE" ]; then
