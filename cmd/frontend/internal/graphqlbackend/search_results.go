@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -601,7 +603,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	} else {
 		resultTypes, _ = r.query.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"symbol", "file", "path", "repo", "ref"}
+			resultTypes = []string{"file", "path", "repo", "ref"}
+			if !conf.Get().DontIncludeSymbolResultsByDefault {
+				resultTypes = append(resultTypes, "symbol")
+			}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))

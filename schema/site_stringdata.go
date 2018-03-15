@@ -31,6 +31,10 @@ const SiteSchemaJSON = `{
       "description": "Publicly accessible URL to web app (e.g., what you type into your browser).",
       "type": "string"
     },
+    "dontIncludeSymbolResultsByDefault": {
+      "description": "Set to ` + "`" + `true` + "`" + ` to not include symbol results if no ` + "`" + `type:` + "`" + ` filter was given",
+      "type": "boolean"
+    },
     "disableTelemetry": {
       "description":
         "Prevent usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
