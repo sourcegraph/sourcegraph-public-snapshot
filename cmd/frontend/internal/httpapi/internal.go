@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -39,13 +38,6 @@ func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 	// Get complete list of Gitolite repositories
 	log15.Debug("serveGitoliteUpdateRepos")
-
-	type indexedGitoliteRepo struct {
-		conf         schema.GitoliteConnection
-		uri          api.RepoURI
-		gitoliteName string
-	}
-	var reposWithPhab []indexedGitoliteRepo
 
 	for _, gconf := range conf.Get().Gitolite {
 		rlist, err := gitserver.DefaultClient.ListGitolite(r.Context(), gconf.Host)
@@ -87,15 +79,9 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			}
 
 			if gconf.PhabricatorMetadataCommand != "" {
-				reposWithPhab = append(reposWithPhab, indexedGitoliteRepo{conf: gconf, uri: uri, gitoliteName: entry})
+				tryUpdateGitolitePhabricatorMetadata(r.Context(), gconf, uri, entry)
 			}
 		}
-	}
-
-	// Best-effort update Phabricator metadata (i.e., callsigns) if applicable. Do this *after* all other operations,
-	// because the performance of the user-defined command may be questionable.
-	for _, rp := range reposWithPhab {
-		tryUpdateGitolitePhabricatorMetadata(r.Context(), rp.conf, rp.uri, rp.gitoliteName)
 	}
 
 	w.WriteHeader(http.StatusNoContent)

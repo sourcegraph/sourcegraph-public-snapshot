@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -60,10 +61,14 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 func getGitolitePhabCallsign(ctx context.Context, gconf schema.GitoliteConnection, repo string, command string) (string, error) {
 	cmd := exec.CommandContext(ctx, "sh", "-c", command)
 	cmd.Env = append(os.Environ(), "REPO="+repo)
-	stdout, err := cmd.CombinedOutput()
+	stdout, err := cmd.Output()
 	if err != nil {
 		log15.Warn("Command to get Gitolite Phabricator callsign failed", "repo", repo, "error", err, "stderr")
 		return "", err
 	}
-	return strings.TrimSpace(string(stdout)), nil
+	callsign := strings.TrimSpace(string(stdout))
+	if callsign == "" {
+		return "", fmt.Errorf("callsign command returned empty")
+	}
+	return callsign, nil
 }
