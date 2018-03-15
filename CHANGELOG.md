@@ -8,6 +8,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * More detailed logging to help diagnose errors with third-party authentication providers.
 
+### Bug fixes
+
+* Applies a 1s timeout to symbol search if invoked without specifying `type:` to not block plain text results. No change of behaviour if `type:symbol` is given explicitely.
+
 ## 2.6.1
 
 ### Bug fixes

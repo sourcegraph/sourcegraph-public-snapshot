@@ -664,6 +664,15 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
+				// If not explicitely searching for ONLY symbols,
+				// apply an aggressive timeout to not block other searches.
+				ctx := ctx
+				if len(resultTypes) > 1 {
+					var done context.CancelFunc
+					ctx, done = context.WithTimeout(ctx, 1*time.Second)
+					defer done()
+				}
+
 				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
 				if err != nil {
 					multiErrMu.Lock()
