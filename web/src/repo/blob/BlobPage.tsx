@@ -207,11 +207,13 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     />
                 }
             />,
-            <RepoHeaderActionPortal
-                position="right"
-                key="toggle-line-wrap"
-                element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
-            />,
+            renderMode === 'code' && (
+                <RepoHeaderActionPortal
+                    position="right"
+                    key="toggle-line-wrap"
+                    element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
+                />
+            ),
             this.state.blobOrError.richHTML && (
                 <RepoHeaderActionPortal
                     key="toggle-rendered-file-mode"
