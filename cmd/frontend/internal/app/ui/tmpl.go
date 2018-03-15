@@ -207,11 +207,19 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 	return err
 }
 
+var debugModeOnce sync.Mutex
+
 // onceOrDebug invokes f() if running in debug mode, otherwise it just
 // invokes o.Do(f)
 func onceOrDebug(o *sync.Once, f func()) {
 	if envvar.DebugMode() {
+		// In debug mode the function is not protected by the sync.Once, but we
+		// must still prevent against the race condition here in effectively
+		// the same way that sync.Once would (except, without only doing it
+		// once).
+		debugModeOnce.Lock()
 		f()
+		debugModeOnce.Unlock()
 		return
 	}
 	o.Do(f)
