@@ -16,6 +16,7 @@ import (
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -645,7 +646,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.query)
 				if err != nil {
 					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, err)
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "repository search failed"))
 					multiErrMu.Unlock()
 				}
 				if repoResults != nil {
@@ -676,7 +677,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
 				if err != nil && ctx.Err() != nil {
 					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, err)
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "symbol search failed"))
 					multiErrMu.Unlock()
 				}
 				for _, symbolFileMatch := range symbolFileMatches {
@@ -711,7 +712,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.query)
 				if err != nil {
 					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, err)
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 					multiErrMu.Unlock()
 				}
 				for _, r := range fileResults {
@@ -747,7 +748,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				refResults, refCommon, err := searchReferencesInRepos(ctx, &args, r.query)
 				if err != nil {
 					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, err)
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "ref search failed"))
 					multiErrMu.Unlock()
 				}
 				if refResults != nil {
@@ -768,7 +769,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args, r.query)
 				if err != nil {
 					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, err)
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "diff search failed"))
 					multiErrMu.Unlock()
 				}
 				if diffResults != nil {
@@ -790,7 +791,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args, r.query)
 				if err != nil {
 					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, err)
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "commit search failed"))
 					multiErrMu.Unlock()
 				}
 				if commitResults != nil {
