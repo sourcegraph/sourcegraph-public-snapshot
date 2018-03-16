@@ -122,8 +122,8 @@ func TestSearchResults(t *testing.T) {
 		if !calledSearchFilesInRepos {
 			t.Error("!calledSearchFilesInRepos")
 		}
-		if !calledSearchSymbols {
-			t.Error("!calledSearchSymbols")
+		if calledSearchSymbols {
+			t.Error("calledSearchSymbols")
 		}
 	})
 }

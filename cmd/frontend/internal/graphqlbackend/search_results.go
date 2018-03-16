@@ -12,8 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -605,9 +603,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		resultTypes, _ = r.query.StringValues(searchquery.FieldType)
 		if len(resultTypes) == 0 {
 			resultTypes = []string{"file", "path", "repo", "ref"}
-			if !conf.Get().DontIncludeSymbolResultsByDefault {
-				resultTypes = append(resultTypes, "symbol")
-			}
 		}
 	}
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
@@ -649,7 +644,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				defer wg.Done()
 
 				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.query)
-				if err != nil {
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "repository search failed"))
 					multiErrMu.Unlock()
@@ -670,18 +666,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				// If not explicitely searching for ONLY symbols,
-				// apply an aggressive timeout to not block other searches.
-				ctx := ctx
-				if len(resultTypes) > 1 {
-					var done context.CancelFunc
-					ctx, done = context.WithTimeout(ctx, 1*time.Second)
-					defer done()
-				}
-
 				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
-				// Make sure we never show an error for symbol search unless ONLY searching for `type:symbol`
-				if err != nil && ctx.Err() != nil && err != context.Canceled && err != context.DeadlineExceeded && len(resultTypes) == 1 {
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "symbol search failed"))
 					multiErrMu.Unlock()
@@ -716,7 +703,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				defer wg.Done()
 
 				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.query)
-				if err != nil {
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 					multiErrMu.Unlock()
@@ -752,7 +740,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 				refResults, refCommon, err := searchReferencesInRepos(ctx, &args, r.query)
-				if err != nil {
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "ref search failed"))
 					multiErrMu.Unlock()
@@ -773,7 +762,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args, r.query)
-				if err != nil {
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "diff search failed"))
 					multiErrMu.Unlock()
@@ -795,7 +785,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				defer wg.Done()
 
 				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args, r.query)
-				if err != nil {
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "commit search failed"))
 					multiErrMu.Unlock()
@@ -859,6 +850,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	return &resultsResolver, multiErr.ErrorOrNil()
+}
+
+// isContextError returns true if ctx.Err() is not nil or if err
+// is an error caused by context cancelation or timeout.
+func isContextError(ctx context.Context, err error) bool {
+	return ctx.Err() != nil || err == context.Canceled || err == context.DeadlineExceeded
 }
 
 // searchResultResolver is a resolver for the GraphQL union type `SearchResult`
