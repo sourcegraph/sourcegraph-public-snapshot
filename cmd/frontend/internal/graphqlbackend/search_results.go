@@ -675,7 +675,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 
 				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
-				if err != nil && ctx.Err() != nil && err != context.Canceled && err != context.DeadlineExceeded {
+				// Make sure we never show an error for symbol search unless ONLY searching for `type:symbol`
+				if err != nil && ctx.Err() != nil && err != context.Canceled && err != context.DeadlineExceeded && len(resultTypes) == 1 {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "symbol search failed"))
 					multiErrMu.Unlock()
