@@ -7,6 +7,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ## 2.6.3
 
 Bug fixes
+
 * Symbol results are now only returned for searches that contain `type:symbol`
 
 ## 2.6.2
