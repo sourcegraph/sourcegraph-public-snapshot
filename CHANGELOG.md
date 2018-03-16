@@ -4,6 +4,13 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes (add your changes here!)
 
+## 2.6.3
+
+Bug fixes
+* Symbol results are now only returned for searches that contain `type:symbol`
+
+## 2.6.2
+
 ### Added
 
 * More detailed logging to help diagnose errors with third-party authentication providers.
