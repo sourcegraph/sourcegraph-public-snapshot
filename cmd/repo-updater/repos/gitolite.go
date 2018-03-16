@@ -19,7 +19,7 @@ func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 		} else {
 			log15.Debug("updated Gitolite repos")
 		}
-
+		gitoliteUpdateTime.Set(float64(time.Now().Unix()))
 		time.Sleep(getUpdateInterval())
 	}
 }

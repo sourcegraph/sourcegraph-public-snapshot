@@ -149,11 +149,12 @@ var awsCodeCommitRepositorySyncWorker = &worker{
 				}
 
 				for {
+					updateAWSCodeCommitRepositories(ctx, c)
+					awsCodeCommitUpdateTime.WithLabelValues(c.awsAccountID).Set(float64(time.Now().Unix()))
 					select {
 					case <-shutdown:
 						return
 					case <-time.After(getUpdateInterval()):
-						updateAWSCodeCommitRepositories(ctx, c)
 					}
 				}
 			}(c)

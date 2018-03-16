@@ -79,6 +79,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 				if err != nil {
 					log15.Error("Error updating Phabricator repos", "err", err)
 				}
+				phabricatorUpdateTime.WithLabelValues(c.Url).Set(float64(time.Now().Unix()))
 
 				if res.Cursor.After == nil {
 					break

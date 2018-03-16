@@ -229,6 +229,7 @@ var gitHubRepositorySyncWorker = &worker{
 						time.Sleep(wait)
 					}
 					updateGitHubRepositories(ctx, c)
+					githubUpdateTime.WithLabelValues(c.baseURL.String()).Set(float64(time.Now().Unix()))
 					select {
 					case <-shutdown:
 						return

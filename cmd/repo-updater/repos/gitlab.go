@@ -178,6 +178,7 @@ var gitLabRepositorySyncWorker = &worker{
 						time.Sleep(wait)
 					}
 					updateGitLabProjects(ctx, c)
+					gitlabUpdateTime.WithLabelValues(c.baseURL.String()).Set(float64(time.Now().Unix()))
 					select {
 					case <-shutdown:
 						return

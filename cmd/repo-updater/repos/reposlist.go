@@ -50,6 +50,7 @@ func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {
 				continue
 			}
 		}
+		repoListUpdateTime.Set(float64(time.Now().Unix()))
 		select {
 		case <-shutdown:
 			return

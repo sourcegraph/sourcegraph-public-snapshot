@@ -54,9 +54,7 @@ func main() {
 	waitForFrontend(ctx)
 
 	// Repos List syncing thread
-	go func() {
-		repos.RunRepositorySyncWorker(ctx)
-	}()
+	go repos.RunRepositorySyncWorker(ctx)
 
 	// GitHub Repository syncing thread
 	go repos.RunGitHubRepositorySyncWorker(ctx)

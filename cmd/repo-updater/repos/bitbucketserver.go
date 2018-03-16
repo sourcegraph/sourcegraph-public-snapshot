@@ -196,6 +196,7 @@ var bitbucketServerWorker = &worker{
 			go func(c *bitbucketServerConnection) {
 				for {
 					updateBitbucketServerRepos(ctx, c)
+					bitbucketServerUpdateTime.WithLabelValues(c.config.Url).Set(float64(time.Now().Unix()))
 					select {
 					case <-shutdown:
 						return
