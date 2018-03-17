@@ -23,12 +23,12 @@ const (
 )
 
 type searchSuggestionsArgs struct {
-	First *int
+	First *int32
 }
 
 func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 	if a.First == nil || *a.First < 0 || *a.First > maxSearchSuggestions {
-		n := maxSearchSuggestions
+		n := int32(maxSearchSuggestions)
 		a.First = &n
 	}
 }
@@ -164,7 +164,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			var suggestions []*searchSuggestionResolver
 			if results != nil {
-				if len(results.results) > *args.First {
+				if len(results.results) > int(*args.First) {
 					results.results = results.results[:*args.First]
 				}
 				for i, res := range results.results {
@@ -261,7 +261,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	allSuggestions = uniqueSuggestions
 
 	sort.Sort(searchResultSorter(allSuggestions))
-	if len(allSuggestions) > *args.First {
+	if len(allSuggestions) > int(*args.First) {
 		allSuggestions = allSuggestions[:*args.First]
 	}
 
