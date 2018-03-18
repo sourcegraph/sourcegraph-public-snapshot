@@ -285,7 +285,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/golang/groupcache"
-  packages = ["consistenthash"]
+  packages = [
+    "consistenthash",
+    "lru"
+  ]
   revision = "66deaeb636dff1ac7d938ce666d090556056a4b0"
 
 [[projects]]
@@ -1406,6 +1409,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2512b56b9d602441b717132fedc6a3c8d9393d1314f34c9d826bacb5b30abb77"
+  inputs-digest = "842b230014106e16fa2c3dbdffa79802f94b679baa7551cdd210fbf276bb934a"
   solver-name = "gps-cdcl"
   solver-version = 1
