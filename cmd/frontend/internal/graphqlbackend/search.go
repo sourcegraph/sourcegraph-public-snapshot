@@ -382,7 +382,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	return repoPattern
 }
 
-func (r *searchResolver) resolveFiles(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
+func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
 	repoRevisions, _, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -401,10 +401,10 @@ func (r *searchResolver) resolveFiles(ctx context.Context, limit int) ([]*search
 		CaseSensitive: r.query.IsCaseSensitive(),
 	}
 
-	// If a single term is specified in the query, and no other file patterns,
-	// then treat it as an include pattern (which is a nice UX for users).
-	if vs := r.query.Values(searchquery.FieldDefault); len(vs) == 1 {
-		includePatterns = append(includePatterns, asString(vs[0]))
+	// Treat all default terms as though they had `file:` before them (to make it easy for users to
+	// jump to files by just typing their name).
+	for _, v := range r.query.Values(searchquery.FieldDefault) {
+		includePatterns = append(includePatterns, asString(v))
 	}
 
 	matchPath, err := pathmatch.CompilePathPatterns(includePatterns, excludePattern, pathOptions)
@@ -412,15 +412,17 @@ func (r *searchResolver) resolveFiles(ctx context.Context, limit int) ([]*search
 		return nil, &badRequestError{err}
 	}
 
-	var scorerQuery string
+	matcher := matcher{match: matchPath.MatchPath}
+
+	// Rank matches if include patterns are specified.
 	if len(includePatterns) > 0 {
-		// Try to extract the text-only (non-regexp) part of the query to
-		// pass to stringscore, which doesn't use regexps. This is best-effort.
-		scorerQuery = strings.TrimSuffix(strings.TrimPrefix(includePatterns[0], "^"), "$")
-	}
-	matcher := matcher{
-		match:       matchPath.MatchPath,
-		scorerQuery: scorerQuery,
+		scorerQueryParts := make([]string, len(includePatterns))
+		for i, includePattern := range includePatterns {
+			// Try to extract the text-only (non-regexp) part of the query to
+			// pass to stringscore, which doesn't use regexps. This is best-effort.
+			scorerQueryParts[i] = strings.TrimSuffix(strings.TrimPrefix(strings.Replace(includePattern, `\`, "", -1), "^"), "$")
+		}
+		matcher.scorerQuery = strings.Join(scorerQueryParts, " ")
 	}
 
 	return searchTree(ctx, matcher, repoRevisions, limit)
