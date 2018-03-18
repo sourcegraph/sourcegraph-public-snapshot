@@ -319,6 +319,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 			}
 		}()
 	} else {
+		updateQueue.Inc()
 		s.updateRepo <- updateRepoRequest{repo: req.Repo, url: req.URL}
 	}
 }
@@ -594,7 +595,13 @@ var (
 		Namespace: "src",
 		Subsystem: "gitserver",
 		Name:      "lsremote_queue",
-		Help:      "number of repos waiting to check existance on remote code host (git ls-remote).",
+		Help:      "number of repos waiting to check existence on remote code host (git ls-remote).",
+	})
+	updateQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "update_queue",
+		Help:      "number of repos waiting to be updated (enqueue-repo-update)",
 	})
 )
 
@@ -603,6 +610,7 @@ func init() {
 	prometheus.MustRegister(execDuration)
 	prometheus.MustRegister(cloneQueue)
 	prometheus.MustRegister(lsRemoteQueue)
+	prometheus.MustRegister(updateQueue)
 }
 
 func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
@@ -611,6 +619,8 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 
 	go func() {
 		for req := range updateRepo {
+			updateQueue.Dec()
+
 			if t, ok := lastCheckAt[req.repo]; ok && time.Now().Before(t.Add(10*time.Second)) {
 				continue // git data still fresh
 			}
