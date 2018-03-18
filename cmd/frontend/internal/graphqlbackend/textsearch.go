@@ -118,6 +118,11 @@ type fileMatchResolver struct {
 	uri          string
 	repo         *types.Repo
 	commitID     api.CommitID // or empty for default branch
+
+	// inputRev is the Git revspec that the user originally requested to search. It is used to
+	// preserve the original revision specifier from the user instead of navigating them to the
+	// absolute commit ID when they select a result.
+	inputRev *string
 }
 
 func (fm *fileMatchResolver) Key() string {
@@ -331,6 +336,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 		fm.uri = workspace + fm.JPath
 		fm.repo = repo
 		fm.commitID = commit
+		fm.inputRev = &rev
 	}
 
 	return matches, limitHit, err
