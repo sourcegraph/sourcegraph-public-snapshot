@@ -28,7 +28,6 @@ import (
 
 var (
 	forceRunInterval = env.Get("FORCE_RUN_INTERVAL", "", "Force an interval to run saved queries at, instead of assuming query execution time * 30 (query that takes 2s to run, runs every 60s)")
-	pprofHttp        = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 )
 
 func main() {
@@ -50,10 +49,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	if pprofHttp != "" {
-		go debugserver.Start(pprofHttp)
-		log15.Info(fmt.Sprintf("Profiler available on %s/pprof", pprofHttp))
-	}
+	go debugserver.Start()
 
 	http.HandleFunc(queryrunnerapi.PathSavedQueryWasCreatedOrUpdated, serveSavedQueryWasCreatedOrUpdated)
 	http.HandleFunc(queryrunnerapi.PathSavedQueryWasDeleted, serveSavedQueryWasDeleted)

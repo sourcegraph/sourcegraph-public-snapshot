@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -23,7 +22,6 @@ import (
 )
 
 var numWorkers = env.Get("NUM_WORKERS", "4", "The maximum number of indexing done in parallel.")
-var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 var googleAPIKey = env.Get("GOOGLE_CSE_API_TOKEN", "", "API token for issuing Google:github.com search queries")
 
 var queueLength = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -65,10 +63,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	if profBindAddr != "" {
-		go debugserver.Start(profBindAddr)
-		log15.Info(fmt.Sprintf("Profiler available on %s/pprof", profBindAddr))
-	}
+	go debugserver.Start()
 
 	wq := idx.NewQueue(queueLength)
 	n, _ := strconv.Atoi(numWorkers)

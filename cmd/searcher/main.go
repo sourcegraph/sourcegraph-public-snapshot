@@ -27,7 +27,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
-var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "0", "maximum size of the on disk cache in megabytes")
 
@@ -43,9 +42,7 @@ func main() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 	}
 
-	if profBindAddr != "" {
-		go debugserver.Start(profBindAddr)
-	}
+	go debugserver.Start()
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {

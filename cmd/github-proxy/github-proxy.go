@@ -25,7 +25,6 @@ import (
 )
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
-var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 
 // requestMu ensures we only do one request at a time to prevent tripping abuse detection.
 var requestMu sync.Mutex
@@ -60,10 +59,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	if profBindAddr != "" {
-		go debugserver.Start(profBindAddr)
-		log.Printf("Profiler available on %s/pprof", profBindAddr)
-	}
+	go debugserver.Start()
 
 	var (
 		authenticateRequestMu sync.RWMutex

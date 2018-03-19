@@ -64,6 +64,7 @@ func NewHandler() http.Handler {
 		r.Header.Del("Cookie")
 		r.Header.Write(w)
 	})))
+	addDebugHandlers(r.Get(router.Debug).Subrouter())
 
 	var h http.Handler = m
 	h = redirects.RedirectsMiddleware(h)

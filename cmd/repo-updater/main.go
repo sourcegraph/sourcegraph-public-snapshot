@@ -22,10 +22,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
-var (
-	profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
-)
-
 func main() {
 	ctx := context.Background()
 	env.Lock()
@@ -38,10 +34,7 @@ func main() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 	}
 
-	if profBindAddr != "" {
-		go debugserver.Start(profBindAddr)
-		log.Printf("Profiler available on %s/pprof", profBindAddr)
-	}
+	go debugserver.Start()
 
 	// Start up handler that frontend relies on
 	var repoupdater repoupdater.Server

@@ -28,7 +28,6 @@ const repoCleanupInterval = 24 * time.Hour
 
 var (
 	reposDir          = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
-	profBindAddr      = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 	runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
 )
 
@@ -54,10 +53,7 @@ func main() {
 	// Create Handler now since it also initializes state
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
 
-	if profBindAddr != "" {
-		go debugserver.Start(profBindAddr)
-		log.Printf("Profiler available on %s/pprof", profBindAddr)
-	}
+	go debugserver.Start()
 
 	if runRepoCleanup {
 		go func() {

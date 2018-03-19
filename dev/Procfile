@@ -1,13 +1,13 @@
-gitserver: env SRC_PROF_HTTP=:6068 .bin/gitserver
+gitserver: .bin/gitserver
 indexer: .bin/indexer
-query-runner: env SRC_PROF_HTTP=:6067 .bin/query-runner
+query-runner: .bin/query-runner
 repo-updater: .bin/repo-updater
-searcher: env SRC_PROF_HTTP=:6069 $EXEC_SEARCHER .bin/searcher
-symbols: env SRC_PROF_HTTP=:6071 .bin/symbols
+searcher: $EXEC_SEARCHER .bin/searcher
+symbols: .bin/symbols
 github-proxy: .bin/github-proxy
-lsp-proxy: env SRC_PROF_HTTP=:6061 .bin/lsp-proxy
-xlang-go: .bin/xlang-go -mode=tcp -addr=:4389 -prof-http=:6062
-frontend: env SRC_PROF_HTTP=:6060 $EXEC_FRONTEND .bin/frontend
+lsp-proxy: .bin/lsp-proxy
+xlang-go: .bin/xlang-go -mode=tcp -addr=:4389
+frontend: $EXEC_FRONTEND .bin/frontend
 watch-go: node_modules/.bin/chokidar --silent "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" --ignore node_modules --ignore web -c "./dev/restart.sh"
 web: sh -c "npm --prefix ./web install && npm --prefix ./web run watch"
 syntect_server: ./dev/syntect_server

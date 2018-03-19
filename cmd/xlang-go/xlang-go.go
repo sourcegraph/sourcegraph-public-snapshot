@@ -26,9 +26,8 @@ func init() {
 }
 
 var (
-	mode     = flag.String("mode", "tcp", "communication mode (stdio|tcp)")
-	addr     = flag.String("addr", ":4389", "server listen address (tcp)")
-	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
+	mode = flag.String("mode", "tcp", "communication mode (stdio|tcp)")
+	addr = flag.String("addr", ":4389", "server listen address (tcp)")
 
 	openGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "golangserver",
@@ -56,9 +55,7 @@ func main() {
 func run() error {
 	tracer.Init("xlang-go")
 
-	if *profbind != "" {
-		go debugserver.Start(*profbind)
-	}
+	go debugserver.Start()
 
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()

@@ -31,7 +31,6 @@ import (
 )
 
 var (
-	profBindAddr   = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address")
 	cacheDir       = env.Get("CACHE_DIR", "/tmp/symbols-cache", "directory to store cached symbols")
 	cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "0", "maximum size of the disk cache in megabytes")
 	ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.NumCPU()), "number of ctags child processes to run")
@@ -50,10 +49,7 @@ func main() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
 	}
 
-	if profBindAddr != "" {
-		go debugserver.Start(profBindAddr)
-		log.Printf("Profiler available on %s/pprof", profBindAddr)
-	}
+	go debugserver.Start()
 
 	service := symbols.Service{
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {

@@ -57,8 +57,6 @@ var (
 	httpsAddr        = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API. Only used if manual tls cert and key are specified.")
 	httpAddrInternal = env.Get("SRC_HTTP_ADDR_INTERNAL", ":3090", "HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.")
 
-	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
-
 	appURL                  = conf.GetTODO().AppURL
 	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
 
@@ -173,10 +171,7 @@ func Main() error {
 		return err
 	}
 
-	if profBindAddr != "" {
-		go debugserver.Start(profBindAddr)
-		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", profBindAddr))
-	}
+	go debugserver.Start()
 
 	db.ConnectToDB("")
 

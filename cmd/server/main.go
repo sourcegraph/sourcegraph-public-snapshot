@@ -40,6 +40,20 @@ var defaultEnv = map[string]string{
 	"SEARCHER_CACHE_SIZE_MB": "50000",
 	"SYMBOLS_CACHE_SIZE_MB":  "50000",
 
+	// enables the debug proxy (/-/debug)
+	"SRC_PROF_SERVICES": `
+[
+  { "Name": "frontend", "Host": "127.0.0.1:6060" },
+  { "Name": "gitserver", "Host": "127.0.0.1:6068" },
+  { "Name": "searcher", "Host": "127.0.0.1:6069" },
+  { "Name": "lsp-proxy", "Host": "127.0.0.1:6061" },
+  { "Name": "symbols", "Host": "127.0.0.1:6071" },
+  { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
+  { "Name": "query-runner", "Host": "127.0.0.1:6067" },
+  { "Name": "indexer", "Host": "127.0.0.1:6073" }
+]
+`,
+
 	// TODO other bits
 	// * Guess SRC_APP_URL based on hostname
 	// * SRC_LOG_LEVEL, DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458

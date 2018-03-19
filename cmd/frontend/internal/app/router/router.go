@@ -34,6 +34,7 @@ const (
 	GDDORefs = "gddo.refs"
 	Editor   = "editor"
 
+	Debug        = "debug"
 	DebugHeaders = "debug.headers"
 
 	GopherconLiveBlog = "gophercon.live.blog"
@@ -71,6 +72,7 @@ func newRouter() *mux.Router {
 	base.Path("/-/editor").Methods("GET").Name(Editor)
 
 	base.Path("/-/debug/headers").Methods("GET").Name(DebugHeaders)
+	base.PathPrefix("/-/debug").Name(Debug)
 
 	base.Path("/gophercon").Methods("GET").Name(GopherconLiveBlog)
 

@@ -1,15 +1,43 @@
 package debugserver
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/pprof"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"golang.org/x/net/trace"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+var (
+	addr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
+)
+
+func init() {
+	err := json.Unmarshal([]byte(env.Get("SRC_PROF_SERVICES", "[]", "list of net/http/pprof http bind address.")), &Services)
+	if err != nil {
+		panic("failed to JSON unmarshal SRC_PROF_SERVICES: " + err.Error())
+	}
+
+	if addr == "" {
+		// Look for our binname in the services list
+		name := filepath.Base(os.Args[0])
+		for _, svc := range Services {
+			if svc.Name == name {
+				addr = svc.Host
+				break
+			}
+		}
+	}
+}
 
 // Endpoint is a handler for the debug server. It will be displayed on the
 // debug index page.
@@ -22,24 +50,43 @@ type Endpoint struct {
 	Handler http.Handler
 }
 
-// Start runs a debug server (pprof, prometheus, etc) on addr. It is blocking.
-func Start(addr string, extra ...Endpoint) {
+// Services is the list of registered services' debug addresses. Populated
+// from SRC_PROF_MAP.
+var Services []Service
+
+// Service is a service's debug addr (host:port).
+type Service struct {
+	// Name of the service. Always the binary name. example: "gitserver"
+	Name string
+
+	// Host is the host:port for the services SRC_PROF_HTTP. example:
+	// "127.0.0.1:6060"
+	Host string
+}
+
+// Start runs a debug server (pprof, prometheus, etc) if it is configured (via
+// SRC_PROF_HTTP environment variable). It is blocking.
+func Start(extra ...Endpoint) {
+	if addr == "" {
+		return
+	}
+
 	pp := http.NewServeMux()
 	index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`
-				<a href="/vars">Vars</a><br>
-				<a href="/debug/pprof">PProf</a><br>
-				<a href="/metrics">Metrics</a><br>
-				<a href="/debug/requests">Requests</a><br>
-				<a href="/debug/events">Events</a><br>
+				<a href="vars">Vars</a><br>
+				<a href="debug/pprof/">PProf</a><br>
+				<a href="metrics">Metrics</a><br>
+				<a href="debug/requests">Requests</a><br>
+				<a href="debug/events">Events</a><br>
 			`))
 		for _, e := range extra {
-			fmt.Fprintf(w, `<a href="%s">%s</a><br>`, e.Path, e.Name)
+			fmt.Fprintf(w, `<a href="%s">%s</a><br>`, strings.TrimPrefix(e.Path, "/"), e.Name)
 		}
 		w.Write([]byte(`
 				<br>
-				<form method="post" action="/gc" style="display: inline;"><input type="submit" value="GC"></form>
-				<form method="post" action="/freeosmemory" style="display: inline;"><input type="submit" value="Free OS Memory"></form>
+				<form method="post" action="gc" style="display: inline;"><input type="submit" value="GC"></form>
+				<form method="post" action="freeosmemory" style="display: inline;"><input type="submit" value="Free OS Memory"></form>
 			`))
 	})
 	pp.Handle("/", index)

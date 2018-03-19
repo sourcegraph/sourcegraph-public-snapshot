@@ -27,9 +27,8 @@ func init() {
 }
 
 var (
-	addr     = flag.String("addr", ":4388", "proxy server TCP listen address")
-	profbind = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
-	trace    = flag.Bool("trace", false, "print traces of JSON-RPC 2.0 requests/responses")
+	addr  = flag.String("addr", ":4388", "proxy server TCP listen address")
+	trace = flag.Bool("trace", false, "print traces of JSON-RPC 2.0 requests/responses")
 )
 
 func main() {
@@ -67,13 +66,12 @@ func run() error {
 	log15.Info("lsp-proxy: listening", "addr", lis.Addr())
 	p := proxy.New()
 	p.Trace = *trace
-	if profbind != "" {
-		e := debugserver.Endpoint{
-			Name:    "LSP-Proxy Connections",
-			Path:    "/lsp-conns",
-			Handler: &proxy.DebugHandler{Proxy: p},
-		}
-		go debugserver.Start(profbind, e)
-	}
+
+	go debugserver.Start(debugserver.Endpoint{
+		Name:    "LSP-Proxy Connections",
+		Path:    "/lsp-conns",
+		Handler: &proxy.DebugHandler{Proxy: p},
+	})
+
 	return p.Serve(context.Background(), lis)
 }
