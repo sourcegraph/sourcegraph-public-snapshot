@@ -90,11 +90,11 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID 
 			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
 				if err == nil {
 					mu.Lock()
-					err = errors.Wrap(err, fmt.Sprintf("parse repo %s commit %s path %s", repo, commitID, req.path))
+					err = errors.Wrap(parseErr, fmt.Sprintf("parse repo %s commit %s path %s", repo, commitID, req.path))
 					mu.Unlock()
 				}
 				cancel()
-				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", err)
+				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
 			}
 			if len(entries) > 0 {
 				mu.Lock()
