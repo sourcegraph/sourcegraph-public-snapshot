@@ -8,7 +8,7 @@ The user facing documentation lives in
 
 This file documents information relevant to developers at Sourcegraph.
 
-## Publishing a new version
+## Publishing a new major/minor version
 
 This process is quite manual still, since we want to ensure each release is
 high quality. As we get used to releasing Sourcegraph Server more and more
@@ -67,6 +67,17 @@ It is important that the following steps be ran closely together, otherwise we w
 1.  Commit and `git push` this change directly to the `master` branch.
 
 You are done! Sourcegraph Server version `VERSION` has been released!
+
+## Publishing a new patch version
+
+Patch versions should only contain bug fixes and updates that are too urgent to wait for the next major/minor release.
+
+1. `git push origin origin/RELEASE_BRANCH:docker-images-patch/server`
+1. `docker tag us.gcr.io/sourcegraph-dev/server:CI_VERSION sourcegraph/server:VERSION`
+1. `docker push sourcegraph/server:VERSION`
+1. If applicable, update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseServerBuild` to the
+    semver version string of the new version.
+1. If applicable, update the website docs with the new version number.
 
 ## Publishing new code intelligence images
 
