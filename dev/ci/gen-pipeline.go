@@ -260,7 +260,7 @@ func main() {
 			Cmd("./dev/ci/deploy-staging.sh"))
 		pipeline.AddWait()
 
-	case string.HasPrefix(branch, "docker-images-patch/"):
+	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
 		addDockerImageStep(branch[20:], false)
 
