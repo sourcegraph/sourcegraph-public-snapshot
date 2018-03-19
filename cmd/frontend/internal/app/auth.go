@@ -67,12 +67,19 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 		return
 	}
 
+	const defaultErrorMessage = "Signup failed unexpectedly."
+
 	// Create the user.
 	//
 	// We don't need to check auth.allowSignup because we assume the caller of doServeSignUp checks
 	// it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which case the only signup
 	// allowed is that of the initial site admin).
-	emailCode := backend.MakeEmailVerificationCode()
+	emailCode, err := backend.MakeEmailVerificationCode()
+	if err != nil {
+		log15.Error("Error generating email verification code for new user.", "email", creds.Email, "username", creds.Username, "error", err)
+		http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
+		return
+	}
 	usr, err := db.Users.Create(r.Context(), db.NewUser{
 		Email:                creds.Email,
 		Username:             creds.Username,
@@ -95,7 +102,7 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 		default:
 			// Do not show non-whitelisted error messages to user, in case they contain sensitive or confusing
 			// information.
-			message = "Signup failed unexpectedly."
+			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError
 		}
 		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)

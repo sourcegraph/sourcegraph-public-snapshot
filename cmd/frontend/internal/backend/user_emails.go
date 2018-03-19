@@ -84,7 +84,10 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 
 	var code *string
 	if conf.EmailVerificationRequired() {
-		tmp := MakeEmailVerificationCode()
+		tmp, err := MakeEmailVerificationCode()
+		if err != nil {
+			return err
+		}
 		code = &tmp
 	}
 
@@ -102,13 +105,14 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 	return nil
 }
 
-// MakeEmailVerificationCode returns a random string that can be used as an email verification code.
-func MakeEmailVerificationCode() string {
+// MakeEmailVerificationCode returns a random string that can be used as an email verification
+// code. If there is not enough entropy to create a random string, it returns a non-nil error.
+func MakeEmailVerificationCode() (string, error) {
 	emailCodeBytes := make([]byte, 20)
 	if _, err := rand.Read(emailCodeBytes); err != nil {
-		panic(err)
+		return "", err
 	}
-	return base64.StdEncoding.EncodeToString(emailCodeBytes)
+	return base64.StdEncoding.EncodeToString(emailCodeBytes), nil
 }
 
 // SendUserEmailVerificationEmail sends an email to the user to verify the email address. The code
