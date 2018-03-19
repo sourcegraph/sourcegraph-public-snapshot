@@ -1,17 +1,25 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import format from 'date-fns/format'
+import isEqual from 'lodash/isEqual'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { gql, mutateGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { createAggregateError } from '../util/errors'
+import { setUserEmailVerified } from '../user/settings/backend'
+import { asError } from '../util/errors'
 import { deleteUser, fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
@@ -41,6 +49,48 @@ interface UserNodeState {
 class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public state: UserNodeState = {
         loading: false,
+    }
+
+    private emailVerificationClicks = new Subject<{ email: string; verified: boolean }>()
+    private subscriptions = new Subscription()
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.emailVerificationClicks
+                .pipe(
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    switchMap(({ email, verified }) =>
+                        merge(
+                            of({
+                                errorDescription: undefined,
+                                resetPasswordURL: undefined,
+                                loading: true,
+                            }),
+                            setUserEmailVerified(this.props.node.id, email, verified).pipe(
+                                map(() => ({ loading: false })),
+                                catchError(error => [{ loading: false, errorDescription: asError(error).message }]),
+                                publishReplay<
+                                    Pick<UserNodeState, 'loading' | 'errorDescription' | 'resetPasswordURL'>
+                                >(),
+                                refCount()
+                            )
+                        )
+                    )
+                )
+                .subscribe(
+                    stateUpdate => {
+                        this.setState(stateUpdate)
+                        if (this.props.onDidUpdate) {
+                            this.props.onDidUpdate()
+                        }
+                    },
+                    err => console.error(err)
+                )
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -128,7 +178,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                                         // tslint:disable-next-line:jsx-no-lambda
                                                         onClick={e => {
                                                             e.preventDefault()
-                                                            this.markEmailAsVerified(email, !verified)
+                                                            this.emailVerificationClicks.next({
+                                                                email,
+                                                                verified: !verified,
+                                                            })
                                                         }}
                                                     >
                                                         Mark as {verificationPending ? 'verified' : 'unverified'}
@@ -180,42 +233,6 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 )}
             </li>
         )
-    }
-
-    private markEmailAsVerified = (email: string, verified: boolean) => {
-        this.setState({
-            errorDescription: undefined,
-            resetPasswordURL: undefined,
-            loading: true,
-        })
-
-        mutateGraphQL(
-            gql`
-                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
-                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
-                        alwaysNil
-                    }
-                }
-            `,
-            { user: this.props.node.id, email, verified }
-        )
-            .pipe(
-                map(({ data, errors }) => {
-                    if (!data || (errors && errors.length > 0)) {
-                        throw createAggregateError(errors)
-                    }
-                })
-            )
-            .toPromise()
-            .then(
-                () => {
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                err => this.setState({ loading: false, errorDescription: err.message })
-            )
     }
 
     private promoteToSiteAdmin = () => this.setSiteAdmin(true)

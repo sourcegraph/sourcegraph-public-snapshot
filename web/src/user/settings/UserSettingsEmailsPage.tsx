@@ -13,6 +13,7 @@ import { siteFlags } from '../../site/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { AddUserEmailForm } from './AddUserEmailForm'
+import { setUserEmailVerified } from './backend'
 
 interface UserEmailNodeProps {
     node: GQL.IUserEmail
@@ -119,32 +120,15 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             loading: true,
         })
 
-        mutateGraphQL(
-            gql`
-                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
-                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
-                        alwaysNil
-                    }
+        setUserEmailVerified(this.props.user.id, this.props.node.email, verified).subscribe(
+            () => {
+                this.setState({ loading: false })
+                if (this.props.onDidUpdate) {
+                    this.props.onDidUpdate()
                 }
-            `,
-            { user: this.props.user.id, email: this.props.node.email, verified }
+            },
+            error => this.setState({ loading: false, errorDescription: error.message })
         )
-            .pipe(
-                map(({ data, errors }) => {
-                    if (!data || (errors && errors.length > 0)) {
-                        throw createAggregateError(errors)
-                    }
-                })
-            )
-            .subscribe(
-                () => {
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                error => this.setState({ loading: false, errorDescription: error.message })
-            )
     }
 }
 
