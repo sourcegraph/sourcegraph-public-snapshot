@@ -80,14 +80,13 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showRepoSuggestions)
 
 	showFileSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
-		// If only repos/repogroups and files are specified (and at most 1 term), then show file suggestions.
-		// If the query has a file: filter AND a term, then abort; we will use showFilesWithTextMatches
-		// instead.
+		// If only repos/repogroups and files are specified (and at most 1 term), then show file
+		// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
+		// make it easy to jump to files by just typing in their name, not `file:<their name>`).
 		hasOnlyEmptyRepoField := len(r.query.Values(searchquery.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(searchquery.FieldRepo)) && len(r.query.Fields) == 1
 		hasRepoOrFileFields := len(r.query.Values(searchquery.FieldRepoGroup)) > 0 || len(r.query.Values(searchquery.FieldRepo)) > 0 || len(r.query.Values(searchquery.FieldFile)) > 0
-		userQueryHasFileFilterAndTerm := len(r.query.Values(searchquery.FieldFile)) > 0 && len(r.query.Values(searchquery.FieldDefault)) > 0
-		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(searchquery.FieldDefault)) <= 1 && !userQueryHasFileFilterAndTerm {
-			return r.resolveFiles(ctx, maxSearchSuggestions)
+		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(searchquery.FieldDefault)) <= 1 {
+			return r.suggestFilePaths(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
 	}

@@ -11,8 +11,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -922,13 +924,60 @@ func (r *Repository) ReadDir(ctx context.Context, commit api.CommitID, path stri
 		return nil, err
 	}
 
-	// Trailing slash is necessary to ls-tree under the dir (not just
-	// to list the dir's tree entry in its parent dir).
-	return r.lsTree(ctx, commit, filepath.Clean(util.Rel(path))+"/", recurse)
+	if path != "" {
+		// Trailing slash is necessary to ls-tree under the dir (not just
+		// to list the dir's tree entry in its parent dir).
+		path = filepath.Clean(util.Rel(path)) + "/"
+	}
+	return r.lsTree(ctx, commit, path, recurse)
 }
+
+// lsTreeRootCache caches the result of running `git ls-tree ...` on a repository's root path
+// (because non-root paths are likely to have a lower cache hit rate). It is intended to improve the
+// perceived performance of large monorepos, where the tree for a given repo+commit (usually the
+// repo's latest commit on default branch) will be requested frequently and would take multiple
+// seconds to compute if uncached.
+var (
+	lsTreeRootCacheMu sync.Mutex
+	lsTreeRootCache   = lru.New(5)
+)
 
 // lsTree returns ls of tree at path.
 func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+	if path != "" || !recurse {
+		// Only cache the root recursive ls-tree.
+		return r.lsTreeUncached(ctx, commit, path, recurse)
+	}
+
+	key := string(r.repoURI) + ":" + string(commit) + ":" + path
+	lsTreeRootCacheMu.Lock()
+	v, ok := lsTreeRootCache.Get(key)
+	lsTreeRootCacheMu.Unlock()
+	var entries []os.FileInfo
+	if ok {
+		// Cache hit.
+		entries = v.([]os.FileInfo)
+	} else {
+		// Cache miss.
+		var err error
+		start := time.Now()
+		entries, err = r.lsTreeUncached(ctx, commit, path, recurse)
+		if err != nil {
+			return nil, err
+		}
+
+		// It's only worthwhile to cache if the operation took a while and returned a lot of
+		// data. This is a heuristic.
+		if time.Since(start) > 500*time.Millisecond && len(entries) > 5000 {
+			lsTreeRootCacheMu.Lock()
+			lsTreeRootCache.Add(key, entries)
+			lsTreeRootCacheMu.Unlock()
+		}
+	}
+	return entries, nil
+}
+
+func (r *Repository) lsTreeUncached(ctx context.Context, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	r.ensureAbsCommit(commit)
 
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
@@ -948,7 +997,9 @@ func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path strin
 	if recurse {
 		args = append(args, "-r", "-t")
 	}
-	args = append(args, "--", filepath.ToSlash(path))
+	if path != "" {
+		args = append(args, "--", filepath.ToSlash(path))
+	}
 	cmd := r.command("git", args...)
 	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
