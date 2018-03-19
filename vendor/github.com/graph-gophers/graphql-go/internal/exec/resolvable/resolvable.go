@@ -33,8 +33,8 @@ type Field struct {
 	TypeName    string
 	MethodIndex int
 	HasContext  bool
-	ArgsPacker  *packer.StructPacker
 	HasError    bool
+	ArgsPacker  *packer.StructPacker
 	ValueExec   Resolvable
 	TraceLabel  string
 }
@@ -227,12 +227,12 @@ func (b *execBuilder) makeObjectExec(typeName string, fields schema.FieldList, p
 
 	typeAssertions := make(map[string]*TypeAssertion)
 	for _, impl := range possibleTypes {
-		methodIndex := findMethod(resolverType, "to"+impl.Name)
+		methodIndex := findMethod(resolverType, "To"+impl.Name)
 		if methodIndex == -1 {
-			return nil, fmt.Errorf("%s does not resolve %q: missing method %q to convert to %q", resolverType, typeName, "to"+impl.Name, impl.Name)
+			return nil, fmt.Errorf("%s does not resolve %q: missing method %q to convert to %q", resolverType, typeName, "To"+impl.Name, impl.Name)
 		}
 		if resolverType.Method(methodIndex).Type.NumOut() != 2 {
-			return nil, fmt.Errorf("%s does not resolve %q: method %q should return a value and a bool indicating success", resolverType, typeName, "to"+impl.Name)
+			return nil, fmt.Errorf("%s does not resolve %q: method %q should return a value and a bool indicating success", resolverType, typeName, "To"+impl.Name)
 		}
 		a := &TypeAssertion{
 			MethodIndex: methodIndex,

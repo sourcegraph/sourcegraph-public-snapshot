@@ -21,6 +21,7 @@ func (w *statusCodeTracker) WriteHeader(status int) {
 
 type mwOptions struct {
 	opNameFunc    func(r *http.Request) string
+	spanObserver  func(span opentracing.Span, r *http.Request)
 	componentName string
 }
 
@@ -36,10 +37,18 @@ func OperationNameFunc(f func(r *http.Request) string) MWOption {
 }
 
 // MWComponentName returns a MWOption that sets the component name
-// name for the server-side span.
+// for the server-side span.
 func MWComponentName(componentName string) MWOption {
 	return func(options *mwOptions) {
 		options.componentName = componentName
+	}
+}
+
+// MWSpanObserver returns a MWOption that observe the span
+// for the server-side span.
+func MWSpanObserver(f func(span opentracing.Span, r *http.Request)) MWOption {
+	return func(options *mwOptions) {
+		options.spanObserver = f
 	}
 }
 
@@ -58,15 +67,19 @@ func MWComponentName(componentName string) MWOption {
 //   mw := nethttp.Middleware(
 //      tracer,
 //      http.DefaultServeMux,
-//      nethttp.OperationName(func(r *http.Request) string {
+//      nethttp.OperationNameFunc(func(r *http.Request) string {
 //	        return "HTTP " + r.Method + ":/api/customers"
 //      }),
+//      nethttp.MWSpanObserver(func(sp opentracing.Span, r *http.Request) {
+//			sp.SetTag("http.uri", r.URL.EscapedPath())
+//		}),
 //   )
 func Middleware(tr opentracing.Tracer, h http.Handler, options ...MWOption) http.Handler {
 	opts := mwOptions{
 		opNameFunc: func(r *http.Request) string {
 			return "HTTP " + r.Method
 		},
+		spanObserver: func(span opentracing.Span, r *http.Request) {},
 	}
 	for _, opt := range options {
 		opt(&opts)
@@ -76,6 +89,7 @@ func Middleware(tr opentracing.Tracer, h http.Handler, options ...MWOption) http
 		sp := tr.StartSpan(opts.opNameFunc(r), ext.RPCServerOption(ctx))
 		ext.HTTPMethod.Set(sp, r.Method)
 		ext.HTTPUrl.Set(sp, r.URL.String())
+		opts.spanObserver(sp, r)
 
 		// set component name, use "net/http" if caller does not specify
 		componentName := opts.componentName

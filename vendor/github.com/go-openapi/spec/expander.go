@@ -336,12 +336,17 @@ func normalizeAbsPath(path string) string {
 // base could be a directory or a full file path
 func normalizePaths(refPath, base string) string {
 	refURL, _ := url.Parse(refPath)
-	if path.IsAbs(refURL.Path) {
+	if path.IsAbs(refURL.Path) || filepath.IsAbs(refPath) {
 		// refPath is actually absolute
 		if refURL.Host != "" {
 			return refPath
 		}
-		return filepath.FromSlash(refPath)
+		parts := strings.Split(refPath, "#")
+		result := filepath.FromSlash(parts[0])
+		if len(parts) == 2 {
+			result += "#" + parts[1]
+		}
+		return result
 	}
 
 	// relative refPath
@@ -430,9 +435,11 @@ func (r *schemaLoader) load(refURL *url.URL) (interface{}, url.URL, bool, error)
 	toFetch := *refURL
 	toFetch.Fragment = ""
 
-	data, fromCache := r.cache.Get(toFetch.String())
+	normalized := normalizeAbsPath(toFetch.String())
+
+	data, fromCache := r.cache.Get(normalized)
 	if !fromCache {
-		b, err := r.loadDoc(toFetch.String())
+		b, err := r.loadDoc(normalized)
 		if err != nil {
 			return nil, url.URL{}, false, err
 		}
@@ -440,7 +447,7 @@ func (r *schemaLoader) load(refURL *url.URL) (interface{}, url.URL, bool, error)
 		if err := json.Unmarshal(b, &data); err != nil {
 			return nil, url.URL{}, false, err
 		}
-		r.cache.Set(toFetch.String(), data)
+		r.cache.Set(normalized, data)
 	}
 
 	return data, toFetch, fromCache, nil

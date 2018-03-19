@@ -29,9 +29,11 @@ package zoekt
 // 15: rune based symbol sections
 const IndexFormatVersion = 15
 
-// FeatureVersion is increased if a feature is added that requires reindexing data.
+// FeatureVersion is increased if a feature is added that requires reindexing data
+// without changing the format version
 // 2: Rank field for shards.
-const FeatureVersion = 2
+// 3: Rank documents within shards
+const FeatureVersion = 3
 
 type indexTOC struct {
 	fileContents compoundSection

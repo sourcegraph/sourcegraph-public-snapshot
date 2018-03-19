@@ -179,7 +179,7 @@ func handleSendError(r *aws.Request, err error) {
 	ctx := r.Context()
 	select {
 	case <-ctx.Done():
-		r.Error = awserr.New(aws.CanceledErrorCode,
+		r.Error = awserr.New(aws.ErrCodeRequestCanceled,
 			"request context canceled", ctx.Err())
 		r.Retryable = aws.Bool(false)
 	default:
@@ -207,7 +207,7 @@ var AfterRetryHandler = aws.NamedHandler{Name: "core.AfterRetryHandler", Fn: fun
 		r.RetryDelay = r.RetryRules(r)
 
 		if err := sdk.SleepWithContext(r.Context(), r.RetryDelay); err != nil {
-			r.Error = awserr.New(aws.CanceledErrorCode,
+			r.Error = awserr.New(aws.ErrCodeRequestCanceled,
 				"request context canceled", err)
 			r.Retryable = aws.Bool(false)
 			return

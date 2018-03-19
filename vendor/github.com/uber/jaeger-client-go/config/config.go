@@ -175,6 +175,14 @@ func (c Configuration) New(
 		tracerOptions = append(tracerOptions, jaeger.TracerOptions.ContribObserver(cobs))
 	}
 
+	for format, injector := range opts.injectors {
+		tracerOptions = append(tracerOptions, jaeger.TracerOptions.Injector(format, injector))
+	}
+
+	for format, extractor := range opts.extractors {
+		tracerOptions = append(tracerOptions, jaeger.TracerOptions.Extractor(format, extractor))
+	}
+
 	if c.BaggageRestrictions != nil {
 		mgr := remote.NewRestrictionManager(
 			serviceName,
@@ -193,7 +201,8 @@ func (c Configuration) New(
 		serviceName,
 		sampler,
 		reporter,
-		tracerOptions...)
+		tracerOptions...,
+	)
 
 	return tracer, closer, nil
 }

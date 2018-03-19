@@ -1,31 +1,29 @@
 package aws
 
 import (
-	"reflect"
 	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go-v2/internal/awsutil"
 )
 
-// A Pagination provides paginating of SDK API operations which are paginatable.
+// A Pager provides paginating of SDK API operations which are paginatable.
 // Generally you should not use this type directly, but use the "Pages" API
 // operations method to automatically perform pagination for you. Such as,
 // "S3.ListObjectsPages", and "S3.ListObjectsPagesWithContext" methods.
 //
-// Pagination differs from a Paginator type in that pagination is the type that
+// Pagier differs from a Paginator type in that pagination is the type that
 // does the pagination between API operations, and Paginator defines the
 // configuration that will be used per page request.
 //
-//     cont := true
-//     for p.Next() && cont {
-//         data := p.Page().(*s3.ListObjectsOutput)
+//     for p.Next() {
+//         data := p.CurrentPage().(*s3.ListObjectsOutput)
 //         // process the page's data
 //     }
 //     return p.Err()
 //
 // See service client API operation Pages methods for examples how the SDK will
-// use the Pagination type.
-type Pagination struct {
+// use the Pager type.
+type Pager struct {
 	// Function to return a Request value for each pagination request.
 	// Any configuration or handlers that need to be applied to the request
 	// prior to getting the next page should be done here before the request
@@ -42,24 +40,24 @@ type Pagination struct {
 	curPage interface{}
 }
 
-// HasNextPage will return true if Pagination is able to determine that the API
+// hasNextPage will return true if Pager is able to determine that the API
 // operation has additional pages. False will be returned if there are no more
 // pages remaining.
 //
 // Will always return true if Next has not been called yet.
-func (p *Pagination) HasNextPage() bool {
+func (p *Pager) hasNextPage() bool {
 	return !(p.started && len(p.nextTokens) == 0)
 }
 
-// Err returns the error Pagination encountered when retrieving the next page.
-func (p *Pagination) Err() error {
+// Err returns the error Pager encountered when retrieving the next page.
+func (p *Pager) Err() error {
 	return p.err
 }
 
-// Page returns the current page. Page should only be called after a successful
+// CurrentPage returns the current page. Page should only be called after a successful
 // call to Next. It is undefined what Page will return if Page is called after
 // Next returns false.
-func (p *Pagination) Page() interface{} {
+func (p *Pager) CurrentPage() interface{} {
 	return p.curPage
 }
 
@@ -71,8 +69,8 @@ func (p *Pagination) Page() interface{} {
 // to be cast to the API operation's output type.
 //
 // Use the Err method to determine if an error occurred if Page returns false.
-func (p *Pagination) Next() bool {
-	if !p.HasNextPage() {
+func (p *Pager) Next() bool {
+	if !p.hasNextPage() {
 		return false
 	}
 
@@ -105,7 +103,7 @@ func (p *Pagination) Next() bool {
 // should be paginated. This type is used by the API service models to define
 // the generated pagination config for service APIs.
 //
-// The Pagination type is what provides iterating between pages of an API. It
+// The Pager type is what provides iterating between pages of an API. It
 // is only used to store the token metadata the SDK should use for performing
 // pagination.
 type Paginator struct {
@@ -187,65 +185,3 @@ var (
 	logDeprecatedNextPage    int32
 	logDeprecatedEachPage    int32
 )
-
-// HasNextPage returns true if this request has more pages of data available.
-//
-// Deprecated Use Pagination type for configurable pagination of API operations
-func (r *Request) HasNextPage() bool {
-	logDeprecatedf(r.Config.Logger, &logDeprecatedHasNextPage,
-		"Request.HasNextPage deprecated. Use Pagination type for configurable pagination of API operations")
-
-	return len(r.nextPageTokens()) > 0
-}
-
-// NextPage returns a new Request that can be executed to return the next
-// page of result data. Call .Send() on this request to execute it.
-//
-// Deprecated Use Pagination type for configurable pagination of API operations
-func (r *Request) NextPage() *Request {
-	logDeprecatedf(r.Config.Logger, &logDeprecatedNextPage,
-		"Request.NextPage deprecated. Use Pagination type for configurable pagination of API operations")
-
-	tokens := r.nextPageTokens()
-	if len(tokens) == 0 {
-		return nil
-	}
-
-	data := reflect.New(reflect.TypeOf(r.Data).Elem()).Interface()
-	nr := New(r.Config, r.Metadata, r.Handlers, r.Retryer, r.Operation, awsutil.CopyOf(r.Params), data)
-	for i, intok := range nr.Operation.InputTokens {
-		awsutil.SetValueAtPath(nr.Params, intok, tokens[i])
-	}
-	return nr
-}
-
-// EachPage iterates over each page of a paginated request object. The fn
-// parameter should be a function with the following sample signature:
-//
-//   func(page *T, lastPage bool) bool {
-//       return true // return false to stop iterating
-//   }
-//
-// Where "T" is the structure type matching the output structure of the given
-// operation. For example, a request object generated by
-// DynamoDB.ListTablesRequest() would expect to see dynamodb.ListTablesOutput
-// as the structure "T". The lastPage value represents whether the page is
-// the last page of data or not. The return value of this function should
-// return true to keep iterating or false to stop.
-//
-// Deprecated Use Pagination type for configurable pagination of API operations
-func (r *Request) EachPage(fn func(data interface{}, isLastPage bool) (shouldContinue bool)) error {
-	logDeprecatedf(r.Config.Logger, &logDeprecatedEachPage,
-		"Request.EachPage deprecated. Use Pagination type for configurable pagination of API operations")
-
-	for page := r; page != nil; page = page.NextPage() {
-		if err := page.Send(); err != nil {
-			return err
-		}
-		if getNextPage := fn(page.Data, !page.HasNextPage()); !getNextPage {
-			return page.Error
-		}
-	}
-
-	return nil
-}

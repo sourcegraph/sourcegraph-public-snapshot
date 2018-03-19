@@ -26,6 +26,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/uber/jaeger-client-go/internal/baggage"
+	"github.com/uber/jaeger-client-go/internal/throttler"
 	"github.com/uber/jaeger-client-go/log"
 	"github.com/uber/jaeger-client-go/utils"
 )
@@ -58,10 +59,13 @@ type Tracer struct {
 
 	observer compositeObserver
 
-	tags []Tag
+	tags    []Tag
+	process Process
 
 	baggageRestrictionManager baggage.RestrictionManager
 	baggageSetter             *baggageSetter
+
+	debugThrottler throttler.Throttler
 }
 
 // NewTracer creates Tracer implementation that reports tracing to Jaeger.
@@ -111,6 +115,9 @@ func NewTracer(
 	} else {
 		t.baggageSetter = newBaggageSetter(baggage.NewDefaultRestrictionManager(0), &t.metrics)
 	}
+	if t.debugThrottler == nil {
+		t.debugThrottler = throttler.DefaultThrottler{}
+	}
 	if t.randomNumber == nil {
 		rng := utils.NewRand(time.Now().UnixNano())
 		t.randomNumber = func() uint64 {
@@ -142,6 +149,14 @@ func NewTracer(
 	} else if t.options.highTraceIDGenerator != nil {
 		t.logger.Error("Overriding high trace ID generator but not generating " +
 			"128 bit trace IDs, consider enabling the \"Gen128Bit\" option")
+	}
+	t.process = Process{
+		UUID:    "PLACEHOLDER", // TODO
+		Service: serviceName,
+		Tags:    t.tags,
+	}
+	if throttler, ok := t.debugThrottler.(ProcessSetter); ok {
+		throttler.SetProcess(t.process)
 	}
 
 	return t, t
@@ -294,6 +309,9 @@ func (t *Tracer) Close() error {
 	if mgr, ok := t.baggageRestrictionManager.(io.Closer); ok {
 		mgr.Close()
 	}
+	if throttler, ok := t.debugThrottler.(io.Closer); ok {
+		throttler.Close()
+	}
 	return nil
 }
 
@@ -390,7 +408,7 @@ func (t *Tracer) randomID() uint64 {
 	return val
 }
 
-// (NB) span should hold the lock before making this call
+// (NB) span must hold the lock before making this call
 func (t *Tracer) setBaggage(sp *Span, key, value string) {
 	t.baggageSetter.setBaggage(sp, key, value)
 }

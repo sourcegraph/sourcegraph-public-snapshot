@@ -34,6 +34,8 @@ type Options struct {
 	gen128Bit           bool
 	zipkinSharedRPCSpan bool
 	tags                []opentracing.Tag
+	injectors           map[interface{}]jaeger.Injector
+	extractors          map[interface{}]jaeger.Extractor
 }
 
 // Metrics creates an Option that initializes Metrics in the tracer,
@@ -98,8 +100,25 @@ func Tag(key string, value interface{}) Option {
 	}
 }
 
+// Injector registers an Injector with the given format.
+func Injector(format interface{}, injector jaeger.Injector) Option {
+	return func(c *Options) {
+		c.injectors[format] = injector
+	}
+}
+
+// Extractor registers an Extractor with the given format.
+func Extractor(format interface{}, extractor jaeger.Extractor) Option {
+	return func(c *Options) {
+		c.extractors[format] = extractor
+	}
+}
+
 func applyOptions(options ...Option) Options {
-	opts := Options{}
+	opts := Options{
+		injectors:  make(map[interface{}]jaeger.Injector),
+		extractors: make(map[interface{}]jaeger.Extractor),
+	}
 	for _, option := range options {
 		option(&opts)
 	}

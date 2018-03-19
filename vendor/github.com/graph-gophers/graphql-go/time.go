@@ -11,7 +11,7 @@ type Time struct {
 	time.Time
 }
 
-func (_ Time) ImplementsGraphQLType(name string) bool {
+func (Time) ImplementsGraphQLType(name string) bool {
 	return name == "Time"
 }
 

@@ -24,11 +24,6 @@ type Request struct {
 	Logger  log.Logger
 }
 
-type fieldResult struct {
-	name  string
-	value []byte
-}
-
 func (r *Request) handlePanic(ctx context.Context) {
 	if value := recover(); value != nil {
 		r.Logger.LogPanic(ctx, value)
@@ -294,10 +289,6 @@ func unwrapNonNull(t common.Type) (common.Type, bool) {
 		return nn.OfType, true
 	}
 	return t, false
-}
-
-type marshaler interface {
-	MarshalJSON() ([]byte, error)
 }
 
 type pathSegment struct {

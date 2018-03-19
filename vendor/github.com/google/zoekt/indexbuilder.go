@@ -61,7 +61,7 @@ func newPostingsBuilder() *postingsBuilder {
 	}
 }
 
-func (s *postingsBuilder) newSearchableString(data []byte, byteSections []DocumentSection) (*searchableString, []DocumentSection) {
+func (s *postingsBuilder) newSearchableString(data []byte, byteSections []DocumentSection) (*searchableString, []DocumentSection, error) {
 	dest := searchableString{
 		data: data,
 	}
@@ -113,8 +113,13 @@ func (s *postingsBuilder) newSearchableString(data []byte, byteSections []Docume
 	}
 	s.runeCount += runeIndex
 
+	for len(byteSectionBoundaries) > 0 && byteSectionBoundaries[0] < uint32(byteCount) {
+		return nil, nil, fmt.Errorf("no rune for section boundary at byte %d", byteSectionBoundaries[0])
+	}
+
 	// Handle symbol definition that ends at file end. This can
 	// happen for labels at the end of .bat files.
+
 	for len(byteSectionBoundaries) > 0 && byteSectionBoundaries[0] == uint32(byteCount) {
 		runeSectionBoundaries = append(runeSectionBoundaries,
 			endRune+runeIndex)
@@ -130,7 +135,7 @@ func (s *postingsBuilder) newSearchableString(data []byte, byteSections []Docume
 
 	s.endRunes = append(s.endRunes, s.runeCount)
 	s.endByte += dataSz
-	return &dest, runeSecs
+	return &dest, runeSecs, nil
 }
 
 // IndexBuilder builds a single index shard.
@@ -344,6 +349,14 @@ func (b *IndexBuilder) Add(doc Document) error {
 			return fmt.Errorf("path %q must start subrepo path %q", doc.Name, doc.SubRepositoryPath)
 		}
 	}
+	docStr, runeSecs, err := b.contentPostings.newSearchableString(doc.Content, doc.Symbols)
+	if err != nil {
+		return err
+	}
+	nameStr, _, err := b.namePostings.newSearchableString([]byte(doc.Name), nil)
+	if err != nil {
+		return err
+	}
 
 	subRepoIdx, ok := b.subRepoIndices[doc.SubRepositoryPath]
 	if !ok {
@@ -362,11 +375,10 @@ func (b *IndexBuilder) Add(doc Document) error {
 	b.subRepos = append(b.subRepos, subRepoIdx)
 
 	hasher.Write(doc.Content)
-	docStr, runeSecs := b.contentPostings.newSearchableString(doc.Content, doc.Symbols)
+
 	b.contentStrings = append(b.contentStrings, docStr)
 	b.runeDocSections = append(b.runeDocSections, runeSecs...)
 
-	nameStr, _ := b.namePostings.newSearchableString([]byte(doc.Name), nil)
 	b.nameStrings = append(b.nameStrings, nameStr)
 	b.docSections = append(b.docSections, doc.Symbols)
 	b.branchMasks = append(b.branchMasks, mask)

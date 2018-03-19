@@ -202,6 +202,8 @@ func (s *Span) FinishWithOptions(options opentracing.FinishOptions) {
 
 // Context implements opentracing.Span API
 func (s *Span) Context() opentracing.SpanContext {
+	s.Lock()
+	defer s.Unlock()
 	return s.context
 }
 

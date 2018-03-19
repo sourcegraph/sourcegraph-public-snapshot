@@ -23,5 +23,11 @@ func DeepEqual(a, b interface{}) bool {
 		return false
 	}
 
+	// Special casing for strings as typed enumerations are string aliases
+	// but are not deep equal.
+	if ra.Kind() == reflect.String && rb.Kind() == reflect.String {
+		return ra.String() == rb.String()
+	}
+
 	return reflect.DeepEqual(ra.Interface(), rb.Interface())
 }

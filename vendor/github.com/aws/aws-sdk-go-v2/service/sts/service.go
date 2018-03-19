@@ -31,15 +31,10 @@ const (
 )
 
 // New creates a new instance of the STS client with a config.
-// If additional configuration is needed for the client instance use the
-// optional aws.Config parameter to add your extra config.
 //
 // Example:
 //     // Create a STS client from just a config.
 //     svc := sts.New(myConfig)
-//
-//     // Create a STS client with additional configuration
-//     svc := sts.New(myConfig, aws.NewConfig().WithRegion("us-west-2"))
 func New(config aws.Config) *STS {
 	var signingName string
 	signingRegion := config.Region

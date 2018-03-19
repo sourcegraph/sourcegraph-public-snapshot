@@ -8,7 +8,7 @@ import (
 // ID represents GraphQL's "ID" scalar type. A custom type may be used instead.
 type ID string
 
-func (_ ID) ImplementsGraphQLType(name string) bool {
+func (ID) ImplementsGraphQLType(name string) bool {
 	return name == "ID"
 }
 

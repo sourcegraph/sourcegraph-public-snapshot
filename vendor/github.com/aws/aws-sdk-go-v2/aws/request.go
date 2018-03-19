@@ -26,10 +26,10 @@ const (
 	// during body reads.
 	ErrCodeResponseTimeout = "ResponseTimeout"
 
-	// CanceledErrorCode is the error code that will be returned by an
+	// ErrCodeRequestCanceled is the error code that will be returned by an
 	// API request that was canceled. Requests given a Context may
 	// return this error when canceled.
-	CanceledErrorCode = "RequestCanceled"
+	ErrCodeRequestCanceled = "RequestCanceled"
 )
 
 // A Request is the service request to be made.
@@ -565,7 +565,7 @@ func shouldRetryCancel(r *Request) bool {
 	timeoutErr := false
 	errStr := r.Error.Error()
 	if ok {
-		if awsErr.Code() == CanceledErrorCode {
+		if awsErr.Code() == ErrCodeRequestCanceled {
 			return false
 		}
 		err := awsErr.OrigErr()

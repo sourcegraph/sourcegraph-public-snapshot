@@ -2,7 +2,6 @@ package query
 
 import (
 	"fmt"
-	"strings"
 	"text/scanner"
 
 	"github.com/graph-gophers/graphql-go/errors"
@@ -95,16 +94,10 @@ func (InlineFragment) isSelection() {}
 func (FragmentSpread) isSelection() {}
 
 func Parse(queryString string) (*Document, *errors.QueryError) {
-	sc := &scanner.Scanner{
-		Mode: scanner.ScanIdents | scanner.ScanInts | scanner.ScanFloats | scanner.ScanStrings,
-	}
-	sc.Init(strings.NewReader(queryString))
+	l := common.NewLexer(queryString)
 
-	l := common.New(sc)
 	var doc *Document
-	err := l.CatchSyntaxError(func() {
-		doc = parseDocument(l)
-	})
+	err := l.CatchSyntaxError(func() { doc = parseDocument(l) })
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +107,7 @@ func Parse(queryString string) (*Document, *errors.QueryError) {
 
 func parseDocument(l *common.Lexer) *Document {
 	d := &Document{}
+	l.Consume()
 	for l.Peek() != scanner.EOF {
 		if l.Peek() == '{' {
 			op := &Operation{Type: Query, Loc: l.Location()}

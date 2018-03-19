@@ -7,6 +7,7 @@
 package unix
 
 import (
+	"bytes"
 	"runtime"
 	"sync"
 	"syscall"
@@ -52,12 +53,11 @@ func errnoErr(e syscall.Errno) error {
 
 // clen returns the index of the first NULL byte in n or len(n) if n contains no NULL byte.
 func clen(n []byte) int {
-	for i := 0; i < len(n); i++ {
-		if n[i] == 0 {
-			return i
-		}
+	i := bytes.IndexByte(n, 0)
+	if i == -1 {
+		i = len(n)
 	}
-	return len(n)
+	return i
 }
 
 // Mmap manager, for use by operating system-specific implementations.
@@ -304,4 +304,13 @@ func SetNonblock(fd int, nonblocking bool) (err error) {
 	}
 	_, err = fcntl(fd, F_SETFL, flag)
 	return err
+}
+
+// Exec calls execve(2), which replaces the calling executable in the process
+// tree. argv0 should be the full path to an executable ("/bin/ls") and the
+// executable name should also be the first argument in argv (["ls", "-l"]).
+// envv are the environment variables that should be passed to the new
+// process (["USER=go", "PWD=/tmp"]).
+func Exec(argv0 string, argv []string, envv []string) error {
+	return syscall.Exec(argv0, argv, envv)
 }

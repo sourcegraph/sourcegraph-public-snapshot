@@ -26,6 +26,19 @@ import (
 	"github.com/google/zoekt/query"
 )
 
+const maxUInt16 = 0xffff
+
+// DebugScore controls whether we collect data on match scores are
+// constructed. Intended for use in tests.
+var DebugScore = false
+
+func (m *FileMatch) addScore(what string, s float64) {
+	if DebugScore {
+		m.Debug += fmt.Sprintf("%s:%f, ", what, s)
+	}
+	m.Score += s
+}
+
 func (d *indexData) simplify(in query.Q) query.Q {
 	eval := query.Map(in, func(q query.Q) query.Q {
 		switch r := q.(type) {
@@ -72,6 +85,13 @@ func (d *indexData) Search(ctx context.Context, q query.Q, opts *SearchOptions) 
 		return &res, nil
 	}
 
+	select {
+	case <-ctx.Done():
+		res.Stats.ShardsSkipped++
+		return &res, nil
+	default:
+	}
+
 	tr := trace.New("indexData.Search", d.file.Name())
 	tr.LazyPrintf("opts: %+v", opts)
 	defer func() {
@@ -95,13 +115,6 @@ func (d *indexData) Search(ctx context.Context, q query.Q, opts *SearchOptions) 
 	if opts.EstimateDocCount {
 		res.Stats.ShardFilesConsidered = len(d.fileBranchMasks)
 		return &res, nil
-	}
-
-	select {
-	case <-ctx.Done():
-		res.Stats.ShardsSkipped++
-		return &res, nil
-	default:
 	}
 
 	q = query.Map(q, query.ExpandFileContent)
@@ -169,12 +182,8 @@ nextFileMatch:
 		fileMatch := FileMatch{
 			Repository: d.repoMetaData.Name,
 			FileName:   string(d.fileName(nextDoc)),
-			// Maintain ordering of input files. This
-			// strictly dominates the in-file ordering of
-			// the matches.
-			Score:    10 * float64(nextDoc) / float64(len(d.boundaries)),
-			Checksum: d.getChecksum(nextDoc),
-			Language: d.languageMap[d.languages[nextDoc]],
+			Checksum:   d.getChecksum(nextDoc),
+			Language:   d.languageMap[d.languages[nextDoc]],
 		}
 
 		if s := d.subRepos[nextDoc]; s > 0 {
@@ -199,7 +208,6 @@ nextFileMatch:
 		visitMatches(mt, known, func(mt matchTree) {
 			atomMatchCount++
 		})
-		fileMatch.Score += float64(atomMatchCount) / float64(totalAtomCount) * scoreFactorAtomMatch
 		finalCands := gatherMatches(mt, known)
 
 		if len(finalCands) == 0 {
@@ -226,15 +234,23 @@ nextFileMatch:
 			}
 
 			// Order by ordering in file.
-			fileMatch.LineMatches[i].Score += 1.0 - (float64(i) / float64(len(fileMatch.LineMatches)))
+			fileMatch.LineMatches[i].Score += scoreLineOrderFactor * (1.0 - (float64(i) / float64(len(fileMatch.LineMatches))))
 		}
-		fileMatch.Score += maxFileScore
+
+		// Maintain ordering of input files. This
+		// strictly dominates the in-file ordering of
+		// the matches.
+		fileMatch.addScore("fragment", maxFileScore)
+		fileMatch.addScore("atom", float64(atomMatchCount)/float64(totalAtomCount)*scoreFactorAtomMatch)
+
+		// Prefer earlier docs.
+		fileMatch.addScore("doc-order", scoreFileOrderFactor*(1.0-float64(nextDoc)/float64(len(d.boundaries))))
+		fileMatch.addScore("shard-order", scoreShardRankFactor*float64(d.repoMetaData.Rank)/maxUInt16)
 
 		if fileMatch.Score > scoreImportantThreshold {
 			importantMatchCount++
 		}
 		fileMatch.Branches = d.gatherBranches(nextDoc, mt, known)
-
 		sortMatchesByScore(fileMatch.LineMatches)
 		if opts.Whole {
 			fileMatch.Content = cp.data(false)

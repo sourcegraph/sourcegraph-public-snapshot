@@ -4,6 +4,7 @@ import (
 	"github.com/graph-gophers/graphql-go/errors"
 )
 
+// http://facebook.github.io/graphql/draft/#InputValueDefinition
 type InputValue struct {
 	Name    Ident
 	Type    Type

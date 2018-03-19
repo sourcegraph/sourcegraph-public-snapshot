@@ -15,6 +15,7 @@ const opAssumeRole = "AssumeRole"
 type AssumeRoleRequest struct {
 	*aws.Request
 	Input *AssumeRoleInput
+	Copy  func(*AssumeRoleInput) AssumeRoleRequest
 }
 
 // Send marshals and sends the AssumeRole API request.
@@ -97,7 +98,12 @@ func (r AssumeRoleRequest) Send() (*AssumeRoleOutput, error) {
 // the user to call AssumeRole on the ARN of the role in the other account.
 // If the user is in the same account as the role, then you can either attach
 // a policy to the user (identical to the previous different account user),
-// or you can add the user as a principal directly in the role's trust policy
+// or you can add the user as a principal directly in the role's trust policy.
+// In this case, the trust policy acts as the only resource-based policy in
+// IAM, and users in the same account as the role do not need explicit permission
+// to assume the role. For more information about trust policies and resource-based
+// policies, see IAM Policies (http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html)
+// in the IAM User Guide.
 //
 // Using MFA with AssumeRole
 //
@@ -143,7 +149,7 @@ func (c *STS) AssumeRoleRequest(input *AssumeRoleInput) AssumeRoleRequest {
 	req := c.newRequest(op, input, output)
 	output.responseMetadata = aws.Response{Request: req}
 
-	return AssumeRoleRequest{Request: req, Input: input}
+	return AssumeRoleRequest{Request: req, Input: input, Copy: c.AssumeRoleRequest}
 }
 
 const opAssumeRoleWithSAML = "AssumeRoleWithSAML"
@@ -152,6 +158,7 @@ const opAssumeRoleWithSAML = "AssumeRoleWithSAML"
 type AssumeRoleWithSAMLRequest struct {
 	*aws.Request
 	Input *AssumeRoleWithSAMLInput
+	Copy  func(*AssumeRoleWithSAMLInput) AssumeRoleWithSAMLRequest
 }
 
 // Send marshals and sends the AssumeRoleWithSAML API request.
@@ -258,7 +265,7 @@ func (c *STS) AssumeRoleWithSAMLRequest(input *AssumeRoleWithSAMLInput) AssumeRo
 	req := c.newRequest(op, input, output)
 	output.responseMetadata = aws.Response{Request: req}
 
-	return AssumeRoleWithSAMLRequest{Request: req, Input: input}
+	return AssumeRoleWithSAMLRequest{Request: req, Input: input, Copy: c.AssumeRoleWithSAMLRequest}
 }
 
 const opAssumeRoleWithWebIdentity = "AssumeRoleWithWebIdentity"
@@ -267,6 +274,7 @@ const opAssumeRoleWithWebIdentity = "AssumeRoleWithWebIdentity"
 type AssumeRoleWithWebIdentityRequest struct {
 	*aws.Request
 	Input *AssumeRoleWithWebIdentityInput
+	Copy  func(*AssumeRoleWithWebIdentityInput) AssumeRoleWithWebIdentityRequest
 }
 
 // Send marshals and sends the AssumeRoleWithWebIdentity API request.
@@ -367,7 +375,7 @@ func (r AssumeRoleWithWebIdentityRequest) Send() (*AssumeRoleWithWebIdentityOutp
 //    the information from these providers to get and use temporary security
 //    credentials.
 //
-//    * Web Identity Federation with Mobile Applications (http://aws.amazon.com/articles/4617974389850313).
+//    * Web Identity Federation with Mobile Applications (http://aws.amazon.com/articles/web-identity-federation-with-mobile-applications).
 //    This article discusses web identity federation and shows an example of
 //    how to use web identity federation to get access to content in Amazon
 //    S3.
@@ -395,7 +403,7 @@ func (c *STS) AssumeRoleWithWebIdentityRequest(input *AssumeRoleWithWebIdentityI
 	req := c.newRequest(op, input, output)
 	output.responseMetadata = aws.Response{Request: req}
 
-	return AssumeRoleWithWebIdentityRequest{Request: req, Input: input}
+	return AssumeRoleWithWebIdentityRequest{Request: req, Input: input, Copy: c.AssumeRoleWithWebIdentityRequest}
 }
 
 const opDecodeAuthorizationMessage = "DecodeAuthorizationMessage"
@@ -404,6 +412,7 @@ const opDecodeAuthorizationMessage = "DecodeAuthorizationMessage"
 type DecodeAuthorizationMessageRequest struct {
 	*aws.Request
 	Input *DecodeAuthorizationMessageInput
+	Copy  func(*DecodeAuthorizationMessageInput) DecodeAuthorizationMessageRequest
 }
 
 // Send marshals and sends the DecodeAuthorizationMessage API request.
@@ -475,7 +484,7 @@ func (c *STS) DecodeAuthorizationMessageRequest(input *DecodeAuthorizationMessag
 	req := c.newRequest(op, input, output)
 	output.responseMetadata = aws.Response{Request: req}
 
-	return DecodeAuthorizationMessageRequest{Request: req, Input: input}
+	return DecodeAuthorizationMessageRequest{Request: req, Input: input, Copy: c.DecodeAuthorizationMessageRequest}
 }
 
 const opGetCallerIdentity = "GetCallerIdentity"
@@ -484,6 +493,7 @@ const opGetCallerIdentity = "GetCallerIdentity"
 type GetCallerIdentityRequest struct {
 	*aws.Request
 	Input *GetCallerIdentityInput
+	Copy  func(*GetCallerIdentityInput) GetCallerIdentityRequest
 }
 
 // Send marshals and sends the GetCallerIdentity API request.
@@ -525,7 +535,7 @@ func (c *STS) GetCallerIdentityRequest(input *GetCallerIdentityInput) GetCallerI
 	req := c.newRequest(op, input, output)
 	output.responseMetadata = aws.Response{Request: req}
 
-	return GetCallerIdentityRequest{Request: req, Input: input}
+	return GetCallerIdentityRequest{Request: req, Input: input, Copy: c.GetCallerIdentityRequest}
 }
 
 const opGetFederationToken = "GetFederationToken"
@@ -534,6 +544,7 @@ const opGetFederationToken = "GetFederationToken"
 type GetFederationTokenRequest struct {
 	*aws.Request
 	Input *GetFederationTokenInput
+	Copy  func(*GetFederationTokenInput) GetFederationTokenRequest
 }
 
 // Send marshals and sends the GetFederationToken API request.
@@ -651,7 +662,7 @@ func (c *STS) GetFederationTokenRequest(input *GetFederationTokenInput) GetFeder
 	req := c.newRequest(op, input, output)
 	output.responseMetadata = aws.Response{Request: req}
 
-	return GetFederationTokenRequest{Request: req, Input: input}
+	return GetFederationTokenRequest{Request: req, Input: input, Copy: c.GetFederationTokenRequest}
 }
 
 const opGetSessionToken = "GetSessionToken"
@@ -660,6 +671,7 @@ const opGetSessionToken = "GetSessionToken"
 type GetSessionTokenRequest struct {
 	*aws.Request
 	Input *GetSessionTokenInput
+	Copy  func(*GetSessionTokenInput) GetSessionTokenRequest
 }
 
 // Send marshals and sends the GetSessionToken API request.
@@ -745,7 +757,7 @@ func (c *STS) GetSessionTokenRequest(input *GetSessionTokenInput) GetSessionToke
 	req := c.newRequest(op, input, output)
 	output.responseMetadata = aws.Response{Request: req}
 
-	return GetSessionTokenRequest{Request: req, Input: input}
+	return GetSessionTokenRequest{Request: req, Input: input, Copy: c.GetSessionTokenRequest}
 }
 
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleRequest
@@ -898,48 +910,6 @@ func (s *AssumeRoleInput) Validate() error {
 	return nil
 }
 
-// SetDurationSeconds sets the DurationSeconds field's value.
-func (s *AssumeRoleInput) SetDurationSeconds(v int64) *AssumeRoleInput {
-	s.DurationSeconds = &v
-	return s
-}
-
-// SetExternalId sets the ExternalId field's value.
-func (s *AssumeRoleInput) SetExternalId(v string) *AssumeRoleInput {
-	s.ExternalId = &v
-	return s
-}
-
-// SetPolicy sets the Policy field's value.
-func (s *AssumeRoleInput) SetPolicy(v string) *AssumeRoleInput {
-	s.Policy = &v
-	return s
-}
-
-// SetRoleArn sets the RoleArn field's value.
-func (s *AssumeRoleInput) SetRoleArn(v string) *AssumeRoleInput {
-	s.RoleArn = &v
-	return s
-}
-
-// SetRoleSessionName sets the RoleSessionName field's value.
-func (s *AssumeRoleInput) SetRoleSessionName(v string) *AssumeRoleInput {
-	s.RoleSessionName = &v
-	return s
-}
-
-// SetSerialNumber sets the SerialNumber field's value.
-func (s *AssumeRoleInput) SetSerialNumber(v string) *AssumeRoleInput {
-	s.SerialNumber = &v
-	return s
-}
-
-// SetTokenCode sets the TokenCode field's value.
-func (s *AssumeRoleInput) SetTokenCode(v string) *AssumeRoleInput {
-	s.TokenCode = &v
-	return s
-}
-
 // Contains the response to a successful AssumeRole request, including temporary
 // AWS credentials that can be used to make AWS requests.
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleResponse
@@ -983,24 +953,6 @@ func (s AssumeRoleOutput) GoString() string {
 // SDKResponseMetdata return sthe response metadata for the API.
 func (s AssumeRoleOutput) SDKResponseMetadata() aws.Response {
 	return s.responseMetadata
-}
-
-// SetAssumedRoleUser sets the AssumedRoleUser field's value.
-func (s *AssumeRoleOutput) SetAssumedRoleUser(v *AssumedRoleUser) *AssumeRoleOutput {
-	s.AssumedRoleUser = v
-	return s
-}
-
-// SetCredentials sets the Credentials field's value.
-func (s *AssumeRoleOutput) SetCredentials(v *Credentials) *AssumeRoleOutput {
-	s.Credentials = v
-	return s
-}
-
-// SetPackedPolicySize sets the PackedPolicySize field's value.
-func (s *AssumeRoleOutput) SetPackedPolicySize(v int64) *AssumeRoleOutput {
-	s.PackedPolicySize = &v
-	return s
 }
 
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithSAMLRequest
@@ -1115,36 +1067,6 @@ func (s *AssumeRoleWithSAMLInput) Validate() error {
 	return nil
 }
 
-// SetDurationSeconds sets the DurationSeconds field's value.
-func (s *AssumeRoleWithSAMLInput) SetDurationSeconds(v int64) *AssumeRoleWithSAMLInput {
-	s.DurationSeconds = &v
-	return s
-}
-
-// SetPolicy sets the Policy field's value.
-func (s *AssumeRoleWithSAMLInput) SetPolicy(v string) *AssumeRoleWithSAMLInput {
-	s.Policy = &v
-	return s
-}
-
-// SetPrincipalArn sets the PrincipalArn field's value.
-func (s *AssumeRoleWithSAMLInput) SetPrincipalArn(v string) *AssumeRoleWithSAMLInput {
-	s.PrincipalArn = &v
-	return s
-}
-
-// SetRoleArn sets the RoleArn field's value.
-func (s *AssumeRoleWithSAMLInput) SetRoleArn(v string) *AssumeRoleWithSAMLInput {
-	s.RoleArn = &v
-	return s
-}
-
-// SetSAMLAssertion sets the SAMLAssertion field's value.
-func (s *AssumeRoleWithSAMLInput) SetSAMLAssertion(v string) *AssumeRoleWithSAMLInput {
-	s.SAMLAssertion = &v
-	return s
-}
-
 // Contains the response to a successful AssumeRoleWithSAML request, including
 // temporary AWS credentials that can be used to make AWS requests.
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithSAMLResponse
@@ -1216,54 +1138,6 @@ func (s AssumeRoleWithSAMLOutput) GoString() string {
 // SDKResponseMetdata return sthe response metadata for the API.
 func (s AssumeRoleWithSAMLOutput) SDKResponseMetadata() aws.Response {
 	return s.responseMetadata
-}
-
-// SetAssumedRoleUser sets the AssumedRoleUser field's value.
-func (s *AssumeRoleWithSAMLOutput) SetAssumedRoleUser(v *AssumedRoleUser) *AssumeRoleWithSAMLOutput {
-	s.AssumedRoleUser = v
-	return s
-}
-
-// SetAudience sets the Audience field's value.
-func (s *AssumeRoleWithSAMLOutput) SetAudience(v string) *AssumeRoleWithSAMLOutput {
-	s.Audience = &v
-	return s
-}
-
-// SetCredentials sets the Credentials field's value.
-func (s *AssumeRoleWithSAMLOutput) SetCredentials(v *Credentials) *AssumeRoleWithSAMLOutput {
-	s.Credentials = v
-	return s
-}
-
-// SetIssuer sets the Issuer field's value.
-func (s *AssumeRoleWithSAMLOutput) SetIssuer(v string) *AssumeRoleWithSAMLOutput {
-	s.Issuer = &v
-	return s
-}
-
-// SetNameQualifier sets the NameQualifier field's value.
-func (s *AssumeRoleWithSAMLOutput) SetNameQualifier(v string) *AssumeRoleWithSAMLOutput {
-	s.NameQualifier = &v
-	return s
-}
-
-// SetPackedPolicySize sets the PackedPolicySize field's value.
-func (s *AssumeRoleWithSAMLOutput) SetPackedPolicySize(v int64) *AssumeRoleWithSAMLOutput {
-	s.PackedPolicySize = &v
-	return s
-}
-
-// SetSubject sets the Subject field's value.
-func (s *AssumeRoleWithSAMLOutput) SetSubject(v string) *AssumeRoleWithSAMLOutput {
-	s.Subject = &v
-	return s
-}
-
-// SetSubjectType sets the SubjectType field's value.
-func (s *AssumeRoleWithSAMLOutput) SetSubjectType(v string) *AssumeRoleWithSAMLOutput {
-	s.SubjectType = &v
-	return s
 }
 
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithWebIdentityRequest
@@ -1394,42 +1268,6 @@ func (s *AssumeRoleWithWebIdentityInput) Validate() error {
 	return nil
 }
 
-// SetDurationSeconds sets the DurationSeconds field's value.
-func (s *AssumeRoleWithWebIdentityInput) SetDurationSeconds(v int64) *AssumeRoleWithWebIdentityInput {
-	s.DurationSeconds = &v
-	return s
-}
-
-// SetPolicy sets the Policy field's value.
-func (s *AssumeRoleWithWebIdentityInput) SetPolicy(v string) *AssumeRoleWithWebIdentityInput {
-	s.Policy = &v
-	return s
-}
-
-// SetProviderId sets the ProviderId field's value.
-func (s *AssumeRoleWithWebIdentityInput) SetProviderId(v string) *AssumeRoleWithWebIdentityInput {
-	s.ProviderId = &v
-	return s
-}
-
-// SetRoleArn sets the RoleArn field's value.
-func (s *AssumeRoleWithWebIdentityInput) SetRoleArn(v string) *AssumeRoleWithWebIdentityInput {
-	s.RoleArn = &v
-	return s
-}
-
-// SetRoleSessionName sets the RoleSessionName field's value.
-func (s *AssumeRoleWithWebIdentityInput) SetRoleSessionName(v string) *AssumeRoleWithWebIdentityInput {
-	s.RoleSessionName = &v
-	return s
-}
-
-// SetWebIdentityToken sets the WebIdentityToken field's value.
-func (s *AssumeRoleWithWebIdentityInput) SetWebIdentityToken(v string) *AssumeRoleWithWebIdentityInput {
-	s.WebIdentityToken = &v
-	return s
-}
-
 // Contains the response to a successful AssumeRoleWithWebIdentity request,
 // including temporary AWS credentials that can be used to make AWS requests.
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithWebIdentityResponse
@@ -1494,42 +1332,6 @@ func (s AssumeRoleWithWebIdentityOutput) SDKResponseMetadata() aws.Response {
 	return s.responseMetadata
 }
 
-// SetAssumedRoleUser sets the AssumedRoleUser field's value.
-func (s *AssumeRoleWithWebIdentityOutput) SetAssumedRoleUser(v *AssumedRoleUser) *AssumeRoleWithWebIdentityOutput {
-	s.AssumedRoleUser = v
-	return s
-}
-
-// SetAudience sets the Audience field's value.
-func (s *AssumeRoleWithWebIdentityOutput) SetAudience(v string) *AssumeRoleWithWebIdentityOutput {
-	s.Audience = &v
-	return s
-}
-
-// SetCredentials sets the Credentials field's value.
-func (s *AssumeRoleWithWebIdentityOutput) SetCredentials(v *Credentials) *AssumeRoleWithWebIdentityOutput {
-	s.Credentials = v
-	return s
-}
-
-// SetPackedPolicySize sets the PackedPolicySize field's value.
-func (s *AssumeRoleWithWebIdentityOutput) SetPackedPolicySize(v int64) *AssumeRoleWithWebIdentityOutput {
-	s.PackedPolicySize = &v
-	return s
-}
-
-// SetProvider sets the Provider field's value.
-func (s *AssumeRoleWithWebIdentityOutput) SetProvider(v string) *AssumeRoleWithWebIdentityOutput {
-	s.Provider = &v
-	return s
-}
-
-// SetSubjectFromWebIdentityToken sets the SubjectFromWebIdentityToken field's value.
-func (s *AssumeRoleWithWebIdentityOutput) SetSubjectFromWebIdentityToken(v string) *AssumeRoleWithWebIdentityOutput {
-	s.SubjectFromWebIdentityToken = &v
-	return s
-}
-
 // The identifiers for the temporary security credentials that the operation
 // returns.
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumedRoleUser
@@ -1560,18 +1362,6 @@ func (s AssumedRoleUser) String() string {
 // GoString returns the string representation
 func (s AssumedRoleUser) GoString() string {
 	return s.String()
-}
-
-// SetArn sets the Arn field's value.
-func (s *AssumedRoleUser) SetArn(v string) *AssumedRoleUser {
-	s.Arn = &v
-	return s
-}
-
-// SetAssumedRoleId sets the AssumedRoleId field's value.
-func (s *AssumedRoleUser) SetAssumedRoleId(v string) *AssumedRoleUser {
-	s.AssumedRoleId = &v
-	return s
 }
 
 // AWS credentials for API authentication.
@@ -1608,30 +1398,6 @@ func (s Credentials) String() string {
 // GoString returns the string representation
 func (s Credentials) GoString() string {
 	return s.String()
-}
-
-// SetAccessKeyId sets the AccessKeyId field's value.
-func (s *Credentials) SetAccessKeyId(v string) *Credentials {
-	s.AccessKeyId = &v
-	return s
-}
-
-// SetExpiration sets the Expiration field's value.
-func (s *Credentials) SetExpiration(v time.Time) *Credentials {
-	s.Expiration = &v
-	return s
-}
-
-// SetSecretAccessKey sets the SecretAccessKey field's value.
-func (s *Credentials) SetSecretAccessKey(v string) *Credentials {
-	s.SecretAccessKey = &v
-	return s
-}
-
-// SetSessionToken sets the SessionToken field's value.
-func (s *Credentials) SetSessionToken(v string) *Credentials {
-	s.SessionToken = &v
-	return s
 }
 
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/DecodeAuthorizationMessageRequest
@@ -1671,12 +1437,6 @@ func (s *DecodeAuthorizationMessageInput) Validate() error {
 	return nil
 }
 
-// SetEncodedMessage sets the EncodedMessage field's value.
-func (s *DecodeAuthorizationMessageInput) SetEncodedMessage(v string) *DecodeAuthorizationMessageInput {
-	s.EncodedMessage = &v
-	return s
-}
-
 // A document that contains additional information about the authorization status
 // of a request from an encoded message that is returned in response to an AWS
 // request.
@@ -1703,12 +1463,6 @@ func (s DecodeAuthorizationMessageOutput) GoString() string {
 // SDKResponseMetdata return sthe response metadata for the API.
 func (s DecodeAuthorizationMessageOutput) SDKResponseMetadata() aws.Response {
 	return s.responseMetadata
-}
-
-// SetDecodedMessage sets the DecodedMessage field's value.
-func (s *DecodeAuthorizationMessageOutput) SetDecodedMessage(v string) *DecodeAuthorizationMessageOutput {
-	s.DecodedMessage = &v
-	return s
 }
 
 // Identifiers for the federated user that is associated with the credentials.
@@ -1739,18 +1493,6 @@ func (s FederatedUser) String() string {
 // GoString returns the string representation
 func (s FederatedUser) GoString() string {
 	return s.String()
-}
-
-// SetArn sets the Arn field's value.
-func (s *FederatedUser) SetArn(v string) *FederatedUser {
-	s.Arn = &v
-	return s
-}
-
-// SetFederatedUserId sets the FederatedUserId field's value.
-func (s *FederatedUser) SetFederatedUserId(v string) *FederatedUser {
-	s.FederatedUserId = &v
-	return s
 }
 
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetCallerIdentityRequest
@@ -1803,24 +1545,6 @@ func (s GetCallerIdentityOutput) GoString() string {
 // SDKResponseMetdata return sthe response metadata for the API.
 func (s GetCallerIdentityOutput) SDKResponseMetadata() aws.Response {
 	return s.responseMetadata
-}
-
-// SetAccount sets the Account field's value.
-func (s *GetCallerIdentityOutput) SetAccount(v string) *GetCallerIdentityOutput {
-	s.Account = &v
-	return s
-}
-
-// SetArn sets the Arn field's value.
-func (s *GetCallerIdentityOutput) SetArn(v string) *GetCallerIdentityOutput {
-	s.Arn = &v
-	return s
-}
-
-// SetUserId sets the UserId field's value.
-func (s *GetCallerIdentityOutput) SetUserId(v string) *GetCallerIdentityOutput {
-	s.UserId = &v
-	return s
 }
 
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetFederationTokenRequest
@@ -1913,24 +1637,6 @@ func (s *GetFederationTokenInput) Validate() error {
 	return nil
 }
 
-// SetDurationSeconds sets the DurationSeconds field's value.
-func (s *GetFederationTokenInput) SetDurationSeconds(v int64) *GetFederationTokenInput {
-	s.DurationSeconds = &v
-	return s
-}
-
-// SetName sets the Name field's value.
-func (s *GetFederationTokenInput) SetName(v string) *GetFederationTokenInput {
-	s.Name = &v
-	return s
-}
-
-// SetPolicy sets the Policy field's value.
-func (s *GetFederationTokenInput) SetPolicy(v string) *GetFederationTokenInput {
-	s.Policy = &v
-	return s
-}
-
 // Contains the response to a successful GetFederationToken request, including
 // temporary AWS credentials that can be used to make AWS requests.
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetFederationTokenResponse
@@ -1973,24 +1679,6 @@ func (s GetFederationTokenOutput) GoString() string {
 // SDKResponseMetdata return sthe response metadata for the API.
 func (s GetFederationTokenOutput) SDKResponseMetadata() aws.Response {
 	return s.responseMetadata
-}
-
-// SetCredentials sets the Credentials field's value.
-func (s *GetFederationTokenOutput) SetCredentials(v *Credentials) *GetFederationTokenOutput {
-	s.Credentials = v
-	return s
-}
-
-// SetFederatedUser sets the FederatedUser field's value.
-func (s *GetFederationTokenOutput) SetFederatedUser(v *FederatedUser) *GetFederationTokenOutput {
-	s.FederatedUser = v
-	return s
-}
-
-// SetPackedPolicySize sets the PackedPolicySize field's value.
-func (s *GetFederationTokenOutput) SetPackedPolicySize(v int64) *GetFederationTokenOutput {
-	s.PackedPolicySize = &v
-	return s
 }
 
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetSessionTokenRequest
@@ -2058,24 +1746,6 @@ func (s *GetSessionTokenInput) Validate() error {
 	return nil
 }
 
-// SetDurationSeconds sets the DurationSeconds field's value.
-func (s *GetSessionTokenInput) SetDurationSeconds(v int64) *GetSessionTokenInput {
-	s.DurationSeconds = &v
-	return s
-}
-
-// SetSerialNumber sets the SerialNumber field's value.
-func (s *GetSessionTokenInput) SetSerialNumber(v string) *GetSessionTokenInput {
-	s.SerialNumber = &v
-	return s
-}
-
-// SetTokenCode sets the TokenCode field's value.
-func (s *GetSessionTokenInput) SetTokenCode(v string) *GetSessionTokenInput {
-	s.TokenCode = &v
-	return s
-}
-
 // Contains the response to a successful GetSessionToken request, including
 // temporary AWS credentials that can be used to make AWS requests.
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetSessionTokenResponse
@@ -2107,10 +1777,4 @@ func (s GetSessionTokenOutput) GoString() string {
 // SDKResponseMetdata return sthe response metadata for the API.
 func (s GetSessionTokenOutput) SDKResponseMetadata() aws.Response {
 	return s.responseMetadata
-}
-
-// SetCredentials sets the Credentials field's value.
-func (s *GetSessionTokenOutput) SetCredentials(v *Credentials) *GetSessionTokenOutput {
-	s.Credentials = v
-	return s
 }

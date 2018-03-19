@@ -96,8 +96,7 @@ func ConcatJSON(blobs ...[]byte) []byte {
 
 	last := len(blobs) - 1
 	var opening, closing byte
-	a := 0
-	idx := 0
+	var idx, a int
 	buf := bytes.NewBuffer(nil)
 
 	for i, b := range blobs {
