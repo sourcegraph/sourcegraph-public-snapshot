@@ -141,16 +141,16 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 
 func (r *gitCommitResolver) repoRevURL() string {
 	url := r.repo.URL()
-	if r.inputRev != nil && *r.inputRev == "" {
-		return url
-	}
 	var rev string
 	if r.inputRev != nil {
-		rev = *r.inputRev
+		rev = *r.inputRev // use the original input rev from the user
 	} else {
 		rev = string(r.oid)
 	}
-	return url + "@" + rev
+	if rev != "" {
+		return url + "@" + rev
+	}
+	return url
 }
 
 func gitCommitSubject(message string) string {
