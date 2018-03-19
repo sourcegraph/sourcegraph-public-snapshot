@@ -13,13 +13,7 @@ if [ -n "$DELVE" ]; then
 fi
 
 ALL_CMDS=$(echo {gitserver,indexer,query-runner,github-proxy,xlang-go,lsp-proxy,searcher,frontend,repo-updater,symbols})
-if [ -n "$NOGORACED" ]; then
-	echo "Go race detector disabled. You can enable it for specific commands by setting GORACED (e.g. GORACED=frontend,searcher or GORACED=all for all commands)"
-	GORACED=''
-elif [ -z "$GORACED" ]; then
-	echo "Enabling GORACED=frontend by default."
-	GORACED=frontend
-elif [ "$GORACED" == "all" ]; then
+if [ "$GORACED" == "all" ]; then
 	GORACED=$ALL_CMDS
 fi
 
@@ -35,6 +29,8 @@ if [ -n "$GORACED" ]; then
 			RACED_CMDS="$RACED_CMDS $RACED_CMD"
 		fi
 	done
+else
+	echo "Go race detector disabled. You can enable it for specific commands by setting GORACED (e.g. GORACED=frontend,searcher or GORACED=all for all commands)"
 fi
 
 NOT_RACED_CMDS=''
