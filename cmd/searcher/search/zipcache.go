@@ -144,18 +144,15 @@ func (f *zipFile) populateFiles(r *zip.Reader) error {
 		if file.Method != zip.Store {
 			return errors.Errorf("file %s stored with compression %v, want %v", file.Name, file.Method, zip.Store)
 		}
-		size := int(file.UncompressedSize64)
 		off, err := file.DataOffset()
 		if err != nil {
 			return err
 		}
-		if int64(int32(off)) != off {
-			return errors.Errorf("file %s has offset > 2gb: %v", file.Name, off)
-		}
-		if int(int32(size)) != size {
+		size := int(file.UncompressedSize64)
+		if uint64(size) != file.UncompressedSize64 {
 			return errors.Errorf("file %s has size > 2gb: %v", file.Name, size)
 		}
-		f.Files[i] = srcFile{Name: file.Name, Off: int32(off), Len: int32(size)}
+		f.Files[i] = srcFile{Name: file.Name, Off: off, Len: int32(size)}
 		if size > f.MaxLen {
 			f.MaxLen = size
 		}
@@ -199,11 +196,11 @@ func mockZipFile(data []byte) (*zipFile, error) {
 type srcFile struct {
 	// Take care with the size of this struct.
 	// There will be *lots* of these in memory.
-	// This is why Off and Len are 32 bit ints.
+	// This is why Len is a 32 bit int.
 	// (Note that this means that zipCache cannot
-	// handle zip files bigger than 2gb.)
+	// handle files inside the zip archive bigger than 2gb.)
 	Name string
-	Off  int32
+	Off  int64
 	Len  int32
 }
 
@@ -211,7 +208,7 @@ type srcFile struct {
 // The contents MUST NOT be modified.
 // It is not safe to use the contents after f has been Closed.
 func (f *zipFile) DataFor(s *srcFile) []byte {
-	return f.Data[s.Off : int64(s.Off)+int64(s.Len)]
+	return f.Data[s.Off : s.Off+int64(s.Len)]
 }
 
 func (f *srcFile) String() string {
