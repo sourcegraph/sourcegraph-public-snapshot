@@ -131,39 +131,52 @@ var (
 // mustListTemplates returns a list of all template filepaths. If any error
 // occurs, mustListTemplates panics.
 func mustListTemplates() []string {
-	onceOrDebug(&listTemplatesOnce, func() {
-		var walk func(dir string) ([]string, error)
-		walk = func(dir string) ([]string, error) {
-			f, err := templates.Data.Open(dir)
-			if err != nil {
-				return nil, err
-			}
-			infos, err := f.Readdir(-1)
-			if err != nil {
-				return nil, err
-			}
-			var list []string
-			for _, f := range infos {
-				fp := path.Join(dir, f.Name())
-
-				// Descend into further directories.
-				if f.IsDir() {
-					subList, err := walk(fp)
-					if err != nil {
-						return nil, err
-					}
-					list = append(list, subList...)
-					continue
-				}
-
-				if !strings.HasSuffix(fp, ".html") {
-					continue
-				}
-				fp = strings.TrimPrefix(fp, "ui/") // TODO(slimsag): remove line in the future
-				list = append(list, fp)
-			}
-			return list, nil
+	var walk func(dir string) ([]string, error)
+	walk = func(dir string) ([]string, error) {
+		f, err := templates.Data.Open(dir)
+		if err != nil {
+			return nil, err
 		}
+		infos, err := f.Readdir(-1)
+		if err != nil {
+			return nil, err
+		}
+		var list []string
+		for _, f := range infos {
+			fp := path.Join(dir, f.Name())
+
+			// Descend into further directories.
+			if f.IsDir() {
+				subList, err := walk(fp)
+				if err != nil {
+					return nil, err
+				}
+				list = append(list, subList...)
+				continue
+			}
+
+			if !strings.HasSuffix(fp, ".html") {
+				continue
+			}
+			fp = strings.TrimPrefix(fp, "ui/") // TODO(slimsag): remove line in the future
+			list = append(list, fp)
+		}
+		return list, nil
+	}
+
+	if envvar.DebugMode() {
+		// In debug mode the underlying templates can change, so we can't use
+		// the perf optimization of doing it in a sync.Once
+		templates, err := walk("ui") // TODO(slimsag): replace with root in the future
+		if err != nil {
+			log.Println("ui: listing templates failed:", err)
+			panic(err)
+		}
+		return templates
+	}
+
+	// Otherwise we cache the result in listTemplatesCache
+	listTemplatesOnce.Do(func() {
 		var err error
 		listTemplatesCache, err = walk("ui") // TODO(slimsag): replace with root in the future
 		if err != nil {
@@ -205,24 +218,6 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 	}
 	_, err = buf.WriteTo(w)
 	return err
-}
-
-var debugModeOnce sync.Mutex
-
-// onceOrDebug invokes f() if running in debug mode, otherwise it just
-// invokes o.Do(f)
-func onceOrDebug(o *sync.Once, f func()) {
-	if envvar.DebugMode() {
-		// In debug mode the function is not protected by the sync.Once, but we
-		// must still prevent against the race condition here in effectively
-		// the same way that sync.Once would (except, without only doing it
-		// once).
-		debugModeOnce.Lock()
-		f()
-		debugModeOnce.Unlock()
-		return
-	}
-	o.Do(f)
 }
 
 // readFile is like ioutil.ReadFile but for a http.FileSystem.
