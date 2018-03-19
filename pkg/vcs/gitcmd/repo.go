@@ -383,7 +383,7 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
 func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error) {
-	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt, true)
+	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -414,7 +414,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	return commits, nil
 }
 
-func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions, addFollowIfPath bool) (args []string, err error) {
+func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions) (args []string, err error) {
 	if err := checkSpecArgSafety(string(opt.Base)); err != nil {
 		return nil, err
 	}
@@ -432,10 +432,6 @@ func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions, addFollowIfPath
 
 	if opt.MessageQuery != "" {
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
-	}
-
-	if opt.Path != "" && addFollowIfPath {
-		args = append(args, "--follow")
 	}
 
 	// Range
@@ -456,7 +452,7 @@ func (r *Repository) CommitCount(ctx context.Context, opt vcs.CommitsOptions) (u
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt, false)
+	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
 	if err != nil {
 		return 0, err
 	}

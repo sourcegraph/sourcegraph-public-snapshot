@@ -38,10 +38,6 @@
         width: 100%;
         grid-column-gap: 2.25rem;
 
-        &-loader {
-            margin-bottom: 2rem;
-        }
-
         &-directories {
             grid-template-columns: repeat(auto-fill, minmax(7rem, auto));
         }

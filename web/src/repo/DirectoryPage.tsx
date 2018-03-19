@@ -7,11 +7,14 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
-import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
@@ -23,7 +26,7 @@ import { QueryInput } from '../search/QueryInput'
 import { SearchButton } from '../search/SearchButton'
 import { SearchHelp } from '../search/SearchHelp'
 import { UserAvatar } from '../user/UserAvatar'
-import { createAggregateError } from '../util/errors'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { parseCommitDateString } from '../util/time'
 import { externalCommitURL, toPrettyBlobURL, toTreeURL } from '../util/url'
@@ -53,15 +56,11 @@ const DirectoryEntry: React.SFC<{
     )
 }
 
-export const fetchTreeAndCommits = memoizeObservable(
-    (ctx: {
-        repoPath: string
-        commitID: string
-        filePath: string
-    }): Observable<{ tree: GQL.ITree; commits: GQL.IGitCommit[] }> =>
+export const fetchTree = memoizeObservable(
+    (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.ITree> =>
         queryGraphQL(
             gql`
-                query fetchTreeAndCommits($repoPath: String!, $commitID: String!, $filePath: String!) {
+                query Tree($repoPath: String!, $commitID: String!, $filePath: String!) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
                             tree(path: $filePath) {
@@ -72,6 +71,29 @@ export const fetchTreeAndCommits = memoizeObservable(
                                     name
                                 }
                             }
+                        }
+                    }
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || errors || !data.repository || !data.repository.commit || !data.repository.commit.tree) {
+                    throw createAggregateError(errors)
+                }
+                return data.repository.commit.tree
+            })
+        ),
+    makeRepoURI
+)
+
+export const fetchTreeCommits = memoizeObservable(
+    (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.IGitCommit[]> =>
+        queryGraphQL(
+            gql`
+                query TreeCommits($repoPath: String!, $commitID: String!, $filePath: String!) {
+                    repository(uri: $repoPath) {
+                        commit(rev: $commitID) {
                             file(path: $filePath) {
                                 commits {
                                     oid
@@ -98,13 +120,12 @@ export const fetchTreeAndCommits = memoizeObservable(
                     errors ||
                     !data.repository ||
                     !data.repository.commit ||
-                    !data.repository.commit.tree ||
                     !data.repository.commit.file ||
                     !data.repository.commit.file.commits
                 ) {
                     throw createAggregateError(errors)
                 }
-                return { tree: data.repository.commit.tree, commits: data.repository.commit.file.commits }
+                return data.repository.commit.file.commits
             })
         ),
     makeRepoURI
@@ -123,10 +144,11 @@ interface Props {
 }
 
 interface State {
-    loading: boolean
-    tree?: GQL.ITree
-    commits?: GQL.IGitCommit[]
-    errorDescription?: string
+    /** This directory's tree, or an error. Undefined while loading. */
+    treeOrError?: GQL.ITree | ErrorLike
+
+    /** A log of the most recent commits for this tree, or an error. Undefined while loading. */
+    commitsOrError?: GQL.IGitCommit[] | ErrorLike
 
     /**
      * The value of the search query input field.
@@ -135,15 +157,12 @@ interface State {
 }
 
 export class DirectoryPage extends React.PureComponent<Props, State> {
-    public state: State = {
-        loading: false,
-        query: '',
-    }
+    public state: State = { query: '' }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
-    constructor(props: Props) {
-        super(props)
+
+    public componentDidMount(): void {
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -154,31 +173,30 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             x.commitID === y.commitID &&
                             x.filePath === y.filePath
                     ),
-                    tap(() =>
-                        this.setState({
-                            loading: true,
-                            tree: undefined,
-                            commits: undefined,
-                            errorDescription: undefined,
-                        })
-                    ),
                     switchMap(props =>
-                        fetchTreeAndCommits(props).pipe(
-                            catchError(err => {
-                                this.setState({ loading: false, errorDescription: err })
-                                return []
-                            })
+                        merge(
+                            of({ treeOrError: undefined, commitsOrError: undefined } as Pick<
+                                State,
+                                'treeOrError' | 'commitsOrError'
+                            >),
+                            fetchTree(props).pipe(
+                                catchError(err => [asError(err)]),
+                                map(c => ({ treeOrError: c })),
+                                publishReplay<Pick<State, 'treeOrError'>>(),
+                                refCount()
+                            ),
+                            fetchTreeCommits(props).pipe(
+                                catchError(err => [asError(err)]),
+                                map(c => ({ commitsOrError: c })),
+                                publishReplay<Pick<State, 'commitsOrError'>>(),
+                                refCount()
+                            )
                         )
                     )
                 )
-                .subscribe(
-                    ({ tree, commits }) => this.setState({ tree, commits, loading: false }),
-                    err => console.error(err)
-                )
+                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
-    }
 
-    public componentDidMount(): void {
         this.componentUpdates.next(this.props)
     }
 
@@ -235,87 +253,112 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                         <SearchHelp />
                     </form>
                 </section>
-                {this.state.loading && <Loader className="icon-inline directory-page__entries-loader" />}
-                {this.state.errorDescription && (
-                    <div className="alert alert-danger">
-                        <p>Error fetching directory information</p>
-                        <div>
-                            <pre>{this.state.errorDescription.slice(0, 100)}</pre>
-                        </div>
+                {this.state.treeOrError === undefined && (
+                    <div>
+                        <Loader className="icon-inline directory-page__entries-loader" /> Loading files and directories
                     </div>
                 )}
-                {this.state.tree &&
-                    this.state.tree.directories.length > 0 && (
-                        <section className="directory-page__section">
-                            <h3 className="directory-page__section-header">Directories</h3>
-                            <div className="directory-page__entries directory-page__entries-directories">
-                                {this.state.tree.directories.map((e, i) => (
-                                    <DirectoryEntry
-                                        key={i}
-                                        isDir={true}
-                                        name={e.name}
-                                        parentPath={this.props.filePath}
-                                        repoPath={this.props.repoPath}
-                                        rev={this.props.rev}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-                {this.state.tree &&
-                    this.state.tree.files.length > 0 && (
-                        <section className="directory-page__section">
-                            <h3 className="directory-page__section-header">Files</h3>
-                            <div className="directory-page__entries directory-page__entries-files">
-                                {this.state.tree.files.map((e, i) => (
-                                    <DirectoryEntry
-                                        key={i}
-                                        isDir={false}
-                                        name={e.name}
-                                        parentPath={this.props.filePath}
-                                        repoPath={this.props.repoPath}
-                                        rev={this.props.rev}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-                {this.state.commits &&
-                    this.state.commits.length > 0 && (
-                        <section className="directory-page__section">
-                            <h3 className="directory-page__section-header">Recent changes</h3>
-                            {this.props.rev && (
+                {this.state.treeOrError !== undefined &&
+                    (isErrorLike(this.state.treeOrError) ? (
+                        <div className="alert alert-danger">
+                            <p>Unable to list directory contents</p>
+                            {this.state.treeOrError.message && (
                                 <div>
-                                    From <code>{this.props.rev}</code>
+                                    <pre>{this.state.treeOrError.message.slice(0, 100)}</pre>
                                 </div>
                             )}
-                            <table className="directory-page__section-commits table">
-                                <tbody>
-                                    {this.state.commits.map((c, i) => (
-                                        <tr key={i} className="directory-page__commit">
-                                            <td className="directory-page__commit-id" title={c.abbreviatedOID}>
-                                                <a href={externalCommitURL(this.props.repoPath, c.oid)}>
-                                                    <code>{c.abbreviatedOID}</code>
-                                                </a>
-                                            </td>
-                                            <td className="directory-page__commit-author">
-                                                {c.author.person && <UserAvatar user={c.author.person} />}{' '}
-                                                {c.author.person && c.author.person.name}
-                                            </td>
-                                            <td className="directory-page__commit-date" title={c.author.date}>
-                                                {formatDistance(parseCommitDateString(c.author.date), new Date(), {
-                                                    addSuffix: true,
-                                                })}
-                                            </td>
-                                            <td className="directory-page__commit-message" title={c.message}>
-                                                {c.message}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </section>
+                        </div>
+                    ) : (
+                        <>
+                            {this.state.treeOrError.directories.length > 0 && (
+                                <section className="directory-page__section">
+                                    <h3 className="directory-page__section-header">Directories</h3>
+                                    <div className="directory-page__entries directory-page__entries-directories">
+                                        {this.state.treeOrError.directories.map((e, i) => (
+                                            <DirectoryEntry
+                                                key={i}
+                                                isDir={true}
+                                                name={e.name}
+                                                parentPath={this.props.filePath}
+                                                repoPath={this.props.repoPath}
+                                                rev={this.props.rev}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+                            {this.state.treeOrError.files.length > 0 && (
+                                <section className="directory-page__section">
+                                    <h3 className="directory-page__section-header">Files</h3>
+                                    <div className="directory-page__entries directory-page__entries-files">
+                                        {this.state.treeOrError.files.map((e, i) => (
+                                            <DirectoryEntry
+                                                key={i}
+                                                isDir={false}
+                                                name={e.name}
+                                                parentPath={this.props.filePath}
+                                                repoPath={this.props.repoPath}
+                                                rev={this.props.rev}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+                        </>
+                    ))}
+                {this.state.commitsOrError === undefined &&
+                    this.state.treeOrError !== undefined && (
+                        <div>
+                            <Loader className="icon-inline directory-page__entries-loader" /> Loading commits
+                        </div>
                     )}
+                {this.state.commitsOrError !== undefined &&
+                    (isErrorLike(this.state.commitsOrError) ? (
+                        <div className="alert alert-danger">
+                            <p>Unable to list commits</p>
+                            {this.state.commitsOrError.message && (
+                                <div>
+                                    <pre>{this.state.commitsOrError.message.slice(0, 100)}</pre>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        this.state.commitsOrError.length > 0 && (
+                            <section className="directory-page__section">
+                                <h3 className="directory-page__section-header">Recent changes</h3>
+                                {this.props.rev && (
+                                    <div>
+                                        From <code>{this.props.rev}</code>
+                                    </div>
+                                )}
+                                <table className="directory-page__section-commits table">
+                                    <tbody>
+                                        {this.state.commitsOrError.map((c, i) => (
+                                            <tr key={i} className="directory-page__commit">
+                                                <td className="directory-page__commit-id" title={c.abbreviatedOID}>
+                                                    <a href={externalCommitURL(this.props.repoPath, c.oid)}>
+                                                        <code>{c.abbreviatedOID}</code>
+                                                    </a>
+                                                </td>
+                                                <td className="directory-page__commit-author">
+                                                    {c.author.person && <UserAvatar user={c.author.person} />}{' '}
+                                                    {c.author.person && c.author.person.name}
+                                                </td>
+                                                <td className="directory-page__commit-date" title={c.author.date}>
+                                                    {formatDistance(parseCommitDateString(c.author.date), new Date(), {
+                                                        addSuffix: true,
+                                                    })}
+                                                </td>
+                                                <td className="directory-page__commit-message" title={c.message}>
+                                                    {c.message}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </section>
+                        )
+                    ))}
             </div>
         )
     }
