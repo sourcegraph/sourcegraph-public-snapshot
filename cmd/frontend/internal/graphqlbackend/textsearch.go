@@ -20,6 +20,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -710,6 +711,9 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 			defer wg.Done()
 			rev := repoRev.revspecs()[0] // TODO(sqs): search multiple revs
 			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.query, fetchTimeout)
+			if searchErr != nil {
+				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+			}
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {

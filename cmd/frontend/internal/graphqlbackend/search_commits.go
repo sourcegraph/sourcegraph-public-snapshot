@@ -12,10 +12,14 @@ import (
 	"sync"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -302,11 +306,17 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query s
 		return mockSearchCommitDiffsInRepos(args, query)
 	}
 
+	var err error
+	tr, ctx := trace.New(ctx, "searchCommitDiffsInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	var (
-		err         error
 		wg          sync.WaitGroup
 		mu          sync.Mutex
 		unflattened [][]*commitSearchResultResolver
@@ -320,6 +330,9 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query s
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchFilesInRepo for this repo.
 				return
+			}
+			if searchErr != nil {
+				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -352,11 +365,17 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query sea
 		return mockSearchCommitLogInRepos(args, query)
 	}
 
+	var err error
+	tr, ctx := trace.New(ctx, "searchCommitLogInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	var (
-		err         error
 		wg          sync.WaitGroup
 		mu          sync.Mutex
 		unflattened [][]*commitSearchResultResolver
@@ -370,6 +389,9 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query sea
 			if ctx.Err() != nil {
 				// Our request has been canceled, we can just ignore searchFilesInRepo for this repo.
 				return
+			}
+			if searchErr != nil {
+				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()

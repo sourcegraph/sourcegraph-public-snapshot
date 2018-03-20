@@ -57,6 +57,15 @@ func (t *Trace) LazyPrintf(format string, a ...interface{}) {
 	t.trace.LazyPrintf(format, a...)
 }
 
+// LogFields logs fields to the opentracing.Span
+// as well as the nettrace.Trace.
+func (t *Trace) LogFields(fields ...log.Field) {
+	t.span.LogFields(fields...)
+	for _, f := range fields {
+		t.trace.LazyLog(f, false)
+	}
+}
+
 // SetError declares that this trace and span resulted in an error.
 func (t *Trace) SetError(err error) {
 	if err == nil {

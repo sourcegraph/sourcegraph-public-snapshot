@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -16,8 +17,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -32,13 +35,10 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 		return mockSearchSymbols(ctx, args, query, limit)
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols")
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
 	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
-		}
-		span.Finish()
+		tr.SetError(err)
+		tr.Finish()
 	}()
 
 	if args.query.Pattern == "" {
@@ -65,6 +65,9 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 		goroutine.Go(func() {
 			defer run.Release()
 			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.query, query, limit)
+			if repoErr != nil {
+				tr.LogFields(otlog.String("repo", string(repoRevs.repo.URI)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
+			}
 			mu.Lock()
 			defer mu.Unlock()
 			limitHit := len(res) > limit

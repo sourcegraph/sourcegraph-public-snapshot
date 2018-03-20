@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -15,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
@@ -148,6 +150,9 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, query se
 			defer wg.Done()
 			rev := repoRev.revspecs()[0] // TODO(sqs): search multiple revs
 			matches, repoLimitHit, searchErr := searchReferencesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, language, symbol, hints, args.query)
+			if searchErr != nil {
+				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+			}
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {
