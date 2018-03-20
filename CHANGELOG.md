@@ -7,7 +7,6 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * Improve search timeout error messages
-* Instrumentation section for admins now works in Data Center
 * Performance improvements for searching regular expressions that do not start with a literal.
 
 ## 2.6.3
