@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/neelance/parallel"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/jsonrpc2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -22,6 +24,13 @@ const (
 	// servers are registered to handle.
 	CodeModeNotFound = -32000
 )
+
+// IsModeNotFound returns whether err (or err's underlying cause) is a JSON-RPC 2.0
+// (*jsonrpc2.Error) with error code CodeModeNotFound.
+func IsModeNotFound(err error) bool {
+	e, ok := errors.Cause(err).(*jsonrpc2.Error)
+	return ok && e != nil && e.Code == CodeModeNotFound
+}
 
 // New creates a new LSP proxy.
 func New() *Proxy {

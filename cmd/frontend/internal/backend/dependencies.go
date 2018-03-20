@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	"github.com/sourcegraph/jsonrpc2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
@@ -37,8 +36,8 @@ func (dependencies) RefreshIndex(ctx context.Context, repo *types.Repo, commitID
 		if err == nil {
 			err = db.GlobalDeps.UpdateIndexForLanguage(ctx, lang, repo, deps)
 		}
-		if err != nil {
-			log15.Error("refreshing index failed", "language", lang, "error", err)
+		if err != nil && !proxy.IsModeNotFound(err) {
+			log15.Error("Refreshing repository dependencies index failed.", "repo", repo.URI, "language", lang, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", lang, err))
 		}
 	}
@@ -98,8 +97,8 @@ func (dependencies) List(ctx context.Context, repo *types.Repo, rev api.CommitID
 	for _, lang := range langs {
 		deps, err := (dependencies{}).listForLanguageInRepo(ctx, lang, repo, rev, background)
 		if err != nil {
-			if e, ok := errors.Cause(err).(*jsonrpc2.Error); ok && e.Code == proxy.CodeModeNotFound {
-				log15.Warn("Dependencies.List skipping language because no language server is registered", "lang", lang, "err", err)
+			if proxy.IsModeNotFound(err) {
+				log15.Debug("Dependencies.List skipping language because no language server is registered", "lang", lang, "err", err)
 			} else {
 				return nil, errors.Wrap(err, "listForLanguageInRepo "+lang)
 			}
