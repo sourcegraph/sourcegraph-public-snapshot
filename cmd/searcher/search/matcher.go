@@ -2,6 +2,7 @@ package search
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -78,11 +79,20 @@ type readerGrep struct {
 	// matchPath is compiled from the include/exclude path patterns and reports
 	// whether a file path matches (and should be searched).
 	matchPath pathmatch.PathMatcher
+
+	// literalSubstring is used to test if a file is worth considering for
+	// matches. literalSubstring is guaranteed to appear in any match found by
+	// re. It is the output of the longestLiteral function. It is only set if
+	// the regex has an empty LiteralPrefix.
+	literalSubstring []byte
 }
 
 // compile returns a readerGrep for matching p.
 func compile(p *protocol.PatternInfo) (*readerGrep, error) {
-	var re *regexp.Regexp
+	var (
+		re               *regexp.Regexp
+		literalSubstring []byte
+	)
 	if p.Pattern != "" {
 		expr := p.Pattern
 		if !p.IsRegExp {
@@ -113,6 +123,17 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// Only use literalSubstring optimization if the regex engine doesn't
+		// have a prefix to use.
+		if pre, _ := re.LiteralPrefix(); pre == "" {
+			ast, err := syntax.Parse(expr, syntax.Perl)
+			if err != nil {
+				return nil, err
+			}
+			ast = ast.Simplify()
+			literalSubstring = []byte(longestLiteral(ast))
+		}
 	}
 
 	pathOptions := pathmatch.CompileOptions{
@@ -125,9 +146,10 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 	}
 
 	return &readerGrep{
-		re:         re,
-		ignoreCase: !p.IsCaseSensitive,
-		matchPath:  matchPath,
+		re:               re,
+		ignoreCase:       !p.IsCaseSensitive,
+		matchPath:        matchPath,
+		literalSubstring: literalSubstring,
 	}, nil
 }
 
@@ -139,9 +161,10 @@ func (rg *readerGrep) Copy() *readerGrep {
 		reCopy = rg.re.Copy()
 	}
 	return &readerGrep{
-		re:         reCopy,
-		ignoreCase: rg.ignoreCase,
-		matchPath:  rg.matchPath.Copy(),
+		re:               reCopy,
+		ignoreCase:       rg.ignoreCase,
+		matchPath:        rg.matchPath.Copy(),
+		literalSubstring: rg.literalSubstring,
 	}
 }
 
@@ -181,11 +204,15 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 	}
 
 	// Most files will not have a match and we bound the number of matched
-	// files we return. So we can avoid the overhead of parsing out new
-	// lines and repeatedly running the regex engine by running a single
-	// match over the whole file. This does mean we duplicate work when
-	// actually searching for results. We use the same approach when we
-	// search per-line.
+	// files we return. So we can avoid the overhead of parsing out new lines
+	// and repeatedly running the regex engine by running a single match over
+	// the whole file. This does mean we duplicate work when actually
+	// searching for results. We use the same approach when we search
+	// per-line. Additionally if we have a non-empty literalSubstring, we use
+	// that to prune out files since doing bytes.Index is very fast.
+	if bytes.Index(fileMatchBuf, rg.literalSubstring) < 0 {
+		return nil, false, nil
+	}
 	first := rg.re.FindIndex(fileMatchBuf)
 	if first == nil {
 		return nil, false, nil
@@ -452,6 +479,35 @@ func lowerRegexpASCII(re *syntax.Regexp) {
 	for i := 0; i < 2 && i < len(re.Rune); i++ {
 		re.Rune0[i] = re.Rune[i]
 	}
+}
+
+// longestLiteral finds the longest substring that is guaranteed to appear in
+// a match of re.
+//
+// Note: There may be a longer substring that is guaranteed to appear. For
+// example we do not find the longest common substring in alternating
+// group. Nor do we handle concatting simple capturing groups.
+func longestLiteral(re *syntax.Regexp) string {
+	switch re.Op {
+	case syntax.OpLiteral:
+		return string(re.Rune)
+	case syntax.OpCapture, syntax.OpPlus:
+		return longestLiteral(re.Sub[0])
+	case syntax.OpRepeat:
+		if re.Min >= 1 {
+			return longestLiteral(re.Sub[0])
+		}
+	case syntax.OpConcat:
+		longest := ""
+		for _, sub := range re.Sub {
+			l := longestLiteral(sub)
+			if len(l) > len(longest) {
+				longest = l
+			}
+		}
+		return longest
+	}
+	return ""
 }
 
 // readAll will read r until EOF into b. It returns the number of bytes
