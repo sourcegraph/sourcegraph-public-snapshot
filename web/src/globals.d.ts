@@ -113,6 +113,11 @@ interface SourcegraphContext {
      * configuration change.
      */
     needServerRestart: boolean
+
+    /**
+     * Whether or not the server is running via datacenter deployment.
+     */
+    isRunningDataCenter: boolean
 }
 
 declare module '*.json' {

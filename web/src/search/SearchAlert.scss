@@ -22,6 +22,21 @@
         list-style: none;
     }
 
+    &__list-header {
+        color: #93a9c8;
+        margin: 0;
+    }
+
+    &__list-items {
+        margin-left: 2rem;
+        list-style-position: inside;
+        list-style: disc;
+    }
+
+    &__list-item {
+        color: #93a9c8;
+    }
+
     &__proposed-query {
         margin-top: 1.1rem;
 

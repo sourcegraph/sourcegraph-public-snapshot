@@ -4,6 +4,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes (add your changes here!)
 
+* Improve search timeout error messages
+
 ## 2.6.3
 
 Bug fixes

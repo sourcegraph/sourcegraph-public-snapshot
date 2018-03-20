@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -56,9 +57,10 @@ type JSContext struct {
 	ShowOnboarding       bool                  `json:"showOnboarding"`
 	EmailEnabled         bool                  `json:"emailEnabled"`
 
-	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
-	NeedServerRestart bool                     `json:"needServerRestart"`
+	Site                schema.SiteConfiguration `json:"site"` // public subset of site configuration
+	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
+	NeedServerRestart   bool                     `json:"needServerRestart"`
+	IsRunningDataCenter bool                     `json:"isRunningDataCenter"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 }
@@ -133,6 +135,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Site:                 publicSiteConfiguration,
 		LikelyDockerOnMac:    likelyDockerOnMac(),
 		NeedServerRestart:    NeedServerRestart(),
+		IsRunningDataCenter:  os.Getenv("GOREMAN_RPC_ADDR") != "",
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}

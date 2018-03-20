@@ -65,6 +65,9 @@ interface State {
 }
 
 const ALL_EXPANDED_LOCAL_STORAGE_KEY = 'allExpanded'
+const DATA_CENTER_UPGRADE_STRING =
+    'Upgrade to Sourcegraph Data Center for distributed on-the-fly search and near-instant indexed search.'
+const SEARCH_TIMED_OUT_DEFAULT_TITLE = 'Search timed out'
 
 export class SearchResults extends React.Component<Props, State> {
     private static SHOW_MISSING = true
@@ -219,11 +222,27 @@ export class SearchResults extends React.Component<Props, State> {
         })
     }
 
+    private renderSearchAlertTimeoutDetails(items: string[]): React.ReactFragment {
+        return (
+            <div className="search-alert__list">
+                <p className="search-alert__list-header">Recommendations:</p>
+                <ul className="search-alert__list-items">
+                    {items.map((item, i) => (
+                        <li key={i} className="search-alert__list-item">
+                            {item}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )
+    }
+
     public render(): JSX.Element | null {
         let alert: {
             title: string
             description?: string | null
             proposedQueries?: GQL.ISearchQueryDescription[]
+            errorBody?: React.ReactFragment
         } | null = null
         if (this.state.error) {
             if (this.state.error.message.includes('no query terms or regexp specified')) {
@@ -239,10 +258,33 @@ export class SearchResults extends React.Component<Props, State> {
             this.state.missing.length === 0 &&
             this.state.cloning.length === 0
         ) {
+            const defaultTimeoutAlert = {
+                title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
+                description: 'Try narrowing your query.',
+            }
             if (this.state.timedout.length > 0) {
-                alert = {
-                    title: 'Search timed out',
-                    description: 'Try narrowing your query.',
+                if (window.context.sourcegraphDotComMode) {
+                    alert = defaultTimeoutAlert
+                } else {
+                    if (window.context.likelyDockerOnMac) {
+                        alert = {
+                            title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
+                            errorBody: this.renderSearchAlertTimeoutDetails([
+                                DATA_CENTER_UPGRADE_STRING,
+                                'Use Docker Machine instead of Docker for Mac for better performance on macOS.',
+                            ]),
+                        }
+                    } else if (!window.context.likelyDockerOnMac && !window.context.isRunningDataCenter) {
+                        alert = {
+                            title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
+                            errorBody: this.renderSearchAlertTimeoutDetails([
+                                DATA_CENTER_UPGRADE_STRING,
+                                'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
+                            ]),
+                        }
+                    } else {
+                        alert = defaultTimeoutAlert
+                    }
                 }
             } else {
                 alert = { title: 'No results' }
@@ -385,6 +427,7 @@ export class SearchResults extends React.Component<Props, State> {
                             description={alert.description || undefined}
                             proposedQueries={this.state.alert ? this.state.alert.proposedQueries : undefined}
                             location={this.props.location}
+                            errorBody={alert.errorBody}
                         />
                     )}
                 </div>
