@@ -212,7 +212,8 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "lightstepProject": {
-      "description": "The project ID on LightStep that corresponds to the ` + "`" + `lightstepAccessToken` + "`" + `, only for generating links to traces. For example, if ` + "`" + `lightstepProject` + "`" + ` is ` + "`" + `mycompany-prod` + "`" + `, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form ` + "`" + `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...` + "`" + `.",
+      "description":
+        "The project ID on LightStep that corresponds to the ` + "`" + `lightstepAccessToken` + "`" + `, only for generating links to traces. For example, if ` + "`" + `lightstepProject` + "`" + ` is ` + "`" + `mycompany-prod` + "`" + `, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form ` + "`" + `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...` + "`" + `.",
       "type": "string"
     },
     "useJaeger": {
