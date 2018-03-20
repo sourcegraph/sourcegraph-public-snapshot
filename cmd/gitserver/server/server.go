@@ -345,7 +345,8 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	start := time.Now()
-	exitStatus := -10810 // sentinel value to indicate not set
+	var cmdStart time.Time // set once we have ensured commit
+	exitStatus := -10810   // sentinel value to indicate not set
 	var stdoutN, stderrN int64
 	var status string
 	var errStr string
@@ -375,6 +376,14 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd, repo).Dec()
 			execDuration.WithLabelValues(cmd, repo, status).Observe(duration.Seconds())
+
+			var cmdDuration time.Duration
+			var fetchDuration time.Duration
+			if !cmdStart.IsZero() {
+				cmdDuration = time.Since(cmdStart)
+				fetchDuration = cmdStart.Sub(start)
+			}
+
 			if honey.Enabled() {
 				ev := honey.Event("gitserver-exec")
 				ev.AddField("repo", req.Repo)
@@ -388,10 +397,17 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				if errStr != "" {
 					ev.AddField("error", errStr)
 				}
+				if !cmdStart.IsZero() {
+					ev.AddField("cmd_duration_ms", cmdDuration.Seconds()*1000)
+					ev.AddField("fetch_duration_ms", fetchDuration.Seconds()*1000)
+				}
 				ev.Send()
 			}
-			if duration > 2500*time.Millisecond {
-				log15.Warn("Long exec request", "repo", req.Repo, "args", req.Args, "duration", duration)
+			if cmdDuration > 2500*time.Millisecond {
+				log15.Warn("Long exec request", "repo", req.Repo, "args", req.Args, "duration", cmdDuration)
+			}
+			if fetchDuration > 10*time.Second {
+				log15.Warn("Slow fetch/clone for exec request", "repo", req.Repo, "args", req.Args, "duration", fetchDuration)
 			}
 		}()
 	}
@@ -443,6 +459,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	stdoutW := &writeCounter{w: w}
 	stderrW := &writeCounter{w: &stderrBuf}
 
+	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
 	cmd.Dir = dir
 	cmd.Stdout = stdoutW
