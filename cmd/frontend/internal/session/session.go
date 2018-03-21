@@ -58,30 +58,45 @@ func NewRedisStore(secureCookie bool) sessions.Store {
 	return rstore
 }
 
+// Ping attempts to contact Redis and returns a non-nil error upon failure. It is intended to be
+// used by health checks.
+func Ping() error {
+	if sessionStore == nil {
+		return errors.New("redis session store is not available")
+	}
+	rstore, ok := sessionStore.(*redistore.RediStore)
+	if !ok {
+		// Only try to ping Redis session stores. If we add other types of session stores, add ways
+		// to ping them here.
+		return nil
+	}
+	return ping(rstore)
+}
+
+func ping(s *redistore.RediStore) error {
+	conn := s.Pool.Get()
+	defer conn.Close()
+	data, err := conn.Do("PING")
+	if err != nil {
+		return err
+	}
+	if data != "PONG" {
+		return errors.New("no pong received")
+	}
+	return nil
+}
+
 // waitForRedis waits up to a certain timeout for Redis to become reachable, to reduce the
 // likelihood of the HTTP handlers starting to serve requests while Redis (and therefore session
 // data) is still unavailable. After the timeout has elapsed, if Redis is still unreachable, it
 // continues anyway (because that's probably better than the site not coming up at all).
 func waitForRedis(s *redistore.RediStore) {
-	ping := func() error {
-		conn := s.Pool.Get()
-		defer conn.Close()
-		data, err := conn.Do("PING")
-		if err != nil {
-			return err
-		}
-		if data != "PONG" {
-			return errors.New("no pong received")
-		}
-		return nil
-	}
-
 	const timeout = 5 * time.Second
 	deadline := time.Now().Add(timeout)
 	var err error
 	for {
 		time.Sleep(150 * time.Millisecond)
-		err = ping()
+		err = ping(s)
 		if err == nil {
 			return
 		}

@@ -28,6 +28,7 @@ func NewHandler() http.Handler {
 	m.Handle("/__version", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, env.Version)
 	}))
+	m.Handle("/healthz", http.HandlerFunc(handleHealthCheck)) // healthz is a conventional name for "health check"
 
 	r.Get(router.RobotsTxt).Handler(trace.TraceRoute(http.HandlerFunc(robotsTxt)))
 	r.Get(router.Favicon).Handler(trace.TraceRoute(http.HandlerFunc(favicon)))

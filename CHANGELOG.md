@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes (add your changes here!)
 
+### Added
+
+* The externally accessible URL path `/healthz` performs a basic application health check, returning HTTP 200 on success and HTTP 500 on failure.
+
 ### Behavior changes
 
 * Read-only forks on GitHub are no longer synced by default. If you want to add a readonly fork, navigate directly to the repository page on Sourcegraph to add it (e.g. https://sourcegraph.mycompany.internal/github.com/owner/repo). This prevents your repo list from being cluttered with a large number of private forks of a private repository that you have access to. One notable example is https://github.com/EpicGames/UnrealEngine.
