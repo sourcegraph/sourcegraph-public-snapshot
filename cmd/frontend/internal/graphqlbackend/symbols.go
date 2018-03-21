@@ -2,8 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -27,81 +28,75 @@ func (r *repositoryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*s
 	if err != nil {
 		return nil, err
 	}
-	return &symbolConnectionResolver{
-		first:  args.First,
-		query:  args.Query,
-		commit: commit,
-	}, nil
+	symbols, err := computeSymbols(ctx, commit, args.Query, args.First)
+	if err != nil && len(symbols) == 0 {
+		return nil, err
+	}
+	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
 }
 
-func (r *fileResolver) Symbols(args *symbolsArgs) *symbolConnectionResolver {
-	return &symbolConnectionResolver{
-		first:  args.First,
-		query:  args.Query,
-		commit: r.commit,
-		// TODO!(sqs): limit to path
+func (r *fileResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
+	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First)
+	if err != nil && len(symbols) == 0 {
+		return nil, err
 	}
+	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
 }
 
-func (r *gitCommitResolver) Symbols(args *symbolsArgs) *symbolConnectionResolver {
-	return &symbolConnectionResolver{
-		first:  args.First,
-		query:  args.Query,
-		commit: r,
+func (r *gitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
+	symbols, err := computeSymbols(ctx, r, args.Query, args.First)
+	if err != nil && len(symbols) == 0 {
+		return nil, err
 	}
+	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
 }
 
 type symbolConnectionResolver struct {
-	first *int32
-	query *string
-
-	commit *gitCommitResolver
-
-	// cache results because they are used by multiple fields
-	once    sync.Once
+	first   *int32
 	symbols []*symbolResolver
-	err     error
 }
 
-func (r *symbolConnectionResolver) limitOrDefault() int {
-	if r.first == nil {
+func limitOrDefault(first *int32) int {
+	if first == nil {
 		return 100
 	}
-	return int(*r.first)
+	return int(*first)
 }
 
-func (r *symbolConnectionResolver) compute(ctx context.Context) ([]*symbolResolver, error) {
-	r.once.Do(func() {
-		searchArgs := protocol.SearchArgs{
-			CommitID: api.CommitID(r.commit.oid),
-			First:    r.limitOrDefault() + 1, // add 1 so we can determine PageInfo.hasNextPage
-			Repo:     r.commit.repo.repo.URI,
+func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *string, first *int32) (res []*symbolResolver, err error) {
+	// TODO!(sqs): limit to path
+	ctx, done := context.WithTimeout(ctx, 5*time.Second)
+	defer done()
+	defer func() {
+		if ctx.Err() != nil && len(res) == 0 {
+			err = errors.New("processing symbols is taking longer than expected. Try again in a while")
 		}
-		if r.query != nil {
-			searchArgs.Query = *r.query
+	}()
+	searchArgs := protocol.SearchArgs{
+		CommitID: api.CommitID(commit.oid),
+		First:    limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
+		Repo:     commit.repo.repo.URI,
+	}
+	if query != nil {
+		searchArgs.Query = *query
+	}
+	baseURI, err := uri.Parse("git://" + string(commit.repo.repo.URI) + "?" + string(commit.oid))
+	if err != nil {
+		return nil, err
+	}
+	symbols, err := backend.Symbols.ListTags(ctx, searchArgs)
+	if baseURI == nil {
+		return
+	}
+	resolvers := make([]*symbolResolver, 0, len(symbols))
+	for _, symbol := range symbols {
+		resolver := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit)
+		if resolver == nil {
+			continue
 		}
-		symbols, err := backend.Symbols.ListTags(ctx, searchArgs)
-		if err != nil && r.err == nil && ctx.Err() == nil {
-			r.err = err
-		}
-		resolvers := make([]*symbolResolver, 0, len(symbols))
-		for _, symbol := range symbols {
-			baseURI, err := uri.Parse("git://" + string(r.commit.repo.repo.URI) + "?" + string(r.commit.oid))
-			if err != nil && r.err == nil && ctx.Err() == nil {
-				r.err = err
-			}
-			if baseURI == nil {
-				continue
-			}
-			resolver := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), r.commit)
-			if resolver == nil {
-				continue
-			}
-			resolvers = append(resolvers, resolver)
-		}
-		r.symbols = append(r.symbols, resolvers...)
-	})
-	return r.symbols, r.err
+		resolvers = append(resolvers, resolver)
+	}
+	return resolvers, err
 }
 
 func toSymbolResolver(symbol lsp.SymbolInformation, lang string, commitResolver *gitCommitResolver) *symbolResolver {
@@ -127,22 +122,15 @@ func toSymbolResolver(symbol lsp.SymbolInformation, lang string, commitResolver 
 }
 
 func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]*symbolResolver, error) {
-	symbols, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if len(r.symbols) > r.limitOrDefault() {
-		symbols = symbols[:r.limitOrDefault()]
+	symbols := r.symbols
+	if len(r.symbols) > limitOrDefault(r.first) {
+		symbols = symbols[:limitOrDefault(r.first)]
 	}
 	return symbols, nil
 }
 
 func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
-	symbols, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &pageInfo{hasNextPage: len(symbols) > r.limitOrDefault()}, nil
+	return &pageInfo{hasNextPage: len(r.symbols) > limitOrDefault(r.first)}, nil
 }
 
 type symbolResolver struct {
