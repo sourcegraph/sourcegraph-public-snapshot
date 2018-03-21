@@ -56,6 +56,7 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 		URL:          *entityIDURL,
 		Key:          keyPair.PrivateKey.(*rsa.PrivateKey),
 		Certificate:  keyPair.Leaf,
+		CookieMaxAge: session.DefaultExpiryPeriod,
 		CookieSecure: entityIDURL.Scheme == "https",
 	}
 
