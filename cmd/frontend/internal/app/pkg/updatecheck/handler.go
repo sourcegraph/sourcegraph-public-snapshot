@@ -21,7 +21,7 @@ var (
 	// When we speak to sourcegraph.com we report this version. Usually should
 	// be equal to latestReleaseBuild.Version, unless we are in the process of
 	// doing a release, in which case it should be one version ahead.
-	ProductVersion = "2.6.4"
+	ProductVersion = "2.6.5"
 
 	// latestReleaseServerBuild is only used by sourcegraph.com to tell existing
 	// Server installations what the latest version is. The version here _must_ be
