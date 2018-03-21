@@ -44,8 +44,8 @@ func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path strin
 	}, nil
 }
 
-func (r *treeResolver) toFileResolvers(filter func(fi os.FileInfo) bool) []*fileResolver {
-	var l []*fileResolver
+func (r *treeResolver) toFileResolvers(filter func(fi os.FileInfo) bool, alloc int) []*fileResolver {
+	l := make([]*fileResolver, 0, alloc)
 	for _, entry := range r.entries {
 		if filter == nil || filter(entry) {
 			l = append(l, &fileResolver{
@@ -59,19 +59,19 @@ func (r *treeResolver) toFileResolvers(filter func(fi os.FileInfo) bool) []*file
 }
 
 func (r *treeResolver) Entries() []*fileResolver {
-	return r.toFileResolvers(nil)
+	return r.toFileResolvers(nil, len(r.entries))
 }
 
 func (r *treeResolver) Directories() []*fileResolver {
 	return r.toFileResolvers(func(fi os.FileInfo) bool {
 		return fi.Mode().IsDir()
-	})
+	}, len(r.entries)/8) // heuristic: 1/8 of the entries in a repo are dirs
 }
 
 func (r *treeResolver) Files() []*fileResolver {
 	return r.toFileResolvers(func(fi os.FileInfo) bool {
 		return !fi.Mode().IsDir()
-	})
+	}, len(r.entries))
 }
 
 func (r *fileResolver) Tree(ctx context.Context) (*treeResolver, error) {
