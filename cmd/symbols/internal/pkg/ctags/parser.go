@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -71,6 +72,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 
 	var init reply
 	if err := proc.read(&init); err != nil {
+		proc.Close()
 		return nil, err
 	}
 
@@ -92,10 +94,12 @@ func (p *ctagsProcess) Close() {
 
 func (p *ctagsProcess) read(rep *reply) error {
 	if !p.out.Scan() {
-		// capture exit error.
-		err := p.cmd.Wait()
-		p.outPipe.Close()
-		p.in.Close()
+		err := p.out.Err()
+		if err == nil {
+			// p.out.Err() returns nil if the Scanner hit EOF,
+			// but EOF is unexpected and means the process is bad and needs to be cleaned up
+			err = errors.New("unexpected EOF from ctags")
+		}
 		return err
 	}
 	if debug {
