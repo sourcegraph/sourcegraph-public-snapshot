@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -45,12 +44,17 @@ func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path strin
 }
 
 func (r *treeResolver) toFileResolvers(filter func(fi os.FileInfo) bool, alloc int) []*fileResolver {
+	var prefix string
+	if r.path != "" {
+		prefix = r.path + "/"
+	}
+
 	l := make([]*fileResolver, 0, alloc)
 	for _, entry := range r.entries {
 		if filter == nil || filter(entry) {
 			l = append(l, &fileResolver{
 				commit: r.commit,
-				path:   path.Join(r.path, entry.Name()),
+				path:   prefix + entry.Name(), // relies on git paths being cleaned already
 				stat:   entry,
 			})
 		}
