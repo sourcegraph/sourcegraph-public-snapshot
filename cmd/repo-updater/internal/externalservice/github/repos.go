@@ -23,18 +23,35 @@ func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err
 
 // Repository is a GitHub repository.
 type Repository struct {
-	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
-	DatabaseID    int64  // The integer database id
-	NameWithOwner string // full name of repository ("owner/name")
-	Description   string // description of repository
-	URL           string // the web URL of this repository ("https://github.com/foo/bar")
-	IsPrivate     bool   // whether the repository is private
-	IsFork        bool   // whether the repository is a fork of another repository
+	ID               string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
+	DatabaseID       int64  // The integer database id
+	NameWithOwner    string // full name of repository ("owner/name")
+	Description      string // description of repository
+	URL              string // the web URL of this repository ("https://github.com/foo/bar")
+	IsPrivate        bool   // whether the repository is private
+	IsFork           bool   // whether the repository is a fork of another repository
+	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this.
 }
 
-// RepositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
+// repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
 // Repository struct.
-func (Repository) RepositoryFieldsGraphQLFragment() string {
+func (c *Client) repositoryFieldsGraphQLFragment() string {
+	if c.githubDotCom {
+		return `
+fragment RepositoryFields on Repository {
+	id
+	nameWithOwner
+	description
+	url
+	isPrivate
+	isFork
+	viewerPermission
+}
+	`
+	}
+	// Some fields are not yet available on GitHub Enterprise yet
+	// or are available but too new to expect our customers to have updated:
+	// - viewerPermission
 	return `
 fragment RepositoryFields on Repository {
 	id
@@ -258,7 +275,7 @@ query Repository($id: ID!) {
 			...RepositoryFields
 		}
 	}
-}`+(Repository{}).RepositoryFieldsGraphQLFragment(),
+}`+c.repositoryFieldsGraphQLFragment(),
 		map[string]interface{}{"id": id},
 		&result,
 	); err != nil {
@@ -318,7 +335,7 @@ func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *s
 		rateLimit {
 			cost
 		}
-	}`+(Repository{}).RepositoryFieldsGraphQLFragment(),
+	}`+c.repositoryFieldsGraphQLFragment(),
 		map[string]interface{}{"first": first, "after": after},
 		&result,
 	); err != nil {

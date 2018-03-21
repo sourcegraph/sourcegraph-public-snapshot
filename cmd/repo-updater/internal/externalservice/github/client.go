@@ -39,9 +39,10 @@ var (
 
 // Client is a GitHub API client.
 type Client struct {
-	apiURL     *url.URL     // base URL of GitHub API; e.g., https://api.github.com
-	token      string       // a personal access token to authenticate requests, if set
-	httpClient *http.Client // the HTTP client to use
+	apiURL       *url.URL     // base URL of GitHub API; e.g., https://api.github.com
+	githubDotCom bool         // true if this client connects to github.com
+	token        string       // a personal access token to authenticate requests, if set
+	httpClient   *http.Client // the HTTP client to use
 
 	repoCache *rcache.Cache
 
@@ -72,7 +73,9 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Clie
 	})
 
 	var cacheTTL time.Duration
-	if isGitHubDotComURL(apiURL) {
+	hostname := strings.ToLower(apiURL.Hostname())
+	githubDotCom := hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
+	if githubDotCom {
 		cacheTTL = 10 * time.Minute
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
@@ -87,17 +90,13 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Clie
 	repoCache := rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
 	return &Client{
-		apiURL:     apiURL,
-		token:      token,
-		httpClient: &http.Client{Transport: transport},
-		RateLimit:  &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:  repoCache,
+		apiURL:       apiURL,
+		githubDotCom: githubDotCom,
+		token:        token,
+		httpClient:   &http.Client{Transport: transport},
+		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
+		repoCache:    repoCache,
 	}
-}
-
-func isGitHubDotComURL(apiURL *url.URL) bool {
-	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
