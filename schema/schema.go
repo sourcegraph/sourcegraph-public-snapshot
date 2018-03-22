@@ -36,6 +36,7 @@ type DatacenterOpsConfiguration struct {
 	AlertmanagerURL         string                          `json:"alertmanagerURL,omitempty"`
 	AuthProxyIP             string                          `json:"authProxyIP,omitempty"`
 	AuthProxyPassword       string                          `json:"authProxyPassword,omitempty"`
+	CustomPrometheusRules   string                          `json:"customPrometheusRules,omitempty"`
 	DeploymentOverrides     map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
 	ExperimentIndexedSearch bool                            `json:"experimentIndexedSearch,omitempty"`
 	GitoliteIP              string                          `json:"gitoliteIP,omitempty"`
@@ -55,6 +56,8 @@ type DatacenterOpsConfiguration struct {
 	PhabricatorIP           string                          `json:"phabricatorIP,omitempty"`
 	PyPIIP                  string                          `json:"pyPIIP,omitempty"`
 	StorageClass            string                          `json:"storageClass,omitempty"`
+	UseAlertManager         bool                            `json:"useAlertManager,omitempty"`
+	UsePrometheus           bool                            `json:"usePrometheus,omitempty"`
 	UseRBAC                 bool                            `json:"useRBAC,omitempty"`
 }
 

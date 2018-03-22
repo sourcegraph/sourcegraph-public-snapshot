@@ -23,6 +23,10 @@
       "type": "string",
       "description": "Password used by auth-proxy for basic authentication."
     },
+    "customPrometheusRules": {
+      "type": "string",
+      "description": "A newline-delimited list of Prometheus recording rules to include if Prometheus is enabled"
+    },
     "deploymentOverrides": {
       "description": "Kubernetes configuration overrides",
       "type": "object",
@@ -109,6 +113,14 @@
     "experimentIndexedSearch": {
       "type": "boolean",
       "description": "Enable this to experimentally use an indexed code search backend."
+    },
+    "usePrometheus": {
+      "type": "boolean",
+      "description": "Enable Prometheus to gather performance metrics"
+    },
+    "useAlertManager": {
+      "type": "boolean",
+      "description": "Enable Alert Manager"
     }
   },
   "definitions": {
