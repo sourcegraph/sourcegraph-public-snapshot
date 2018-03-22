@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -26,6 +28,7 @@ func addDebugHandlers(r *mux.Router) {
 					req.URL.Path = req.URL.Path[i+len(prefix):]
 				}
 			},
+			ErrorLog: log.New(ioutil.Discard, "", 0), // disable
 		}))
 	}
 
