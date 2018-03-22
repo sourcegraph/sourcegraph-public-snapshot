@@ -101,6 +101,14 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		}
 	}
 
+	for _, bbsCfg := range cfg.BitbucketServer {
+		if bbsCfg.Token != "" && (bbsCfg.Username != "" || bbsCfg.Password != "") {
+			invalid("for Bitbucket Server, specify either a token or a username/password, not both")
+		} else if bbsCfg.Token == "" && bbsCfg.Username == "" || bbsCfg.Password == "" {
+			invalid("for Bitbucket Server, you must specify either a token or a username/password to authenticate")
+		}
+	}
+
 	for _, ghCfg := range cfg.Github {
 		if ghCfg.PreemptivelyClone {
 			invalid(`github[].preemptivelyClone is deprecated; use initialRepositoryEnablement instead`)

@@ -16,9 +16,11 @@ type BitbucketServerConnection struct {
 	Certificate                 string `json:"certificate,omitempty"`
 	GitURLType                  string `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
+	Password                    string `json:"password,omitempty"`
 	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
-	Token                       string `json:"token"`
+	Token                       string `json:"token,omitempty"`
 	Url                         string `json:"url"`
+	Username                    string `json:"username,omitempty"`
 }
 
 // ContainerOverrides

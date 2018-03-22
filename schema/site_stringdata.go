@@ -570,7 +570,7 @@ const SiteSchemaJSON = `{
     "BitbucketServerConnection": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["url", "token"],
+      "required": ["url"],
       "properties": {
         "url": {
           "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com",
@@ -584,9 +584,19 @@ const SiteSchemaJSON = `{
         },
         "token": {
           "description":
-            "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add",
+            "A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add.\n\nFor Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the \"username\" and \"password\" fields.",
           "type": "string",
           "pattern": "^[^<>]+$"
+        },
+        "username": {
+          "description":
+            "The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"password\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
+          "type": "string"
+        },
+        "password": {
+          "description":
+            "The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding \"username\" field.\n\nFor Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the \"token\" field).",
+          "type": "string"
         },
         "gitURLType": {
           "description":

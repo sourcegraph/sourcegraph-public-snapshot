@@ -105,7 +105,15 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 			break
 		}
 		if l.Name == "http" {
-			cloneURL = addPasswordBestEffort(l.Href, config.Token)
+			// l.Href already contains the username in the URL userinfo, so just add the token or
+			// password.
+			var password string
+			if config.Token != "" {
+				password = config.Token // prefer personal access token
+			} else {
+				password = config.Password
+			}
+			cloneURL = addPasswordBestEffort(l.Href, password)
 			// No break, so that we fallback to http in case of ssh missing
 			// with GitURLType == "ssh"
 		}
@@ -257,8 +265,10 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bi
 	return &bitbucketServerConnection{
 		config: config,
 		client: &bitbucketserver.Client{
-			URL:   baseURL,
-			Token: config.Token,
+			URL:      baseURL,
+			Token:    config.Token,
+			Username: config.Username,
+			Password: config.Password,
 			HTTPClient: &http.Client{
 				Transport: transport,
 			},

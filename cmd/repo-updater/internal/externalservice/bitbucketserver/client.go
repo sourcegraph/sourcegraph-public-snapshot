@@ -23,6 +23,11 @@ type Client struct {
 	// server. https://bitbucket.example.com/plugins/servlet/access-tokens/manage
 	Token string
 
+	// The username and password credentials for accessing the server. Typically these are only
+	// used when the server doesn't support personal access tokens (such as Bitbucket Server
+	// version 5.4 and older). If both Token and Username/Password are specifed, Token is used.
+	Username, Password string
+
 	// HTTPClient is the client used to access Bitbucket Server. To enabled
 	// tracing, ensure the transport includes nethttp.Transport.
 	HTTPClient *http.Client
@@ -76,7 +81,13 @@ func (c *Client) RecentRepos(ctx context.Context, pageToken *PageToken) ([]*Repo
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
 	req.URL = c.URL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+
+	// Authenticate request, preferring token.
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	} else if c.Username != "" || c.Password != "" {
+		req.SetBasicAuth(c.Username, c.Password)
+	}
 
 	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
 		nethttp.OperationName("Bitbucket Server"),

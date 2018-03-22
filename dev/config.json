@@ -46,7 +46,9 @@
     // creds: admin / WhYw6x9GSxmbmg4m
     {
       "url": "https://bitbucket.sgdev.org",
-      "token": "NDczNDE0NDg0OTk3OrfPrmh/lmU2c3P7Xat+d/aOoZb/"
+      // "token": "NDczNDE0NDg0OTk3OrfPrmh/lmU2c3P7Xat+d/aOoZb/"
+      "username": "admin",
+      "password": "WhYw6x9GSxmbmg4m"
     }
   ],
   "awsCodeCommit": [
