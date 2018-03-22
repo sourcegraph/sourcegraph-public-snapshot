@@ -104,7 +104,7 @@ func ValidateCustom(normalizedInput []byte) (validationErrors []string, err erro
 	for _, bbsCfg := range cfg.BitbucketServer {
 		if bbsCfg.Token != "" && (bbsCfg.Username != "" || bbsCfg.Password != "") {
 			invalid("for Bitbucket Server, specify either a token or a username/password, not both")
-		} else if bbsCfg.Token == "" && bbsCfg.Username == "" || bbsCfg.Password == "" {
+		} else if bbsCfg.Token == "" && bbsCfg.Username == "" && bbsCfg.Password == "" {
 			invalid("for Bitbucket Server, you must specify either a token or a username/password to authenticate")
 		}
 	}
