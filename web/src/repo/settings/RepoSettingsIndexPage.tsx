@@ -209,9 +209,10 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         </>
                     ) : (
                         <div className="alert alert-info">
-                            This Sourcegraph site only supports on-the-fly searching. For enhanced search performance at
-                            scale, <a href="mailto:support@sourcegraph.com">contact support</a> to enable indexed
-                            search.
+                            This Sourcegraph site doesn't support indexed search. For faster code search across your
+                            repositories, upgrade to the
+                            <a href="https://about.sourcegraph.com/docs/server/datacenter">Data Center deployment</a>
+                            for indexed search.
                         </div>
                     ))}
             </div>
