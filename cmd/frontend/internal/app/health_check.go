@@ -4,22 +4,21 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
 
 func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	var errs []error
+	var errors []string
 
 	if err := db.Ping(r.Context()); err != nil {
-		errs = append(errs, errors.Wrap(err, "PostgreSQL"))
+		errors = append(errors, "unable to contact PostgreSQL")
 	}
 	if err := session.Ping(); err != nil {
-		errs = append(errs, errors.Wrap(err, "Redis"))
+		errors = append(errors, "unable to contact Redis")
 	}
 
-	if len(errs) == 0 {
+	if len(errors) == 0 {
 		fmt.Fprintln(w, "Health check status: OK ✅")
 		return
 	}
@@ -27,7 +26,7 @@ func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 	fmt.Fprintln(w, "Health check status: FAIL ❌")
 	fmt.Fprintln(w)
-	for _, err := range errs {
-		fmt.Fprintln(w, err)
+	for _, e := range errors {
+		fmt.Fprintln(w, e)
 	}
 }
