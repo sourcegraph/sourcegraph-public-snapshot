@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
+### Added
+
+* Dynamic search filters now suggest exclusions of go test files, vendored files and node_module files.
+
 ## 2.6.6
 
 ### Added

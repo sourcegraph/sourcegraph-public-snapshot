@@ -163,10 +163,32 @@ func (sr *searchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
 }
 
+// commonFileFilters are common filters used. It is used by DynamicFilters to
+// propose them if they match shown results.
+var commonFileFilters = []struct {
+	Regexp *regexp.Regexp
+	Filter string
+}{
+	// Exclude go tests
+	{
+		Regexp: regexp.MustCompile(`_test\.go$`),
+		Filter: `-file:_test\.go$`,
+	},
+	// Exclude go vendor
+	{
+		Regexp: regexp.MustCompile(`(^|/)vendor/`),
+		Filter: `-file:(^|/)vendor/`,
+	},
+	// Exclude node_modules
+	{
+		Regexp: regexp.MustCompile(`(^|/)node_modules/`),
+		Filter: `-file:(^|/)node_modules/`,
+	},
+}
+
 func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	filters := map[string]*searchFilterResolver{}
-	addRepoFilter := func(uri string) {
-		value := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
+	add := func(value string) {
 		sf, ok := filters[value]
 		if !ok {
 			sf = &searchFilterResolver{
@@ -176,19 +198,18 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		}
 		sf.score++
 	}
+	addRepoFilter := func(uri string) {
+		add(fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri)))
+	}
 	addFileFilter := func(filematchPath string) {
-		if path.Ext(filematchPath) == "" {
-			return
+		if ext := path.Ext(filematchPath); ext != "" {
+			add(fmt.Sprintf(`file:%s$`, regexp.QuoteMeta(ext)))
 		}
-		value := fmt.Sprintf(`file:%s$`, regexp.QuoteMeta(path.Ext(filematchPath)))
-		sf, ok := filters[value]
-		if !ok {
-			sf = &searchFilterResolver{
-				value: value,
+		for _, ff := range commonFileFilters {
+			if ff.Regexp.MatchString(filematchPath) {
+				add(ff.Filter)
 			}
-			filters[value] = sf
 		}
-		sf.score++
 	}
 	for _, result := range sr.results {
 		if result.fileMatch != nil {
