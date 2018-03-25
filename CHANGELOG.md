@@ -4,12 +4,11 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
+## 2.6.7
+
 ### Added
 
 * The duration that the frontend waits for the PostgreSQL database to become available is now configurable with the `DB_STARTUP_TIMEOUT` env var (the value is any valid Go duration string).
-
-### Added
-
 * Dynamic search filters now suggest exclusions of go test files, vendored files and node_module files.
 
 ## 2.6.6
