@@ -21,6 +21,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db/migrations"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
@@ -38,6 +39,14 @@ var (
 func ConnectToDB(dataSource string) {
 	if dataSource == "" {
 		dataSource = defaultDataSource
+	}
+
+	// Force PostgreSQL session timezone to UTC.
+	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
+		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
+	}
+	if err := os.Setenv("PGTZ", "UTC"); err != nil {
+		log.Fatalln("Error setting PGTZ=UTC:", err)
 	}
 
 	var err error
@@ -84,15 +93,6 @@ func Open(dataSource string) (*sql.DB, error) {
 	db, err := sql.Open("postgres-proxy", dataSource)
 	if err != nil {
 		return nil, fmt.Errorf("%s (datasource=%q)", err, dataSource)
-	}
-
-	// Ensure we're in UTC.
-	var tz string
-	if err := db.QueryRow("SELECT current_setting('TIMEZONE')").Scan(&tz); err != nil {
-		return nil, fmt.Errorf("getting DB timezone: %s", err)
-	}
-	if tz != "UTC" {
-		return nil, fmt.Errorf("PostgresQL timezone must be UTC, but it is set to %q. (Set it by specifying `timezone = 'UTC'` in postgresql.conf and then restart PostgreSQL.)", tz)
 	}
 	return db, nil
 }
