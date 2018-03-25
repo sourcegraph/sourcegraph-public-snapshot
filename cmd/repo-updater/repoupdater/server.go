@@ -36,6 +36,10 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	t := time.Now()
 	result, err := repoLookup(r.Context(), args)
 	if err != nil {
+		if err == context.Canceled {
+			http.Error(w, "request canceled", http.StatusGatewayTimeout)
+			return
+		}
 		log15.Error("repoLookup failed", "args", &args, "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
