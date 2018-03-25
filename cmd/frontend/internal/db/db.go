@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -62,21 +63,45 @@ func ConnectToDB(dataSource string) {
 	}
 }
 
+var (
+	startupTimeout = func() time.Duration {
+		str := env.Get("DB_STARTUP_TIMEOUT", "10s", "keep trying for this long to connect to PostgreSQL database before failing")
+		d, err := time.ParseDuration(str)
+		if err != nil {
+			log.Fatalln("DB_STARTUP_TIMEOUT:", err)
+		}
+		return d
+	}()
+)
+
 func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".
-	const startupTimeout = 10 * time.Second
 	startupDeadline := time.Now().Add(startupTimeout)
 	for {
 		if time.Now().After(startupDeadline) {
 			return nil, fmt.Errorf("database did not start up within %s (%v)", startupTimeout, err)
 		}
 		db, err = Open(dataSource)
-		if err != nil && strings.Contains(err.Error(), "pq: the database system is starting up") {
+		if err != nil && isDatabaseLikelyStartingUp(err) {
 			time.Sleep(startupTimeout / 10)
 			continue
 		}
 		return db, err
 	}
+}
+
+// isDatabaseLikelyStartingUp returns whether the err likely just means the PostgreSQL database is
+// starting up, and it should not be treated as a fatal error during program initialization.
+func isDatabaseLikelyStartingUp(err error) bool {
+	if strings.Contains(err.Error(), "pq: the database system is starting up") {
+		// Wait for DB to start up.
+		return true
+	}
+	if e, ok := errors.Cause(err).(net.Error); ok && strings.Contains(e.Error(), "connection refused") {
+		// Wait for DB to start listening.
+		return true
+	}
+	return false
 }
 
 var registerOnce sync.Once
@@ -92,7 +117,7 @@ func Open(dataSource string) (*sql.DB, error) {
 	})
 	db, err := sql.Open("postgres-proxy", dataSource)
 	if err != nil {
-		return nil, fmt.Errorf("%s (datasource=%q)", err, dataSource)
+		return nil, errors.Wrap(err, "postgresql open")
 	}
 	return db, nil
 }
