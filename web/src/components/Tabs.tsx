@@ -9,7 +9,7 @@ import { NavLink } from 'react-router-dom'
  */
 export interface Tab<ID extends string> {
     id: ID
-    label: string
+    label: React.ReactFragment
 }
 
 /**

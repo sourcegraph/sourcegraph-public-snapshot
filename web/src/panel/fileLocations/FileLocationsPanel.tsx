@@ -41,6 +41,8 @@ interface Props {
     /** Called when a location is selected. */
     onSelect: () => void
 
+    className: string
+
     isLightTheme: boolean
 }
 
@@ -148,7 +150,7 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
         }
 
         return (
-            <div className="file-locations-panel">
+            <div className={`file-locations-panel ${this.props.className}`}>
                 <VirtualList
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}

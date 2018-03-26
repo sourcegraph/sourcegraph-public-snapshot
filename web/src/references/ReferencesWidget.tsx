@@ -2,10 +2,7 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
-import isEqual from 'lodash/isEqual'
-import omit from 'lodash/omit'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { bufferTime } from 'rxjs/operators/bufferTime'
 import { concat } from 'rxjs/operators/concat'
@@ -14,14 +11,16 @@ import { map } from 'rxjs/operators/map'
 import { scan } from 'rxjs/operators/scan'
 import { skip } from 'rxjs/operators/skip'
 import { startWith } from 'rxjs/operators/startWith'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Location } from 'vscode-languageserver-types'
 import { fetchReferences } from '../backend/lsp'
+import { Spacer, Tab, TabBorderClassName, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { FileLocationsPanelContent } from '../panel/fileLocations/FileLocationsPanel'
-import { AbsoluteRepoFilePosition, PositionSpec, RangeSpec, RepoFile, RepoFilePosition } from '../repo'
+import { AbsoluteRepoFilePosition } from '../repo'
 import { eventLogger } from '../tracking/eventLogger'
-import { parseHash, toPrettyBlobURL } from '../util/url'
+import { parseHash } from '../util/url'
 import { fetchExternalReferences } from './backend'
 
 interface Props extends AbsoluteRepoFilePosition {
@@ -39,24 +38,7 @@ interface ReferencesStateSubject {
     character: number
 }
 
-interface ReferencesState extends ReferencesStateSubject {
-    references: Location[]
-    loadingLocal: boolean
-    loadingExternal: boolean
-}
-
-interface State extends ReferencesState {
-    group?: 'local' | 'external'
-}
-
-function initialReferencesState(props: Props): ReferencesState {
-    return {
-        ...referencesStateSubject(props),
-        references: [],
-        loadingLocal: true,
-        loadingExternal: true,
-    }
-}
+type ReferencesTabID = 'references' | 'references:external'
 
 function referencesStateSubject(props: Props): ReferencesStateSubject {
     const parsedHash = parseHash(props.location.hash)
@@ -84,19 +66,17 @@ function referencesStateSubjectIsEqual(
     )
 }
 
+interface State {
+    referencesCount?: number
+    referencesExternalCount?: number
+}
+
 export class ReferencesWidget extends React.PureComponent<Props, State> {
+    public state: State = {}
+
     private componentUpdates = new Subject<Props>()
     private locationsUpdates = new Subject<void>()
     private subscriptions = new Subscription()
-
-    constructor(props: Props) {
-        super(props)
-        const parsedHash = parseHash(props.location.hash)
-        this.state = {
-            group: parsedHash.modalMode || 'local',
-            ...initialReferencesState(props),
-        }
-    }
 
     public componentDidMount(): void {
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
@@ -108,30 +88,15 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     distinctUntilChanged<Props>((a, b) =>
                         referencesStateSubjectIsEqual(referencesStateSubject(a), referencesStateSubject(b))
                     ),
-                    skip(1)
+                    skip(1),
+                    tap(() => this.setState({ referencesCount: undefined, referencesExternalCount: undefined }))
                 )
                 .subscribe(() => this.locationsUpdates.next())
         )
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
-        const parsedHash = parseHash(nextProps.location.hash)
-        if (parsedHash.modalMode && parsedHash.modalMode !== this.state.group) {
-            this.setState({ group: parsedHash.modalMode })
-        }
-        if (!isEqual(omit(this.props, 'rev'), omit(nextProps, 'rev'))) {
-            this.componentUpdates.next(nextProps)
-        }
-    }
-
-    public getRefsGroupFromUrl(urlStr: string): 'local' | 'external' {
-        if (urlStr.indexOf('$references:local') !== -1) {
-            return 'local'
-        }
-        if (urlStr.indexOf('$references:external') !== -1) {
-            return 'external'
-        }
-        return 'local'
+        this.componentUpdates.next(nextProps)
     }
 
     public componentWillUnmount(): void {
@@ -139,80 +104,96 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const ctx: RepoFilePosition = this.props
+        const tabs: Tab<ReferencesTabID>[] = [
+            {
+                id: 'references',
+                label: (
+                    <>
+                        This repository
+                        {this.state.referencesCount !== undefined && (
+                            <span className="badge badge-pill badge-secondary ml-1">{this.state.referencesCount}</span>
+                        )}
+                    </>
+                ),
+            },
+            {
+                id: 'references:external',
+                label: (
+                    <>
+                        Other repositories
+                        {this.state.referencesExternalCount !== undefined && (
+                            <span className="badge badge-pill badge-secondary ml-1">
+                                {this.state.referencesExternalCount}
+                            </span>
+                        )}
+                    </>
+                ),
+            },
+        ]
 
         return (
-            <div className="references-widget">
-                <div className="references-widget__title-bar">
-                    <h5>
-                        <Link
-                            className={
-                                'references-widget__title-bar-group' +
-                                (this.state.group === 'local' ? ' references-widget__title-bar-group--active' : '')
-                            }
-                            to={toPrettyBlobURL({ ...ctx, referencesMode: 'local' })}
-                            onClick={this.onLocalRefsButtonClick}
+            <TabsWithURLViewStatePersistence
+                tabs={tabs}
+                tabBarEndFragment={
+                    <>
+                        <Spacer />
+                        <button
+                            onClick={this.onDismiss}
+                            className={`btn btn-icon tab-bar__close-button ${TabBorderClassName}`}
+                            data-tooltip="Close"
                         >
-                            This repository
-                        </Link>
-                    </h5>
-                    <h5>
-                        <Link
-                            className={
-                                'references-widget__title-bar-group' +
-                                (this.state.group === 'external' ? ' references-widget__title-bar-group--active' : '')
-                            }
-                            to={toPrettyBlobURL({ ...ctx, referencesMode: 'external' })}
-                            onClick={this.onShowExternalRefsButtonClick}
-                        >
-                            Other repositories
-                        </Link>
-                    </h5>
-                    <span className="references-widget__close-icon" onClick={this.onDismiss} data-tooltip="Close">
-                        <CloseIcon className="icon-inline" />
-                    </span>
-                </div>
-                <div className="references-widget__groups">
-                    {this.state.group === 'local' && (
-                        <FileLocationsPanelContent
-                            query={this.queryReferencesLocal}
-                            updates={this.locationsUpdates}
-                            inputRevision={this.props.rev}
-                            icon={RepoIcon}
-                            onSelect={this.logLocalSelection}
-                            isLightTheme={this.props.isLightTheme}
-                        />
-                    )}
-                    {this.state.group === 'external' && (
-                        <FileLocationsPanelContent
-                            query={this.queryReferencesExternal}
-                            updates={this.locationsUpdates}
-                            icon={GlobeIcon}
-                            onSelect={this.logExternalSelection}
-                            isLightTheme={this.props.isLightTheme}
-                        />
-                    )}
-                </div>
-            </div>
+                            <CloseIcon />
+                        </button>
+                    </>
+                }
+                className="references-widget"
+                tabClassName="tab-bar__tab--h5like"
+                onSelectTab={this.onSelectTab}
+                location={this.props.location}
+            >
+                <FileLocationsPanelContent
+                    key="references"
+                    className="references-widget__content"
+                    query={this.queryReferencesLocal}
+                    updates={this.locationsUpdates}
+                    inputRevision={this.props.rev}
+                    icon={RepoIcon}
+                    onSelect={this.logLocalSelection}
+                    isLightTheme={this.props.isLightTheme}
+                />
+                <FileLocationsPanelContent
+                    key="references:external"
+                    className="references-widget__content"
+                    query={this.queryReferencesExternal}
+                    updates={this.locationsUpdates}
+                    icon={GlobeIcon}
+                    onSelect={this.logExternalSelection}
+                    isLightTheme={this.props.isLightTheme}
+                />
+            </TabsWithURLViewStatePersistence>
         )
     }
 
     private onDismiss = (): void => {
-        this.props.history.push(
-            // Cast because we want this to have a type with a full absolute position/range but
-            // with referencesMode undefined, because the purpose of this call is to remove
-            // referencesMode from the URL.
-            toPrettyBlobURL({ ...this.props, referencesMode: undefined } as RepoFile &
-                Partial<PositionSpec> & { referencesMode: undefined } & Partial<RangeSpec>)
-        )
+        this.props.history.push(TabsWithURLViewStatePersistence.urlForTabID(this.props.location, null))
     }
-    private onLocalRefsButtonClick = () => eventLogger.log('ShowLocalRefsButtonClicked')
-    private onShowExternalRefsButtonClick = () => eventLogger.log('ShowExternalRefsButtonClicked')
+
+    private onSelectTab = (tab: string): void => {
+        if (tab === 'references') {
+            eventLogger.log('ShowLocalRefsButtonClicked')
+        } else if (tab === 'references:external') {
+            eventLogger.log('ShowExternalRefsButtonClicked')
+        }
+    }
+
     private logLocalSelection = () => eventLogger.log('GoToLocalRefClicked')
     private logExternalSelection = () => eventLogger.log('GoToExternalRefClicked')
 
     private queryReferencesLocal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchReferences(this.props).pipe(map(c => ({ loading: false, locations: c })))
+        fetchReferences(this.props).pipe(
+            map(c => ({ loading: false, locations: c })),
+            tap(({ locations }) => this.setState({ referencesCount: locations.length }))
+        )
 
     private queryReferencesExternal = (): Observable<{ loading: boolean; locations: Location[] }> =>
         fetchExternalReferences(this.props).pipe(
@@ -225,6 +206,11 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                     locations: cur.locations.concat(...locs.map(({ locations }) => locations)),
                 }),
                 { loading: true, locations: [] }
-            )
+            ),
+            tap(({ loading, locations }) => {
+                if (!loading || locations.length > 0) {
+                    this.setState({ referencesExternalCount: locations.length })
+                }
+            })
         )
 }

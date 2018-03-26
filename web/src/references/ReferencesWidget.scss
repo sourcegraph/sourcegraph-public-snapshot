@@ -2,118 +2,25 @@
     flex: 1 1 50%;
     min-height: 0;
 
+    overflow-x: auto;
+
     display: flex;
     flex-direction: column;
 
-    user-select: none;
-    background: #070a0d;
+    background-color: $color-bg-4;
+    border-top: 1px solid $color-border;
+    width: 100%;
 
-    &__title-bar {
-        flex: none;
-        width: 100%;
-        height: 2.5rem;
-
-        padding: 0 1rem;
-        display: flex;
-        align-items: center;
-
-        background-color: #070a0d;
-
-        &-title {
-            max-width: 50%;
-            margin-right: 1.5rem;
-        }
-
-        &-group {
-            margin-left: 1rem;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            text-decoration: none;
-            opacity: 0.5;
-
-            &:hover {
-                color: white;
-                text-decoration: none;
-                opacity: 1;
-            }
-
-            &--active {
-                color: white;
-                opacity: 1;
-            }
-        }
-    }
-
-    &__badge {
-        height: 1.5rem;
-        min-width: 1.5rem;
-        margin: 0 0.25rem;
-        opacity: 0.5;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.25rem 0.5rem;
-
-        font-size: 0.857em;
-        border-radius: 1rem;
-        background-color: #2a3a51;
-        color: white;
-
-        &--active {
-            opacity: 1;
-        }
-    }
-
-    &__close-icon {
-        flex: none;
-        cursor: pointer;
-        margin-left: auto;
-
-        display: flex;
-
-        &:hover {
-            color: white;
-        }
-    }
-
-    &__groups {
-        flex: 1 1 auto;
-        min-height: 0;
+    overflow-y: hidden;
+    &__content {
         overflow-y: auto;
     }
 }
 
 .theme-light {
     .references-widget {
-        background: $color-light-bg-2;
-
-        &__title-bar {
-            border-bottom: 1px solid $color-light-border;
-            border-top: 1px solid $color-light-border;
-            background-color: $color-light-bg-2;
-        }
-
-        &__title-bar-group {
-            &:hover {
-                color: #07090d;
-            }
-            &--active {
-                color: #566e9f;
-            }
-        }
-
-        &__badge {
-            background-color: $color-light-bg-3;
-            color: inherit;
-        }
-
-        &__close-icon {
-            &:hover {
-                color: $color-light-text-5;
-            }
-        }
+        background-color: $color-light-bg-2;
+        border-top-color: $color-light-border;
 
         .result-container {
             margin-bottom: 0;
