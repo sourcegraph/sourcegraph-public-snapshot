@@ -7,6 +7,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Bug fixes
 
 * Searches of `type:repo` now work correctly with "Show more" and the `max` parameter.
+* Fixes an issue where the server would crash if the DB was not available upon startup.
 
 ## 2.6.7
 

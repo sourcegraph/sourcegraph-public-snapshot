@@ -82,6 +82,9 @@ func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 			return nil, fmt.Errorf("database did not start up within %s (%v)", startupTimeout, err)
 		}
 		db, err = Open(dataSource)
+		if err == nil {
+			err = db.Ping()
+		}
 		if err != nil && isDatabaseLikelyStartingUp(err) {
 			time.Sleep(startupTimeout / 10)
 			continue
