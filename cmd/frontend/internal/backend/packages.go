@@ -65,7 +65,7 @@ func (packages) listForLanguageInRepo(ctx context.Context, language string, repo
 	// server explicitly for background tasks such as workspace/xpackages.
 	// This makes it such that indexing repositories does not interfere in
 	// terms of resource usage with real user requests.
-	if _, ok := xlang.HasXDefinitionAndXPackages[language]; !ok {
+	if _, ok := xlang.HasXDefinitionAndXPackages[language]; !ok { // TODO(keegancsmith) this list is no longer accurate
 		// The language does not support xpackages, so there is no indexing to
 		// perform.
 		return nil, nil

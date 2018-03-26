@@ -63,9 +63,30 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			// DEPRECATED: Use old Mode field if the new one is not set.
 			c.mode = init.Mode
 		}
-		_, c.hasXDefinitionAndXPackages = xlang.HasXDefinitionAndXPackages[c.mode]
+		var resultRaw json.RawMessage
+		if err := c.Client.Call(ctx, method, params, &resultRaw, opt...); err != nil {
+			return err
+		}
+
+		// We only care about the XDefinitionProvider. Right now it implies
+		// the support of XPackages as well :'(
+		var initResultSubset struct {
+			Capabilities struct {
+				// XDefinitionProvider indicates the server provides support for
+				// textDocument/xdefinition. This is a Sourcegraph extension.
+				XDefinitionProvider bool `json:"xdefinitionProvider,omitempty"`
+			} `json:"capabilities,omitempty"`
+		}
+		if err := json.Unmarshal(resultRaw, &initResultSubset); err != nil {
+			return err
+		}
+
+		c.hasXDefinitionAndXPackages = initResultSubset.Capabilities.XDefinitionProvider
+		//_, c.hasXDefinitionAndXPackages = xlang.HasXDefinitionAndXPackages[c.mode]
 		_, c.hasCrossRepoHover = xlang.HasCrossRepoHover[c.mode]
-		return c.Client.Call(ctx, method, params, result, opt...)
+
+		return json.Unmarshal(resultRaw, result)
+
 	case !c.hasXDefinitionAndXPackages:
 		break
 	case method == "textDocument/definition":
