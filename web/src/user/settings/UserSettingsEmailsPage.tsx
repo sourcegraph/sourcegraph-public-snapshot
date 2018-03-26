@@ -8,9 +8,12 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { SiteFlags } from '../../site'
+import { siteFlags } from '../../site/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { AddUserEmailForm } from './AddUserEmailForm'
+import { setUserEmailVerified } from './backend'
 
 interface UserEmailNodeProps {
     node: GQL.IUserEmail
@@ -58,7 +61,6 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                             className="btn btn-sm btn-secondary site-admin-detail-list__action"
                             onClick={this.props.node.verified ? this.setAsUnverified : this.setAsVerified}
                             disabled={this.state.loading}
-                            data-tooltip="Only site admins may perform this action"
                         >
                             {this.props.node.verified ? 'Mark as unverified' : 'Mark as verified'}
                         </button>
@@ -118,37 +120,24 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             loading: true,
         })
 
-        mutateGraphQL(
-            gql`
-                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
-                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
-                        alwaysNil
-                    }
+        setUserEmailVerified(this.props.user.id, this.props.node.email, verified).subscribe(
+            () => {
+                this.setState({ loading: false })
+                if (this.props.onDidUpdate) {
+                    this.props.onDidUpdate()
                 }
-            `,
-            { user: this.props.user.id, email: this.props.node.email, verified }
+            },
+            error => this.setState({ loading: false, errorDescription: error.message })
         )
-            .pipe(
-                map(({ data, errors }) => {
-                    if (!data || (errors && errors.length > 0)) {
-                        throw createAggregateError(errors)
-                    }
-                })
-            )
-            .subscribe(
-                () => {
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                error => this.setState({ loading: false, errorDescription: error.message })
-            )
     }
 }
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
+}
+
+interface State {
+    siteFlags?: SiteFlags
 }
 
 /** We fake a XyzConnection type because our GraphQL API doesn't have one (or need one) for user emails. */
@@ -162,16 +151,16 @@ class FilteredUserEmailConnection extends FilteredConnection<
     Pick<UserEmailNodeProps, 'user' | 'onDidUpdate'>
 > {}
 
-// TODO(sqs): this is feature-flagged because it doesn't yet send verification emails, which is confusing. See TODO
-// in graphqlbackend AddUserEmail method.
-const enableAddUserEmail = localStorage.getItem('addUserEmail') !== null
+export class UserSettingsEmailsPage extends React.Component<Props, State> {
+    public state: State = {}
 
-export class UserSettingsEmailsPage extends React.Component<Props> {
     private userEmailUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsEmails')
+
+        this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
     }
 
     public componentWillUnmount(): void {
@@ -188,6 +177,13 @@ export class UserSettingsEmailsPage extends React.Component<Props> {
             <div className="site-admin-detail-list user-settings-emails-page">
                 <PageTitle title="Emails" />
                 <h2 className="site-admin-page__header-title">Emails</h2>
+                {this.state.siteFlags &&
+                    !this.state.siteFlags.sendsEmailVerificationEmails && (
+                        <div className="alert alert-warning mt-2 mb-3">
+                            Sourcegraph is not configured to send email verifications. Newly added email addresses must
+                            be manually verified by a site admin.
+                        </div>
+                    )}
                 <FilteredUserEmailConnection
                     className="site-admin-page__filtered-connection"
                     noun="email address"
@@ -201,9 +197,7 @@ export class UserSettingsEmailsPage extends React.Component<Props> {
                     history={this.props.history}
                     location={this.props.location}
                 />
-                {enableAddUserEmail && (
-                    <AddUserEmailForm className="mt-4" user={this.props.user.id} onDidAdd={this.onDidUpdateUserEmail} />
-                )}
+                <AddUserEmailForm className="mt-4" user={this.props.user.id} onDidAdd={this.onDidUpdateUserEmail} />
             </div>
         )
     }

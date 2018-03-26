@@ -1,14 +1,25 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import format from 'date-fns/format'
+import isEqual from 'lodash/isEqual'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { map } from 'rxjs/operators/map'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
+import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { setUserEmailVerified } from '../user/settings/backend'
+import { asError } from '../util/errors'
 import { deleteUser, fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
 import { SettingsInfo } from './util/SettingsInfo'
 
@@ -38,6 +49,48 @@ interface UserNodeState {
 class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public state: UserNodeState = {
         loading: false,
+    }
+
+    private emailVerificationClicks = new Subject<{ email: string; verified: boolean }>()
+    private subscriptions = new Subscription()
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.emailVerificationClicks
+                .pipe(
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    switchMap(({ email, verified }) =>
+                        merge(
+                            of({
+                                errorDescription: undefined,
+                                resetPasswordURL: undefined,
+                                loading: true,
+                            }),
+                            setUserEmailVerified(this.props.node.id, email, verified).pipe(
+                                map(() => ({ loading: false })),
+                                catchError(error => [{ loading: false, errorDescription: asError(error).message }]),
+                                publishReplay<
+                                    Pick<UserNodeState, 'loading' | 'errorDescription' | 'resetPasswordURL'>
+                                >(),
+                                refCount()
+                            )
+                        )
+                    )
+                )
+                .subscribe(
+                    stateUpdate => {
+                        this.setState(stateUpdate)
+                        if (this.props.onDidUpdate) {
+                            this.props.onDidUpdate()
+                        }
+                    },
+                    err => console.error(err)
+                )
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -102,9 +155,42 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 <strong>Site admin</strong>
                             </li>
                         )}
-                        {this.props.node.email && (
+                        {this.props.node.emails && (
                             <li>
-                                Email: <a href={`mailto:${this.props.node.email}`}>{this.props.node.email}</a>
+                                Emails:{' '}
+                                {this.props.node.emails.length === 0 ? (
+                                    '(none)'
+                                ) : (
+                                    <ul className="ml-3">
+                                        {this.props.node.emails.map(({ email, verified, verificationPending }, i) => (
+                                            <li key={i} className="site-admin-all-users-page__item-email pr-2">
+                                                <span
+                                                    data-tooltip={
+                                                        verificationPending ? 'Verification pending' : 'Verified'
+                                                    }
+                                                >
+                                                    {email}
+                                                </span>{' '}
+                                                &ndash;{' '}
+                                                {(verificationPending || verified) && (
+                                                    <a
+                                                        href=""
+                                                        // tslint:disable-next-line:jsx-no-lambda
+                                                        onClick={e => {
+                                                            e.preventDefault()
+                                                            this.emailVerificationClicks.next({
+                                                                email,
+                                                                verified: !verified,
+                                                            })
+                                                        }}
+                                                    >
+                                                        Mark as {verificationPending ? 'verified' : 'unverified'}
+                                                    </a>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </li>
                         )}
                         {this.props.node.createdAt && (

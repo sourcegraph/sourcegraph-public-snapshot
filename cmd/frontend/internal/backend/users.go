@@ -2,21 +2,11 @@ package backend
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"net/url"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 )
-
-func MakeEmailVerificationCode() string {
-	emailCodeBytes := make([]byte, 20)
-	if _, err := rand.Read(emailCodeBytes); err != nil {
-		panic(err)
-	}
-	return base64.StdEncoding.EncodeToString(emailCodeBytes)
-}
 
 func MakeRandomHardToGuessPassword() string {
 	return randstring.NewLen(36)

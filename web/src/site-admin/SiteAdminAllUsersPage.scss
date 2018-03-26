@@ -9,6 +9,10 @@
             display: block !important;
         }
 
+        &-email {
+            white-space: nowrap;
+        }
+
         &-alert {
             margin: 0.75rem 0;
         }

@@ -79,7 +79,7 @@ func (r *userResolver) Email(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	email, _, err := db.UserEmails.GetEmail(ctx, r.user.ID)
+	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, r.user.ID)
 	if err != nil {
 		return "", err
 	}

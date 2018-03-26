@@ -21,7 +21,7 @@ func TestThreads_Create(t *testing.T) {
 		CloneURL:          "https://test.com/test",
 	}
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{}, nil }
-	db.Mocks.UserEmails.GetEmail = func(ctx context.Context, id int32) (string, bool, error) {
+	db.Mocks.UserEmails.GetPrimaryEmail = func(ctx context.Context, id int32) (string, bool, error) {
 		return "alice@example.com", true, nil
 	}
 	db.Mocks.OrgMembers.MockGetByOrgIDAndUserID_Return(t, &types.OrgMembership{}, nil)

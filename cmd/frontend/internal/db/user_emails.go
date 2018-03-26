@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -17,12 +18,26 @@ type UserEmail struct {
 	VerifiedAt       *time.Time
 }
 
+// userEmailNotFoundError is the error that is returned when a user email is not found.
+type userEmailNotFoundError struct {
+	args []interface{}
+}
+
+func (err userEmailNotFoundError) Error() string {
+	return fmt.Sprintf("user email not found: %v", err.args)
+}
+
+func (err userEmailNotFoundError) NotFound() bool {
+	return true
+}
+
 // userEmails provides access to the `user_emails` table.
 type userEmails struct{}
 
-func (*userEmails) GetEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
-	if Mocks.UserEmails.GetEmail != nil {
-		return Mocks.UserEmails.GetEmail(ctx, id)
+// GetPrimaryEmail gets the oldest email associated with the user.
+func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
+	if Mocks.UserEmails.GetPrimaryEmail != nil {
+		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
 	}
 
 	if err := globalDB.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY created_at ASC, email ASC LIMIT 1",
@@ -31,6 +46,20 @@ func (*userEmails) GetEmail(ctx context.Context, id int32) (email string, verifi
 		return "", false, userNotFoundErr{[]interface{}{fmt.Sprintf("id %d", id)}}
 	}
 	return email, verified, nil
+}
+
+// Get gets information about the user's associated email address.
+func (*userEmails) Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error) {
+	if Mocks.UserEmails.Get != nil {
+		return Mocks.UserEmails.Get(userID, email)
+	}
+
+	if err := globalDB.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
+		userID, email,
+	).Scan(&emailCanonicalCase, &verified); err != nil {
+		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("userID %d email %q", userID, email)}}
+	}
+	return emailCanonicalCase, verified, nil
 }
 
 // Add adds new user email. When added, it is always unverified.
@@ -55,18 +84,22 @@ func (*userEmails) Remove(ctx context.Context, userID int32, email string) error
 	return nil
 }
 
-func (*userEmails) ValidateEmail(ctx context.Context, id int32, userCode string) (bool, error) {
+// Verify verifies the user's email address given the email verification code. If the code is not
+// correct (not the one originally used when creating the user or adding the user email), then it
+// returns false.
+func (*userEmails) Verify(ctx context.Context, userID int32, email, code string) (bool, error) {
 	var dbCode sql.NullString
-	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1", id).Scan(&dbCode); err != nil {
+	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1 AND email=$2", userID, email).Scan(&dbCode); err != nil {
 		return false, err
 	}
 	if !dbCode.Valid {
 		return false, errors.New("email already verified")
 	}
-	if dbCode.String != userCode {
+	// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification code via timing attack. It is not important to avoid leaking the *length* of the code, because the length of verification codes is constant.
+	if len(dbCode.String) != len(code) || subtle.ConstantTimeCompare([]byte(dbCode.String), []byte(code)) != 1 {
 		return false, nil
 	}
-	if _, err := globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1", id); err != nil {
+	if _, err := globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email); err != nil {
 		return false, err
 	}
 	return true, nil

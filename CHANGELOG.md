@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
+### Added
+
+* User and site admin management capabilities for user email addresses are improved.
+
 ## 2.6.8
 
 ### Bug fixes

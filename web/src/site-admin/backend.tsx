@@ -22,7 +22,12 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                             externalID
                             username
                             displayName
-                            email
+                            emails {
+                                email
+                                verified
+                                verificationPending
+                                viewerCanManuallyVerify
+                            }
                             createdAt
                             siteAdmin
                             latestSettings {

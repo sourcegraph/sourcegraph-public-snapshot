@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -68,12 +67,19 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 		return
 	}
 
+	const defaultErrorMessage = "Signup failed unexpectedly."
+
 	// Create the user.
 	//
 	// We don't need to check auth.allowSignup because we assume the caller of doServeSignUp checks
 	// it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which case the only signup
 	// allowed is that of the initial site admin).
-	emailCode := backend.MakeEmailVerificationCode()
+	emailCode, err := backend.MakeEmailVerificationCode()
+	if err != nil {
+		log15.Error("Error generating email verification code for new user.", "email", creds.Email, "username", creds.Username, "error", err)
+		http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
+		return
+	}
 	usr, err := db.Users.Create(r.Context(), db.NewUser{
 		Email:                creds.Email,
 		Username:             creds.Username,
@@ -96,7 +102,7 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 		default:
 			// Do not show non-whitelisted error messages to user, in case they contain sensitive or confusing
 			// information.
-			message = "Signup failed unexpectedly."
+			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError
 		}
 		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
@@ -106,22 +112,7 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 	actor := &actor.Actor{UID: usr.ID}
 
 	if conf.EmailVerificationRequired() {
-		// Send verify email
-		q := make(url.Values)
-		q.Set("code", emailCode)
-		verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
-		if err := txemail.Send(r.Context(), txemail.Message{
-			To:       []string{creds.Email},
-			Template: verifyEmailTemplates,
-			Data: struct {
-				URL string
-			}{
-				URL: globals.AppURL.ResolveReference(&url.URL{
-					Path:     verifyEmailPath.Path,
-					RawQuery: q.Encode(),
-				}).String(),
-			},
-		}); err != nil {
+		if err := backend.SendUserEmailVerificationEmail(r.Context(), creds.Email, emailCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
 		}
 	}
@@ -145,22 +136,6 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, "SignupCompleted")
 	}
 }
-
-var (
-	verifyEmailTemplates = txemail.MustValidate(txemail.Templates{
-		Subject: `Verify your email on Sourcegraph`,
-		Text: `
-Verify your email address on Sourcegraph by following this link:
-
-  {{.URL}}
-`,
-		HTML: `
-<p>Verify your email address on Sourcegraph to finish signing up.</p>
-
-<p><strong><a href="{{.URL}}">Verify email address</a></p>
-`,
-	})
-)
 
 func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.User, error) {
 	if strings.Contains(emailOrUsername, "@") {
@@ -214,6 +189,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 
 func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	email := r.URL.Query().Get("email")
 	verifyCode := r.URL.Query().Get("code")
 	actr := actor.FromContext(ctx)
 	if !actr.IsAuthenticated() {
@@ -230,27 +206,27 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, alreadyVerified, err := db.UserEmails.GetEmail(ctx, usr.ID)
+	email, alreadyVerified, err := db.UserEmails.Get(ctx, usr.ID, email)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("No email found for user %d", usr.ID), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("No email %q found for user %d", email, usr.ID), http.StatusBadRequest)
 		return
 	}
 	if alreadyVerified {
-		http.Error(w, fmt.Sprintf("User %s already verified", email), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("User %d email %q is already verified", usr.ID, email), http.StatusBadRequest)
 		return
 	}
-	verified, err := db.UserEmails.ValidateEmail(ctx, usr.ID, verifyCode)
+	verified, err := db.UserEmails.Verify(ctx, usr.ID, email, verifyCode)
 	if err != nil {
-		log15.Error("Unexpected error when verifying user", "error", err)
+		log15.Error("Failed to verify user email.", "userID", usr.ID, "email", email, "error", err)
 		http.Error(w, "Unexpected error when verifying user.", http.StatusInternalServerError)
 		return
 	}
 	if !verified {
-		http.Error(w, "Could not verify user. Code did not match email.", http.StatusUnauthorized)
+		http.Error(w, "Could not verify user email. Email verification code did not match.", http.StatusUnauthorized)
 		return
 	}
 
-	http.Redirect(w, r, "/settings/profile", http.StatusFound)
+	http.Redirect(w, r, "/settings/emails", http.StatusFound)
 }
 
 // serveResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.

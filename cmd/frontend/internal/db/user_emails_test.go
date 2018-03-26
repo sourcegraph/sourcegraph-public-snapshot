@@ -6,7 +6,66 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
+
+func TestUserEmails_Get_GetPrimary(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	user, err := Users.Create(ctx, NewUser{
+		Email:     "a@example.com",
+		Username:  "u2",
+		Password:  "pw",
+		EmailCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := UserEmails.Add(ctx, user.ID, "b@example.com", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	emailPrimary, verifiedPrimary, err := UserEmails.GetPrimaryEmail(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "a@example.com"; emailPrimary != want {
+		t.Errorf("got email %q, want %q", emailPrimary, want)
+	}
+	if verifiedPrimary {
+		t.Error("want verified == false")
+	}
+
+	emailA, verifiedA, err := UserEmails.Get(ctx, user.ID, "A@EXAMPLE.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "a@example.com"; emailA != want {
+		t.Errorf("got email %q, want %q", emailA, want)
+	}
+	if verifiedA {
+		t.Error("want verified == false")
+	}
+
+	emailB, verifiedB, err := UserEmails.Get(ctx, user.ID, "B@EXAMPLE.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "b@example.com"; emailB != want {
+		t.Errorf("got email %q, want %q", emailB, want)
+	}
+	if verifiedB {
+		t.Error("want verified == false")
+	}
+
+	if _, _, err := UserEmails.Get(ctx, user.ID, "doesntexist@example.com"); !errcode.IsNotFound(err) {
+		t.Errorf("got %v, want IsNotFound", err)
+	}
+}
 
 func TestUserEmails_ListByUser(t *testing.T) {
 	if testing.Short() {

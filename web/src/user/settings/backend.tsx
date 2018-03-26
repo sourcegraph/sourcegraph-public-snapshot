@@ -212,6 +212,32 @@ export function updatePassword(args: { oldPassword: string; newPassword: string 
     )
 }
 
+/**
+ * Set the verification state for a user email address.
+ *
+ * @param user the user's GraphQL ID
+ * @param email the email address to edit
+ * @param verified the new verification state for the user email
+ */
+export function setUserEmailVerified(user: GQLID, email: string, verified: boolean): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+                setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+                    alwaysNil
+                }
+            }
+        `,
+        { user, email, verified }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+        })
+    )
+}
+
 export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
     return mutateGraphQL(
         gql`

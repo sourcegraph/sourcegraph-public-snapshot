@@ -87,10 +87,10 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                     <button type="submit" className="btn btn-primary" disabled={loading}>
                         {loading ? 'Adding...' : 'Add'}
                     </button>
-                    {this.state.error && (
-                        <div className="alert alert-danger mt-2">{upperFirst(this.state.error.message)}</div>
-                    )}
                 </form>
+                {this.state.error && (
+                    <div className="alert alert-danger mt-2">{upperFirst(this.state.error.message)}</div>
+                )}
             </div>
         )
     }

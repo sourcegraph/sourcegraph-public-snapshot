@@ -59,15 +59,7 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-
-	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
-		return nil, err
-	}
-
-	// TODO(sqs): this should send an email verification email to the user, but that code is in the
-	// ../app package and needs to be extracted.
-	if err := db.UserEmails.Add(ctx, userID, args.Email, nil); err != nil {
+	if err := backend.UserEmails.Add(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

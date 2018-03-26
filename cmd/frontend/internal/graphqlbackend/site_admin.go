@@ -25,11 +25,15 @@ func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	code, err := backend.MakeEmailVerificationCode()
+	if err != nil {
+		return nil, err
+	}
 	user, err := db.Users.Create(ctx, db.NewUser{
 		Email:     args.Email,
 		Username:  args.Username,
 		Password:  backend.MakeRandomHardToGuessPassword(),
-		EmailCode: backend.MakeEmailVerificationCode(),
+		EmailCode: code,
 	})
 	if err != nil {
 		return nil, err
@@ -68,7 +72,7 @@ func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, arg
 		return nil, err
 	}
 
-	email, _, err := db.UserEmails.GetEmail(ctx, userID)
+	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

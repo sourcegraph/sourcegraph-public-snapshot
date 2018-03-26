@@ -24,6 +24,7 @@ export function refreshSiteFlags(): Observable<never> {
                 hasCodeIntelligence
                 externalAuthEnabled
                 disableBuiltInSearches
+                sendsEmailVerificationEmails
                 updateCheck {
                     pending
                     checkedAt
