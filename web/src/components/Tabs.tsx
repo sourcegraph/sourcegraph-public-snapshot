@@ -82,7 +82,7 @@ interface TabsProps<T extends string> {
     onSelectTab?: (tab: T) => void
 }
 
-interface TabState<T extends string> {
+interface TabsState<T extends string> {
     /** The currently active tab. */
     activeTab: T
 }
@@ -91,7 +91,7 @@ interface TabState<T extends string> {
  * A tabbed UI component, with a tab bar for switching between tabs and a content view that renders the active
  * tab's contents.
  */
-export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, TabState<T>> {
+export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, TabsState<T>> {
     /**
      * The class name to use for other elements injected via tabBarEndFragment that should have a bottom border.
      */
