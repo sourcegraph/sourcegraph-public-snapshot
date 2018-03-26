@@ -1,20 +1,27 @@
 import * as React from 'react'
 
-/** Describes a tab. */
-export interface Tab<T extends string> {
-    id: T
+/** Describes a tab.
+ * @template ID The type that includes all possible tab IDs (typically a union of string constants).
+ */
+export interface Tab<ID extends string> {
+    id: ID
     label: string
 }
 
-interface TabBarProps<T extends string> {
+/**
+ * Properties for the tab bar.
+ *
+ * @template ID The type that includes all possible tab IDs (typically a union of string constants).
+ */
+interface TabBarProps<ID extends string> {
     /** All tabs. */
-    tabs: Tab<T>[]
+    tabs: Tab<ID>[]
 
     /** The currently active tab. */
-    activeTab: T
+    activeTab: ID
 
     /** Called when the user selects a different tab. */
-    onSelect: (tab: T) => void
+    onSelect: (tab: ID) => void
 
     /** A fragment to render at the end of the tab bar. */
     endFragment?: React.ReactFragment
@@ -25,9 +32,9 @@ interface TabBarProps<T extends string> {
 /**
  * A horizontal bar that displays tab titles, which the user can click to switch to the tab.
  *
- * @template T The type that includes all possible tab IDs (typically a union of string constants).
+ * @template ID The type that includes all possible tab IDs (typically a union of string constants).
  */
-class TabBar<T extends string> extends React.PureComponent<TabBarProps<T>> {
+class TabBar<ID extends string> extends React.PureComponent<TabBarProps<ID>> {
     public render(): JSX.Element | null {
         return (
             <div className="tab-bar">
@@ -56,9 +63,14 @@ class TabBar<T extends string> extends React.PureComponent<TabBarProps<T>> {
  */
 export const Spacer: () => JSX.Element = () => <span className="tab-bar__spacer" />
 
-interface TabsProps<T extends string> {
+/**
+ * Properties for the Tabs components and its wrappers.
+ *
+ * @template ID The type that includes all possible tab IDs (typically a union of string constants).
+ */
+interface TabsProps<ID extends string> {
     /** All tabs. Must always have at least one element. */
-    tabs: Tab<T>[]
+    tabs: Tab<ID>[]
 
     /**
      * A fragment to display at the end of the tab bar. If specified, the tabs will not flex grow to fill the
@@ -66,14 +78,14 @@ interface TabsProps<T extends string> {
      */
     tabBarEndFragment?: React.ReactFragment
 
-    children: undefined | React.ReactElement<{ key: T }> | (undefined | React.ReactElement<{ key: T }>)[]
+    children: undefined | React.ReactElement<{ key: ID }> | (undefined | React.ReactElement<{ key: ID }>)[]
 
     id?: string
     className?: string
     tabClassName?: string
 
     /** Optional handler when a tab is selected */
-    onSelectTab?: (tab: T) => void
+    onSelectTab?: (tab: ID) => void
 }
 
 /**
@@ -82,10 +94,10 @@ interface TabsProps<T extends string> {
  *
  * Most callers should use one of the TabsWithXyzViewStatePersistence components to handle view state persistence.
  */
-export class Tabs<T extends string> extends React.PureComponent<
-    TabsProps<T> & {
+export class Tabs<ID extends string> extends React.PureComponent<
+    TabsProps<ID> & {
         /** The currently active tab. */
-        activeTab: T
+        activeTab: ID
     }
 > {
     /**
@@ -94,11 +106,11 @@ export class Tabs<T extends string> extends React.PureComponent<
     public static tabBorderClassName = 'tab-bar__end-fragment-other-element'
 
     public render(): JSX.Element | null {
-        let children: React.ReactElement<{ key: T }>[] | undefined
+        let children: React.ReactElement<{ key: ID }>[] | undefined
         if (Array.isArray(this.props.children)) {
-            children = this.props.children as React.ReactElement<{ key: T }>[]
+            children = this.props.children as React.ReactElement<{ key: ID }>[]
         } else if (this.props.children) {
-            children = [this.props.children as React.ReactElement<{ key: T }>]
+            children = [this.props.children as React.ReactElement<{ key: ID }>]
         }
 
         return (
@@ -115,7 +127,7 @@ export class Tabs<T extends string> extends React.PureComponent<
         )
     }
 
-    private onSelectTab = (tab: T) => {
+    private onSelectTab = (tab: ID) => {
         if (this.props.onSelectTab) {
             this.props.onSelectTab(tab)
         }
@@ -125,16 +137,16 @@ export class Tabs<T extends string> extends React.PureComponent<
 /**
  * A wrapper for Tabs that persists view state (the currently active tab) in localStorage.
  */
-export class TabsWithLocalStorageViewStatePersistence<T extends string> extends React.PureComponent<
-    TabsProps<T> & {
+export class TabsWithLocalStorageViewStatePersistence<ID extends string> extends React.PureComponent<
+    TabsProps<ID> & {
         /**
          * A key unique to this UI element that is used for persisting the view state.
          */
         storageKey?: string
     },
-    { activeTab: T }
+    { activeTab: ID }
 > {
-    constructor(props: TabsProps<T>) {
+    constructor(props: TabsProps<ID>) {
         super(props)
         this.state = {
             activeTab:
@@ -163,7 +175,7 @@ export class TabsWithLocalStorageViewStatePersistence<T extends string> extends 
         return <Tabs {...this.props} onSelectTab={this.onSelectTab} activeTab={this.state.activeTab} />
     }
 
-    private onSelectTab = (tab: T) => {
+    private onSelectTab = (tab: ID) => {
         if (this.props.onSelectTab) {
             this.props.onSelectTab(tab)
         }
