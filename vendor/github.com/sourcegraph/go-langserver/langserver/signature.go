@@ -7,12 +7,13 @@ import (
 	"go/token"
 	"go/types"
 
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
 func (h *LangHandler) handleTextDocumentSignatureHelp(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.SignatureHelp, error) {
-	if !isFileURI(params.TextDocument.URI) {
+	if !util.IsURI(params.TextDocument.URI) {
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
 			Message: fmt.Sprintf("textDocument/signatureHelp not yet supported for out-of-workspace URI (%q)", params.TextDocument.URI),

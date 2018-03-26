@@ -12,17 +12,19 @@ import (
 
 	"github.com/sourcegraph/go-langserver/langserver/internal/godef"
 	"github.com/sourcegraph/go-langserver/langserver/internal/refs"
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-// UseBinaryPkgCache controls whether or not $GOPATH/pkg binary .a files should
-// be used.
-var UseBinaryPkgCache = false
-
 func (h *LangHandler) handleDefinition(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
-	if UseBinaryPkgCache {
+	if h.Config.UseBinaryPkgCache {
 		_, _, locs, err := h.definitionGodef(ctx, params)
+		if err == godef.ErrNoIdentifierFound {
+			// This is expected to happen when j2d over
+			// comments/strings/whitespace/etc), just return no info.
+			return []lsp.Location{}, nil
+		}
 		return locs, err
 	}
 
@@ -45,7 +47,7 @@ func (h *LangHandler) definitionGodef(ctx context.Context, params lsp.TextDocume
 	// to correct the path now.
 	vfsURI := params.TextDocument.URI
 	if testOSToVFSPath != nil {
-		vfsURI = pathToURI(testOSToVFSPath(uriToFilePath(vfsURI)))
+		vfsURI = util.PathToURI(testOSToVFSPath(util.UriToPath(vfsURI)))
 	}
 
 	// Read file contents and calculate byte offset.
@@ -53,7 +55,9 @@ func (h *LangHandler) definitionGodef(ctx context.Context, params lsp.TextDocume
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	filename := h.FilePath(params.TextDocument.URI)
+	// convert the path into a real path because 3rd party tools
+	// might load additional code based on the file's package
+	filename := util.UriToRealPath(params.TextDocument.URI)
 	offset, valid, why := offsetForPosition(contents, params.Position)
 	if !valid {
 		return nil, nil, nil, fmt.Errorf("invalid position: %s:%d:%d (%s)", filename, params.Position.Line, params.Position.Character, why)
@@ -76,7 +80,7 @@ func (h *LangHandler) definitionGodef(ctx context.Context, params lsp.TextDocume
 		// TODO: builtins do not have valid URIs or locations, so we emit a
 		// phony location here instead. This is better than our other
 		// implementation.
-		loc.URI = pathToURI(filepath.Join(build.Default.GOROOT, "/src/builtin/builtin.go"))
+		loc.URI = util.PathToURI(filepath.Join(build.Default.GOROOT, "/src/builtin/builtin.go"))
 		loc.Range = lsp.Range{}
 	}
 
@@ -84,7 +88,7 @@ func (h *LangHandler) definitionGodef(ctx context.Context, params lsp.TextDocume
 }
 
 func (h *LangHandler) handleXDefinition(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]symbolLocationInformation, error) {
-	if !isFileURI(params.TextDocument.URI) {
+	if !util.IsURI(params.TextDocument.URI) {
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
 			Message: fmt.Sprintf("%s not yet supported for out-of-workspace URI (%q)", req.Method, params.TextDocument.URI),

@@ -2,13 +2,13 @@ package tools
 
 import (
 	"go/build"
-	"os"
-	"path/filepath"
+	"path"
 	"sort"
-	"strings"
 	"sync"
 
 	"golang.org/x/tools/go/buildutil"
+
+	"github.com/sourcegraph/go-langserver/langserver/util"
 )
 
 // ListPkgsUnderDir is buildutil.ExpandPattern(ctxt, []string{dir +
@@ -50,17 +50,17 @@ var ioLimit = make(chan bool, 20)
 // since it doesn't allow searching from a directory. We need from a specific
 // directory for performance on large GOPATHs.
 func allPackages(ctxt *build.Context, root, start string, ch chan<- string) {
-	root = filepath.Clean(root) + string(os.PathSeparator)
-	start = filepath.Clean(start) + string(os.PathSeparator)
+	root = path.Clean(root)
+	start = path.Clean(start)
 
-	if strings.HasPrefix(root, start) {
+	if util.PathHasPrefix(root, start) {
 		// If we are a child of start, we can just start at the
 		// root. A concrete example of this happening is when
 		// root=/goroot/src and start=/goroot
 		start = root
 	}
 
-	if !strings.HasPrefix(start, root) {
+	if !util.PathHasPrefix(start, root) {
 		return
 	}
 
@@ -69,12 +69,12 @@ func allPackages(ctxt *build.Context, root, start string, ch chan<- string) {
 	var walkDir func(dir string)
 	walkDir = func(dir string) {
 		// Avoid .foo, _foo, and testdata directory trees.
-		base := filepath.Base(dir)
+		base := path.Base(dir)
 		if base == "" || base[0] == '.' || base[0] == '_' || base == "testdata" {
 			return
 		}
 
-		pkg := filepath.Clean(filepath.ToSlash(strings.TrimPrefix(dir, root)))
+		pkg := util.PathTrimPrefix(dir, root)
 
 		// Prune search if we encounter any of these import paths.
 		switch pkg {
@@ -94,7 +94,7 @@ func allPackages(ctxt *build.Context, root, start string, ch chan<- string) {
 			if fi.IsDir() {
 				wg.Add(1)
 				go func() {
-					walkDir(filepath.Join(dir, fi.Name()))
+					walkDir(buildutil.JoinPath(ctxt, dir, fi.Name()))
 					wg.Done()
 				}()
 			}

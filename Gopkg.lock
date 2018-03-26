@@ -880,19 +880,21 @@
   revision = "fc136a6c6dec6d9921c6f6efe24d5289c9d4d776"
 
 [[projects]]
-  branch = "no-godef"
+  branch = "master"
   name = "github.com/sourcegraph/go-langserver"
   packages = [
     "langserver",
+    "langserver/internal/gocode",
     "langserver/internal/godef",
     "langserver/internal/godef/go/parser",
     "langserver/internal/godef/go/types",
     "langserver/internal/refs",
+    "langserver/util",
     "pkg/lsp",
     "pkg/lspext",
     "pkg/tools"
   ]
-  revision = "88717affe59d6766d01172443f358b7d33b2ecdf"
+  revision = "8f2623b8ce031ad4927af64d268b3152eb1eb419"
 
 [[projects]]
   branch = "master"
@@ -1410,6 +1412,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "842b230014106e16fa2c3dbdffa79802f94b679baa7551cdd210fbf276bb934a"
+  inputs-digest = "470daf5e746ec81b2f1cc63be6743f8fdc701199b883b0679d6e4faca1995d9b"
   solver-name = "gps-cdcl"
   solver-version = 1

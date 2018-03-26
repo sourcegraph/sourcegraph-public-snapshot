@@ -31,6 +31,8 @@ type Result struct {
 	Package *build.Package
 }
 
+var ErrNoIdentifierFound = errors.New("no identifier found")
+
 func Godef(fset *token.FileSet, offset int, filename string, src []byte) (*Result, error) {
 	pkgScope := ast.NewScope(parser.Universe)
 	f, err := parser.ParseFile(fset, filename, src, 0, pkgScope, types.DefaultImportPathToName)
@@ -40,7 +42,7 @@ func Godef(fset *token.FileSet, offset int, filename string, src []byte) (*Resul
 
 	o := findIdentifier(fset, f, offset)
 	if o == nil {
-		return nil, fmt.Errorf("no identifier found")
+		return nil, ErrNoIdentifierFound
 	}
 	switch e := o.(type) {
 	case *ast.ImportSpec:

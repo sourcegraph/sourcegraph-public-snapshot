@@ -22,6 +22,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
@@ -45,7 +46,12 @@ func NewHandler() jsonrpc2.Handler {
 	shared := &langserver.HandlerShared{Shared: true}
 	h := &BuildHandler{
 		HandlerShared: shared,
-		lang:          &langserver.LangHandler{HandlerShared: shared},
+		lang: &langserver.LangHandler{
+			HandlerShared: shared,
+			Config: langserver.Config{
+				MaxParallelism: runtime.GOMAXPROCS(0),
+			},
+		},
 	}
 	shared.FindPackage = h.findPackageCached
 	return jsonrpc2.HandlerWithError(h.handle)
@@ -256,13 +262,13 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			// If the _reference_ to a definition is made from inside a
 			// vendored package, or from outside of the repository itself,
 			// exclude it.
-			if langserver.IsVendorDir(path) || !langserver.PathHasPrefix(path, h.RootFSPath) {
+			if util.IsVendorDir(path) || !util.PathHasPrefix(path, h.RootFSPath) {
 				return
 			}
 
 			// If the package being referenced is defined in the repo, and
 			// it is NOT a vendor package, then exclude it.
-			if !r.vendor && langserver.PathHasPrefix(filepath.Join(gopath, "src", r.absolute), h.RootFSPath) {
+			if !r.vendor && util.PathHasPrefix(filepath.Join(gopath, "src", r.absolute), h.RootFSPath) {
 				return
 			}
 
@@ -336,7 +342,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			}
 			path := strings.TrimPrefix(string(uri), "file://")
 			path = pathpkg.Join(h.RootFSPath, path)
-			if !langserver.PathHasPrefix(path, h.RootFSPath) {
+			if !util.PathHasPrefix(path, h.RootFSPath) {
 				panic(fmt.Sprintf("file path %q must have prefix %q (file URI is %q, root URI is %q)", path, h.RootFSPath, uri, h.init.RootPath))
 			}
 			newURI := lsp.DocumentURI("file://" + path)
@@ -382,7 +388,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				if _, isStdlib := stdlibPackagePaths[q.Dir]; isStdlib && !strings.HasPrefix(q.Dir, "src") {
 					q.Dir = "sginvalid"
 				} else {
-					q.Dir = langserver.PathTrimPrefix(q.Dir, "src") // "src/net/http" -> "net/http"
+					q.Dir = util.PathTrimPrefix(q.Dir, "src") // "src/net/http" -> "net/http"
 				}
 			}
 			wsparams.Query = q.String()
@@ -464,8 +470,8 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri lsp.DocumentURI) (lsp.Docume
 		}
 
 		// Refers to a file in the Go stdlib?
-		if langserver.PathHasPrefix(u.Path, goroot) {
-			fileInGoStdlib := langserver.PathTrimPrefix(u.Path, goroot)
+		if util.PathHasPrefix(u.Path, goroot) {
+			fileInGoStdlib := util.PathTrimPrefix(u.Path, goroot)
 			if h.rootImportPath == "" {
 				// The workspace is the Go stdlib and this refers to
 				// something in the Go stdlib, so let's use file:///
@@ -479,14 +485,14 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri lsp.DocumentURI) (lsp.Docume
 		}
 
 		// Refers to a file in the same workspace?
-		if langserver.PathHasPrefix(u.Path, h.RootFSPath) {
-			pathInThisWorkspace := langserver.PathTrimPrefix(u.Path, h.RootFSPath)
+		if util.PathHasPrefix(u.Path, h.RootFSPath) {
+			pathInThisWorkspace := util.PathTrimPrefix(u.Path, h.RootFSPath)
 			return lsp.DocumentURI("file:///" + pathInThisWorkspace), nil
 		}
 
 		// Refers to a file in the GOPATH (that's from another repo)?
-		if gopathSrcDir := path.Join(gopath, "src"); langserver.PathHasPrefix(u.Path, gopathSrcDir) {
-			p := langserver.PathTrimPrefix(u.Path, gopathSrcDir) // "github.com/foo/bar/baz/qux.go"
+		if gopathSrcDir := path.Join(gopath, "src"); util.PathHasPrefix(u.Path, gopathSrcDir) {
+			p := util.PathTrimPrefix(u.Path, gopathSrcDir) // "github.com/foo/bar/baz/qux.go"
 
 			// Go through the list of directories we have
 			// mounted. We make a copy instead of holding the lock

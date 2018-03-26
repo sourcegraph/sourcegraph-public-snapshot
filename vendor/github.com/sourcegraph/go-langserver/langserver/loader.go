@@ -9,15 +9,18 @@ import (
 	"go/token"
 	"go/types"
 	"log"
-	"path/filepath"
+	"path"
 	"reflect"
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
 
+	"github.com/sourcegraph/go-langserver/langserver/util"
+
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 
+	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/loader"
 )
 
@@ -30,7 +33,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fil
 	ctx = opentracing.ContextWithSpan(ctx, span)
 	defer span.Finish()
 
-	if !isFileURI(fileURI) {
+	if !util.IsURI(fileURI) {
 		return nil, nil, nil, nil, nil, nil, fmt.Errorf("typechecking of out-of-workspace URI (%q) is not yet supported", fileURI)
 	}
 
@@ -49,7 +52,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fil
 
 	bpkg, err := ContainingPackage(bctx, filename)
 	if mpErr, ok := err.(*build.MultiplePackageError); ok {
-		bpkg, err = buildPackageForNamedFileInMultiPackageDir(bpkg, mpErr, filepath.Base(filename))
+		bpkg, err = buildPackageForNamedFileInMultiPackageDir(bpkg, mpErr, path.Base(filename))
 		if err != nil {
 			return nil, nil, nil, nil, nil, nil, err
 		}
@@ -106,7 +109,7 @@ func (e *invalidNodeError) Error() string {
 func posForFileOffset(fset *token.FileSet, filename string, offset int) token.Pos {
 	var f *token.File
 	fset.Iterate(func(ff *token.File) bool {
-		if ff.Name() == filename {
+		if util.PathEqual(ff.Name(), filename) {
 			f = ff
 			return false // break out of loop
 		}
@@ -268,7 +271,7 @@ func typecheck(ctx context.Context, fset *token.FileSet, bctx *build.Context, bp
 		goFiles = append(goFiles, bpkg.XTestGoFiles...)
 	}
 	for i, filename := range goFiles {
-		goFiles[i] = filepath.Join(bpkg.Dir, filename)
+		goFiles[i] = buildutil.JoinPath(bctx, bpkg.Dir, filename)
 	}
 	conf.CreateFromFilenames(bpkg.ImportPath, goFiles...)
 	prog, err := conf.Load()

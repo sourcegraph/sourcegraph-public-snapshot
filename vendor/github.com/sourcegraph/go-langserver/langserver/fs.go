@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+
+	"github.com/sourcegraph/go-langserver/langserver/util"
 )
 
 // isFileSystemRequest returns if this is an LSP method whose sole
@@ -101,16 +103,10 @@ func (h *HandlerShared) handleFileSystemRequest(ctx context.Context, req *jsonrp
 type overlay struct {
 	mu sync.Mutex
 	m  map[string][]byte
-	// v is contains the versions of m. Version is controlled by the LS
-	// client.
-	v map[string]int
 }
 
 func newOverlay() *overlay {
-	return &overlay{
-		m: make(map[string][]byte),
-		v: make(map[string]int),
-	}
+	return &overlay{m: make(map[string][]byte)}
 }
 
 // FS returns a vfs for the overlay.
@@ -119,7 +115,7 @@ func (h *overlay) FS() ctxvfs.FileSystem {
 }
 
 func (h *overlay) didOpen(params *lsp.DidOpenTextDocumentParams) {
-	h.set(params.TextDocument.URI, params.TextDocument.Version, []byte(params.TextDocument.Text))
+	h.set(params.TextDocument.URI, []byte(params.TextDocument.Text))
 }
 
 func (h *overlay) didChange(params *lsp.DidChangeTextDocumentParams) error {
@@ -139,7 +135,7 @@ func (h *overlay) didChange(params *lsp.DidChangeTextDocumentParams) error {
 		}
 		var end int
 		if change.RangeLength != 0 {
-			end = start + int(change.RangeLength) - 1
+			end = start + int(change.RangeLength)
 		} else {
 			// RangeLength not specified, work it out from Range.End
 			end, ok, why = offsetForPosition(contents, change.Range.End)
@@ -152,13 +148,13 @@ func (h *overlay) didChange(params *lsp.DidChangeTextDocumentParams) error {
 		}
 		// Try avoid doing too many allocations, so use bytes.Buffer
 		b := &bytes.Buffer{}
-		b.Grow(start + len(change.Text) + len(contents) - end - 1)
+		b.Grow(start + len(change.Text) + len(contents) - end)
 		b.Write(contents[:start])
 		b.WriteString(change.Text)
-		b.Write(contents[end+1:])
+		b.Write(contents[end:])
 		contents = b.Bytes()
 	}
-	h.set(params.TextDocument.URI, params.TextDocument.Version, contents)
+	h.set(params.TextDocument.URI, contents)
 	return nil
 }
 
@@ -167,8 +163,8 @@ func (h *overlay) didClose(params *lsp.DidCloseTextDocumentParams) {
 }
 
 func uriToOverlayPath(uri lsp.DocumentURI) string {
-	if isFileURI(uri) {
-		return strings.TrimPrefix(uriToFilePath(uri), "/")
+	if util.IsURI(uri) {
+		return strings.TrimPrefix(util.UriToPath(uri), "/")
 	}
 	return string(uri)
 }
@@ -181,18 +177,10 @@ func (h *overlay) get(uri lsp.DocumentURI) (contents []byte, found bool) {
 	return
 }
 
-func (h *overlay) set(uri lsp.DocumentURI, version int, contents []byte) {
+func (h *overlay) set(uri lsp.DocumentURI, contents []byte) {
 	path := uriToOverlayPath(uri)
 	h.mu.Lock()
-	// Until we correctly synchronise TextDocumentSync notification, we
-	// suffer from a race condition on mutations. So we can rely on the
-	// version number to prevent an older request overwriting a later
-	// one. The version is a strictly increasing number and is managed by
-	// the client.
-	if version >= h.v[path] {
-		h.v[path] = version
-		h.m[path] = contents
-	}
+	h.m[path] = contents
 	h.mu.Unlock()
 }
 
@@ -200,12 +188,11 @@ func (h *overlay) del(uri lsp.DocumentURI) {
 	path := uriToOverlayPath(uri)
 	h.mu.Lock()
 	delete(h.m, path)
-	delete(h.v, path)
 	h.mu.Unlock()
 }
 
 func (h *HandlerShared) FilePath(uri lsp.DocumentURI) string {
-	path := uriToFilePath(uri)
+	path := util.UriToPath(uri)
 	if !strings.HasPrefix(path, "/") {
 		panic(fmt.Sprintf("bad uri %q (path %q MUST have leading slash; it can't be relative)", uri, path))
 	}
@@ -213,7 +200,7 @@ func (h *HandlerShared) FilePath(uri lsp.DocumentURI) string {
 }
 
 func (h *HandlerShared) readFile(ctx context.Context, uri lsp.DocumentURI) ([]byte, error) {
-	if !isFileURI(uri) {
+	if !util.IsURI(uri) {
 		return nil, &os.PathError{Op: "Open", Path: string(uri), Err: errors.New("unable to read out-of-workspace resource from virtual file system")}
 	}
 	h.Mu.Lock()

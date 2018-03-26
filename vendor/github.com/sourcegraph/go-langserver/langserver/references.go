@@ -1,6 +1,7 @@
 package langserver
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,15 +11,19 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"io"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/refactor/importgraph"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/go-langserver/pkg/tools"
@@ -26,7 +31,7 @@ import (
 )
 
 func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
-	if !isFileURI(params.TextDocument.URI) {
+	if !util.IsURI(params.TextDocument.URI) {
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
 			Message: fmt.Sprintf("textDocument/references not yet supported for out-of-workspace URI (%q)", params.TextDocument.URI),
@@ -75,7 +80,10 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 
 	bctx := h.BuildContext(ctx)
 	pkgInWorkspace := func(path string) bool {
-		return PathHasPrefix(path, h.init.RootImportPath)
+		if h.init.RootImportPath == "" {
+			return true
+		}
+		return util.PathHasPrefix(path, h.init.RootImportPath)
 	}
 
 	// findRefCtx is used in the findReferences function. It has its own
@@ -89,7 +97,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 		// refStreamAndCollect.
 		locsC = make(chan []lsp.Location)
 
-		// refs is a stream of raw references found findReferences.
+		// refs is a stream of raw references found by findReferences or findReferencesPkgLevel.
 		refs = make(chan *ast.Ident)
 
 		// findRefErr is non-nil if findReferences fails.
@@ -106,7 +114,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 	}()
 
 	// Don't include decl if it is outside of workspace.
-	if params.Context.IncludeDeclaration && PathHasPrefix(defpkg, h.init.RootImportPath) {
+	if params.Context.IncludeDeclaration && util.PathHasPrefix(defpkg, h.init.RootImportPath) {
 		refs <- &ast.Ident{NamePos: obj.Pos(), Name: obj.Name()}
 	}
 
@@ -120,11 +128,20 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 		// type-checking.
 		var users map[string]bool
 		if pkgLevel {
+			// We need to check all packages that import defpkg.
 			users = map[string]bool{}
 			for pkg := range reverseImportGraph[defpkg] {
 				users[pkg] = true
 			}
+			// We also need to check defpkg itself, and its xtests.
+			// For the reverse graph packages, we process xtests with the main package.
+			// defpkg gets special handling; we must distinguish between in-package vs out-of-package.
+			// To make the control flow, add defpkg and defpkg xtest placeholders.
+			// Use "!test" instead of "_test" because "!" is not a valid character in an import path.
+			// (More precisely, it is not guaranteed to be a valid character in an import path,
+			// so it is unlikely that it will be in use. See https://golang.org/ref/spec#Import_declarations.)
 			users[defpkg] = true
+			users[defpkg+"!test"] = true
 		} else {
 			users = reverseImportGraph.Search(defpkg)
 		}
@@ -142,19 +159,24 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 			continue
 		}
 
-		lconf := loader.Config{
-			Fset:  fset,
-			Build: bctx,
+		if pkgLevel {
+			// pkgLevel queries can be done syntactically instead of semantically,
+			// which is much faster. See https://golang.org/cl/97800/.
+			findRefErr = h.findReferencesPkgLevel(findRefCtx, bctx, fset, unseen, pkgInWorkspace, obj, refs)
+		} else {
+			lconf := loader.Config{
+				Fset:  fset,
+				Build: bctx,
+			}
+
+			// The importgraph doesn't treat external test packages
+			// as separate nodes, so we must use ImportWithTests.
+			for path := range unseen {
+				lconf.ImportWithTests(path)
+			}
+
+			findRefErr = findReferences(findRefCtx, lconf, pkgInWorkspace, obj, refs)
 		}
-
-		// The importgraph doesn't treat external test packages
-		// as separate nodes, so we must use ImportWithTests.
-		for path := range unseen {
-			lconf.ImportWithTests(path)
-		}
-
-		findRefErr = findReferences(findRefCtx, lconf, pkgInWorkspace, obj, refs)
-
 		if findRefCtx.Err() != nil {
 			// If we are canceled, cancel loop early
 			break
@@ -171,6 +193,10 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 	// the def.
 	if len(locs) == 0 && findRefErr != nil {
 		return nil, findRefErr
+	}
+
+	if locs == nil {
+		locs = []lsp.Location{}
 	}
 
 	return locs, nil
@@ -408,7 +434,7 @@ func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace fun
 		// Prevent any uncaught panics from taking the entire server down.
 		defer func() {
 			close(done)
-			_ = panicf(recover(), "findReferences")
+			_ = util.Panicf(recover(), "findReferences")
 		}()
 
 		lconf.Load() // ignore error
@@ -434,6 +460,241 @@ func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace fun
 			return afterTypeCheckErr
 		}
 		return errors.New("query object not found during reloading")
+	}
+
+	return nil
+}
+
+// findReferencesPkgLevel finds all references to obj.
+// It only returns references from packages in users.
+// It is the analogue of globalReferrersPkgLevel
+// from golang.org/x/tools/cmd/guru/referrers.go.
+func (h *LangHandler) findReferencesPkgLevel(ctx context.Context, bctx *build.Context, fset *token.FileSet, users map[string]bool, pkgInWorkspace func(string) bool, obj types.Object, refs chan<- *ast.Ident) error {
+	// findReferencesPkgLevel uses go/ast and friends instead of go/types.
+	// This affords a considerable performance benefit.
+	// It comes at the cost of some code complexity.
+	//
+	// Here's a high level summary.
+	//
+	// The goal is to find references to the query object p.Q.
+	// There are several possible scenarios, each handled differently.
+	//
+	// 1. We are looking in a package other than p, and p is not dot-imported.
+	//    This is the simplest case. Q must be referred to as n.Q,
+	//    where n is the name under which p is imported.
+	//    We look at all imports of p to gather all names under which it is imported.
+	//    (In the typical case, it is imported only once, under its default name.)
+	//    Then we look at all selector expressions and report any matches.
+	//
+	// 2. We are looking in a package other than p, and p is dot-imported.
+	//    In this case, Q will be referred to just as Q.
+	//    Furthermore, go/ast's object resolution will not be able to resolve
+	//    Q to any other object, unlike any local (file- or function- or block-scoped) object.
+	//    So we look at all matching identifiers and report all unresolvable ones.
+	//
+	// 3. We are looking in package p.
+	//    (Care must be taken to separate p and p_test (an xtest package),
+	//    and make sure that they are treated as separate packages.)
+	//    In this case, we give go/ast the entire package for object resolution,
+	//    instead of going file by file.
+	//    We then iterate over all identifiers that resolve to the query object.
+	//    (The query object itself has already been reported, so we don't re-report it.)
+	//
+	// We always skip all files that don't contain the string Q, as they cannot be
+	// relevant to finding references to Q.
+	//
+	// We parse all files leniently. In the presence of parsing errors, results are best-effort.
+
+	defpkg := strings.TrimSuffix(obj.Pkg().Path(), "_test")
+	defpkg = util.VendorlessImportPath(defpkg)
+
+	defname := obj.Pkg().Name()                    // name of the defining package of the query object, used for resolving imports that use import path only (common case)
+	isxtest := strings.HasSuffix(defname, "_test") // indicates where the query object is defined in an xtest package
+
+	name := obj.Name()
+	namebytes := []byte(name)          // byte slice version of query object name, for early filtering
+	objpos := fset.Position(obj.Pos()) // position of query object, used to prevent re-emitting original decl
+
+	var files []string    // reusable list of files
+	var pkgnames []string // reusable list of names the package is imported under
+
+	find := h.getFindPackageFunc()
+
+	for u := range users {
+		// Bail out early if the context is canceled
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		uIsXTest := strings.HasSuffix(u, "!test") // indicates whether this package is the special defpkg xtest package
+		u = strings.TrimSuffix(u, "!test")
+
+		if !pkgInWorkspace(u) {
+			continue
+		}
+
+		// Resolve package.
+		// TODO: is fromDir == "" correct?
+		pkg, err := find(ctx, bctx, u, "", build.IgnoreVendor)
+		if err != nil {
+			continue
+		}
+
+		files = files[:0]
+
+		// If we're not in the query package,
+		// the object is in another package regardless,
+		// so we want to process all files.
+		// If we are in the query package,
+		// we want to only process the files that are
+		// part of that query package;
+		// that set depends on whether the query package itself is an xtest.
+		inQueryPkg := u == defpkg && isxtest == uIsXTest
+		if !inQueryPkg || !isxtest {
+			files = append(files, pkg.GoFiles...)
+			files = append(files, pkg.TestGoFiles...)
+			files = append(files, pkg.CgoFiles...) // use raw cgo files, as we're only parsing
+		}
+		if !inQueryPkg || isxtest {
+			files = append(files, pkg.XTestGoFiles...)
+		}
+
+		if len(files) == 0 {
+			continue
+		}
+
+		var deffiles map[string]*ast.File // set of files that are part of this package, for inQueryPkg only
+		if inQueryPkg {
+			deffiles = make(map[string]*ast.File)
+		}
+
+		for _, file := range files {
+			if !buildutil.IsAbsPath(bctx, file) {
+				file = buildutil.JoinPath(bctx, pkg.Dir, file)
+			}
+			src, err := readFile(bctx, file)
+			if err != nil {
+				continue
+			}
+
+			// Fast path: If the object's name isn't present anywhere in the source, ignore the file.
+			if !bytes.Contains(src, namebytes) {
+				continue
+			}
+
+			if inQueryPkg {
+				// If we're in the query package, we defer final processing until we have
+				// parsed all of the candidate files in the package.
+				// Best effort; allow errors and use what we can from what remains.
+				f, _ := parser.ParseFile(fset, file, src, parser.AllErrors)
+				if f != nil {
+					deffiles[file] = f
+				}
+				continue
+			}
+
+			// We aren't in the query package. Go file by file.
+
+			// Parse out only the imports, to check whether the defining package
+			// was imported, and if so, under what names.
+			// Best effort; allow errors and use what we can from what remains.
+			f, _ := parser.ParseFile(fset, file, src, parser.ImportsOnly|parser.AllErrors)
+			if f == nil {
+				continue
+			}
+
+			// pkgnames is the set of names by which defpkg is imported in this file.
+			// (Multiple imports in the same file are legal but vanishingly rare.)
+			pkgnames = pkgnames[:0]
+			var isdotimport bool
+			for _, imp := range f.Imports {
+				path, err := strconv.Unquote(imp.Path.Value)
+				if err != nil || path != defpkg {
+					continue
+				}
+				switch {
+				case imp.Name == nil:
+					pkgnames = append(pkgnames, defname)
+				case imp.Name.Name == ".":
+					isdotimport = true
+				default:
+					pkgnames = append(pkgnames, imp.Name.Name)
+				}
+			}
+			if len(pkgnames) == 0 && !isdotimport {
+				// Defining package not imported, bail.
+				continue
+			}
+
+			// Re-parse the entire file.
+			// Parse errors are ok; we'll do the best we can with a partial AST, if we have one.
+			f, _ = parser.ParseFile(fset, file, src, parser.AllErrors)
+			if f == nil {
+				continue
+			}
+
+			// Walk the AST looking for references.
+			ast.Inspect(f, func(n ast.Node) bool {
+				// Check selector expressions.
+				// If the selector matches the target name,
+				// and the expression is one of the names
+				// that the defining package was imported under,
+				// then we have a match.
+				if sel, ok := n.(*ast.SelectorExpr); ok && sel.Sel.Name == name {
+					if id, ok := sel.X.(*ast.Ident); ok {
+						for _, n := range pkgnames {
+							if n == id.Name {
+								refs <- sel.Sel
+								// Don't recurse further, to avoid duplicate entries
+								// from the dot import check below.
+								return false
+							}
+						}
+					}
+				}
+				// Dot imports are special.
+				// Objects imported from the defining package are placed in the package scope.
+				// go/ast does not resolve them to an object.
+				// At all other scopes (file, local), go/ast can do the resolution.
+				// So we're looking for object-free idents with the right name.
+				// The only other way to get something with the right name at the package scope
+				// is to *be* the defining package. We handle that case separately (inQueryPkg).
+				if isdotimport {
+					if id, ok := n.(*ast.Ident); ok && id.Obj == nil && id.Name == name {
+						refs <- id
+						return false
+					}
+				}
+				return true
+			})
+		}
+
+		// If we're in the query package, we've now collected all the files in the package.
+		// (Or at least the ones that might contain references to the object.)
+		if inQueryPkg {
+			// Bundle the files together into a package.
+			// This does package-level object resolution.
+			pkg, _ := ast.NewPackage(fset, deffiles, nil, nil)
+			// Look up the query object; we know that it is defined in the package scope.
+			pkgobj := pkg.Scope.Objects[name]
+			if pkgobj == nil {
+				panic("missing defpkg object for " + defpkg + "." + name)
+			}
+			// Find all references to the query object.
+			ast.Inspect(pkg, func(n ast.Node) bool {
+				if id, ok := n.(*ast.Ident); ok {
+					// Check both that this is a reference to the query object
+					// and that it is not the query object itself;
+					// the query object itself was already emitted.
+					if id.Obj == pkgobj && objpos != fset.Position(id.Pos()) {
+						refs <- id
+						return false
+					}
+				}
+				return true
+			})
+			deffiles = nil // allow GC
+		}
 	}
 
 	return nil
@@ -515,4 +776,19 @@ func sameObj(x, y types.Object) bool {
 		}
 	}
 	return false
+}
+
+// readFile is like ioutil.ReadFile, but
+// it goes through the virtualized build.Context.
+func readFile(ctxt *build.Context, filename string) ([]byte, error) {
+	rc, err := buildutil.OpenFile(ctxt, filename)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, rc); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

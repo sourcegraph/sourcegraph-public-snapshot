@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/sourcegraph/go-langserver/langserver"
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/tools"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -54,7 +54,7 @@ func toPackageInformation(pkg *build.Package) lspext.PackageDescriptor {
 	// must identify the package.
 	return map[string]interface{}{
 		"package": pkg.ImportPath,
-		"vendor":  langserver.IsVendorDir(pkg.Dir),
+		"vendor":  util.IsVendorDir(pkg.Dir),
 		"doc":     pkg.Doc,
 	}
 }

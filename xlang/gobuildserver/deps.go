@@ -17,6 +17,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -214,7 +215,7 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 	// example.com/a/b and example.com/a/b lives in a separate
 	// repo, then this will break. This is the case for some
 	// azul3d packages, but it's rare.
-	if h.rootImportPath != "" && langserver.PathHasPrefix(path, h.rootImportPath) {
+	if h.rootImportPath != "" && util.PathHasPrefix(path, h.rootImportPath) {
 		if pkg != nil {
 			return pkg, nil
 		}
@@ -232,7 +233,7 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 	// it; it is already on disk. If we fetch it, we might end up
 	// with multiple conflicting versions of the workspace's repo
 	// overlaid on each other.
-	if h.rootImportPath != "" && langserver.PathHasPrefix(d.projectRoot, h.rootImportPath) {
+	if h.rootImportPath != "" && util.PathHasPrefix(d.projectRoot, h.rootImportPath) {
 		return nil, fmt.Errorf("package %q is inside of workspace root, refusing to fetch remotely", path)
 	}
 

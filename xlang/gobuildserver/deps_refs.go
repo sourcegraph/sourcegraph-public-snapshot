@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/go-langserver/langserver"
+	"github.com/sourcegraph/go-langserver/langserver/util"
 )
 
 type goDependencyReference struct {
@@ -154,7 +154,7 @@ func (d *depCache) references(emitRef func(path string, r goDependencyReference)
 			emissions[imp.imports.ImportPath] = goDependencyReference{
 				pkg:      unvendoredPath(imp.imports.ImportPath),
 				absolute: imp.imports.ImportPath,
-				vendor:   langserver.IsVendorDir(imp.imports.Dir),
+				vendor:   util.IsVendorDir(imp.imports.Dir),
 				depth:    depth,
 			}
 		}

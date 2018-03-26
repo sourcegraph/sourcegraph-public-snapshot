@@ -24,12 +24,19 @@ func (p *InitializeParams) Root() DocumentURI {
 	if p.RootURI != "" {
 		return p.RootURI
 	}
+	if strings.HasPrefix(p.RootPath, "file://") {
+		return DocumentURI(p.RootPath)
+	}
 	return DocumentURI("file://" + p.RootPath)
 }
 
 type DocumentURI string
 
 type ClientCapabilities struct {
+	Workspace    WorkspaceClientCapabilities    `json:"workspace,omitempty"`
+	TextDocument TextDocumentClientCapabilities `json:"textDocument,omitempty"`
+	Experimental interface{}                    `json:"experimental,omitempty"`
+
 	// Below are Sourcegraph extensions. They do not live in lspext since
 	// they are extending the field InitializeParams.Capabilities
 
@@ -44,6 +51,19 @@ type ClientCapabilities struct {
 	// XCacheProvider indicates the client provides support for cache/get
 	// and cache/set.
 	XCacheProvider bool `json:"xcacheProvider,omitempty"`
+}
+
+type WorkspaceClientCapabilities struct{}
+
+type TextDocumentClientCapabilities struct {
+	Completion struct {
+		CompletionItemKind struct {
+			ValueSet []CompletionItemKind `json:"valueSet,omitempty"`
+		} `json:"completionItemKind,omitempty"`
+		CompletionItem struct {
+			SnippetSupport bool `json:"snippetSupport,omitempty"`
+		} `json:"completionItem,omitempty"`
+	} `json:"completion,omitempty"`
 }
 
 type InitializeResult struct {
@@ -173,41 +193,106 @@ type SignatureHelpOptions struct {
 type CompletionItemKind int
 
 const (
-	CIKText        CompletionItemKind = 1
-	CIKMethod                         = 2
-	CIKFunction                       = 3
-	CIKConstructor                    = 4
-	CIKField                          = 5
-	CIKVariable                       = 6
-	CIKClass                          = 7
-	CIKInterface                      = 8
-	CIKModule                         = 9
-	CIKProperty                       = 10
-	CIKUnit                           = 11
-	CIKValue                          = 12
-	CIKEnum                           = 13
-	CIKKeyword                        = 14
-	CIKSnippet                        = 15
-	CIKColor                          = 16
-	CIKFile                           = 17
-	CIKReference                      = 18
+	_ CompletionItemKind = iota
+	CIKText
+	CIKMethod
+	CIKFunction
+	CIKConstructor
+	CIKField
+	CIKVariable
+	CIKClass
+	CIKInterface
+	CIKModule
+	CIKProperty
+	CIKUnit
+	CIKValue
+	CIKEnum
+	CIKKeyword
+	CIKSnippet
+	CIKColor
+	CIKFile
+	CIKReference
+	CIKFolder
+	CIKEnumMember
+	CIKConstant
+	CIKStruct
+	CIKEvent
+	CIKOperator
+	CIKTypeParameter
 )
 
+func (c CompletionItemKind) String() string {
+	return completionItemKindName[c]
+}
+
+var completionItemKindName = map[CompletionItemKind]string{
+	CIKText:          "text",
+	CIKMethod:        "method",
+	CIKFunction:      "function",
+	CIKConstructor:   "constructor",
+	CIKField:         "field",
+	CIKVariable:      "variable",
+	CIKClass:         "class",
+	CIKInterface:     "interface",
+	CIKModule:        "module",
+	CIKProperty:      "property",
+	CIKUnit:          "unit",
+	CIKValue:         "value",
+	CIKEnum:          "enum",
+	CIKKeyword:       "keyword",
+	CIKSnippet:       "snippet",
+	CIKColor:         "color",
+	CIKFile:          "file",
+	CIKReference:     "reference",
+	CIKFolder:        "folder",
+	CIKEnumMember:    "enumMember",
+	CIKConstant:      "constant",
+	CIKStruct:        "struct",
+	CIKEvent:         "event",
+	CIKOperator:      "operator",
+	CIKTypeParameter: "typeParameter",
+}
+
 type CompletionItem struct {
-	Label         string      `json:"label"`
-	Kind          int         `json:"kind,omitempty"`
-	Detail        string      `json:"detail,omitempty"`
-	Documentation string      `json:"documentation,omitempty"`
-	SortText      string      `json:"sortText,omitempty"`
-	FilterText    string      `json:"filterText,omitempty"`
-	InsertText    string      `json:"insertText,omitempty"`
-	TextEdit      TextEdit    `json:"textEdit,omitempty"`
-	Data          interface{} `json:"data,omitempty"`
+	Label            string             `json:"label"`
+	Kind             CompletionItemKind `json:"kind,omitempty"`
+	Detail           string             `json:"detail,omitempty"`
+	Documentation    string             `json:"documentation,omitempty"`
+	SortText         string             `json:"sortText,omitempty"`
+	FilterText       string             `json:"filterText,omitempty"`
+	InsertText       string             `json:"insertText,omitempty"`
+	InsertTextFormat InsertTextFormat   `json:"insertTextFormat,omitempty"`
+	TextEdit         *TextEdit          `json:"textEdit,omitempty"`
+	Data             interface{}        `json:"data,omitempty"`
 }
 
 type CompletionList struct {
 	IsIncomplete bool             `json:"isIncomplete"`
 	Items        []CompletionItem `json:"items"`
+}
+
+type CompletionTriggerKind int
+
+const (
+	CTKInvoked          CompletionTriggerKind = 1
+	CTKTriggerCharacter                       = 2
+)
+
+type InsertTextFormat int
+
+const (
+	ITFPlainText InsertTextFormat = 1
+	ITFSnippet                    = 2
+)
+
+type CompletionContext struct {
+	TriggerKind      CompletionTriggerKind `json:"triggerKind"`
+	TriggerCharacter string                `json:"triggerCharacter,omitempty"`
+}
+
+type CompletionParams struct {
+	TextDocumentPositionParams
+	Context CompletionContext `json:"context,omitempty"`
 }
 
 type Hover struct {

@@ -12,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+
+	"github.com/sourcegraph/go-langserver/langserver/util"
 )
 
 type diagnostics map[string][]*lsp.Diagnostic // map of URI to diagnostics (for PublishDiagnosticParams)
@@ -30,7 +32,7 @@ func (h *LangHandler) publishDiagnostics(ctx context.Context, conn jsonrpc2.JSON
 
 	for filename, diags := range diags {
 		params := lsp.PublishDiagnosticsParams{
-			URI:         pathToURI(filename),
+			URI:         util.PathToURI(filename),
 			Diagnostics: make([]lsp.Diagnostic, len(diags)),
 		}
 		for i, d := range diags {

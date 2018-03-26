@@ -8,16 +8,17 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
-	"path/filepath"
+	"path"
 
 	"golang.org/x/tools/go/buildutil"
 
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
 func (h *LangHandler) handleTextDocumentFormatting(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.DocumentFormattingParams) ([]lsp.TextEdit, error) {
-	if !isFileURI(params.TextDocument.URI) {
+	if !util.IsURI(params.TextDocument.URI) {
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
 			Message: fmt.Sprintf("%s not yet supported for out-of-workspace URI (%q)", req.Method, params.TextDocument.URI),
@@ -27,7 +28,7 @@ func (h *LangHandler) handleTextDocumentFormatting(ctx context.Context, conn jso
 	filename := h.FilePath(params.TextDocument.URI)
 	bctx := h.BuildContext(ctx)
 	fset := token.NewFileSet()
-	file, err := buildutil.ParseFile(fset, bctx, nil, filepath.Dir(filename), filepath.Base(filename), parser.ParseComments)
+	file, err := buildutil.ParseFile(fset, bctx, nil, path.Dir(filename), path.Base(filename), parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}

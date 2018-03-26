@@ -3,14 +3,15 @@ package langserver
 import (
 	"fmt"
 	"go/build"
-	"io"
-	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"golang.org/x/net/context"
+
+	"golang.org/x/tools/go/buildutil"
+
+	"github.com/sourcegraph/go-langserver/langserver/util"
 )
 
 // BuildContext creates a build.Context which uses the overlay FS and the InitializeParams.BuildContext overrides.
@@ -41,36 +42,8 @@ func (h *LangHandler) BuildContext(ctx context.Context) *build.Context {
 	fs := h.FS
 	h.Mu.Unlock()
 
-	bctx.OpenFile = func(path string) (io.ReadCloser, error) {
-		return fs.Open(ctx, path)
-	}
-	bctx.IsDir = func(path string) bool {
-		fi, err := fs.Stat(ctx, path)
-		return err == nil && fi.Mode().IsDir()
-	}
-	bctx.HasSubdir = func(root, dir string) (rel string, ok bool) {
-		if !bctx.IsDir(dir) {
-			return "", false
-		}
-		rel, err := filepath.Rel(root, dir)
-		if err != nil {
-			return "", false
-		}
-		return rel, true
-	}
-	bctx.ReadDir = func(path string) ([]os.FileInfo, error) {
-		return fs.ReadDir(ctx, path)
-	}
+	util.PrepareContext(bctx, ctx, fs)
 	return bctx
-}
-
-// From: https://github.com/golang/tools/blob/b814a3b030588c115189743d7da79bce8b549ce1/go/buildutil/util.go#L84
-// dirHasPrefix tests whether the directory dir begins with prefix.
-func dirHasPrefix(dir, prefix string) bool {
-	if runtime.GOOS != "windows" {
-		return strings.HasPrefix(dir, prefix)
-	}
-	return len(dir) >= len(prefix) && strings.EqualFold(dir[:len(prefix)], prefix)
 }
 
 // ContainingPackage returns the package that contains the given
@@ -83,9 +56,9 @@ func dirHasPrefix(dir, prefix string) bool {
 // * if the file is in the xtest package (package p_test not package p),
 //   it returns build.Package only representing that xtest package
 func ContainingPackage(bctx *build.Context, filename string) (*build.Package, error) {
-	gopaths := filepath.SplitList(bctx.GOPATH) // list will be empty with no GOPATH
+	gopaths := buildutil.SplitPathList(bctx, bctx.GOPATH) // list will be empty with no GOPATH
 	for _, gopath := range gopaths {
-		if !filepath.IsAbs(gopath) {
+		if !buildutil.IsAbsPath(bctx, gopath) {
 			return nil, fmt.Errorf("build context GOPATH must be an absolute path (GOPATH=%q)", gopath)
 		}
 	}
@@ -95,19 +68,19 @@ func ContainingPackage(bctx *build.Context, filename string) (*build.Package, er
 		pkgDir = path.Dir(filename)
 	}
 	var srcDir string
-	if PathHasPrefix(filename, bctx.GOROOT) {
+	if util.PathHasPrefix(filename, bctx.GOROOT) {
 		srcDir = bctx.GOROOT // if workspace is Go stdlib
 	} else {
 		srcDir = "" // with no GOPATH, only stdlib will work
 		for _, gopath := range gopaths {
-			if dirHasPrefix(pkgDir, gopath) {
+			if util.PathHasPrefix(pkgDir, gopath) {
 				srcDir = gopath
 				break
 			}
 		}
 	}
-	srcDir = path.Join(srcDir, "src") + "/"
-	importPath := strings.TrimPrefix(pkgDir, srcDir)
+	srcDir = path.Join(filepath.ToSlash(srcDir), "src")
+	importPath := util.PathTrimPrefix(pkgDir, srcDir)
 	var xtest bool
 	pkg, err := bctx.Import(importPath, pkgDir, 0)
 	if pkg != nil {

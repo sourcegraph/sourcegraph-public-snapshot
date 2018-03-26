@@ -19,6 +19,7 @@ import (
 	"golang.org/x/tools/go/buildutil"
 
 	"github.com/neelance/parallel"
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/go-langserver/pkg/tools"
@@ -195,11 +196,11 @@ func score(q Query, s symbolPair) (scor int) {
 		return -1
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
-	if !isFileURI(s.Location.URI) {
+	if !util.IsURI(s.Location.URI) {
 		log.Printf("unexpectedly saw symbol defined at a non-file URI: %q", s.Location.URI)
 		return 0
 	}
-	filename := uriToFilePath(s.Location.URI)
+	filename := util.UriToPath(s.Location.URI)
 	isVendor := strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/")
 	if q.Filter == FilterExported && isVendor {
 		// is:exported excludes vendor symbols always.
@@ -227,7 +228,7 @@ func score(q Query, s symbolPair) (scor int) {
 		if strings.Contains(filename, tok) && len(tok) >= 3 {
 			scor++
 		}
-		if strings.HasPrefix(filepath.Base(filename), tok) && len(tok) >= 3 {
+		if strings.HasPrefix(path.Base(filename), tok) && len(tok) >= 3 {
 			scor += 2
 		}
 		if tok == name {
@@ -271,7 +272,7 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 		},
 		// NOTE: fields must be kept in sync with workspace_refs.go:defSymbolDescriptor
 		desc: symbolDescriptor{
-			Vendor:      IsVendorDir(bpkg.Dir),
+			Vendor:      util.IsVendorDir(bpkg.Dir),
 			Package:     path.Clean(bpkg.ImportPath),
 			PackageName: bpkg.Name,
 			Recv:        recv,
@@ -284,13 +285,13 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 // handleTextDocumentSymbol handles `textDocument/documentSymbol` requests for
 // the Go language server.
 func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.DocumentSymbolParams) ([]lsp.SymbolInformation, error) {
-	if !isFileURI(params.TextDocument.URI) {
+	if !util.IsURI(params.TextDocument.URI) {
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
 			Message: fmt.Sprintf("textDocument/documentSymbol not yet supported for out-of-workspace URI (%q)", params.TextDocument.URI),
 		}
 	}
-	path := uriToFilePath(params.TextDocument.URI)
+	path := util.UriToPath(params.TextDocument.URI)
 
 	fset := token.NewFileSet()
 	bctx := h.BuildContext(ctx)
@@ -335,35 +336,29 @@ func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn jsonrpc2.J
 	return h.handleSymbol(ctx, conn, req, q, params.Limit)
 }
 
-// MaxParallelism controls the maximum number of goroutines that should be used
-// to fulfill requests. This is useful in editor environments where users do
-// not want results ASAP, but rather just semi quickly without eating all of
-// their CPU.
-var MaxParallelism = 8
-
 func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, query Query, limit int) ([]lsp.SymbolInformation, error) {
 	results := resultSorter{Query: query, results: make([]scoredSymbol, 0)}
 	{
 		rootPath := h.FilePath(h.init.Root())
 		bctx := h.BuildContext(ctx)
 
-		par := parallel.NewRun(8)
+		par := parallel.NewRun(h.Config.MaxParallelism)
 		for _, pkg := range tools.ListPkgsUnderDir(bctx, rootPath) {
 			// If we're restricting results to a single file or dir, ensure the
 			// package dir matches to avoid doing unnecessary work.
 			if results.Query.File != "" {
 				filePkgPath := path.Dir(results.Query.File)
-				if PathHasPrefix(filePkgPath, bctx.GOROOT) {
-					filePkgPath = PathTrimPrefix(filePkgPath, bctx.GOROOT)
+				if util.PathHasPrefix(filePkgPath, bctx.GOROOT) {
+					filePkgPath = util.PathTrimPrefix(filePkgPath, bctx.GOROOT)
 				} else {
-					filePkgPath = PathTrimPrefix(filePkgPath, bctx.GOPATH)
+					filePkgPath = util.PathTrimPrefix(filePkgPath, bctx.GOPATH)
 				}
-				filePkgPath = PathTrimPrefix(filePkgPath, "src")
-				if !pathEqual(pkg, filePkgPath) {
+				filePkgPath = util.PathTrimPrefix(filePkgPath, "src")
+				if !util.PathEqual(pkg, filePkgPath) {
 					continue
 				}
 			}
-			if results.Query.Filter == FilterDir && !pathEqual(pkg, results.Query.Dir) {
+			if results.Query.Filter == FilterDir && !util.PathEqual(pkg, results.Query.Dir) {
 				continue
 			}
 
@@ -383,7 +378,7 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2.JSONRPC2, 
 				// https://github.com/golang/go/issues/17788
 				defer func() {
 					par.Release()
-					_ = panicf(recover(), "%v for pkg %v", req.Method, pkg)
+					_ = util.Panicf(recover(), "%v for pkg %v", req.Method, pkg)
 				}()
 				h.collectFromPkg(ctx, bctx, pkg, rootPath, &results)
 			}(pkg)
@@ -449,12 +444,7 @@ func astPkgToSymbols(fs *token.FileSet, astPkg *ast.Package, buildPkg *build.Pac
 	// Emit decls
 	var pkgSyms []symbolPair
 	for _, t := range docPkg.Types {
-		if len(t.Decl.Specs) == 1 { // the type name is the first spec in type declarations
-			pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg, "", lsp.SKClass, fs, t.Decl.Specs[0].Pos()))
-		} else { // in case there's some edge case where there's not 1 spec, fall back to the start of the declaration
-			pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg, "", lsp.SKClass, fs, t.Decl.TokPos))
-		}
-
+		pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg, "", typeSpecSym(t), fs, declNamePos(t.Decl, t.Name)))
 		for _, v := range t.Funcs {
 			pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg, "", lsp.SKFunction, fs, v.Decl.Name.NamePos))
 		}
@@ -463,23 +453,23 @@ func astPkgToSymbols(fs *token.FileSet, astPkg *ast.Package, buildPkg *build.Pac
 		}
 		for _, v := range t.Consts {
 			for _, name := range v.Names {
-				pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKConstant, fs, v.Decl.TokPos))
+				pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKConstant, fs, declNamePos(v.Decl, name)))
 			}
 		}
 		for _, v := range t.Vars {
 			for _, name := range v.Names {
-				pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKField, fs, v.Decl.TokPos))
+				pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKField, fs, declNamePos(v.Decl, name)))
 			}
 		}
 	}
 	for _, v := range docPkg.Consts {
 		for _, name := range v.Names {
-			pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKConstant, fs, v.Decl.TokPos))
+			pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKConstant, fs, declNamePos(v.Decl, name)))
 		}
 	}
 	for _, v := range docPkg.Vars {
 		for _, name := range v.Names {
-			pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKVariable, fs, v.Decl.TokPos))
+			pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKVariable, fs, declNamePos(v.Decl, name)))
 		}
 	}
 	for _, v := range docPkg.Funcs {
@@ -487,6 +477,44 @@ func astPkgToSymbols(fs *token.FileSet, astPkg *ast.Package, buildPkg *build.Pac
 	}
 
 	return pkgSyms
+}
+
+func typeSpecSym(t *doc.Type) lsp.SymbolKind {
+	// This usually has one, but we're running through a for loop in case it has
+	// none. In either case, the default is an SKClass.
+
+	// NOTE: coincidentally, doing this gives access to the methods for an
+	// interface and fields for a struct. Possible solution to Github issue #36?
+	for _, s := range t.Decl.Specs {
+		if v, ok := s.(*ast.TypeSpec); ok {
+			if _, ok := v.Type.(*ast.InterfaceType); ok {
+				return lsp.SKInterface
+			}
+		}
+	}
+
+	return lsp.SKClass
+}
+
+func declNamePos(decl *ast.GenDecl, name string) token.Pos {
+	for _, spec := range decl.Specs {
+		switch spec := spec.(type) {
+		case *ast.ImportSpec:
+			if spec.Name != nil {
+				return spec.Name.Pos()
+			}
+			return spec.Path.Pos()
+		case *ast.ValueSpec:
+			for _, specName := range spec.Names {
+				if specName.Name == name {
+					return specName.NamePos
+				}
+			}
+		case *ast.TypeSpec:
+			return spec.Name.Pos()
+		}
+	}
+	return decl.TokPos
 }
 
 // parseDir mirrors parser.ParseDir, but uses the passed in build context's VFS. In other words,
@@ -500,8 +528,8 @@ func parseDir(fset *token.FileSet, bctx *build.Context, path string, filter func
 	pkgs = map[string]*ast.Package{}
 	for _, d := range list {
 		if strings.HasSuffix(d.Name(), ".go") && (filter == nil || filter(d)) {
-			filename := filepath.Join(path, d.Name())
-			if src, err := buildutil.ParseFile(fset, bctx, nil, filepath.Join(path, d.Name()), filename, mode); err == nil {
+			filename := buildutil.JoinPath(bctx, path, d.Name())
+			if src, err := buildutil.ParseFile(fset, bctx, nil, buildutil.JoinPath(bctx, path, d.Name()), filename, mode); err == nil {
 				name := src.Name.Name
 				pkg, found := pkgs[name]
 				if !found {

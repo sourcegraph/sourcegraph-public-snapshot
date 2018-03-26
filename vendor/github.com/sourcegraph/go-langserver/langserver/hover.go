@@ -15,16 +15,18 @@ import (
 	"strings"
 
 	doc "github.com/slimsag/godocmd"
+	"github.com/sourcegraph/go-langserver/langserver/internal/godef"
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
 func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
-	if UseBinaryPkgCache {
+	if h.Config.UseBinaryPkgCache {
 		return h.handleHoverGodef(ctx, conn, req, params)
 	}
 
-	if !isFileURI(params.TextDocument.URI) {
+	if !util.IsURI(params.TextDocument.URI) {
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
 			Message: fmt.Sprintf("textDocument/hover not yet supported for out-of-workspace URI (%q)", params.TextDocument.URI),
@@ -259,6 +261,11 @@ func (h *LangHandler) handleHoverGodef(ctx context.Context, conn jsonrpc2.JSONRP
 	// order to resolve the definition position.
 	fset, res, _, err := h.definitionGodef(ctx, params)
 	if err != nil {
+		if err == godef.ErrNoIdentifierFound {
+			// This is expected to happen when hovering over
+			// comments/strings/whitespace/etc), just return no info.
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -303,7 +310,9 @@ func (h *LangHandler) handleHoverGodef(ctx context.Context, conn jsonrpc2.JSONRP
 		return &lsp.Hover{}, nil
 	}
 
-	filename := uriToFilePath(loc.URI)
+	// convert the path into a real path because 3rd party tools
+	// might load additional code based on the file's package
+	filename := util.UriToRealPath(loc.URI)
 
 	// Parse the entire dir into its respective AST packages.
 	pkgs, err := parser.ParseDir(fset, filepath.Dir(filename), nil, parser.ParseComments)
@@ -327,11 +336,9 @@ func (h *LangHandler) handleHoverGodef(ctx context.Context, conn jsonrpc2.JSONRP
 		return nil, fmt.Errorf("failed to find doc object for %s", target)
 	}
 
-	contents, node := fmtDocObject(fset, docObject, target)
-	r := rangeForNode(fset, node)
+	contents, _ := fmtDocObject(fset, docObject, target)
 	return &lsp.Hover{
 		Contents: contents,
-		Range:    &r,
 	}, nil
 }
 
@@ -350,7 +357,7 @@ func packageForFile(pkgs map[string]*ast.Package, filename string) (string, *ast
 
 // inRange tells if x is in the range of a-b inclusive.
 func inRange(x, a, b token.Position) bool {
-	if x.Filename != a.Filename || x.Filename != b.Filename {
+	if !util.PathEqual(x.Filename, a.Filename) || !util.PathEqual(x.Filename, b.Filename) {
 		return false
 	}
 	return x.Offset >= a.Offset && x.Offset <= b.Offset
@@ -390,6 +397,26 @@ func findDocTarget(fset *token.FileSet, target token.Position, in interface{}) i
 	case *doc.Type:
 		if inRange(target, fset.Position(v.Decl.Pos()), fset.Position(v.Decl.End())) {
 			return v
+		}
+		for _, x := range v.Consts {
+			if r := findDocTarget(fset, target, x); r != nil {
+				return r
+			}
+		}
+		for _, x := range v.Vars {
+			if r := findDocTarget(fset, target, x); r != nil {
+				return r
+			}
+		}
+		for _, x := range v.Funcs {
+			if r := findDocTarget(fset, target, x); r != nil {
+				return r
+			}
+		}
+		for _, x := range v.Methods {
+			if r := findDocTarget(fset, target, x); r != nil {
+				return r
+			}
 		}
 		return nil
 	case *doc.Func:

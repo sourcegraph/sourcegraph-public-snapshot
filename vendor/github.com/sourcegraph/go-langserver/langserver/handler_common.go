@@ -7,6 +7,8 @@ import (
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
+
+	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
@@ -27,10 +29,10 @@ func (h *HandlerCommon) Reset(rootURI lsp.DocumentURI) error {
 	if h.shutdown {
 		return errors.New("unable to reset a server that is shutting down")
 	}
-	if !isFileURI(rootURI) {
-		return fmt.Errorf("invalid root URI %q: must be file:/// URI", rootURI)
+	if !util.IsURI(rootURI) {
+		return fmt.Errorf("invalid root path %q: must be file:/// URI", rootURI)
 	}
-	h.RootFSPath = uriToFilePath(rootURI) // retain leading slash
+	h.RootFSPath = util.UriToPath(rootURI) // retain leading slash
 	return nil
 }
 

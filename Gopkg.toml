@@ -44,9 +44,8 @@ required = [
   branch = "master"
   name = "github.com/jteeuwen/go-bindata"
 
-# We don't support the godef code that is in master of go-langserver
 [[constraint]]
-  branch = "no-godef"
+  branch = "master"
   name = "github.com/sourcegraph/go-langserver"
 
 # github_flavored_markdown depends on v1 of blackfriday, which is the master
