@@ -61,12 +61,6 @@ interface TabsProps<T extends string> {
     tabs: Tab<T>[]
 
     /**
-     * A key unique to this UI element that is used for persisting the view state. If not set, then this component
-     * does not persist view state.
-     */
-    storageKey?: string
-
-    /**
      * A fragment to display at the end of the tab bar. If specified, the tabs will not flex grow to fill the
      * width.
      */
@@ -82,28 +76,73 @@ interface TabsProps<T extends string> {
     onSelectTab?: (tab: T) => void
 }
 
-interface TabsState<T extends string> {
-    /** The currently active tab. */
-    activeTab: T
-}
-
 /**
  * A tabbed UI component, with a tab bar for switching between tabs and a content view that renders the active
  * tab's contents.
+ *
+ * Most callers should use one of the TabsWithXyzViewStatePersistence components to handle view state persistence.
  */
-export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, TabsState<T>> {
+export class Tabs<T extends string> extends React.PureComponent<
+    TabsProps<T> & {
+        /** The currently active tab. */
+        activeTab: T
+    }
+> {
     /**
      * The class name to use for other elements injected via tabBarEndFragment that should have a bottom border.
      */
     public static tabBorderClassName = 'tab-bar__end-fragment-other-element'
 
+    public render(): JSX.Element | null {
+        let children: React.ReactElement<{ key: T }>[] | undefined
+        if (Array.isArray(this.props.children)) {
+            children = this.props.children as React.ReactElement<{ key: T }>[]
+        } else if (this.props.children) {
+            children = [this.props.children as React.ReactElement<{ key: T }>]
+        }
+
+        return (
+            <div id={this.props.id} className={`tabs ${this.props.className || ''}`}>
+                <TabBar
+                    tabs={this.props.tabs}
+                    activeTab={this.props.activeTab}
+                    onSelect={this.onSelectTab}
+                    endFragment={this.props.tabBarEndFragment}
+                    tabClassName={this.props.tabClassName}
+                />
+                {children && children.find(c => c && c.key === this.props.activeTab)}
+            </div>
+        )
+    }
+
+    private onSelectTab = (tab: T) => {
+        if (this.props.onSelectTab) {
+            this.props.onSelectTab(tab)
+        }
+    }
+}
+
+/**
+ * A wrapper for Tabs that persists view state (the currently active tab) in localStorage.
+ */
+export class TabsWithLocalStorageViewStatePersistence<T extends string> extends React.PureComponent<
+    TabsProps<T> & {
+        /**
+         * A key unique to this UI element that is used for persisting the view state.
+         */
+        storageKey?: string
+    },
+    { activeTab: T }
+> {
     constructor(props: TabsProps<T>) {
         super(props)
-
         this.state = {
             activeTab:
                 this.props.storageKey !== undefined
-                    ? Tabs.readFromLocalStorage(this.props.storageKey, this.props.tabs)
+                    ? TabsWithLocalStorageViewStatePersistence.readFromLocalStorage(
+                          this.props.storageKey,
+                          this.props.tabs
+                      )
                     : this.props.tabs[0].id,
         }
     }
@@ -121,25 +160,7 @@ export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, Ta
     }
 
     public render(): JSX.Element | null {
-        let children: React.ReactElement<{ key: T }>[] | undefined
-        if (Array.isArray(this.props.children)) {
-            children = this.props.children as React.ReactElement<{ key: T }>[]
-        } else if (this.props.children) {
-            children = [this.props.children as React.ReactElement<{ key: T }>]
-        }
-
-        return (
-            <div id={this.props.id} className={`tabs ${this.props.className || ''}`}>
-                <TabBar
-                    tabs={this.props.tabs}
-                    activeTab={this.state.activeTab}
-                    onSelect={this.onSelectTab}
-                    endFragment={this.props.tabBarEndFragment}
-                    tabClassName={this.props.tabClassName}
-                />
-                {children && children.find(c => c && c.key === this.state.activeTab)}
-            </div>
-        )
+        return <Tabs {...this.props} onSelectTab={this.onSelectTab} activeTab={this.state.activeTab} />
     }
 
     private onSelectTab = (tab: T) => {
@@ -148,7 +169,7 @@ export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, Ta
         }
         this.setState({ activeTab: tab }, () => {
             if (this.props.storageKey !== undefined) {
-                Tabs.saveToLocalStorage(this.props.storageKey, tab)
+                TabsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, tab)
             }
         })
     }

@@ -10,7 +10,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { Resizable } from '../components/Resizable'
-import { Spacer, Tab, Tabs } from '../components/Tabs'
+import { Spacer, Tab, Tabs, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { fetchSite } from '../site-admin/backend'
 import { fileHistorySidebarEnabled } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
@@ -162,7 +162,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 storageKey="repo-rev-sidebar"
                 defaultSize={256 /* px */}
                 element={
-                    <Tabs
+                    <TabsWithLocalStorageViewStatePersistence
                         tabs={tabs}
                         storageKey={RepoRevSidebar.LAST_TAB_STORAGE_KEY}
                         tabBarEndFragment={
@@ -216,7 +216,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                             />
                         )}
-                    </Tabs>
+                    </TabsWithLocalStorageViewStatePersistence>
                 }
             />
         )
