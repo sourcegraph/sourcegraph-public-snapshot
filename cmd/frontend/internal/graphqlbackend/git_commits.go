@@ -14,6 +14,7 @@ type gitCommitConnectionResolver struct {
 
 	first *int32
 	query *string
+	path  *string
 
 	repo *repositoryResolver
 
@@ -36,10 +37,15 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commi
 			query = *r.query
 			n++
 		}
+		var path string
+		if r.path != nil {
+			path = *r.path
+		}
 		return vcsrepo.Commits(ctx, vcs.CommitsOptions{
 			Head:         api.CommitID(r.headCommitID),
 			N:            uint(n),
 			MessageQuery: query,
+			Path:         path,
 		})
 	}
 

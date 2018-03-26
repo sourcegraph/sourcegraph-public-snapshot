@@ -12,6 +12,7 @@ interface Props {
     size?: number
     user?: Avatarable
     className?: string
+    tooltip?: string
 }
 
 interface State {
@@ -58,7 +59,7 @@ export class UserAvatar extends React.Component<Props, State> {
             if (this.props.size) {
                 url.searchParams.set('s', this.props.size + '')
             }
-            avatar = <img className="avatar-icon" src={url.href} />
+            avatar = <img className="avatar-icon" src={url.href} data-tooltip={this.props.tooltip} />
         } else {
             avatar = <UserWomanAlternateIcon />
         }

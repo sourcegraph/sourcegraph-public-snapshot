@@ -44,6 +44,19 @@
       "description": "Whether built-in searches should be hidden on the Searches page.",
       "type": "boolean"
     },
+    "experimentalFeatures": {
+      "description":
+        "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fileHistorySidebar": {
+          "description": "Enables or disables the file history sidebar.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
     "tls.letsencrypt": {
       "description":
         "Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.\nThe default value is auto, which uses the following conditions to switch on:\n - tlsCert and tlsKey are unset.\n - appURL is a https:// URL\n - Can successfully bind to port 443",

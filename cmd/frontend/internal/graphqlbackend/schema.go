@@ -1053,6 +1053,8 @@ type GitCommit implements Node {
         first: Int
         # Return commits that match the query.
         query: String
+        # Return commits that affect the path.
+        path: String
     ): GitCommitConnection!
     # Symbols defined as of this commit. (All symbols, not just symbols that were newly defined in this commit.)
     symbols(

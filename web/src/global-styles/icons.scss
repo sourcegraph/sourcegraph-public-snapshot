@@ -1,3 +1,18 @@
+/**
+ * Global style for user-defined avatars
+ * Used for user, team member, and org avatars.
+ */
+.avatar {
+    display: inline-flex;
+
+    .avatar-icon,
+    .icon {
+        height: 100%;
+        fill: currentColor;
+        border-radius: 50%;
+    }
+}
+
 // Formats an icon so that it appears inline in the text
 // with height matching the text
 .icon-inline {
@@ -7,7 +22,8 @@
     display: inline-flex;
     align-items: center;
 
-    svg {
+    svg,
+    .avatar-icon {
         // TODO find a better way to scale icons that is not proportional to the font size
         // 14px font size -> 20px icon size
         // stylelint-disable-next-line declaration-property-unit-whitelist
@@ -22,19 +38,4 @@
 // Special case for the loader
 .icon-inline > .icon-loader {
     stroke: currentColor;
-}
-
-/**
- * Global style for user-defined avatars
- * Used for user, team member, and org avatars.
- */
-.avatar {
-    display: inline-flex;
-
-    .avatar-icon,
-    .icon {
-        height: 100%;
-        fill: currentColor;
-        border-radius: 50%;
-    }
 }

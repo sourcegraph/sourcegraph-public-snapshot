@@ -238,6 +238,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                             rev={this.props.rev}
                                             commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
                                             filePath={routeComponentProps.match.params.filePath || ''}
+                                            isDir={objectType === 'tree'}
                                             defaultBranch={
                                                 (this.state.resolvedRevOrError as ResolvedRev).defaultBranch || 'HEAD'
                                             }

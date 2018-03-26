@@ -68,6 +68,11 @@ type DeploymentOverrides struct {
 	Replicas     *int                           `json:"replicas,omitempty"`
 }
 
+// ExperimentalFeatures Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
+type ExperimentalFeatures struct {
+	FileHistorySidebar bool `json:"fileHistorySidebar,omitempty"`
+}
+
 // GitHubConnection
 type GitHubConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
@@ -220,6 +225,7 @@ type SiteConfiguration struct {
 	EmailAddress                      string                      `json:"email.address,omitempty"`
 	EmailSmtp                         *SMTPServerConfig           `json:"email.smtp,omitempty"`
 	ExecuteGradleOriginalRootPaths    string                      `json:"executeGradleOriginalRootPaths,omitempty"`
+	ExperimentalFeatures              *ExperimentalFeatures       `json:"experimentalFeatures,omitempty"`
 	GitMaxConcurrentClones            int                         `json:"gitMaxConcurrentClones,omitempty"`
 	GitOriginMap                      string                      `json:"gitOriginMap,omitempty"`
 	Github                            []GitHubConnection          `json:"github,omitempty"`

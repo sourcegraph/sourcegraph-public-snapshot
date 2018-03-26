@@ -11,10 +11,13 @@ import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, Tabs } from '../components/Tabs'
+import { fetchSite } from '../site-admin/backend'
+import { fileHistorySidebarEnabled } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
+import { RepoRevSidebarCommits } from './RepoRevSidebarCommits'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
 const fetchTree = memoizeObservable(
@@ -51,7 +54,7 @@ const fetchTree = memoizeObservable(
     makeRepoURI
 )
 
-type SidebarTabID = 'files' | 'symbols'
+type SidebarTabID = 'files' | 'symbols' | 'commits'
 
 interface Props {
     repoID: GQLID
@@ -59,6 +62,7 @@ interface Props {
     rev: string | undefined
     commitID: string
     filePath: string
+    isDir: boolean
     defaultBranch: string
     className: string
     history: H.History
@@ -70,6 +74,11 @@ interface State {
     error?: string
 
     showSidebar: boolean
+
+    /**
+     * Should the "File History" sidebar be shown. Set by feature flag.
+     */
+    showHistorySidebar: boolean
 
     /**
      * All file paths in the repository.
@@ -85,16 +94,29 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
 
     private static TABS: Tab<SidebarTabID>[] = [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }]
+    private static FILE_TABS: Tab<SidebarTabID>[] = [{ id: 'commits', label: 'File history' }]
 
     public state: State = {
         loading: true,
         showSidebar: localStorage.getItem(RepoRevSidebar.HIDDEN_STORAGE_KEY) === null,
+        showHistorySidebar: false,
     }
 
     private specChanges = new Subject<{ repoPath: string; commitID: string }>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        // Fetch site config
+        this.subscriptions.add(
+            fetchSite({ telemetrySamples: false }).subscribe(
+                site =>
+                    this.setState({
+                        showHistorySidebar: fileHistorySidebarEnabled(site.configuration.effectiveContents),
+                    }),
+                error => this.setState({ error: error.message })
+            )
+        )
+
         // Fetch repository revision.
         this.subscriptions.add(
             this.specChanges
@@ -128,6 +150,11 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             )
         }
 
+        let tabs = RepoRevSidebar.TABS
+        if (!this.props.isDir && this.state.showHistorySidebar) {
+            tabs = tabs.concat(RepoRevSidebar.FILE_TABS)
+        }
+
         return (
             <Resizable
                 className="repo-rev-container__sidebar-resizable"
@@ -136,7 +163,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 defaultSize={256 /* px */}
                 element={
                     <Tabs
-                        tabs={RepoRevSidebar.TABS}
+                        tabs={tabs}
                         storageKey={RepoRevSidebar.LAST_TAB_STORAGE_KEY}
                         tabBarEndFragment={
                             <>
@@ -177,6 +204,18 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                             />
                         }
+                        {this.props.isDir ? (
+                            undefined
+                        ) : (
+                            <RepoRevSidebarCommits
+                                key="commits"
+                                repoID={this.props.repoID}
+                                rev={this.props.rev}
+                                filePath={this.props.filePath}
+                                history={this.props.history}
+                                location={this.props.location}
+                            />
+                        )}
                     </Tabs>
                 }
             />
@@ -197,6 +236,8 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             eventLogger.log('SidebarSymbolsTabSelected')
         } else if (tab === 'files') {
             eventLogger.log('SidebarFilesTabSelected')
+        } else if (tab === 'commits') {
+            eventLogger.log('SidebarCommitsTabSelected')
         }
     }
 }
