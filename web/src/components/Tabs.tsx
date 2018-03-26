@@ -147,20 +147,17 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
         /**
          * A key unique to this UI element that is used for persisting the view state.
          */
-        storageKey?: string
+        storageKey: string
     },
     { activeTab: ID }
 > {
-    constructor(props: TabsProps<ID, T>) {
+    constructor(props: TabsProps<ID, T> & { storageKey: string }) {
         super(props)
         this.state = {
-            activeTab:
-                this.props.storageKey !== undefined
-                    ? TabsWithLocalStorageViewStatePersistence.readFromLocalStorage(
-                          this.props.storageKey,
-                          this.props.tabs
-                      )
-                    : this.props.tabs[0].id,
+            activeTab: TabsWithLocalStorageViewStatePersistence.readFromLocalStorage(
+                this.props.storageKey,
+                this.props.tabs
+            ),
         }
     }
 
@@ -184,10 +181,8 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
         if (this.props.onSelectTab) {
             this.props.onSelectTab(tab)
         }
-        this.setState({ activeTab: tab }, () => {
-            if (this.props.storageKey !== undefined) {
-                TabsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, tab)
-            }
-        })
+        this.setState({ activeTab: tab }, () =>
+            TabsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, tab)
+        )
     }
 }
