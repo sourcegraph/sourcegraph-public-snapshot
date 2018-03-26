@@ -46,7 +46,7 @@ func TestCache(t *testing.T) {
 	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)))
 	defer c.conn.Close()
 	c.initOnce.Do(func() {
-		err := c.lspInitialize(ctx)
+		_, err := c.lspInitialize(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -433,47 +433,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			}
 		}()
 
-		// PERF: Initialize the server as soon as possible, so that it
-		// can start indexing before a user does an explicit request.
-		err = c.proxy.initializeServer(ctx, serverID{contextID: c.context})
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO(keegancsmith) Create a whitelist based on the response
-		// from the server. For now though, we hardcode the response
-		// for python.
-		if c.context.mode == "python" {
-			kind := lsp.TDSKNone
-			return lsp.InitializeResult{
-				Capabilities: lsp.ServerCapabilities{
-					TextDocumentSync:             lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
-					ReferencesProvider:           true,
-					DefinitionProvider:           true,
-					HoverProvider:                true,
-					DocumentSymbolProvider:       true,
-					WorkspaceSymbolProvider:      true,
-					XWorkspaceReferencesProvider: false,
-				},
-			}, nil
-		}
-
-		// Note: We do not respect the order messages are received, since we
-		// spins up a goroutine per received request. As such we can't ever use
-		// lsp.TDSKIncremental since that relies on in-order delivery of
-		// notifications. https://github.com/sourcegraph/sourcegraph/issues/4594
-		kind := lsp.TDSKFull
-		return lsp.InitializeResult{
-			Capabilities: lsp.ServerCapabilities{
-				TextDocumentSync:             lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
-				ReferencesProvider:           true,
-				DefinitionProvider:           true,
-				HoverProvider:                true,
-				DocumentSymbolProvider:       true,
-				WorkspaceSymbolProvider:      true,
-				XWorkspaceReferencesProvider: true,
-			},
-		}, nil
+		// TODO(keegancsmith) downgrade TextDocumentSync to lsp.TDSKNone. This
+		// is not a security issue right now, since sync operations will be
+		// denied by the proxy.
+		return c.proxy.initializeServer(ctx, serverID{contextID: c.context})
 
 	case "initialized":
 		if err := ensureInitialized(); err != nil {

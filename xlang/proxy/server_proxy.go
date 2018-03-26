@@ -53,7 +53,9 @@ type serverProxyConn struct {
 	// initOnce ensures we only connect and initialize once, and other
 	// goroutines wait until the 1st goroutine completes those tasks.
 	initOnce sync.Once
-	initErr  error // only safe to write inside initOnce.Do(...), only safe to read after calling initOnce.Do(...)
+	// initResult and initErr are only safe to write inside initOnce.Do(...), only safe to read after calling initOnce.Do(...)
+	initResult json.RawMessage
+	initErr    error
 
 	mu          sync.Mutex
 	rootFS      FileSystem // the workspace's file system
@@ -239,9 +241,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 
 // getServerConn returns an existing connection to the specified
 // server or creates one if none exists.
-func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyConn, error) {
-	var c *serverProxyConn
-
+func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyConn, initResponse json.RawMessage, err error) {
 	// Check for an already established connection.
 	p.mu.Lock()
 	for cc := range p.servers {
@@ -333,8 +333,8 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		}
 		c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
 
-		if err := c.lspInitialize(ctx); err != nil {
-			c.initErr = err
+		c.initResult, c.initErr = c.lspInitialize(ctx)
+		if c.initErr != nil {
 			return
 		}
 		c.updateLastTime()
@@ -354,7 +354,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		}()
 	})
 
-	err := c.initErr
+	err = c.initErr
 	if err != nil {
 		if didWeInit {
 			// If we encounter an error during initialization, fail every
@@ -379,10 +379,10 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 				err = errors.Wrap(err, otherGoroutineMessage)
 			}
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
-	return c, nil
+	return c, c.initResult, nil
 }
 
 func (p *Proxy) shouldUseLargeServer(mode string, repo api.RepoURI) bool {
@@ -406,10 +406,11 @@ func (p *Proxy) shouldStripBGMode(mode string) bool {
 }
 
 // initializeServer will ensure we either have an open connection or will open
-// one to ID. If it fails, it will return a non-nil error.
-func (p *Proxy) initializeServer(ctx context.Context, id serverID) error {
-	_, err := p.getServerConn(ctx, id)
-	return err
+// one to ID. It returns the initializeResult as a json.RawMessage. If it
+// fails, it will return a non-nil error.
+func (p *Proxy) initializeServer(ctx context.Context, id serverID) (json.RawMessage, error) {
+	_, initResult, err := p.getServerConn(ctx, id)
+	return initResult, err
 }
 
 // clientBroadcastFunc returns a function which will broadcast a request to
@@ -428,7 +429,7 @@ func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc
 	}
 }
 
-func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
+func (c *serverProxyConn) lspInitialize(ctx context.Context) (json.RawMessage, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: initialize",
 		opentracing.Tags{"mode": c.id.mode, "rootPath": c.id.rootURI.String(), "rootURI": c.id.rootURI.String()},
 	)
@@ -468,7 +469,12 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	if initOps := getInitializationOptions(c.id.mode); initOps != nil {
 		initParams.InitializationOptions = initOps
 	}
-	return c.conn.Call(ctx, "initialize", initParams, nil, addTraceMeta(ctx))
+	var res json.RawMessage
+	err := c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 // callServer sends an LSP request to the specified server
@@ -493,7 +499,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 		span.Finish()
 	}()
 
-	c, err = p.getServerConn(ctx, sid)
+	c, _, err = p.getServerConn(ctx, sid)
 	if err != nil {
 		return err
 	}
