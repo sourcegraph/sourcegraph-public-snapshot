@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
+### Bug fixes
+
+* Searches of `type:repo` now work correctly with "Show more" and the `max` parameter.
+
 ## 2.6.7
 
 ### Added

@@ -664,7 +664,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.query)
+				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.query, r.maxResults())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
