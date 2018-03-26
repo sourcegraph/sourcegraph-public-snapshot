@@ -57,11 +57,14 @@ class TabBar<T extends string> extends React.PureComponent<TabBarProps<T>> {
 export const Spacer: () => JSX.Element = () => <span className="tab-bar__spacer" />
 
 interface TabsProps<T extends string> {
-    /** All tabs. */
+    /** All tabs. Must always have at least one element. */
     tabs: Tab<T>[]
 
-    /** A key unique to this UI element that is used for persisting the view state. */
-    storageKey: string
+    /**
+     * A key unique to this UI element that is used for persisting the view state. If not set, then this component
+     * does not persist view state.
+     */
+    storageKey?: string
 
     /**
      * A fragment to display at the end of the tab bar. If specified, the tabs will not flex grow to fill the
@@ -98,7 +101,10 @@ export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, Ta
         super(props)
 
         this.state = {
-            activeTab: Tabs.readFromLocalStorage(this.props.storageKey, this.props.tabs),
+            activeTab:
+                this.props.storageKey !== undefined
+                    ? Tabs.readFromLocalStorage(this.props.storageKey, this.props.tabs)
+                    : this.props.tabs[0].id,
         }
     }
 
@@ -140,6 +146,10 @@ export class Tabs<T extends string> extends React.PureComponent<TabsProps<T>, Ta
         if (this.props.onSelectTab) {
             this.props.onSelectTab(tab)
         }
-        this.setState({ activeTab: tab }, () => Tabs.saveToLocalStorage(this.props.storageKey, tab))
+        this.setState({ activeTab: tab }, () => {
+            if (this.props.storageKey !== undefined) {
+                Tabs.saveToLocalStorage(this.props.storageKey, tab)
+            }
+        })
     }
 }
