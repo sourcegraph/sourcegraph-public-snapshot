@@ -10,7 +10,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { Resizable } from '../components/Resizable'
-import { Spacer, Tab, Tabs } from '../components/Tabs'
+import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { fetchSite } from '../site-admin/backend'
 import { fileHistorySidebarEnabled } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
@@ -162,7 +162,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 storageKey="repo-rev-sidebar"
                 defaultSize={256 /* px */}
                 element={
-                    <Tabs
+                    <TabsWithLocalStorageViewStatePersistence
                         tabs={tabs}
                         storageKey={RepoRevSidebar.LAST_TAB_STORAGE_KEY}
                         tabBarEndFragment={
@@ -170,7 +170,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 <Spacer />
                                 <button
                                     onClick={this.onSidebarToggle}
-                                    className={`btn btn-icon repo-rev-sidebar__close-button ${Tabs.tabBorderClassName}`}
+                                    className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon />
@@ -181,7 +181,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
                         }`}
-                        tabClassName="repo-rev-sidebar__tab"
+                        tabClassName="tab-bar__tab--h5like"
                         onSelectTab={this.onSelectTab}
                     >
                         {this.state.files && (
@@ -216,7 +216,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                             />
                         )}
-                    </Tabs>
+                    </TabsWithLocalStorageViewStatePersistence>
                 }
             />
         )

@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators/map'
 import { replaceRevisionInURL } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
-import { Tabs } from '../components/Tabs'
+import { TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
@@ -217,7 +217,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="revisions-popover popover">
-                <Tabs
+                <TabsWithLocalStorageViewStatePersistence
                     tabs={RevisionsPopover.TABS}
                     storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
                     className="revisions-popover__tabs"
@@ -281,7 +281,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 />
                             )
                     )}
-                </Tabs>
+                </TabsWithLocalStorageViewStatePersistence>
             </div>
         )
     }
