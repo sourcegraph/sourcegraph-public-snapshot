@@ -78,10 +78,6 @@
         }
     }
 
-    &__placeholder {
-        padding: 0.5rem 1rem;
-    }
-
     &__groups {
         flex: 1 1 auto;
         min-height: 0;
@@ -106,10 +102,6 @@
             &--active {
                 color: #566e9f;
             }
-        }
-
-        &__placeholder {
-            border-top: 1px solid $color-light-border;
         }
 
         &__badge {
