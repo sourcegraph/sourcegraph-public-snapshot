@@ -1,6 +1,8 @@
 import * as React from 'react'
 
-/** Describes a tab.
+/**
+ * Describes a tab.
+ *
  * @template ID The type that includes all possible tab IDs (typically a union of string constants).
  */
 export interface Tab<ID extends string> {
@@ -12,10 +14,11 @@ export interface Tab<ID extends string> {
  * Properties for the tab bar.
  *
  * @template ID The type that includes all possible tab IDs (typically a union of string constants).
+ * @template T The type that describes a tab.
  */
-interface TabBarProps<ID extends string> {
+interface TabBarProps<ID extends string, T extends Tab<ID>> {
     /** All tabs. */
-    tabs: Tab<ID>[]
+    tabs: T[]
 
     /** The currently active tab. */
     activeTab: ID
@@ -33,8 +36,9 @@ interface TabBarProps<ID extends string> {
  * A horizontal bar that displays tab titles, which the user can click to switch to the tab.
  *
  * @template ID The type that includes all possible tab IDs (typically a union of string constants).
+ * @template T The type that describes a tab.
  */
-class TabBar<ID extends string> extends React.PureComponent<TabBarProps<ID>> {
+class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<TabBarProps<ID, T>> {
     public render(): JSX.Element | null {
         return (
             <div className="tab-bar">
@@ -67,10 +71,11 @@ export const Spacer: () => JSX.Element = () => <span className="tab-bar__spacer"
  * Properties for the Tabs components and its wrappers.
  *
  * @template ID The type that includes all possible tab IDs (typically a union of string constants).
+ * @template T The type that describes a tab.
  */
-interface TabsProps<ID extends string> {
+interface TabsProps<ID extends string, T extends Tab<ID>> {
     /** All tabs. Must always have at least one element. */
-    tabs: Tab<ID>[]
+    tabs: T[]
 
     /**
      * A fragment to display at the end of the tab bar. If specified, the tabs will not flex grow to fill the
@@ -94,8 +99,8 @@ interface TabsProps<ID extends string> {
  *
  * Most callers should use one of the TabsWithXyzViewStatePersistence components to handle view state persistence.
  */
-export class Tabs<ID extends string> extends React.PureComponent<
-    TabsProps<ID> & {
+export class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
+    TabsProps<ID, T> & {
         /** The currently active tab. */
         activeTab: ID
     }
@@ -137,8 +142,8 @@ export class Tabs<ID extends string> extends React.PureComponent<
 /**
  * A wrapper for Tabs that persists view state (the currently active tab) in localStorage.
  */
-export class TabsWithLocalStorageViewStatePersistence<ID extends string> extends React.PureComponent<
-    TabsProps<ID> & {
+export class TabsWithLocalStorageViewStatePersistence<ID extends string, T extends Tab<ID>> extends React.PureComponent<
+    TabsProps<ID, T> & {
         /**
          * A key unique to this UI element that is used for persisting the view state.
          */
@@ -146,7 +151,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string> extends
     },
     { activeTab: ID }
 > {
-    constructor(props: TabsProps<ID>) {
+    constructor(props: TabsProps<ID, T>) {
         super(props)
         this.state = {
             activeTab:
@@ -159,16 +164,16 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string> extends
         }
     }
 
-    private static readFromLocalStorage<T extends string>(storageKey: string, tabs: Tab<T>[]): T {
+    private static readFromLocalStorage<ID extends string, T extends Tab<ID>>(storageKey: string, tabs: T[]): ID {
         const lastTabID = localStorage.getItem(storageKey)
         if (lastTabID !== null && tabs.find(tab => tab.id === lastTabID)) {
-            return lastTabID as T
+            return lastTabID as ID
         }
         return tabs[0].id // default
     }
 
-    private static saveToLocalStorage<T extends string>(storageKey: string, lastTab: T): void {
-        localStorage.setItem(storageKey, lastTab)
+    private static saveToLocalStorage<ID extends string>(storageKey: string, lastTabID: ID): void {
+        localStorage.setItem(storageKey, lastTabID)
     }
 
     public render(): JSX.Element | null {
