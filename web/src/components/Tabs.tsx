@@ -1,5 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
+import { NavLink } from 'react-router-dom'
 
 /**
  * Describes a tab.
@@ -196,5 +197,89 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
         >
             {tab.label}
         </button>
+    )
+}
+
+interface TabsWithURLViewStatePersistenceProps<ID extends string, T extends Tab<ID>> extends TabsProps<ID, T> {
+    location: H.Location
+}
+
+/**
+ * A wrapper for Tabs that persists view state (the currently active tab) in the current page's URL.
+ *
+ * URL whose fragment (hash) ends with "$x" are considered to have active tab "x" (where "x" is the tab's ID).
+ */
+export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID>> extends React.PureComponent<
+    TabsWithURLViewStatePersistenceProps<ID, T>,
+    { activeTab: ID }
+> {
+    constructor(props: TabsWithURLViewStatePersistenceProps<ID, T>) {
+        super(props)
+        this.state = {
+            activeTab: this.readFromURL(props.location, props.tabs),
+        }
+    }
+
+    /**
+     * Returns the tab ID specified in the URL. The tab ID is in the URL fragment (hash) after the rightmost "$".
+     * For example, in the URL "https://example.com/foo/bar?baz#qux$zip", the tab ID is "zip".
+     */
+    public static getTabIDFromURL(location: H.Location): string | null {
+        const i = location.hash.lastIndexOf('$')
+        if (i >= 0) {
+            return location.hash.slice(i + 1) || null
+        }
+        return null
+    }
+
+    /**
+     * Returns the URL hash (which can be used as a relative URL) that specifies the given tab. If the URL hash
+     * already contains a tab ID, it replaces it; otherwise it appends it to the current URL fragment. If the tabID
+     * argument is null, then the tab ID is removed from the URL.
+     */
+    public static urlForTabID(location: H.Location, tabID: string | null): H.LocationDescriptorObject {
+        const newSuffix = tabID === null ? '' : `$${tabID}`
+        const i = location.hash.lastIndexOf('$')
+        if (i >= 0) {
+            return { hash: location.hash.slice(0, i) + newSuffix }
+        }
+        return { hash: location.hash + newSuffix }
+    }
+
+    private readFromURL(location: H.Location, tabs: T[]): ID {
+        const urlTabID = TabsWithURLViewStatePersistence.getTabIDFromURL(location)
+        if (urlTabID) {
+            for (const tab of tabs) {
+                if (tab.id === urlTabID) {
+                    return tab.id
+                }
+            }
+        }
+        return tabs[0].id // default
+    }
+
+    public componentWillReceiveProps(nextProps: TabsWithURLViewStatePersistenceProps<ID, T>): void {
+        if (nextProps.location !== this.props.location || nextProps.tabs !== this.props.tabs) {
+            this.setState({ activeTab: this.readFromURL(nextProps.location, nextProps.tabs) })
+        }
+    }
+
+    public render(): JSX.Element | null {
+        return <Tabs {...this.props} activeTab={this.state.activeTab} tabComponent={this.renderTab} />
+    }
+
+    private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
+        <NavLink
+            className={className}
+            to={TabsWithURLViewStatePersistence.urlForTabID(this.props.location, tab.id)}
+            // tslint:disable-next-line:jsx-no-lambda
+            onClick={() => {
+                if (this.props.onSelectTab) {
+                    this.props.onSelectTab(tab.id)
+                }
+            }}
+        >
+            {tab.label}
+        </NavLink>
     )
 }

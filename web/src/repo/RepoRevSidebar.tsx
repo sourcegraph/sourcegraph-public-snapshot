@@ -170,7 +170,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 <Spacer />
                                 <button
                                     onClick={this.onSidebarToggle}
-                                    className={`btn btn-icon repo-rev-sidebar__close-button ${TabBorderClassName}`}
+                                    className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon />
@@ -181,7 +181,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
                         }`}
-                        tabClassName="repo-rev-sidebar__tab"
+                        tabClassName="tab-bar__tab--h5like"
                         onSelectTab={this.onSelectTab}
                     >
                         {this.state.files && (
