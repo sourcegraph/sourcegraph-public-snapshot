@@ -10,7 +10,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { Resizable } from '../components/Resizable'
-import { Spacer, Tab, Tabs, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
+import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { fetchSite } from '../site-admin/backend'
 import { fileHistorySidebarEnabled } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
@@ -170,7 +170,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 <Spacer />
                                 <button
                                     onClick={this.onSidebarToggle}
-                                    className={`btn btn-icon repo-rev-sidebar__close-button ${Tabs.tabBorderClassName}`}
+                                    className={`btn btn-icon repo-rev-sidebar__close-button ${TabBorderClassName}`}
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon />

@@ -1,3 +1,4 @@
+import * as H from 'history'
 import * as React from 'react'
 
 /**
@@ -23,11 +24,11 @@ interface TabBarProps<ID extends string, T extends Tab<ID>> {
     /** The currently active tab. */
     activeTab: ID
 
-    /** Called when the user selects a different tab. */
-    onSelect: (tab: ID) => void
-
     /** A fragment to render at the end of the tab bar. */
     endFragment?: React.ReactFragment
+
+    /** The component used to render the tab (in the tab bar, not the active tab's content area). */
+    tabComponent: React.ComponentType<{ tab: T; className: string }>
 
     tabClassName?: string
 }
@@ -43,17 +44,14 @@ class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<T
         return (
             <div className="tab-bar">
                 {this.props.tabs.map((tab, i) => (
-                    <button
+                    <this.props.tabComponent
                         key={i}
+                        tab={tab}
                         className={`btn btn-link btn-sm tab-bar__tab ${!this.props.endFragment &&
                             'tab-bar__tab--flex-grow'} tab-bar__tab--${
                             this.props.activeTab === tab.id ? 'active' : 'inactive'
                         } ${this.props.tabClassName || ''}`}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        onClick={() => this.props.onSelect(tab.id)}
-                    >
-                        {tab.label}
-                    </button>
+                    />
                 ))}
                 {this.props.endFragment}
             </div>
@@ -94,22 +92,25 @@ interface TabsProps<ID extends string, T extends Tab<ID>> {
 }
 
 /**
+ * The class name to use for other elements injected via tabBarEndFragment that should have a bottom border.
+ */
+export const TabBorderClassName = 'tab-bar__end-fragment-other-element'
+
+/**
  * A tabbed UI component, with a tab bar for switching between tabs and a content view that renders the active
  * tab's contents.
  *
- * Most callers should use one of the TabsWithXyzViewStatePersistence components to handle view state persistence.
+ * Callers should use one of the TabsWithXyzViewStatePersistence components to handle view state persistence.
  */
-export class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
+class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
     TabsProps<ID, T> & {
         /** The currently active tab. */
         activeTab: ID
+
+        /** The component used to render the tab (in the tab bar, not the active tab's content area). */
+        tabComponent: React.ComponentType<{ tab: T; className: string }>
     }
 > {
-    /**
-     * The class name to use for other elements injected via tabBarEndFragment that should have a bottom border.
-     */
-    public static tabBorderClassName = 'tab-bar__end-fragment-other-element'
-
     public render(): JSX.Element | null {
         let children: React.ReactElement<{ key: ID }>[] | undefined
         if (Array.isArray(this.props.children)) {
@@ -123,19 +124,13 @@ export class Tabs<ID extends string, T extends Tab<ID>> extends React.PureCompon
                 <TabBar
                     tabs={this.props.tabs}
                     activeTab={this.props.activeTab}
-                    onSelect={this.onSelectTab}
                     endFragment={this.props.tabBarEndFragment}
                     tabClassName={this.props.tabClassName}
+                    tabComponent={this.props.tabComponent}
                 />
                 {children && children.find(c => c && c.key === this.props.activeTab)}
             </div>
         )
-    }
-
-    private onSelectTab = (tab: ID) => {
-        if (this.props.onSelectTab) {
-            this.props.onSelectTab(tab)
-        }
     }
 }
 
@@ -174,7 +169,14 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
     }
 
     public render(): JSX.Element | null {
-        return <Tabs {...this.props} onSelectTab={this.onSelectTab} activeTab={this.state.activeTab} />
+        return (
+            <Tabs
+                {...this.props}
+                onSelectTab={this.onSelectTab}
+                activeTab={this.state.activeTab}
+                tabComponent={this.renderTab}
+            />
+        )
     }
 
     private onSelectTab = (tab: ID) => {
@@ -185,4 +187,14 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
             TabsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, tab)
         )
     }
+
+    private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
+        <button
+            className={className}
+            // tslint:disable-next-line:jsx-no-lambda
+            onClick={() => this.onSelectTab(tab.id)}
+        >
+            {tab.label}
+        </button>
+    )
 }
