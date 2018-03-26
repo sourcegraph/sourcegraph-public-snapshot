@@ -19,7 +19,7 @@ import { takeUntil } from 'rxjs/operators/takeUntil'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { ErrorLike, isErrorLike } from '../util/errors'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { pluralize } from '../util/strings'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
@@ -415,7 +415,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 ...(filter ? filter.args : {}),
                             })
                             .pipe(
-                                catchError(error => [error]),
+                                catchError(error => [asError(error)]),
                                 map(
                                     c =>
                                         ({
