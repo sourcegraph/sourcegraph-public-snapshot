@@ -29,6 +29,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -220,6 +221,13 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 		"IncludePattern":  []string{*p.IncludePattern},
 		"FetchTimeout":    []string{fetchTimeout.String()},
 	}
+	if deadline, ok := ctx.Deadline(); ok {
+		t, err := deadline.MarshalText()
+		if err != nil {
+			return nil, false, err
+		}
+		q.Set("Deadline", string(t))
+	}
 	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
 		q.Set("IsRegExp", "true")
@@ -321,9 +329,12 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 		return nil, false, err
 	}
 
-	// We expect textSearch to be fast
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
+	if !conf.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled {
+		// Old behavior doesn't set timeout at top level.
+		tctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		ctx = tctx
+	}
 
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
@@ -348,7 +359,7 @@ type repoSearchArgs struct {
 	repos []*repositoryRevisions
 }
 
-func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions) (fm []*fileMatchResolver, limitHit bool, err error) {
+func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil
 	}
@@ -411,11 +422,22 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 
 	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
 		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
-		tr.LazyPrintf("maxwalltime %s", searchOpts.MaxWallTime)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+3*time.Second)
-	defer cancel()
+	if !conf.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled {
+		// Old behavior doesn't set timeout at top level.
+		tctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+3*time.Second)
+		defer cancel()
+		ctx = tctx
+	} else {
+		// We don't need to set a context timeout at this level because it is already set at the top level.
+		if searchTimeoutFieldSet {
+			// If the user manually specified a timeout, allow zoekt to use most of that timeout.
+			deadline, _ := ctx.Deadline()
+			searchOpts.MaxWallTime = time.Duration(0.9 * float64(deadline.Sub(time.Now())))
+		}
+	}
+	tr.LazyPrintf("maxwalltime %s", searchOpts.MaxWallTime)
 
 	resp, err := zoektCl.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
@@ -593,7 +615,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query, searchTimeoutFieldSet bool) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -740,7 +762,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
-		matches, limitHit, searchErr := zoektSearchHEAD(ctx, args.query, zoektRepos)
+		matches, limitHit, searchErr := zoektSearchHEAD(ctx, args.query, zoektRepos, searchTimeoutFieldSet)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {

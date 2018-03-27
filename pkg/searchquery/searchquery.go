@@ -3,6 +3,7 @@
 package searchquery
 
 import (
+	config "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
 )
@@ -29,8 +30,9 @@ const (
 	FieldMessage   = "message"
 
 	// Temporary experimental fields:
-	FieldIndex = "index"
-	FieldMax   = "max" // maximum number of search results
+	FieldIndex   = "index"
+	FieldMax     = "max" // maximum number of search results
+	FieldTimeout = "timeout"
 )
 
 var (
@@ -59,6 +61,9 @@ var (
 			// Experimental fields:
 			FieldIndex: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldMax:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldTimeout: {Literal: types.StringType, Quoted: types.StringType, Singular: true, FeatureFlagEnabled: func() bool {
+				return config.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled
+			}},
 		},
 		FieldAliases: map[string]string{
 			"r":        FieldRepo,
@@ -166,4 +171,27 @@ func (q *Query) StringValues(field string) (values, negatedValues []string) {
 		}
 	}
 	return
+}
+
+// StringValue returns the string value for the given field.
+// It panics if the field is not recognized, it is not always string-typed, or it is not singular.
+func (q *Query) StringValue(field string) (value, negatedValue string) {
+	fieldType, ok := q.conf.FieldTypes[field]
+	if !ok {
+		panic("no such field: " + field)
+	}
+	if fieldType.Literal != types.StringType || fieldType.Quoted != types.StringType {
+		panic("field is not always string-typed: " + field)
+	}
+	if !fieldType.Singular {
+		panic("field is not singular: " + field)
+	}
+	if len(q.Fields[field]) == 0 {
+		return "", ""
+	}
+	v := q.Fields[field][0]
+	if v.Not() {
+		return "", *v.String
+	}
+	return *v.String, ""
 }

@@ -35,6 +35,10 @@ type Request struct {
 	// This only times out how long we wait for the fetch request;
 	// the fetch will still happen in the background so future requests don't have to wait.
 	FetchTimeout string
+
+	// The deadline for the search request.
+	// It is parsed with time.Time.UnmarshalText.
+	Deadline string
 }
 
 // GitserverRepo returns the repository information necessary to perform gitserver requests.

@@ -49,6 +49,7 @@ func init() {
 
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	running.Inc()
 	defer running.Dec()
 
@@ -64,6 +65,16 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to decode form: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	if p.Deadline != "" {
+		var deadline time.Time
+		if err := deadline.UnmarshalText([]byte(p.Deadline)); err != nil {
+			http.Error(w, "invalid deadline: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		dctx, cancel := context.WithDeadline(ctx, deadline)
+		defer cancel()
+		ctx = dctx
+	}
 	if !p.PatternMatchesContent && !p.PatternMatchesPath {
 		// BACKCOMPAT: Old frontends send neither of these fields, but we still want to
 		// search file content in that case.
@@ -74,10 +85,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	matches, limitHit, err := s.search(r.Context(), &p)
+	matches, limitHit, err := s.search(ctx, &p)
 	if err != nil {
 		code := http.StatusInternalServerError
-		if isBadRequest(err) || r.Context().Err() == context.Canceled {
+		if isBadRequest(err) || ctx.Err() == context.Canceled {
 			code = http.StatusBadRequest
 		} else if isTemporary(err) {
 			code = http.StatusServiceUnavailable
@@ -123,6 +134,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	span.SetTag("fileMatchLimit", p.FileMatchLimit)
 	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
 	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
+	span.SetTag("deadline", p.Deadline)
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled requests. We do not want to

@@ -26,6 +26,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
@@ -575,6 +576,41 @@ func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 	return patternInfo, nil
 }
 
+// The default timeout to use for queries.
+var defaultTimeout = 10 * time.Second
+
+func (r *searchResolver) searchTimeoutParameterEnabled() bool {
+	return conf.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled
+}
+
+func (r *searchResolver) searchTimeoutFieldSet() bool {
+	timeout, _ := r.query.StringValue(searchquery.FieldTimeout)
+	return timeout != ""
+}
+
+func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
+	if !r.searchTimeoutParameterEnabled() {
+		// Old behavior is to not set a timeout at the top level.
+		ctx, cancel := context.WithCancel(ctx)
+		return ctx, cancel, nil
+	}
+	d := defaultTimeout
+	timeout, _ := r.query.StringValue(searchquery.FieldTimeout)
+	if timeout != "" {
+		var err error
+		d, err = time.ParseDuration(timeout)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	// don't run queries longer than 1 minute.
+	if d.Minutes() > 1 {
+		d = time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, d)
+	return ctx, cancel, nil
+}
+
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
@@ -583,6 +619,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}()
 
 	start := time.Now()
+
+	ctx, cancel, err := r.withTimeout(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
 
 	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
@@ -637,7 +679,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	var (
-		wg         sync.WaitGroup
+		requiredWg sync.WaitGroup
+		optionalWg sync.WaitGroup
 		results    []*searchResultResolver
 		resultsMu  sync.Mutex
 		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
@@ -650,6 +693,21 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		fileMatchesMu sync.Mutex
 	)
 
+	waitGroup := func(required bool) *sync.WaitGroup {
+		if !r.searchTimeoutParameterEnabled() {
+			// Old behavior is to wait for all searches.
+			return &requiredWg
+		}
+		if r.searchTimeoutFieldSet() {
+			// When a custom timeout is specified, all searches are required and get the full timeout.
+			return &requiredWg
+		}
+		if required {
+			return &requiredWg
+		}
+		return &optionalWg
+	}
+
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
 		resultType := resultType // shadow so it doesn't change in the goroutine
@@ -660,6 +718,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		switch resultType {
 		case "repo":
 			// Search for repos
+			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
@@ -683,6 +742,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "symbol":
+			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
@@ -719,11 +779,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				continue
 			}
 			searchedFileContentsOrPaths = true
+			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.query)
+				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.query, r.searchTimeoutFieldSet())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -757,6 +818,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			if len(refValues) == 0 {
 				continue
 			}
+			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
@@ -779,6 +841,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "diff":
+			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
@@ -801,6 +864,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "commit":
+			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
@@ -825,7 +889,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			})
 		}
 	}
-	wg.Wait()
+
+	// Wait for required searches.
+	requiredWg.Wait()
+
+	if r.searchTimeoutParameterEnabled() {
+		// Give optional searches some minimum budget in case required searches return quickly.
+		// Cancel all remaining searches after this minimum budget.
+		budget := 100 * time.Millisecond
+		elapsed := time.Now().Sub(start)
+		timer := time.AfterFunc(budget-elapsed, cancel)
+
+		// Wait for remaining optional searches to finish or get cancelled.
+		optionalWg.Wait()
+
+		timer.Stop()
+	}
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 

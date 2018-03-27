@@ -202,6 +202,11 @@ func initConfig() error {
 		return err
 	}
 
+	// For convenience, make sure this is not nil.
+	if tmpConfig.ExperimentalFeatures == nil {
+		tmpConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+	}
+
 	cfgMu.Lock()
 	cfg = tmpConfig
 	cfgMu.Unlock()

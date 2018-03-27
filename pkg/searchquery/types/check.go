@@ -32,6 +32,10 @@ type FieldType struct {
 	Quoted    ValueType // interpret literal tokens as being of this type
 	Singular  bool      // whether the field may only be used 0 or 1 times
 	Negatable bool      // whether the field can be matched negated (i.e., -field:value)
+
+	// FeatureFlagEnabled returns true if this field is enabled.
+	// The field is always enabled if this is nil.
+	FeatureFlagEnabled func() bool
 }
 
 // Check typechecks the input query for field and type validity.
@@ -64,6 +68,10 @@ func (c *Config) resolveField(field string, not bool) (resolvedField string, typ
 	typ, ok = c.FieldTypes[field]
 	if !ok {
 		err = fmt.Errorf("unrecognized field %q", field)
+		return
+	}
+	if typ.FeatureFlagEnabled != nil && !typ.FeatureFlagEnabled() {
+		err = fmt.Errorf("unrecognized field %q; the feature flag for this field is not enabled", field)
 		return
 	}
 	if not && !typ.Negatable {

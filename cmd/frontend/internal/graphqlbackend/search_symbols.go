@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
@@ -105,8 +106,12 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	}()
 	span.SetTag("repo", string(repoRevs.repo.URI))
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
+	if !conf.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled {
+		// Old behavior doesn't set timeout at top level.
+		tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		ctx = tctx
+	}
 
 	inputRev := repoRevs.revspecs()[0]
 	span.SetTag("rev", inputRev)

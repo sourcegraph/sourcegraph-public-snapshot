@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -312,7 +313,15 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 	}
 
 	// If we reach fileMatchLimit we use cancel to stop the search
-	ctx, cancel := context.WithCancel(ctx)
+	var cancel context.CancelFunc
+	if deadline, ok := ctx.Deadline(); ok {
+		// If a deadline is set, try to finish before the deadline expires.
+		timeout := time.Duration(0.9 * float64(deadline.Sub(time.Now())))
+		span.LogFields(otlog.Int64("concurrentFindTimeout", int64(timeout)))
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
 	defer cancel()
 
 	var (

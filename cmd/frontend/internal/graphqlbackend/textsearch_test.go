@@ -171,7 +171,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	results, common, err := searchFilesInRepos(context.Background(), args, *query)
+	results, common, err := searchFilesInRepos(context.Background(), args, *query, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +198,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		},
 		repos: makeRepositoryRevisions("foo/no-rev@dev"),
 	}
-	_, _, err = searchFilesInRepos(context.Background(), args, *query)
+	_, _, err = searchFilesInRepos(context.Background(), args, *query, false)
 	if !vcs.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
