@@ -39,7 +39,7 @@ interface Props {
     icon: React.ComponentType<{ className: string }>
 
     /** Called when a location is selected. */
-    onSelect: () => void
+    onSelect?: () => void
 
     className: string
 
@@ -160,7 +160,7 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
                             expanded={true}
                             result={refsToFileMatch(uri, this.props.inputRevision, locationsByURI.get(uri)!)}
                             icon={this.props.icon}
-                            onSelect={this.props.onSelect}
+                            onSelect={this.onSelect}
                             showAllMatches={true}
                             isLightTheme={this.props.isLightTheme}
                         />
@@ -173,6 +173,12 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
 
     private onShowMoreItems = (): void => {
         this.setState(state => ({ itemsToShow: state.itemsToShow + 3 }))
+    }
+
+    private onSelect = (): void => {
+        if (this.props.onSelect) {
+            this.props.onSelect()
+        }
     }
 }
 
