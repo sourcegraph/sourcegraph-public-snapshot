@@ -23,10 +23,12 @@ import { takeUntil } from 'rxjs/operators/takeUntil'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Hover, Location } from 'vscode-languageserver-types'
+import { ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
     fetchDefinition,
     fetchHover,
     fetchReferences,
+    fetchServerCapabilities,
     firstMarkedString,
     isEmptyHover,
     queryImplementation,
@@ -83,6 +85,9 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
 const LOADING: 'loading' = 'loading'
 
 interface State {
+    /** The LSP server capabilities information. */
+    serverCapabilitiesOrError?: ServerCapabilities | ErrorLike
+
     /** The hover information for the subject. */
     hoverOrError?: Hover | ErrorLike | typeof LOADING
 }
@@ -108,6 +113,31 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
         // Changes to the context subject, including upon the initial mount.
         const subjectChanges = componentUpdates.pipe(
             distinctUntilChanged<Props>((a, b) => subjectIsEqual(toSubject(a), toSubject(b)))
+        )
+
+        // Update server capabilities.
+        this.subscriptions.add(
+            subjectChanges
+                .pipe(
+                    // This remains the same for all positions/ranges in the file.
+                    distinctUntilChanged(
+                        (a, b) => a.repoPath === b.repoPath && a.commitID === b.commitID && a.filePath === b.filePath
+                    ),
+                    switchMap(subject => {
+                        type PartialStateUpdate = Pick<State, 'serverCapabilitiesOrError'>
+                        const result = fetchServerCapabilities(subject).pipe(
+                            catchError(error => [asError(error)]),
+                            map(c => ({ serverCapabilitiesOrError: c } as PartialStateUpdate)),
+                            publishReplay<PartialStateUpdate>(),
+                            refCount()
+                        )
+                        return merge(
+                            of({ serverCapabilitiesOrError: undefined }), // clear old data immediately
+                            result
+                        )
+                    })
+                )
+                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )
 
         // Update hover.
@@ -168,6 +198,12 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
             {
                 id: 'impl',
                 label: 'Implementation',
+                hidden:
+                    !this.state.serverCapabilitiesOrError ||
+                    isErrorLike(this.state.serverCapabilitiesOrError) ||
+                    // TODO(sqs): implementationProvider is in vscode-languageserver-node repo tag v4.0.0 but is
+                    // not published to npm yet.
+                    !(this.state.serverCapabilitiesOrError as any).implementationProvider,
             },
         ]
 

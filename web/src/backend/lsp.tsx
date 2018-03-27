@@ -10,6 +10,7 @@ import { ErrorObservable } from 'rxjs/observable/ErrorObservable'
 import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
 import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver-types'
+import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { siteFlags } from '../site/backend'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
@@ -19,7 +20,7 @@ import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 
 interface LSPRequest {
     method: string
-    params: any
+    params?: any
 }
 
 export const isEmptyHover = (hover: any): boolean =>
@@ -35,7 +36,7 @@ export function firstMarkedString(hover: Hover): MarkedString | undefined {
     return hover.contents.value
 }
 
-const wrapLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] => [
+const wrapLSPRequests = (ctx: AbsoluteRepo, path: string, requests: LSPRequest[]): any[] => [
     {
         id: 0,
         method: 'initialize',
@@ -48,12 +49,9 @@ const wrapLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): any[]
             mode: `${getModeFromExtension(getPathExtension(path))}`,
         },
     },
+    ...requests.map((req, i) => ({ id: i + 1, ...req })),
     {
-        id: 1,
-        ...req,
-    },
-    {
-        id: 2,
+        id: 1 + requests.length,
         method: 'shutdown',
     },
     {
@@ -84,16 +82,7 @@ siteFlags.subscribe(v => (siteHasCodeIntelligence = v && v.hasCodeIntelligence))
 
 let loggedSiteHasNoCodeIntelligence = false
 
-/**
- * Sends an LSP request to the xlang API.
- * If an error is returned, the Promise is rejected with the error from the response.
- *
- * @param req The LSP request to send
- * @param ctx Repo and revision
- * @param path File path for determining the mode
- * @return The result of the method call
- */
-const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Observable<any> => {
+const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPRequest[]): Observable<any> => {
     if (!siteHasCodeIntelligence) {
         if (!loggedSiteHasNoCodeIntelligence) {
             console.log(
@@ -114,13 +103,13 @@ const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Obser
 
     return ajax({
         method: 'POST',
-        url: `/.api/xlang/${req.method}`,
+        url: `/.api/xlang/${requests.map(({ method }) => method).join(',')}`,
         headers: {
             ...window.context.xhrHeaders,
             Accept: 'application/json',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(wrapLSPRequest(req, ctx, path)),
+        body: JSON.stringify(wrapLSPRequests(ctx, path, requests)),
     }).pipe(
         catchError<AjaxResponse, never>(err => {
             normalizeAjaxError(err)
@@ -137,10 +126,35 @@ const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Obser
                 }
             }
 
-            return results[1].result
+            return results.map((result: any) => result && result.result)
         })
     )
 }
+
+/**
+ * Sends an LSP request to the xlang API.
+ * If an error is returned, the Promise is rejected with the error from the response.
+ *
+ * @param req The LSP request to send
+ * @param ctx Repo and revision
+ * @param path File path for determining the mode
+ * @return The result of the method call
+ */
+const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Observable<any> =>
+    sendLSPRequests(ctx, path, req).pipe(map(results => results[1]))
+
+export const fetchServerCapabilities = memoizeObservable(
+    (pos: AbsoluteRepoFile): Observable<ServerCapabilities> =>
+        sendLSPRequests(pos, pos.filePath, {
+            method: 'textDocument/didOpen',
+            params: {
+                textDocument: {
+                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                },
+            } as DidOpenTextDocumentParams,
+        }).pipe(map(results => (results[0] as InitializeResult).capabilities)),
+    makeRepoURI
+)
 
 export const fetchHover = memoizeObservable(
     (pos: AbsoluteRepoFilePosition): Observable<Hover> =>
