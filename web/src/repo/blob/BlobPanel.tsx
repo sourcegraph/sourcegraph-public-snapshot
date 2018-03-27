@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Resizable } from '../../components/Resizable'
-import { ReferencesWidget } from '../../references/ReferencesWidget'
+import { BlobReferencesPanel } from './references/BlobReferencesPanel'
 
 interface Props {
     repoPath: string
@@ -27,7 +27,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                 defaultSize={350}
                 storageKey="blob-panel"
                 element={
-                    <ReferencesWidget
+                    <BlobReferencesPanel
                         repoPath={this.props.repoPath}
                         commitID={this.props.commitID}
                         rev={this.props.rev}

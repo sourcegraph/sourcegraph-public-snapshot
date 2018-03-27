@@ -264,6 +264,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
             hash.modal === 'references' &&
                 hash.line && (
                     <BlobPanel
+                        key="blob-panel"
                         repoPath={this.props.repoPath}
                         rev={this.props.rev}
                         commitID={this.props.commitID}

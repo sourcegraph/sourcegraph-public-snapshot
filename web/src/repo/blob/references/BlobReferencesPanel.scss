@@ -1,4 +1,4 @@
-.references-widget {
+.blob-references-panel {
     flex: 1 1 50%;
     min-height: 0;
 
@@ -18,7 +18,7 @@
 }
 
 .theme-light {
-    .references-widget {
+    .blob-references-panel {
         background-color: $color-light-bg-2;
         border-top-color: $color-light-border;
 
