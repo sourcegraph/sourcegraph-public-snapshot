@@ -4,6 +4,7 @@ import { Range } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, BlobViewState } from '..'
 import { Resizable } from '../../components/Resizable'
 import { parseHash } from '../../util/url'
+import { BlobPanel2 } from './panel/BlobPanel2'
 import { BlobReferencesPanel } from './references/BlobReferencesPanel'
 
 interface Props extends AbsoluteRepoFile {
@@ -13,6 +14,8 @@ interface Props extends AbsoluteRepoFile {
 }
 
 interface State {}
+
+const useNewBlobPanel = localStorage.getItem('newBlobPanel') !== null
 
 export class BlobPanel extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
@@ -36,17 +39,31 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                 defaultSize={350}
                 storageKey="blob-panel"
                 element={
-                    <BlobReferencesPanel
-                        repoPath={this.props.repoPath}
-                        commitID={this.props.commitID}
-                        rev={this.props.rev}
-                        viewState={hash.viewState}
-                        filePath={this.props.filePath}
-                        position={range.start}
-                        location={this.props.location}
-                        history={this.props.history}
-                        isLightTheme={this.props.isLightTheme}
-                    />
+                    useNewBlobPanel ? (
+                        <BlobPanel2
+                            repoPath={this.props.repoPath}
+                            commitID={this.props.commitID}
+                            rev={this.props.rev}
+                            viewState={hash.viewState}
+                            filePath={this.props.filePath}
+                            position={range.start}
+                            location={this.props.location}
+                            history={this.props.history}
+                            isLightTheme={this.props.isLightTheme}
+                        />
+                    ) : (
+                        <BlobReferencesPanel
+                            repoPath={this.props.repoPath}
+                            commitID={this.props.commitID}
+                            rev={this.props.rev}
+                            viewState={hash.viewState}
+                            filePath={this.props.filePath}
+                            position={range.start}
+                            location={this.props.location}
+                            history={this.props.history}
+                            isLightTheme={this.props.isLightTheme}
+                        />
+                    )
                 }
             />
         )

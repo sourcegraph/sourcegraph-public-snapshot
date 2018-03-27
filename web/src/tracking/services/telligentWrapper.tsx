@@ -69,6 +69,7 @@ class TelligentWrapper {
                 id: eventProps.id,
                 platform: eventProps.platform,
                 server: eventProps.server,
+                tab: eventProps.tab,
             }
             this.telligent('track', eventAction, limitedEventProps)
             return

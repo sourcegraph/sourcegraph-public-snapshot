@@ -9,7 +9,7 @@ import { AjaxResponse } from 'rxjs/observable/dom/AjaxObservable'
 import { ErrorObservable } from 'rxjs/observable/ErrorObservable'
 import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
-import { Definition, Hover, Location } from 'vscode-languageserver-types'
+import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver-types'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { siteFlags } from '../site/backend'
 import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
@@ -24,6 +24,16 @@ interface LSPRequest {
 
 export const isEmptyHover = (hover: any): boolean =>
     !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
+
+/** Returns the first MarkedString element from the hover, or undefined if it has none. */
+export function firstMarkedString(hover: Hover): MarkedString | undefined {
+    if (typeof hover.contents === 'string') {
+        return hover.contents
+    } else if (Array.isArray(hover.contents)) {
+        return hover.contents[0]
+    }
+    return hover.contents.value
+}
 
 const wrapLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] => [
     {
@@ -217,7 +227,7 @@ export const fetchXdefinition = memoizeObservable(
 )
 
 export const fetchReferences = memoizeObservable(
-    (options: AbsoluteRepoFilePosition): Observable<Location[]> =>
+    (options: AbsoluteRepoFilePosition & { includeDeclaration?: boolean }): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'textDocument/references',
@@ -230,7 +240,28 @@ export const fetchReferences = memoizeObservable(
                         line: options.position.line - 1,
                     },
                     context: {
-                        includeDeclaration: true,
+                        includeDeclaration: options.includeDeclaration !== false, // undefined means true
+                    },
+                },
+            },
+            options,
+            options.filePath
+        ),
+    makeRepoURI
+)
+
+export const queryImplementation = memoizeObservable(
+    (options: AbsoluteRepoFilePosition): Observable<Location[]> =>
+        sendLSPRequest(
+            {
+                method: 'textDocument/implementation',
+                params: {
+                    textDocument: {
+                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
+                    },
+                    position: {
+                        character: options.position.character! - 1,
+                        line: options.position.line - 1,
                     },
                 },
             },
