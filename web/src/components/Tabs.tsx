@@ -10,6 +10,11 @@ import { NavLink } from 'react-router-dom'
 export interface Tab<ID extends string> {
     id: ID
     label: React.ReactFragment
+
+    /**
+     * Whether the tab is hidden in the tab bar.
+     */
+    hidden?: boolean
 }
 
 /**
@@ -44,16 +49,18 @@ class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<T
     public render(): JSX.Element | null {
         return (
             <div className="tab-bar">
-                {this.props.tabs.map((tab, i) => (
-                    <this.props.tabComponent
-                        key={i}
-                        tab={tab}
-                        className={`btn btn-link btn-sm tab-bar__tab ${!this.props.endFragment &&
-                            'tab-bar__tab--flex-grow'} tab-bar__tab--${
-                            this.props.activeTab === tab.id ? 'active' : 'inactive'
-                        } ${this.props.tabClassName || ''}`}
-                    />
-                ))}
+                {this.props.tabs
+                    .filter(({ hidden }) => !hidden)
+                    .map((tab, i) => (
+                        <this.props.tabComponent
+                            key={i}
+                            tab={tab}
+                            className={`btn btn-link btn-sm tab-bar__tab ${!this.props.endFragment &&
+                                'tab-bar__tab--flex-grow'} tab-bar__tab--${
+                                this.props.activeTab === tab.id ? 'active' : 'inactive'
+                            } ${this.props.tabClassName || ''}`}
+                        />
+                    ))}
                 {this.props.endFragment}
             </div>
         )
@@ -241,9 +248,9 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         const newSuffix = tabID === null ? '' : `$${tabID}`
         const i = location.hash.lastIndexOf('$')
         if (i >= 0) {
-            return { hash: location.hash.slice(0, i) + newSuffix }
+            return { ...location, hash: location.hash.slice(0, i) + newSuffix }
         }
-        return { hash: location.hash + newSuffix }
+        return { ...location, hash: location.hash + newSuffix }
     }
 
     private readFromURL(location: H.Location, tabs: T[]): ID {

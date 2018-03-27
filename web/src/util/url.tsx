@@ -3,15 +3,12 @@ import {
     AbsoluteRepoFile,
     PositionSpec,
     RangeSpec,
-    ReferencesModeSpec,
     RenderModeSpec,
     Repo,
     RepoFile,
     ResolvedRevSpec,
+    ViewStateSpec,
 } from '../repo'
-
-type Modal = 'references'
-type ModalMode = 'local' | 'external'
 
 function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {
     if (ctx.renderMode === 'code') {
@@ -31,16 +28,25 @@ export type LineOrPositionOrRange =
     | { line: number; character?: undefined; endLine?: number; endCharacter?: undefined }
     | { line: number; character: number; endLine: number; endCharacter: number }
 
-export function parseHash(hash: string): LineOrPositionOrRange & { modal?: Modal; modalMode?: ModalMode } {
+/**
+ * Parses the URL fragment (hash) portion, which consists of a line, position, or range in the file, plus an
+ * optional "viewState" parameter (that encodes other view state, such as for the panel).
+ *
+ * For example, in the URL fragment "#L17:19-21:23$foo:bar", the "viewState" is "foo:bar".
+ *
+ * @template V The type that describes the view state (typically a union of string constants). There is no runtime
+ *             check that the return value satisfies V.
+ */
+export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
     if (hash.startsWith('#')) {
         hash = hash.substr('#'.length)
     }
-    if (!/^L[0-9]+(:[0-9]+)?($|((-[0-9]+(:[0-9]+)?)?($|(\$references($|(:(local|external)$))))))/.test(hash)) {
-        // invalid hash
+    if (!/^L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?(\$.*)?$/.test(hash)) {
+        // invalid or empty hash
         return {}
     }
 
-    const lineCharModalInfo = hash.split('$') // e.g. "L17:19-21:23$references:external"
+    const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references:external"
 
     // Parse the line or position range, ensuring we don't get an inconsistent result
     // (such as L1-2:3, a range from a line to a position).
@@ -62,7 +68,7 @@ export function parseHash(hash: string): LineOrPositionOrRange & { modal?: Modal
             endCharacter = parsed.character
         }
     }
-    let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange
+    let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange & { viewState?: V }
     if (typeof line === 'undefined' || (typeof endLine !== 'undefined' && typeof character !== typeof endCharacter)) {
         lpr = {}
     } else if (typeof character === 'undefined') {
@@ -72,15 +78,10 @@ export function parseHash(hash: string): LineOrPositionOrRange & { modal?: Modal
     } else {
         lpr = { line, character, endLine, endCharacter }
     }
-
-    if (!lineCharModalInfo[1]) {
-        return lpr
+    if (lineCharModalInfo[1]) {
+        lpr.viewState = lineCharModalInfo[1] as V
     }
-
-    const modalInfo = lineCharModalInfo[1].split(':')
-    const modal = modalInfo[0] as Modal // "references"
-    const modalMode = (modalInfo[1] as ModalMode) || 'local' // "external"
-    return { ...lpr, modal, modalMode }
+    return lpr
 }
 
 function parseLineOrPosition(
@@ -124,8 +125,8 @@ function toPositionHashComponent(position: Position): string {
     return position.line.toString() + (position.character ? ':' + position.character : '')
 }
 
-function toReferencesHashComponent(group: 'local' | 'external' | undefined): string {
-    return group ? (group === 'local' ? '$references' : '$references:external') : ''
+function toViewStateHashComponent(viewState: string | undefined): string {
+    return viewState ? `$${viewState}` : ''
 }
 
 export function toRepoURL(ctx: Repo & Partial<ResolvedRevSpec>): string {
@@ -143,20 +144,20 @@ export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
+    ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
 ): string {
     return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toRenderModeQuery(
         ctx
-    )}${toPositionOrRangeHash(ctx)}${toReferencesHashComponent(ctx.referencesMode)}`
+    )}${toPositionOrRangeHash(ctx)}${toViewStateHashComponent(ctx.viewState)}`
 }
 
 export function toAbsoluteBlobURL(
-    ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ReferencesModeSpec> & Partial<RenderModeSpec>
+    ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RenderModeSpec>
 ): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
         ctx
-    )}${toReferencesHashComponent(ctx.referencesMode)}`
+    )}${toViewStateHashComponent(ctx.viewState)}`
 }
 
 export function toTreeURL(ctx: RepoFile): string {

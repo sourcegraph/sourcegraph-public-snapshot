@@ -143,6 +143,7 @@ export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
                                 previewWindowExtraLines={1}
                                 highlightRanges={item.highlightRanges}
                                 line={item.line}
+                                className="file-match__item-code-excerpt"
                                 isLightTheme={props.isLightTheme}
                             />
                         </Link>

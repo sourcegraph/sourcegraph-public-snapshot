@@ -19,6 +19,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { isError } from 'util'
 import { Location } from 'vscode-languageserver-types'
 import { VirtualList } from '../../components/VirtualList'
+import { parseRepoURI } from '../../repo'
 import { FileMatch, IFileMatch, ILineMatch } from '../../search/FileMatch'
 import { asError } from '../../util/errors'
 import { ErrorLike, isErrorLike } from '../../util/errors'
@@ -32,14 +33,23 @@ interface Props {
     /** An observable that upon emission causes the connection to refresh the data (by calling queryConnection). */
     updates?: Observable<void>
 
-    /** If given, use this revision in the link URLs to the files (instead of empty). */
+    /**
+     * Used along with the "inputRevision" prop to preserve the original Git revision specifier for the current
+     * repository.
+     */
+    inputRepo?: string
+
+    /**
+     * If given, use this revision in the link URLs to the files (instead of empty) for locations whose repository
+     * matches the "inputRepo" prop.
+     */
     inputRevision?: string
 
     /** The icon to use for each location. */
     icon: React.ComponentType<{ className: string }>
 
     /** Called when a location is selected. */
-    onSelect: () => void
+    onSelect?: () => void
 
     className: string
 
@@ -136,14 +146,15 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
         const locationsByURI = new Map<string, Location[]>()
 
         // URIs with >0 locations, in order (to avoid jitter as more results stream in).
-        const orderedURIs: string[] = []
+        const orderedURIs: { uri: string; repo: string }[] = []
 
         if (this.state.locationsOrError) {
             for (const loc of this.state.locationsOrError) {
                 if (!locationsByURI.has(loc.uri)) {
                     locationsByURI.set(loc.uri, [])
 
-                    orderedURIs.push(loc.uri)
+                    const { repoPath } = parseRepoURI(loc.uri)
+                    orderedURIs.push({ uri: loc.uri, repo: repoPath })
                 }
                 locationsByURI.get(loc.uri)!.push(loc)
             }
@@ -154,13 +165,17 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
                 <VirtualList
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
-                    items={orderedURIs.map((uri, i) => (
+                    items={orderedURIs.map(({ uri, repo }, i) => (
                         <FileMatch
                             key={i}
                             expanded={true}
-                            result={refsToFileMatch(uri, this.props.inputRevision, locationsByURI.get(uri)!)}
+                            result={refsToFileMatch(
+                                uri,
+                                repo === this.props.inputRepo ? this.props.inputRevision : undefined,
+                                locationsByURI.get(uri)!
+                            )}
                             icon={this.props.icon}
-                            onSelect={this.props.onSelect}
+                            onSelect={this.onSelect}
                             showAllMatches={true}
                             isLightTheme={this.props.isLightTheme}
                         />
@@ -173,6 +188,12 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
 
     private onShowMoreItems = (): void => {
         this.setState(state => ({ itemsToShow: state.itemsToShow + 3 }))
+    }
+
+    private onSelect = (): void => {
+        if (this.props.onSelect) {
+            this.props.onSelect()
+        }
     }
 }
 

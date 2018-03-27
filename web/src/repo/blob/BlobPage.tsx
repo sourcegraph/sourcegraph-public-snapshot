@@ -18,18 +18,16 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { Resizable } from '../../components/Resizable'
-import { ReferencesWidget } from '../../references/ReferencesWidget'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
-import { parseHash } from '../../util/url'
 import { makeRepoURI, ParsedRepoURI } from '../index'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { OpenInEditorAction } from './actions/OpenInEditorAction'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
+import { BlobPanel } from './BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
@@ -98,11 +96,6 @@ interface State {
     wrapCode: boolean
 
     /**
-     * Whether to show the references panel.
-     */
-    showRefs: boolean
-
-    /**
      * The blob data or error that happened.
      * undefined while loading.
      */
@@ -119,12 +112,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
         this.state = {
             wrapCode: ToggleLineWrap.getValue(),
-            showRefs: parseHash(props.location.hash).modal === 'references',
         }
     }
 
     private logViewEvent(): void {
-        eventLogger.logViewEvent('Blob', { fileShown: true, referencesShown: this.state.showRefs })
+        eventLogger.logViewEvent('Blob', { fileShown: true })
     }
 
     public componentDidMount(): void {
@@ -190,7 +182,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
         }
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
-        const hash = parseHash(this.props.location.hash)
 
         return [
             <PageTitle key="page-title" title={this.getPageTitle()} />,
@@ -262,30 +253,16 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         </div>
                     </div>
                 ),
-            hash.modal === 'references' &&
-                hash.line && (
-                    <Resizable
-                        key="blob-page-references"
-                        className="blob-page__panel--resizable"
-                        handlePosition="top"
-                        defaultSize={350}
-                        storageKey="blob-page-references"
-                        element={
-                            <ReferencesWidget
-                                key="refs"
-                                repoPath={this.props.repoPath}
-                                commitID={this.props.commitID}
-                                rev={this.props.rev}
-                                referencesMode={hash.modalMode}
-                                filePath={this.props.filePath}
-                                position={{ line: hash.line, character: hash.character || 0 }}
-                                location={this.props.location}
-                                history={this.props.history}
-                                isLightTheme={this.props.isLightTheme}
-                            />
-                        }
-                    />
-                ),
+            <BlobPanel
+                key="blob-panel"
+                repoPath={this.props.repoPath}
+                rev={this.props.rev}
+                commitID={this.props.commitID}
+                filePath={this.props.filePath}
+                isLightTheme={this.props.isLightTheme}
+                location={this.props.location}
+                history={this.props.history}
+            />,
         ]
     }
 

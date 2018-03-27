@@ -1,4 +1,5 @@
 @import './Blob';
+@import './BlobPanel';
 @import './RenderedFile';
 @import './Tooltips';
 
@@ -8,13 +9,6 @@
 
     &__placeholder {
         flex: 1 1 50%;
-    }
-
-    &__panel {
-        &--resizable {
-            min-height: 10rem;
-            max-height: 80%;
-        }
     }
 
     &__blob {

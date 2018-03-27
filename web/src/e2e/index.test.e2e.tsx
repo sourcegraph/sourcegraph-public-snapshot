@@ -125,20 +125,20 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
 
     const assertNonemptyLocalRefs = async (): Promise<void> => {
         // verify active group is 'local'
-        await page.waitForSelector('.references-widget .tab-bar__tab--active')
+        await page.waitForSelector('.blob-references-panel .tab-bar__tab--active')
         assert.equal(
             await page.evaluate(() =>
-                document.querySelector('.references-widget .tab-bar__tab--active')!.textContent!.replace(/\d/g, '')
+                document.querySelector('.blob-references-panel .tab-bar__tab--active')!.textContent!.replace(/\d/g, '')
             ),
             'This repository'
         )
 
-        await page.waitForSelector('.references-widget .badge')
+        await page.waitForSelector('.blob-references-panel .badge')
         await retry(async () =>
             assert.ok(
                 parseInt(
                     await page.evaluate(
-                        () => document.querySelector('.references-widget .tab-bar__tab--active .badge')!.textContent
+                        () => document.querySelector('.blob-references-panel .tab-bar__tab--active .badge')!.textContent
                     ),
                     10
                 ) > 0, // assert some (local) refs fetched
@@ -149,19 +149,21 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
 
     const assertNonemptyExternalRefs = async (): Promise<void> => {
         // verify active group is 'external'
-        await page.waitForSelector('.references-widget .tab-bar__tab--active')
+        await page.waitForSelector('.blob-references-panel .tab-bar__tab--active')
         assert.equal(
-            await page.evaluate(() => document.querySelector('.references-widget .tab-bar__tab--active')!.textContent),
+            await page.evaluate(
+                () => document.querySelector('.blob-references-panel .tab-bar__tab--active')!.textContent
+            ),
             'Other repositories'
         )
-        await page.waitForSelector('.references-widget .tab-bar__tab--active .badge')
+        await page.waitForSelector('.blob-references-panel .tab-bar__tab--active .badge')
         await retry(async () => {
             assert.ok(
                 parseInt(
                     await page.evaluate(
                         () =>
                             document
-                                .querySelector('.references-widget .tab-bar__tab--active .badge')!
+                                .querySelector('.blob-references-panel .tab-bar__tab--active .badge')!
                                 .textContent!.replace(/\d/g, '') // get the external refs count
                     ),
                     10
@@ -521,11 +523,11 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                     await assertNonemptyLocalRefs()
 
                     // verify the appropriate # of references are fetched
-                    await page.waitForSelector('.references-widget .badge')
+                    await page.waitForSelector('.blob-references-panel .badge')
                     await retry(async () =>
                         assert.equal(
                             await page.evaluate(() =>
-                                document.querySelector('.references-widget .badge')!.textContent!.replace(/\d/g, '')
+                                document.querySelector('.blob-references-panel .badge')!.textContent!.replace(/\d/g, '')
                             ),
                             '5'
                         )

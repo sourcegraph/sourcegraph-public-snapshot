@@ -8,11 +8,11 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { Location } from 'vscode-languageserver-types'
-import { gql, queryGraphQL } from '../backend/graphql'
-import { fetchXdefinition, fetchXreferences } from '../backend/lsp'
-import { AbsoluteRepoFilePosition, makeRepoURI } from '../repo'
-import * as util from '../util'
-import { memoizeObservable } from '../util/memoize'
+import { gql, queryGraphQL } from '../../../backend/graphql'
+import { fetchXdefinition, fetchXreferences } from '../../../backend/lsp'
+import * as util from '../../../util'
+import { memoizeObservable } from '../../../util/memoize'
+import { AbsoluteRepoFilePosition, makeRepoURI } from '../../index'
 
 export const fetchDependencyReferences = memoizeObservable(
     (ctx: AbsoluteRepoFilePosition): Observable<GQL.IDependencyReferences | null> => {

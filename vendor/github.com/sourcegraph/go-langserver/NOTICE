@@ -1,4 +1,4 @@
-Portions of code are adapted from go/types and github.com/golang/gddo:
+Portions of code are adapted from go/types, golang.org/x/tools, and github.com/golang/gddo:
 
 Copyright (c) 2013 The Go Authors. All rights reserved.
 

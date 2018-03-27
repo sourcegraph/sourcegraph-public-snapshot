@@ -1,4 +1,4 @@
-.references-widget {
+.blob-panel2 {
     flex: 1 1 50%;
     min-height: 0;
 
@@ -11,6 +11,25 @@
     border-top: 1px solid $color-border;
     width: 100%;
 
+    &__header {
+        padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+        display: flex;
+        align-items: center;
+        &-title {
+            flex: 1;
+
+            // override .hljs styles
+            padding: 0 0.25rem 0 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        &-close-button {
+            flex: 0;
+            opacity: 0.6;
+        }
+    }
+
     overflow-y: hidden;
     &__content {
         overflow-y: auto;
@@ -18,7 +37,7 @@
 }
 
 .theme-light {
-    .references-widget {
+    .blob-panel2 {
         background-color: $color-light-bg-2;
         border-top-color: $color-light-border;
 

@@ -28,6 +28,7 @@ import {
     AbsoluteRepoFile,
     AbsoluteRepoFilePosition,
     AbsoluteRepoFileRange,
+    BlobViewState,
     getCodeCell,
     getCodeCells,
     RenderMode,
@@ -149,9 +150,9 @@ export class Blob extends React.Component<Props, State> {
             }
         }
         const thisHash = parseHash(this.props.location.hash)
-        if (thisHash.modal !== nextHash.modal && this.props.location.pathname === nextProps.location.pathname) {
-            // When updating references mode in the same file, scroll. Wait just a moment to make sure the references
-            // panel is shown, since the scroll offset is calculated based on the height of the blob.
+        if (thisHash.viewState !== nextHash.viewState && this.props.location.pathname === nextProps.location.pathname) {
+            // When updating references mode in the same file, scroll. Wait just a moment to make sure the panel is
+            // shown, since the scroll offset is calculated based on the height of the blob.
             setTimeout(() => this.scrollToLine(nextProps), 10)
         }
 
@@ -161,13 +162,13 @@ export class Blob extends React.Component<Props, State> {
                 thisHash.line !== nextHash.line ||
                 thisHash.endCharacter !== nextHash.endCharacter ||
                 thisHash.endLine !== nextHash.endLine ||
-                thisHash.modal !== nextHash.modal)
+                thisHash.viewState !== nextHash.viewState)
         ) {
-            if (!nextHash.modal) {
+            if (!nextHash.viewState) {
                 this.fixedTooltip.next(nextProps)
                 this.scrollToLine(nextProps, true)
             } else {
-                // If showing modal, remove any tooltip then highlight the element for the given start position.
+                // If showing panel, remove any tooltip then highlight the element for the given start position.
                 this.setFixedTooltip()
                 if (nextHash.line) {
                     this.addSelectionHighlightSticky(nextHash.line, nextHash.character)
@@ -228,8 +229,8 @@ export class Blob extends React.Component<Props, State> {
         createTooltips()
 
         const parsedHash = parseHash(this.props.location.hash)
-        if (!parsedHash.modal) {
-            // Show fixed tooltip if necessary iff not showing a modal.
+        if (!parsedHash.viewState) {
+            // Show fixed tooltip if necessary iff not showing a panel.
             this.fixedTooltip.next(this.props)
         }
         // The HTML contents were updated on a mounted component, e.g. from a 'back' or 'forward' event,
@@ -299,10 +300,10 @@ export class Blob extends React.Component<Props, State> {
                                         convertNode(td)
                                     }
                                 }
-                                if (!parsed.modal) {
+                                if (!parsed.viewState) {
                                     return true
                                 }
-                                // Don't show a tooltip when there is a modal (but do highlight the token)
+                                // Don't show a tooltip when there is a panel (but do highlight the token)
                                 // TODO(john): this can probably be simplified.
                                 if (cell) {
                                     const el = findElementWithOffset(
@@ -551,8 +552,8 @@ export class Blob extends React.Component<Props, State> {
     }
 
     private scrollToLine = (props: Props, scrollOnlyIfNeeded?: boolean) => {
-        const parsed = parseHash(props.location.hash)
-        const { line, character, endLine, endCharacter, modalMode } = parsed
+        const parsed = parseHash<BlobViewState>(props.location.hash)
+        const { line, character, endLine, endCharacter, viewState } = parsed
         if (line) {
             const cells = getCodeCells(line, endLine)
             updateAndScrollToLine(
@@ -569,7 +570,7 @@ export class Blob extends React.Component<Props, State> {
                             ? { line: endLine, character: endCharacter || 0 }
                             : { line, character: character || 0 },
                     },
-                    referencesMode: modalMode,
+                    viewState,
                     renderMode: props.renderMode,
                 },
                 undefined,
@@ -658,7 +659,7 @@ export class Blob extends React.Component<Props, State> {
             return
         }
         e.preventDefault()
-        this.props.history.push(toPrettyBlobURL({ ...ctx, rev: this.props.rev, referencesMode: 'local' }))
+        this.props.history.push(toPrettyBlobURL({ ...ctx, rev: this.props.rev, viewState: 'references' }))
         hideTooltip()
         scrollToCell(getCodeCell(ctx.position.line))
     }

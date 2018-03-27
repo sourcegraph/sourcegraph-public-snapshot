@@ -15,12 +15,12 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Location } from 'vscode-languageserver-types'
-import { fetchReferences } from '../backend/lsp'
-import { Spacer, Tab, TabBorderClassName, TabsWithURLViewStatePersistence } from '../components/Tabs'
-import { FileLocationsPanelContent } from '../panel/fileLocations/FileLocationsPanel'
-import { AbsoluteRepoFilePosition } from '../repo'
-import { eventLogger } from '../tracking/eventLogger'
-import { parseHash } from '../util/url'
+import { fetchReferences } from '../../../backend/lsp'
+import { Spacer, Tab, TabBorderClassName, TabsWithURLViewStatePersistence } from '../../../components/Tabs'
+import { FileLocationsPanelContent } from '../../../panel/fileLocations/FileLocationsPanel'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { parseHash } from '../../../util/url'
+import { AbsoluteRepoFilePosition } from '../../index'
 import { fetchExternalReferences } from './backend'
 
 interface Props extends AbsoluteRepoFilePosition {
@@ -71,7 +71,10 @@ interface State {
     referencesExternalCount?: number
 }
 
-export class ReferencesWidget extends React.PureComponent<Props, State> {
+/**
+ * A panel on the blob page that displays references.
+ */
+export class BlobReferencesPanel extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private componentUpdates = new Subject<Props>()
@@ -146,14 +149,14 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                         </button>
                     </>
                 }
-                className="references-widget"
+                className="blob-references-panel"
                 tabClassName="tab-bar__tab--h5like"
                 onSelectTab={this.onSelectTab}
                 location={this.props.location}
             >
                 <FileLocationsPanelContent
                     key="references"
-                    className="references-widget__content"
+                    className="blob-references-panel__content"
                     query={this.queryReferencesLocal}
                     updates={this.locationsUpdates}
                     inputRevision={this.props.rev}
@@ -163,7 +166,7 @@ export class ReferencesWidget extends React.PureComponent<Props, State> {
                 />
                 <FileLocationsPanelContent
                     key="references:external"
-                    className="references-widget__content"
+                    className="blob-references-panel__content"
                     query={this.queryReferencesExternal}
                     updates={this.locationsUpdates}
                     icon={GlobeIcon}

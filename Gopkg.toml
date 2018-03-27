@@ -45,7 +45,7 @@ required = [
   name = "github.com/jteeuwen/go-bindata"
 
 [[constraint]]
-  branch = "master"
+  branch = "iface-impls"
   name = "github.com/sourcegraph/go-langserver"
 
 # github_flavored_markdown depends on v1 of blackfriday, which is the master
