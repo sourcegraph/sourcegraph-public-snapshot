@@ -161,7 +161,8 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
             assert.ok(
                 parseInt(
                     await page.evaluate(
-                        () => document.querySelector('.blob-references-panel .tab-bar__tab--active .badge')! // get the external refs count
+                        () =>
+                            document.querySelector('.blob-references-panel .tab-bar__tab--active .badge')!.textContent! // get the external refs count
                     ),
                     10
                 ) > 0, // assert some external refs fetched
