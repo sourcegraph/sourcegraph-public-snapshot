@@ -37,7 +37,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                 className="blob-panel--resizable"
                 handlePosition="top"
                 defaultSize={350}
-                storageKey="blob-panel"
+                storageKey="blob-panel-size"
                 element={
                     useNewBlobPanel ? (
                         <BlobPanel2

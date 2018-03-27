@@ -12,6 +12,7 @@
     width: 100%;
 
     &__header {
+        flex: none;
         padding: 0.25rem 0.25rem 0.25rem 0.5rem;
         display: flex;
         align-items: center;
@@ -19,15 +20,22 @@
             flex: 1;
 
             // override .hljs styles
-            padding: 0 0.25rem 0 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            > .hljs {
+                padding: 0 0.25rem 0 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
         }
-        &-close-button {
+        &-icon {
             flex: 0;
             opacity: 0.6;
         }
+    }
+
+    &__extra {
+        max-height: 60vh;
+        overflow: auto;
     }
 
     overflow-y: hidden;

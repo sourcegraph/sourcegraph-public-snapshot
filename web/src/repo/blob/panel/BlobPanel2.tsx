@@ -1,8 +1,10 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import Loader from '@sourcegraph/icons/lib/Loader'
+import MoreIcon from '@sourcegraph/icons/lib/More'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import { highlight } from 'highlight.js'
 import * as H from 'history'
+import marked from 'marked'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { merge } from 'rxjs/observable/merge'
@@ -22,7 +24,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { takeUntil } from 'rxjs/operators/takeUntil'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { Hover, Location } from 'vscode-languageserver-types'
+import { Hover, Location, MarkedString } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
     fetchDefinition,
@@ -36,7 +38,6 @@ import {
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../../../components/Tabs'
 import { FileLocationsPanelContent } from '../../../panel/fileLocations/FileLocationsPanel'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { getModeFromExtension, getPathExtension } from '../../../util'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
 import { AbsoluteRepoFilePosition } from '../../index'
@@ -84,12 +85,20 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
 
 const LOADING: 'loading' = 'loading'
 
+/** View state that is persisted in localStorage. */
+interface PersistentViewState {
+    /** Show the full hover information (not just the first line). */
+    expandHover: boolean
+}
+
 interface State {
     /** The LSP server capabilities information. */
     serverCapabilitiesOrError?: ServerCapabilities | ErrorLike
 
     /** The hover information for the subject. */
     hoverOrError?: Hover | ErrorLike | typeof LOADING
+
+    viewState: PersistentViewState
 }
 
 /**
@@ -98,11 +107,42 @@ interface State {
  * NOTE: This is the new version, still feature-flagged off by default.
  */
 export class BlobPanel2 extends React.PureComponent<Props, State> {
-    public state: State = {}
+    private static STORAGE_KEY = 'blob-panel-view-state'
+
+    public state: State = {
+        viewState: BlobPanel2.getViewState(),
+    }
 
     private componentUpdates = new Subject<Props>()
     private locationsUpdates = new Subject<void>()
     private subscriptions = new Subscription()
+
+    /**
+     * Reads the current view state.
+     */
+    public static getViewState(): PersistentViewState {
+        try {
+            const data = localStorage.getItem(BlobPanel2.STORAGE_KEY)
+            if (data) {
+                const obj = JSON.parse(data)
+                // Check that data is valid-ish.
+                if (typeof obj.expandHover === 'boolean') {
+                    return obj
+                }
+            }
+        } catch (e) {
+            // noop
+        }
+        window.localStorage.removeItem(BlobPanel2.STORAGE_KEY) // in case of error or invalid data
+        return { expandHover: false } // default
+    }
+
+    /**
+     * Persists the view state.
+     */
+    private static setViewState(value: PersistentViewState): void {
+        localStorage.setItem(BlobPanel2.STORAGE_KEY, JSON.stringify(value))
+    }
 
     public componentDidMount(): void {
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
@@ -198,54 +238,60 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
             },
         ]
 
-        let title: React.ReactFragment | null
-        let titleHTML: string | undefined
+        let titleRendered: React.ReactFragment | undefined
+        let extraRendered: React.ReactFragment | undefined
         if (this.state.hoverOrError === LOADING) {
-            title = <Loader className="icon-inline" />
+            titleRendered = <Loader className="icon-inline" />
         } else if (this.state.hoverOrError === undefined) {
             // Don't show loading indicator yet (to reduce UI jitter).
-            title = null
+            titleRendered = undefined
         } else if (
             this.state.hoverOrError &&
             !isErrorLike(this.state.hoverOrError) &&
             !isEmptyHover(this.state.hoverOrError)
         ) {
             // Hover with one or more MarkedStrings.
-            const markedString = firstMarkedString(this.state.hoverOrError)!
-            const value = typeof markedString === 'string' ? markedString : markedString.value
-            title = value
-            try {
-                titleHTML = highlight(getModeFromExtension(getPathExtension(this.props.filePath)), value).value
-            } catch (e) {
-                // Ignore syntax highlighting errors; plain text will be rendered.
+            titleRendered = renderMarkedString(firstMarkedString(this.state.hoverOrError)!)
+
+            if (Array.isArray(this.state.hoverOrError.contents) && this.state.hoverOrError.contents.length >= 2) {
+                extraRendered = this.state.hoverOrError.contents.slice(1).map((s, i) => (
+                    <div key={i} className="blob-panel2__extra-item px-2 pt-1">
+                        {renderMarkedString(s)}
+                    </div>
+                ))
             }
         } else {
             // Error or no hover information.
             //
             // Don't bother showing the error, if any; if it occurs on the panel contents fetches, it will be
             // displayed.
-            title = 'Context'
+            titleRendered = 'Context'
         }
 
         return (
             <div className="blob-panel2">
                 <header className="blob-panel2__header">
-                    {titleHTML ? (
-                        <code
-                            className="blob-panel2__header-title hljs"
-                            dangerouslySetInnerHTML={titleHTML ? { __html: titleHTML } : undefined}
-                        />
-                    ) : (
-                        <code className="blob-panel2__header-title">{title}</code>
+                    <div className="blob-panel2__header-title">{titleRendered}</div>
+                    {extraRendered && (
+                        <button
+                            className="btn btn-icon blob-panel2__header-icon"
+                            onClick={this.toggleExpandHover}
+                            data-tooltip={
+                                this.state.viewState.expandHover ? 'Show less information' : 'Show more information'
+                            }
+                        >
+                            <MoreIcon />
+                        </button>
                     )}
                     <button
                         onClick={this.onDismiss}
-                        className="btn btn-icon blob-panel2__header-close-button"
+                        className="btn btn-icon blob-panel2__header-icon"
                         data-tooltip="Close"
                     >
                         <CloseIcon />
                     </button>
                 </header>
+                {this.state.viewState.expandHover && <div className="blob-panel2__extra">{extraRendered}</div>}
                 <TabsWithURLViewStatePersistence
                     tabs={tabs}
                     tabBarEndFragment={<Spacer />}
@@ -336,4 +382,33 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
 
     private queryImplementation = (): Observable<{ loading: boolean; locations: Location[] }> =>
         queryImplementation(this.props).pipe(map(c => ({ loading: false, locations: c })))
+
+    private toggleExpandHover = (): void => {
+        this.setState(
+            prevState => ({
+                viewState: { ...prevState.viewState, expandHover: !prevState.viewState.expandHover },
+            }),
+            () => BlobPanel2.setViewState(this.state.viewState)
+        )
+    }
+}
+
+function renderMarkedString(markedString: MarkedString): React.ReactFragment {
+    const value = typeof markedString === 'string' ? markedString : markedString.value
+    const language = typeof markedString === 'string' ? 'markdown' : markedString.language
+    try {
+        if (language === 'markdown') {
+            return (
+                <div
+                    dangerouslySetInnerHTML={{
+                        __html: marked(value, { gfm: true, breaks: true, sanitize: true }),
+                    }}
+                />
+            )
+        }
+        return <code className="hljs" dangerouslySetInnerHTML={{ __html: highlight(language, value).value }} />
+    } catch (e) {
+        // Ignore rendering or syntax highlighting errors; plain text will be rendered.
+    }
+    return value
 }
