@@ -241,9 +241,9 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         const newSuffix = tabID === null ? '' : `$${tabID}`
         const i = location.hash.lastIndexOf('$')
         if (i >= 0) {
-            return { hash: location.hash.slice(0, i) + newSuffix }
+            return { ...location, hash: location.hash.slice(0, i) + newSuffix }
         }
-        return { hash: location.hash + newSuffix }
+        return { ...location, hash: location.hash + newSuffix }
     }
 
     private readFromURL(location: H.Location, tabs: T[]): ID {
