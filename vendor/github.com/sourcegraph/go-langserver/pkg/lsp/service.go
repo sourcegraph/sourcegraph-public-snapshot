@@ -64,6 +64,10 @@ type TextDocumentClientCapabilities struct {
 			SnippetSupport bool `json:"snippetSupport,omitempty"`
 		} `json:"completionItem,omitempty"`
 	} `json:"completion,omitempty"`
+
+	Implementation *struct {
+		DynamicRegistration bool `json:"dynamicRegistration,omitempty"`
+	} `json:"implementation,omitempty"`
 }
 
 type InitializeResult struct {
@@ -151,6 +155,7 @@ type ServerCapabilities struct {
 	DocumentHighlightProvider        bool                             `json:"documentHighlightProvider,omitempty"`
 	DocumentSymbolProvider           bool                             `json:"documentSymbolProvider,omitempty"`
 	WorkspaceSymbolProvider          bool                             `json:"workspaceSymbolProvider,omitempty"`
+	ImplementationProvider           bool                             `json:"implementationProvider,omitempty"`
 	CodeActionProvider               bool                             `json:"codeActionProvider,omitempty"`
 	CodeLensProvider                 *CodeLensOptions                 `json:"codeLensProvider,omitempty"`
 	DocumentFormattingProvider       bool                             `json:"documentFormattingProvider,omitempty"`
