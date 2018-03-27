@@ -269,8 +269,13 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         rev={this.props.rev}
                         commitID={this.props.commitID}
                         filePath={this.props.filePath}
-                        line={hash.line}
-                        character={hash.character || 0}
+                        range={{
+                            start: { line: hash.line, character: hash.character || 0 },
+                            end: {
+                                line: hash.endLine || hash.line,
+                                character: hash.endCharacter || hash.character || 0,
+                            },
+                        }}
                         modalMode={hash.modalMode}
                         isLightTheme={this.props.isLightTheme}
                         location={this.props.location}

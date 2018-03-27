@@ -1,15 +1,10 @@
 import * as H from 'history'
 import * as React from 'react'
+import { AbsoluteRepoFileRange } from '..'
 import { Resizable } from '../../components/Resizable'
 import { BlobReferencesPanel } from './references/BlobReferencesPanel'
 
-interface Props {
-    repoPath: string
-    rev: string | undefined
-    commitID: string
-    filePath: string
-    line: number
-    character: number
+interface Props extends AbsoluteRepoFileRange {
     modalMode: 'local' | 'external' | undefined
     isLightTheme: boolean
     location: H.Location
@@ -33,7 +28,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         rev={this.props.rev}
                         referencesMode={this.props.modalMode}
                         filePath={this.props.filePath}
-                        position={{ line: this.props.line, character: this.props.character }}
+                        position={this.props.range.start}
                         location={this.props.location}
                         history={this.props.history}
                         isLightTheme={this.props.isLightTheme}
