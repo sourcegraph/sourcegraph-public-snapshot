@@ -1,0 +1,8 @@
+@import '../../components/Resizable';
+
+.blob-panel {
+    &--resizable {
+        min-height: 10rem;
+        max-height: 80%;
+    }
+}

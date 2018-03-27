@@ -18,8 +18,6 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { Resizable } from '../../components/Resizable'
-import { ReferencesWidget } from '../../references/ReferencesWidget'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
@@ -30,6 +28,7 @@ import { OpenInEditorAction } from './actions/OpenInEditorAction'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
+import { BlobPanel } from './BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
@@ -264,26 +263,17 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 ),
             hash.modal === 'references' &&
                 hash.line && (
-                    <Resizable
-                        key="blob-page-references"
-                        className="blob-page__panel--resizable"
-                        handlePosition="top"
-                        defaultSize={350}
-                        storageKey="blob-page-references"
-                        element={
-                            <ReferencesWidget
-                                key="refs"
-                                repoPath={this.props.repoPath}
-                                commitID={this.props.commitID}
-                                rev={this.props.rev}
-                                referencesMode={hash.modalMode}
-                                filePath={this.props.filePath}
-                                position={{ line: hash.line, character: hash.character || 0 }}
-                                location={this.props.location}
-                                history={this.props.history}
-                                isLightTheme={this.props.isLightTheme}
-                            />
-                        }
+                    <BlobPanel
+                        repoPath={this.props.repoPath}
+                        rev={this.props.rev}
+                        commitID={this.props.commitID}
+                        filePath={this.props.filePath}
+                        line={hash.line}
+                        character={hash.character || 0}
+                        modalMode={hash.modalMode}
+                        isLightTheme={this.props.isLightTheme}
+                        location={this.props.location}
+                        history={this.props.history}
                     />
                 ),
         ]
