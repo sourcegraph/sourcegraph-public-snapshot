@@ -21,7 +21,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
-import { parseHash } from '../../util/url'
 import { makeRepoURI, ParsedRepoURI } from '../index'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { OpenInEditorAction } from './actions/OpenInEditorAction'
@@ -97,11 +96,6 @@ interface State {
     wrapCode: boolean
 
     /**
-     * Whether to show the references panel.
-     */
-    showRefs: boolean
-
-    /**
      * The blob data or error that happened.
      * undefined while loading.
      */
@@ -118,12 +112,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
         this.state = {
             wrapCode: ToggleLineWrap.getValue(),
-            showRefs: parseHash(props.location.hash).modal === 'references',
         }
     }
 
     private logViewEvent(): void {
-        eventLogger.logViewEvent('Blob', { fileShown: true, referencesShown: this.state.showRefs })
+        eventLogger.logViewEvent('Blob', { fileShown: true })
     }
 
     public componentDidMount(): void {

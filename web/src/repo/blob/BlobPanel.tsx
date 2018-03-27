@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Range } from 'vscode-languageserver-types'
-import { AbsoluteRepoFile } from '..'
+import { AbsoluteRepoFile, BlobViewState } from '..'
 import { Resizable } from '../../components/Resizable'
 import { parseHash } from '../../util/url'
 import { BlobReferencesPanel } from './references/BlobReferencesPanel'
@@ -16,8 +16,8 @@ interface State {}
 
 export class BlobPanel extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
-        const hash = parseHash(this.props.location.hash)
-        if (hash.line === undefined || hash.modal === undefined) {
+        const hash = parseHash<BlobViewState>(this.props.location.hash)
+        if (hash.line === undefined || hash.viewState === undefined) {
             return null // no panel
         }
 
@@ -40,7 +40,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         repoPath={this.props.repoPath}
                         commitID={this.props.commitID}
                         rev={this.props.rev}
-                        referencesMode={hash.modalMode}
+                        viewState={hash.viewState}
                         filePath={this.props.filePath}
                         position={range.start}
                         location={this.props.location}

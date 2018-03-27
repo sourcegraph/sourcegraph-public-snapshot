@@ -4,8 +4,8 @@ import { parseHash, toBlobURL, toPrettyBlobURL, toTreeURL } from './url'
 describe('util/url', () => {
     const linePosition = { line: 1 }
     const lineCharPosition = { line: 1, character: 1 }
-    const localRefMode = { ...lineCharPosition, modal: 'references', modalMode: 'local' }
-    const externalRefMode = { ...lineCharPosition, modal: 'references', modalMode: 'external' }
+    const localRefMode = { ...lineCharPosition, viewState: 'references' }
+    const externalRefMode = { ...lineCharPosition, viewState: 'references:external' }
     const ctx = {
         repoPath: 'github.com/gorilla/mux',
         rev: '',
@@ -31,11 +31,6 @@ describe('util/url', () => {
             assert.deepStrictEqual(parseHash('L1:-2'), {})
             assert.deepStrictEqual(parseHash('L1:2--3:4'), {})
             assert.deepStrictEqual(parseHash('L53:a'), {})
-            assert.deepStrictEqual(parseHash('L53:36$'), {})
-            assert.deepStrictEqual(parseHash('L53:36$referencess'), {})
-            assert.deepStrictEqual(parseHash('L53:36$references:'), {})
-            assert.deepStrictEqual(parseHash('L53:36$references:trexternal'), {})
-            assert.deepStrictEqual(parseHash('L53:36$references:local_'), {})
         })
 
         it('parses hash with leading octothorpe', () => {
@@ -57,7 +52,7 @@ describe('util/url', () => {
 
         it('parses hash with local references', () => {
             assert.deepStrictEqual(parseHash('L1:1$references'), localRefMode)
-            assert.deepStrictEqual(parseHash('L1:1$references:local'), localRefMode)
+            assert.deepStrictEqual(parseHash('L1:1$references'), localRefMode)
         })
 
         it('parses hash with external references', () => {
@@ -84,9 +79,9 @@ describe('util/url', () => {
             )
         })
 
-        it('formats url with references mode', () => {
+        it('formats url with view state', () => {
             assert.strictEqual(
-                toPrettyBlobURL({ ...ctx, position: lineCharPosition, referencesMode: 'external' }),
+                toPrettyBlobURL({ ...ctx, position: lineCharPosition, viewState: 'references:external' }),
                 '/github.com/gorilla/mux/-/blob/mux.go#L1:1$references:external'
             )
         })

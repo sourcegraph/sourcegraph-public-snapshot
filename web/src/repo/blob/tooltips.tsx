@@ -154,7 +154,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
     findRefsAction.onclick = actions.references(ctx)
 
     if (ctx) {
-        findRefsAction.href = toAbsoluteBlobURL({ ...ctx, referencesMode: 'local' })
+        findRefsAction.href = toAbsoluteBlobURL({ ...ctx, viewState: 'references' })
     } else {
         findRefsAction.href = ''
     }

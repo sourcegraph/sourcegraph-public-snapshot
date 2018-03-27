@@ -54,11 +54,13 @@ export interface RangeSpec {
     range: Range
 }
 
-export interface ReferencesModeSpec {
+export type BlobViewState = 'references' | 'references:external'
+
+export interface ViewStateSpec {
     /**
-     * the mode for the references panel
+     * The view state (for the blob panel).
      */
-    referencesMode: 'local' | 'external'
+    viewState: BlobViewState
 }
 
 /**
@@ -114,7 +116,7 @@ export interface RepoFilePosition
         Partial<ResolvedRevSpec>,
         FileSpec,
         PositionSpec,
-        Partial<ReferencesModeSpec>,
+        Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
 /**
@@ -126,7 +128,7 @@ export interface AbsoluteRepoFilePosition
         ResolvedRevSpec,
         FileSpec,
         PositionSpec,
-        Partial<ReferencesModeSpec>,
+        Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
 /**
@@ -138,7 +140,7 @@ export interface AbsoluteRepoFileRange
         ResolvedRevSpec,
         FileSpec,
         RangeSpec,
-        Partial<ReferencesModeSpec>,
+        Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
 const parsePosition = (str: string): Position => {
