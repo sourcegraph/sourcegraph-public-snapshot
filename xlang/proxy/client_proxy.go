@@ -448,7 +448,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// server, it doesn't make sense to pass on.
 		return nil, nil
 
-	case "textDocument/definition", "textDocument/xdefinition", "textDocument/hover", "textDocument/references", "textDocument/documentSymbol", "workspace/symbol", "workspace/xreferences", "workspace/xdependencies", "workspace/xpackages":
+	case "textDocument/definition", "textDocument/xdefinition", "textDocument/hover", "textDocument/references", "textDocument/documentHighlight", "textDocument/documentLink", "documentLink/resolve", "textDocument/implementation", "textDocument/typeDefinition", "textDocument/documentSymbol", "workspace/symbol", "workspace/xreferences", "workspace/xdependencies", "workspace/xpackages":
 		if err := ensureInitialized(); err != nil {
 			return nil, err
 		}
