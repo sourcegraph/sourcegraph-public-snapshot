@@ -1,7 +1,7 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
-import { highlightBlock } from 'highlight.js'
+import { highlight } from 'highlight.js'
 import * as H from 'history'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
@@ -36,7 +36,7 @@ import {
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../../../components/Tabs'
 import { FileLocationsPanelContent } from '../../../panel/fileLocations/FileLocationsPanel'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { getModeFromExtension } from '../../../util'
+import { getModeFromExtension, getPathExtension } from '../../../util'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
 import { AbsoluteRepoFilePosition } from '../../index'
@@ -104,9 +104,6 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
     private locationsUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
-    private titleRef: HTMLElement | null = null
-    private setTitleRef = (e: HTMLElement | null) => (this.titleRef = e)
-
     public componentDidMount(): void {
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
 
@@ -171,12 +168,6 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
         this.componentUpdates.next(nextProps)
     }
 
-    public componentDidUpdate(prevProps: Props, prevState: State): void {
-        if (this.state.hoverOrError !== prevState.hoverOrError) {
-            this.highlightTitle()
-        }
-    }
-
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
@@ -208,7 +199,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
         ]
 
         let title: React.ReactFragment | null
-        let titleClassName = ''
+        let titleHTML: string | undefined
         if (this.state.hoverOrError === LOADING) {
             title = <Loader className="icon-inline" />
         } else if (this.state.hoverOrError === undefined) {
@@ -221,8 +212,13 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
         ) {
             // Hover with one or more MarkedStrings.
             const markedString = firstMarkedString(this.state.hoverOrError)!
-            title = typeof markedString === 'string' ? markedString : markedString.value
-            titleClassName = getModeFromExtension(this.props.filePath)
+            const value = typeof markedString === 'string' ? markedString : markedString.value
+            title = value
+            try {
+                titleHTML = highlight(getModeFromExtension(getPathExtension(this.props.filePath)), value).value
+            } catch (e) {
+                // Ignore syntax highlighting errors; plain text will be rendered.
+            }
         } else {
             // Error or no hover information.
             //
@@ -234,9 +230,14 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
         return (
             <div className="blob-panel2">
                 <header className="blob-panel2__header">
-                    <code className={`blob-panel2__header-title ${titleClassName}`} ref={this.setTitleRef}>
-                        {title}
-                    </code>
+                    {titleHTML ? (
+                        <code
+                            className="blob-panel2__header-title hljs"
+                            dangerouslySetInnerHTML={titleHTML ? { __html: titleHTML } : undefined}
+                        />
+                    ) : (
+                        <code className="blob-panel2__header-title">{title}</code>
+                    )}
                     <button
                         onClick={this.onDismiss}
                         className="btn btn-icon blob-panel2__header-close-button"
@@ -335,10 +336,4 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
 
     private queryImplementation = (): Observable<{ loading: boolean; locations: Location[] }> =>
         queryImplementation(this.props).pipe(map(c => ({ loading: false, locations: c })))
-
-    private highlightTitle(): void {
-        if (this.titleRef) {
-            highlightBlock(this.titleRef)
-        }
-    }
 }
