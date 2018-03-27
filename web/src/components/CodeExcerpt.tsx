@@ -14,6 +14,7 @@ interface Props extends AbsoluteRepoFile {
     previewWindowExtraLines?: number
     line: number
     highlightRanges: HighlightRange[]
+    className?: string
     isLightTheme: boolean
 }
 
@@ -54,6 +55,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                         this.setState({ blobLines })
                     },
                     err => {
+                        this.setState({ blobLines: [] })
                         console.error('failed to fetch blob content', err)
                     }
                 )
@@ -116,9 +118,16 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        if (this.state.blobLines && this.state.blobLines.length === 0) {
+            // Show in case of error (e.g., repo not added). This at least lets the user click through, at
+            // which point they'll see the full error reason (this is better than showing 3 empty lines of an
+            // excerpt).
+            return null
+        }
+
         return (
             <VisibilitySensor onChange={this.onChangeVisibility} partialVisibility={true}>
-                <code className="code-excerpt">
+                <code className={`code-excerpt ${this.props.className || ''}`}>
                     {this.state.blobLines && (
                         <div
                             ref={this.setTableContainerElement}
