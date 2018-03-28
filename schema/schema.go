@@ -54,6 +54,7 @@ type DatacenterOpsConfiguration struct {
 	LangTypeScript          bool                            `json:"langTypeScript,omitempty"`
 	NodeSSDPath             string                          `json:"nodeSSDPath,omitempty"`
 	PhabricatorIP           string                          `json:"phabricatorIP,omitempty"`
+	Prometheus              *Prometheus                     `json:"prometheus,omitempty"`
 	PyPIIP                  string                          `json:"pyPIIP,omitempty"`
 	StorageClass            string                          `json:"storageClass,omitempty"`
 	UseAlertManager         bool                            `json:"useAlertManager,omitempty"`
@@ -135,6 +136,11 @@ type Phabricator struct {
 	Repos []Repos `json:"repos,omitempty"`
 	Token string  `json:"token,omitempty"`
 	Url   string  `json:"url,omitempty"`
+}
+
+// Prometheus Prometheus configuration.
+type Prometheus struct {
+	NoDefaultAlerts bool `json:"noDefaultAlerts,omitempty"`
 }
 
 // Repos

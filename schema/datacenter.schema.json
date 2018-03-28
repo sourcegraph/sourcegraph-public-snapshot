@@ -116,14 +116,28 @@
     },
     "usePrometheus": {
       "type": "boolean",
-      "description": "Enable Prometheus to gather performance metrics"
+      "description": "Enable Prometheus to gather performance metrics."
     },
     "useAlertManager": {
       "type": "boolean",
-      "description": "Enable Alert Manager"
+      "description": "Enable Alert Manager."
+    },
+    "prometheus": {
+      "$ref": "#/definitions/Prometheus"
     }
   },
   "definitions": {
+    "Prometheus": {
+      "properties": {
+        "noDefaultAlerts": {
+          "type": "boolean",
+          "description": "Disable the default set of alerts."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "Prometheus configuration."
+    },
     "ContainerOverrides": {
       "properties": {
         "image": {
