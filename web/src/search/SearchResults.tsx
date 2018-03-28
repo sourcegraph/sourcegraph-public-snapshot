@@ -227,11 +227,14 @@ export class SearchResults extends React.Component<Props, State> {
             <div className="search-alert__list">
                 <p className="search-alert__list-header">Recommendations:</p>
                 <ul className="search-alert__list-items">
-                    {items.map((item, i) => (
-                        <li key={i} className="search-alert__list-item">
-                            {item}
-                        </li>
-                    ))}
+                    {items.map(
+                        (item, i) =>
+                            item && (
+                                <li key={i} className="search-alert__list-item">
+                                    {item}
+                                </li>
+                            )
+                    )}
                 </ul>
             </div>
         )
@@ -258,10 +261,16 @@ export class SearchResults extends React.Component<Props, State> {
             this.state.missing.length === 0 &&
             this.state.cloning.length === 0
         ) {
+            const searchTimeoutParameterEnabled = window.context.experimentalFeatures.searchTimeoutParameterEnabled
             const defaultTimeoutAlert = {
                 title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
-                description: 'Try narrowing your query.',
+                description: searchTimeoutParameterEnabled
+                    ? "Try narrowing your query, or specifying a longer 'timeout:' in your query."
+                    : 'Try narrowing your query.',
             }
+            const longerTimeoutString = searchTimeoutParameterEnabled
+                ? "Specify a longer 'timeout:' in your query."
+                : ''
             if (this.state.timedout.length > 0) {
                 if (window.context.sourcegraphDotComMode) {
                     alert = defaultTimeoutAlert
@@ -270,6 +279,7 @@ export class SearchResults extends React.Component<Props, State> {
                         alert = {
                             title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
                             errorBody: this.renderSearchAlertTimeoutDetails([
+                                longerTimeoutString,
                                 DATA_CENTER_UPGRADE_STRING,
                                 'Use Docker Machine instead of Docker for Mac for better performance on macOS.',
                             ]),
@@ -278,6 +288,7 @@ export class SearchResults extends React.Component<Props, State> {
                         alert = {
                             title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
                             errorBody: this.renderSearchAlertTimeoutDetails([
+                                longerTimeoutString,
                                 DATA_CENTER_UPGRADE_STRING,
                                 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
                             ]),
@@ -359,7 +370,10 @@ export class SearchResults extends React.Component<Props, State> {
                                                     cloning
                                                 </span>
                                             )}
-                                            &nbsp;(reload to try again)
+                                            &nbsp;(reload to try again
+                                            {window.context.experimentalFeatures.searchTimeoutParameterEnabled &&
+                                                ", or specify a longer 'timeout:' in your query"}
+                                            )
                                         </span>
                                     )}
                                     {typeof this.state.approximateResultCount === 'string' &&

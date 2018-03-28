@@ -118,6 +118,11 @@ interface SourcegraphContext {
      * Whether or not the server is running via datacenter deployment.
      */
     isRunningDataCenter: boolean
+
+    experimentalFeatures: {
+        fileHistorySidebar: bool
+        searchTimeoutParameterEnabled: bool
+    }
 }
 
 declare module '*.json' {

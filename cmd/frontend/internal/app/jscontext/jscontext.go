@@ -63,6 +63,8 @@ type JSContext struct {
 	IsRunningDataCenter bool                     `json:"isRunningDataCenter"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
+
+	ExperimentalFeatures *schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -138,6 +140,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		IsRunningDataCenter:  os.Getenv("GOREMAN_RPC_ADDR") != "",
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		ExperimentalFeatures:  conf.Get().ExperimentalFeatures,
 	}
 }
 

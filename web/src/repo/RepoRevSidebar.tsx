@@ -12,7 +12,6 @@ import { gql, queryGraphQL } from '../backend/graphql'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { fetchSite } from '../site-admin/backend'
-import { fileHistorySidebarEnabled } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { createAggregateError } from '../util/errors'
@@ -111,7 +110,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             fetchSite({ telemetrySamples: false }).subscribe(
                 site =>
                     this.setState({
-                        showHistorySidebar: fileHistorySidebarEnabled(site.configuration.effectiveContents),
+                        showHistorySidebar: window.context.experimentalFeatures.fileHistorySidebar,
                     }),
                 error => this.setState({ error: error.message })
             )

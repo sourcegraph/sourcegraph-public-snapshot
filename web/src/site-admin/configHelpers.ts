@@ -193,23 +193,3 @@ export function getTelemetryEnabled(text: string): boolean {
         return true
     }
 }
-
-/**
- * Indicates whether the file history sidebar feature flag is enabled. Default is false.
- */
-export function fileHistorySidebarEnabled(text: string): boolean {
-    try {
-        const parsedConfig = parseJSON(text) as SiteConfiguration
-        if (!parsedConfig) {
-            return false
-        }
-        return (
-            !!parsedConfig.experimentalFeatures &&
-            parsedConfig.experimentalFeatures.fileHistorySidebar !== undefined &&
-            parsedConfig.experimentalFeatures.fileHistorySidebar
-        )
-    } catch (err) {
-        console.error(err)
-        return false
-    }
-}
