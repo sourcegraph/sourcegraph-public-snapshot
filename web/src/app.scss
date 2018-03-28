@@ -85,12 +85,19 @@ $table-border-color: #2b3750;
 $table-hover-bg-light: #f2f4f8;
 $table-border-color-light: #e4e9f1;
 
+// List group
+
+$list-group-bg: transparent;
+$list-group-item-padding-y: 0.25rem;
+$list-group-item-padding-x: 0.5rem;
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/badge';
+@import 'bootstrap/scss/list-group';
 @import './global-styles/colors';
 @import './global-styles/type';
 @import './global-styles/icons';

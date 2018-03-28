@@ -42,6 +42,7 @@ import { parseHash } from '../../../util/url'
 import { AbsoluteRepoFilePosition } from '../../index'
 import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
+import { FileLocationsTree } from './FileLocationsTree'
 
 interface Props extends AbsoluteRepoFilePosition {
     location: H.Location
@@ -295,14 +296,14 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                 <TabsWithURLViewStatePersistence
                     tabs={tabs}
                     tabBarEndFragment={<Spacer />}
-                    className="blob-references-panel"
+                    className="blob-panel2__tabs"
                     tabClassName="tab-bar__tab--h5like"
                     onSelectTab={this.onSelectTab}
                     location={this.props.location}
                 >
                     <FileLocations
                         key="def"
-                        className="blob-references-panel__content"
+                        className="blob-panel2__tabs-content"
                         query={this.queryDefinition}
                         updates={this.locationsUpdates}
                         inputRepo={this.props.repoPath}
@@ -315,7 +316,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                     />
                     <FileLocations
                         key="references"
-                        className="blob-references-panel__content"
+                        className="blob-panel2__tabs-content"
                         query={this.queryReferencesLocal}
                         updates={this.locationsUpdates}
                         inputRepo={this.props.repoPath}
@@ -326,20 +327,21 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                         pluralNoun="local references"
                         isLightTheme={this.props.isLightTheme}
                     />
-                    <FileLocations
+                    <FileLocationsTree
                         key="references:external"
-                        className="blob-references-panel__content"
+                        className="blob-panel2__tabs-content"
                         query={this.queryReferencesExternal}
                         updates={this.locationsUpdates}
                         // tslint:disable-next-line:jsx-no-lambda
-                        onSelect={() => this.onSelectLocation('references:external')}
+                        onSelectLocation={() => this.onSelectLocation('references:external')}
                         icon={RepoIcon}
                         pluralNoun="external references"
                         isLightTheme={this.props.isLightTheme}
+                        location={this.props.location}
                     />
                     <FileLocations
                         key="impl"
-                        className="blob-references-panel__content"
+                        className="blob-panel2__tabs-content"
                         query={this.queryImplementation}
                         updates={this.locationsUpdates}
                         inputRepo={this.props.repoPath}

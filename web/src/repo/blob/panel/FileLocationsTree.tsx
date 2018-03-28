@@ -1,8 +1,8 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import upperFirst from 'lodash/upperFirst'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
+import * as H from 'history'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { combineLatest } from 'rxjs/observable/combineLatest'
 import { merge } from 'rxjs/observable/merge'
@@ -20,23 +20,12 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { isError } from 'util'
 import { Location } from 'vscode-languageserver-types'
-import { VirtualList } from '../../../components/VirtualList'
-import { FileMatch, IFileMatch, ILineMatch } from '../../../search/FileMatch'
-import { asError } from '../../../util/errors'
+import { Resizable } from '../../../components/Resizable'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
+import { asError } from '../../../util/errors'
 import { parseRepoURI } from '../../index'
-
-export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
-    <div className="file-locations__error alert alert-danger m-2">
-        <ErrorIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
-    </div>
-)
-
-export const FileLocationsNotFound: React.SFC<{ pluralNoun: string }> = ({ pluralNoun }) => (
-    <div className="file-locations__not-found m-2">
-        <DirectionalSignIcon className="icon-inline" /> No {pluralNoun} found
-    </div>
-)
+import { RepoLink } from '../../RepoLink'
+import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 
 interface Props {
     /**
@@ -62,8 +51,11 @@ interface Props {
     /** The icon to use for each location. */
     icon: React.ComponentType<{ className: string }>
 
+    /** Called when an item in the tree is selected. */
+    onSelectTree?: () => void
+
     /** Called when a location is selected. */
-    onSelect?: () => void
+    onSelectLocation?: () => void
 
     /** The plural noun described by the locations, such as "references" or "implementations". */
     pluralNoun: string
@@ -71,6 +63,8 @@ interface Props {
     className: string
 
     isLightTheme: boolean
+
+    location: H.Location
 }
 
 interface State {
@@ -83,19 +77,17 @@ interface State {
     /** Whether to show a loading indicator. */
     loading: boolean
 
-    itemsToShow: number
+    selectedRepo?: string
 }
 
 /**
- * Displays a flat list of file excerpts. For a tree view, use FileLocationsTree.
+ * Displays a two-column view, with a repository list, and a list of file excerpts for the selected tree item.
  */
-export class FileLocations extends React.PureComponent<Props, State> {
-    public state: State = {
-        itemsToShow: 3,
-        loading: false,
-    }
+export class FileLocationsTree extends React.PureComponent<Props, State> {
+    public state: State = { loading: false }
 
     private componentUpdates = new Subject<Props>()
+    private locationsUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -157,74 +149,95 @@ export class FileLocations extends React.PureComponent<Props, State> {
             return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
         }
 
-        // Locations by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
-        const locationsByURI = new Map<string, Location[]>()
+        // Don't show tree until we have at least one item.
+        if (this.state.locationsOrError === undefined) {
+            return null
+        } else if (this.state.loading && this.state.locationsOrError.length === 0) {
+            return <Loader className="icon-inline p-2" />
+        }
 
-        // URIs with >0 locations, in order (to avoid jitter as more results stream in).
-        const orderedURIs: { uri: string; repo: string }[] = []
+        // Locations grouped by repository.
+        const locationsByRepo = new Map<string, Location[]>()
+
+        // Repositories with >0 locations, in order (to avoid jitter as more results stream in).
+        const orderedRepos: string[] = []
 
         if (this.state.locationsOrError) {
             for (const loc of this.state.locationsOrError) {
-                if (!locationsByURI.has(loc.uri)) {
-                    locationsByURI.set(loc.uri, [])
-
-                    const { repoPath } = parseRepoURI(loc.uri)
-                    orderedURIs.push({ uri: loc.uri, repo: repoPath })
+                const { repoPath } = parseRepoURI(loc.uri)
+                if (!locationsByRepo.has(repoPath)) {
+                    locationsByRepo.set(repoPath, [])
+                    orderedRepos.push(repoPath)
                 }
-                locationsByURI.get(loc.uri)!.push(loc)
+                locationsByRepo.get(repoPath)!.push(loc)
             }
         }
 
+        const selectedRepo: string | undefined =
+            this.state.selectedRepo && orderedRepos.includes(this.state.selectedRepo)
+                ? this.state.selectedRepo
+                : orderedRepos[0]
+
         return (
-            <div className={`file-locations ${this.props.className}`}>
-                <VirtualList
-                    itemsToShow={this.state.itemsToShow}
-                    onShowMoreItems={this.onShowMoreItems}
-                    items={orderedURIs.map(({ uri, repo }, i) => (
-                        <FileMatch
-                            key={i}
-                            expanded={true}
-                            result={refsToFileMatch(
-                                uri,
-                                repo === this.props.inputRepo ? this.props.inputRevision : undefined,
-                                locationsByURI.get(uri)!
-                            )}
-                            icon={this.props.icon}
-                            onSelect={this.onSelect}
-                            showAllMatches={true}
-                            isLightTheme={this.props.isLightTheme}
-                        />
-                    ))}
+            <div className={`file-locations-tree ${this.props.className}`}>
+                <Resizable
+                    className="file-locations-tree__resizable"
+                    handlePosition="right"
+                    storageKey="file-locations-tree-resizable"
+                    defaultSize={200 /* px */}
+                    element={
+                        <div className="list-group list-group-flush file-locations-tree__list">
+                            {orderedRepos.map((repo, i) => (
+                                <Link
+                                    key={i}
+                                    className={`list-group-item file-locations-tree__item ${
+                                        selectedRepo === repo ? 'active' : ''
+                                    }`}
+                                    to={this.props.location}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={e => this.onSelectTree(e, repo)}
+                                >
+                                    <span className="file-locations-tree__item-name">
+                                        <RepoIcon className="icon-inline file-locations-tree__item-icon" />
+                                        <RepoLink to={null} repoPath={repo} />
+                                    </span>
+                                    <span className="badge badge-secondary badge-pill file-locations-tree__item-badge">
+                                        {locationsByRepo.get(repo)!.length}
+                                    </span>
+                                </Link>
+                            ))}
+                            {this.state.loading && <Loader className="icon-inline p-2" />}
+                        </div>
+                    }
                 />
-                {this.state.loading && <Loader className="icon-inline p-2" />}
+                <FileLocations
+                    className="file-locations-tree__content"
+                    // tslint:disable-next-line:jsx-no-lambda
+                    query={() =>
+                        of({
+                            loading: false,
+                            locations: selectedRepo ? locationsByRepo.get(selectedRepo)! : [],
+                        })
+                    }
+                    updates={this.locationsUpdates}
+                    inputRepo={this.props.inputRepo}
+                    inputRevision={this.props.inputRevision}
+                    onSelect={this.props.onSelectLocation}
+                    icon={RepoIcon}
+                    pluralNoun={this.props.pluralNoun}
+                    isLightTheme={this.props.isLightTheme}
+                />
             </div>
         )
     }
 
-    private onShowMoreItems = (): void => {
-        this.setState(state => ({ itemsToShow: state.itemsToShow + 3 }))
-    }
+    private onSelectTree = (e: React.MouseEvent<HTMLElement>, repo: string): void => {
+        e.preventDefault()
 
-    private onSelect = (): void => {
-        if (this.props.onSelect) {
-            this.props.onSelect()
+        this.setState({ selectedRepo: repo })
+
+        if (this.props.onSelectTree) {
+            this.props.onSelectTree()
         }
-    }
-}
-
-function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[]): IFileMatch {
-    const resource = new URL(uri)
-    if (rev) {
-        resource.search = rev
-    }
-    return {
-        resource: resource.toString(),
-        limitHit: false,
-        lineMatches: refs.map((ref): ILineMatch => ({
-            preview: '',
-            limitHit: false,
-            lineNumber: ref.range.start.line,
-            offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
-        })),
     }
 }

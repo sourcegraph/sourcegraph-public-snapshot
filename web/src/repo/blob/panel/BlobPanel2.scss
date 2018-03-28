@@ -1,4 +1,5 @@
 @import './FileLocations';
+@import './FileLocationsTree';
 
 .blob-panel2 {
     flex: 1 1 50%;
@@ -41,8 +42,14 @@
     }
 
     overflow-y: hidden;
-    &__content {
-        overflow-y: auto;
+    &__tabs {
+        flex: 1;
+        &-content {
+            flex: 1;
+            &--scroll {
+                overflow: auto;
+            }
+        }
     }
 }
 
