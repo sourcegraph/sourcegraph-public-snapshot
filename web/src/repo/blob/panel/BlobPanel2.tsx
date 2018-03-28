@@ -36,12 +36,12 @@ import {
     queryImplementation,
 } from '../../../backend/lsp'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../../../components/Tabs'
-import { FileLocationsPanelContent } from '../../../panel/fileLocations/FileLocationsPanel'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
 import { AbsoluteRepoFilePosition } from '../../index'
 import { fetchExternalReferences } from '../references/backend'
+import { FileLocations } from './FileLocations'
 
 interface Props extends AbsoluteRepoFilePosition {
     location: H.Location
@@ -300,7 +300,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                     onSelectTab={this.onSelectTab}
                     location={this.props.location}
                 >
-                    <FileLocationsPanelContent
+                    <FileLocations
                         key="def"
                         className="blob-references-panel__content"
                         query={this.queryDefinition}
@@ -313,7 +313,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                         pluralNoun="definitions"
                         isLightTheme={this.props.isLightTheme}
                     />
-                    <FileLocationsPanelContent
+                    <FileLocations
                         key="references"
                         className="blob-references-panel__content"
                         query={this.queryReferencesLocal}
@@ -326,7 +326,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                         pluralNoun="local references"
                         isLightTheme={this.props.isLightTheme}
                     />
-                    <FileLocationsPanelContent
+                    <FileLocations
                         key="references:external"
                         className="blob-references-panel__content"
                         query={this.queryReferencesExternal}
@@ -337,7 +337,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                         pluralNoun="external references"
                         isLightTheme={this.props.isLightTheme}
                     />
-                    <FileLocationsPanelContent
+                    <FileLocations
                         key="impl"
                         className="blob-references-panel__content"
                         query={this.queryImplementation}

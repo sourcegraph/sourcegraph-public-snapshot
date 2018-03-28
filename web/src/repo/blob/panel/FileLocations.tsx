@@ -19,11 +19,11 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { isError } from 'util'
 import { Location } from 'vscode-languageserver-types'
-import { VirtualList } from '../../components/VirtualList'
-import { parseRepoURI } from '../../repo'
-import { FileMatch, IFileMatch, ILineMatch } from '../../search/FileMatch'
-import { asError } from '../../util/errors'
-import { ErrorLike, isErrorLike } from '../../util/errors'
+import { VirtualList } from '../../../components/VirtualList'
+import { FileMatch, IFileMatch, ILineMatch } from '../../../search/FileMatch'
+import { asError } from '../../../util/errors'
+import { ErrorLike, isErrorLike } from '../../../util/errors'
+import { parseRepoURI } from '../../index'
 
 interface Props {
     /**
@@ -74,9 +74,9 @@ interface State {
 }
 
 /**
- * Displays a list of file excerpts in a panel.
+ * Displays a flat list of file excerpts.
  */
-export class FileLocationsPanelContent extends React.PureComponent<Props, State> {
+export class FileLocations extends React.PureComponent<Props, State> {
     public state: State = {
         itemsToShow: 3,
         loading: false,
@@ -144,7 +144,7 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
         }
         if (!this.state.loading && this.state.locationsOrError && this.state.locationsOrError.length === 0) {
             return (
-                <div className="file-locations-panel__not-found m-2">
+                <div className="file-locations__not-found m-2">
                     <DirectionalSignIcon className="icon-inline" /> No {this.props.pluralNoun} found
                 </div>
             )
@@ -169,7 +169,7 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
         }
 
         return (
-            <div className={`file-locations-panel ${this.props.className}`}>
+            <div className={`file-locations ${this.props.className}`}>
                 <VirtualList
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}

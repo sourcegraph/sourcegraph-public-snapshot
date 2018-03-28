@@ -1,7 +1,7 @@
-@import '../../../panel/fileLocations/FileLocationsPanel';
 @import '../../components/Resizable';
 @import './references/BlobReferencesPanel';
 @import './panel/BlobPanel2';
+@import './panel/FileLocations';
 
 .blob-panel {
     &--resizable {
