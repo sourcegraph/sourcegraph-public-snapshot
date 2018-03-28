@@ -17,10 +17,10 @@ import { Subscription } from 'rxjs/Subscription'
 import { Location } from 'vscode-languageserver-types'
 import { fetchReferences } from '../../../backend/lsp'
 import { Spacer, Tab, TabBorderClassName, TabsWithURLViewStatePersistence } from '../../../components/Tabs'
-import { FileLocationsPanelContent } from '../../../panel/fileLocations/FileLocationsPanel'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { parseHash } from '../../../util/url'
 import { AbsoluteRepoFilePosition } from '../../index'
+import { FileLocations } from '../panel/FileLocations'
 import { fetchExternalReferences } from './backend'
 
 interface Props extends AbsoluteRepoFilePosition {
@@ -154,7 +154,7 @@ export class BlobReferencesPanel extends React.PureComponent<Props, State> {
                 onSelectTab={this.onSelectTab}
                 location={this.props.location}
             >
-                <FileLocationsPanelContent
+                <FileLocations
                     key="references"
                     className="blob-references-panel__content"
                     query={this.queryReferencesLocal}
@@ -162,15 +162,17 @@ export class BlobReferencesPanel extends React.PureComponent<Props, State> {
                     inputRevision={this.props.rev}
                     icon={RepoIcon}
                     onSelect={this.logLocalSelection}
+                    pluralNoun="local references"
                     isLightTheme={this.props.isLightTheme}
                 />
-                <FileLocationsPanelContent
+                <FileLocations
                     key="references:external"
                     className="blob-references-panel__content"
                     query={this.queryReferencesExternal}
                     updates={this.locationsUpdates}
                     icon={GlobeIcon}
                     onSelect={this.logExternalSelection}
+                    pluralNoun="external references"
                     isLightTheme={this.props.isLightTheme}
                 />
             </TabsWithURLViewStatePersistence>

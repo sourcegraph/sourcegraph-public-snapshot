@@ -1,3 +1,5 @@
+import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
@@ -18,11 +20,23 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { isError } from 'util'
 import { Location } from 'vscode-languageserver-types'
-import { VirtualList } from '../../components/VirtualList'
-import { parseRepoURI } from '../../repo'
-import { FileMatch, IFileMatch, ILineMatch } from '../../search/FileMatch'
-import { asError } from '../../util/errors'
-import { ErrorLike, isErrorLike } from '../../util/errors'
+import { VirtualList } from '../../../components/VirtualList'
+import { FileMatch, IFileMatch, ILineMatch } from '../../../search/FileMatch'
+import { asError } from '../../../util/errors'
+import { ErrorLike, isErrorLike } from '../../../util/errors'
+import { parseRepoURI } from '../../index'
+
+export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
+    <div className="file-locations__error alert alert-danger m-2">
+        <ErrorIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
+    </div>
+)
+
+export const FileLocationsNotFound: React.SFC<{ pluralNoun: string }> = ({ pluralNoun }) => (
+    <div className="file-locations__not-found m-2">
+        <DirectionalSignIcon className="icon-inline" /> No {pluralNoun} found
+    </div>
+)
 
 interface Props {
     /**
@@ -51,6 +65,9 @@ interface Props {
     /** Called when a location is selected. */
     onSelect?: () => void
 
+    /** The plural noun described by the locations, such as "references" or "implementations". */
+    pluralNoun: string
+
     className: string
 
     isLightTheme: boolean
@@ -70,9 +87,9 @@ interface State {
 }
 
 /**
- * Displays a list of file excerpts in a panel.
+ * Displays a flat list of file excerpts. For a tree view, use FileLocationsTree.
  */
-export class FileLocationsPanelContent extends React.PureComponent<Props, State> {
+export class FileLocations extends React.PureComponent<Props, State> {
     public state: State = {
         itemsToShow: 3,
         loading: false,
@@ -134,12 +151,10 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
 
     public render(): JSX.Element | null {
         if (isErrorLike(this.state.locationsOrError)) {
-            return (
-                <div className="alert alert-danger m-2">Error: {upperFirst(this.state.locationsOrError.message)}</div>
-            )
+            return <FileLocationsError pluralNoun={this.props.pluralNoun} error={this.state.locationsOrError} />
         }
         if (!this.state.loading && this.state.locationsOrError && this.state.locationsOrError.length === 0) {
-            return <div className="m-2">No results</div>
+            return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
         }
 
         // Locations by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
@@ -161,7 +176,7 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
         }
 
         return (
-            <div className={`file-locations-panel ${this.props.className}`}>
+            <div className={`file-locations ${this.props.className}`}>
                 <VirtualList
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
