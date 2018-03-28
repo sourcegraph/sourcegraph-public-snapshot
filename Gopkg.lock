@@ -880,7 +880,7 @@
   revision = "fc136a6c6dec6d9921c6f6efe24d5289c9d4d776"
 
 [[projects]]
-  branch = "iface-impls"
+  branch = "master"
   name = "github.com/sourcegraph/go-langserver"
   packages = [
     "langserver",
@@ -894,7 +894,7 @@
     "pkg/lspext",
     "pkg/tools"
   ]
-  revision = "f646f66e63ad9658a54fbfb2c78e95fd4f196bdf"
+  revision = "7e016370b5dcb7c929e563a2eea65b1c42ba01e3"
 
 [[projects]]
   branch = "master"
@@ -1412,6 +1412,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "aef64ebd4d4dd5f574ba3948f82d0e3b87be6f377274a2c5beabecab19c98193"
+  inputs-digest = "5d5865675d165a55ca686a31db1d2eb9a5982ed1077b69ca112b00620c98ecab"
   solver-name = "gps-cdcl"
   solver-version = 1
