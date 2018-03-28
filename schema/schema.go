@@ -36,7 +36,6 @@ type DatacenterOpsConfiguration struct {
 	AlertmanagerURL         string                          `json:"alertmanagerURL,omitempty"`
 	AuthProxyIP             string                          `json:"authProxyIP,omitempty"`
 	AuthProxyPassword       string                          `json:"authProxyPassword,omitempty"`
-	CustomPrometheusRules   string                          `json:"customPrometheusRules,omitempty"`
 	DeploymentOverrides     map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
 	ExperimentIndexedSearch bool                            `json:"experimentIndexedSearch,omitempty"`
 	GitoliteIP              string                          `json:"gitoliteIP,omitempty"`
@@ -58,7 +57,6 @@ type DatacenterOpsConfiguration struct {
 	PyPIIP                  string                          `json:"pyPIIP,omitempty"`
 	StorageClass            string                          `json:"storageClass,omitempty"`
 	UseAlertManager         bool                            `json:"useAlertManager,omitempty"`
-	UsePrometheus           bool                            `json:"usePrometheus,omitempty"`
 	UseRBAC                 bool                            `json:"useRBAC,omitempty"`
 }
 
@@ -138,9 +136,10 @@ type Phabricator struct {
 	Url   string  `json:"url,omitempty"`
 }
 
-// Prometheus Prometheus configuration.
+// Prometheus Prometheus configuration. Set this to enable Prometheus for performance monitoring.
 type Prometheus struct {
-	NoDefaultAlerts bool `json:"noDefaultAlerts,omitempty"`
+	CustomRules     string `json:"customRules,omitempty"`
+	NoDefaultAlerts bool   `json:"noDefaultAlerts,omitempty"`
 }
 
 // Repos

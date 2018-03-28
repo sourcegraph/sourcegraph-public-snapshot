@@ -23,10 +23,6 @@
       "type": "string",
       "description": "Password used by auth-proxy for basic authentication."
     },
-    "customPrometheusRules": {
-      "type": "string",
-      "description": "A newline-delimited list of Prometheus recording rules to include if Prometheus is enabled"
-    },
     "deploymentOverrides": {
       "description": "Kubernetes configuration overrides",
       "type": "object",
@@ -114,10 +110,6 @@
       "type": "boolean",
       "description": "Enable this to experimentally use an indexed code search backend."
     },
-    "usePrometheus": {
-      "type": "boolean",
-      "description": "Enable Prometheus to gather performance metrics."
-    },
     "useAlertManager": {
       "type": "boolean",
       "description": "Enable Alert Manager."
@@ -129,6 +121,10 @@
   "definitions": {
     "Prometheus": {
       "properties": {
+        "customRules": {
+          "type": "string",
+          "description": "A newline-delimited list of Prometheus recording rules to include if Prometheus is enabled"
+        },
         "noDefaultAlerts": {
           "type": "boolean",
           "description": "Disable the default set of alerts."
@@ -136,7 +132,7 @@
       },
       "additionalProperties": false,
       "type": "object",
-      "description": "Prometheus configuration."
+      "description": "Prometheus configuration. Set this to enable Prometheus for performance monitoring."
     },
     "ContainerOverrides": {
       "properties": {
