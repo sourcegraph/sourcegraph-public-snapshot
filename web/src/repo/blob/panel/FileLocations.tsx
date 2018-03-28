@@ -1,4 +1,5 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
@@ -24,6 +25,18 @@ import { FileMatch, IFileMatch, ILineMatch } from '../../../search/FileMatch'
 import { asError } from '../../../util/errors'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseRepoURI } from '../../index'
+
+export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
+    <div className="file-locations__error alert alert-danger m-2">
+        <ErrorIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
+    </div>
+)
+
+export const FileLocationsNotFound: React.SFC<{ pluralNoun: string }> = ({ pluralNoun }) => (
+    <div className="file-locations__not-found m-2">
+        <DirectionalSignIcon className="icon-inline" /> No {pluralNoun} found
+    </div>
+)
 
 interface Props {
     /**
@@ -138,16 +151,10 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         if (isErrorLike(this.state.locationsOrError)) {
-            return (
-                <div className="alert alert-danger m-2">Error: {upperFirst(this.state.locationsOrError.message)}</div>
-            )
+            return <FileLocationsError pluralNoun={this.props.pluralNoun} error={this.state.locationsOrError} />
         }
         if (!this.state.loading && this.state.locationsOrError && this.state.locationsOrError.length === 0) {
-            return (
-                <div className="file-locations__not-found m-2">
-                    <DirectionalSignIcon className="icon-inline" /> No {this.props.pluralNoun} found
-                </div>
-            )
+            return <FileLocationsNotFound pluralNoun={this.props.pluralNoun} />
         }
 
         // Locations by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go
