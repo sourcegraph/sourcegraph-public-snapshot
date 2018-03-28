@@ -712,9 +712,15 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	}
 
 	var fetchTimeout time.Duration
-	if len(searcherRepos) == 1 {
-		// When searching a single repo, give it time to fetch the archive.
-		fetchTimeout = 1 * time.Minute
+	if len(searcherRepos) == 1 || searchTimeoutFieldSet {
+		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
+		deadline, ok := ctx.Deadline()
+		if ok {
+			fetchTimeout = deadline.Sub(time.Now())
+		} else {
+			// Deprecated code path that can be removed when searchTimeoutParameterEnabled feature flag is removed
+			fetchTimeout = time.Minute
+		}
 	} else {
 		// When searching many repos, don't wait long for any single repo to fetch.
 		fetchTimeout = 500 * time.Millisecond
