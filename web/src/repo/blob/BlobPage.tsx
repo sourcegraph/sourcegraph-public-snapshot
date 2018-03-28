@@ -181,9 +181,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
             return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.blobOrError.message)} />
         }
 
-        const renderMode =
-            ToggleRenderedFileMode.getModeFromURL(this.props.location) ||
-            (this.state.blobOrError.richHTML ? 'rendered' : 'code')
+        const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
 
         return [
             <PageTitle key="page-title" title={this.getPageTitle()} />,
