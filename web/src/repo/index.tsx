@@ -65,9 +65,10 @@ export interface ViewStateSpec {
 
 /**
  * 'code' for Markdown/rich-HTML files rendered as code, 'rendered' for rendering them as
- * Markdown/rich-HTML.
+ * Markdown/rich-HTML, undefined for the default for the file type ('rendered' for Markdown, etc.,
+ * 'code' otherwise).
  */
-export type RenderMode = 'code' | 'rendered'
+export type RenderMode = 'code' | 'rendered' | undefined
 
 export interface RenderModeSpec {
     /**

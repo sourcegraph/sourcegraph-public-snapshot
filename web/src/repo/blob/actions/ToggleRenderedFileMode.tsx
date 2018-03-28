@@ -23,6 +23,9 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
      */
     public static getModeFromURL(location: H.Location): RenderMode {
         const q = new URLSearchParams(location.search)
+        if (!q.has(ToggleRenderedFileMode.URL_QUERY_PARAM)) {
+            return undefined
+        }
         return q.get(ToggleRenderedFileMode.URL_QUERY_PARAM) === 'code' ? 'code' : 'rendered' // default to rendered
     }
 

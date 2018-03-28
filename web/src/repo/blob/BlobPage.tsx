@@ -182,6 +182,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
         }
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
+        // renderAs is renderMode but with undefined mapped to the actual mode.
+        const renderAs = renderMode || (this.state.blobOrError.richHTML ? 'rendered' : 'code')
 
         return [
             <PageTitle key="page-title" title={this.getPageTitle()} />,
@@ -198,10 +200,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     />
                 }
             />,
-            renderMode === 'code' && (
+            renderAs === 'code' && (
                 <RepoHeaderActionPortal
                     position="right"
                     key="toggle-line-wrap"
+                    priority={99}
                     element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
                 />
             ),
@@ -209,24 +212,25 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 <RepoHeaderActionPortal
                     key="toggle-rendered-file-mode"
                     position="right"
+                    priority={100}
                     element={
                         <ToggleRenderedFileMode
                             key="toggle-rendered-file-mode"
-                            mode={renderMode}
+                            mode={renderMode || 'rendered'}
                             location={this.props.location}
                         />
                     }
                 />
             ),
             this.state.blobOrError.richHTML &&
-                renderMode === 'rendered' && (
+                renderAs === 'rendered' && (
                     <RenderedFile
                         key="rendered-file"
                         dangerousInnerHTML={this.state.blobOrError.richHTML}
                         location={this.props.location}
                     />
                 ),
-            (renderMode === 'code' || !this.state.blobOrError.richHTML) &&
+            renderAs === 'code' &&
                 !this.state.blobOrError.highlight.aborted && (
                     <Blob
                         key="blob"
