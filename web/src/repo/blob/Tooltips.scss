@@ -24,7 +24,7 @@
     &__divider {
         display: flex;
         border-bottom: 1px solid #2a3a51;
-        padding: 0.5rem;
+        padding: 0.5rem 0.5rem 0.25rem 0.5rem;
     }
 
     &__doc {
@@ -36,6 +36,10 @@
         font-family: $font-family-base;
         border-bottom: 1px solid #2a3a51;
         white-space: normal;
+
+        p:last-child {
+            margin-bottom: 0;
+        }
     }
 
     &__actions {
@@ -69,7 +73,7 @@
 
     &__close-icon {
         cursor: pointer;
-        margin-left: 0.75rem;
+        margin-left: 0.5rem;
 
         &:hover {
             color: white;
@@ -86,33 +90,33 @@
     }
 
     &__definition-icon {
-        margin-right: 0.75rem;
+        margin-right: 0.5rem;
     }
 
     &__references-icon {
-        margin-right: 0.75rem;
+        margin-right: 0.5rem;
     }
 }
 
 .theme-light {
     .tooltip {
-        background-color: $color-light-bg-2;
+        background-color: $color-light-bg-1;
         border: solid 1px $color-light-border;
         color: inherit;
 
         &__divider {
-            border-bottom: 1px solid $color-light-border;
+            border-bottom: 1px solid $color-light-border-2;
         }
 
         &__doc {
-            border-bottom: 1px solid $color-light-border;
+            border-bottom: 1px solid $color-light-border-2;
         }
 
         &__action {
             color: inherit;
 
             &:not(:last-child) {
-                border-right: 1px solid $color-light-border;
+                border-right: 1px solid $color-light-border-2;
             }
 
             &:hover {
