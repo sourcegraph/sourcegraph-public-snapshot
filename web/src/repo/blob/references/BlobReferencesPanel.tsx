@@ -162,6 +162,7 @@ export class BlobReferencesPanel extends React.PureComponent<Props, State> {
                     inputRevision={this.props.rev}
                     icon={RepoIcon}
                     onSelect={this.logLocalSelection}
+                    pluralNoun="local references"
                     isLightTheme={this.props.isLightTheme}
                 />
                 <FileLocationsPanelContent
@@ -171,6 +172,7 @@ export class BlobReferencesPanel extends React.PureComponent<Props, State> {
                     updates={this.locationsUpdates}
                     icon={GlobeIcon}
                     onSelect={this.logExternalSelection}
+                    pluralNoun="external references"
                     isLightTheme={this.props.isLightTheme}
                 />
             </TabsWithURLViewStatePersistence>

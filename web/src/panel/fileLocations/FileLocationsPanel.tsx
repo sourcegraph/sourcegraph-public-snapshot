@@ -1,3 +1,4 @@
+import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
@@ -50,6 +51,9 @@ interface Props {
 
     /** Called when a location is selected. */
     onSelect?: () => void
+
+    /** The plural noun described by the locations, such as "references" or "implementations". */
+    pluralNoun: string
 
     className: string
 
@@ -139,7 +143,11 @@ export class FileLocationsPanelContent extends React.PureComponent<Props, State>
             )
         }
         if (!this.state.loading && this.state.locationsOrError && this.state.locationsOrError.length === 0) {
-            return <div className="m-2">No results</div>
+            return (
+                <div className="file-locations-panel__not-found m-2">
+                    <DirectionalSignIcon className="icon-inline" /> No {this.props.pluralNoun} found
+                </div>
+            )
         }
 
         // Locations by fully qualified URI, like git://github.com/gorilla/mux?rev#mux.go

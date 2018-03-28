@@ -310,6 +310,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                         // tslint:disable-next-line:jsx-no-lambda
                         onSelect={() => this.onSelectLocation('def')}
                         icon={RepoIcon}
+                        pluralNoun="definitions"
                         isLightTheme={this.props.isLightTheme}
                     />
                     <FileLocationsPanelContent
@@ -322,6 +323,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                         // tslint:disable-next-line:jsx-no-lambda
                         onSelect={() => this.onSelectLocation('references')}
                         icon={RepoIcon}
+                        pluralNoun="local references"
                         isLightTheme={this.props.isLightTheme}
                     />
                     <FileLocationsPanelContent
@@ -332,6 +334,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                         // tslint:disable-next-line:jsx-no-lambda
                         onSelect={() => this.onSelectLocation('references:external')}
                         icon={RepoIcon}
+                        pluralNoun="external references"
                         isLightTheme={this.props.isLightTheme}
                     />
                     <FileLocationsPanelContent
@@ -344,6 +347,7 @@ export class BlobPanel2 extends React.PureComponent<Props, State> {
                         // tslint:disable-next-line:jsx-no-lambda
                         onSelect={() => this.onSelectLocation('impl')}
                         icon={RepoIcon}
+                        pluralNoun="implementations"
                         isLightTheme={this.props.isLightTheme}
                     />
                 </TabsWithURLViewStatePersistence>
