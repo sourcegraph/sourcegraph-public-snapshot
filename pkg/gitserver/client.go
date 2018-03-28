@@ -321,7 +321,8 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 		if resp.Cloneable {
 			return nil
 		}
-		return errors.Wrap(ErrNotCloneable, resp.Reason)
+		notFound := strings.Contains(resp.Reason, "not found")
+		return &RepoNotCloneableErr{repo: repo, reason: resp.Reason, notFound: notFound}
 	}
 
 	// Backcompat (gitserver is old, does not recognize ?v=2)
@@ -334,10 +335,26 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 	if cloneable {
 		return nil
 	}
-	return ErrNotCloneable
+	return &RepoNotCloneableErr{}
 }
 
-var ErrNotCloneable = errors.New("repository is not cloneable")
+// RepoNotCloneableErr is the error that happens when a repository can not be cloned.
+type RepoNotCloneableErr struct {
+	repo     Repo
+	reason   string
+	notFound bool
+}
+
+// NotFound returns true if the repo could not be cloned because it wasn't found.
+// This may be because the repo doesn't exist, or because the repo is private and
+// there are insufficient permissions.
+func (e *RepoNotCloneableErr) NotFound() bool {
+	return e.notFound
+}
+
+func (e *RepoNotCloneableErr) Error() string {
+	return fmt.Sprintf("repo not found (name=%s url=%s) because %s", e.repo.Name, e.repo.URL, e.reason)
+}
 
 func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoURI) (bool, error) {
 	req := &protocol.IsRepoClonedRequest{

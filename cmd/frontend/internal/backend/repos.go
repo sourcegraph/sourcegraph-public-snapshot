@@ -95,13 +95,8 @@ func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
 	if gitserverRepo := quickGitserverRepoInfo(uri); gitserverRepo != nil {
-		if isRepoCloneableErr := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); isRepoCloneableErr == gitserver.ErrNotCloneable || errors.Cause(isRepoCloneableErr) == gitserver.ErrNotCloneable {
-			if err == nil {
-				return isRepoCloneableErr
-			}
-			return err // return original error (likely "not found") if repository is not cloneable
-		} else if isRepoCloneableErr != nil {
-			return isRepoCloneableErr
+		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
+			return err
 		}
 	}
 
