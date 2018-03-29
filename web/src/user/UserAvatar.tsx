@@ -53,14 +53,19 @@ export class UserAvatar extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        let avatar: JSX.Element
+        let avatar: JSX.Element | null = null
         if (this.state.user && this.state.user.avatarURL) {
-            const url = new URL(this.state.user.avatarURL)
-            if (this.props.size) {
-                url.searchParams.set('s', this.props.size + '')
+            try {
+                const url = new URL(this.state.user.avatarURL)
+                if (this.props.size) {
+                    url.searchParams.set('s', this.props.size + '')
+                }
+                avatar = <img className="avatar-icon" src={url.href} data-tooltip={this.props.tooltip} />
+            } catch (e) {
+                // noop
             }
-            avatar = <img className="avatar-icon" src={url.href} data-tooltip={this.props.tooltip} />
-        } else {
+        }
+        if (!avatar) {
             avatar = <UserWomanAlternateIcon />
         }
 
