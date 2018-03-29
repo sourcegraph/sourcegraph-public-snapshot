@@ -157,12 +157,7 @@ export class PasswordResetPage extends React.Component {
         return (
             <div className="password-reset-page">
                 <PageTitle title="Reset password" />
-                <HeroPage
-                    icon={KeyIcon}
-                    title="Sourcegraph"
-                    subtitle="Sign in or sign up to create an account"
-                    cta={<PasswordResetForm />}
-                />
+                <HeroPage icon={KeyIcon} title="Reset password" cta={<PasswordResetForm />} />
             </div>
         )
     }
