@@ -46,7 +46,7 @@ func (p *cloneProxy) cloneWorkspaceToCache() error {
 }
 
 func (p *cloneProxy) workspaceCacheDir() string {
-	return filepath.Join(*cacheDir, p.id.String())
+	return filepath.Join(*cacheDir, p.sessionID.String())
 }
 
 func (p *cloneProxy) clientToServerURI(uri lsp.DocumentURI) lsp.DocumentURI {

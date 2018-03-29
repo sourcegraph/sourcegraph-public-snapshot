@@ -33,8 +33,10 @@ type cloneProxy struct {
 	client *jsonrpc2.Conn // connection to the browser
 	server *jsonrpc2.Conn // connection to the language server
 
-	ready chan struct{} // barrier to block handling requests until proxy is fully initalized
-	id    uuid.UUID     // unique ID for this session
+	sessionID     uuid.UUID      // unique ID for this session
+	lastRequestID *atomicCounter // counter that is incremented for each new request that is sent across the wire for this session
+
+	ready chan struct{} // barrier to block handling requests until the proxy is fully initalized
 	ctx   context.Context
 }
 
@@ -113,14 +115,15 @@ func main() {
 			}
 
 			proxy := &cloneProxy{
-				ready: make(chan struct{}),
-				ctx:   ctx,
-				id:    uuid.New(),
+				ready:         make(chan struct{}),
+				ctx:           ctx,
+				sessionID:     uuid.New(),
+				lastRequestID: newAtomicCounter(),
 			}
 
 			var serverConnOpts []jsonrpc2.ConnOpt
 			if *trace {
-				serverConnOpts = append(serverConnOpts, jsonrpc2.LogMessages(log.New(os.Stderr, fmt.Sprintf("TRACE %s ", proxy.id.String()), log.Ltime)))
+				serverConnOpts = append(serverConnOpts, jsonrpc2.LogMessages(log.New(os.Stderr, fmt.Sprintf("TRACE %s ", proxy.sessionID.String()), log.Ltime)))
 			}
 			proxy.client = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(clientNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleClientRequest)))
 			proxy.server = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(lsConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleServerRequest)), serverConnOpts...)
@@ -155,7 +158,8 @@ func (p *cloneProxy) handleServerRequest(ctx context.Context, conn *jsonrpc2.Con
 	<-p.ready
 
 	rTripper := roundTripper{
-		req: req,
+		req:             req,
+		globalRequestID: p.lastRequestID,
 
 		src:  p.server,
 		dest: p.client,
@@ -180,7 +184,8 @@ func (p *cloneProxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.Con
 	}
 
 	rTripper := roundTripper{
-		req: req,
+		req:             req,
+		globalRequestID: p.lastRequestID,
 
 		src:  p.client,
 		dest: p.server,
@@ -195,7 +200,8 @@ func (p *cloneProxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.Con
 }
 
 type roundTripper struct {
-	req *jsonrpc2.Request
+	req             *jsonrpc2.Request
+	globalRequestID *atomicCounter
 
 	src  *jsonrpc2.Conn
 	dest *jsonrpc2.Conn
@@ -225,10 +231,13 @@ func (r *roundTripper) roundTrip(ctx context.Context) error {
 	}
 
 	callOpts := []jsonrpc2.CallOption{
-		// Proxy the ID used. Otherwise we assign our own ID, breaking
-		// calls that depend on controlling the ID such as
-		// $/cancelRequest and $/partialResult.
-		jsonrpc2.PickID(r.req.ID),
+		// Some language servers don't properly support ID's that are strings (e.x. Rust),
+		// so we provide a number instead.
+		jsonrpc2.PickID(jsonrpc2.ID{
+			Num:      r.globalRequestID.getAndInc(),
+			Str:      "",
+			IsString: false,
+		}),
 	}
 
 	var rawResult *json.RawMessage
