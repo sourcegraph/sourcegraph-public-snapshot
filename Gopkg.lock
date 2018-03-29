@@ -927,7 +927,7 @@
     ".",
     "websocket"
   ]
-  revision = "dbf20885e7ff39b0d5b64878148113e8433571f1"
+  revision = "2ed59d3304d3c7a972e6f58064ab9cdad4cbfc2c"
 
 [[projects]]
   branch = "master"

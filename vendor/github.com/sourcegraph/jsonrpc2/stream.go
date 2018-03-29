@@ -120,10 +120,7 @@ func (VSCodeObjectCodec) WriteObject(stream io.Writer, obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(stream, "Content-Length: %d\r\n", len(data)); err != nil {
-		return err
-	}
-	if _, err := fmt.Fprint(stream, "Content-Type: application/vscode-jsonrpc; charset=utf8\r\n\r\n"); err != nil {
+	if _, err := fmt.Fprintf(stream, "Content-Length: %d\r\n\r\n", len(data)); err != nil {
 		return err
 	}
 	if _, err := stream.Write(data); err != nil {
