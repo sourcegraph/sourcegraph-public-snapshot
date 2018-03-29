@@ -364,7 +364,8 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "secretKey": {
-      "description": "A secret key for this site, used for ensuring the integrity of user session data.",
+      "description":
+        "A secret key for this site, used for generating links for inviting users to organizations and resetting passwords.",
       "type": "string"
     },
     "auth.provider": {

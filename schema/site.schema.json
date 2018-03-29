@@ -359,7 +359,8 @@
       "type": "string"
     },
     "secretKey": {
-      "description": "A secret key for this site, used for ensuring the integrity of user session data.",
+      "description":
+        "A secret key for this site, used for generating links for inviting users to organizations and resetting passwords, and to enable integrity checking of session data without incurring a database roundtrip.",
       "type": "string"
     },
     "auth.provider": {
