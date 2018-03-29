@@ -11,6 +11,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * User and site admin management capabilities for user email addresses are improved.
+* If SSO is enabled (via OpenID or SAML) and the SSO system provides user avatar images and/or display names, those are now used by Sourcegraph.
 * Enable new search timeout behavior by enabling `experimentalFeatures.searchTimeoutParameterEnabled` in your site config.
   * Adds a new `timeout:` parameter to customize the timeout for searches. It defaults to 10s and may not be set higher than 1m.
   * The value of the `timeout:` parameter is a string that can be parsed by [time.Duration](https://golang.org/pkg/time/#ParseDuration) (e.g. "100ms", "2s").
