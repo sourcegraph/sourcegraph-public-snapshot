@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
+### Fixed
+
+* Searches no longer wait for up to 3 minutes the index server to become healthy. Instead, it respects the normal search timeout.
+
 ### Added
 
 * User and site admin management capabilities for user email addresses are improved.

@@ -39,6 +39,10 @@ required = [
   unused-packages = true
   non-go = true
 
+[[override]]
+  branch = "master"
+  name = "github.com/sourcegraph/rpc"
+
 # The latest release (v3.0.7) doesn't include the -nometadata which we use.
 [[constraint]]
   branch = "master"

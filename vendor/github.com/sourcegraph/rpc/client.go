@@ -14,8 +14,9 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
-	"github.com/keegancsmith/rpc/internal/svc"
+	"github.com/sourcegraph/rpc/internal/svc"
 )
 
 // ServerError represents an error that has been returned from
@@ -250,10 +251,16 @@ func DialHTTP(network, address string) (*Client, error) {
 }
 
 // DialHTTPPath connects to an HTTP RPC server
-// at the specified network address and path.
+// at the specified network address and path with a default timeout.
 func DialHTTPPath(network, address, path string) (*Client, error) {
+	return DialHTTPPathTimeout(network, address, path, 0)
+}
+
+// DialHTTPPathTimeout connects to an HTTP RPC server
+// at the specified network address and path with the specified timeout.
+func DialHTTPPathTimeout(network, address, path string, timeout time.Duration) (*Client, error) {
 	var err error
-	conn, err := net.Dial(network, address)
+	conn, err := net.DialTimeout(network, address, timeout)
 	if err != nil {
 		return nil, err
 	}

@@ -330,7 +330,7 @@
     "rpc",
     "rpc/internal/srv"
   ]
-  revision = "dbfcdeafa9669b01402c06f684e802288b15c9dd"
+  revision = "63a99a9f9271e680758ff324e16cd97d11b55266"
   source = "github.com/sourcegraph/zoekt"
 
 [[projects]]
@@ -514,15 +514,6 @@
   name = "github.com/kardianos/osext"
   packages = ["."]
   revision = "ae77be60afb1dcacde03767a8c37337fad28ac14"
-
-[[projects]]
-  name = "github.com/keegancsmith/rpc"
-  packages = [
-    ".",
-    "internal/svc"
-  ]
-  revision = "e57ba2c39bf5f13f3bb5747a5a381f6e26d16d4a"
-  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/keegancsmith/sqlf"
@@ -934,6 +925,15 @@
   name = "github.com/sourcegraph/jsonx"
   packages = ["."]
   revision = "255da098122c4943c68ed854178a38ab5f3210af"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/sourcegraph/rpc"
+  packages = [
+    ".",
+    "internal/svc"
+  ]
+  revision = "5eaf49b36f8558bf8be72ffbef31edcadd554e07"
 
 [[projects]]
   branch = "master"
@@ -1412,6 +1412,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5d5865675d165a55ca686a31db1d2eb9a5982ed1077b69ca112b00620c98ecab"
+  inputs-digest = "ac367b9623e1c12207be53875d6156f305f4c21de07d7eb5c719c02e0951a5b6"
   solver-name = "gps-cdcl"
   solver-version = 1

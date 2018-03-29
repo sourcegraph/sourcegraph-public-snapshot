@@ -6,7 +6,7 @@
 	Package rpc is a fork of the stdlib net/rpc which is frozen. It adds
 	support for context.Context on the client and server, including
 	propogating cancellation. See the README at
-	https://github.com/keegancsmith/rpc for motivation why this exists.
+	https://github.com/sourcegraph/rpc for motivation why this exists.
 
 	The API is exactly the same, except Client.Call takes a context.Context,
 	and Server methods are expected to take a context.Context as the first
@@ -153,7 +153,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/keegancsmith/rpc/internal/svc"
+	"github.com/sourcegraph/rpc/internal/svc"
 )
 
 const (

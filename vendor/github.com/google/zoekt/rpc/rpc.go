@@ -12,7 +12,7 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/rpc/internal/srv"
-	"github.com/keegancsmith/rpc"
+	"github.com/sourcegraph/rpc"
 )
 
 // DefaultRPCPath is the rpc path used by zoekt-webserver
@@ -63,7 +63,7 @@ func (c *client) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
 func (c *client) call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
 	// We try twice. If we fail to dial or fail to call the function we try
 	// again after 100ms. Unrolled to make logic clear
-	cl, gen, err := c.getRPCClient(0)
+	cl, gen, err := c.getRPCClient(ctx, 0)
 	if err == nil {
 		err = cl.Call(ctx, serviceMethod, args, reply)
 		if err != rpc.ErrShutdown {
@@ -77,7 +77,7 @@ func (c *client) call(ctx context.Context, serviceMethod string, args interface{
 	case <-time.After(100 * time.Millisecond):
 	}
 
-	cl, gen, err = c.getRPCClient(gen)
+	cl, gen, err = c.getRPCClient(ctx, gen)
 	if err != nil {
 		return err
 	}
@@ -87,14 +87,18 @@ func (c *client) call(ctx context.Context, serviceMethod string, args interface{
 // getRPCClient gets the rpc client. If gen matches the current generation, we
 // redail and increment the generation. This is used to prevent concurrent
 // redailing on network failure.
-func (c *client) getRPCClient(gen int) (*rpc.Client, int, error) {
+func (c *client) getRPCClient(ctx context.Context, gen int) (*rpc.Client, int, error) {
 	// coarse lock so we only dial once
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if gen != c.gen {
 		return c.cl, c.gen, nil
 	}
-	cl, err := rpc.DialHTTPPath("tcp", c.addr, c.path)
+	var timeout time.Duration
+	if deadline, ok := ctx.Deadline(); ok {
+		timeout = deadline.Sub(time.Now())
+	}
+	cl, err := rpc.DialHTTPPathTimeout("tcp", c.addr, c.path, timeout)
 	if err != nil {
 		return nil, c.gen, err
 	}
