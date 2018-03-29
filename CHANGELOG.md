@@ -17,6 +17,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
   * The value of the `timeout:` parameter is a string that can be parsed by [time.Duration](https://golang.org/pkg/time/#ParseDuration) (e.g. "100ms", "2s").
   * When `timeout:` is not provided, search optimizes for retuning results as soon as possible and will include slower kinds of results (e.g. symbols) only if they are found quickly.
   * When `timeout:` is provided, all result kinds are given the full timeout to complete.
+* A new user settings tokens page was added that allows users to obtain a token that they can use to authenticate to the Sourcegraph API.
 
 ## 2.6.8
 

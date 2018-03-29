@@ -1,7 +1,6 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import KeyIcon from '@sourcegraph/icons/lib/Key'
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
 import SunIcon from '@sourcegraph/icons/lib/Sun'
@@ -12,7 +11,6 @@ import { NavLink } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import { OrgAvatar } from '../org/OrgAvatar'
-import { hasTagRecursive } from '../settings/tags'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props {
@@ -26,7 +24,6 @@ interface Props {
 }
 
 interface State {
-    editorBeta: boolean
     currentUser?: GQL.IUser
     orgs?: GQL.IOrg[]
 }
@@ -35,12 +32,8 @@ interface State {
  * Sidebar for settings pages
  */
 export class SettingsSidebar extends React.Component<Props, State> {
+    public state: State = {}
     private subscriptions = new Subscription()
-
-    constructor(props: Props) {
-        super(props)
-        this.state = { editorBeta: false }
-    }
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -51,8 +44,7 @@ export class SettingsSidebar extends React.Component<Props, State> {
                     // this.props.history.push('/sign-in')
                     return
                 }
-                const editorBeta = hasTagRecursive(user, 'editor-beta')
-                this.setState({ orgs: user.orgs, currentUser: user, editorBeta })
+                this.setState({ orgs: user.orgs, currentUser: user })
             })
         )
     }
@@ -123,17 +115,15 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             Emails
                         </NavLink>
                     </li>
-                    {this.state.editorBeta && (
-                        <li className="sidebar__item">
-                            <NavLink
-                                to="/settings/editor-auth"
-                                className="sidebar__item-link"
-                                activeClassName="sidebar__item--active"
-                            >
-                                <KeyIcon className="icon-inline sidebar__item-icon" />Editor authentication
-                            </NavLink>
-                        </li>
-                    )}
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/settings/tokens"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                        >
+                            Access tokens
+                        </NavLink>
+                    </li>
                     <li className="sidebar__item">
                         <div className="settings-sidebar__theme-switcher">
                             <a
@@ -208,17 +198,6 @@ export class SettingsSidebar extends React.Component<Props, State> {
 
                 <div className="sidebar__spacer" />
 
-                {this.state.editorBeta && (
-                    <div className="sidebar__item sidebar__action">
-                        <a
-                            className="sidebar__action-button btn"
-                            target="_blank"
-                            href="https://about.sourcegraph.com/docs/editor/setup/"
-                        >
-                            Download Editor
-                        </a>
-                    </div>
-                )}
                 {this.props.user && (
                     <div className="sidebar__item sidebar__action">
                         <NavLink

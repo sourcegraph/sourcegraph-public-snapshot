@@ -59,6 +59,7 @@ const (
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
 	routeLegacyAcceptInvite            = "legacy.accept-invite"
 	routeLegacyEditorAuth              = "legacy.editor-auth"
+	routeLegacyEditorAuth2             = "legacy.editor-auth2"
 	routeLegacySearchQueries           = "search-queries"
 )
 
@@ -92,6 +93,8 @@ var (
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
+
+	r.Path("/settings/editor-auth").Methods("GET").Name(routeLegacyEditorAuth2)
 
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
@@ -172,7 +175,8 @@ func initRouter() {
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
 		router.Get(routeLegacyAcceptInvite).Handler(staticRedirectHandler("/settings/accept-invite", http.StatusMovedPermanently))
-		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/editor-auth", http.StatusMovedPermanently))
+		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
+		router.Get(routeLegacyEditorAuth2).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
 	}
 	router.Get(routeLegacySearchQueries).Handler(staticRedirectHandler("/search/searches", http.StatusMovedPermanently))
 

@@ -1,0 +1,25 @@
+.user-settings-tokens-page {
+    overflow: hidden;
+
+    &__textarea-container {
+        display: flex;
+    }
+
+    &__textarea {
+        flex: 1 0 auto;
+        background-color: inherit;
+        color: inherit;
+        font-size: inherit;
+        border: 0;
+        padding: 0;
+        margin: 0 1rem 0 0;
+        overflow: auto;
+        resize: none;
+        outline: none;
+
+        &-pre {
+            white-space: pre;
+            font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, monospace;
+        }
+    }
+}

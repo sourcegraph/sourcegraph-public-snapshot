@@ -7,12 +7,12 @@ import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/invite/AcceptInvitePage'
 import { siteFlags } from '../site/backend'
-import { EditorAuthPage } from '../user/settings/EditorAuthPage'
 import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPage'
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
 import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
 import { UserSettingsIntegrationsPage } from '../user/settings/UserSettingsIntegrationsPage'
 import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
+import { UserSettingsTokensPage } from '../user/settings/UserSettingsTokensPage'
 import { SettingsSidebar } from './SettingsSidebar'
 
 const SettingsNotFoundPage = () => (
@@ -128,10 +128,10 @@ export class SettingsArea extends React.Component<Props, State> {
                             )}
                         />
                         <Route
-                            path={`${this.props.match.url}/editor-auth`}
+                            path={`${this.props.match.url}/tokens`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            component={EditorAuthPage}
+                            component={UserSettingsTokensPage}
                         />
                         <Route
                             path={`${this.props.match.url}/integrations`}
