@@ -1,6 +1,7 @@
 .dismissible-alert {
+    display: flex;
     align-items: flex-start;
-    padding-right: 0.75rem;
+    padding: 0.75rem;
     margin-bottom: 0;
 
     &__content {

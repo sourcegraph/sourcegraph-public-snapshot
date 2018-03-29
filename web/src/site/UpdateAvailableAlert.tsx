@@ -14,7 +14,7 @@ const onClickCTA = () => {
 export const UpdateAvailableAlert: React.SFC<{ updateVersionAvailable: string }> = ({ updateVersionAvailable }) => (
     <DismissibleAlert
         partialStorageKey={`Update/${updateVersionAvailable}`}
-        className="alert-success update-available-alert"
+        className="site-alert alert-success update-available-alert"
     >
         <Icon className="icon-inline site-alert__link-icon" /> An update is available:&nbsp;
         <a className="site-alert__link" href="https://about.sourcegraph.com" onClick={onClickCTA}>
