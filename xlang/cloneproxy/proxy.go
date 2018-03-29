@@ -216,9 +216,12 @@ func (r *roundTripper) roundTrip(ctx context.Context) error {
 	WalkURIFields(params, nil, r.updateURIFromSrc)
 
 	if r.req.Notif {
-		if err := r.dest.Notify(ctx, r.req.Method, params); err != nil {
-			return errors.Wrap(err, "sending notification to dest failed")
+		err := r.dest.Notify(ctx, r.req.Method, params)
+		if err != nil {
+			err = errors.Wrap(err, "sending notification to dest failed")
 		}
+		// Don't send responses back to src for Notification requests
+		return err
 	}
 
 	callOpts := []jsonrpc2.CallOption{
