@@ -60,16 +60,6 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
         }, 2000)
     }
 
-    private copyOpenSearchUrl = () => {
-        eventLogger.log('CopyOpenSearchURLClicked')
-        copy(`${window.context.appURL}/search?q=%s`)
-        this.setState({ openSearchUrlCopied: true })
-
-        setTimeout(() => {
-            this.setState({ openSearchUrlCopied: false })
-        }, 2000)
-    }
-
     private installFirefoxExtension = () => {
         eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Firefox' } })
     }
@@ -101,170 +91,86 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
         eventLogger.log('EnableCodeIntelligenceClicked')
     }
 
-    private contactUsClicked = () => {
-        eventLogger.log('ContactUsClicked')
-    }
-
     public render(): JSX.Element | null {
         return (
-            <div className="user-integrations__list">
+            <div className="user-settings-integrations-page__list">
                 <PageTitle title="Integrations" />
-                <h2 className="user-integrations__header">Integrations</h2>
-                <h3 className="user-integrations__integration-name">Browser extension</h3>
+                <h2>Integrations</h2>
+
+                <h3>Browser extension</h3>
                 <p>
-                    The Sourcegraph extension adds code search and code intelligence on GitHub, including pull request
-                    diffs.
+                    <a
+                        className={`btn btn-primary mr-2 ${
+                            this.state.browserExtensionInstalled && IS_CHROME ? 'disabled' : ''
+                        }`}
+                        target="_blank"
+                        href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
+                        onClick={this.installChromeExtension}
+                    >
+                        Install Chrome extension
+                    </a>
+                    <a
+                        className={`btn btn-primary ${
+                            this.state.browserExtensionInstalled && IS_FIREFOX ? 'disabled' : ''
+                        }`}
+                        target="_blank"
+                        href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-addon-for-github/"
+                        onClick={this.installFirefoxExtension}
+                    >
+                        Install Firefox add-on
+                    </a>
                 </p>
-                <div>
-                    <div className="user-integrations__action-items">
+                {!this.state.info.hasCodeIntelligence && (
+                    <div className="alert alert-warning">
                         <a
-                            className={`btn btn-primary ${
-                                this.state.browserExtensionInstalled && IS_CHROME ? 'disabled' : ''
-                            }`}
+                            href="https://about.sourcegraph.com/docs/code-intelligence/install?utm_source=integrations"
                             target="_blank"
-                            href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
-                            onClick={this.installChromeExtension}
+                            onClick={this.enableCodeIntelligence}
                         >
-                            Install Chrome extension
-                        </a>
+                            Enable code intelligence
+                        </a>{' '}
+                        to use the full functionality of the browser extensions.
                     </div>
-                    <div className="user-integrations__action-items">
-                        <a
-                            className={`btn btn-primary ${
-                                this.state.browserExtensionInstalled && IS_FIREFOX ? 'disabled' : ''
-                            }`}
-                            target="_blank"
-                            href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-addon-for-github/"
-                            onClick={this.installFirefoxExtension}
-                        >
-                            Install Firefox add-on
-                        </a>
-                    </div>
-                </div>
-                <div className="user-integrations__form">
-                    <table className="table-hover user-integrations__table">
-                        <tbody>
-                            <tr className="user-integrations__table-row">
-                                <td className="user-integrations__table-item">Code search</td>
-                                <td>
-                                    <div className="user-integrations__btn-container">
-                                        <a className={`btn btn-secondary btn-sm disabled`}>Enabled</a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr className="user-integrations__table-row">
-                                <td className="user-integrations__table-item">Code intelligence</td>
-                                <td>
-                                    <div className="user-integrations__btn-container">
-                                        <a
-                                            href="https://about.sourcegraph.com/docs/code-intelligence/install?utm_source=integrations"
-                                            target="_blank"
-                                            className={`btn btn-${
-                                                this.state.info.hasCodeIntelligence ? 'secondary' : 'primary'
-                                            } btn-sm ${this.state.info.hasCodeIntelligence ? 'disabled' : ''}`}
-                                            onClick={this.enableCodeIntelligence}
-                                        >
-                                            {this.state.info.hasCodeIntelligence ? 'Enabled' : 'Enable'}
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr className="user-integrations__table-row">
-                                <td className="user-integrations__table-item">GitHub</td>
-                                <td>
-                                    <div className="user-integrations__btn-container">
-                                        <a className={`btn btn-secondary btn-sm disabled`}>Enabled</a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr className="user-integrations__table-row">
-                                <td className="user-integrations__table-item">GitHub Enterprise</td>
-                                <td>
-                                    <div className="user-integrations__btn-container">
-                                        <a className={`btn btn-secondary btn-sm disabled`}>Enabled</a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr className="user-integrations__table-row">
-                                <td className="user-integrations__table-item">Other code hosts</td>
-                                <td>
-                                    <div className="user-integrations__btn-container">
-                                        <a
-                                            href="https://about.sourcegraph.com/contact/sales?utm_source=integrations"
-                                            target="_blank"
-                                            className={`btn btn-primary btn-sm`}
-                                            onClick={this.contactUsClicked}
-                                        >
-                                            Contact us
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div className="user-integrations__sub-section">
-                    <h4 className="input-label">Sourcegraph Server URL</h4>
-                    <p>
-                        To connect the browser extension to your Sourcegraph Server instance, click the extension icon
-                        and click <b>Connect</b>.
-                    </p>
-                    <p>
-                        You can change your Sourcegraph URL at any time by clicking the extension icon and filling in
-                        the Sourcegraph URL field with your Sourcegraph Server URL and clicking save.
-                    </p>
-                </div>
-                <div className="user-integrations__form">
-                    <input
-                        id="remote-url-input"
-                        className="user-integrations__input form-control"
-                        value={window.context.appURL}
-                        readOnly={true}
-                    />
-                </div>
-                <button className="btn btn-primary" onClick={this.copyRemoteUrl}>
-                    <Copy className="user-integrations__copy-icon icon-inline" />
-                    {this.state.remoteUrlCopied ? 'Copied' : 'Copy'}
-                </button>
-                <div className="user-integrations__divider" />
-                <div>
-                    <h3 className="user-integrations__integration-name">Code search from address bar</h3>
-                    <p>
-                        Get easy access to Sourcegraph code search over your most commonly-used repositories from your
-                        browser address bar by configuring a custom search engine.
-                    </p>
-                    <h4>Sourcegraph search URL</h4>
-                    <div className="user-integrations__form">
-                        <input
-                            id="remote-url-input"
-                            className="user-integrations__input form-control"
-                            value={`${window.context.appURL}/search?q=%s`}
-                            readOnly={true}
-                        />
-                        <button className="btn btn-primary" onClick={this.copyOpenSearchUrl}>
-                            <Copy className="user-integrations__copy-icon icon-inline" />
-                            {this.state.openSearchUrlCopied ? 'Copied' : 'Copy'}
-                        </button>
-                    </div>
-                </div>
-                <div className="user-integrations__sub-section">
-                    <h4>Code search from Google Chrome address bar</h4>
-                    Go to <b>{'chrome://settings/searchEngines'}</b> to add a custom search engine or{' '}
+                )}
+
+                <h3>Browser address bar search shortcut</h3>
+                <ul className="list ml-3">
+                    <li>
+                        <strong>With the Chrome extension installed:</strong> Type <kbd>src &lt;SPACE&gt;</kbd> in the
+                        address bar to search Sourcegraph.
+                    </li>
+                    <li>
+                        <strong>Other browsers:</strong> Add Sourcegraph as a search engine using the URL{' '}
+                        <code>{window.context.appURL}/search?q=%s</code> (assuming <code>%s</code> is the query
+                        placeholder).
+                    </li>
+                </ul>
+                <p>
+                    Need further customization? In Chrome, visit <strong>{'chrome://settings/searchEngines'}</strong> or{' '}
                     <a
                         target="_blank"
                         href="https://support.google.com/chrome/answer/95426?hl=en&co=GENIE.Platform=Desktop"
                     >
-                        read this Chrome page
-                    </a>{' '}
-                    for more information.
-                </div>
-                <div className="user-integrations__sub-section">
-                    <h4>Add Firefox search engine</h4>
-                    Go to <b>{'about:preferences#search'}</b> to add a one-click search engine or check out{' '}
+                        documentation
+                    </a>. In Firefox, visit <strong>{'about:preferences#search'}</strong> or{' '}
                     <a target="_blank" href="https://support.mozilla.org/en-US/kb/add-or-remove-search-engine-firefox">
-                        this Firefox page
-                    </a>{' '}
-                    for additional documentation.
+                        documentation
+                    </a>.
+                </p>
+
+                <h3>Editor extensions and other integrations</h3>
+                <p>Use the following Sourcegraph URL to connect other extensions to this Sourcegraph instance.</p>
+                <div className="user-settings-integrations-page__form">
+                    <input
+                        id="remote-url-input"
+                        className="user-settings-integrations_-page_input form-control"
+                        value={window.context.appURL}
+                        readOnly={true}
+                    />
+                    <button className="btn btn-primary mt-2" onClick={this.copyRemoteUrl}>
+                        <Copy className="user-settings-integrations-page__copy-icon icon-inline" />{' '}
+                        {this.state.remoteUrlCopied ? 'Copied' : 'Copy'}
+                    </button>
                 </div>
             </div>
         )
