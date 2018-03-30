@@ -586,11 +586,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 	defer cancel()
 	resp, err := zoektCache.ListAll(ctx)
 	if err != nil {
-		// Everything is unindexed on transient errors
-		if errcode.IsTemporary(err) || errcode.IsTimeout(err) {
-			return nil, repos, nil
-		}
-		return nil, nil, err
+		return nil, repos, err
 	}
 
 	// Everything currently in indexed is at HEAD. Filter out repos which
@@ -635,8 +631,8 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	if err != nil {
 		// Don't hard fail if index is not available yet.
 		tr.LogFields(otlog.String("indexErr", err.Error()))
-		searcherRepos = args.repos
 		common.indexUnavailable = true
+		err = nil
 	}
 
 	common.repos = make([]api.RepoURI, len(args.repos))
