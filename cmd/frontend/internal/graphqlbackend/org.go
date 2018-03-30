@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -228,6 +229,20 @@ func (o *orgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (o *orgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return false, nil
+	}
+	if _, err := db.OrgMembers.GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
+		if errcode.IsNotFound(err) {
+			err = nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func getOrgSlackWebhookURL(ctx context.Context, id int32) (string, error) {
 	settings, err := backend.Configuration.GetForSubject(ctx, api.ConfigurationSubject{Org: &id})
 	if err != nil {
@@ -374,7 +389,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		if err == nil {
 			return nil, fmt.Errorf("%s is already a member of org %d", args.Email, orgID)
 		}
-		if _, ok := err.(db.ErrOrgMemberNotFound); !ok {
+		if _, ok := err.(*db.ErrOrgMemberNotFound); !ok {
 			return nil, err
 		}
 	}

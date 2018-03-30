@@ -1,45 +1,108 @@
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Observable } from 'rxjs/Observable'
+import { catchError } from 'rxjs/operators/catchError'
 import { concat } from 'rxjs/operators/concat'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { gql, queryGraphQL } from '../../backend/graphql'
+import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { SettingsFile } from '../../settings/SettingsFile'
 import { eventLogger } from '../../tracking/eventLogger'
 import { refreshConfiguration } from '../../user/settings/backend'
-import { fetchOrg, updateOrgSettings } from '../backend'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { OrgAreaPageProps } from '../area/OrgArea'
+import { updateOrgSettings } from '../backend'
 
-interface Props extends RouteComponentProps<any> {
-    org: GQL.IOrg
-    user: GQL.IUser
+function fetchOrgSettings(args: { id: string }): Observable<GQL.ISettings | null> {
+    return queryGraphQL(
+        gql`
+            query OrganizationSettings($id: ID!) {
+                node(id: $id) {
+                    ... on Org {
+                        latestSettings {
+                            id
+                            configuration {
+                                contents
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.node || errors) {
+                throw createAggregateError(errors)
+            }
+            const org = data.node as GQL.IOrg
+            return org.latestSettings
+        })
+    )
+}
+
+interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean
 }
 
 interface State {
-    settings?: GQL.ISettings | null
-    error?: string
+    settingsOrError?: GQL.ISettings | null | ErrorLike
     commitError?: Error
 }
 
 export class OrgSettingsConfigurationPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
-    private orgChanges = new Subject<GQL.IOrg | undefined>()
+    private orgChanges = new Subject<{ id: GQLID /* org ID */ }>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('OrgSettingsConfiguration')
-
+        // Load settings.
         this.subscriptions.add(
             this.orgChanges
-                .pipe(switchMap(org => fetchOrg((org || this.props.org).id)))
-                .subscribe(
-                    org => this.setState({ settings: org && org.latestSettings }),
-                    error => this.setState({ error: error.message })
+                .pipe(
+                    distinctUntilChanged(),
+                    switchMap(({ id }) => {
+                        type PartialStateUpdate = Pick<State, 'settingsOrError'>
+                        return fetchOrgSettings({ id }).pipe(
+                            catchError(error => [error]),
+                            map(c => ({ settingsOrError: c } as PartialStateUpdate)),
+                            publishReplay<PartialStateUpdate>(),
+                            refCount()
+                        )
+                    })
                 )
+                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
+
+        // Clear settings when org ID changes.
+        this.subscriptions.add(
+            this.orgChanges
+                .pipe(distinctUntilChanged((a, b) => a.id === b.id))
+                .subscribe(() => this.setState({ settingsOrError: undefined }))
+        )
+
+        // Log view event.
+        this.subscriptions.add(
+            this.orgChanges
+                .pipe(
+                    distinctUntilChanged((a, b) => a.id === b.id),
+                    tap(() => eventLogger.logViewEvent('OrgSettingsConfiguration'))
+                )
+                .subscribe()
+        )
+
         this.orgChanges.next(this.props.org)
     }
 
@@ -54,36 +117,33 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
     }
 
     public render(): JSX.Element | null {
-        const orgInEditorBeta = this.props.org.tags.some(tag => tag.name === 'editor-beta')
+        if (this.state.settingsOrError === undefined) {
+            return null // loading
+        }
+        if (isErrorLike(this.state.settingsOrError)) {
+            // TODO!(sqs): show a 404 if org not found, instead of a generic error
+            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.settingsOrError.message)} />
+        }
 
         return (
             <div className="settings-file-container">
                 <PageTitle title="Organization configuration" />
                 <h2>Configuration</h2>
                 <p>View and edit your organization's search scopes and saved queries.</p>
-                {this.state.settings !== undefined && (
-                    <SettingsFile
-                        settings={this.state.settings}
-                        commitError={this.state.commitError}
-                        onDidCommit={this.onDidCommit}
-                        onDidDiscard={this.onDidDiscard}
-                        history={this.props.history}
-                        isLightTheme={this.props.isLightTheme}
-                    />
-                )}
+                <SettingsFile
+                    settings={this.state.settingsOrError}
+                    commitError={this.state.commitError}
+                    onDidCommit={this.onDidCommit}
+                    onDidDiscard={this.onDidDiscard}
+                    history={this.props.history}
+                    isLightTheme={this.props.isLightTheme}
+                />
                 <small className="form-text">
                     Documentation:{' '}
                     <a target="_blank" href="https://about.sourcegraph.com/docs/server/config/search-scopes">
                         Customizing search scopes for org members
                     </a>
                 </small>
-                {orgInEditorBeta && (
-                    <small className="form-text">
-                        This configuration applies to all org members and takes effect in Sourcegraph Editor and on the
-                        web. You can also run the 'Preferences: Open Organization Settings' command inside of
-                        Sourcegraph Editor to change this configuration.
-                    </small>
-                )}
             </div>
         )
     }
@@ -94,7 +154,7 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
             .subscribe(
                 () => {
                     this.setState({ commitError: undefined })
-                    this.orgChanges.next(undefined)
+                    this.orgChanges.next({ id: this.props.org.id })
                 },
                 err => {
                     this.setState({ commitError: err })

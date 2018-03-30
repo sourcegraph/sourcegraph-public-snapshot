@@ -1,7 +1,7 @@
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { merge } from 'rxjs/observable/merge'
 import { of } from 'rxjs/observable/of'
@@ -17,10 +17,11 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
+import { userURL } from '../../user'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { OrgAreaPageProps } from '../area/OrgArea'
 import { removeUserFromOrg } from '../backend'
 import { InviteForm } from '../invite/InviteForm'
 
@@ -101,7 +102,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             <li className="site-admin-detail-list__item site-admin-all-users-page__item-container">
                 <div className="site-admin-all-users-page__item">
                     <div className="site-admin-detail-list__header">
-                        <span className="site-admin-detail-list__name">{this.props.node.username}</span>
+                        <Link to={userURL(this.props.node.username)} className="site-admin-detail-list__name">
+                            {this.props.node.username}
+                        </Link>
                         {this.props.node.displayName && (
                             <>
                                 <br />
@@ -136,10 +139,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     private remove = () => this.removes.next()
 }
 
-interface Props extends RouteComponentProps<{}> {
-    org: GQL.IOrg
-    user?: GQL.IUser
-}
+interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {}
 
 interface State {
     /**
@@ -158,7 +158,7 @@ class FilteredUserConnection extends FilteredConnection<
 /**
  * The organizations members page
  */
-export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
+export class OrgMembersPage extends React.PureComponent<Props, State> {
     private orgChanges = new Subject<GQL.IOrg>()
     private userUpdates = new Subject<void>()
     private subscriptions = new Subscription()
@@ -193,22 +193,16 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.user) {
-            return (
-                <HeroPage icon={ErrorIcon} title="Error" subtitle="Must be logged in to view organization members." />
-            )
-        }
-
         const nodeProps: Pick<UserNodeProps, 'org' | 'authenticatedUser' | 'onDidUpdate'> = {
             org: { ...this.props.org, viewerCanAdminister: this.state.viewerCanAdminister },
-            authenticatedUser: this.props.user,
+            authenticatedUser: this.props.authenticatedUser,
             onDidUpdate: this.onDidUpdateUser,
         }
 
         return (
             <div className="org-settings-members-page">
                 <PageTitle title={`Members - ${this.props.org.name}`} />
-                <InviteForm orgID={this.props.org.id} />
+                {this.state.viewerCanAdminister && <InviteForm orgID={this.props.org.id} />}
                 <FilteredUserConnection
                     className="site-admin-page__filtered-connection"
                     noun="member"
@@ -252,10 +246,12 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
+                    this.setState({ viewerCanAdminister: false })
                     throw createAggregateError(errors)
                 }
                 const org = data.node as GQL.IOrg
                 if (!org.members) {
+                    this.setState({ viewerCanAdminister: false })
                     throw createAggregateError(errors)
                 }
                 this.setState({ viewerCanAdminister: org.viewerCanAdminister })

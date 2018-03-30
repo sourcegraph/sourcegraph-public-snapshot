@@ -1,37 +1,75 @@
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
+import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { map } from 'rxjs/operators/map'
+import { publishReplay } from 'rxjs/operators/publishReplay'
+import { refCount } from 'rxjs/operators/refCount'
+import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
+import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../../components/PageTitle'
 import { SettingsFile } from '../../settings/SettingsFile'
 import { eventLogger } from '../../tracking/eventLogger'
+import { asError, ErrorLike, isErrorLike } from '../../util/errors'
+import { UserAreaPageProps } from '../area/UserArea'
 import { fetchUserSettings, updateUserSettings } from './backend'
 
-interface Props extends RouteComponentProps<any> {
-    user: GQL.IUser
+interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean
 }
 
 interface State {
-    settings?: GQL.ISettings | null
-    error?: string
+    /** The user's settings, or an error, or undefined while loading. */
+    settingsOrError?: GQL.ISettings | null | ErrorLike
+
+    /** An error that occurred while saving the settings. */
     commitError?: Error
 }
 
 export class UserSettingsConfigurationPage extends React.Component<Props, State> {
     public state: State = {}
 
+    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsConfiguration')
 
-        this.subscriptions.add(
-            fetchUserSettings().subscribe(
-                settings => this.setState({ settings }),
-                error => this.setState({ error: error.message })
-            )
+        const userChanges = this.componentUpdates.pipe(
+            distinctUntilChanged((a, b) => a.user.id === b.user.id),
+            map(({ user }) => user)
         )
+
+        // Fetch the user settings.
+        this.subscriptions.add(
+            userChanges
+                .pipe(
+                    tap(() => this.setState({ commitError: undefined })),
+                    switchMap(user =>
+                        merge(
+                            of({ settingsOrError: undefined }),
+                            fetchUserSettings(user.id).pipe(
+                                catchError(error => [asError(error)]),
+                                map(c => ({ settingsOrError: c } as Pick<State, 'settingsOrError'>)),
+                                publishReplay<Pick<State, 'settingsOrError'>>(),
+                                refCount()
+                            )
+                        )
+                    )
+                )
+                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+        )
+
+        this.componentUpdates.next(this.props)
+    }
+
+    public componentWillReceiveProps(nextProps: Props): void {
+        this.componentUpdates.next(nextProps)
     }
 
     public componentWillUnmount(): void {
@@ -39,54 +77,45 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
     }
 
     public render(): JSX.Element | null {
-        const userInEditorBeta = this.props.user.tags && this.props.user.tags.some(tag => tag.name === 'editor-beta')
-
         return (
             <div className="user-settings-configuration-page">
                 <PageTitle title="User configuration" />
                 <h2>Configuration</h2>
-                {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
-                <p>View and edit your personal search scopes and saved queries.</p>
-                {this.state.settings !== undefined && (
-                    <SettingsFile
-                        settings={this.state.settings}
-                        onDidCommit={this.onDidCommit}
-                        onDidDiscard={this.onDidDiscard}
-                        commitError={this.state.commitError}
-                        history={this.props.history}
-                        isLightTheme={this.props.isLightTheme}
-                    />
+                {isErrorLike(this.state.settingsOrError) && (
+                    <p className="alert alert-danger">Error: {upperFirst(this.state.settingsOrError.message)}</p>
                 )}
+                <p>View and edit user search scopes and saved queries.</p>
+                {this.state.settingsOrError !== undefined &&
+                    !isErrorLike(this.state.settingsOrError) && (
+                        <SettingsFile
+                            settings={this.state.settingsOrError}
+                            onDidCommit={this.onDidCommit}
+                            onDidDiscard={this.onDidDiscard}
+                            commitError={this.state.commitError}
+                            history={this.props.history}
+                            isLightTheme={this.props.isLightTheme}
+                        />
+                    )}
                 <small className="form-text">
                     Documentation:{' '}
                     <a target="_blank" href="https://about.sourcegraph.com/docs/server/config/search-scopes">
                         Customizing search scopes
                     </a>
                 </small>
-                {userInEditorBeta && (
-                    <small className="form-text">
-                        Editor beta users: This configuration does not yet take effect in Sourcegraph Editor, unlike org
-                        config (which does). It can only be used to configure the Sourcegraph web app.
-                    </small>
-                )}
             </div>
         )
     }
 
     private onDidCommit = (lastKnownSettingsID: number | null, contents: string): void => {
-        this.setState({
-            error: undefined,
-            commitError: undefined,
-        })
-        updateUserSettings(lastKnownSettingsID, contents).subscribe(
+        this.setState({ commitError: undefined })
+        updateUserSettings(this.props.user.id, lastKnownSettingsID, contents).subscribe(
             settings =>
                 this.setState({
-                    error: undefined,
                     commitError: undefined,
-                    settings,
+                    settingsOrError: settings,
                 }),
             error => {
-                this.setState({ error: undefined, commitError: error })
+                this.setState({ commitError: error })
                 console.error(error)
             }
         )

@@ -1,9 +1,7 @@
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
-import { take } from 'rxjs/operators/take'
 import { tap } from 'rxjs/operators/tap'
-import { currentUser } from '../../auth'
 import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
 import { configurationCascade } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -81,48 +79,55 @@ export const settingsFragment = gql`
 `
 
 /**
- * Fetches the settings for the current user.
+ * Fetches the settings for the user.
  *
  * @return Observable that emits the settings or `null` if it doesn't exist
  */
-export function fetchUserSettings(): Observable<GQL.ISettings | null> {
+export function fetchUserSettings(user: GQLID): Observable<GQL.ISettings | null> {
     return queryGraphQL(
         gql`
-            query CurrentUserSettings() {
-                currentUser {
-                    latestSettings {
-                        ...SettingsFields
+            query UserSettings($user: ID!) {
+                node(id: $user) {
+                    ... on User {
+                        latestSettings {
+                            ...SettingsFields
+                        }
                     }
                 }
             }
             ${settingsFragment}
-        `
+        `,
+        { user }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.currentUser) {
+            if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            return data.currentUser.latestSettings
+            return (data.node as GQL.IUser).latestSettings
         })
     )
 }
 
 /**
- * Updates the settings for the current user.
+ * Updates the settings for the user.
  *
  * @return Observable that emits the newly updated settings
  */
-export function updateUserSettings(lastKnownSettingsID: number | null, contents: string): Observable<GQL.ISettings> {
+export function updateUserSettings(
+    user: GQLID,
+    lastKnownSettingsID: number | null,
+    contents: string
+): Observable<GQL.ISettings> {
     return mutateGraphQL(
         gql`
-            mutation UpdateUserSettings($lastKnownSettingsID: Int, $contents: String!) {
-                updateUserSettings(lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
+            mutation UpdateUserSettings($user: ID!, $lastKnownSettingsID: Int, $contents: String!) {
+                updateUserSettings(user: $user, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
                     ...SettingsFields
                 }
             }
             ${settingsFragment}
         `,
-        { lastKnownSettingsID, contents }
+        { user, lastKnownSettingsID, contents }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.updateUserSettings) {
@@ -145,43 +150,23 @@ export interface UpdateUserOptions {
 /**
  * Sends a GraphQL mutation to update a user's profile
  */
-export function updateUser(args: UpdateUserOptions): Observable<GQL.IUser> {
-    return currentUser.pipe(
-        take(1),
-        mergeMap(user => {
-            if (!user) {
-                throw new Error('User must be signed in.')
+export function updateUser(user: GQLID, args: UpdateUserOptions): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation updateUser($user: ID!, $username: String, $displayName: String, $avatarURL: String) {
+                updateUser(user: $user, username: $username, displayName: $displayName, avatarURL: $avatarURL) {
+                    alwaysNil
+                }
             }
-            return mutateGraphQL(
-                gql`
-                    mutation updateUser($username: String, $displayName: String, $avatarURL: String) {
-                        updateUser(username: $username, displayName: $displayName, avatarURL: $avatarURL) {
-                            id
-                            sourcegraphID
-                            username
-                        }
-                    }
-                `,
-                args
-            )
-        }),
+        `,
+        { ...args, user }
+    ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.updateUser) {
                 eventLogger.log('UpdateUserFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('UserProfileUpdated', {
-                auth: {
-                    user: {
-                        id: data.updateUser.sourcegraphID,
-                        external_id: data.updateUser.externalID,
-                        username: data.updateUser.username,
-                        display_name: args.displayName,
-                        avatar_url: args.avatarURL,
-                    },
-                },
-            })
-            return data.updateUser
+            eventLogger.log('UserProfileUpdated')
         })
     )
 }

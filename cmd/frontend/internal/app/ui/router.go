@@ -46,6 +46,8 @@ const (
 	routeExplore        = "explore"
 	routeAPIConsole     = "api-console"
 	routeSearchScope    = "scope"
+	routeUser           = "user"
+	routeUserSettings   = "user-settings"
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
@@ -114,6 +116,8 @@ func newRouter() *mux.Router {
 	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 	r.Path("/search/scope/{scope}").Methods("GET").Name(routeSearchScope)
+	r.PathPrefix("/users/{username}/settings").Methods("GET").Name(routeUserSettings)
+	r.PathPrefix("/users/{username}").Methods("GET").Name(routeUser)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -165,6 +169,11 @@ func initRouter() {
 	router.Get(routeRepoSettings).Handler(handler(serveBasicPageString("Repository settings - Sourcegraph")))
 	router.Get(routeRepoGraph).Handler(handler(serveBasicPageString("Repository graph - Sourcegraph")))
 	router.Get(routeSearchScope).Handler(handler(serveBasicPageString("Search scope - Sourcegraph")))
+
+	router.Get(routeUserSettings).Handler(handler(serveBasicPageString("User settings - Sourcegraph")))
+	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+		return mux.Vars(r)["username"] + " - Sourcegraph"
+	})))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {

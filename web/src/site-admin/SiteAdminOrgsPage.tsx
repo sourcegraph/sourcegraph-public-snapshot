@@ -39,10 +39,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
         return (
             <li className="site-admin-detail-list__item">
                 <div className="site-admin-detail-list__header">
-                    <Link
-                        to={`${orgURL(this.props.node.name)}/settings/members`}
-                        className="site-admin-detail-list__name"
-                    >
+                    <Link to={orgURL(this.props.node.name)} className="site-admin-detail-list__name">
                         {this.props.node.name}
                     </Link>
                     <br />
@@ -138,11 +135,13 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-detail-list site-admin-orgs-page">
                 <PageTitle title="Organizations - Admin" />
-                <h2>Organizations</h2>
-                <div className="site-admin-page__actions">
-                    <Link to="/organizations/new" className="btn btn-primary btn-sm site-admin-page__actions-btn">
-                        <AddIcon className="icon-inline" /> Create organization
-                    </Link>
+                <div className="site-admin-page__header">
+                    <h2 className="site-admin-page__header-title">Organizations</h2>
+                    <div className="site-admin-page__actions">
+                        <Link to="/organizations/new" className="btn btn-primary btn-sm site-admin-page__actions-btn">
+                            <AddIcon className="icon-inline" /> Create organization
+                        </Link>
+                    </div>
                 </div>
                 <FilteredOrgConnection
                     className="site-admin-page__filtered-connection"

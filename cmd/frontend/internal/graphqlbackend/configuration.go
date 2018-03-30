@@ -31,18 +31,14 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
 	switch s := resolver.(type) {
 	case *siteResolver:
 		return &configurationSubject{site: s}, nil
 
 	case *userResolver:
-		if !actor.IsAuthenticated() {
-			return nil, errors.New("must be logged in to view/modify user configuration")
-		}
-		// 🚨 SECURITY: A user may only view or modify their own configuration.
-		if actor.UID != s.SourcegraphID() {
-			return nil, errors.New("a user may only view or modify their own configuration")
+		// 🚨 SECURITY: Only the user and site admins are allowed to update the user's settings.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, s.user.ID); err != nil {
+			return nil, err
 		}
 		return &configurationSubject{user: s}, nil
 

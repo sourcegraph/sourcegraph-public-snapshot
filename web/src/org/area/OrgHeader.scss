@@ -1,0 +1,14 @@
+@import '../../components/AreaHeader';
+
+.org-header {
+    &__title {
+        display: flex;
+        align-items: center;
+        margin-left: 0.25rem;
+        margin-bottom: 0.75rem;
+        font-weight: normal;
+        &-text {
+            padding-left: 0.5rem;
+        }
+    }
+}

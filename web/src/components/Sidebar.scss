@@ -22,6 +22,10 @@
         }
     }
 
+    &__alert {
+        margin-bottom: 0.75rem;
+    }
+
     &__items,
     &__action {
         flex-shrink: 0;

@@ -49,16 +49,26 @@ func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 }
 
 func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
+	User                graphql.ID
 	LastKnownSettingsID *int32
 	Contents            string
 }) (*settingsResolver, error) {
-	// 🚨 SECURITY: verify that the current user is authenticated.
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	userID, err := unmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
 
-	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{User: &user.ID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	// 🚨 SECURITY: Only the user and site admins are allowed to update the user's settings.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{User: &userID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := db.Users.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

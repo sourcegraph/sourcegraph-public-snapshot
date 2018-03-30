@@ -16,9 +16,10 @@ import { SavedQueriesPage } from './search/SavedQueries'
 import { ScopePage } from './search/ScopePage'
 import { SearchPage } from './search/SearchPage'
 import { SearchResults } from './search/SearchResults'
-import { SettingsArea } from './settings/SettingsArea'
 import { SiteAdminArea } from './site-admin/SiteAdminArea'
 import { SiteInitPage } from './site-admin/SiteInitPage'
+import { UserArea } from './user/area/UserArea'
+import { RedirectToUserSettings } from './user/settings/RedirectToUserSettings'
 import { canListAllRepositories } from './util/features'
 
 export interface LayoutRouteProps extends RouteProps {
@@ -84,7 +85,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/settings',
-        component: SettingsArea,
+        component: RedirectToUserSettings,
     },
     {
         path: '/organizations',
@@ -132,6 +133,10 @@ export const routes: LayoutRouteProps[] = [
         path: '/api/console',
         component: APIConsole,
         exact: true,
+    },
+    {
+        path: '/users/:username',
+        component: UserArea,
     },
     repoRevRoute,
 ]

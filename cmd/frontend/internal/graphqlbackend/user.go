@@ -139,12 +139,18 @@ func (r *userResolver) SiteAdmin(ctx context.Context) (bool, error) {
 }
 
 func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
+	User        graphql.ID
 	Username    *string
 	DisplayName *string
 	AvatarURL   *string
-}) (*userResolver, error) {
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
+}) (*EmptyResponse, error) {
+	userID, err := unmarshalUserID(args.User)
 	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return nil, err
 	}
 
@@ -155,16 +161,10 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	if args.Username != nil {
 		update.Username = *args.Username
 	}
-	if err := db.Users.Update(ctx, user.ID, update); err != nil {
+	if err := db.Users.Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
-
-	// Get updated user.
-	user, err = db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &userResolver{user: user}, nil
+	return &EmptyResponse{}, nil
 }
 
 func currentUser(ctx context.Context) (*userResolver, error) {

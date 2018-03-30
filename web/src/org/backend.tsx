@@ -4,46 +4,10 @@ import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
 import { take } from 'rxjs/operators/take'
 import { currentUser, refreshCurrentUser } from '../auth'
-import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { gql, mutateGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
 import { settingsFragment } from '../user/settings/backend'
 import { createAggregateError } from '../util/errors'
-
-/**
- * Fetches an org by ID
- *
- * @return Observable that emits the org or `null` if it doesn't exist
- */
-export function fetchOrg(id: string): Observable<GQL.IOrg | null> {
-    return queryGraphQL(
-        gql`
-            query Org($id: ID!) {
-                org(id: $id) {
-                    id
-                    name
-                    displayName
-                    latestSettings {
-                        id
-                        configuration {
-                            contents
-                        }
-                    }
-                    tags {
-                        name
-                    }
-                }
-            }
-        `,
-        { id }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.org) {
-                throw createAggregateError(errors)
-            }
-            return data.org
-        })
-    )
-}
 
 export interface CreateOrgOptions {
     /** The name of the org */

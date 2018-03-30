@@ -145,7 +145,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             <li className="site-admin-detail-list__item site-admin-all-users-page__item-container">
                 <div className="site-admin-all-users-page__item">
                     <div className="site-admin-detail-list__header">
-                        <span className="site-admin-detail-list__name">{this.props.node.username}</span>
+                        <Link className="site-admin-detail-list__name" to={`/users/${this.props.node.username}`}>
+                            {this.props.node.username}
+                        </Link>
                         <br />
                         <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
                     </div>

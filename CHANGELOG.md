@@ -11,6 +11,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * User and site admin management capabilities for user email addresses are improved.
+* The user and organization management UI has been greatly improved. Site admins may now administer all organizations (even those they aren't a member of) and may edit profile info and configuration for all users.
 * If SSO is enabled (via OpenID or SAML) and the SSO system provides user avatar images and/or display names, those are now used by Sourcegraph.
 * Enable new search timeout behavior by enabling `experimentalFeatures.searchTimeoutParameterEnabled` in your site config.
   * Adds a new `timeout:` parameter to customize the timeout for searches. It defaults to 10s and may not be set higher than 1m.

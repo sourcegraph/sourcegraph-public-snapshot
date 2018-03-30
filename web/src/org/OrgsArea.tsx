@@ -1,10 +1,9 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { NewOrganizationPage } from '../org/new/NewOrganizationPage'
-import { OrgSettingsArea } from './settings/OrgSettingsArea'
+import { OrgArea } from './area/OrgArea'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -24,20 +23,12 @@ interface Props extends RouteComponentProps<any> {
  */
 export class OrgsArea extends React.Component<Props> {
     public render(): JSX.Element | null {
-        // If not logged in, redirect to sign in.
-        if (!this.props.user) {
-            const newUrl = new URL(window.location.href)
-            newUrl.pathname = '/sign-in'
-            newUrl.searchParams.set('returnTo', window.location.href)
-            return <Redirect to={newUrl.pathname + newUrl.search} />
-        }
-
         return (
             <div className="orgs-area">
                 <div className="orgs-area__content">
                     <Switch>
                         <Route path={`${this.props.match.url}/new`} component={NewOrganizationPage} exact={true} />
-                        <Route path={`${this.props.match.url}/:orgName`} render={this.renderOrgSettingsArea} />
+                        <Route path={`${this.props.match.url}/:name`} render={this.renderOrgArea} />
                         <Route component={NotFoundPage} />
                     </Switch>
                 </div>
@@ -45,7 +36,7 @@ export class OrgsArea extends React.Component<Props> {
         )
     }
 
-    private renderOrgSettingsArea = (routeComponentProps: RouteComponentProps<any>) => (
-        <OrgSettingsArea {...this.props} {...routeComponentProps} />
+    private renderOrgArea = (routeComponentProps: RouteComponentProps<any>) => (
+        <OrgArea {...this.props} {...routeComponentProps} />
     )
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 var ErrNotAuthenticated = errors.New("not authenticated")
@@ -33,6 +34,9 @@ var ErrNotAnOrgMember = errors.New("current user is not an org member")
 func checkUserIsOrgMember(ctx context.Context, userID, orgID int32) error {
 	resp, err := db.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return ErrNotAnOrgMember
+		}
 		return err
 	}
 	// Be robust in case GetByOrgIDAndUserID changes so that lack of membership returns

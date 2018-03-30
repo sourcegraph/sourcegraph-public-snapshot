@@ -1,8 +1,7 @@
 @import '../components/Area';
+@import './area/OrgArea';
 @import './new/NewOrgPage';
-@import './settings/OrgSettingsArea';
 
 .orgs-area {
     width: 100%;
-    padding: 2rem;
 }

@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { AcceptInvitePage } from '../org/invite/AcceptInvitePage'
 import { siteFlags } from '../site/backend'
+import { UserAreaPageProps } from '../user/area/UserArea'
 import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPage'
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
 import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
@@ -23,8 +24,7 @@ const SettingsNotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser | null
+interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean
     onThemeChange: () => void
 }
@@ -53,8 +53,12 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        // If not logged in, redirect to sign in
         if (!this.props.user) {
+            return null
+        }
+
+        // If not logged in, redirect to sign in
+        if (!this.props.authenticatedUser) {
             const currUrl = new URL(window.location.href)
             const newUrl = new URL(window.location.href)
             newUrl.pathname = currUrl.pathname === '/settings/accept-invite' ? '/sign-up' : '/sign-in'
@@ -63,19 +67,16 @@ export class SettingsArea extends React.Component<Props, State> {
             return <Redirect to={newUrl.pathname + newUrl.search} />
         }
 
-        if (this.props.location.pathname === '/settings') {
-            return <Redirect to="/settings/profile" />
+        if (this.props.match.isExact) {
+            return <Redirect to={`${this.props.match.path}/profile`} />
         }
-
-        // We redefine this here so the type of user is non-null
-        const transferProps = { ...this.props, user: this.props.user }
 
         return (
             <div className="settings-area area">
                 <SettingsSidebar
                     externalAuthEnabled={this.state.externalAuthEnabled}
                     className="area__sidebar"
-                    {...transferProps}
+                    {...this.props}
                 />
                 <div className="area__content">
                     <Switch>
@@ -86,7 +87,7 @@ export class SettingsArea extends React.Component<Props, State> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <UserSettingsProfilePage {...routeComponentProps} {...transferProps} />
+                                <UserSettingsProfilePage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         <Route
@@ -95,7 +96,7 @@ export class SettingsArea extends React.Component<Props, State> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <UserSettingsConfigurationPage {...routeComponentProps} {...transferProps} />
+                                <UserSettingsConfigurationPage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         {!this.state.externalAuthEnabled && (
@@ -105,7 +106,7 @@ export class SettingsArea extends React.Component<Props, State> {
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <UserSettingsAccountPage {...routeComponentProps} {...transferProps} />
+                                    <UserSettingsAccountPage {...routeComponentProps} {...this.props} />
                                 )}
                             />
                         )}
@@ -115,7 +116,7 @@ export class SettingsArea extends React.Component<Props, State> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <UserSettingsEmailsPage {...routeComponentProps} {...transferProps} />
+                                <UserSettingsEmailsPage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         <Route
@@ -124,7 +125,7 @@ export class SettingsArea extends React.Component<Props, State> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <AcceptInvitePage {...routeComponentProps} {...transferProps} />
+                                <AcceptInvitePage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         <Route

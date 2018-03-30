@@ -90,7 +90,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                             </small>
                         )}
                 </div>
-                <div className="site-admin-detail-list__actions site-admin-repositories-page__actions">
+                <div className="site-admin-detail-list__actions">
                     {
                         <Link
                             className="btn btn-secondary btn-sm site-admin-detail-list__action"
@@ -346,7 +346,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
 
         return (
             <div className="site-admin-detail-list site-admin-repositories-page">
-                <PageTitle title="Repositories" />
+                <PageTitle title="Repositories - Admin" />
                 <div className="site-admin-page__header">
                     <h2 className="site-admin-page__header-title">Repositories</h2>
                     <div className="site-admin-page__actions">

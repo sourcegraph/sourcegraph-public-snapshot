@@ -1,13 +1,6 @@
 @import './DetailList';
 
 .site-admin-repositories-page {
-    &__actions {
-        flex: 1;
-        flex-direction: row-reverse;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
     &__repo {
         align-items: center;
 

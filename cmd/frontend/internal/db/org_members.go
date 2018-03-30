@@ -66,9 +66,11 @@ type ErrOrgMemberNotFound struct {
 	args []interface{}
 }
 
-func (err ErrOrgMemberNotFound) Error() string {
+func (err *ErrOrgMemberNotFound) Error() string {
 	return fmt.Sprintf("org member not found: %v", err.args)
 }
+
+func (ErrOrgMemberNotFound) NotFound() bool { return true }
 
 func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.OrgMembership, error) {
 	members, err := m.getBySQL(ctx, query, args...)
@@ -76,7 +78,7 @@ func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...inte
 		return nil, err
 	}
 	if len(members) != 1 {
-		return nil, ErrOrgMemberNotFound{args}
+		return nil, &ErrOrgMemberNotFound{args}
 	}
 	return members[0], nil
 }

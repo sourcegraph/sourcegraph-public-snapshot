@@ -1,95 +1,56 @@
-import UserIcon from '@sourcegraph/icons/lib/User'
 import * as React from 'react'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
-import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../../auth'
-import { OrgAvatar } from '../OrgAvatar'
+import { NavLink } from 'react-router-dom'
+import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { OrgAreaPageProps } from '../area/OrgArea'
 
-interface Props extends RouteComponentProps<{ orgName: string }> {
+interface Props extends OrgAreaPageProps {
     className: string
-}
-
-interface State {
-    orgs?: GQL.IOrg[]
 }
 
 /**
  * Sidebar for org settings pages
  */
-export class OrgSettingsSidebar extends React.Component<Props, State> {
-    public state: State = {}
-
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            currentUser.subscribe(user => {
-                this.setState({ orgs: user ? user.orgs : undefined })
-            })
-        )
+export const OrgSettingsSidebar: React.SFC<Props> = ({ org, authenticatedUser, className }) => {
+    if (!org) {
+        return null
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    const siteAdminViewingOtherOrg = authenticatedUser && org.viewerCanAdminister && !org.viewerIsMember
 
-    public render(): JSX.Element | null {
-        const org: GQL.IOrg | undefined =
-            this.state.orgs && this.state.orgs.find(org => org.name === this.props.match.params.orgName)
+    return (
+        <div className={`sidebar org-settings-sidebar ${className}`}>
+            {/* Indicate when the site admin is viewing another org's settings */}
+            {siteAdminViewingOtherOrg && (
+                <SiteAdminAlert className="sidebar__alert">
+                    Viewing settings for <strong>{org.name}</strong>
+                </SiteAdminAlert>
+            )}
 
-        if (!this.state.orgs) {
-            return <div className={`sidebar org-settings-sidebar ${this.props.className}`} />
-        } else if (!org) {
-            return null
-        }
-
-        return (
-            <div className={`sidebar org-settings-sidebar ${this.props.className}`}>
-                <ul className="sidebar__items">
-                    <div className="sidebar__header">
-                        <div className="sidebar__header-icon">
-                            <OrgAvatar org={org.name} />
-                        </div>
-                        <h5 className="sidebar__header-title">{org.name}</h5>
-                    </div>
-                    <li className="sidebar__item">
-                        <NavLink
-                            to={`/organizations/${org.name}/settings/profile`}
-                            exact={true}
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                        >
-                            Profile
-                        </NavLink>
-                    </li>
-                    <li className="sidebar__item">
-                        <NavLink
-                            to={`/organizations/${org.name}/settings/members`}
-                            exact={true}
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                        >
-                            Members
-                        </NavLink>
-                    </li>
-                    <li className="sidebar__item">
-                        <NavLink
-                            to={`/organizations/${org.name}/settings/configuration`}
-                            exact={true}
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                        >
-                            Configuration
-                        </NavLink>
-                    </li>
-                </ul>
-                <div className="sidebar__item sidebar__action">
-                    <Link to="/settings/profile" className="sidebar__action-button btn">
-                        <UserIcon className="icon-inline sidebar__action-icon" />
-                        User settings
-                    </Link>
+            <ul className="sidebar__items">
+                <div className="sidebar__header">
+                    <h5 className="sidebar__header-title">Organization settings</h5>
                 </div>
-            </div>
-        )
-    }
+                <li className="sidebar__item">
+                    <NavLink
+                        to={`/organizations/${org.name}/settings/profile`}
+                        exact={true}
+                        className="sidebar__item-link"
+                        activeClassName="sidebar__item--active"
+                    >
+                        Profile
+                    </NavLink>
+                </li>
+                <li className="sidebar__item">
+                    <NavLink
+                        to={`/organizations/${org.name}/settings/configuration`}
+                        exact={true}
+                        className="sidebar__item-link"
+                        activeClassName="sidebar__item--active"
+                    >
+                        Configuration
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
+    )
 }

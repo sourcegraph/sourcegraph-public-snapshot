@@ -5,87 +5,71 @@ import MoonIcon from '@sourcegraph/icons/lib/Moon'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
 import SunIcon from '@sourcegraph/icons/lib/Sun'
 import UserIcon from '@sourcegraph/icons/lib/User'
-import * as H from 'history'
 import * as React from 'react'
-import { NavLink } from 'react-router-dom'
-import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../auth'
+import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { OrgAvatar } from '../org/OrgAvatar'
+import { SiteAdminAlert } from '../site-admin/SiteAdminAlert'
 import { eventLogger } from '../tracking/eventLogger'
+import { UserAreaPageProps } from '../user/area/UserArea'
 
-interface Props {
-    history: H.History
-    location: H.Location
+interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     className: string
-    user: GQL.IUser | null
     isLightTheme: boolean
     externalAuthEnabled: boolean
     onThemeChange: () => void
 }
 
-interface State {
-    currentUser?: GQL.IUser
-    orgs?: GQL.IOrg[]
-}
-
 /**
  * Sidebar for settings pages
  */
-export class SettingsSidebar extends React.Component<Props, State> {
-    public state: State = {}
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            currentUser.subscribe(user => {
-                // If not logged in, redirect
-                if (!user) {
-                    // TODO currently we can't redirect here because the initial value will always be `null`
-                    // this.props.history.push('/sign-in')
-                    return
-                }
-                this.setState({ orgs: user.orgs, currentUser: user })
-            })
-        )
+export const SettingsSidebar: React.SFC<Props> = props => {
+    if (!props.authenticatedUser) {
+        return null
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    // When the site admin is viewing another user's settings.
+    const siteAdminViewingOtherUser = props.user.id !== props.authenticatedUser.id
 
-    public render(): JSX.Element | null {
-        return (
-            <div className={`sidebar settings-sidebar ${this.props.className}`}>
-                <ul className="sidebar__items">
-                    <li className="sidebar__header">
-                        <div className="sidebar__header-icon">
-                            <UserIcon className="icon-inline" />
-                        </div>
-                        <h5 className="sidebar__header-title">User settings</h5>
-                    </li>
+    return (
+        <div className={`sidebar settings-sidebar ${props.className}`}>
+            {/* Indicate when the site admin is viewing another user's settings */}
+            {siteAdminViewingOtherUser && (
+                <SiteAdminAlert className="sidebar__alert">
+                    Viewing settings for <strong>{props.user.username}</strong>
+                </SiteAdminAlert>
+            )}
+
+            <ul className="sidebar__items">
+                <li className="sidebar__header">
+                    <div className="sidebar__header-icon">
+                        <UserIcon className="icon-inline" />
+                    </div>
+                    <h5 className="sidebar__header-title">User settings</h5>
+                </li>
+                <li className="sidebar__item">
+                    <NavLink
+                        to={`${props.match.path}/profile`}
+                        exact={true}
+                        className="sidebar__item-link"
+                        activeClassName="sidebar__item--active"
+                    >
+                        Profile
+                    </NavLink>
+                </li>
+                <li className="sidebar__item">
+                    <NavLink
+                        to={`${props.match.path}/configuration`}
+                        exact={true}
+                        className="sidebar__item-link"
+                        activeClassName="sidebar__item--active"
+                    >
+                        Configuration
+                    </NavLink>
+                </li>
+                {!siteAdminViewingOtherUser && (
                     <li className="sidebar__item">
                         <NavLink
-                            to="/settings/profile"
-                            exact={true}
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                        >
-                            Profile
-                        </NavLink>
-                    </li>
-                    <li className="sidebar__item">
-                        <NavLink
-                            to="/settings/configuration"
-                            exact={true}
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                        >
-                            Configuration
-                        </NavLink>
-                    </li>
-                    <li className="sidebar__item">
-                        <NavLink
-                            to="/settings/integrations"
+                            to={`${props.match.path}/integrations`}
                             exact={true}
                             className="sidebar__item-link"
                             activeClassName="sidebar__item--active"
@@ -93,10 +77,12 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             Integrations
                         </NavLink>
                     </li>
-                    {!this.props.externalAuthEnabled && (
+                )}
+                {!siteAdminViewingOtherUser &&
+                    !props.externalAuthEnabled && (
                         <li className="sidebar__item">
                             <NavLink
-                                to="/settings/account"
+                                to={`${props.match.path}/account`}
                                 exact={true}
                                 className="sidebar__item-link"
                                 activeClassName="sidebar__item--active"
@@ -105,36 +91,35 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </NavLink>
                         </li>
                     )}
+                <li className="sidebar__item">
+                    <NavLink
+                        to={`${props.match.path}/emails`}
+                        exact={true}
+                        className="sidebar__item-link"
+                        activeClassName="sidebar__item--active"
+                    >
+                        Emails
+                    </NavLink>
+                </li>
+                {!siteAdminViewingOtherUser && (
                     <li className="sidebar__item">
                         <NavLink
-                            to="/settings/emails"
-                            exact={true}
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                        >
-                            Emails
-                        </NavLink>
-                    </li>
-                    <li className="sidebar__item">
-                        <NavLink
-                            to="/settings/tokens"
+                            to={`${props.match.path}/tokens`}
                             className="sidebar__item-link"
                             activeClassName="sidebar__item--active"
                         >
                             Access tokens
                         </NavLink>
                     </li>
+                )}
+                {!siteAdminViewingOtherUser && (
                     <li className="sidebar__item">
                         <div className="settings-sidebar__theme-switcher">
-                            <a
-                                className="sidebar__link"
-                                onClick={this.props.onThemeChange}
-                                title="Switch to light theme"
-                            >
+                            <a className="sidebar__link" onClick={props.onThemeChange} title="Switch to light theme">
                                 <div
                                     className={
                                         'settings-sidebar__theme-switcher--button' +
-                                        (this.props.isLightTheme
+                                        (props.isLightTheme
                                             ? ' settings-sidebar__theme-switcher--button--selected'
                                             : '')
                                     }
@@ -143,15 +128,11 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                     Light
                                 </div>
                             </a>
-                            <a
-                                className="sidebar__link"
-                                onClick={this.props.onThemeChange}
-                                title="Switch to dark theme"
-                            >
+                            <a className="sidebar__link" onClick={props.onThemeChange} title="Switch to dark theme">
                                 <div
                                     className={
                                         'settings-sidebar__theme-switcher--button' +
-                                        (!this.props.isLightTheme
+                                        (!props.isLightTheme
                                             ? ' settings-sidebar__theme-switcher--button--selected'
                                             : '')
                                     }
@@ -162,16 +143,18 @@ export class SettingsSidebar extends React.Component<Props, State> {
                             </a>
                         </div>
                     </li>
-                </ul>
+                )}
+            </ul>
 
-                <div className="sidebar__spacer" />
+            <div className="sidebar__spacer" />
 
-                <ul className="sidebar__items">
-                    <li className="sidebar__header">
-                        <h5 className="sidebar__header-title ui-title">Organization settings</h5>
-                    </li>
-                    {this.state.orgs &&
-                        this.state.orgs.map(org => (
+            {(props.user.orgs.length > 0 || !siteAdminViewingOtherUser) && (
+                <>
+                    <ul className="sidebar__items">
+                        <li className="sidebar__header">
+                            <h5 className="sidebar__header-title ui-title">Organization settings</h5>
+                        </li>
+                        {props.user.orgs.map(org => (
                             <li className="sidebar__item" key={org.id}>
                                 <NavLink
                                     to={`/organizations/${org.name}/settings`}
@@ -185,63 +168,60 @@ export class SettingsSidebar extends React.Component<Props, State> {
                                 </NavLink>
                             </li>
                         ))}
-                    <li className="sidebar__item sidebar__action sidebar__item-action">
-                        <NavLink
-                            to="/organizations/new"
-                            className="sidebar__action-button btn"
-                            activeClassName="sidebar__item--active"
-                        >
-                            <AddIcon className="icon-inline sidebar__action-icon" />New organization
-                        </NavLink>
-                    </li>
-                </ul>
+                        {!siteAdminViewingOtherUser && (
+                            <li className="sidebar__item sidebar__action sidebar__item-action">
+                                <NavLink
+                                    to="/organizations/new"
+                                    className="sidebar__action-button btn"
+                                    activeClassName="sidebar__item--active"
+                                >
+                                    <AddIcon className="icon-inline sidebar__action-icon" />New organization
+                                </NavLink>
+                            </li>
+                        )}
+                    </ul>
+                    <div className="sidebar__spacer" />
+                </>
+            )}
 
-                <div className="sidebar__spacer" />
-
-                {this.props.user && (
+            {!siteAdminViewingOtherUser && (
+                <div className="sidebar__item sidebar__action">
+                    <NavLink
+                        to="/api/console"
+                        className="sidebar__action-button btn"
+                        activeClassName="sidebar__item--active"
+                    >
+                        <FeedIcon className="icon-inline sidebar__action-icon" />
+                        API console
+                    </NavLink>
+                </div>
+            )}
+            {props.authenticatedUser.siteAdmin && (
+                <div className="sidebar__item sidebar__action">
+                    <NavLink
+                        to="/site-admin"
+                        className="sidebar__action-button btn"
+                        activeClassName="sidebar__item--active"
+                    >
+                        <GearIcon className="icon-inline sidebar__action-icon" />
+                        Site admin
+                    </NavLink>
+                </div>
+            )}
+            {/* Hide sign out for SSO users. */}
+            {!siteAdminViewingOtherUser &&
+                props.user.externalID === null && (
                     <div className="sidebar__item sidebar__action">
-                        <NavLink
-                            to="/api/console"
-                            className="sidebar__action-button btn"
-                            activeClassName="sidebar__item--active"
-                        >
-                            <FeedIcon className="icon-inline sidebar__action-icon" />
-                            API console
-                        </NavLink>
+                        <a href="/-/sign-out" className="sidebar__action-button btn" onClick={logTelemetryOnSignOut}>
+                            <SignOutIcon className="icon-inline sidebar__item-action-icon" />
+                            Sign out
+                        </a>
                     </div>
                 )}
-                {this.props.user &&
-                    this.props.user.siteAdmin && (
-                        <div className="sidebar__item sidebar__action">
-                            <NavLink
-                                to="/site-admin"
-                                className="sidebar__action-button btn"
-                                activeClassName="sidebar__item--active"
-                            >
-                                <GearIcon className="icon-inline sidebar__action-icon" />
-                                Site admin
-                            </NavLink>
-                        </div>
-                    )}
-                {/* Hide sign out for SSO users. */}
-                {this.props.user &&
-                    this.props.user.externalID === null && (
-                        <div className="sidebar__item sidebar__action">
-                            <a
-                                href="/-/sign-out"
-                                className="sidebar__action-button btn"
-                                onClick={this.logTelemetryOnSignOut}
-                            >
-                                <SignOutIcon className="icon-inline sidebar__item-action-icon" />
-                                Sign out
-                            </a>
-                        </div>
-                    )}
-            </div>
-        )
-    }
+        </div>
+    )
+}
 
-    private logTelemetryOnSignOut = (): void => {
-        eventLogger.log('SignOutClicked')
-    }
+function logTelemetryOnSignOut(): void {
+    eventLogger.log('SignOutClicked')
 }
