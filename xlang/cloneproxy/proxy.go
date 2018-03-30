@@ -233,6 +233,8 @@ func (r *roundTripper) roundTrip(ctx context.Context) error {
 	callOpts := []jsonrpc2.CallOption{
 		// Some language servers don't properly support ID's that are strings (e.x. Rust),
 		// so we provide a number instead.
+
+		// Note that doing this breaks the `$/cancelRequest` and `$/partialResult` request.
 		jsonrpc2.PickID(jsonrpc2.ID{
 			Num:      r.globalRequestID.getAndInc(),
 			Str:      "",
