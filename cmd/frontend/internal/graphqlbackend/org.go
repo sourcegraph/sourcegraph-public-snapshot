@@ -421,7 +421,13 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 
 	if conf.CanSendEmail() {
 		// If email is disabled, the frontend will show a link instead.
-		if err := invite.SendEmail(args.Email, *currentUser.DisplayName(), org.Name, inviteURL); err != nil {
+		var fromName string
+		if currentUser.user.DisplayName != "" {
+			fromName = fmt.Sprintf("%s (%s on Sourcegraph)", currentUser.user.DisplayName, currentUser.user.Username)
+		} else {
+			fromName = fmt.Sprintf("%s (on Sourcegraph)", currentUser.user.Username)
+		}
+		if err := invite.SendEmail(args.Email, fromName, org.Name, inviteURL); err != nil {
 			return nil, err
 		}
 	}
