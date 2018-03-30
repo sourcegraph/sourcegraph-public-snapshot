@@ -25,8 +25,19 @@
         &--flex-grow {
             flex: 1;
         }
+
+        border-bottom-color: $color-bg-3;
+
+        &,
+        &:hover {
+            text-decoration: none !important; // override .btn-link:focus
+        }
+        &:hover {
+            opacity: 1;
+            border-bottom-color: $color-border-hover;
+        }
         &--active {
-            border-bottom-color: $primary;
+            border-bottom-color: $color-border-active !important; // override .btn-link:focus
         }
 
         &--h5like {
