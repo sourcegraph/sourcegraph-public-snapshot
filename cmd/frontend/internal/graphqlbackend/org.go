@@ -84,6 +84,9 @@ func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RF
 func (o *orgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list the org members.
 	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
+		if err == backend.ErrNotAnOrgMember {
+			return nil, errors.New("must be a member of this organization to view members")
+		}
 		return nil, err
 	}
 
