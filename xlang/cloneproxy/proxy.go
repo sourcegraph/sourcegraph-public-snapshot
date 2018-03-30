@@ -164,8 +164,8 @@ func (p *cloneProxy) handleServerRequest(ctx context.Context, conn *jsonrpc2.Con
 		src:  p.server,
 		dest: p.client,
 
-		updateURIFromSrc:  p.serverToClientURI,
-		updateURIFromDest: p.clientToServerURI,
+		updateURIFromSrc:  func(uri lsp.DocumentURI) lsp.DocumentURI { return serverToClientURI(uri, p.workspaceCacheDir()) },
+		updateURIFromDest: func(uri lsp.DocumentURI) lsp.DocumentURI { return clientToServerURI(uri, p.workspaceCacheDir()) },
 	}
 
 	if err := rTripper.roundTrip(ctx); err != nil {
@@ -190,8 +190,8 @@ func (p *cloneProxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.Con
 		src:  p.client,
 		dest: p.server,
 
-		updateURIFromSrc:  p.clientToServerURI,
-		updateURIFromDest: p.serverToClientURI,
+		updateURIFromSrc:  func(uri lsp.DocumentURI) lsp.DocumentURI { return clientToServerURI(uri, p.workspaceCacheDir()) },
+		updateURIFromDest: func(uri lsp.DocumentURI) lsp.DocumentURI { return serverToClientURI(uri, p.workspaceCacheDir()) },
 	}
 
 	if err := rTripper.roundTrip(ctx); err != nil {
@@ -219,7 +219,7 @@ func (r *roundTripper) roundTrip(ctx context.Context) error {
 		}
 	}
 
-	WalkURIFields(params, nil, r.updateURIFromSrc)
+	WalkURIFields(params, r.updateURIFromSrc)
 
 	if r.req.Notif {
 		err := r.dest.Notify(ctx, r.req.Method, params)
@@ -269,7 +269,7 @@ func (r *roundTripper) roundTrip(ctx context.Context) error {
 		}
 	}
 
-	WalkURIFields(result, nil, r.updateURIFromDest)
+	WalkURIFields(result, r.updateURIFromDest)
 
 	if err = r.src.Reply(ctx, r.req.ID, &result); err != nil {
 		return errors.Wrap(err, "sending reply to back to src failed")

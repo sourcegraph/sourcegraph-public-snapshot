@@ -49,11 +49,7 @@ func (p *cloneProxy) workspaceCacheDir() string {
 	return filepath.Join(*cacheDir, p.sessionID.String())
 }
 
-func (p *cloneProxy) clientToServerURI(uri lsp.DocumentURI) lsp.DocumentURI {
-	if uri == "" {
-		return uri
-	}
-
+func clientToServerURI(uri lsp.DocumentURI, cacheDir string) lsp.DocumentURI {
 	parsedURI, err := url.Parse(string(uri))
 
 	if err != nil {
@@ -61,19 +57,17 @@ func (p *cloneProxy) clientToServerURI(uri lsp.DocumentURI) lsp.DocumentURI {
 		return uri
 	}
 
-	if parsedURI.Scheme != "" && parsedURI.Scheme != "file" {
+	if !probablyFileURI(parsedURI) {
 		return uri
 	}
 
-	parsedURI.Path = filepath.Join(p.workspaceCacheDir(), parsedURI.Path)
+	// We assume that any path provided by the client to the server
+	// is a project path that is relative to '/'
+	parsedURI.Path = filepath.Join(cacheDir, parsedURI.Path)
 	return lsp.DocumentURI(parsedURI.String())
 }
 
-func (p *cloneProxy) serverToClientURI(uri lsp.DocumentURI) lsp.DocumentURI {
-	if uri == "" {
-		return uri
-	}
-
+func serverToClientURI(uri lsp.DocumentURI, cacheDir string) lsp.DocumentURI {
 	parsedURI, err := url.Parse(string(uri))
 
 	if err != nil {
@@ -81,15 +75,30 @@ func (p *cloneProxy) serverToClientURI(uri lsp.DocumentURI) lsp.DocumentURI {
 		return uri
 	}
 
-	if parsedURI.Scheme != "" && parsedURI.Scheme != "file" {
+	if !probablyFileURI(parsedURI) {
 		return uri
 	}
 
-	if pathHasPrefix(parsedURI.Path, p.workspaceCacheDir()) {
-		parsedURI.Path = filepath.Join("/", pathTrimPrefix(parsedURI.Path, p.workspaceCacheDir()))
+	// Only rewrite uris that point to a location in the workspace cache. If it does
+	// point to a cache location, then we assume that the path points to a location in the
+	// project.
+	if pathHasPrefix(parsedURI.Path, cacheDir) {
+		parsedURI.Path = filepath.Join("/", pathTrimPrefix(parsedURI.Path, cacheDir))
 	}
 
 	return lsp.DocumentURI(parsedURI.String())
+}
+
+func probablyFileURI(candidate *url.URL) bool {
+	if !(candidate.Scheme == "" || candidate.Scheme == "file") {
+		return false
+	}
+
+	if candidate.Path == "" {
+		return false
+	}
+
+	return true
 }
 
 // copied from sourcegraph/go-langserver/util.go
@@ -115,17 +124,13 @@ func pathTrimPrefix(s, prefix string) string {
 // WalkURIFields walks the LSP params/result object for fields
 // containing document URIs.
 //
-// If collect is non-nil, it calls collect(uri) for every URI
-// encountered. Callers can use this to collect a list of all document
-// URIs referenced in the params/result.
-//
 // If update is non-nil, it updates all document URIs in an LSP
 // params/result with the value of f(existingURI). Callers can use
 // this to rewrite paths in the params/result.
 //
 // TODO(sqs): does not support WorkspaceEdit (with a field whose
 // TypeScript type is {[uri: string]: TextEdit[]}.
-func WalkURIFields(o interface{}, collect func(lsp.DocumentURI), update func(lsp.DocumentURI) lsp.DocumentURI) {
+func WalkURIFields(o interface{}, update func(lsp.DocumentURI) lsp.DocumentURI) {
 	var walk func(o interface{})
 	walk = func(o interface{}) {
 		switch o := o.(type) {
@@ -140,9 +145,6 @@ func WalkURIFields(o interface{}, collect func(lsp.DocumentURI), update func(lsp
 						ok = ok2
 					}
 					if ok {
-						if collect != nil {
-							collect(lsp.DocumentURI(s))
-						}
 						if update != nil {
 							o[k] = update(lsp.DocumentURI(s))
 						}
@@ -162,9 +164,6 @@ func WalkURIFields(o interface{}, collect func(lsp.DocumentURI), update func(lsp
 			}
 			if rv.Kind() == reflect.Struct {
 				if fv := rv.FieldByName("URI"); fv.Kind() == reflect.String {
-					if collect != nil {
-						collect(lsp.DocumentURI(fv.String()))
-					}
 					if update != nil {
 						fv.SetString(string(update(lsp.DocumentURI(fv.String()))))
 					}
