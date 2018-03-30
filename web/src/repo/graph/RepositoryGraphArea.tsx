@@ -5,6 +5,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
+import { DismissibleAlert } from '../../site/DismissibleAlert'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { RepositoryGraphDependenciesPage } from './RepositoryGraphDependenciesPage'
 import { RepositoryGraphOverviewPage } from './RepositoryGraphOverviewPage'
@@ -77,6 +78,12 @@ export class RepositoryGraphArea extends React.Component<Props> {
                     routePrefix={this.props.routePrefix}
                 />
                 <div className="area__content">
+                    <DismissibleAlert className="alert-warning mb-4" partialStorageKey="repository-graph-experimental">
+                        <span>
+                            The repository graph area is an <strong>experimental</strong> feature that lets you explore
+                            a repository's dependencies and packages. Not all languages and repositories are supported.
+                        </span>
+                    </DismissibleAlert>
                     <Switch>
                         <Route
                             path={`${this.props.match.url}`}
