@@ -21,6 +21,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                         missing
                         cloning
                         timedout
+                        indexUnavailable
                         dynamicFilters {
                             value
                         }

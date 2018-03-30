@@ -388,6 +388,8 @@ type SearchResults {
     # Repositories or commits which we did not manage to search in time. Trying
     # again usually will work.
     timedout: [String!]!
+    # True if indexed search is enabled but was not available during this search.
+    indexUnavailable: Boolean!
     # An alert message that should be displayed before any results.
     alert: SearchAlert
     # The time it took to generate these results.

@@ -57,6 +57,7 @@ interface State {
     cloning: string[]
     missing: string[]
     timedout: string[]
+    indexUnavailable: boolean
     showModal?: boolean
     didSave?: boolean
     user?: GQL.IUser | null
@@ -80,6 +81,7 @@ export class SearchResults extends React.Component<Props, State> {
         cloning: [],
         missing: [],
         timedout: [],
+        indexUnavailable: false,
         didSave: false,
         showModal: false,
         dynamicFilters: [],
@@ -177,6 +179,7 @@ export class SearchResults extends React.Component<Props, State> {
                         missing: [],
                         cloning: [],
                         timedout: [],
+                        indexUnavailable: false,
                         limitHit: false,
                         error: undefined,
                         loading: true,
@@ -389,6 +392,7 @@ export class SearchResults extends React.Component<Props, State> {
                                                 )}
                                             </span>
                                         )}
+                                    {this.state.indexUnavailable && <span>&nbsp;(index unavailable)</span>}
                                 </div>
                                 <div className="search-results__info-row-right">
                                     {this.state.allExpanded ? (

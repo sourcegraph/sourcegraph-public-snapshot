@@ -51,6 +51,8 @@ type searchResultsCommon struct {
 	// This should only happen for large repos and the searcher caches are
 	// purged.
 	timedout []api.RepoURI
+
+	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
 
 func (c *searchResultsCommon) LimitHit() bool {
@@ -99,10 +101,15 @@ func (c *searchResultsCommon) Timedout() []string {
 	return repoURIsToStrings(c.timedout)
 }
 
+func (c *searchResultsCommon) IndexUnavailable() bool {
+	return c.indexUnavailable
+}
+
 // update updates c with the other data, deduping as necessary. It modifies c but
 // does not modify other.
 func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.limitHit = c.limitHit || other.limitHit
+	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
 
 	appendUnique := func(dstp *[]api.RepoURI, src []api.RepoURI) {
 		dst := *dstp

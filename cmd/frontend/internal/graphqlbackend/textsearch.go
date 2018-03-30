@@ -629,12 +629,15 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	common = &searchResultsCommon{}
+
 	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.repos)
 	if err != nil {
-		return nil, nil, err
+		// Don't hard fail if index is not available yet.
+		tr.LogFields(otlog.String("indexErr", err.Error()))
+		searcherRepos = args.repos
+		common.indexUnavailable = true
 	}
-
-	common = &searchResultsCommon{}
 
 	common.repos = make([]api.RepoURI, len(args.repos))
 	for i, repo := range args.repos {
@@ -648,7 +651,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 
 	// Support index:yes (default), index:only, and index:no in search query.
 	index, _ := query.StringValues(searchquery.FieldIndex)
-	if len(index) == 0 && os.Getenv("SEARCH10_INDEX_DEFAULT") != "" && len(args.repos) > 10 {
+	if !common.indexUnavailable && len(index) == 0 && os.Getenv("SEARCH10_INDEX_DEFAULT") != "" && len(args.repos) > 10 {
 		index = []string{os.Getenv("SEARCH10_INDEX_DEFAULT")}
 	}
 	if len(index) > 0 {
