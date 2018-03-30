@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
 // LangServer contains backend methods for communicating with language and build servers over LSP (via xlang).
@@ -18,7 +17,7 @@ type langServer struct{}
 func (langServer) WorkspaceXReferences(ctx context.Context, repo *types.Repo, commitID api.CommitID, language string, params lspext.WorkspaceReferencesParams) (result []*lspext.ReferenceInformation, err error) {
 	vcs := "git" // TODO: store VCS type in *types.Repo object.
 	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
-	err = xlang.UnsafeOneShotClientRequest(ctx, language, rootURI, "workspace/xreferences", params, &result)
+	err = cachedUnsafeXLangCall(ctx, language, rootURI, "workspace/xreferences", params, &result)
 	return result, err
 }
 

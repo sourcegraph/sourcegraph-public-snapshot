@@ -2,6 +2,8 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -10,23 +12,45 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
-// xlangCall invokes the xlang method with the specified
+// cachedUnsafeXLangCall invokes the xlang method with the specified
 // arguments. This exists as an intermediary between this package and
 // xlang.UnsafeOneShotClientRequest to enable mocking of xlang in unit
 // tests.
-var unsafeXLangCall = unsafeXLangCall_
+var cachedUnsafeXLangCall = cachedUnsafeXLangCall_
 
-func unsafeXLangCall_(ctx context.Context, mode string, rootURI lsp.DocumentURI, method string, params, results interface{}) error {
-	return xlang.UnsafeOneShotClientRequest(ctx, mode, rootURI, method, params, results)
+var xlangCache = rcache.NewWithTTL("backend-xlang", 600)
+
+func cachedUnsafeXLangCall_(ctx context.Context, mode string, rootURI lsp.DocumentURI, method string, params, results interface{}) error {
+	key := fmt.Sprintf("%s:%s:%s:%+v", mode, rootURI, method, params)
+	cacheable := !strings.HasSuffix(mode, "_bg") // don't cache _bg requests because hit rate will be very low
+	if cacheable {
+		b, ok := xlangCache.Get(key)
+		if ok {
+			return json.Unmarshal(b, results)
+		}
+	}
+
+	if err := xlang.UnsafeOneShotClientRequest(ctx, mode, rootURI, method, params, results); err != nil {
+		return err
+	}
+	if cacheable {
+		b, err := json.Marshal(results)
+		if err != nil {
+			return err
+		}
+		xlangCache.Set(key, b)
+	}
+	return nil
 }
 
 func mockXLang(fn func(ctx context.Context, mode string, rootURI lsp.DocumentURI, method string, params, results interface{}) error) (done func()) {
-	unsafeXLangCall = fn
+	cachedUnsafeXLangCall = fn
 	return func() {
-		unsafeXLangCall = unsafeXLangCall_
+		cachedUnsafeXLangCall = cachedUnsafeXLangCall_
 	}
 }
 

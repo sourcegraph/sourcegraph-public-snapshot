@@ -76,7 +76,7 @@ func (packages) listForLanguageInRepo(ctx context.Context, language string, repo
 	}
 	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
 	var allPks []lspext.PackageInformation
-	err = unsafeXLangCall(ctx, language+bgSuffix, rootURI, "workspace/xpackages", map[string]string{}, &allPks)
+	err = cachedUnsafeXLangCall(ctx, language+bgSuffix, rootURI, "workspace/xpackages", map[string]string{}, &allPks)
 	if err != nil {
 		return nil, errors.Wrap(err, "LSP Call workspace/xpackages")
 	}

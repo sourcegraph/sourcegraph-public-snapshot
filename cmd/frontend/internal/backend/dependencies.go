@@ -71,7 +71,7 @@ func (dependencies) listForLanguageInRepo(ctx context.Context, language string, 
 		bgSuffix = "_bg"
 	}
 	rootURI := lsp.DocumentURI(vcs + "://" + string(repo.URI) + "?" + string(commitID))
-	err = unsafeXLangCall(ctx, language+bgSuffix, rootURI, "workspace/xdependencies", map[string]string{}, &deps)
+	err = cachedUnsafeXLangCall(ctx, language+bgSuffix, rootURI, "workspace/xdependencies", map[string]string{}, &deps)
 	if err != nil {
 		return nil, errors.Wrap(err, "LSP Call workspace/xdependencies")
 	}
