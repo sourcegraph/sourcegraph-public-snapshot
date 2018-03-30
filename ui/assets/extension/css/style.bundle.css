@@ -180,6 +180,10 @@
     color: #2b3750;
     width: 400px;
     height: 400px; }
+    .options__container-full {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto; }
   .options__logo {
     height: 24px; }
   .options__overlay-header {
@@ -301,7 +305,17 @@
       cursor: auto; }
   .options__item-badge {
     font-weight: normal;
-    background-color: #566E9F; }
+    background-color: #566e9f; }
+  .options__footer {
+    margin-right: auto !important;
+    border: 0;
+    padding-top: 0; }
+  .options__installation-cta {
+    padding-top: 1rem; }
+  .options__cta {
+    background-color: #1c7cd6; }
+  .options__link {
+    color: #1c7cd6; }
 
 .sg-options-label {
   padding-left: 5px; }
@@ -778,3 +792,5 @@
       color: white; }
   .sg-alert .btn-icon:hover, .sg-alert .btn-icon:focus {
     color: white; }
+
+/*# sourceMappingURL=style.bundle.css.map*/

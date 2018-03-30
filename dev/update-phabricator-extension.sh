@@ -11,8 +11,8 @@ cd .extension
 npm install
 npm run build
 
-cp dist/js/phabricator.bundle.js ../scripts
-cp dist/css/style.bundle.css ../scripts
+cp build/dist/js/phabricator.bundle.js ../scripts
+cp build/dist/css/style.bundle.css ../scripts
 
 cd ..
 rm -rf .extension
