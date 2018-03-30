@@ -15,7 +15,7 @@ interface Props extends AbsoluteRepoFile {
 
 interface State {}
 
-const useNewBlobPanel = localStorage.getItem('newBlobPanel') !== null
+const useNewBlobPanel = localStorage.getItem('newBlobPanel') !== null || window.context.sourcegraphDotComMode
 
 export class BlobPanel extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
