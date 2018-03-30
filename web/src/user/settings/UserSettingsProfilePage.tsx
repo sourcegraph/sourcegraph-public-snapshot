@@ -23,8 +23,11 @@ interface State {
     error?: Error
     loading?: boolean
     saved?: boolean
-    username: string
-    displayName: string
+
+    /** undefined while loading, null means "unset field" */
+    username?: string | null
+    displayName?: string | null
+    avatarURL?: string | null
 }
 
 export class UserSettingsProfilePage extends React.Component<Props, State> {
@@ -33,12 +36,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        const redirectError = this.getRedirectError()
+
         this.state = {
             user: null,
-            username: '',
-            displayName: '',
-            error: redirectError ? new Error(redirectError) : undefined,
         }
     }
 
@@ -47,11 +47,16 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         this.subscriptions.add(
             currentUser.subscribe(
                 user =>
-                    this.setState({
-                        user,
-                        username: (user && user.username) || '',
-                        displayName: (user && user.displayName) || '',
-                    }),
+                    this.setState(
+                        user
+                            ? {
+                                  user,
+                                  username: user.username || null,
+                                  displayName: user.displayName || null,
+                                  avatarURL: user.avatarURL || null,
+                              }
+                            : { user }
+                    ),
                 error => this.setState({ error })
             )
         )
@@ -64,12 +69,20 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     tap(() => this.setState({ loading: true })),
-                    mergeMap(event =>
-                        updateUser({
+                    mergeMap(event => {
+                        if (
+                            this.state.username === undefined ||
+                            this.state.displayName === undefined ||
+                            this.state.avatarURL === undefined
+                        ) {
+                            throw new Error('loading')
+                        }
+                        return updateUser({
                             username: this.state.username,
                             displayName: this.state.displayName,
+                            avatarURL: this.state.avatarURL,
                         }).pipe(catchError(this.handleError))
-                    ),
+                    }),
                     tap(() => {
                         this.setState({ loading: false, error: undefined, saved: true })
                         setTimeout(() => this.setState({ saved: false }), 500)
@@ -91,40 +104,55 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                 <h2>Profile</h2>
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 <form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
-                    <div className="user-settings-profile-page__avatar-row">
-                        <div className="form-group">
-                            <label>Username</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={this.state.username}
-                                onChange={this.onUsernameFieldChange}
-                                pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
-                                required={true}
-                                disabled={this.state.loading}
-                                spellCheck={false}
-                                placeholder="Username"
-                            />
-                            <small className="form-text">
-                                A username consists of letters, numbers, hyphens (-) and may not begin or end with a
-                                hyphen
-                            </small>
-                        </div>
-                        <div className="user-settings-profile-page__avatar-column">
-                            <UserAvatar />
-                        </div>
+                    <div className="form-group">
+                        <label>Username</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            value={this.state.username || ''}
+                            onChange={this.onUsernameFieldChange}
+                            pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
+                            required={true}
+                            disabled={this.state.loading}
+                            spellCheck={false}
+                            placeholder="Username"
+                        />
+                        <small className="form-text">
+                            A username consists of letters, numbers, hyphens (-) and may not begin or end with a hyphen
+                        </small>
                     </div>
                     <div className="form-group">
                         <label>Display name (optional)</label>
                         <input
                             type="text"
                             className="form-control"
-                            value={this.state.displayName}
+                            value={this.state.displayName || ''}
                             onChange={this.onDisplayNameFieldChange}
                             disabled={this.state.loading}
                             spellCheck={false}
                             placeholder="Display name"
                         />
+                    </div>
+                    <div className="user-settings-profile-page__avatar-row">
+                        <div className="form-group user-settings-profile-page__field-column">
+                            <label>Avatar URL (optional)</label>
+                            <input
+                                type="url"
+                                className="form-control"
+                                value={this.state.avatarURL || ''}
+                                onChange={this.onAvatarURLFieldChange}
+                                disabled={this.state.loading}
+                                spellCheck={false}
+                                placeholder="URL to avatar photo"
+                            />
+                        </div>
+                        {this.state.avatarURL && (
+                            <div className="user-settings-profile-page__avatar-column">
+                                <UserAvatar
+                                    user={this.state.avatarURL ? { avatarURL: this.state.avatarURL } : undefined}
+                                />
+                            </div>
+                        )}
                     </div>
                     <button
                         className="btn btn-primary user-settings-profile-page__button"
@@ -154,16 +182,8 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         this.setState({ displayName: e.target.value })
     }
 
-    private getRedirectError(): string | undefined {
-        const code = new URLSearchParams(this.props.location.search).get('error')
-        if (!code) {
-            return undefined
-        }
-        switch (code) {
-            case 'err_username_exists':
-                return 'The username you selected is already taken, please try again.'
-        }
-        return 'There was an error creating your profile, please try again.'
+    private onAvatarURLFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ avatarURL: e.target.value })
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

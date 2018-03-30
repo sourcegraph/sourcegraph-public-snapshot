@@ -135,31 +135,26 @@ export function updateUserSettings(lastKnownSettingsID: number | null, contents:
 }
 
 export interface UpdateUserOptions {
-    username: string
+    username: string | null
     /** The user's display name */
-    displayName: string
+    displayName: string | null
     /** The user's avatar URL */
-    avatarUrl?: string
+    avatarURL: string | null
 }
 
 /**
  * Sends a GraphQL mutation to update a user's profile
  */
-export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
+export function updateUser(args: UpdateUserOptions): Observable<GQL.IUser> {
     return currentUser.pipe(
         take(1),
         mergeMap(user => {
             if (!user) {
                 throw new Error('User must be signed in.')
             }
-
-            const variables = {
-                ...options,
-                avatarUrl: options.avatarUrl || user.avatarURL,
-            }
             return mutateGraphQL(
                 gql`
-                    mutation updateUser($username: String!, $displayName: String!, $avatarURL: String) {
+                    mutation updateUser($username: String, $displayName: String, $avatarURL: String) {
                         updateUser(username: $username, displayName: $displayName, avatarURL: $avatarURL) {
                             id
                             sourcegraphID
@@ -167,7 +162,7 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                         }
                     }
                 `,
-                variables
+                args
             )
         }),
         map(({ data, errors }) => {
@@ -181,8 +176,8 @@ export function updateUser(options: UpdateUserOptions): Observable<GQL.IUser> {
                         id: data.updateUser.sourcegraphID,
                         external_id: data.updateUser.externalID,
                         username: data.updateUser.username,
-                        display_name: options.displayName,
-                        avatar_url: options.avatarUrl,
+                        display_name: args.displayName,
+                        avatar_url: args.avatarURL,
                     },
                 },
             })
