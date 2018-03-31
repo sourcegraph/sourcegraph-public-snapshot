@@ -5,6 +5,7 @@
 @import './RepoSettingsSidebar';
 
 .repo-settings-area {
+    overflow: auto;
     &__header {
         &-item {
             padding-left: 0.25rem;
