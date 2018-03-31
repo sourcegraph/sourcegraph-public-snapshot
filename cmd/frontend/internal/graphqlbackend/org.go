@@ -333,8 +333,8 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Check that the current user is a member
-	// of the org that is being modified.
+	// 🚨 SECURITY: Check that the current user is a member of the org that is being modified, or a
+	// site admin.
 	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
 		return nil, err
 	}
