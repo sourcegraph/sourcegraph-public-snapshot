@@ -56,42 +56,37 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
 }
 
 /**
- * Sends a GraphQL mutation to invite a user to an org
+ * Sends a GraphQL mutation to invite a user to an organization.
  *
- * @param email The email to send the invitation to
- * @param orgID The ID of the org
+ * @param usernameOrEmail The username or email address of the user to invite
+ * @param organization The GraphQL ID of the organization
  * @return Observable that emits `undefined`, then completes
  */
-export function inviteUser(email: string, orgID: string): Observable<GQL.IInviteUserResult> {
+export function inviteUser(usernameOrEmail: string, organization: GQLID): Observable<GQL.IInviteUserResult> {
     return currentUser.pipe(
         take(1),
-        mergeMap(user => {
-            if (!user) {
-                throw new Error('User must be signed in.')
-            }
-
-            const variables = {
-                email,
-                orgID,
-            }
-            return mutateGraphQL(
+        mergeMap(user =>
+            mutateGraphQL(
                 gql`
-                    mutation inviteUser($email: String!, $orgID: ID!) {
-                        inviteUser(email: $email, orgID: $orgID) {
+                    mutation inviteUser($organization: ID!, $usernameOrEmail: String!) {
+                        inviteUser(organization: $organization, usernameOrEmail: $usernameOrEmail) {
                             acceptInviteURL
                         }
                     }
                 `,
-                variables
+                {
+                    usernameOrEmail,
+                    organization,
+                }
             )
-        }),
+        ),
         map(({ data, errors }) => {
             const eventData = {
                 organization: {
                     invite: {
-                        user_email: email,
+                        user_email: usernameOrEmail,
                     },
-                    org_id: orgID,
+                    org_id: organization,
                 },
             }
             if (!data || !data.inviteUser || (errors && errors.length > 0)) {

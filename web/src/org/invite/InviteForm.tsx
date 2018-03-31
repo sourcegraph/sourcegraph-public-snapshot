@@ -1,6 +1,7 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import InvitationIcon from '@sourcegraph/icons/lib/Invitation'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
@@ -128,7 +129,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                 Username or email address
                             </label>
                             <input
-                                type="email"
+                                type="text"
                                 className="form-control mb-2 mr-sm-2"
                                 id="invite-form__email"
                                 placeholder="Username or email address"
@@ -161,7 +162,9 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         />
                     ))}
                 {this.state.error && (
-                    <div className="invite-form__alert alert alert-danger">{this.state.error.message}</div>
+                    <div className="invite-form__alert alert alert-danger">
+                        Error: {upperFirst(this.state.error.message)}
+                    </div>
                 )}
             </div>
         )

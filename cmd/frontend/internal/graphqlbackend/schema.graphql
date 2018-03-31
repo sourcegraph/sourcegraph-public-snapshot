@@ -208,7 +208,10 @@ type Mutation {
     setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
     # Deletes a user account. Only site admins may perform this mutation.
     deleteUser(user: ID!): EmptyResponse
-    inviteUser(email: String!, orgID: ID!): InviteUserResult
+    # Invite a user to the organization, either by username or email address.
+    #
+    # Only organization members and site admins may perform this mutation.
+    inviteUser(organization: ID!, usernameOrEmail: String!): InviteUserResult
     # Updates the current user's password. The oldPassword arg must match the user's current password.
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     acceptUserInvite(inviteToken: String!): EmptyResponse

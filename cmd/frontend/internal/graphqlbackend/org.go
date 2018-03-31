@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
@@ -350,16 +351,15 @@ type inviteUserResult struct {
 func (r *inviteUserResult) AcceptInviteURL() string { return r.acceptInviteURL }
 
 func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
-	OrgID graphql.ID
-	Email string
+	Organization    graphql.ID
+	UsernameOrEmail string
 }) (*inviteUserResult, error) {
 	var orgID int32
-	if err := relay.UnmarshalSpec(args.OrgID, &orgID); err != nil {
+	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
 		return nil, err
 	}
-
-	// 🚨 SECURITY: Check that the current user is a member
-	// of the org that the user is being invited to.
+	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
+	// invited to.
 	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
 		return nil, err
 	}
@@ -376,18 +376,43 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Don't invite the user if they are already a member.
-	invitedUser, err := db.Users.GetByEmail(ctx, args.Email)
-	if err != nil {
-		if !errcode.IsNotFound(err) {
+	// See if the user to invite exists.
+	var invitedUser *types.User
+	var emailAddress string
+	if isEmailAddress := strings.Contains(args.UsernameOrEmail, "@"); isEmailAddress {
+		// Invite user by email address.
+		var err error
+		invitedUser, err = db.Users.GetByEmail(ctx, args.UsernameOrEmail)
+		if errcode.IsNotFound(err) {
+			err = nil // not a fatal error, can send invite link to user
+		}
+		if err != nil {
 			return nil, err
+		}
+		emailAddress = args.UsernameOrEmail
+	} else {
+		// Invite user by username. A user with the given username must exist.
+		var err error
+		invitedUser, err = db.Users.GetByUsername(ctx, args.UsernameOrEmail)
+		if err != nil {
+			return nil, err
+		}
+
+		// Look up user's email address so we can send them an email (if needed).
+		var verified bool
+		emailAddress, verified, err = db.UserEmails.GetPrimaryEmail(ctx, invitedUser.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !verified && conf.CanSendEmail() {
+			return nil, errors.New("user has no verified email addresses to send invitation to")
 		}
 	}
 
 	if invitedUser != nil {
 		_, err = db.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.ID)
 		if err == nil {
-			return nil, fmt.Errorf("%s is already a member of org %d", args.Email, orgID)
+			return nil, fmt.Errorf("%s is already a member of org %d", args.UsernameOrEmail, orgID)
 		}
 		if _, ok := err.(*db.ErrOrgMemberNotFound); !ok {
 			return nil, err
@@ -430,7 +455,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		}
 	}
 
-	token, err := invite.CreateOrgToken(args.Email, org)
+	token, err := invite.CreateOrgToken(emailAddress, org)
 	if err != nil {
 		return nil, err
 	}
@@ -445,7 +470,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		} else {
 			fromName = fmt.Sprintf("%s (on Sourcegraph)", currentUser.user.Username)
 		}
-		if err := invite.SendEmail(args.Email, fromName, org.Name, inviteURL); err != nil {
+		if err := invite.SendEmail(emailAddress, fromName, org.Name, inviteURL); err != nil {
 			return nil, err
 		}
 	}
@@ -455,7 +480,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 	client := slack.New(slackWebhookURL, true)
-	go slack.NotifyOnInvite(client, currentUser, email, org, args.Email)
+	go slack.NotifyOnInvite(client, currentUser, email, org, emailAddress)
 
 	return &inviteUserResult{acceptInviteURL: inviteURL}, nil
 }
