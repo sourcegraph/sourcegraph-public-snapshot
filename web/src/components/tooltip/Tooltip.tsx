@@ -40,7 +40,6 @@ export class Tooltip extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         Tooltip.INSTANCE = this
 
-        document.addEventListener('click', this.toggleHint)
         document.addEventListener('focusin', this.toggleHint)
         document.addEventListener('mouseover', this.toggleHint)
         document.addEventListener('touchend', this.toggleHint)
@@ -58,7 +57,6 @@ export class Tooltip extends React.PureComponent<Props, State> {
     public componentWillUnmount(): void {
         Tooltip.INSTANCE = undefined
 
-        document.removeEventListener('click', this.toggleHint)
         document.removeEventListener('focusin', this.toggleHint)
         document.removeEventListener('mouseover', this.toggleHint)
         document.removeEventListener('touchend', this.toggleHint)
