@@ -255,16 +255,18 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	// Trigger updates.
-	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
-	if err != nil {
-		return nil, err
-	}
-	if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
-		return nil, err
-	}
-	if err := backend.Repos.RefreshIndex(ctx, repo.repo); err != nil {
-		return nil, err
+	// Trigger update when enabling.
+	if args.Enabled {
+		gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
+		if err != nil {
+			return nil, err
+		}
+		if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+			return nil, err
+		}
+		if err := backend.Repos.RefreshIndex(ctx, repo.repo); err != nil {
+			return nil, err
+		}
 	}
 
 	return &EmptyResponse{}, nil
