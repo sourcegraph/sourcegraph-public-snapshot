@@ -218,10 +218,16 @@ type Mutation {
     # Invite a user to the organization, either by username or email address.
     #
     # Only organization members and site admins may perform this mutation.
-    inviteUser(organization: ID!, usernameOrEmail: String!): InviteUserResult
+    inviteUserToOrganization(organization: ID!, usernameOrEmail: String!): InviteUserResult
     # Updates the current user's password. The oldPassword arg must match the user's current password.
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     acceptUserInvite(inviteToken: String!): EmptyResponse
+    # Immediately add a user to the organization, either by username or email address, without sending an
+    # invitation email.
+    #
+    # Only site admins may perform this mutation. Organization members may use the inviteUser mutation to invite
+    # users.
+    addUserToOrganization(organization: ID!, usernameOrEmail: String!): EmptyResponse!
     removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
     # adds a phabricator repository to the Sourcegraph server.
     # example callsign: "MUX"

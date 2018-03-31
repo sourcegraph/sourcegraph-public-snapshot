@@ -55,53 +55,6 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
     )
 }
 
-/**
- * Sends a GraphQL mutation to invite a user to an organization.
- *
- * @param usernameOrEmail The username or email address of the user to invite
- * @param organization The GraphQL ID of the organization
- * @return Observable that emits `undefined`, then completes
- */
-export function inviteUser(usernameOrEmail: string, organization: GQLID): Observable<GQL.IInviteUserResult> {
-    return currentUser.pipe(
-        take(1),
-        mergeMap(user =>
-            mutateGraphQL(
-                gql`
-                    mutation inviteUser($organization: ID!, $usernameOrEmail: String!) {
-                        inviteUser(organization: $organization, usernameOrEmail: $usernameOrEmail) {
-                            acceptInviteURL
-                        }
-                    }
-                `,
-                {
-                    usernameOrEmail,
-                    organization,
-                }
-            )
-        ),
-        map(({ data, errors }) => {
-            const eventData = {
-                organization: {
-                    invite: {
-                        user_email: usernameOrEmail,
-                    },
-                    org_id: organization,
-                },
-            }
-            if (!data || !data.inviteUser || (errors && errors.length > 0)) {
-                eventLogger.log('InviteOrgMemberFailed', eventData)
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('OrgMemberInvited', eventData)
-            return data.inviteUser
-        })
-    )
-    // For now, no need to re-fetch auth state after this fetch completes. The
-    // inviteUser mutation only sends an email, it does not update current user
-    // or org state.
-}
-
 export interface AcceptUserInviteOptions {
     /** The JWT */
     inviteToken: string

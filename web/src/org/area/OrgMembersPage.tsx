@@ -202,7 +202,13 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
         return (
             <div className="org-settings-members-page">
                 <PageTitle title={`Members - ${this.props.org.name}`} />
-                {this.state.viewerCanAdminister && <InviteForm orgID={this.props.org.id} />}
+                {this.state.viewerCanAdminister && (
+                    <InviteForm
+                        orgID={this.props.org.id}
+                        authenticatedUser={this.props.authenticatedUser}
+                        onDidUpdateOrganizationMembers={this.onDidUpdateOrganizationMembers}
+                    />
+                )}
                 <FilteredUserConnection
                     className="site-admin-page__filtered-connection"
                     noun="member"
@@ -221,6 +227,8 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
     }
 
     private onDidUpdateUser = () => this.userUpdates.next()
+
+    private onDidUpdateOrganizationMembers = () => this.userUpdates.next()
 
     private fetchOrgMembers = (): Observable<GQL.IUserConnection> =>
         queryGraphQL(

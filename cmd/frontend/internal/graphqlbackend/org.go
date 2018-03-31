@@ -344,13 +344,58 @@ func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	return nil, db.OrgMembers.Remove(ctx, orgID, userID)
 }
 
+func getUserToInviteToOrganization(ctx context.Context, usernameOrEmail string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
+	// See if the user to invite exists.
+	if isEmailAddress := strings.Contains(usernameOrEmail, "@"); isEmailAddress {
+		// Invite user by email address.
+		var err error
+		userToInvite, err = db.Users.GetByEmail(ctx, usernameOrEmail)
+		if errcode.IsNotFound(err) {
+			err = nil // not a fatal error, can send invite link to user
+		}
+		if err != nil {
+			return nil, "", err
+		}
+		userEmailAddress = usernameOrEmail
+	} else {
+		// Invite user by username. A user with the given username must exist.
+		var err error
+		userToInvite, err = db.Users.GetByUsername(ctx, usernameOrEmail)
+		if err != nil {
+			return nil, "", err
+		}
+
+		// Look up user's email address so we can send them an email (if needed).
+		var verified bool
+		userEmailAddress, verified, err = db.UserEmails.GetPrimaryEmail(ctx, userToInvite.ID)
+		if err != nil {
+			return nil, "", err
+		}
+		if !verified && conf.CanSendEmail() {
+			return nil, "", errors.New("user has no verified email addresses to send invitation to")
+		}
+	}
+
+	if userToInvite != nil {
+		_, err = db.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID)
+		if err == nil {
+			return nil, "", errors.New("user is already a member of the organization")
+		}
+		if _, ok := err.(*db.ErrOrgMemberNotFound); !ok {
+			return nil, "", err
+		}
+	}
+
+	return userToInvite, userEmailAddress, nil
+}
+
 type inviteUserResult struct {
 	acceptInviteURL string
 }
 
 func (r *inviteUserResult) AcceptInviteURL() string { return r.acceptInviteURL }
 
-func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
+func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
 	Organization    graphql.ID
 	UsernameOrEmail string
 }) (*inviteUserResult, error) {
@@ -376,47 +421,9 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// See if the user to invite exists.
-	var invitedUser *types.User
-	var emailAddress string
-	if isEmailAddress := strings.Contains(args.UsernameOrEmail, "@"); isEmailAddress {
-		// Invite user by email address.
-		var err error
-		invitedUser, err = db.Users.GetByEmail(ctx, args.UsernameOrEmail)
-		if errcode.IsNotFound(err) {
-			err = nil // not a fatal error, can send invite link to user
-		}
-		if err != nil {
-			return nil, err
-		}
-		emailAddress = args.UsernameOrEmail
-	} else {
-		// Invite user by username. A user with the given username must exist.
-		var err error
-		invitedUser, err = db.Users.GetByUsername(ctx, args.UsernameOrEmail)
-		if err != nil {
-			return nil, err
-		}
-
-		// Look up user's email address so we can send them an email (if needed).
-		var verified bool
-		emailAddress, verified, err = db.UserEmails.GetPrimaryEmail(ctx, invitedUser.ID)
-		if err != nil {
-			return nil, err
-		}
-		if !verified && conf.CanSendEmail() {
-			return nil, errors.New("user has no verified email addresses to send invitation to")
-		}
-	}
-
-	if invitedUser != nil {
-		_, err = db.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, invitedUser.ID)
-		if err == nil {
-			return nil, fmt.Errorf("%s is already a member of org %d", args.UsernameOrEmail, orgID)
-		}
-		if _, ok := err.(*db.ErrOrgMemberNotFound); !ok {
-			return nil, err
-		}
+	userToInvite, userEmailAddress, err := getUserToInviteToOrganization(ctx, args.UsernameOrEmail, orgID)
+	if err != nil {
+		return nil, err
 	}
 
 	if envvar.SourcegraphDotComMode() {
@@ -441,7 +448,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if invitedUser != nil {
+	if userToInvite != nil {
 		// If the org has the editor-beta tag, add the editor beta tag to an invited user
 		// if they're already registered.
 		const editorBetaTag = "editor-beta"
@@ -449,13 +456,13 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		if _, ok := err.(db.ErrOrgTagNotFound); !ok && err != nil {
 			return nil, err
 		} else if tag != nil {
-			if _, err = db.UserTags.Create(ctx, invitedUser.ID, editorBetaTag); err != nil {
+			if _, err = db.UserTags.Create(ctx, userToInvite.ID, editorBetaTag); err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	token, err := invite.CreateOrgToken(emailAddress, org)
+	token, err := invite.CreateOrgToken(userEmailAddress, org)
 	if err != nil {
 		return nil, err
 	}
@@ -470,7 +477,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		} else {
 			fromName = fmt.Sprintf("%s (on Sourcegraph)", currentUser.user.Username)
 		}
-		if err := invite.SendEmail(emailAddress, fromName, org.Name, inviteURL); err != nil {
+		if err := invite.SendEmail(userEmailAddress, fromName, org.Name, inviteURL); err != nil {
 			return nil, err
 		}
 	}
@@ -480,7 +487,7 @@ func (*schemaResolver) InviteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 	client := slack.New(slackWebhookURL, true)
-	go slack.NotifyOnInvite(client, currentUser, email, org, emailAddress)
+	go slack.NotifyOnInvite(client, currentUser, email, org, userEmailAddress)
 
 	return &inviteUserResult{acceptInviteURL: inviteURL}, nil
 }
@@ -521,6 +528,34 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	client := slack.New(slackWebhookURL, true)
 	go slack.NotifyOnAcceptedInvite(client, currentUser, email, org)
 
+	return &EmptyResponse{}, nil
+}
+
+func (*schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
+	Organization    graphql.ID
+	UsernameOrEmail string
+}) (*EmptyResponse, error) {
+	var orgID int32
+	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
+	// invitation step).
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userToInvite, _, err := getUserToInviteToOrganization(ctx, args.UsernameOrEmail, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if userToInvite == nil {
+		return nil, errors.New("user not found")
+	}
+
+	if _, err := db.OrgMembers.Create(ctx, orgID, userToInvite.ID); err != nil {
+		return nil, err
+	}
 	return &EmptyResponse{}, nil
 }
 
