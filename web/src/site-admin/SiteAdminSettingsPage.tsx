@@ -39,8 +39,6 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const userInEditorBeta = this.props.user.tags && this.props.user.tags.some(tag => tag.name === 'editor-beta')
-
         return (
             <div className="user-settings-configuration-page">
                 <PageTitle title="Site settings" />
@@ -63,12 +61,6 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
                         Customizing search scopes
                     </a>
                 </small>
-                {userInEditorBeta && (
-                    <small className="form-text">
-                        Editor beta users: This configuration does not yet take effect in Sourcegraph Editor, unlike org
-                        config (which does). It can only be used to configure the Sourcegraph web app.
-                    </small>
-                )}
             </div>
         )
     }

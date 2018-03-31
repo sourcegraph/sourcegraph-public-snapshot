@@ -23,7 +23,6 @@ import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { makeRepoURI, ParsedRepoURI } from '../index'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
-import { OpenInEditorAction } from './actions/OpenInEditorAction'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
@@ -187,19 +186,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
         return [
             <PageTitle key="page-title" title={this.getPageTitle()} />,
-            <RepoHeaderActionPortal
-                position="right"
-                key="open-in-editor"
-                element={
-                    <OpenInEditorAction
-                        key="open-in-editor"
-                        repoPath={this.props.repoPath}
-                        commitID={this.props.commitID}
-                        filePath={this.props.filePath}
-                        location={this.props.location}
-                    />
-                }
-            />,
             renderAs === 'code' && (
                 <RepoHeaderActionPortal
                     position="right"
