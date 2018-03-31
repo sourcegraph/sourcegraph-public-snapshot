@@ -1,4 +1,5 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
+import CityIcon from '@sourcegraph/icons/lib/City'
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
@@ -44,7 +45,7 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                     <div className="sidebar__header-icon">
                         <UserIcon className="icon-inline" />
                     </div>
-                    <h5 className="sidebar__header-title">User settings</h5>
+                    <h5 className="sidebar__header-title">Settings</h5>
                 </li>
                 <li className="sidebar__item">
                     <NavLink
@@ -112,47 +113,43 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                         </NavLink>
                     </li>
                 )}
-                {!siteAdminViewingOtherUser && (
-                    <li className="sidebar__item">
-                        <div className="settings-sidebar__theme-switcher">
-                            <a className="sidebar__link" onClick={props.onThemeChange} title="Switch to light theme">
-                                <div
-                                    className={
-                                        'settings-sidebar__theme-switcher--button' +
-                                        (props.isLightTheme
-                                            ? ' settings-sidebar__theme-switcher--button--selected'
-                                            : '')
-                                    }
-                                >
-                                    <SunIcon className="settings-sidebar__theme-switcher--icon icon-inline" />
-                                    Light
-                                </div>
-                            </a>
-                            <a className="sidebar__link" onClick={props.onThemeChange} title="Switch to dark theme">
-                                <div
-                                    className={
-                                        'settings-sidebar__theme-switcher--button' +
-                                        (!props.isLightTheme
-                                            ? ' settings-sidebar__theme-switcher--button--selected'
-                                            : '')
-                                    }
-                                >
-                                    <MoonIcon className="settings-sidebar__theme-switcher--icon icon-inline" />
-                                    Dark
-                                </div>
-                            </a>
-                        </div>
-                    </li>
-                )}
             </ul>
 
-            <div className="sidebar__spacer" />
+            {!siteAdminViewingOtherUser && (
+                <div className="settings-sidebar__theme-switcher">
+                    <a className="sidebar__link" onClick={props.onThemeChange} title="Switch to light theme">
+                        <div
+                            className={
+                                'settings-sidebar__theme-switcher--button' +
+                                (props.isLightTheme ? ' settings-sidebar__theme-switcher--button--selected' : '')
+                            }
+                        >
+                            <SunIcon className="settings-sidebar__theme-switcher--icon icon-inline" />
+                            Light
+                        </div>
+                    </a>
+                    <a className="sidebar__link" onClick={props.onThemeChange} title="Switch to dark theme">
+                        <div
+                            className={
+                                'settings-sidebar__theme-switcher--button' +
+                                (!props.isLightTheme ? ' settings-sidebar__theme-switcher--button--selected' : '')
+                            }
+                        >
+                            <MoonIcon className="settings-sidebar__theme-switcher--icon icon-inline" />
+                            Dark
+                        </div>
+                    </a>
+                </div>
+            )}
 
             {(props.user.orgs.length > 0 || !siteAdminViewingOtherUser) && (
                 <>
                     <ul className="sidebar__items">
                         <li className="sidebar__header">
-                            <h5 className="sidebar__header-title ui-title">Organization settings</h5>
+                            <div className="sidebar__header-icon">
+                                <CityIcon className="icon-inline" />
+                            </div>
+                            <h5 className="sidebar__header-title">Organizations</h5>
                         </li>
                         {props.user.orgs.map(org => (
                             <li className="sidebar__item" key={org.id}>
@@ -164,7 +161,7 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                                     <div className="sidebar__item-icon">
                                         <OrgAvatar org={org.name} />
                                     </div>
-                                    {org.name}
+                                    <span className="sidebar__item-link-text">{org.name}</span>
                                 </NavLink>
                             </li>
                         ))}

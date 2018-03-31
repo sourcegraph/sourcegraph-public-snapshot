@@ -1,3 +1,4 @@
+import CityIcon from '@sourcegraph/icons/lib/City'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
@@ -28,7 +29,10 @@ export const OrgSettingsSidebar: React.SFC<Props> = ({ org, authenticatedUser, c
 
             <ul className="sidebar__items">
                 <div className="sidebar__header">
-                    <h5 className="sidebar__header-title">Organization settings</h5>
+                    <div className="sidebar__header-icon">
+                        <CityIcon className="icon-inline" />
+                    </div>
+                    <h5 className="sidebar__header-title">Settings</h5>
                 </div>
                 <li className="sidebar__item">
                     <NavLink

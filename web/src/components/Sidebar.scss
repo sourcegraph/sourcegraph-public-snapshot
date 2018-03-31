@@ -54,6 +54,13 @@
 
         &-link {
             padding-left: 0.75rem;
+            overflow: hidden;
+            &-text {
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                overflow: hidden;
+                min-width: 0;
+            }
         }
 
         &-link:hover {
