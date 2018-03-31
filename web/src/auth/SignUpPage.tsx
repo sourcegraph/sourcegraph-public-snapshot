@@ -23,7 +23,6 @@ interface SignUpFormProps {
     location: H.Location
     history: H.History
     prefilledEmail?: string
-    autoFocus?: boolean
 
     /** Called to perform the signup on the server. */
     doSignUp: (args: SignUpArgs) => Promise<void>
@@ -63,7 +62,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         required={true}
                         value={this.state.email}
                         disabled={this.state.loading || Boolean(this.props.prefilledEmail)}
-                        autoFocus={this.props.autoFocus}
+                        autoFocus={!Boolean(this.props.prefilledEmail)}
                     />
                 </div>
                 <div className="form-group">
@@ -73,6 +72,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         value={this.state.username}
                         required={true}
                         disabled={this.state.loading}
+                        autoFocus={Boolean(this.props.prefilledEmail)}
                     />
                 </div>
                 <div className="form-group">

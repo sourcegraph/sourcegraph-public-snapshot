@@ -23,7 +23,6 @@ export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> 
                     <h2 className="site-init-page__header">Welcome to Sourcegraph Server!</h2>
                     <p>Create an admin account to start using Sourcegraph.</p>
                     <SignUpForm
-                        autoFocus={true}
                         buttonLabel="Create admin account & continue"
                         doSignUp={this.doSignUp}
                         location={this.props.location}

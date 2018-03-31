@@ -53,6 +53,7 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
                         required={true}
                         value={this.state.email}
                         disabled={this.state.loading}
+                        autoFocus={true}
                     />
                 </div>
                 <div className="form-group">
