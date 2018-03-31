@@ -1,4 +1,5 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
+import InvitationIcon from '@sourcegraph/icons/lib/Invitation'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import { of } from 'rxjs/observable/of'
@@ -118,46 +119,51 @@ export class InviteForm extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <form className="invite-form" onSubmit={this.onSubmit}>
-                <div className="invite-form__container">
-                    <input
-                        type="email"
-                        className="form-control invite-form__email"
-                        placeholder="newmember@yourcompany.com"
-                        onChange={this.onEmailChange}
-                        value={this.state.email}
-                        required={true}
-                        spellCheck={false}
-                        size={30}
-                    />
-                    <button
-                        type="submit"
-                        disabled={this.state.loading}
-                        className="btn btn-primary invite-form__submit-button"
-                    >
-                        {emailInvitesEnabled ? 'Invite' : 'Make invite link'}
-                    </button>
+            <div className="invite-form">
+                <div className="card invite-form__container">
+                    <div className="card-body">
+                        <h4 className="card-title">Invite member</h4>
+                        <form className="form-inline" onSubmit={this.onSubmit}>
+                            <label className="sr-only" htmlFor="invite-form__email">
+                                Username or email address
+                            </label>
+                            <input
+                                type="email"
+                                className="form-control mb-2 mr-sm-2"
+                                id="invite-form__email"
+                                placeholder="Username or email address"
+                                onChange={this.onEmailChange}
+                                value={this.state.email}
+                                required={true}
+                                spellCheck={false}
+                                size={30}
+                            />
+                            <button type="submit" disabled={this.state.loading} className="btn btn-primary mb-2">
+                                {this.state.loading ? (
+                                    <LoaderIcon className="icon-inline" />
+                                ) : (
+                                    <InvitationIcon className="icon-inline" />
+                                )}{' '}
+                                {emailInvitesEnabled ? 'Invite' : 'Make invite link'}
+                            </button>
+                        </form>
+                    </div>
                 </div>
                 {this.state.invited &&
-                    this.state.invited.length > 0 && (
-                        <div className="invite-form__alerts">
-                            {this.state.invited.map(({ email, acceptInviteURL }, i) => (
-                                <InvitedNotification
-                                    key={i}
-                                    className="alert alert-success invite-form__invited"
-                                    email={email}
-                                    acceptInviteURL={acceptInviteURL}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onDismiss={() => this.dismissNotification(i)}
-                                />
-                            ))}
-                        </div>
-                    )}
-                <div className="invite-form__status">
-                    {this.state.loading && <LoaderIcon className="icon-inline" />}
-                    {this.state.error && <div className="text-danger">{this.state.error.message}</div>}
-                </div>
-            </form>
+                    this.state.invited.map(({ email, acceptInviteURL }, i) => (
+                        <InvitedNotification
+                            key={i}
+                            className="alert alert-success invite-form__alert"
+                            email={email}
+                            acceptInviteURL={acceptInviteURL}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            onDismiss={() => this.dismissNotification(i)}
+                        />
+                    ))}
+                {this.state.error && (
+                    <div className="invite-form__alert alert alert-danger">{this.state.error.message}</div>
+                )}
+            </div>
         )
     }
 
