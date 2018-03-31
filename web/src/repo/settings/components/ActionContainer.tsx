@@ -1,3 +1,4 @@
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 
 export const BaseActionContainer: React.SFC<{
@@ -87,6 +88,11 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                                 </div>
                             )}
                     </>
+                }
+                details={
+                    this.state.error && (
+                        <div className="alert alert-danger mb-0 mt-3">Error: {upperFirst(this.state.error)}</div>
+                    )
                 }
             />
         )
