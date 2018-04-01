@@ -11,9 +11,17 @@
     &__tab,
     &__spacer,
     &__end-fragment-other-element {
-        border: none;
+        border-color: transparent;
+        border-top-width: 0;
+        border-left-width: 0;
+        border-right-width: 0;
+        border-bottom-width: 3px;
+        border-bottom-style: solid;
         border-radius: 0;
-        border-bottom: solid 3px $color-border;
+    }
+    &:not(&--empty) &__spacer,
+    &:not(&--empty) &__end-fragment-other-element {
+        border-bottom-color: $color-border;
     }
 
     &__spacer,
@@ -64,8 +72,8 @@
 .theme-light {
     .tab-bar {
         &__tab,
-        &__spacer,
-        &__end-fragment-other-element {
+        &:not(.tab-bar--empty) .tab-bar__spacer,
+        &:not(.tab-bar--empty) .tab-bar__end-fragment-other-element {
             border-bottom-color: $color-light-border;
         }
         &__tab {

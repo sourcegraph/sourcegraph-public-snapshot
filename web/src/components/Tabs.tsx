@@ -28,7 +28,7 @@ interface TabBarProps<ID extends string, T extends Tab<ID>> {
     tabs: T[]
 
     /** The currently active tab. */
-    activeTab: ID
+    activeTab: ID | undefined
 
     /** A fragment to render at the end of the tab bar. */
     endFragment?: React.ReactFragment
@@ -48,7 +48,7 @@ interface TabBarProps<ID extends string, T extends Tab<ID>> {
 class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<TabBarProps<ID, T>> {
     public render(): JSX.Element | null {
         return (
-            <div className="tab-bar">
+            <div className={`tab-bar ${this.props.tabs.length === 0 ? 'tab-bar--empty' : ''}`}>
                 {this.props.tabs
                     .filter(({ hidden }) => !hidden)
                     .map((tab, i) => (
@@ -57,7 +57,9 @@ class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<T
                             tab={tab}
                             className={`btn btn-link btn-sm tab-bar__tab ${!this.props.endFragment &&
                                 'tab-bar__tab--flex-grow'} tab-bar__tab--${
-                                this.props.activeTab === tab.id ? 'active' : 'inactive'
+                                this.props.activeTab !== undefined && this.props.activeTab === tab.id
+                                    ? 'active'
+                                    : 'inactive'
                             } ${this.props.tabClassName || ''}`}
                         />
                     ))}
@@ -80,7 +82,7 @@ export const Spacer: () => JSX.Element = () => <span className="tab-bar__spacer"
  * @template T The type that describes a tab.
  */
 interface TabsProps<ID extends string, T extends Tab<ID>> {
-    /** All tabs. Must always have at least one element. */
+    /** All tabs. */
     tabs: T[]
 
     /**
@@ -113,7 +115,7 @@ export const TabBorderClassName = 'tab-bar__end-fragment-other-element'
 class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
     TabsProps<ID, T> & {
         /** The currently active tab. */
-        activeTab: ID
+        activeTab: ID | undefined
 
         /** The component used to render the tab (in the tab bar, not the active tab's content area). */
         tabComponent: React.ComponentType<{ tab: T; className: string }>
@@ -152,7 +154,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
          */
         storageKey: string
     },
-    { activeTab: ID }
+    { activeTab: ID | undefined }
 > {
     constructor(props: TabsProps<ID, T> & { storageKey: string }) {
         super(props)
@@ -164,10 +166,16 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
         }
     }
 
-    private static readFromLocalStorage<ID extends string, T extends Tab<ID>>(storageKey: string, tabs: T[]): ID {
+    private static readFromLocalStorage<ID extends string, T extends Tab<ID>>(
+        storageKey: string,
+        tabs: T[]
+    ): ID | undefined {
         const lastTabID = localStorage.getItem(storageKey)
         if (lastTabID !== null && tabs.find(tab => tab.id === lastTabID)) {
             return lastTabID as ID
+        }
+        if (tabs.length === 0) {
+            return undefined
         }
         return tabs[0].id // default
     }
@@ -218,7 +226,7 @@ interface TabsWithURLViewStatePersistenceProps<ID extends string, T extends Tab<
  */
 export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID>> extends React.PureComponent<
     TabsWithURLViewStatePersistenceProps<ID, T>,
-    { activeTab: ID }
+    { activeTab: ID | undefined }
 > {
     constructor(props: TabsWithURLViewStatePersistenceProps<ID, T>) {
         super(props)
@@ -253,7 +261,7 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         return { ...location, hash: location.hash + newSuffix }
     }
 
-    private readFromURL(location: H.Location, tabs: T[]): ID {
+    private readFromURL(location: H.Location, tabs: T[]): ID | undefined {
         const urlTabID = TabsWithURLViewStatePersistence.getTabIDFromURL(location)
         if (urlTabID) {
             for (const tab of tabs) {
@@ -261,6 +269,9 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
                     return tab.id
                 }
             }
+        }
+        if (tabs.length === 0) {
+            return undefined
         }
         return tabs[0].id // default
     }
