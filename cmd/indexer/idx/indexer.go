@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
-	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 var LSPEnabled bool
@@ -23,159 +19,54 @@ func init() {
 	}
 }
 
-type qitem struct {
-	repo api.RepoURI
-	rev  string
-}
-
-type workQueue struct {
-	enqueue chan<- qitem          // channel of inputs
-	dequeue chan<- (chan<- qitem) // channel of task executors
-}
-
-func NewQueue(lengthGauge prometheus.Gauge) *workQueue {
-	enqueue, dequeue := queueWithoutDuplicates(lengthGauge)
-	return &workQueue{enqueue: enqueue, dequeue: dequeue}
-}
-
-func (w *workQueue) Enqueue(repo api.RepoURI, rev string) {
-	w.enqueue <- qitem{repo: repo, rev: rev}
-}
-
-// queueWithoutDuplicates provides a queue that ignores a new entry if it is already enqueued.
-// Sending to the dequeue channel blocks if no entry is available.
-func queueWithoutDuplicates(lengthGauge prometheus.Gauge) (enqueue chan<- qitem, dequeue chan<- (chan<- qitem)) {
-	var queue []qitem
-	set := make(map[qitem]struct{})
-	enqueueChan := make(chan qitem)
-	dequeueChan := make(chan (chan<- qitem))
-
-	go func() {
-		for {
-			if len(queue) == 0 {
-				repoRev := <-enqueueChan
-				queue = append(queue, repoRev)
-				set[repoRev] = struct{}{}
-				if lengthGauge != nil {
-					lengthGauge.Set(float64(len(queue)))
-				}
-			}
-
-			select {
-			case repoRev := <-enqueueChan:
-				if _, ok := set[repoRev]; ok {
-					continue // duplicate, discard
-				}
-				queue = append(queue, repoRev)
-				set[repoRev] = struct{}{}
-				if lengthGauge != nil {
-					lengthGauge.Set(float64(len(queue)))
-				}
-			case c := <-dequeueChan:
-				repoRev := queue[0]
-				queue = queue[1:]
-				delete(set, repoRev)
-				if lengthGauge != nil {
-					lengthGauge.Set(float64(len(queue)))
-				}
-				c <- repoRev
-			}
-		}
-	}()
-
-	return enqueueChan, dequeueChan
-}
-
-var (
-	// Global state shared by all work threads
-	currentJobs   = make(map[qitem]struct{})
-	currentJobsMu sync.Mutex
-)
-
-func Work(ctx context.Context, w *workQueue) {
-	for {
-		c := make(chan qitem)
-		w.dequeue <- c
-		repoRev := <-c
-
-		{
-			currentJobsMu.Lock()
-			if _, ok := currentJobs[repoRev]; ok {
-				currentJobsMu.Unlock()
-				return // in progress, discard
-			}
-			currentJobs[repoRev] = struct{}{}
-			currentJobsMu.Unlock()
-		}
-
-		if err := index(ctx, w, repoRev.repo, repoRev.rev); err != nil {
-			log15.Error("Indexing failed", "repo", repoRev.repo, "rev", repoRev.rev, "error", err)
-		}
-
-		{
-			currentJobsMu.Lock()
-			delete(currentJobs, repoRev)
-			currentJobsMu.Unlock()
-		}
-	}
-}
-
-func index(ctx context.Context, wq *workQueue, repoName api.RepoURI, rev string) (err error) {
-	repo, commit, err := resolveRevision(ctx, repoName, rev)
+// index updates the cross-repo code intelligence indexes for the given repository at the given revision and enqueues
+// further repos to index if applicable.
+func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err error) {
+	repo, commit, err := resolveRevision(w.Ctx, repoName, rev)
 	if err != nil {
+		// Avoid infinite loop for always cloning test.
 		if repo != nil && repo.URI == "github.com/sourcegraphtest/AlwaysCloningTest" {
-			// Avoid infinite loop for always cloning test.
-			return nil
-		}
-		// If clone is in progress, re-enqueue after 5 seconds
-		if vcs.IsCloneInProgress(err) {
-			go func() {
-				time.Sleep(5 * time.Second)
-				wq.Enqueue(repoName, rev)
-			}()
 			return nil
 		}
 		return err
 	}
 
+	// Check if index is already up-to-date
 	if repo.IndexedRevision != nil && (repo.FreezeIndexedRevision || *repo.IndexedRevision == commit) {
-		return nil // index is up-to-date
+		return nil
 	}
 
-	defer func(start time.Time) {
-		// Errors are handled in a higher layer
-		if err != nil {
-			return
-		}
-		log15.Info("Indexing finished", "repo", repoName, "rev", rev, "commit", commit, "duration", time.Since(start))
-	}(time.Now())
-
-	inv, err := api.InternalClient.ReposGetInventoryUncached(ctx, repo.ID, commit)
+	// Get language
+	inv, err := api.InternalClient.ReposGetInventoryUncached(w.Ctx, repo.ID, commit)
 	if err != nil {
 		return fmt.Errorf("Repos.GetInventory failed: %s", err)
 	}
+	lang := inv.PrimaryProgrammingLanguage()
 
-	// Global refs & packages indexing. Neither index forks.
+	// Update global refs & packages index
 	if !repo.Fork() && LSPEnabled {
-		defErr := api.InternalClient.DefsRefreshIndex(ctx, repo.URI, commit)
-		if err != nil {
-			defErr = fmt.Errorf("Defs.RefreshIndex failed: %s", err)
+		var errs []error
+		if err := api.InternalClient.DefsRefreshIndex(w.Ctx, repo.URI, commit); err != nil {
+			errs = append(errs, fmt.Errorf("Defs.RefreshIndex failed: %s", err))
 		}
 
-		pkgErr := api.InternalClient.PkgsRefreshIndex(ctx, repo.URI, commit)
-		if err != nil {
-			pkgErr = fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)
+		if err := api.InternalClient.PkgsRefreshIndex(w.Ctx, repo.URI, commit); err != nil {
+			errs = append(errs, fmt.Errorf("Pkgs.RefreshIndex failed: %s", err))
 		}
 
-		// Spider out to index dependencies
-		spidErr := enqueueDependencies(ctx, wq, inv.PrimaryProgrammingLanguage(), repo.ID)
+		if isPrimary {
+			// Spider out to index dependencies
+			if err := w.enqueueDependencies(lang, repo.ID); err != nil {
+				errs = append(errs, fmt.Errorf("Could not enqueue dependencies: %s", err))
+			}
+		}
 
-		if err := makeMultiErr(defErr, pkgErr, spidErr); err != nil {
+		if err := makeMultiErr(errs...); err != nil {
 			return err
 		}
 	}
 
-	err = api.InternalClient.ReposUpdateIndex(ctx, repo.ID, commit, inv.PrimaryProgrammingLanguage())
+	err = api.InternalClient.ReposUpdateIndex(w.Ctx, repo.ID, commit, lang)
 	if err != nil {
 		return err
 	}
@@ -187,28 +78,28 @@ func index(ctx context.Context, wq *workQueue, repoName api.RepoURI, rev string)
 // itself cannot resolve dependencies to source repository URLs. For those languages, dependency
 // repositories must be indexed before cross-repo jump-to-def can work. enqueueDependencies tries to
 // best-effort determine what those dependencies are and enqueue them.
-func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repo api.RepoID) error {
+func (w *Worker) enqueueDependencies(lang string, repo api.RepoID) error {
 	// do nothing if this is not a language that requires heuristic dependency resolution
 	if lang != "Java" {
 		return nil
 	}
 	log15.Info("Enqueuing dependencies for repo", "repo", repo, "lang", lang)
 
-	unfetchedDeps, err := api.InternalClient.ReposUnindexedDependencies(ctx, repo, lang)
+	unfetchedDeps, err := api.InternalClient.ReposUnindexedDependencies(w.Ctx, repo, lang)
 	if err != nil {
 		return err
 	}
 
 	// Resolve and enqueue unindexed dependencies for indexing
-	resolvedDeps := resolveDependencies(ctx, lang, unfetchedDeps)
+	resolvedDeps := resolveDependencies(w.Ctx, lang, unfetchedDeps)
 	resolvedDepsList := make([]api.RepoURI, 0, len(resolvedDeps))
 	for rawDepRepo := range resolvedDeps {
-		repo, err := api.InternalClient.ReposGetByURI(ctx, rawDepRepo)
+		repo, err := api.InternalClient.ReposGetByURI(w.Ctx, rawDepRepo)
 		if err != nil {
 			log15.Warn("Could not resolve repository, skipping", "repo", rawDepRepo, "error", err)
 			continue
 		}
-		wq.Enqueue(repo.URI, "")
+		w.primary.Enqueue(repo.URI, "")
 		resolvedDepsList = append(resolvedDepsList, repo.URI)
 	}
 	log15.Info("Enqueued dependencies for repo", "repo", repo, "lang", lang, "num", len(resolvedDeps), "dependencies", resolvedDepsList)

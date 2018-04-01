@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -26,10 +27,28 @@ func (r *siteResolver) Repositories(args *struct {
 	NotCloned       bool
 	Indexed         bool
 	NotIndexed      bool
+	OrderBy         string
+	Descending      bool
+	CIIndexed       bool
+	NotCIIndexed    bool
 }) (*repositoryConnectionResolver, error) {
 	opt := db.ReposListOptions{
 		Enabled:  args.Enabled,
 		Disabled: args.Disabled,
+		OrderBy: db.RepoListOrderBy{{
+			Field:      toDBRepoListColumn(args.OrderBy),
+			Descending: args.Descending,
+		}},
+	}
+	if args.CIIndexed && args.NotCIIndexed {
+		return nil, fmt.Errorf("cannot set both ciIndexed and notCIIndexed")
+	}
+	if args.CIIndexed {
+		t := true
+		opt.HasIndexedRevision = &t
+	} else if args.NotCIIndexed {
+		f := false
+		opt.HasIndexedRevision = &f
 	}
 	if args.Query != nil {
 		opt.Query = *args.Query
@@ -337,4 +356,15 @@ func repoURIsToStrings(repoURIs []api.RepoURI) []string {
 		strings[i] = string(repoURI)
 	}
 	return strings
+}
+
+func toDBRepoListColumn(ob string) db.RepoListColumn {
+	switch ob {
+	case "REPO_URI":
+		return "uri"
+	case "REPO_CREATED_AT":
+		return "created_at"
+	default:
+		return ""
+	}
 }

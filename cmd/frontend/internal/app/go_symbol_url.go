@@ -17,11 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-type graphqlQuery struct {
-	Query     string                 `json:"query"`
-	Variables map[string]interface{} `json:"variables"`
-}
-
 // serveGoSymbolURL handles Go symbol URLs (e.g.,
 // https://sourcegraph.com/go/github.com/gorilla/mux/-/Vars) by
 // redirecting them to the file and line/column URL of the definition.

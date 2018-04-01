@@ -217,8 +217,49 @@ type ReposListOptions struct {
 	// Disabled includes disabled repositories in the list.
 	Disabled bool
 
+	// Filters repositories based on whether they have an IndexedRevision set.
+	HasIndexedRevision *bool
+
+	// List of fields by which to order the return repositories.
+	OrderBy RepoListOrderBy
+
 	*LimitOffset
 }
+
+type RepoListOrderBy []RepoListSort
+
+func (r RepoListOrderBy) SQL() *sqlf.Query {
+	if len(r) == 0 {
+		return sqlf.Sprintf(`ORDER BY id ASC`)
+	}
+
+	clauses := make([]*sqlf.Query, 0, len(r))
+	for _, s := range r {
+		clauses = append(clauses, s.SQL())
+	}
+	return sqlf.Sprintf(`ORDER BY %s`, sqlf.Join(clauses, ", "))
+}
+
+// RepoListSort is a field by which to sort and the direction of the sorting.
+type RepoListSort struct {
+	Field      RepoListColumn
+	Descending bool
+}
+
+func (r RepoListSort) SQL() *sqlf.Query {
+	if r.Descending {
+		return sqlf.Sprintf(string(r.Field) + ` DESC`)
+	}
+	return sqlf.Sprintf(string(r.Field))
+}
+
+// RepoListColumn is a column by which repositories can be sorted. These correspond to columns in the database.
+type RepoListColumn string
+
+const (
+	RepoListCreatedAt RepoListColumn = "created_at"
+	RepoListURI                      = "uri"
+)
 
 // List lists repositories in the Sourcegraph repository
 //
@@ -242,7 +283,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	}
 
 	// fetch matching repos
-	fetchSQL := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
+	fetchSQL := sqlf.Sprintf("WHERE %s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
 	rawRepos, err := s.getBySQL(ctx, fetchSQL)
 	if err != nil {
@@ -298,6 +339,13 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		conds = append(conds, sqlf.Sprintf("NOT enabled"))
 	} else {
 		return nil, errors.New("Repos.List: must specify at least one of Enabled=true or Disabled=true")
+	}
+	if opt.HasIndexedRevision != nil {
+		if *opt.HasIndexedRevision {
+			conds = append(conds, sqlf.Sprintf("indexed_revision IS NOT NULL"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("indexed_revision IS NULL"))
+		}
 	}
 
 	return conds, nil

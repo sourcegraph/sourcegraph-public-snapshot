@@ -65,10 +65,10 @@ func main() {
 
 	go debugserver.Start()
 
-	wq := idx.NewQueue(queueLength)
+	worker := idx.NewWorker(ctx, idx.NewQueue(queueLength), idx.SecondaryQueue(ctx))
 	n, _ := strconv.Atoi(numWorkers)
 	for i := 0; i < n; i++ {
-		go idx.Work(ctx, wq)
+		go worker.Work()
 	}
 
 	http.HandleFunc("/refresh", func(resp http.ResponseWriter, req *http.Request) {
@@ -78,7 +78,7 @@ func main() {
 			http.Error(resp, "missing repo parameter", http.StatusBadRequest)
 			return
 		}
-		wq.Enqueue(repo, rev)
+		worker.Enqueue(repo, rev)
 		resp.Write([]byte("OK"))
 	})
 

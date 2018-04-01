@@ -34,9 +34,10 @@ type Repo struct {
 	// Enabled is whether the repository is enabled. Disabled repositories are
 	// not accessible by users (except site admins).
 	Enabled bool
-	// IndexedRevision is the revision that the global index is currently based on. It is only used
-	// by the indexer to determine if reindexing is necessary. Setting it to nil/null will cause
-	// the indexer to reindex the next time it gets triggered for this repository.
+	// IndexedRevision is the revision that the cross-repo code intelligence index is currently
+	// based on. It is only used by the indexer to determine if reindexing is necessary. Setting it
+	// to nil/null will cause the indexer to reindex the next time it gets triggered for this
+	// repository.
 	IndexedRevision *CommitID
 	// FreezeIndexedRevision, when true, tells the indexer not to
 	// update the indexed revision if it is already set. This is a

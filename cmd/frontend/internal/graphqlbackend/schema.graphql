@@ -1425,6 +1425,13 @@ type ThreadConnection {
     totalCount: Int!
 }
 
+# RepoOrderBy enumerates the ways a repositories-list result set can
+# be ordered.
+enum RepoOrderBy {
+    REPO_URI
+    REPO_CREATED_AT
+}
+
 # A site is an installation of Sourcegraph that consists of one or more
 # servers that share the same configuration and database.
 #
@@ -1463,6 +1470,14 @@ type Site implements ConfigurationSubject {
         indexed: Boolean = true
         # Include repositories that do not have a text search index.
         notIndexed: Boolean = true
+        # Filter for repositories that have been indexed for cross-repository code intelligence.
+        ciIndexed: Boolean = false
+        # Filter for repositories that have not been indexed for cross-repository code intelligence.
+        notCIIndexed: Boolean = false
+        # Sort field
+        orderBy: RepoOrderBy = REPO_URI
+        # Sort direction
+        descending: Boolean = false
     ): RepositoryConnection!
     # List all users.
     users(

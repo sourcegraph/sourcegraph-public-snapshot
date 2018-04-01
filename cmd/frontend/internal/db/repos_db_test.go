@@ -228,6 +228,123 @@ func TestRepos_List_query2(t *testing.T) {
 	}
 }
 
+// Test indexed_revision
+func TestRepos_List_indexedRevision(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := testContext()
+
+	ctx = actor.WithActor(ctx, &actor.Actor{})
+
+	createdRepos := []*types.Repo{
+		{URI: "a/def", IndexedRevision: (*api.CommitID)(strptr("aaaaaa"))},
+		{URI: "b/def"},
+	}
+	for _, repo := range createdRepos {
+		createRepo(ctx, t, repo)
+		gotRepo, err := Repos.GetByURI(ctx, repo.URI)
+		if err != nil {
+			panic(err)
+		}
+		if repo.IndexedRevision != nil {
+			Repos.UpdateIndexedRevision(ctx, gotRepo.ID, *repo.IndexedRevision)
+		}
+	}
+	tests := []struct {
+		hasIndexedRevision *bool
+		want               []api.RepoURI
+	}{
+		{nil, []api.RepoURI{"a/def", "b/def"}},
+		{boolptr(true), []api.RepoURI{"a/def"}},
+		{boolptr(false), []api.RepoURI{"b/def"}},
+	}
+
+	for _, test := range tests {
+		repos, err := Repos.List(ctx, ReposListOptions{HasIndexedRevision: test.hasIndexedRevision, Enabled: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			if test.hasIndexedRevision == nil {
+				t.Errorf("Unexpected repo result for hasIndexedRevision %v:\ngot:  %q\nwant: %q", test.hasIndexedRevision, got, test.want)
+			} else {
+				t.Errorf("Unexpected repo result for hasIndexedRevision %v:\ngot:  %q\nwant: %q", *test.hasIndexedRevision, got, test.want)
+			}
+		}
+	}
+}
+
+// Test sort
+func TestRepos_List_sort(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := testContext()
+
+	ctx = actor.WithActor(ctx, &actor.Actor{})
+
+	createdRepos := []*types.Repo{
+		{URI: "c/def"},
+		{URI: "def/mno"},
+		{URI: "b/def"},
+		{URI: "abc/m"},
+		{URI: "abc/def"},
+		{URI: "def/jkl"},
+		{URI: "def/ghi"},
+	}
+	for _, repo := range createdRepos {
+		createRepo(ctx, t, repo)
+	}
+	tests := []struct {
+		query   string
+		orderBy RepoListOrderBy
+		want    []api.RepoURI
+	}{
+		{
+			query: "",
+			orderBy: RepoListOrderBy{{
+				Field: RepoListURI,
+			}},
+			want: []api.RepoURI{"abc/def", "abc/m", "b/def", "c/def", "def/ghi", "def/jkl", "def/mno"},
+		},
+		{
+			query: "",
+			orderBy: RepoListOrderBy{{
+				Field: RepoListCreatedAt,
+			}},
+			want: []api.RepoURI{"c/def", "def/mno", "b/def", "abc/m", "abc/def", "def/jkl", "def/ghi"},
+		},
+		{
+			query: "",
+			orderBy: RepoListOrderBy{{
+				Field:      RepoListCreatedAt,
+				Descending: true,
+			}},
+			want: []api.RepoURI{"def/ghi", "def/jkl", "abc/def", "abc/m", "b/def", "def/mno", "c/def"},
+		},
+		{
+			query: "def",
+			orderBy: RepoListOrderBy{{
+				Field:      RepoListCreatedAt,
+				Descending: true,
+			}},
+			want: []api.RepoURI{"def/ghi", "def/jkl", "abc/def", "b/def", "def/mno", "c/def"},
+		},
+	}
+	for _, test := range tests {
+		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy, Enabled: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("Unexpected repo result for query %q, orderBy %v:\ngot:  %q\nwant: %q", test.query, test.orderBy, got, test.want)
+		}
+	}
+}
+
 // TestRepos_List_patterns tests the behavior of Repos.List when called with
 // IncludePatterns and ExcludePattern.
 func TestRepos_List_patterns(t *testing.T) {
@@ -358,4 +475,8 @@ func TestMakeFuzzyLikeRepoQuery(t *testing.T) {
 			t.Errorf("makeFuzzyLikeQuery(%q) == %q != %q", query, got, want)
 		}
 	}
+}
+
+func boolptr(b bool) *bool {
+	return &b
 }

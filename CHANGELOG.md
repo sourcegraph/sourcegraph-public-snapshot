@@ -19,6 +19,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
   * When `timeout:` is not provided, search optimizes for retuning results as soon as possible and will include slower kinds of results (e.g. symbols) only if they are found quickly.
   * When `timeout:` is provided, all result kinds are given the full timeout to complete.
 * A new user settings tokens page was added that allows users to obtain a token that they can use to authenticate to the Sourcegraph API.
+* Code intelligence indexes are now built for all repositories in the background, regardless of whether or not they are visited directly by a user.
 
 ## 2.6.8
 
