@@ -99,15 +99,15 @@ func repoURIToGoPathPrefixes(repoURI api.RepoURI) []string {
 		// with an SQL query like `AND dep_data->>'package' LIKE '%';` which
 		// matches all Go repositories effectively. We do this for the stdlib
 		// because all Go repositories will import the stdlib anyway.
-		"github.com/golang/go": []string{""},
+		"github.com/golang/go": {""},
 
 		// google.golang.org
-		"github.com/grpc/grpc-go":                []string{"google.golang.org/grpc"},
-		"github.com/google/google-api-go-client": []string{"google.golang.org/api"},
-		"github.com/golang/appengine":            []string{"google.golang.org/appengine"},
+		"github.com/grpc/grpc-go":                {"google.golang.org/grpc"},
+		"github.com/google/google-api-go-client": {"google.golang.org/api"},
+		"github.com/golang/appengine":            {"google.golang.org/appengine"},
 
 		// go4.org
-		"github.com/camlistore/go4": []string{"go4.org"},
+		"github.com/camlistore/go4": {"go4.org"},
 	}
 	if v, ok := manualMapping[repoURI]; ok {
 		return v

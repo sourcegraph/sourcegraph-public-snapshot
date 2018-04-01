@@ -191,7 +191,7 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 	}
 
 	subjects := []*configurationSubject{
-		&configurationSubject{site: singletonSiteResolver},
+		{site: singletonSiteResolver},
 	}
 
 	// Apply global site settings
@@ -258,9 +258,9 @@ func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurati
 // merged field, the merged config would be {"a":[2]}. If "a" IS a deeply merged field, then the
 // merged config would be {"a":[1,2].}
 var deeplyMergedConfigFields = map[string]struct{}{
-	"search.scopes":           struct{}{},
-	"search.savedQueries":     struct{}{},
-	"search.repositoryGroups": struct{}{},
+	"search.scopes":           {},
+	"search.savedQueries":     {},
+	"search.repositoryGroups": {},
 }
 
 // mergeConfigs merges the specified JSON configs together to produce a single JSON config. The merge

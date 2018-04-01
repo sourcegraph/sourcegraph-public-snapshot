@@ -8,7 +8,7 @@ import (
 
 func TestMergeConfigs(t *testing.T) {
 	orig := deeplyMergedConfigFields
-	deeplyMergedConfigFields = map[string]struct{}{"testDeeplyMergedField": struct{}{}}
+	deeplyMergedConfigFields = map[string]struct{}{"testDeeplyMergedField": {}}
 	defer func() { deeplyMergedConfigFields = orig }()
 
 	tests := map[string]struct {

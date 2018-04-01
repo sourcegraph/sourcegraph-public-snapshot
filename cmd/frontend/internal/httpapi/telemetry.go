@@ -53,16 +53,16 @@ func init() {
 }
 
 var keepHeadersInProxiedTelemetry = map[string]struct{}{
-	"Host":            struct{}{},
-	"User-Agent":      struct{}{},
-	"Content-Length":  struct{}{},
-	"Accept":          struct{}{},
-	"Accept-Encoding": struct{}{},
-	"Accept-Language": struct{}{},
-	"Cache-Control":   struct{}{},
-	"Connection":      struct{}{},
-	"Content-Type":    struct{}{},
-	"Pragma":          struct{}{},
+	"Host":            {},
+	"User-Agent":      {},
+	"Content-Length":  {},
+	"Accept":          {},
+	"Accept-Encoding": {},
+	"Accept-Language": {},
+	"Cache-Control":   {},
+	"Connection":      {},
+	"Content-Type":    {},
+	"Pragma":          {},
 }
 
 // stripTelemetryRequest removes sensitive and unnecessary data from the client request

@@ -20,7 +20,7 @@ func newBuild(version string) build {
 		Version:    *semver.New(version),
 		IsReleased: true,
 		Assets: []struct{}{
-			struct{}{},
+			{},
 		},
 	}
 }

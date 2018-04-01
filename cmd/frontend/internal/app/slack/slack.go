@@ -126,13 +126,13 @@ func notifyOnComments(
 	}
 	payload := &slack.Payload{
 		Attachments: []*slack.Attachment{
-			&slack.Attachment{
+			{
 				AuthorName: fmt.Sprintf("%s %s%s", displayNameText, usernameText, actionText),
 				AuthorLink: deepURL,
 				Fallback:   fmt.Sprintf("%s %s<%s|%s>!", displayNameText, usernameText, deepURL, actionText),
 				Color:      color,
 				Fields: []*slack.Field{
-					&slack.Field{
+					{
 						Title: "Org",
 						Value: fmt.Sprintf("`%s`\n(%d member(s) notified)", org.Name, len(recipients)),
 						Short: true,
@@ -146,7 +146,7 @@ func notifyOnComments(
 
 	if !censored {
 		payload.Attachments[0].Fields = append([]*slack.Field{
-			&slack.Field{
+			{
 				Title: "Path",
 				Value: fmt.Sprintf("<%s|%s/%s (lines %d–%d)>",
 					deepURL,
@@ -190,7 +190,7 @@ func NotifyOnInvite(c *slack.Client, user User, userEmail string, org *types.Org
 
 	payload := &slack.Payload{
 		Attachments: []*slack.Attachment{
-			&slack.Attachment{
+			{
 				Fallback:   text,
 				Color:      "#F96316",
 				Text:       text,
@@ -235,7 +235,7 @@ func NotifyOnAcceptedInvite(c *slack.Client, user User, userEmail string, org *t
 
 	payload := &slack.Payload{
 		Attachments: []*slack.Attachment{
-			&slack.Attachment{
+			{
 				Fallback:   text,
 				Color:      "#B114F7",
 				Text:       text,

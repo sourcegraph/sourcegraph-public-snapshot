@@ -172,7 +172,7 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
 			return map[string][]*types.Repo{
-				"sample": []*types.Repo{{URI: "foo-repo1"}, {URI: "repo3"}},
+				"sample": {{URI: "foo-repo1"}, {URI: "repo3"}},
 			}, nil
 		}
 		defer func() { mockResolveRepoGroups = nil }()

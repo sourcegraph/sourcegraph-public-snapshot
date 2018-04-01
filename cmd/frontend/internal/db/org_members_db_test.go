@@ -52,9 +52,9 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 
 	check := func() error {
 		want := map[string][]int32{
-			"org1": []int32{1, 2},
-			"org2": []int32{},
-			"org3": []int32{1, 2},
+			"org1": {1, 2},
+			"org2": {},
+			"org3": {1, 2},
 		}
 		got := map[string][]int32{}
 		for _, org := range []*types.Org{org1, org2, org3} {

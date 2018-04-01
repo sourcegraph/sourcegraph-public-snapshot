@@ -132,21 +132,21 @@ func TestPkgs_ListPackages(t *testing.T) {
 	ctx := testContext()
 
 	repoToPkgs := map[api.RepoID][]lspext.PackageInformation{
-		1: []lspext.PackageInformation{{
+		1: {{
 			Package: map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 			Dependencies: []lspext.DependencyReference{{
 				Attributes: map[string]interface{}{"name": "pkg1-dep", "version": "1.1.2"},
 			}},
 		}},
-		2: []lspext.PackageInformation{{
+		2: {{
 			Package: map[string]interface{}{"name": "pkg2", "version": "2.2.1"},
 			Dependencies: []lspext.DependencyReference{{
 				Attributes: map[string]interface{}{"name": "pkg2-dep", "version": "2.2.2"},
 			}},
 		}},
-		3: []lspext.PackageInformation{{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
-		4: []lspext.PackageInformation{{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
-		5: []lspext.PackageInformation{{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
+		3: {{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
+		4: {{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
+		5: {{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
 	}
 
 	createdAt := time.Now()

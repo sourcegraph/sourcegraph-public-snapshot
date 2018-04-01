@@ -27,13 +27,13 @@ func NotifyOnSignup(avatarURL, email string, hubSpotProps *hubspot.ContactProper
 
 	payload := &slack.Payload{
 		Attachments: []*slack.Attachment{
-			&slack.Attachment{
+			{
 				Fallback: fmt.Sprintf("%s just signed up!", email),
 				Title:    fmt.Sprintf("%s just signed up!", email),
 				Color:    "good",
 				ThumbURL: avatarURL,
 				Fields: []*slack.Field{
-					&slack.Field{
+					{
 						Title: "User profile links",
 						Value: strings.Join(links, ", "),
 						Short: false,

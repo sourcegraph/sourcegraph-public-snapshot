@@ -16,52 +16,52 @@ import (
 func TestGlobalDeps_TotalRefsExpansion(t *testing.T) {
 	tests := map[api.RepoURI][]string{
 		// azul3d.org
-		"github.com/azul3d/engine": []string{"azul3d.org/engine"},
+		"github.com/azul3d/engine": {"azul3d.org/engine"},
 
 		// dasa.cc
-		"github.com/dskinner/ztext": []string{"dasa.cc/ztext"},
+		"github.com/dskinner/ztext": {"dasa.cc/ztext"},
 
 		// k8s.io
-		"github.com/kubernetes/kubernetes":   []string{"k8s.io/kubernetes"},
-		"github.com/kubernetes/apimachinery": []string{"k8s.io/apimachinery"},
-		"github.com/kubernetes/client-go":    []string{"k8s.io/client-go"},
-		"github.com/kubernetes/heapster":     []string{"k8s.io/heapster"},
+		"github.com/kubernetes/kubernetes":   {"k8s.io/kubernetes"},
+		"github.com/kubernetes/apimachinery": {"k8s.io/apimachinery"},
+		"github.com/kubernetes/client-go":    {"k8s.io/client-go"},
+		"github.com/kubernetes/heapster":     {"k8s.io/heapster"},
 
 		// golang.org/x
-		"github.com/golang/net":    []string{"golang.org/x/net"},
-		"github.com/golang/tools":  []string{"golang.org/x/tools"},
-		"github.com/golang/oauth2": []string{"golang.org/x/oauth2"},
-		"github.com/golang/crypto": []string{"golang.org/x/crypto"},
-		"github.com/golang/sys":    []string{"golang.org/x/sys"},
-		"github.com/golang/text":   []string{"golang.org/x/text"},
-		"github.com/golang/image":  []string{"golang.org/x/image"},
-		"github.com/golang/mobile": []string{"golang.org/x/mobile"},
+		"github.com/golang/net":    {"golang.org/x/net"},
+		"github.com/golang/tools":  {"golang.org/x/tools"},
+		"github.com/golang/oauth2": {"golang.org/x/oauth2"},
+		"github.com/golang/crypto": {"golang.org/x/crypto"},
+		"github.com/golang/sys":    {"golang.org/x/sys"},
+		"github.com/golang/text":   {"golang.org/x/text"},
+		"github.com/golang/image":  {"golang.org/x/image"},
+		"github.com/golang/mobile": {"golang.org/x/mobile"},
 
 		// google.golang.org
-		"github.com/grpc/grpc-go":                []string{"google.golang.org/grpc"},
-		"github.com/google/google-api-go-client": []string{"google.golang.org/api"},
-		"github.com/golang/appengine":            []string{"google.golang.org/appengine"},
+		"github.com/grpc/grpc-go":                {"google.golang.org/grpc"},
+		"github.com/google/google-api-go-client": {"google.golang.org/api"},
+		"github.com/golang/appengine":            {"google.golang.org/appengine"},
 
 		// go.uber.org
-		"github.com/uber-go/yarpc":    []string{"github.com/uber-go/yarpc", "go.uber.org/yarpc"},
-		"github.com/uber-go/thriftrw": []string{"github.com/uber-go/thriftrw", "go.uber.org/thriftrw"},
-		"github.com/uber-go/zap":      []string{"github.com/uber-go/zap", "go.uber.org/zap"},
-		"github.com/uber-go/atomic":   []string{"github.com/uber-go/atomic", "go.uber.org/atomic"},
-		"github.com/uber-go/fx":       []string{"github.com/uber-go/fx", "go.uber.org/fx"},
+		"github.com/uber-go/yarpc":    {"github.com/uber-go/yarpc", "go.uber.org/yarpc"},
+		"github.com/uber-go/thriftrw": {"github.com/uber-go/thriftrw", "go.uber.org/thriftrw"},
+		"github.com/uber-go/zap":      {"github.com/uber-go/zap", "go.uber.org/zap"},
+		"github.com/uber-go/atomic":   {"github.com/uber-go/atomic", "go.uber.org/atomic"},
+		"github.com/uber-go/fx":       {"github.com/uber-go/fx", "go.uber.org/fx"},
 
 		// go4.org
-		"github.com/camlistore/go4": []string{"go4.org"},
+		"github.com/camlistore/go4": {"go4.org"},
 
 		// honnef.co
-		"github.com/dominikh/go-staticcheck": []string{"honnef.co/go/staticcheck"},
-		"github.com/dominikh/go-js-dom":      []string{"honnef.co/go/js/dom"},
-		"github.com/dominikh/go-ssa":         []string{"honnef.co/go/ssa"},
+		"github.com/dominikh/go-staticcheck": {"honnef.co/go/staticcheck"},
+		"github.com/dominikh/go-js-dom":      {"honnef.co/go/js/dom"},
+		"github.com/dominikh/go-ssa":         {"honnef.co/go/ssa"},
 
 		// gopkg.in
-		"github.com/go-mgo/mgo":         []string{"github.com/go-mgo/mgo", "gopkg.in/mgo", "labix.org/v1/mgo", "labix.org/v2/mgo"},
-		"github.com/go-yaml/yaml":       []string{"github.com/go-yaml/yaml", "gopkg.in/yaml", "labix.org/v1/yaml", "labix.org/v2/yaml"},
-		"github.com/fatih/set":          []string{"github.com/fatih/set", "gopkg.in/fatih/set"},
-		"github.com/juju/environschema": []string{"github.com/juju/environschema", "gopkg.in/juju/environschema"},
+		"github.com/go-mgo/mgo":         {"github.com/go-mgo/mgo", "gopkg.in/mgo", "labix.org/v1/mgo", "labix.org/v2/mgo"},
+		"github.com/go-yaml/yaml":       {"github.com/go-yaml/yaml", "gopkg.in/yaml", "labix.org/v1/yaml", "labix.org/v2/yaml"},
+		"github.com/fatih/set":          {"github.com/fatih/set", "gopkg.in/fatih/set"},
+		"github.com/juju/environschema": {"github.com/juju/environschema", "gopkg.in/juju/environschema"},
 	}
 	for input, want := range tests {
 		got := repoURIToGoPathPrefixes(input)
@@ -214,11 +214,11 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 
 	inputRefs := map[api.RepoID][]lspext.DependencyReference{
-		repos[0]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true}}},
-		repos[1]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true}}},
-		repos[2]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
-		repos[3]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
-		repos[4]: []lspext.DependencyReference{{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
+		repos[0]: {{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true}}},
+		repos[1]: {{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true}}},
+		repos[2]: {{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
+		repos[3]: {{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
+		repos[4]: {{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
 	}
 
 	for repo, inputRefs := range inputRefs {

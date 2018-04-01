@@ -55,12 +55,12 @@ func mockXLang(fn func(ctx context.Context, mode string, rootURI lsp.DocumentURI
 }
 
 var xlangSupportedLanguages = map[string]struct{}{
-	"go":         struct{}{},
-	"php":        struct{}{},
-	"typescript": struct{}{},
-	"javascript": struct{}{},
-	"java":       struct{}{},
-	"python":     struct{}{},
+	"go":         {},
+	"php":        {},
+	"typescript": {},
+	"javascript": {},
+	"java":       {},
+	"python":     {},
 }
 
 func languagesForRepo(ctx context.Context, repo *types.Repo, commitID api.CommitID) (languages []string, err error) {
