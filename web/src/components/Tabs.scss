@@ -6,6 +6,7 @@
 .tab-bar {
     flex: 0 0 auto;
     display: flex;
+    overflow-x: auto;
 
     &__tab,
     &__spacer,
