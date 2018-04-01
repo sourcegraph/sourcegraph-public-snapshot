@@ -43,6 +43,8 @@ export class Tooltip extends React.PureComponent<Props, State> {
         document.addEventListener('focusin', this.toggleHint)
         document.addEventListener('mouseover', this.toggleHint)
         document.addEventListener('touchend', this.toggleHint)
+        // Don't let click show hint to avoid enter on forms triggering it on 1st button.
+        document.addEventListener('click', this.hideHint)
     }
 
     public componentDidUpdate(): void {
@@ -60,6 +62,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
         document.removeEventListener('focusin', this.toggleHint)
         document.removeEventListener('mouseover', this.toggleHint)
         document.removeEventListener('touchend', this.toggleHint)
+        document.removeEventListener('click', this.hideHint)
         if (this._timeout !== undefined) {
             clearTimeout(this._timeout)
         }
@@ -104,6 +107,13 @@ export class Tooltip extends React.PureComponent<Props, State> {
                 })),
             Tooltip.DELAY
         )
+    }
+
+    private hideHint = (e: Event): void => {
+        if (this._timeout !== undefined) {
+            clearTimeout(this._timeout)
+        }
+        this.setState({ subject: undefined })
     }
 
     /**
