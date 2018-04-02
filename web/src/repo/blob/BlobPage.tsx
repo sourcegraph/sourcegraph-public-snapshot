@@ -24,6 +24,7 @@ import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
 import { makeRepoURI, ParsedRepoURI } from '../index'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { useNewBlobPanel } from '../RepoRevContainer'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
@@ -232,13 +233,14 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                                 history={this.props.history}
                             />
-                            {lprToRange(parseHash(this.props.location.hash)) && (
-                                <BlobPanel
-                                    {...this.props}
-                                    repoID={this.props.repoID}
-                                    position={lprToRange(parseHash(this.props.location.hash))!.start}
-                                />
-                            )}
+                            {useNewBlobPanel &&
+                                lprToRange(parseHash(this.props.location.hash)) && (
+                                    <BlobPanel
+                                        {...this.props}
+                                        repoID={this.props.repoID}
+                                        position={lprToRange(parseHash(this.props.location.hash))!.start}
+                                    />
+                                )}
                         </>
                     )}
                 {!this.state.blobOrError.richHTML &&

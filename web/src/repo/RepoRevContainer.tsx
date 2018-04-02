@@ -52,7 +52,7 @@ interface State {
     resolvedRevOrError?: ResolvedRev | ErrorLike
 }
 
-const useNewBlobPanel = localStorage.getItem('newBlobPanel') !== null || window.context.sourcegraphDotComMode
+export const useNewBlobPanel = localStorage.getItem('newBlobPanel') !== null || window.context.sourcegraphDotComMode
 
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
