@@ -531,7 +531,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                     {node.children.length === 0 && (
                         <tr
                             key={node.filePath}
-                            className={'tree__row' + (node.filePath === store.selectedPath ? '--selected' : '')}
+                            className={'tree__row' + (node.filePath === store.selectedPath ? '--active' : '')}
                         >
                             <td>
                                 <Link
