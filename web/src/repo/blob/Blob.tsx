@@ -130,6 +130,7 @@ interface Props extends AbsoluteRepoFile {
     html: string
     wrapCode: boolean
     renderMode: RenderMode
+    isLightTheme: boolean
 }
 
 interface State {

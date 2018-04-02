@@ -20,11 +20,14 @@ import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
+import { ResizablePanel } from '../panel/Panel'
 import { ErrorLike, isErrorLike } from '../util/errors'
+import { lprToRange, parseHash } from '../util/url'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
 import { BlobPage } from './blob/BlobPage'
+import { BlobReferencesPanel } from './blob/references/BlobReferencesPanel'
 import { DirectoryPage } from './DirectoryPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
 import { RepositoryGraphArea } from './graph/RepositoryGraphArea'
@@ -48,6 +51,8 @@ interface State {
      */
     resolvedRevOrError?: ResolvedRev | ErrorLike
 }
+
+const useNewBlobPanel = localStorage.getItem('newBlobPanel') !== null || window.context.sourcegraphDotComMode
 
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
@@ -249,6 +254,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                             {objectType === 'blob' ? (
                                                 <BlobPage
                                                     repoPath={this.props.repo.uri}
+                                                    repoID={this.props.repo.id}
                                                     commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
                                                     rev={this.props.rev}
                                                     filePath={routeComponentProps.match.params.filePath || ''}
@@ -266,6 +272,35 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                     location={this.props.location}
                                                     history={this.props.history}
                                                 />
+                                            )}
+                                            {useNewBlobPanel ? (
+                                                <ResizablePanel
+                                                    isLightTheme={this.props.isLightTheme}
+                                                    location={this.props.location}
+                                                    history={this.props.history}
+                                                />
+                                            ) : (
+                                                this.props.location.hash.includes('$') && (
+                                                    <BlobReferencesPanel
+                                                        repoPath={this.props.repo.uri}
+                                                        commitID={
+                                                            (this.state.resolvedRevOrError as ResolvedRev).commitID
+                                                        }
+                                                        rev={this.props.rev}
+                                                        viewState={
+                                                            parseHash<'references' | 'references:external'>(
+                                                                this.props.location.hash
+                                                            ).viewState
+                                                        }
+                                                        filePath={routeComponentProps.match.params.filePath || ''}
+                                                        position={
+                                                            lprToRange(parseHash(this.props.location.hash))!.start
+                                                        }
+                                                        location={this.props.location}
+                                                        history={this.props.history}
+                                                        isLightTheme={this.props.isLightTheme}
+                                                    />
+                                                )
                                             )}
                                         </div>
                                     </>

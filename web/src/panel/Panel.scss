@@ -1,7 +1,9 @@
-@import './FileLocations';
-@import './FileLocationsTree';
+@import '../components/Resizable';
+@import '../repo/blob/panel/BlobPanel';
+@import '../repo/blob/references/BlobReferencesPanel';
+@import '../repo/blob/panel/FileLocations';
 
-.blob-panel2 {
+.panel {
     flex: 1 1 50%;
     min-height: 0;
 
@@ -14,6 +16,19 @@
     border-top: 1px solid $color-border;
     width: 100%;
 
+    &--resizable {
+        min-height: 10rem;
+        max-height: 80%;
+    }
+
+    &__empty {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.6;
+    }
+
     &__header {
         flex: none;
         padding: 0.25rem 0.25rem 0.25rem 0.5rem;
@@ -22,7 +37,7 @@
         &-title {
             flex: 1;
 
-            // override .hljs styles
+            // Override .hljs styles (for titles that have syntax highlighting).
             > .hljs {
                 padding: 0 0.25rem 0 0;
                 overflow: hidden;
@@ -34,11 +49,6 @@
             flex: 0;
             opacity: 0.6;
         }
-    }
-
-    &__extra {
-        max-height: 60vh;
-        overflow: auto;
     }
 
     overflow-y: hidden;
@@ -54,22 +64,8 @@
 }
 
 .theme-light {
-    .blob-panel2 {
+    .panel {
         background-color: $color-light-bg-2;
         border-top-color: $color-light-border;
-
-        .result-container {
-            margin-bottom: 0;
-
-            &__header {
-                border-left: none;
-                border-right: none;
-            }
-        }
-
-        .file-match__item {
-            border-left: none;
-            border-right: none;
-        }
     }
 }

@@ -21,12 +21,13 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
+import { lprToRange, parseHash } from '../../util/url'
 import { makeRepoURI, ParsedRepoURI } from '../index'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
-import { BlobPanel } from './BlobPanel'
+import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
@@ -86,6 +87,7 @@ interface Props {
     history: H.History
     isLightTheme: boolean
     repoPath: string
+    repoID: GQLID
     rev: string | undefined
     commitID: string
     filePath: string
@@ -184,76 +186,77 @@ export class BlobPage extends React.PureComponent<Props, State> {
         // renderAs is renderMode but with undefined mapped to the actual mode.
         const renderAs = renderMode || (this.state.blobOrError.richHTML ? 'rendered' : 'code')
 
-        return [
-            <PageTitle key="page-title" title={this.getPageTitle()} />,
-            renderAs === 'code' && (
-                <RepoHeaderActionPortal
-                    position="right"
-                    key="toggle-line-wrap"
-                    priority={99}
-                    element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
-                />
-            ),
-            this.state.blobOrError.richHTML && (
-                <RepoHeaderActionPortal
-                    key="toggle-rendered-file-mode"
-                    position="right"
-                    priority={100}
-                    element={
-                        <ToggleRenderedFileMode
-                            key="toggle-rendered-file-mode"
-                            mode={renderMode || 'rendered'}
+        return (
+            <>
+                <PageTitle title={this.getPageTitle()} />
+                {renderAs === 'code' && (
+                    <RepoHeaderActionPortal
+                        position="right"
+                        priority={99}
+                        element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
+                    />
+                )}
+                {this.state.blobOrError.richHTML && (
+                    <RepoHeaderActionPortal
+                        position="right"
+                        priority={100}
+                        element={
+                            <ToggleRenderedFileMode
+                                key="toggle-rendered-file-mode"
+                                mode={renderMode || 'rendered'}
+                                location={this.props.location}
+                            />
+                        }
+                    />
+                )}
+                {this.state.blobOrError.richHTML &&
+                    renderAs === 'rendered' && (
+                        <RenderedFile
+                            dangerousInnerHTML={this.state.blobOrError.richHTML}
                             location={this.props.location}
                         />
-                    }
-                />
-            ),
-            this.state.blobOrError.richHTML &&
-                renderAs === 'rendered' && (
-                    <RenderedFile
-                        key="rendered-file"
-                        dangerousInnerHTML={this.state.blobOrError.richHTML}
-                        location={this.props.location}
-                    />
-                ),
-            renderAs === 'code' &&
-                !this.state.blobOrError.highlight.aborted && (
-                    <Blob
-                        key="blob"
-                        className="blob-page__blob"
-                        repoPath={this.props.repoPath}
-                        commitID={this.props.commitID}
-                        filePath={this.props.filePath}
-                        html={this.state.blobOrError.highlight.html}
-                        rev={this.props.rev}
-                        wrapCode={this.state.wrapCode}
-                        renderMode={renderMode}
-                        location={this.props.location}
-                        history={this.props.history}
-                    />
-                ),
-            !this.state.blobOrError.richHTML &&
-                this.state.blobOrError.highlight.aborted && (
-                    <div className="blob-page__aborted" key="aborted">
-                        <div className="alert alert-info">
-                            Syntax-highlighting this file took too long. &nbsp;
-                            <button onClick={this.onExtendHighlightingTimeoutClick} className="btn btn-sm btn-primary">
-                                Try again
-                            </button>
+                    )}
+                {renderAs === 'code' &&
+                    !this.state.blobOrError.highlight.aborted && (
+                        <>
+                            <Blob
+                                className="blob-page__blob"
+                                repoPath={this.props.repoPath}
+                                commitID={this.props.commitID}
+                                filePath={this.props.filePath}
+                                html={this.state.blobOrError.highlight.html}
+                                rev={this.props.rev}
+                                wrapCode={this.state.wrapCode}
+                                renderMode={renderMode}
+                                isLightTheme={this.props.isLightTheme}
+                                location={this.props.location}
+                                history={this.props.history}
+                            />
+                            {lprToRange(parseHash(this.props.location.hash)) && (
+                                <BlobPanel
+                                    {...this.props}
+                                    repoID={this.props.repoID}
+                                    position={lprToRange(parseHash(this.props.location.hash))!.start}
+                                />
+                            )}
+                        </>
+                    )}
+                {!this.state.blobOrError.richHTML &&
+                    this.state.blobOrError.highlight.aborted && (
+                        <div className="blob-page__aborted">
+                            <div className="alert alert-info">
+                                Syntax-highlighting this file took too long. &nbsp;
+                                <button
+                                    onClick={this.onExtendHighlightingTimeoutClick}
+                                    className="btn btn-sm btn-primary"
+                                >
+                                    Try again
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                ),
-            <BlobPanel
-                key="blob-panel"
-                repoPath={this.props.repoPath}
-                rev={this.props.rev}
-                commitID={this.props.commitID}
-                filePath={this.props.filePath}
-                isLightTheme={this.props.isLightTheme}
-                location={this.props.location}
-                history={this.props.history}
-            />,
-        ]
+                    )}
+            </>
+        )
     }
 
     private onDidUpdateLineWrap = (value: boolean) => this.setState({ wrapCode: value })

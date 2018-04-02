@@ -1,4 +1,4 @@
-import { Position } from 'vscode-languageserver-types'
+import { Position, Range } from 'vscode-languageserver-types'
 import {
     AbsoluteRepoFile,
     PositionSpec,
@@ -84,6 +84,19 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
     return lpr
 }
 
+export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
+    if (lpr.line === undefined) {
+        return undefined
+    }
+    return {
+        start: { line: lpr.line, character: lpr.character || 0 },
+        end: {
+            line: lpr.endLine || lpr.line,
+            character: lpr.endCharacter || lpr.character || 0,
+        },
+    }
+}
+
 function parseLineOrPosition(
     str: string
 ): { line: undefined; character: undefined } | { line: number; character?: number } {
@@ -125,7 +138,7 @@ function toPositionHashComponent(position: Position): string {
     return position.line.toString() + (position.character ? ':' + position.character : '')
 }
 
-function toViewStateHashComponent(viewState: string | undefined): string {
+export function toViewStateHashComponent(viewState: string | undefined): string {
     return viewState ? `$${viewState}` : ''
 }
 
