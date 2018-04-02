@@ -1,7 +1,7 @@
 /**
  * Returns all but the last element of path, or "." if that would be the empty path.
  */
-export function dirname(path: string): string | undefined {
+export function dirname(path: string): string {
     return (
         path
             .split('/')

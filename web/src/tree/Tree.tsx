@@ -470,7 +470,7 @@ class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
                             className={[
                                 'tree__row',
                                 this.showSubpath(node.filePath) && 'tree__row--expanded',
-                                node.filePath === store.selectedPath && 'tree__row--selected',
+                                node.filePath === store.selectedPath && 'tree__row--active',
                             ]
                                 .filter(c => !!c)
                                 .join(' ')}

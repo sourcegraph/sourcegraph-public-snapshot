@@ -21,12 +21,13 @@
         width: 100%;
         display: table;
 
-        &:hover {
+        &:hover,
+        &--selected {
             background-color: rgba(42, 58, 81, 0.7);
             cursor: pointer;
         }
 
-        &--selected {
+        &--active {
             color: white;
             width: 100%;
             display: table;
@@ -64,12 +65,13 @@
         &__row {
             color: inherit;
 
-            &:hover {
+            &:hover,
+            &--selected {
                 background-color: $color-light-bg-3;
                 color: inherit;
             }
 
-            &--selected {
+            &--active {
                 background-color: $primary;
                 color: $color-light-text-4 !important;
             }

@@ -14,6 +14,7 @@ import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersisten
 import { fetchSite } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
+import { Tree2 } from '../tree/Tree2'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { RepoRevSidebarCommits } from './RepoRevSidebarCommits'
@@ -84,6 +85,8 @@ interface State {
      */
     files?: string[]
 }
+
+const TreeOrTree2 = localStorage.getItem('tree2') === null ? Tree : Tree2
 
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
@@ -184,13 +187,15 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         onSelectTab={this.onSelectTab}
                     >
                         {this.state.files && (
-                            <Tree
+                            <TreeOrTree2
                                 key="files"
                                 repoPath={this.props.repoPath}
                                 rev={this.props.rev}
                                 history={this.props.history}
                                 scrollRootSelector="#explorer"
-                                selectedPath={this.props.filePath || ''}
+                                activePath={this.props.filePath}
+                                selectedPath={this.props.filePath}
+                                activePathIsDir={this.props.isDir}
                                 paths={this.state.files}
                             />
                         )}
