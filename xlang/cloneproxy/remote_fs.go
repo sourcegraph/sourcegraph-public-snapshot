@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sync"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -15,7 +18,7 @@ import (
 )
 
 type remoteFS struct {
-	client *jsonrpc2.Conn
+	conn *jsonrpc2.Conn
 }
 
 // BatchOpen opens all of the content for the specified paths.
@@ -52,6 +55,11 @@ func (fs *remoteFS) BatchOpen(ctx context.Context, paths []string) ([]batchOpenR
 	return results, nil
 }
 
+type batchOpenResult struct {
+	path    string
+	content string
+}
+
 // Open returns the content of the text file for the given path.
 func (fs *remoteFS) Open(ctx context.Context, path string) (string, error) {
 	u := &url.URL{
@@ -61,7 +69,7 @@ func (fs *remoteFS) Open(ctx context.Context, path string) (string, error) {
 	params := lspext.ContentParams{TextDocument: lsp.TextDocumentIdentifier{URI: lsp.DocumentURI(u.String())}}
 	var res lsp.TextDocumentItem
 
-	if err := fs.client.Call(ctx, "textDocument/xcontent", params, &res); err != nil {
+	if err := fs.conn.Call(ctx, "textDocument/xcontent", params, &res); err != nil {
 		return "", errors.Wrap(err, "calling textDocument/xcontent failed")
 	}
 
@@ -73,7 +81,7 @@ func (fs *remoteFS) Walk(ctx context.Context, base string) ([]string, error) {
 	params := lspext.FilesParams{Base: base}
 	var res []lsp.TextDocumentIdentifier
 
-	if err := fs.client.Call(ctx, "workspace/xfiles", &params, &res); err != nil {
+	if err := fs.conn.Call(ctx, "workspace/xfiles", &params, &res); err != nil {
 		return nil, errors.Wrap(err, "calling workspace/xfiles failed")
 	}
 
@@ -92,7 +100,31 @@ func (fs *remoteFS) Walk(ctx context.Context, base string) ([]string, error) {
 	return paths, parseErrors.ErrorOrNil()
 }
 
-type batchOpenResult struct {
-	path    string
-	content string
+func (fs *remoteFS) Clone(ctx context.Context, baseDir string) error {
+	filePaths, err := fs.Walk(ctx, "/")
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch all filePaths during clone")
+	}
+
+	files, err := fs.BatchOpen(ctx, filePaths)
+	if err != nil {
+		return errors.Wrap(err, "failed to batch open files during clone")
+	}
+
+	for _, file := range files {
+		newFilePath := filepath.Join(baseDir, file.path)
+
+		// There is an assumption here that all paths returned from Walk()
+		// point to files, not directories
+		parentDir := filepath.Dir(newFilePath)
+
+		if err := os.MkdirAll(parentDir, os.ModePerm); err != nil {
+			return errors.Wrapf(err, "failed to make parent dirs for %s")
+		}
+
+		if err := ioutil.WriteFile(newFilePath, []byte(file.content), os.ModePerm); err != nil {
+			return errors.Wrapf(err, "failed to write file content for %s", newFilePath)
+		}
+	}
+	return nil
 }

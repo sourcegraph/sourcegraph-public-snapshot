@@ -142,6 +142,7 @@ func TestWalkURIFields(t *testing.T) {
 
 		sort.Strings(collectedURIs)
 		sort.Strings(wantURIStrs)
+
 		if !reflect.DeepEqual(collectedURIs, wantURIStrs) {
 			t.Errorf("%s: got URIs %q, want %q", objStr, collectedURIs, wantURIStrs)
 		}

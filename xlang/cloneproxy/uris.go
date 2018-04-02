@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -16,29 +15,10 @@ import (
 )
 
 func (p *cloneProxy) cloneWorkspaceToCache() error {
-	fs := &remoteFS{client: p.client}
-
-	filePaths, err := fs.Walk(p.ctx, "/")
+	fs := &remoteFS{conn: p.client}
+	err := fs.Clone(p.ctx, p.workspaceCacheDir())
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch all filePaths when cloning workspace")
-	}
-
-	files, err := fs.BatchOpen(p.ctx, filePaths)
-	if err != nil {
-		return errors.Wrap(err, "failed to batch open files when cloning workspace")
-	}
-
-	for _, file := range files {
-		cacheFilePath := filepath.Join(p.workspaceCacheDir(), file.path)
-		cacheFileDir := filepath.Dir(cacheFilePath)
-
-		if err := os.MkdirAll(cacheFileDir, os.ModePerm); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to make parent dirs for %s", cacheFilePath))
-		}
-
-		if err := ioutil.WriteFile(cacheFilePath, []byte(file.content), os.ModePerm); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to write file content for %s", cacheFilePath))
-		}
+		return errors.Wrap(err, "failed to clone workspace to local cache")
 	}
 
 	log.Printf("Cloned workspace to %s", p.workspaceCacheDir())
