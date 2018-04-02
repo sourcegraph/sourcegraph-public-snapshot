@@ -234,7 +234,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row-icon')
                 await page.click('.tree__row-icon')
-                await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="websocket"]')
                 await page.waitForSelector('.tree__row--expanded [data-tree-path="websocket"]')
                 await assertWindowLocation('/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
             })
@@ -244,7 +244,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                 await enableOrAddRepositoryIfNeeded()
                 await page.waitForSelector('.tree__row-label')
                 await page.click('.tree__row-label')
-                await page.waitForSelector('.tree__row--selected [data-tree-path="websocket"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="websocket"]')
                 await page.waitForSelector('.tree__row--expanded [data-tree-path="websocket"]')
                 await assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
@@ -257,7 +257,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.tree__row--selected [data-tree-path="godockerize.go"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="godockerize.go"]')
             })
 
             it('shows partial tree when opening directory', async () => {
@@ -287,16 +287,16 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
 
                 await page.click('.tree')
                 await page.keyboard.press('ArrowUp') // arrow up to 'diff' directory
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="diff"]')
                 await page.keyboard.press('ArrowRight') // arrow right (expand 'diff' directory)
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="diff"]')
                 await page.waitForSelector('.tree__row--expanded [data-tree-path="diff"]')
                 await page.keyboard.press('ArrowRight') // arrow right (move to nested 'diff/testdata' directory)
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="diff/testdata"]')
                 await assertNumRowsExpanded(1) // only `diff` directory is expanded, though `diff/testdata` is expanded
 
                 await page.keyboard.press('ArrowRight') // arrow right (expand 'diff/testdata' directory)
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="diff/testdata"]')
                 await page.waitForSelector('.tree__row--expanded [data-tree-path="diff/testdata"]')
                 await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
@@ -305,14 +305,14 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                 await page.keyboard.press('ArrowDown') // arrow down
                 await page.keyboard.press('ArrowDown') // arrow down
                 await page.keyboard.press('ArrowDown') // arrow down
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata/empty_orig.diff"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="diff/testdata/empty_orig.diff"]')
 
                 await page.keyboard.press('ArrowLeft') // arrow left (navigate immediately up to parent directory `diff/testdata`)
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="diff/testdata"]')
                 await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
                 await page.keyboard.press('ArrowLeft') // arrow left
-                await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]') // `diff/testdata` still selected
+                await page.waitForSelector('.tree__row--active [data-tree-path="diff/testdata"]') // `diff/testdata` still selected
                 await assertNumRowsExpanded(1) // only `diff` directory expanded
             })
         })
@@ -488,7 +488,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
                     )
                     // Verify file tree is highlighting the new path.
-                    return await page.waitForSelector('.tree__row--selected [data-tree-path="diff/diff.pb.go"]')
+                    return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]')
                 })
 
                 it('does navigation (external repo)', async () => {
