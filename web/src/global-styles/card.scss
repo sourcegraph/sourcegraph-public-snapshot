@@ -1,0 +1,10 @@
+$card-bg: transparent;
+$card-border-color: $color-border;
+
+@import 'bootstrap/scss/card';
+
+.theme-light {
+    .card {
+        border-color: $color-light-border;
+    }
+}
