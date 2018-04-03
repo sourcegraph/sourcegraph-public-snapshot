@@ -892,6 +892,8 @@ type GitRefConnection {
     # The total count of Git refs in the connection. This total count may be larger
     # than the number of nodes in this object when the result is paginated.
     totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # A code symbol (e.g., a function, variable, type, class, etc.).

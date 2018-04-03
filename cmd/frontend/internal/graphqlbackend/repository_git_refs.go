@@ -129,3 +129,7 @@ func (r *gitRefConnectionResolver) Nodes() []*gitRefResolver {
 func (r *gitRefConnectionResolver) TotalCount() int32 {
 	return int32(len(r.refs))
 }
+
+func (r *gitRefConnectionResolver) PageInfo() *pageInfo {
+	return &pageInfo{hasNextPage: r.first != nil && int(*r.first) < len(r.refs)}
+}
