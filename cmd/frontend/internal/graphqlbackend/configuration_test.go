@@ -1,10 +1,65 @@
 package graphqlbackend
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
+
+	"github.com/neelance/graphql-go/gqltesting"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
+
+func TestConfigurationMutation_UpdateConfiguration(t *testing.T) {
+	resetMocks()
+	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
+		return &types.User{ID: 1}, nil
+	}
+	db.Mocks.Settings.GetLatest = func(context.Context, api.ConfigurationSubject) (*api.Settings, error) {
+		return &api.Settings{ID: 1, Contents: "{}"}, nil
+	}
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (*api.Settings, error) {
+		if want := `{
+  "p": {
+    "x": 123
+  }
+}`; contents != want {
+			t.Errorf("got %q, want %q", contents, want)
+		}
+		return &api.Settings{ID: 2, Contents: contents}, nil
+	}
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+			Schema:  GraphQLSchema,
+			Query: `
+				mutation($value: JSONValue) {
+					configurationMutation(input: {subject: "VXNlcjox", lastID: 1}) {
+						updateConfiguration(input: {property: "p", value: $value}) {
+							empty {
+								alwaysNil
+							}
+						}
+					}
+				}
+			`,
+			Variables: map[string]interface{}{"value": map[string]int{"x": 123}},
+			ExpectedResult: `
+				{
+					"configurationMutation": {
+						"updateConfiguration": {
+							"empty": null
+						}
+					}
+				}
+			`,
+		},
+	})
+}
 
 func TestMergeConfigs(t *testing.T) {
 	orig := deeplyMergedConfigFields

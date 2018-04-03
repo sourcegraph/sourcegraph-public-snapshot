@@ -342,7 +342,7 @@ func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct
 
 type updateConfigurationInput struct {
 	Property string
-	Value    *jsonString
+	Value    *jsonValue
 }
 
 type updateConfigurationPayload struct{}
@@ -357,16 +357,15 @@ func (r *configurationMutationResolver) UpdateConfiguration(ctx context.Context,
 		return nil, err
 	}
 
+	remove := args.Input.Value == nil
 	var value interface{}
 	if args.Input.Value != nil {
-		if err := json.Unmarshal([]byte(*args.Input.Value), &value); err != nil {
-			return nil, err
-		}
+		value = args.Input.Value.value
 	}
 
 	keyPath := jsonx.PropertyPath(args.Input.Property)
 	_, err = r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
-		if args.Input.Value == nil {
+		if remove {
 			edits, _, err = jsonx.ComputePropertyRemoval(config, keyPath, formatOptions)
 		} else {
 			edits, _, err = jsonx.ComputePropertyEdit(config, keyPath, value, nil, formatOptions)

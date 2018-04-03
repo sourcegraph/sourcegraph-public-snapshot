@@ -93,8 +93,8 @@ input CreateThreadInput {
     lines: ThreadLinesInput
 }
 
-# A string containing valid JSON.
-scalar JSONString
+# A valid JSON value.
+scalar JSONValue
 
 type Mutation {
     createThread(input: CreateThreadInput!): Thread!
@@ -304,17 +304,18 @@ type ConfigurationMutation {
     deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
 }
 
-# Input to ConfigurationMutation.updateConfiguration. If multiple fields are specified,
-# then their respective operations are performed sequentially in the order in which the
-# fields appear in this type.
+# Input to ConfigurationMutation.updateConfiguration.
 input UpdateConfigurationInput {
     # The name of the property to update.
     #
     # Inserting into an existing array is not yet supported.
     property: String!
-    # The new JSON-encoded value to insert. If the field's value is null, the property is
-    # removed. (This is different from the field's value being the string "null".)
-    value: JSONString
+    # The new JSON-encoded value to insert. If the field's value is not set, the property is removed. (This is
+    # different from the field's value being the JSON null value.)
+    #
+    # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
+    # or else the GraphQL parser will return an error.
+    value: JSONValue
 }
 
 # The payload for ConfigurationMutation.updateConfiguration.
