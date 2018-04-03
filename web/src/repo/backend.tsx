@@ -91,7 +91,9 @@ export const resolveRev = memoizeObservable(
                         commit(rev: $rev) {
                             oid
                         }
-                        defaultBranch
+                        defaultBranch {
+                            abbrevName
+                        }
                         redirectURL
                     }
                 }
@@ -119,7 +121,7 @@ export const resolveRev = memoizeObservable(
                 }
                 return {
                     commitID: data.repository.commit.oid,
-                    defaultBranch: data.repository.defaultBranch,
+                    defaultBranch: data.repository.defaultBranch.abbrevName,
                 }
             })
         ),

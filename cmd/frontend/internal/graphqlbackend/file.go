@@ -158,7 +158,7 @@ func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
 		if err != nil {
 			return nil, nil
 		}
-		url := fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", phabRepo.URL, phabRepo.Callsign, *defaultBranch, r.path, rev)
+		url := fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", phabRepo.URL, phabRepo.Callsign, defaultBranch.DisplayName(), r.path, rev)
 		return &url, nil
 	}
 
@@ -195,7 +195,7 @@ func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
 		if err != nil {
 			return nil, nil
 		}
-		url := fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", phabRepo.URL, phabRepo.Callsign, *defaultBranch, r.path, rev)
+		url := fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", phabRepo.URL, phabRepo.Callsign, defaultBranch.DisplayName(), r.path, rev)
 		return &url, nil
 	}
 

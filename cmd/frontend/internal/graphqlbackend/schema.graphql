@@ -736,9 +736,6 @@ type Repository implements Node {
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress")
     # The commit that was last indexed for cross-references, if any.
     lastIndexedRevOrLatest: GitCommit
-    # The repository's default Git branch. If the repository is currently being cloned or is empty,
-    # this field will be null.
-    defaultBranch: String
     # Information about the text search index for this repository, or null if text search indexing
     # is not enabled or supported for this repository.
     textSearchIndex: RepositoryTextSearchIndex
@@ -748,6 +745,9 @@ type Repository implements Node {
     externalURL: String
     # The type of code host that hosts this repository at its external url (e.g. GitHub, Phabricator).
     hostType: String
+    # The repository's default Git branch (HEAD symbolic ref). If the repository is currently being cloned or is
+    # empty, this field will be null.
+    defaultBranch: GitRef
     # The repository's Git refs.
     gitRefs(
         # Returns the first n Git refs from the list.

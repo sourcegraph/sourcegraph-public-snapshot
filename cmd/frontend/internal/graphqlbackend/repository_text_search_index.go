@@ -80,14 +80,14 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	// We assume that the default branch for enabled repositories is always configured to be indexed.
 	//
 	// TODO(sqs): support configuring which branches should be indexed (add'l branches, not default branch, etc.).
-	defaultBranch, err := r.repo.DefaultBranch(ctx)
+	defaultBranchRef, err := r.repo.DefaultBranch(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if defaultBranch == nil {
+	if defaultBranchRef == nil {
 		return []*repositoryTextSearchIndexedRef{}, nil
 	}
-	refNames := []string{"refs/heads/" + *defaultBranch}
+	refNames := []string{defaultBranchRef.name}
 
 	refs := make([]*repositoryTextSearchIndexedRef, len(refNames))
 	for i, refName := range refNames {

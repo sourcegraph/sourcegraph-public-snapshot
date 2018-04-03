@@ -122,9 +122,9 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 	return r.Commit(ctx, &struct{ Rev string }{Rev: "HEAD"})
 }
 
-func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error) {
+func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
 	vcsrepo := backend.Repos.CachedVCS(r.repo)
-	defaultBranch, err := vcsrepo.GitCmdRaw(ctx, []string{"symbolic-ref", "--short", "HEAD"})
+	ref, err := vcsrepo.GitCmdRaw(ctx, []string{"symbolic-ref", "HEAD"})
 
 	// If we fail to get the default branch due to cloning, we return nothing.
 	if err != nil {
@@ -133,8 +133,7 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*string, error)
 		}
 		return nil, err
 	}
-	t := strings.TrimSpace(defaultBranch)
-	return &t, nil
+	return &gitRefResolver{repo: r, name: strings.TrimSpace(ref)}, nil
 }
 
 func (r *repositoryResolver) Language() string {
