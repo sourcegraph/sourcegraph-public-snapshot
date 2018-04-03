@@ -2,7 +2,7 @@ import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
 import * as React from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
 import { AnonymousSubscription, Subscription } from 'rxjs/Subscription'
 import { PopoverButton } from '../components/PopoverButton'
@@ -176,6 +176,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <div className="repo-header__section">
                     <PopoverButton
                         className="repo-header__section-btn repo-header__repo"
+                        link={`/${this.props.repo.uri}`}
                         popoverElement={
                             <RepositoriesPopover
                                 currentRepo={this.props.repo.id}
@@ -187,13 +188,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         hideOnChange={this.props.repo.uri}
                     >
                         {repoDir ? `${repoDir}/` : ''}
-                        <Link
-                            onClick={this.onClickRepoBasename}
-                            to={`/${this.props.repo.uri}`}
-                            className="repo-header__repo-link"
-                        >
-                            {repoBase}
-                        </Link>
+                        <span className="repo-header__repo-basename">{repoBase}</span>
                     </PopoverButton>
                     {!this.props.repo.enabled && (
                         <div
@@ -231,10 +226,6 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 )}
             </div>
         )
-    }
-
-    private onClickRepoBasename = (e: React.MouseEvent<HTMLElement>): void => {
-        e.stopPropagation()
     }
 }
 

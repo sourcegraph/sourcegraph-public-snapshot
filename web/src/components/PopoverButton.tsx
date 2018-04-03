@@ -1,5 +1,6 @@
 import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 
@@ -13,6 +14,11 @@ interface Props {
      * The button label.
      */
     children?: React.ReactFragment
+
+    /**
+     * The link destination URL for the button. If set, the caret is outside of the button.
+     */
+    link?: string
 
     /**
      * The element to display in the popover.
@@ -106,17 +112,41 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactFragment {
+        const C = this.props.link ? Link : (props: any) => <div {...props} />
+        const popoverAnchor = (
+            <div ref={this.setPopoverRef} className="popover-button__popover">
+                {this.state.open && this.props.popoverElement}
+            </div>
+        )
         return (
             <div
                 className={`popover-button ${this.state.open ? 'popover-button--open' : ''} ${this.props.className ||
-                    ''}`}
-                onClick={this.onClick}
+                    ''} ${
+                    this.props.link ? 'popover-button__container' : 'popover-button__btn popover-button__anchor'
+                }`}
                 ref={this.setRootRef}
             >
-                {this.props.children} <CaretDownIcon className="icon-inline popover-button__icon" />
-                <div ref={this.setPopoverRef} className="popover-button__popover">
-                    {this.state.open && this.props.popoverElement}
-                </div>
+                <C
+                    className={
+                        this.props.link ? 'popover-button__btn popover-button__btn--link' : 'popover-button__container'
+                    }
+                    to={this.props.link}
+                    onClick={this.props.link ? this.onClickLink : this.onClick}
+                >
+                    {this.props.children}{' '}
+                    {!this.props.link && <CaretDownIcon className="icon-inline popover-button__icon" />}
+                </C>
+                {this.props.link ? (
+                    <div className="popover-button__anchor">
+                        <CaretDownIcon
+                            className="icon-inline popover-button__icon popover-button__icon--outside"
+                            onClick={this.onClick}
+                        />
+                        {popoverAnchor}
+                    </div>
+                ) : (
+                    popoverAnchor
+                )}
             </div>
         )
     }
@@ -130,6 +160,10 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         } else {
             PopoverButton.opens.next(this.props.popoverKey)
         }
+    }
+
+    private onClickLink = (e: React.MouseEvent<HTMLElement>): void => {
+        this.hides.next()
     }
 
     private onGlobalKeyDown = (event: KeyboardEvent) => {
