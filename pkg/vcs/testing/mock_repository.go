@@ -37,6 +37,8 @@ type MockRepository struct {
 	Search_ func(context.Context, api.CommitID, vcs.SearchOptions) ([]*vcs.SearchResult, error)
 
 	RawLogDiffSearch_ func(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error)
+
+	BehindAhead_ func(ctx context.Context, left, right string) (*vcs.BehindAhead, error)
 }
 
 var _ vcs.Repository = MockRepository{}
@@ -115,4 +117,8 @@ func (r MockRepository) Search(ctx context.Context, commit api.CommitID, opt vcs
 
 func (r MockRepository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error) {
 	return r.RawLogDiffSearch_(ctx, opt)
+}
+
+func (r MockRepository) BehindAhead(ctx context.Context, left, right string) (*vcs.BehindAhead, error) {
+	return r.BehindAhead_(ctx, left, right)
 }

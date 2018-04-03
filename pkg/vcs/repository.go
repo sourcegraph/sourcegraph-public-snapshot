@@ -130,6 +130,10 @@ type Repository interface {
 	// partial output from the underlying git command (because, e.g., it
 	// timed out during execution and only returned partial output).
 	RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error)
+
+	// BehindAhead returns the behind/ahead commit counts information
+	// for right vs. left (both Git revspecs).
+	BehindAhead(ctx context.Context, left, right string) (*BehindAhead, error)
 }
 
 // BlameOptions configures a blame.

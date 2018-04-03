@@ -141,6 +141,25 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	}
 }
 
+func (r *gitCommitResolver) BehindAhead(ctx context.Context, args *struct {
+	Revspec string
+}) (*behindAheadCountsResolver, error) {
+	vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
+	counts, err := vcsrepo.BehindAhead(ctx, args.Revspec, string(r.oid))
+	if err != nil {
+		return nil, err
+	}
+	return &behindAheadCountsResolver{
+		behind: int32(counts.Behind),
+		ahead:  int32(counts.Ahead),
+	}, nil
+}
+
+type behindAheadCountsResolver struct{ behind, ahead int32 }
+
+func (r *behindAheadCountsResolver) Behind() int32 { return r.behind }
+func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
+
 func (r *gitCommitResolver) repoRevURL() string {
 	url := r.repo.URL()
 	var rev string

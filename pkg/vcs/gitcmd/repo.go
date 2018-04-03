@@ -222,7 +222,7 @@ func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*
 			}
 		}
 		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = r.branchesBehindAhead(ctx, name, opt.BehindAheadBranch)
+			branch.Counts, err = r.BehindAhead(ctx, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
 			if err != nil {
 				return nil, err
 			}
@@ -249,16 +249,19 @@ func (r *Repository) branches(ctx context.Context, args ...string) ([]string, er
 	return branches, nil
 }
 
-// branchesBehindAhead returns the behind/ahead commit counts information for branch, against base branch.
-func (r *Repository) branchesBehindAhead(ctx context.Context, branch, base string) (*vcs.BehindAhead, error) {
-	if err := checkSpecArgSafety(branch); err != nil {
+// BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git revspecs).
+func (r *Repository) BehindAhead(ctx context.Context, left, right string) (*vcs.BehindAhead, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BehindAhead")
+	defer span.Finish()
+
+	if err := checkSpecArgSafety(left); err != nil {
 		return nil, err
 	}
-	if err := checkSpecArgSafety(base); err != nil {
+	if err := checkSpecArgSafety(right); err != nil {
 		return nil, err
 	}
 
-	cmd := r.command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("refs/heads/%s...refs/heads/%s", base, branch))
+	cmd := r.command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, err

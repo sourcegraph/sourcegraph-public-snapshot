@@ -1035,6 +1035,8 @@ type GitObject {
     oid: GitObjectID!
     # The abbreviated form of this object's OID.
     abbreviatedOID: String!
+    # The commit object, if it is a commit and it exists; otherwise null.
+    commit: GitCommit
 }
 
 # A Git revspec expression that (possibly) evaluates to a Git revision.
@@ -1124,6 +1126,8 @@ type GitCommit implements Node {
         # Return commits that affect the path.
         path: String
     ): GitCommitConnection!
+    # Returns the number of commits that this commit is behind and ahead of revspec.
+    behindAhead(revspec: String!): BehindAheadCounts!
     # Symbols defined as of this commit. (All symbols, not just symbols that were newly defined in this commit.)
     symbols(
         # Returns the first n symbols from the list.
@@ -1147,6 +1151,14 @@ type GitCommit implements Node {
         # Return dependencies matching the query.
         query: String
     ): DependencyConnection!
+}
+
+# A set of Git behind/ahead counts for one commit relative to another.
+type BehindAheadCounts {
+    # The number of commits behind the other commit.
+    behind: Int!
+    # The number of commits ahead of the other commit.
+    ahead: Int!
 }
 
 type Signature {

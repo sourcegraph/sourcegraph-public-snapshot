@@ -35,12 +35,16 @@ func isValidGitObjectID(s string) bool {
 }
 
 type gitObject struct {
-	oid gitObjectID
+	repo *repositoryResolver
+	oid  gitObjectID
 }
 
 func (o *gitObject) OID(ctx context.Context) (gitObjectID, error) { return o.oid, nil }
 func (o *gitObject) AbbreviatedOID(ctx context.Context) (string, error) {
 	return string(o.oid[:7]), nil
+}
+func (o *gitObject) Commit(ctx context.Context) (*gitCommitResolver, error) {
+	return o.repo.Commit(ctx, &struct{ Rev string }{Rev: string(o.oid)})
 }
 
 type gitObjectResolver struct {
@@ -74,4 +78,12 @@ func (o *gitObjectResolver) AbbreviatedOID(ctx context.Context) (string, error) 
 		return "", err
 	}
 	return string(oid[:7]), nil
+}
+
+func (o *gitObjectResolver) Commit(ctx context.Context) (*gitCommitResolver, error) {
+	oid, err := o.resolve(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return o.repo.Commit(ctx, &struct{ Rev string }{Rev: string(oid)})
 }

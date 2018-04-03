@@ -143,5 +143,5 @@ func (r *repositoryTextSearchIndexedRef) IndexedCommit() *gitObject {
 	if r.indexedCommit == "" {
 		return nil
 	}
-	return &gitObject{oid: r.indexedCommit}
+	return &gitObject{repo: r.ref.repo, oid: r.indexedCommit}
 }

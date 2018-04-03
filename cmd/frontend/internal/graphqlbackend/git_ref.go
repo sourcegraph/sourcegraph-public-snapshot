@@ -105,9 +105,10 @@ func (r *gitRefResolver) Type() string        { return gitRefType(r.name) }
 func (r *gitRefResolver) Target() interface {
 	OID(context.Context) (gitObjectID, error)
 	AbbreviatedOID(context.Context) (string, error)
+	Commit(context.Context) (*gitCommitResolver, error)
 } {
 	if r.target != "" {
-		return &gitObject{oid: r.target}
+		return &gitObject{repo: r.repo, oid: r.target}
 	}
 	return &gitObjectResolver{repo: r.repo, revspec: r.name}
 }
