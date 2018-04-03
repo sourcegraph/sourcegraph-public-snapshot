@@ -222,7 +222,7 @@ func main() {
 		coverageFile := path + "/coverage.txt"
 		pipeline.AddStep(":go:",
 			Cmd("go test ./"+path+" -v -race -i"),
-			Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic"),
+			Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic -coverpkg=sourcegraph.com/sourcegraph/sourcegraph/..."),
 			ArtifactPaths(coverageFile))
 	}
 
