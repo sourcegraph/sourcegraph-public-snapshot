@@ -154,11 +154,6 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             Telemetry
                         </NavLink>
                     </li>
-                    <li className="sidebar__item">
-                        <a href="/-/debug/" className="sidebar__item-link">
-                            Instrumentation
-                        </a>
-                    </li>
                 </ul>
                 <div className="sidebar__item sidebar__action">
                     <NavLink
@@ -169,6 +164,11 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                         <FeedIcon className="icon-inline sidebar__action-icon" />
                         API console
                     </NavLink>
+                </div>
+                <div className="sidebar__item sidebar__action">
+                    <a href="/-/debug/" className="sidebar__action-button btn btn-link">
+                        Instrumentation
+                    </a>
                 </div>
             </div>
         )
