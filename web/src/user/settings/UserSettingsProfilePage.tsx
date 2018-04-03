@@ -137,7 +137,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
 
                         // Handle when username changes.
                         if (this.state.username !== undefined && this.state.username !== this.props.user.username) {
-                            window.location.href = `/users/${this.state.username}/settings/profile`
+                            this.props.history.push(`/users/${this.state.username}/settings/profile`)
                             return
                         }
 
