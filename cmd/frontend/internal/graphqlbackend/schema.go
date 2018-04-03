@@ -1013,6 +1013,8 @@ type GitRef implements Node {
     target: GitObject!
     # The associated repository.
     repository: Repository!
+    # The URL to this Git ref.
+    url: String!
 }
 
 # ALl possible types of Git refs.
