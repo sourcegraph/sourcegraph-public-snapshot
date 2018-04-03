@@ -146,7 +146,7 @@ export class OrgArea extends React.Component<Props> {
         return (
             <div className="org-area area--vertical">
                 <OrgHeader className="area--vertical__header" {...this.props} {...transferProps} />
-                <div className="area--vertical__content org-area__content">
+                <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
                         <Switch>
                             <Route

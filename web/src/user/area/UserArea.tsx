@@ -172,7 +172,7 @@ export class UserArea extends React.Component<Props> {
         return (
             <div className="user-area area--vertical">
                 <UserHeader className="area--vertical__header" {...this.props} {...transferProps} />
-                <div className="area--vertical__content user-area__content">
+                <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
                         <Switch>
                             <Route

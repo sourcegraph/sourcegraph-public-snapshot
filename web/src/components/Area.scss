@@ -47,16 +47,15 @@ $area-max-width: 54rem;
     flex-direction: column;
     width: 100%;
 
-    &__header {
-        &-inner {
-            max-width: $area-max-width;
-            margin: 0 auto;
-        }
-    }
+    &__header,
     &__content {
         &-inner {
             max-width: $area-max-width;
             margin: 0 auto;
         }
+    }
+
+    &__content {
+        padding: 1rem 0.5rem;
     }
 }
