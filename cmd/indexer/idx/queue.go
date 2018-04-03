@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -104,10 +103,6 @@ func SecondaryQueue(ctx context.Context) <-chan qitem {
 	return c
 }
 
-type graphQLQuery struct {
-	Query string `json:"query"`
-}
-
 const gqlSearchQuery = `query {
   site {
     repositories(orderBy:REPO_CREATED_AT, notCIIndexed:true, descending:true, first:1000) {
@@ -141,7 +136,7 @@ func listRepos(ctx context.Context) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "Encode")
 	}
 
-	url, err := gqlURL()
+	url, err := gqlURL("ListRepos")
 	if err != nil {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}
@@ -160,13 +155,4 @@ func listRepos(ctx context.Context) (*gqlSearchResponse, error) {
 		return res, fmt.Errorf("graphql: errors: %v", res.Errors)
 	}
 	return res, nil
-}
-
-func gqlURL() (string, error) {
-	u, err := url.Parse(api.InternalClient.URL)
-	if err != nil {
-		return "", err
-	}
-	u.Path = "/.api/graphql"
-	return u.String(), nil
 }

@@ -2,10 +2,13 @@ package conf
 
 import (
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
+	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 // SearchTimeoutParameterEnabled returns true if SearchTimeoutParameter experiment is enabled.
@@ -68,6 +71,19 @@ func HasGitLabDotComToken() bool {
 	return false
 }
 
+// EnabledLangservers returns the langservers that are not disabled.
+func EnabledLangservers() []schema.Langservers {
+	all := Get().Langservers
+	results := make([]schema.Langservers, 0, len(all))
+	for _, langserver := range all {
+		if langserver.Disabled {
+			continue
+		}
+		results = append(results, langserver)
+	}
+	return results
+}
+
 // GitHubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
 // This can be used for the purposes of generating external GitHub enterprise links.
 func GitHubEnterpriseURLs() map[string]string {
@@ -90,4 +106,26 @@ func addWatchers() {
 			return urls
 		})
 	})
+}
+
+// DeployType tells the deployment type.
+func DeployType() string {
+	return os.Getenv("DEPLOY_TYPE")
+}
+
+// IsDataCenter tells if the given deployment type is Data Center or, if not, Server.
+func IsDataCenter(deployType string) bool {
+	return deployType == "datacenter"
+}
+
+// DebugManageDocker tells if Docker language servers should be managed or not.
+//
+// This only exists for dev mode / debugging purposes, and should never be used
+// in a production setting.
+func DebugManageDocker() bool {
+	v, err := strconv.ParseBool(os.Getenv("DEBUG_MANAGE_DOCKER"))
+	if err != nil {
+		return true // always manage Docker when not set
+	}
+	return v
 }

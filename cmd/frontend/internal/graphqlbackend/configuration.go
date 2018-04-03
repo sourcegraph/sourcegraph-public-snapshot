@@ -366,9 +366,9 @@ func (r *configurationMutationResolver) UpdateConfiguration(ctx context.Context,
 	keyPath := jsonx.PropertyPath(args.Input.Property)
 	_, err = r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 		if remove {
-			edits, _, err = jsonx.ComputePropertyRemoval(config, keyPath, formatOptions)
+			edits, _, err = jsonx.ComputePropertyRemoval(config, keyPath, conf.FormatOptions)
 		} else {
-			edits, _, err = jsonx.ComputePropertyEdit(config, keyPath, value, nil, formatOptions)
+			edits, _, err = jsonx.ComputePropertyEdit(config, keyPath, value, nil, conf.FormatOptions)
 		}
 		return edits, err
 	})
@@ -429,5 +429,3 @@ func (r *configurationMutationResolver) getCurrentConfig(ctx context.Context) (s
 
 	return config, nil
 }
-
-var formatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}

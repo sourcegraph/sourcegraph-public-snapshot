@@ -9,6 +9,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 var LSPEnabled bool
@@ -42,6 +43,21 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 		return fmt.Errorf("Repos.GetInventory failed: %s", err)
 	}
 	lang := inv.PrimaryProgrammingLanguage()
+
+	// Only auto-enable language servers if not running in Data Center mode and
+	// if not explicitly disabled in dev mode.
+	if !conf.IsDataCenter(conf.DeployType()) && conf.DebugManageDocker() {
+		// Automatically enable the language server for each language detected in
+		// the repository.
+		for _, language := range inv.Languages {
+			err := langServersEnableLanguage(w.Ctx, strings.ToLower(language.Name))
+			if err != nil && !strings.Contains(err.Error(), "language not supported") {
+				// Failure here should never be fatal to the rest of the
+				// indexing operations.
+				log15.Error("failed to automatically enable language server", "language", strings.ToLower(language.Name), "error", err)
+			}
+		}
+	}
 
 	// Update global refs & packages index
 	if !repo.Fork() && LSPEnabled {

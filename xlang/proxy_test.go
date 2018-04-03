@@ -29,11 +29,13 @@ import (
 
 func init() {
 	// Use in-process Go language server for tests.
-	proxy.ServersByMode["go"] = func() (io.ReadWriteCloser, error) {
-		// Run in-process for easy development (no recompiles, etc.).
-		a, b := proxy.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
-		return b, nil
+	proxy.ServersByMode = map[string]func() (io.ReadWriteCloser, error){
+		"go": func() (io.ReadWriteCloser, error) {
+			// Run in-process for easy development (no recompiles, etc.).
+			a, b := proxy.InMemoryPeerConns()
+			jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
+			return b, nil
+		},
 	}
 }
 

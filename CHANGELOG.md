@@ -20,6 +20,9 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
   * When `timeout:` is provided, all result kinds are given the full timeout to complete.
 * A new user settings tokens page was added that allows users to obtain a token that they can use to authenticate to the Sourcegraph API.
 * Code intelligence indexes are now built for all repositories in the background, regardless of whether or not they are visited directly by a user.
+* Language servers are now automatically enabled when visiting a repository. For example, visiting a Go repository will now automatically download and run the relevant Docker container for Go code intelligence.
+  * This change only affects Sourcegraph Server users, not Data Center users.
+  * You will need to use the new `docker run` command at https://about.sourcegraph.com/docs/server/ in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://about.sourcegraph.com/docs/code-intelligence/install for more information.
 
 ## 2.6.8
 

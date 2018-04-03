@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -68,7 +67,7 @@ func updateURL() string {
 	q := url.Values{}
 	q.Set("version", ProductVersion)
 	q.Set("site", siteid.Get())
-	q.Set("deployType", os.Getenv("DEPLOY_TYPE"))
+	q.Set("deployType", conf.DeployType())
 	count, err := useractivity.GetUsersActiveTodayCount()
 	if err != nil {
 		log15.Error("useractivity.GetUsersActiveTodayCount failed", "error", err)

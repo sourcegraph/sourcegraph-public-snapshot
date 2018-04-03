@@ -460,6 +460,11 @@ const SiteSchemaJSON = `{
                 }
               ]
             }
+          },
+          "disabled": {
+            "description": "Whether or not this language server is disabled.",
+            "type": "boolean",
+            "default": false
           }
         }
       }

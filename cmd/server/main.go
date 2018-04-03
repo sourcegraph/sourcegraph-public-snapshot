@@ -17,6 +17,8 @@ import (
 //docker:install curl
 //docker:run curl -o /usr/local/bin/syntect_server https://storage.googleapis.com/sourcegraph-artifacts/syntect_server/01c34269f728ddce8c44b26b0c9e2719 && chmod +x /usr/local/bin/syntect_server
 
+//docker:install docker
+
 // defaultEnv is environment variables that will be set if not already set.
 var defaultEnv = map[string]string{
 	// Sourcegraph services running in this container

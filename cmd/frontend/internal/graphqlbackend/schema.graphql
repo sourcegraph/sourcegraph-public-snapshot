@@ -240,6 +240,8 @@ type Mutation {
     # Updates the site configuration. Returns whether or not a restart is
     # needed for the update to be applied
     updateSiteConfiguration(input: String!): Boolean!
+    # Manages language servers.
+    langServers: LangServersMutation
     # Sets whether the user with the specified user ID is a site admin.
     #
     # 🚨 SECURITY: Only trusted users should be given site admin permissions.
@@ -250,6 +252,32 @@ type Mutation {
     # Reloads the site by restarting the server. This is not supported for all deployment
     # types. This may cause downtime.
     reloadSite: EmptyResponse
+}
+
+# Mutations for language servers.
+type LangServersMutation {
+    # Enables the language server for the given language.
+    #
+    # Any user can perform this mutation, unless the language has been
+    # explicitly disabled.
+    enable(language: String!): EmptyResponse
+
+    # Disables the language server for the given language.
+    #
+    # Only admins can perform this action. After disabling, it is impossible
+    # for plain users to enable the language server for this language (until an
+    # admin re-enables it).
+    disable(language: String!): EmptyResponse
+
+    # Restarts the language server for the given language.
+    #
+    # Only admins can perform this action.
+    restart(language: String!): EmptyResponse
+
+    # Updates the language server for the given language.
+    #
+    # Only admins can perform this action.
+    update(language: String!): EmptyResponse
 }
 
 # Input for Mutation.configuration, which contains fields that all configuration
@@ -1432,6 +1460,62 @@ type ThreadConnection {
     totalCount: Int!
 }
 
+# A language server.
+type LangServer {
+    # "go", "java", "typescript", etc.
+    language: String!
+
+    # Whether or not we are running in Data Center mode.
+    dataCenter: Boolean!
+
+    # Whether or not the language server for this language is enabled.
+    #
+    # In Data Center, this field indicates if the language is configured.
+    enabled: Boolean!
+
+    # Whether or not the language server is being downloaded, starting, restarting.
+    #
+    # Always false in Data Center.
+    pending: Boolean!
+
+    # Whether or not the current user can enable the language server or not.
+    #
+    # Always false in Data Center.
+    canEnable: Boolean!
+
+    # Whether or not the current user can disable the language server or not.
+    #
+    # Always false in Data Center.
+    canDisable: Boolean!
+
+    # Whether or not the current user can restart the language server or not.
+    #
+    # Always false in Data Center.
+    canRestart: Boolean!
+
+    # Whether or not the current user can update the language server or not.
+    #
+    # Always false in Data Center.
+    canUpdate: Boolean!
+
+    # Indicates whether or not the language server is healthy or
+    # unhealthy. Examples include:
+    #
+    #   Healthy:
+    #       - Server is running, experiencing no issues.
+    #       - Server is not running, currently being downloaded.
+    #       - Server is not running, currently starting or restarting.
+    #
+    #   Unhealthy:
+    #       - Server is running, experiencing restarts / OOMs often.
+    #       - Server is not running, an error is preventing startup.
+    #
+    # The value is true ("healthy") if the language server is not enabled.
+    #
+    # Always false in Data Center.
+    healthy: Boolean!
+}
+
 # RepoOrderBy enumerates the ways a repositories-list result set can
 # be ordered.
 enum RepoOrderBy {
@@ -1505,6 +1589,8 @@ type Site implements ConfigurationSubject {
         # Returns the first n threads from the list.
         first: Int
     ): ThreadConnection!
+    # Lists all language servers.
+    langServers: [LangServer!]!
     # The build version of the Sourcegraph Server software that is running on this site (of the form
     # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
     buildVersion: String!

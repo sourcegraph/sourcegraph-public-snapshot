@@ -55,9 +55,7 @@ func run() error {
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
 
-	if err := proxy.RegisterServers(); err != nil {
-		return err
-	}
+	proxy.RegisterServers()
 
 	lis, err := net.Listen("tcp", *addr)
 	if err != nil {

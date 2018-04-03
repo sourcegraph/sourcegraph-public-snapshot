@@ -182,6 +182,9 @@ func Main() error {
 	goroutine.Go(func() {
 		bg.MigrateOrgSlackWebhookURLs(context.Background())
 	})
+	goroutine.Go(func() {
+		bg.StartLangServers(context.Background())
+	})
 	go updatecheck.Start()
 	go useractivity.MigrateUserActivityData(context.Background())
 

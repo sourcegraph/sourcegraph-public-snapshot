@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventlogger"
 
 	"github.com/coreos/go-semver/semver"
@@ -37,7 +38,7 @@ var (
 )
 
 func getLatestRelease(deployType string) build {
-	if deployType == "datacenter" {
+	if conf.IsDataCenter(deployType) {
 		return latestReleaseDataCenterBuild
 	}
 	return latestReleaseServerBuild

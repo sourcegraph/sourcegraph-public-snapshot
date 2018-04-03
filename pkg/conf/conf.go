@@ -2,7 +2,6 @@ package conf
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -141,6 +142,8 @@ func init() {
 					}
 				}
 				watchersMu.Unlock()
+			} else if signalDoneReading != nil {
+				close(signalDoneReading)
 			}
 		}
 	}()
@@ -260,6 +263,7 @@ var doNotRequireRestart = []string{
 	"disableAutoGitUpdates",
 	"corsOrigin",
 	"dontIncludeSymbolResultsByDefault",
+	"langservers",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
@@ -343,3 +347,34 @@ func parseJSONTag(tag string) string {
 	}
 	return tag
 }
+
+// Edit invokes the provided function to compute edits to the site
+// configuration. It then applies and writes them.
+//
+// The computation function is provided the current configuration, which should
+// NEVER be modified in any way. Always copy values.
+func Edit(computeEdits func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error)) error {
+	current := Get()
+	raw := Raw()
+
+	// Compute edits.
+	edits, err := computeEdits(current, raw)
+	if err != nil {
+		return errors.Wrap(err, "computeEdits")
+	}
+
+	// Apply edits and write out new configuration.
+	newConfig, err := jsonx.ApplyEdits(raw, edits...)
+	if err != nil {
+		return errors.Wrap(err, "jsonx.ApplyEdits")
+	}
+	_, err = Write(newConfig)
+	if err != nil {
+		return errors.Wrap(err, "conf.Write")
+	}
+	return nil
+}
+
+// FormatOptions is the default format options that should be used for jsonx
+// edit computation.
+var FormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}

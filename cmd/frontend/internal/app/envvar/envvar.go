@@ -33,5 +33,5 @@ func HasCodeIntelligence() bool {
 	if addr == "" {
 		return false
 	}
-	return len(conf.Get().Langservers) > 0
+	return len(conf.EnabledLangservers()) > 0
 }

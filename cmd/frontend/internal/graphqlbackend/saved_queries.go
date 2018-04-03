@@ -158,7 +158,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 			Notify:         args.Notify,
 			NotifySlack:    args.NotifySlack,
 		}
-		edits, _, err = jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", -1), value, nil, formatOptions)
+		edits, _, err = jsonx.ComputePropertyEdit(oldConfig, jsonx.MakePath("search.savedQueries", -1), value, nil, conf.FormatOptions)
 		return edits, err
 	})
 	if err != nil {
@@ -239,7 +239,7 @@ func (r *configurationMutationResolver) UpdateSavedQuery(ctx context.Context, ar
 	for propertyName, value := range fieldUpdates {
 		id, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 			keyPath := jsonx.MakePath("search.savedQueries", index, propertyName)
-			edits, _, err = jsonx.ComputePropertyEdit(oldConfig, keyPath, value, nil, formatOptions)
+			edits, _, err = jsonx.ComputePropertyEdit(oldConfig, keyPath, value, nil, conf.FormatOptions)
 			return edits, err
 		})
 		if err != nil {
@@ -278,7 +278,7 @@ func (r *configurationMutationResolver) DeleteSavedQuery(ctx context.Context, ar
 	}
 
 	_, err = r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
-		edits, _, err = jsonx.ComputePropertyRemoval(oldConfig, jsonx.MakePath("search.savedQueries", index), formatOptions)
+		edits, _, err = jsonx.ComputePropertyRemoval(oldConfig, jsonx.MakePath("search.savedQueries", index), conf.FormatOptions)
 		return edits, err
 	})
 	if err != nil {

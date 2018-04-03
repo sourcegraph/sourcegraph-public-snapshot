@@ -36,7 +36,7 @@ func (e *errorList) error() error {
 // getInitializationOptions returns the initializationOptions value to use in an LSP
 // initialize request.
 func getInitializationOptions(lang string) map[string]interface{} {
-	for _, ls := range conf.Get().Langservers {
+	for _, ls := range conf.EnabledLangservers() {
 		if ls.Language == lang {
 			return ls.InitializationOptions
 		}

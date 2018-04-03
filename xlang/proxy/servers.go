@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
@@ -19,16 +20,25 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// ServersByMode registers build/lang servers. It should only be
-// accessed by other packages at init time.
-//
-// This is populated by the addServersFromEnv func.
-var ServersByMode = map[string]func() (io.ReadWriteCloser, error){}
+var (
+	// serversByModeMu protects ServersByMode after init time.
+	serversByModeMu sync.RWMutex
+
+	// ServersByMode registers build/lang servers. It should only be
+	// accessed by other packages at init time.
+	//
+	// This is populated by the addServersFromEnv func.
+	ServersByMode map[string]func() (io.ReadWriteCloser, error)
+)
 
 // connectToServer opens a connection to the server that is registered
 // for the given mode (e.g., "go" or "typescript").
 func connectToServer(ctx context.Context, mode string) (io.ReadWriteCloser, error) {
-	if connect, ok := ServersByMode[mode]; ok {
+	serversByModeMu.RLock()
+	connect, ok := ServersByMode[mode]
+	serversByModeMu.RUnlock()
+
+	if ok {
 		return connect()
 	}
 	return nil, &jsonrpc2.Error{
@@ -37,24 +47,29 @@ func connectToServer(ctx context.Context, mode string) (io.ReadWriteCloser, erro
 	}
 }
 
-func RegisterServers() error {
-	err := registerServersFromEnv()
-	if err != nil {
-		return err
-	}
-	err = registerServersFromConfig()
-	if err != nil {
-		return err
-	}
-	if len(ServersByMode) == 0 {
-		log15.Info("No language servers registered")
-	}
-	return nil
+func RegisterServers() {
+	conf.Watch(func() {
+		serversByModeMu.Lock()
+		defer serversByModeMu.Unlock()
+
+		ServersByMode = make(map[string]func() (io.ReadWriteCloser, error))
+
+		err := registerServersFromEnv()
+		if err != nil {
+			log15.Error("error registering language servers from env", "error", err)
+		}
+		err = registerServersFromConfig()
+		if err != nil {
+			log15.Error("error registering language servers from config", "error", err)
+		}
+		if len(ServersByMode) == 0 {
+			log15.Info("No language servers registered")
+		}
+	})
 }
 
 func registerServersFromConfig() error {
-	langservers := conf.GetTODO().Langservers
-	for _, l := range langservers {
+	for _, l := range conf.EnabledLangservers() {
 		if l.Address != "" {
 			err := registerTCPServer(l.Language, l.Address, "config")
 			if err != nil {
@@ -104,6 +119,7 @@ func registerServersFromEnv() error {
 				}
 
 				log15.Info("Registering language server executable", "mode", mode, "path", val)
+
 				ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
 					cmd := exec.Command(val, args...)
 					cmd.Stderr = &prefixWriter{w: os.Stderr, prefix: filepath.Base(val) + ": "}
