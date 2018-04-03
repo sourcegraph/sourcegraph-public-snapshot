@@ -28,9 +28,7 @@ const fetchTree = memoizeObservable(
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
                             tree(recursive: true) {
-                                files {
-                                    path
-                                }
+                                internalRaw
                             }
                         }
                     }
@@ -44,11 +42,11 @@ const fetchTree = memoizeObservable(
                     !data.repository ||
                     !data.repository.commit ||
                     !data.repository.commit.tree ||
-                    !data.repository.commit.tree.files
+                    typeof data.repository.commit.tree.internalRaw !== 'string'
                 ) {
                     throw createAggregateError(errors)
                 }
-                return data.repository.commit.tree.files.map(file => file.path)
+                return data.repository.commit.tree.internalRaw.split('\0')
             })
         ),
     makeRepoURI

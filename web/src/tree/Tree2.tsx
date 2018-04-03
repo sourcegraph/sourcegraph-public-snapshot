@@ -8,6 +8,7 @@ import sortBy from 'lodash/sortBy'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { skip } from 'rxjs/operators/skip'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Repo } from '../repo/index'
@@ -66,14 +67,14 @@ export class Tree2 extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
         const parentPath = (props.activePathIsDir ? props.activePath : dirname(props.activePath)) || undefined
-        console.time('toFileStat (initial)')
+        // console.time('toFileStat (initial)')
         this.state = {
             selectedPath: undefined,
             parentPath,
             resolveTo: [],
             dir: toFileStat(props.paths, { parentPath }),
         }
-        console.timeEnd('toFileStat (initial)')
+        // console.timeEnd('toFileStat (initial)')
     }
 
     private setStateAndRecomputeTree<K extends keyof State>(
@@ -90,15 +91,17 @@ export class Tree2 extends React.PureComponent<Props, State> {
             if (stateUpdate.dir) {
                 throw new Error('unexpected update of computed field dir')
             }
-            const label = `toFileStat (parentPath: ${
-                'parentPath' in stateUpdate ? stateUpdate.parentPath : prevState.parentPath
-            }, resolveTo: ${('resolveTo' in stateUpdate ? stateUpdate.resolveTo : prevState.resolveTo).join(',')})`
-            console.time(label)
+            // const label = `toFileStat (parentPath: ${
+            //     'parentPath' in stateUpdate ? stateUpdate.parentPath : prevState.parentPath
+            // }, resolveTo: ${('resolveTo' in stateUpdate ? stateUpdate.resolveTo : prevState.resolveTo).join(',')})`
+            // console.time(label)
+            // console.profile('toFileStat')
             stateUpdate.dir = toFileStat(props.paths, {
                 parentPath: 'parentPath' in stateUpdate ? stateUpdate.parentPath : prevState.parentPath,
                 resolveTo: 'resolveTo' in stateUpdate ? stateUpdate.resolveTo : prevState.resolveTo,
             })
-            console.timeEnd(label)
+            // console.profileEnd()
+            // console.timeEnd(label)
             return stateUpdate
         })
     }
@@ -122,7 +125,7 @@ export class Tree2 extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            this.componentUpdates.pipe(distinctUntilChanged(isEqual)).subscribe((props: Props) => {
+            this.componentUpdates.pipe(distinctUntilChanged(isEqual), skip(1)).subscribe((props: Props) => {
                 // Recompute with new paths and parent path. But if the new active path is below where we are now,
                 // preserve the current parent path, so that it's easy for the user to go back up.
                 const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
@@ -180,8 +183,10 @@ export class Tree2 extends React.PureComponent<Props, State> {
     }
 
     /** Called when a tree entry is expanded or collapsed. */
-    private onChangeEntryViewState = (path: string, expand: boolean): void =>
+    private onChangeEntryViewState = (path: string, expand: boolean): void => {
+        // console.time('end-to-end')
         this.entryViewStateChanges.next({ path, expand })
+    }
 
     /** Called when a tree entry is selected. */
     private onSelectEntry = (path: string): void =>
@@ -231,8 +236,7 @@ export class Tree2 extends React.PureComponent<Props, State> {
         const loc = this.locateDomNodeInCollection(selectedPath)
         if (loc) {
             const { items, i } = loc
-            const pathSplit = selectedPath.split('/')
-            const dir = pathSplit.splice(0, pathSplit.length - 1).join('/')
+            const dir = dirname(selectedPath)
             const parentDir = dir ? this.locateDomNode(dir) : undefined
             if (parentDir) {
                 this.selectElement(parentDir)
@@ -355,14 +359,14 @@ interface TreeLayerCommon extends Repo, State {
 
 interface TreeLayerProps extends TreeLayerCommon {}
 
-const endToEndLabel = 'end-to-end'
-console.time(endToEndLabel)
+// const endToEndLabel = 'end-to-end'
+// console.time(endToEndLabel)
 class TreeLayer extends React.PureComponent<TreeLayerProps, {}> {
     public render(): JSX.Element | null {
         const nodes = sortBy(this.props.dir.children, [(e: FileStat) => (e.isDirectory ? 0 : 1), 'text'])
-        if (this.props.dir.path === '.' && nodes && nodes.length > 2) {
-            setTimeout(() => console.timeEnd(endToEndLabel))
-        }
+        // if (this.props.dir.path === '.' && nodes && nodes.length > 2) {
+        //     setTimeout(() => console.timeEnd(endToEndLabel))
+        // }
 
         return (
             <table className="tree-layer">
@@ -448,7 +452,7 @@ class TreeRow extends React.PureComponent<TreeRowProps> {
                                             draggable={false}
                                             title={node.path}
                                         >
-                                            {node.path.split('/').pop()}
+                                            {node.name}
                                         </Link>
                                     </div>
                                 </td>
@@ -489,7 +493,7 @@ class TreeRow extends React.PureComponent<TreeRowProps> {
                                     // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                     style={treePadding(this.props.depth, false)}
                                 >
-                                    {node.path.split('/').pop()}
+                                    {node.name}
                                 </Link>
                             </td>
                         </tr>

@@ -1116,6 +1116,12 @@ type Tree {
     files: [File]!
     # Consists of directories plus files.
     entries: [TreeEntry!]!
+
+    # FOR INTERNAL USE ONLY.
+    #
+    # An optimized, raw encoding of this tree, used by the Sourcegraph frontend web application's file tree
+    # component.
+    internalRaw: String!
 }
 
 # A file, directory, or other tree entry.

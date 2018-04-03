@@ -60,8 +60,13 @@ export function toICustomResolveFileOptions(
  *              leading '/'.
  */
 export function toFileStat(files: string[], options: ICustomResolveFileOptions, skipFiles = 0): FileStat | null {
+    // console.log('toFileStat', files.length, skipFiles, options.parentPath)
+
     const { parentPath, resolveSingleChildDescendants, resolveTo, resolveAllDescendants } = options
 
+    if (parentPath === '') {
+        throw new Error('parentPath must be undefined if empty (not empty string)')
+    }
     if (parentPath && parentPath.startsWith('/')) {
         throw new Error('parentPath must not have a leading slash: ' + parentPath)
     }
@@ -71,14 +76,17 @@ export function toFileStat(files: string[], options: ICustomResolveFileOptions, 
         )
     }
 
-    const resolveToPrefixes = Object.create(null)
+    let resolveToPrefixes: string[] | undefined
     if (resolveTo) {
+        resolveToPrefixes = []
         for (const path of resolveTo) {
             const parts = path.split('/')
             // The path might be a file or dir (or might not exist).
             for (let i = 1; i <= parts.length; i++) {
                 const ancestor = parts.slice(0, i).join('/')
-                resolveToPrefixes[ancestor] = true
+                if (!resolveToPrefixes!.includes(ancestor)) {
+                    resolveToPrefixes!.push(ancestor)
+                }
             }
         }
     }
@@ -90,6 +98,7 @@ export function toFileStat(files: string[], options: ICustomResolveFileOptions, 
     const rootStat: FileStat = {
         path: rootPath || '.',
         name: path.basename(rootPath),
+        children: [],
         isDirectory: undefined!,
         hasChildren: undefined!,
     }
@@ -102,7 +111,7 @@ export function toFileStat(files: string[], options: ICustomResolveFileOptions, 
         // Simple flat case.
         rootStat.children = []
         for (const file of files) {
-            if (parentPath && !file.startsWith(parentPath + '/')) {
+            if (parentPath && !startsWith(file, parentPath + '/')) {
                 continue
             }
             rootStat.children.push({
@@ -120,49 +129,42 @@ export function toFileStat(files: string[], options: ICustomResolveFileOptions, 
     // NOTE: This loop is performance sensitive. It runs one iteration per file in the repo. We use shortcuts/hacks
     // because they meaningfully improve performance and we have tested them to ensure they don't cause other
     // problems.
-    let lastSubdir: string | undefined
+    const parentPathPrefix = parentPath ? parentPath + '/' : '' // empty string value is never used
+    const pathComponentPos = parentPath ? parentPath.length + 1 : 0
+    let lastSubdir = ''
+    let lastParentPathPrefixPlusSubdir: string | undefined
     let hasSeenParentPathPrefix = false
     for (let i = skipFiles; i < files.length; i++) {
-        const file = files[i]
-        if (file === parentPath) {
-            rootStat.isDirectory = false
-            rootStat.hasChildren = false
-            return rootStat
-        } else if (!parentPath || file.startsWith(parentPath + '/')) {
-            if (parentPath) {
+        if (parentPath === undefined || startsWith(files[i], parentPathPrefix)) {
+            if (parentPath !== undefined && !hasSeenParentPathPrefix) {
                 hasSeenParentPathPrefix = true
             }
-            if (!rootStat.hasChildren) {
-                rootStat.isDirectory = true
-                rootStat.hasChildren = true
-                rootStat.children = []
-            }
 
-            const pathComponentPos = parentPath ? parentPath.length + 1 : 0
-            const slashPos = file.indexOf('/', pathComponentPos)
+            const slashPos = files[i].indexOf('/', pathComponentPos)
             if (slashPos === -1) {
                 // Is a file directly underneath parentPath.
                 rootStat.children!.push({
-                    path: file,
-                    name: path.basename(file),
+                    path: files[i],
+                    name: path.basename(files[i]),
                     isDirectory: false,
                     hasChildren: false,
                 })
-                lastSubdir = undefined
+                lastSubdir = ''
             } else {
                 // Is a file that is two or more levels below parentPath.
-                const subdir = file.slice(pathComponentPos, slashPos)
-                const parent = file.slice(0, slashPos)
-                const resolveToThisFile = resolveToPrefixes && resolveToPrefixes[parent]
+                const subdir = files[i].slice(pathComponentPos, slashPos)
                 if (subdir !== lastSubdir) {
                     lastSubdir = subdir
+                    lastParentPathPrefixPlusSubdir = parentPathPrefix + subdir
+                    const resolveToThisFile =
+                        resolveToPrefixes && resolveToPrefixes.includes(lastParentPathPrefixPlusSubdir)
                     const recurse =
                         resolveToThisFile ||
                         (resolveSingleChildDescendants &&
                             (i === files.length - 1 ||
-                                !files[i + 1].startsWith(parentPath ? parentPath + '/' + subdir : subdir)))
+                                !startsWith(files[i + 1], parentPath ? lastParentPathPrefixPlusSubdir : subdir)))
                     if (recurse) {
-                        const recurseParentPath = parentPath ? parentPath + '/' + subdir : subdir
+                        const recurseParentPath = parentPath ? lastParentPathPrefixPlusSubdir : subdir
                         rootStat.children!.push(
                             toFileStat(
                                 files,
@@ -184,18 +186,27 @@ export function toFileStat(files: string[], options: ICustomResolveFileOptions, 
                     }
                 }
             }
-        } else if (hasSeenParentPathPrefix) {
+            continue
+        }
+        if (hasSeenParentPathPrefix) {
             // Because we assume files is sorted, we know we won't find any more matches.
             break
         }
+        if (parentPath !== undefined && files[i] === parentPath) {
+            rootStat.isDirectory = false
+            rootStat.hasChildren = false
+            return rootStat
+        }
     }
 
+    rootStat.hasChildren = Boolean(rootStat.children && rootStat.children.length > 0)
+    rootStat.isDirectory = Boolean(rootStat.hasChildren || (parentPath && files[skipFiles] === parentPath))
     if (!rootStat.isDirectory) {
         return null // not found
     }
-
-    if (!rootStat.children) {
-        rootStat.hasChildren = false
-    }
     return rootStat
+}
+
+function startsWith(s: string, prefix: string): boolean {
+    return s.substring(0, prefix.length) === prefix
 }
