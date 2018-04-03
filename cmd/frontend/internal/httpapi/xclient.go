@@ -107,6 +107,14 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		return c.jumpToDefCrossRepo(ctx, params, result, opt...)
 	case method == "textDocument/hover" && c.hasCrossRepoHover:
 		return marshalResult(c.hoverCrossRepo(ctx, params, opt...))
+
+	case method == "xsymbol/hover":
+		// Federation. This will only run on sourcegraph.com
+		var syms []lspext.SymbolLocationInformation
+		if err := json.Unmarshal(*params.(*json.RawMessage), &syms); err != nil {
+			return err
+		}
+		return marshalResult(c.symbolHover(ctx, syms))
 	}
 	return c.Client.Call(ctx, method, params, result, opt...)
 }
@@ -236,13 +244,13 @@ func (c *xclient) jumpToDefCrossRepo(ctx context.Context, params, result interfa
 // 1. If we are hovering over a symbol in the current repository, use the
 //    normal textDocument/hover.
 // 2. Use textDocument/xdefinition (sg extension) to retrieve symbol information.
-// 3. xdefQuery: Consult our packages index to find potential repositories
-//    containing the symbols.
-// 4. xdefQuery: For each potential repository use workspace/symbol with our
-//    symbol query (sg extension).
-// 5. For each symbol do a textDocument/hover. The first non-empty hover
-//    content we return to the user.
-// 6. If we do not find a non-empty hover, fallback to the normal hover.
+// 3. symbolHover: Using the symbols, use the first successful hover in the
+//    definition repos.
+// 4. TODO If we do not find a non-empty hover and federation is enabled, we send
+//    the package query to Sourcegraph.com's xlang API. The assumption is the
+//    dependency is an OSS package so we can consult our public index. If the
+//    response is non-empty we return it.
+// 5. If we do not find a non-empty hover, fallback to the normal hover.
 func (c *xclient) hoverCrossRepo(ctx context.Context, params interface{}, opt ...jsonrpc2.CallOption) (*lsp.Hover, error) {
 	// Note: we can't parallelize the hover and xdefinition requests
 	// without breaking the request cancellation logic used by LSP
@@ -267,12 +275,39 @@ func (c *xclient) hoverCrossRepo(ctx context.Context, params interface{}, opt ..
 		}
 	}
 
+	// Cross repo hover is done via the symbols only.
+	xhov, err := c.symbolHover(ctx, syms)
+	if err != nil {
+		return nil, err
+	}
+	if len(xhov.Contents) > 0 {
+		// Range is for the queried token, so we need to use the local
+		// hover range.
+		xhov.Range = hover.Range
+		return xhov, nil
+	}
+
+	// Fallback to local hover contents.
+	return &hover, nil
+}
+
+// symbolHover finds a hover contents for the given symbols.
+//
+// Algorithm:
+//
+// 1. xdefQuery: Consult our packages index to find potential repositories
+//    containing the symbols.
+// 2. xdefQuery: For each potential repository use workspace/symbol with our
+//    symbol query (sg extension).
+// 3. For each symbol do a textDocument/hover. The first non-empty hover
+//    content we return to the user.
+func (c *xclient) symbolHover(ctx context.Context, syms []lspext.SymbolLocationInformation) (*lsp.Hover, error) {
 	symInfos, err := c.xdefQuery(ctx, syms)
 	if err != nil {
 		return nil, err
 	}
 
-	// display first hover found
+	// return first hover found
 	for rootURI, repoSymInfos := range symInfos {
 		for _, symInfo := range repoSymInfos {
 			pos := symInfo.Location.Range.Start
@@ -286,14 +321,11 @@ func (c *xclient) hoverCrossRepo(ctx context.Context, params interface{}, opt ..
 				return nil, errors.Wrap(err, "hoverCrossRepo: external textDocument/hover error")
 			}
 			if len(xhov.Contents) > 0 {
-				// Range is for the queried token, so we need to use the local
-				// hover range.
-				xhov.Range = hover.Range
 				return &xhov, nil
 			}
 		}
 	}
 
-	// Fallback to local hover contents.
-	return &hover, nil
+	// nothing found, so empty response
+	return &lsp.Hover{}, nil
 }
