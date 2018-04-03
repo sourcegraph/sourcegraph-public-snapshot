@@ -250,6 +250,7 @@ export class SearchResults extends React.Component<Props, State> {
             proposedQueries?: GQL.ISearchQueryDescription[]
             errorBody?: React.ReactFragment
         } | null = null
+        const searchTimeoutParameterEnabled = window.context.searchTimeoutParameterEnabled
         if (this.state.error) {
             if (this.state.error.message.includes('no query terms or regexp specified')) {
                 alert = { title: '', description: 'Enter terms to search...' }
@@ -264,7 +265,6 @@ export class SearchResults extends React.Component<Props, State> {
             this.state.missing.length === 0 &&
             this.state.cloning.length === 0
         ) {
-            const searchTimeoutParameterEnabled = window.context.experimentalFeatures.searchTimeoutParameterEnabled
             const defaultTimeoutAlert = {
                 title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
                 description: searchTimeoutParameterEnabled
@@ -374,7 +374,7 @@ export class SearchResults extends React.Component<Props, State> {
                                                 </span>
                                             )}
                                             &nbsp;(reload to try again
-                                            {window.context.experimentalFeatures.searchTimeoutParameterEnabled &&
+                                            {searchTimeoutParameterEnabled &&
                                                 ", or specify a longer 'timeout:' in your query"}
                                             )
                                         </span>

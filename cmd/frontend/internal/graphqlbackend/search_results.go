@@ -586,17 +586,13 @@ func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 // The default timeout to use for queries.
 var defaultTimeout = 10 * time.Second
 
-func (r *searchResolver) searchTimeoutParameterEnabled() bool {
-	return conf.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled
-}
-
 func (r *searchResolver) searchTimeoutFieldSet() bool {
 	timeout, _ := r.query.StringValue(searchquery.FieldTimeout)
 	return timeout != ""
 }
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	if !r.searchTimeoutParameterEnabled() {
+	if !conf.SearchTimeoutParameterEnabled() {
 		// Old behavior is to not set a timeout at the top level.
 		ctx, cancel := context.WithCancel(ctx)
 		return ctx, cancel, nil
@@ -701,7 +697,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
-		if !r.searchTimeoutParameterEnabled() {
+		if !conf.SearchTimeoutParameterEnabled() {
 			// Old behavior is to wait for all searches.
 			return &requiredWg
 		}
@@ -900,7 +896,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// Wait for required searches.
 	requiredWg.Wait()
 
-	if r.searchTimeoutParameterEnabled() {
+	if conf.SearchTimeoutParameterEnabled() {
 		// Give optional searches some minimum budget in case required searches return quickly.
 		// Cancel all remaining searches after this minimum budget.
 		budget := 100 * time.Millisecond

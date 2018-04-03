@@ -8,6 +8,18 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 )
 
+// SearchTimeoutParameterEnabled returns true if SearchTimeoutParameter experiment is enabled.
+func SearchTimeoutParameterEnabled() bool {
+	p := Get().ExperimentalFeatures.SearchTimeoutParameter
+	return p == "enabled"
+}
+
+// FileHistorySidebarEnabled returns true if FileHistorySidebar experiment is enabled.
+func FileHistorySidebarEnabled() bool {
+	p := Get().ExperimentalFeatures.FileHistorySidebar
+	return p == "enabled"
+}
+
 // EmailVerificationRequired returns whether users must verify an email address before they
 // can perform most actions on this site.
 //

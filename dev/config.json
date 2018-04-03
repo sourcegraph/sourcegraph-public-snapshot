@@ -1,8 +1,8 @@
 // The Sourcegraph site configuration for development servers.
 {
   "experimentalFeatures": {
-    "fileHistorySidebar": true,
-    "searchTimeoutParameterEnabled": true
+    "fileHistorySidebar": "enabled",
+    "searchTimeoutParameter": "enabled"
   },
   "disablePublicRepoRedirects": true,
   "licenseKey":

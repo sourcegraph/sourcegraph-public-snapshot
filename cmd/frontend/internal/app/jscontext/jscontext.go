@@ -64,7 +64,9 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
-	ExperimentalFeatures *schema.ExperimentalFeatures `json:"experimentalFeatures"`
+	// Experimental features
+	FileHistorySidebarEnabled     bool `json:"fileHistorySidebarEnabled"`
+	SearchTimeoutParameterEnabled bool `json:"searchTimeoutParameterEnabled"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -140,7 +142,11 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		IsRunningDataCenter:  os.Getenv("GOREMAN_RPC_ADDR") != "",
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		ExperimentalFeatures:  conf.Get().ExperimentalFeatures,
+
+		// Experiments. We pass these through explicitly so we can
+		// do the default behavior only in Go land.
+		FileHistorySidebarEnabled:     conf.FileHistorySidebarEnabled(),
+		SearchTimeoutParameterEnabled: conf.SearchTimeoutParameterEnabled(),
 	}
 }
 

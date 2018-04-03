@@ -106,7 +106,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	}()
 	span.SetTag("repo", string(repoRevs.repo.URI))
 
-	if !conf.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled {
+	if !conf.SearchTimeoutParameterEnabled() {
 		// Old behavior doesn't set timeout at top level.
 		tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()

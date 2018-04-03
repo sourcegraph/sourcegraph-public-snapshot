@@ -329,7 +329,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 		return nil, false, err
 	}
 
-	if !conf.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled {
+	if !conf.SearchTimeoutParameterEnabled() {
 		// Old behavior doesn't set timeout at top level.
 		tctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
@@ -424,7 +424,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
 	}
 
-	if !conf.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled {
+	if !conf.SearchTimeoutParameterEnabled() {
 		// Old behavior doesn't set timeout at top level.
 		tctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+3*time.Second)
 		defer cancel()

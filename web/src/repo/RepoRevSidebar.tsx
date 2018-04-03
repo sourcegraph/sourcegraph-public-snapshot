@@ -113,7 +113,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             fetchSite({ telemetrySamples: false }).subscribe(
                 site =>
                     this.setState({
-                        showHistorySidebar: window.context.experimentalFeatures.fileHistorySidebar,
+                        showHistorySidebar: window.context.fileHistorySidebarEnabled,
                     }),
                 error => this.setState({ error: error.message })
             )

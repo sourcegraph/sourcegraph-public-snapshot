@@ -62,7 +62,7 @@ var (
 			FieldIndex: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldMax:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldTimeout: {Literal: types.StringType, Quoted: types.StringType, Singular: true, FeatureFlagEnabled: func() bool {
-				return config.Get().ExperimentalFeatures.SearchTimeoutParameterEnabled
+				return config.SearchTimeoutParameterEnabled()
 			}},
 		},
 		FieldAliases: map[string]string{

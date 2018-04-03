@@ -13,7 +13,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * User and site admin management capabilities for user email addresses are improved.
 * The user and organization management UI has been greatly improved. Site admins may now administer all organizations (even those they aren't a member of) and may edit profile info and configuration for all users.
 * If SSO is enabled (via OpenID or SAML) and the SSO system provides user avatar images and/or display names, those are now used by Sourcegraph.
-* Enable new search timeout behavior by enabling `experimentalFeatures.searchTimeoutParameterEnabled` in your site config.
+* Enable new search timeout behavior by setting `"experimentalFeatures": { "searchTimeoutParameter": "enabled"}` in your site config.
   * Adds a new `timeout:` parameter to customize the timeout for searches. It defaults to 10s and may not be set higher than 1m.
   * The value of the `timeout:` parameter is a string that can be parsed by [time.Duration](https://golang.org/pkg/time/#ParseDuration) (e.g. "100ms", "2s").
   * When `timeout:` is not provided, search optimizes for retuning results as soon as possible and will include slower kinds of results (e.g. symbols) only if they are found quickly.
@@ -34,7 +34,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * The duration that the frontend waits for the PostgreSQL database to become available is now configurable with the `DB_STARTUP_TIMEOUT` env var (the value is any valid Go duration string).
 * Dynamic search filters now suggest exclusions of Go test files, vendored files and node_modules files.
-* An experimental "file history" sidebar now exists to expose all commits that affect the current file. This is disabled by default; use `"experimentalFeatures": { "fileHistorySidebar": true }` in your site configuration to enable it.
+* An experimental "file history" sidebar now exists to expose all commits that affect the current file. This is disabled by default; use `"experimentalFeatures": { "fileHistorySidebar": "enabled" }` in your site configuration to enable it.
 
 ## 2.6.6
 

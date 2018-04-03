@@ -119,10 +119,15 @@ interface SourcegraphContext {
      */
     isRunningDataCenter: boolean
 
-    experimentalFeatures: {
-        fileHistorySidebar: bool
-        searchTimeoutParameterEnabled: bool
-    }
+    /**
+     * Whether the fileHistorySidebar feature flag is enabled.
+     */
+    fileHistorySidebarEnabled: bool
+
+    /**
+     * Whether the searchTimeoutParameter feature flag is enabled.
+     */
+    searchTimeoutParameterEnabled: bool
 }
 
 declare module '*.json' {

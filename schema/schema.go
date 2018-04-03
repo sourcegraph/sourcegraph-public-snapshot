@@ -69,8 +69,8 @@ type DeploymentOverrides struct {
 
 // ExperimentalFeatures Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	FileHistorySidebar            bool `json:"fileHistorySidebar,omitempty"`
-	SearchTimeoutParameterEnabled bool `json:"searchTimeoutParameterEnabled,omitempty"`
+	FileHistorySidebar     string `json:"fileHistorySidebar,omitempty"`
+	SearchTimeoutParameter string `json:"searchTimeoutParameter,omitempty"`
 }
 
 // GitHubConnection
