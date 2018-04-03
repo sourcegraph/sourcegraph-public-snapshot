@@ -140,9 +140,8 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 type searchResultsResolver struct {
 	results []*searchResultResolver
 	searchResultsCommon
-	alert           *searchAlert
-	start           time.Time // when the results started being computed
-	maxResultsCount int32
+	alert *searchAlert
+	start time.Time // when the results started being computed
 }
 
 func (sr *searchResultsResolver) Results() []*searchResultResolver {
@@ -945,7 +944,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	resultsResolver := searchResultsResolver{
-		maxResultsCount:     r.maxResults(),
 		start:               start,
 		searchResultsCommon: common,
 		results:             results,
