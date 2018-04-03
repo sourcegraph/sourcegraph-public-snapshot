@@ -372,10 +372,6 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		repoMap[api.RepoURI(strings.ToLower(string(repoRev.repo.URI)))] = repoRev.repo
 	}
 
-	if len(repoSet.Set) == 0 {
-		return nil, false, nil
-	}
-
 	queryExceptRepos, err := queryToZoektQuery(query)
 	if err != nil {
 		return nil, false, err
