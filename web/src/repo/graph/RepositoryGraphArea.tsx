@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
 import { DismissibleAlert } from '../../site/DismissibleAlert'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryGraphDependenciesPage } from './RepositoryGraphDependenciesPage'
 import { RepositoryGraphOverviewPage } from './RepositoryGraphOverviewPage'
 import { RepositoryGraphPackagesPage } from './RepositoryGraphPackagesPage'
@@ -65,11 +66,7 @@ export class RepositoryGraphArea extends React.Component<Props> {
             <div className="repository-graph-area area">
                 <RepoHeaderActionPortal
                     position="nav"
-                    element={
-                        <span key="graph" className="repository-graph-area__header-item">
-                            Graph
-                        </span>
-                    }
+                    element={<RepoHeaderBreadcrumbNavItem key="graph">Graph</RepoHeaderBreadcrumbNavItem>}
                 />
                 <RepositoryGraphSidebar
                     className="area__sidebar"
