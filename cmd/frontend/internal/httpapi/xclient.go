@@ -52,6 +52,19 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 	}()
 	span.SetTag("Method", method)
 
+	// marshalResult takes an existing interface and marshals it into result
+	// via JSON.
+	marshalResult := func(v interface{}, err error) error {
+		if err != nil {
+			return err
+		}
+		b, err := json.Marshal(v)
+		if err != nil {
+			return errors.Wrap(err, "marshaling result")
+		}
+		return json.Unmarshal(b, result)
+	}
+
 	switch {
 	case method == "initialize":
 		var init xlspext.ClientProxyInitializeParams
@@ -93,7 +106,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		span.SetTag("LocationAbsent", "true")
 		return c.jumpToDefCrossRepo(ctx, params, result, opt...)
 	case method == "textDocument/hover" && c.hasCrossRepoHover:
-		return c.hoverCrossRepo(ctx, params, result, opt...)
+		return marshalResult(c.hoverCrossRepo(ctx, params, opt...))
 	}
 	return c.Client.Call(ctx, method, params, result, opt...)
 }
@@ -106,7 +119,7 @@ func (c *xclient) Close() error {
 	return c.Client.Close()
 }
 
-func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInformation, includeHover bool) (map[lsp.DocumentURI][]lsp.SymbolInformation, error) {
+func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInformation) (map[lsp.DocumentURI][]lsp.SymbolInformation, error) {
 	span := opentracing.SpanFromContext(ctx)
 
 	symInfos := make(map[lsp.DocumentURI][]lsp.SymbolInformation)
@@ -199,7 +212,7 @@ func (c *xclient) jumpToDefCrossRepo(ctx context.Context, params, result interfa
 		}
 	}
 
-	symInfos, err := c.xdefQuery(ctx, nolocSyms, false)
+	symInfos, err := c.xdefQuery(ctx, nolocSyms)
 	if err != nil {
 		return err
 	}
@@ -215,7 +228,22 @@ func (c *xclient) jumpToDefCrossRepo(ctx context.Context, params, result interfa
 	return json.Unmarshal(locBytes, result)
 }
 
-func (c *xclient) hoverCrossRepo(ctx context.Context, params, result interface{}, opt ...jsonrpc2.CallOption) (err error) {
+// hoverCrossRepo translates hover requests in the current repository to a
+// hover request on the definition in the definition's repository.
+//
+// Algorithm:
+//
+// 1. If we are hovering over a symbol in the current repository, use the
+//    normal textDocument/hover.
+// 2. Use textDocument/xdefinition (sg extension) to retrieve symbol information.
+// 3. xdefQuery: Consult our packages index to find potential repositories
+//    containing the symbols.
+// 4. xdefQuery: For each potential repository use workspace/symbol with our
+//    symbol query (sg extension).
+// 5. For each symbol do a textDocument/hover. The first non-empty hover
+//    content we return to the user.
+// 6. If we do not find a non-empty hover, fallback to the normal hover.
+func (c *xclient) hoverCrossRepo(ctx context.Context, params interface{}, opt ...jsonrpc2.CallOption) (*lsp.Hover, error) {
 	// Note: we can't parallelize the hover and xdefinition requests
 	// without breaking the request cancellation logic used by LSP
 	// proxy
@@ -223,37 +251,28 @@ func (c *xclient) hoverCrossRepo(ctx context.Context, params, result interface{}
 	// xdefinition request
 	var syms []lspext.SymbolLocationInformation
 	if err := c.Client.Call(ctx, "textDocument/xdefinition", params, &syms, opt...); err != nil {
-		return errors.Wrap(err, "hoverCrossRepo: textDocument/xdefinition error")
+		return nil, errors.Wrap(err, "hoverCrossRepo: textDocument/xdefinition error")
 	}
 
 	// hover request
 	var hover lsp.Hover
 	if err := c.Client.Call(ctx, "textDocument/hover", params, &hover, opt...); err != nil {
-		return errors.Wrap(err, "hoverCrossRepo: textDocument/hover error")
+		return nil, errors.Wrap(err, "hoverCrossRepo: textDocument/hover error")
 	}
 
-	foundLoc := false
+	// return local hover if local definition found
 	for _, sym := range syms {
 		if sym.Location != (lsp.Location{}) {
-			foundLoc = true
-			break
+			return &hover, nil
 		}
-	}
-	if foundLoc { // return local hover if local definition found
-		h, err := json.Marshal(hover)
-		if err != nil {
-			return err
-		}
-		return json.Unmarshal(h, &result)
 	}
 
-	symInfos, err := c.xdefQuery(ctx, syms, true)
+	symInfos, err := c.xdefQuery(ctx, syms)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var crossHov lsp.Hover
-	crossHov.Range = hover.Range
-Outer: // display first hover found
+
+	// display first hover found
 	for rootURI, repoSymInfos := range symInfos {
 		for _, symInfo := range repoSymInfos {
 			pos := symInfo.Location.Range.Start
@@ -264,20 +283,17 @@ Outer: // display first hover found
 			}
 			var xhov lsp.Hover
 			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootURI, "textDocument/hover", p, &xhov); err != nil {
-				return errors.Wrap(err, "hoverCrossRepo: external textDocument/hover error")
+				return nil, errors.Wrap(err, "hoverCrossRepo: external textDocument/hover error")
 			}
 			if len(xhov.Contents) > 0 {
-				crossHov.Contents = xhov.Contents
-				break Outer
+				// Range is for the queried token, so we need to use the local
+				// hover range.
+				xhov.Range = hover.Range
+				return &xhov, nil
 			}
 		}
 	}
-	if len(crossHov.Contents) == 0 { // fall back to local hover contents
-		crossHov.Contents = hover.Contents
-	}
-	h, err := json.Marshal(crossHov)
-	if err != nil {
-		return errors.Wrap(err, "marshaling crossHov")
-	}
-	return json.Unmarshal(h, result)
+
+	// Fallback to local hover contents.
+	return &hover, nil
 }
