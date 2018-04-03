@@ -508,14 +508,13 @@ func queryToZoektQuery(query *patternInfo) (zoektquery.Q, error) {
 
 				FileName: filenameOnly,
 			}, nil
-		} else {
-			return &zoektquery.Regexp{
-				Regexp:        re,
-				CaseSensitive: query.IsCaseSensitive,
-
-				FileName: filenameOnly,
-			}, nil
 		}
+		return &zoektquery.Regexp{
+			Regexp:        re,
+			CaseSensitive: query.IsCaseSensitive,
+
+			FileName: filenameOnly,
+		}, nil
 	}
 	fileRe := func(pattern string) (zoektquery.Q, error) {
 		return parseRe(pattern, true)
