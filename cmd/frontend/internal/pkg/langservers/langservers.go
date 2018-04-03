@@ -452,7 +452,7 @@ func init() {
 	}
 	canManage = true
 
-	go func() {
+	goroutine.Go(func() {
 		setContainerID()
 		createLSPBridge()
 
@@ -463,7 +463,7 @@ func init() {
 
 		stopAllLanguageServers()
 		os.Exit(1)
-	}()
+	})
 }
 
 // setContainerID changes the name of our container to "sourcegraph" so that it is
