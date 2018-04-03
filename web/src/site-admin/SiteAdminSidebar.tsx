@@ -13,6 +13,9 @@ interface Props {
 
 interface State {}
 
+/** Feature flag for showing the comments site admin page link in the sidebar. */
+const showComments = localStorage.getItem('showComments') !== null
+
 /**
  * Sidebar for the site admin area.
  */
@@ -106,18 +109,20 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                         </NavLink>
                     </li>
                 </ul>
-                <ul className="sidebar__items">
-                    <li className="sidebar__item">
-                        <NavLink
-                            to="/site-admin/threads"
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                            exact={true}
-                        >
-                            Comments
-                        </NavLink>
-                    </li>
-                </ul>
+                {showComments && (
+                    <ul className="sidebar__items">
+                        <li className="sidebar__item">
+                            <NavLink
+                                to="/site-admin/threads"
+                                className="sidebar__item-link"
+                                activeClassName="sidebar__item--active"
+                                exact={true}
+                            >
+                                Comments
+                            </NavLink>
+                        </li>
+                    </ul>
+                )}
                 <ul className="sidebar__items">
                     <li className="sidebar__item">
                         <NavLink
