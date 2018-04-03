@@ -249,7 +249,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 				return err
 			}
 		} else {
-			resps[i] = &jsonrpc2.Response{}
+			resps[i] = &jsonrpc2.Response{ID: jsonrpc2.ID{Num: uint64(i)}}
 			err := c.Call(ctx, req.Method, req.Params, &resps[i].Result)
 			if err == nil && resps[i].Result == nil {
 				// c.Call sets Result to Go nil if the response has a
