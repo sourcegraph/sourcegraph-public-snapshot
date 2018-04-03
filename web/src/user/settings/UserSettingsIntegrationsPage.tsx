@@ -93,7 +93,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
 
     public render(): JSX.Element | null {
         return (
-            <div className="user-settings-integrations-page__list">
+            <div>
                 <PageTitle title="Integrations" />
                 <h2>Integrations</h2>
 
@@ -133,7 +133,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                     </div>
                 )}
 
-                <h3>Browser address bar search shortcut</h3>
+                <h3 className="mt-2">Browser address bar search shortcut</h3>
                 <ul className="list ml-3">
                     <li>
                         <strong>With the Chrome extension installed:</strong> Type <kbd>src &lt;SPACE&gt;</kbd> in the
@@ -158,18 +158,17 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                     </a>.
                 </p>
 
-                <h3>Editor extensions and other integrations</h3>
+                <h3 className="mt-2">Editor extensions and other integrations</h3>
                 <p>Use the following Sourcegraph URL to connect other extensions to this Sourcegraph instance.</p>
-                <div className="user-settings-integrations-page__form">
+                <div>
                     <input
                         id="remote-url-input"
-                        className="user-settings-integrations_-page_input form-control"
+                        className="form-control"
                         value={window.context.appURL}
                         readOnly={true}
                     />
                     <button className="btn btn-primary mt-2" onClick={this.copyRemoteUrl}>
-                        <Copy className="user-settings-integrations-page__copy-icon icon-inline" />{' '}
-                        {this.state.remoteUrlCopied ? 'Copied' : 'Copy'}
+                        <Copy className="icon-inline" /> {this.state.remoteUrlCopied ? 'Copied' : 'Copy'}
                     </button>
                 </div>
             </div>
