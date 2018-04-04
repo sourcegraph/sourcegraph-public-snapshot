@@ -10,6 +10,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 )
 
 var LSPEnabled bool
@@ -34,6 +35,7 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 
 	// Check if index is already up-to-date
 	if repo.IndexedRevision != nil && (repo.FreezeIndexedRevision || *repo.IndexedRevision == commit) {
+		w.handleLangServersMigration(repo, commit)
 		return nil
 	}
 
@@ -44,20 +46,9 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 	}
 	lang := inv.PrimaryProgrammingLanguage()
 
-	// Only auto-enable language servers if not running in Data Center mode and
-	// if not explicitly disabled in dev mode.
-	if !conf.IsDataCenter(conf.DeployType()) && conf.DebugManageDocker() {
-		// Automatically enable the language server for each language detected in
-		// the repository.
-		for _, language := range inv.Languages {
-			err := langServersEnableLanguage(w.Ctx, strings.ToLower(language.Name))
-			if err != nil && !strings.Contains(err.Error(), "language not supported") {
-				// Failure here should never be fatal to the rest of the
-				// indexing operations.
-				log15.Error("failed to automatically enable language server", "language", strings.ToLower(language.Name), "error", err)
-			}
-		}
-	}
+	// Automatically enable the language server for each language detected in
+	// the repository.
+	w.enableLangservers(inv)
 
 	// Update global refs & packages index
 	if !repo.Fork() && LSPEnabled {
@@ -87,6 +78,49 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 		return err
 	}
 	return nil
+}
+
+// enableLangservers enables language servers for the given repo inventory.
+func (w *Worker) enableLangservers(inv *inventory.Inventory) {
+	if conf.IsDataCenter(conf.DeployType()) {
+		// Running in Data Center mode, do not auto-enable language servers.
+		return
+	}
+	if !conf.DebugManageDocker() {
+		// Running in dev mode with managed docker disabled.
+		return
+	}
+
+	// Enable the language server for each language detected in the repository.
+	for _, language := range inv.Languages {
+		err := langServersEnableLanguage(w.Ctx, strings.ToLower(language.Name))
+		if err != nil && !strings.Contains(err.Error(), "language not supported") {
+			// Failure here should never be fatal to the rest of the
+			// indexing operations.
+			log15.Error("failed to automatically enable language server", "language", strings.ToLower(language.Name), "error", err)
+		}
+	}
+}
+
+// handleLangServersMigration handles a migration path: The repository is
+// already indexed. But it is still useful to enable language servers
+// automatically at this point for users who've already added all of their
+// repositories before we supported automatic language server management.
+//
+// TODO(slimsag): remove this code after May 3, 2018. Also remove
+// api.InternalClient.ReposGetInventory since this is the only user of it.
+func (w *Worker) handleLangServersMigration(repo *api.Repo, commit api.CommitID) {
+	// Note: we use ReposGetInventory not the uncached variant because this
+	// runs on every refresh operation and it needs to be performant.
+	inv, err := api.InternalClient.ReposGetInventory(w.Ctx, repo.ID, commit)
+	if err != nil {
+		log15.Error("failed to automatically enable language servers, Repos.GetInventory failed", "error", err)
+		return
+	}
+
+	// Automatically enable the language server for each language detected in
+	// the repository.
+	w.enableLangservers(inv)
 }
 
 // enqueueDependencies makes a best effort to enqueue dependencies of the specified repository
