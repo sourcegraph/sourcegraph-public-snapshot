@@ -121,7 +121,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		break
 	case method == "textDocument/definition":
 		span.SetTag("LocationAbsent", "true")
-		return c.jumpToDefCrossRepo(ctx, params, result, opt...)
+		return marshalResult(c.jumpToDefCrossRepo(ctx, params, opt...))
 	case method == "textDocument/hover" && c.hasCrossRepoHover:
 		return marshalResult(c.hoverCrossRepo(ctx, params, opt...))
 
@@ -132,6 +132,14 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			return err
 		}
 		return marshalResult(c.symbolHover(ctx, syms))
+
+	case method == "xsymbol/definition":
+		// Federation. This will only run on sourcegraph.com
+		var syms []lspext.SymbolLocationInformation
+		if err := json.Unmarshal(*params.(*json.RawMessage), &syms); err != nil {
+			return err
+		}
+		return marshalResult(c.symbolDefinition(ctx, syms))
 	}
 	return c.Client.Call(ctx, method, params, result, opt...)
 }
@@ -219,12 +227,13 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 	return symInfos, nil
 }
 
-func (c *xclient) jumpToDefCrossRepo(ctx context.Context, params, result interface{}, opt ...jsonrpc2.CallOption) (err error) {
+func (c *xclient) jumpToDefCrossRepo(ctx context.Context, params interface{}, opt ...jsonrpc2.CallOption) ([]lsp.Location, error) {
 	// Issue xdefinition request
 	var syms []lspext.SymbolLocationInformation
 	if err := c.Client.Call(ctx, "textDocument/xdefinition", params, &syms, opt...); err != nil {
-		return err
+		return nil, err
 	}
+
 	locs := make([]lsp.Location, 0, len(syms))
 
 	var nolocSyms []lspext.SymbolLocationInformation
@@ -237,20 +246,40 @@ func (c *xclient) jumpToDefCrossRepo(ctx context.Context, params, result interfa
 		}
 	}
 
-	symInfos, err := c.xdefQuery(ctx, nolocSyms)
+	symLocs, err := c.symbolDefinition(ctx, nolocSyms)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	locs = append(locs, symLocs...)
+
+	// Failed to find the definition locally, try symbolDefinition on Sourcegraph.com
+	// which may have indexed the OSS repo used.
+	if len(locs) == 0 && len(nolocSyms) > 0 && federateBaseURL != nil {
+		// HACK we need a valid rootURI, even though we are doing symbol queries.
+		rootURI := lsp.DocumentURI("git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06")
+		err := xlang.RemoteOneShotClientRequest(ctx, federateBaseURL, c.mode, rootURI, "xsymbol/definition", nolocSyms, &locs)
+		if err != nil {
+			return nil, err
+		}
+		return locs, nil
+	}
+
+	return locs, nil
+}
+
+func (c *xclient) symbolDefinition(ctx context.Context, syms []lspext.SymbolLocationInformation) ([]lsp.Location, error) {
+	symInfos, err := c.xdefQuery(ctx, syms)
+	if err != nil {
+		return nil, err
+	}
+
+	locs := make([]lsp.Location, 0, len(symInfos))
 	for _, repoSymInfos := range symInfos {
 		for _, symInfo := range repoSymInfos {
 			locs = append(locs, symInfo.Location)
 		}
 	}
-	locBytes, err := json.Marshal(locs)
-	if err != nil {
-		return errors.Wrap(err, "marshaling locations")
-	}
-	return json.Unmarshal(locBytes, result)
+	return locs, nil
 }
 
 // hoverCrossRepo translates hover requests in the current repository to a
