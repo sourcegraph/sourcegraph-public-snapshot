@@ -282,16 +282,31 @@ func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
-	refs, err := r.showRef(ctx, "--tags")
+	cmd := r.command("git", "tag", "--list", "--sort", "-creatordate", "--format", "%(objectname)%00%(refname:short)%00%(creatordate:unix)")
+	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return nil, err
+		if vcs.IsRepoNotExist(err) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("listing git tags in %s failed: %s. Output was:\n\n%s", cmd.Repo, err, out)
 	}
 
-	tags := make([]*vcs.Tag, len(refs))
-	for i, ref := range refs {
+	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
+	lines := bytes.Split(out, []byte("\n"))
+	tags := make([]*vcs.Tag, len(lines))
+	for i, line := range lines {
+		parts := bytes.SplitN(line, []byte("\x00"), 3)
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid git tag list output line: %q", line)
+		}
+		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
+		if err != nil {
+			return nil, err
+		}
 		tags[i] = &vcs.Tag{
-			Name:     strings.TrimPrefix(ref[1], "refs/tags/"),
-			CommitID: api.CommitID(ref[0]),
+			Name:        string(parts[1]),
+			CommitID:    api.CommitID(parts[0]),
+			CreatorDate: time.Unix(date, 0).UTC(),
 		}
 	}
 	return tags, nil

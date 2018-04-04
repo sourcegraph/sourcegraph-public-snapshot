@@ -66,6 +66,7 @@ type BranchesOptions struct {
 type Tag struct {
 	Name         string `json:"Name,omitempty"`
 	api.CommitID `json:"CommitID,omitempty"`
+	CreatorDate  time.Time
 }
 
 // SearchOptions specifies options for a repository search.

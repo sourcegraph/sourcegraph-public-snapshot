@@ -450,8 +450,11 @@ func TestRepository_Tags(t *testing.T) {
 		wantTags []*vcs.Tag
 	}{
 		"git cmd": {
-			repo:     makeGitRepositoryCmd(t, gitCommands...),
-			wantTags: []*vcs.Tag{{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}},
+			repo: makeGitRepositoryCmd(t, gitCommands...),
+			wantTags: []*vcs.Tag{
+				{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			},
 		},
 	}
 
