@@ -11,15 +11,24 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
+// ShowMissingReposEnabled returns true if ShowMissingRepos experiment is enabled.
+func ShowMissingReposEnabled() bool {
+	p := Get().ExperimentalFeatures.ShowMissingRepos
+	// default is enabled
+	return p != "disabled"
+}
+
 // SearchTimeoutParameterEnabled returns true if SearchTimeoutParameter experiment is enabled.
 func SearchTimeoutParameterEnabled() bool {
 	p := Get().ExperimentalFeatures.SearchTimeoutParameter
+	// default is disabled
 	return p == "enabled"
 }
 
 // FileHistorySidebarEnabled returns true if FileHistorySidebar experiment is enabled.
 func FileHistorySidebarEnabled() bool {
 	p := Get().ExperimentalFeatures.FileHistorySidebar
+	// default is disabled
 	return p == "enabled"
 }
 

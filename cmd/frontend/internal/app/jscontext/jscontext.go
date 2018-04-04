@@ -67,6 +67,7 @@ type JSContext struct {
 	// Experimental features
 	FileHistorySidebarEnabled     bool `json:"fileHistorySidebarEnabled"`
 	SearchTimeoutParameterEnabled bool `json:"searchTimeoutParameterEnabled"`
+	ShowMissingReposEnabled       bool `json:"showMissingReposEnabled"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -147,6 +148,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		// do the default behavior only in Go land.
 		FileHistorySidebarEnabled:     conf.FileHistorySidebarEnabled(),
 		SearchTimeoutParameterEnabled: conf.SearchTimeoutParameterEnabled(),
+		ShowMissingReposEnabled:       conf.ShowMissingReposEnabled(),
 	}
 }
 

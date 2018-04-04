@@ -71,6 +71,7 @@ type DeploymentOverrides struct {
 type ExperimentalFeatures struct {
 	FileHistorySidebar     string `json:"fileHistorySidebar,omitempty"`
 	SearchTimeoutParameter string `json:"searchTimeoutParameter,omitempty"`
+	ShowMissingRepos       string `json:"showMissingRepos,omitempty"`
 }
 
 // GitHubConnection

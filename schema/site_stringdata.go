@@ -66,6 +66,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "showMissingRepos": {
+          "description": "Enables or disables showing repos that were not searched",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         }
       }
     },

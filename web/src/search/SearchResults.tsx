@@ -304,7 +304,9 @@ export class SearchResults extends React.Component<Props, State> {
 
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
-        const showMissingRepos = localStorage.getItem('showMissingRepos') && this.state.missing.length > 0
+        const showMissingReposEnabled =
+            window.context.showMissingReposEnabled || localStorage.getItem('showMissingRepos')
+        const showMissingRepos = showMissingReposEnabled && this.state.missing.length > 0
 
         return (
             <div className="search-results">

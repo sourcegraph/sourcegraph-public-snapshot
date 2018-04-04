@@ -6,11 +6,11 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
-* Missing repos no longer appear as search results.
+* Missing repos no longer appear as search results. Instead, a count of repos that were not found is displayed above the search results. Hovering over the count will reveal the names of the missing repos.
 
 ### Fixed
 
-* In Sourcegraph Data Center, searches no longer block if the index is unavailable (e.g., after the index pod restarts). Instead, it respects the normal search timeout and reports the situation to the user if the index is not yet available.
+* In Sourcegraph Data Center, searches no longer block if the index is unavailable (e.g. after the index pod restarts). Instead, it respects the normal search timeout and reports the situation to the user if the index is not yet available.
 * Repo results are no longer returned for filters that are not supported (e.g. if `file:` is part of the search query)
 * Fixed an issue where file tree elements may be scrolled out of view on page load.
 * Fixed an issue that caused "Could not ensure repository updated" log messages when trying to update a large number of repositories from gitolite.

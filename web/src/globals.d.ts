@@ -128,6 +128,11 @@ interface SourcegraphContext {
      * Whether the searchTimeoutParameter feature flag is enabled.
      */
     searchTimeoutParameterEnabled: bool
+
+    /**
+     * Whether the showMissingRepos feature flag is enabled.
+     */
+    showMissingReposEnabled: bool
 }
 
 declare module '*.json' {
