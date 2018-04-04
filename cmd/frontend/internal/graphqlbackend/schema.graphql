@@ -2030,9 +2030,12 @@ enum UserEvent {
 
 # SiteActivity describes a site's aggregate activity level
 type SiteActivity {
-    DAUs: [SiteActivityPeriod!]!
-    WAUs: [SiteActivityPeriod!]!
-    MAUs: [SiteActivityPeriod!]!
+    # Recent daily active users
+    daus: [SiteActivityPeriod!]!
+    # Recent weekly active users
+    waus: [SiteActivityPeriod!]!
+    # Recent monthly active users
+    maus: [SiteActivityPeriod!]!
 }
 
 # SiteActivityPeriod describes a site's activity level for a given timespan
