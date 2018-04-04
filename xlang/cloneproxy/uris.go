@@ -126,7 +126,11 @@ func WalkURIFields(o interface{}, update func(lsp.DocumentURI) lsp.DocumentURI) 
 					}
 					if ok {
 						if update != nil {
-							o[k] = update(lsp.DocumentURI(s))
+							if k == "rootPath" { // HACK
+								o[k] = strings.TrimPrefix(string(update(lsp.DocumentURI(s))), "file://")
+							} else {
+								o[k] = update(lsp.DocumentURI(s))
+							}
 						}
 						continue
 					}
