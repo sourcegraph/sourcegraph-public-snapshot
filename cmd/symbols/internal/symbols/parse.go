@@ -86,7 +86,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID 
 				for _ = range parseRequests {
 				}
 			}()
-			break
+			return nil, ctx.Err()
 		}
 		wg.Add(1)
 		go func(req parseRequest) {
