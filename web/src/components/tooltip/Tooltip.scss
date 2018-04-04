@@ -13,11 +13,12 @@
     &__content {
         max-width: 18rem;
         text-align: center;
-        padding: 0.5rem;
-        border-radius: 0.25rem;
+        padding: 0.275rem 0.5rem;
+        border-radius: 0.1875rem;
         background: darken($color-bg-1, 10%);
         color: $color-text;
         word-wrap: break-word;
+        font-size: 11px; // small
     }
 
     &::after {
