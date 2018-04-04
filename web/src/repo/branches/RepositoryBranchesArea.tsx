@@ -60,7 +60,7 @@ export class RepositoryBranchesArea extends React.Component<Props> {
         }
 
         return (
-            <div className="repository-graph-area area--vertical">
+            <div className="repository-branches-area area--vertical">
                 <RepoHeaderActionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>}
