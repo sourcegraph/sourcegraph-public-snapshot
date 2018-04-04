@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -126,9 +125,6 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID 
 func (s *Service) parse(ctx context.Context, req parseRequest) (entries []ctags.Entry, err error) {
 	parseQueueSize.Inc()
 
-	timeout := time.NewTimer(20 * time.Second)
-	defer timeout.Stop()
-
 	select {
 	case <-ctx.Done():
 		parseQueueSize.Dec()
@@ -136,10 +132,6 @@ func (s *Service) parse(ctx context.Context, req parseRequest) (entries []ctags.
 			parseQueueTimeouts.Inc()
 		}
 		return nil, ctx.Err()
-	case <-timeout.C:
-		parseQueueSize.Dec()
-		parseQueueTimeouts.Inc()
-		return nil, errors.New("timed out waiting for parser")
 	case parser, ok := <-s.parsers:
 		parseQueueSize.Dec()
 
