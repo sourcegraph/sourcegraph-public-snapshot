@@ -1174,7 +1174,7 @@ type BehindAheadCounts {
 }
 
 type Signature {
-    person: Person
+    person: Person!
     date: String!
 }
 
