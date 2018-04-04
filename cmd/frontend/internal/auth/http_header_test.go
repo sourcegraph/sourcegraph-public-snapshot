@@ -44,7 +44,10 @@ func Test_newHTTPHeaderAuthHandler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req.Header.Set(ssoUserHeader, "alice")
 		var calledGetByUsername, calledCreate bool
-		db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
+			if want := "http-header:alice"; id != want {
+				t.Errorf("got %q, want %q", id, want)
+			}
 			calledGetByUsername = true
 			return nil, &errcode.Mock{Message: "user not found", IsNotFound: true}
 		}
@@ -70,9 +73,9 @@ func Test_newHTTPHeaderAuthHandler(t *testing.T) {
 		req.Header.Set(ssoUserHeader, "alice.zhao")
 		const wantNormalizedUsername = "alice-zhao"
 		var calledGetByUsername, calledCreate bool
-		db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
-			if username != wantNormalizedUsername {
-				t.Errorf("got %q, want %q", username, wantNormalizedUsername)
+		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
+			if want := "http-header:alice.zhao"; /* pre-normalized */ id != want {
+				t.Errorf("got %q, want %q", id, want)
 			}
 			calledGetByUsername = true
 			return nil, &errcode.Mock{Message: "user not found", IsNotFound: true}
@@ -101,10 +104,12 @@ func Test_newHTTPHeaderAuthHandler(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req.Header.Set(ssoUserHeader, "bob")
 		var calledGetByUsername bool
-		db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
+			if want := "http-header:bob"; id != want {
+				t.Errorf("got %q, want %q", id, want)
+			}
 			calledGetByUsername = true
-			extID := "http-header:" + username
-			return &types.User{ID: 1, ExternalID: &extID, Username: username}, nil
+			return &types.User{ID: 1, ExternalID: &id, Username: "bob"}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		handler.ServeHTTP(rr, req)

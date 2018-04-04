@@ -1,14 +1,12 @@
 package auth
 
 import (
-	"context"
 	"net/http"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 const (
@@ -33,7 +31,20 @@ func newHTTPHeaderAuthHandler(handler http.Handler) http.Handler {
 		// If the HTTP request contains the header from the auth proxy, get or create the user and
 		// proceed with the authenticated request.
 		if headerValue := r.Header.Get(ssoUserHeader); headerValue != "" {
-			userID, err := getUserFromSSOHeaderUsername(r.Context(), headerValue)
+			username, err := NormalizeUsername(headerValue)
+			if err != nil {
+				log15.Error("Error normalizing username from HTTP auth proxy.", "username", headerValue, "err", err)
+				http.Error(w, "unable to normalize username", http.StatusInternalServerError)
+				return
+			}
+			userID, err := createOrUpdateUser(r.Context(), db.NewUser{
+				ExternalProvider: UserProviderHTTPHeader,
+				// Store headerValue, not normalized username, to prevent two users with distinct
+				// pre-normalization usernames from being merged into the same normalized username
+				// (and therefore letting them each impersonate the other).
+				ExternalID: UserProviderHTTPHeader + ":" + headerValue,
+				Username:   username,
+			})
 			if err != nil {
 				log15.Error("unable to get/create user from SSO header", "header", ssoUserHeader, "headerValue", headerValue, "err", err)
 				http.Error(w, "unable to get/create user", http.StatusInternalServerError)
@@ -52,36 +63,4 @@ func newHTTPHeaderAuthHandler(handler http.Handler) http.Handler {
 		http.Error(w, "must access via HTTP authentication proxy", http.StatusUnauthorized)
 	})
 
-}
-
-func getUserFromSSOHeaderUsername(ctx context.Context, username string) (userID int32, err error) {
-	username, err = NormalizeUsername(username)
-	if err != nil {
-		return 0, err
-	}
-
-	user, err := db.Users.GetByUsername(ctx, username)
-	if err == nil {
-		// User exists.
-		return user.ID, nil
-	} else if !errcode.IsNotFound(err) {
-		return 0, err
-	}
-
-	// User does not exist, so we need to create it.
-	user, err = db.Users.Create(ctx, db.NewUser{
-		ExternalID:       UserProviderHTTPHeader + ":" + username,
-		Username:         username,
-		ExternalProvider: UserProviderHTTPHeader,
-	})
-	// Handle the race condition where the new user performs two requests
-	// and both try to create the user.
-	if err != nil {
-		var err2 error
-		user, err2 = db.Users.GetByUsername(ctx, username)
-		if err2 != nil {
-			return 0, err // return Create error
-		}
-	}
-	return user.ID, nil
 }
