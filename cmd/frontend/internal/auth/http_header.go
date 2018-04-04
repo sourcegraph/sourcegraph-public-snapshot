@@ -51,6 +51,11 @@ func newHTTPHeaderAuthHandler(handler http.Handler) http.Handler {
 }
 
 func getUserFromSSOHeaderUsername(ctx context.Context, username string) (userID int32, err error) {
+	username, err = NormalizeUsername(username)
+	if err != nil {
+		return 0, err
+	}
+
 	user, err := db.Users.GetByUsername(ctx, username)
 	if err == nil {
 		// User exists.

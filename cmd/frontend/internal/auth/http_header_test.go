@@ -63,6 +63,38 @@ func Test_newHTTPHeaderAuthHandler(t *testing.T) {
 		}
 	})
 
+	t.Run("sent, new user with un-normalized username", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		req.Header.Set(ssoUserHeader, "alice.zhao")
+		const wantNormalizedUsername = "alice-zhao"
+		var calledGetByUsername, calledCreate bool
+		db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+			if username != wantNormalizedUsername {
+				t.Errorf("got %q, want %q", username, wantNormalizedUsername)
+			}
+			calledGetByUsername = true
+			return nil, &errcode.Mock{Message: "user not found", IsNotFound: true}
+		}
+		db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*types.User, error) {
+			if info.Username != wantNormalizedUsername {
+				t.Errorf("got %q, want %q", info.Username, wantNormalizedUsername)
+			}
+			calledCreate = true
+			return &types.User{ID: 1, ExternalID: &info.ExternalID, Username: info.Username}, nil
+		}
+		defer func() { db.Mocks = db.MockStores{} }()
+		handler.ServeHTTP(rr, req)
+		if got, want := rr.Body.String(), "user 1"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+		if !calledGetByUsername {
+			t.Error("!calledGetByUsername")
+		}
+		if !calledCreate {
+			t.Error("!calledCreate")
+		}
+	})
+
 	t.Run("sent, existing user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req.Header.Set(ssoUserHeader, "bob")

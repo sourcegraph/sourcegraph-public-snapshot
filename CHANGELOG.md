@@ -14,6 +14,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Repo results are no longer returned for filters that are not supported (e.g. if `file:` is part of the search query)
 * Fixed an issue where file tree elements may be scrolled out of view on page load.
 * Fixed an issue that caused "Could not ensure repository updated" log messages when trying to update a large number of repositories from gitolite.
+* When using an HTTP authentication proxy (`"auth.provider": "http-header"`), usernames are now properly normalized (special characters including `.` replaced with `-`). This fixes an issue preventing users from signing in if their username contained these special characters.
 
 ### Added
 
