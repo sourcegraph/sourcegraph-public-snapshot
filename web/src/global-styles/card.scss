@@ -1,10 +1,18 @@
+$card-spacer-y: 0.5rem;
+$card-spacer-x: 0.75rem;
 $card-bg: transparent;
 $card-border-color: $color-border;
 
 @import 'bootstrap/scss/card';
 
+.card-header {
+    font-weight: bold;
+    opacity: 0.8;
+}
+
 .theme-light {
-    .card {
+    .card,
+    .card-header {
         border-color: $color-light-border;
     }
 }

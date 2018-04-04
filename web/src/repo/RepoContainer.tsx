@@ -19,6 +19,7 @@ import { queryUpdates } from '../search/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
+import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
 import { RepositoryGraphAction } from './graph/RepositoryGraphAction'
 import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
@@ -234,6 +235,14 @@ export class RepoContainer extends React.Component<Props, State> {
                                 )}
                             />
                         ))}
+                        <Route
+                            path={`${repoMatchURL}/-/branches`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryBranchesArea {...routeComponentProps} {...transferProps} />
+                            )}
+                        />
                         <Route
                             path={`${repoMatchURL}/-/settings`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

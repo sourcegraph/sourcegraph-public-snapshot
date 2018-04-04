@@ -3,11 +3,13 @@
 .theme-light {
     color: $body-color-light;
 
+    --text-muted: $color-light-text-2;
     --link-color: #566e9f;
     --link-hover-color: #1d2535;
 }
 
 .theme-dark {
+    --text-muted: $color-text-1;
     --link-color: #a2b0cd;
     --link-hover-color: white;
 }

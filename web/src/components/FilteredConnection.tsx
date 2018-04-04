@@ -334,7 +334,8 @@ interface Connection<N> {
     pageInfo?: { hasNextPage: boolean }
 }
 
-const QUERY_KEY = 'query'
+/** The URL query parameter where the search query for FilteredConnection is stored. */
+export const QUERY_KEY = 'query'
 
 /**
  * Displays a collection of items with filtering and pagination. It is called

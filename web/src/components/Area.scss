@@ -48,6 +48,7 @@ $area-max-width: 54rem;
     width: 100%;
 
     &__header,
+    &__navbar,
     &__content {
         &-inner {
             max-width: $area-max-width;
@@ -55,7 +56,9 @@ $area-max-width: 54rem;
         }
     }
 
+    &__navbar,
     &__content {
         padding: 1rem 0.5rem;
+        flex: none;
     }
 }

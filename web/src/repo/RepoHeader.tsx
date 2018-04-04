@@ -1,3 +1,4 @@
+import BranchIcon from '@sourcegraph/icons/lib/Branch'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
@@ -8,6 +9,9 @@ import { AnonymousSubscription, Subscription } from 'rxjs/Subscription'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { RepositoriesPopover } from './RepositoriesPopover'
+
+/** Feature flag enabling Git branches, etc., pages. */
+const enableGitBrowsing = localStorage.getItem('gitBrowsing') !== null
 
 /**
  * An action link that is added to and displayed in the repository header.
@@ -213,6 +217,16 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 {this.state.leftActions && this.state.leftActions.map(a => a.element)}
                 <div className="repo-header__spacer" />
                 {this.state.rightActions && this.state.rightActions.map(a => a.element)}
+                {enableGitBrowsing && (
+                    <NavLink
+                        to={`/${this.props.repo.uri}/-/branches`}
+                        className="composite-container__header-action"
+                        activeClassName="composite-container__header-action-active"
+                    >
+                        <BranchIcon className="icon-inline" />
+                        <span className="composite-container__header-action-text">Branches</span>
+                    </NavLink>
+                )}
                 {this.props.repo.viewerCanAdminister && (
                     <NavLink
                         to={`/${this.props.repo.uri}/-/settings`}

@@ -766,6 +766,8 @@ type Repository implements Node {
         # Known issue: It is only supported to retrieve Git branch and tag refs, not
         # other Git refs.
         type: GitRefType
+        # Ordering for Git refs in the list.
+        orderBy: GitRefOrder
     ): GitRefConnection!
     # The repository's Git branches.
     branches(
@@ -773,6 +775,8 @@ type Repository implements Node {
         first: Int
         # Return Git branches whose names match the query.
         query: String
+        # Ordering for Git branches in the list.
+        orderBy: GitRefOrder
     ): GitRefConnection!
     # The repository's Git tags.
     tags(
@@ -1027,6 +1031,12 @@ enum GitRefType {
     GIT_TAG
     # A Git ref that is neither a branch nor tag.
     GIT_REF_OTHER
+}
+
+# Ordering options for Git refs.
+enum GitRefOrder {
+    # By the authored or committed at date, whichever is more recent.
+    AUTHORED_OR_COMMITTED_AT
 }
 
 # A Git object.

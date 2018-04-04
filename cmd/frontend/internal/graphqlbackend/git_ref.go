@@ -14,6 +14,8 @@ const (
 	gitRefTypeBranch = "GIT_BRANCH"
 	gitRefTypeTag    = "GIT_TAG"
 	gitRefTypeOther  = "GIT_REF_OTHER"
+
+	gitRefOrderAuthoredOrCommittedAt = "AUTHORED_OR_COMMITTED_AT"
 )
 
 func gitRefPrefix(ref string) string {

@@ -2,8 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strings"
+	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -11,14 +13,16 @@ import (
 
 func (r *repositoryResolver) Branches(ctx context.Context, args *struct {
 	connectionArgs
-	Query *string
+	Query   *string
+	OrderBy *string
 }) (*gitRefConnectionResolver, error) {
 	gitRefTypeBranch := gitRefTypeBranch
 	return r.GitRefs(ctx, &struct {
 		connectionArgs
-		Query *string
-		Type  *string
-	}{connectionArgs: args.connectionArgs, Query: args.Query, Type: &gitRefTypeBranch})
+		Query   *string
+		Type    *string
+		OrderBy *string
+	}{connectionArgs: args.connectionArgs, Query: args.Query, Type: &gitRefTypeBranch, OrderBy: args.OrderBy})
 }
 
 func (r *repositoryResolver) Tags(ctx context.Context, args *struct {
@@ -28,40 +32,61 @@ func (r *repositoryResolver) Tags(ctx context.Context, args *struct {
 	gitRefTypeTag := gitRefTypeTag
 	return r.GitRefs(ctx, &struct {
 		connectionArgs
-		Query *string
-		Type  *string
+		Query   *string
+		Type    *string
+		OrderBy *string
 	}{connectionArgs: args.connectionArgs, Query: args.Query, Type: &gitRefTypeTag})
 }
 
 func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	connectionArgs
-	Query *string
-	Type  *string
+	Query   *string
+	Type    *string
+	OrderBy *string
 }) (*gitRefConnectionResolver, error) {
+	if args.OrderBy != nil && (args.Type == nil || *args.Type != gitRefTypeBranch) {
+		return nil, errors.New("Repository.gitRefs orderBy parameter must be use with type: GIT_BRANCH")
+	}
+
 	vcsrepo := backend.Repos.CachedVCS(r.repo)
 
 	var branches []*vcs.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = vcsrepo.Branches(ctx, vcs.BranchesOptions{})
+		branches, err = vcsrepo.Branches(ctx, vcs.BranchesOptions{IncludeCommit: true})
 		if err != nil {
 			return nil, err
 		}
 
 		// Sort branches by most recently committed.
-		sort.Slice(branches, func(i, j int) bool {
-			bi, bj := branches[i], branches[j]
-			switch {
-			case bi.Commit == nil:
-				return false
-			case bj.Commit == nil:
-				return true
-			case !bi.Commit.Author.Date.IsZero():
-				return bi.Commit.Author.Date.After(bj.Commit.Author.Date)
-			default:
-				return bi.Name < bj.Name
+		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+			date := func(c *vcs.Commit) time.Time {
+				if c.Committer == nil {
+					return c.Author.Date
+				}
+				if c.Committer.Date.After(c.Author.Date) {
+					return c.Committer.Date
+				}
+				return c.Author.Date
 			}
-		})
+			sort.Slice(branches, func(i, j int) bool {
+				bi, bj := branches[i], branches[j]
+				if bi.Commit == nil {
+					return false
+				}
+				if bj.Commit == nil {
+					return true
+				}
+				di, dj := date(bi.Commit), date(bj.Commit)
+				if di.Equal(dj) {
+					return bi.Name < bj.Name
+				}
+				if di.After(dj) {
+					return true
+				}
+				return false
+			})
+		}
 	}
 
 	var tags []*vcs.Tag

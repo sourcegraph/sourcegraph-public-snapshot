@@ -13,6 +13,7 @@ $media-lg: 992px;
 $media-xl: 1200px;
 
 @import 'open-color/open-color';
+@import './global-styles/colors';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: 2px;
@@ -45,6 +46,8 @@ $theme-colors-light: ('secondary': $secondary-light);
 
 $body-color: #f2f4f8;
 $body-color-light: #2b3750;
+
+$text-muted: var(--text-muted);
 
 // Links
 
@@ -85,23 +88,17 @@ $table-border-color: #2b3750;
 $table-hover-bg-light: #f2f4f8;
 $table-border-color-light: #e4e9f1;
 
-// List group
-
-$list-group-bg: transparent;
-$list-group-item-padding-y: 0.25rem;
-$list-group-item-padding-x: 0.5rem;
-
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/nav';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/badge';
-@import 'bootstrap/scss/list-group';
-@import './global-styles/colors';
 @import './global-styles/card';
 @import './global-styles/type';
 @import './global-styles/icons';
+@import './global-styles/list-group';
 @import './global-styles/tables';
 @import './global-styles/code';
 @import './global-styles/buttons';
