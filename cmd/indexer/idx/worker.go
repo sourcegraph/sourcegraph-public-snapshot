@@ -75,10 +75,6 @@ func (w *Worker) Work() {
 		} else if vcs.IsCloneInProgress(err) {
 			if isPrimary {
 				log15.Info("Index postponed (clone in progress)", "repo", repoRev.repo, "rev", repoRev.rev)
-				go func() {
-					time.Sleep(5 * time.Second)
-					w.primary.Enqueue(repoRev.repo, repoRev.rev)
-				}()
 			}
 		} else {
 			log15.Error("Index failed", "repo", repoRev.repo, "rev", repoRev.rev, "isPrimary", isPrimary, "error", err)
