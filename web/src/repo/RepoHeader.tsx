@@ -2,6 +2,7 @@ import BranchIcon from '@sourcegraph/icons/lib/Branch'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
+import TagIcon from '@sourcegraph/icons/lib/Tag'
 import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
@@ -235,6 +236,14 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         >
                             <BranchIcon className="icon-inline" />
                             <span className="composite-container__header-action-text">Branches</span>
+                        </NavLink>
+                        <NavLink
+                            to={`/${this.props.repo.uri}/-/tags`}
+                            className="composite-container__header-action"
+                            activeClassName="composite-container__header-action-active"
+                        >
+                            <TagIcon className="icon-inline" />
+                            <span className="composite-container__header-action-text">Tags</span>
                         </NavLink>
                     </>
                 )}

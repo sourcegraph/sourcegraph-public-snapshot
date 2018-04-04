@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"strings"
 	"time"
@@ -44,10 +43,6 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	Type    *string
 	OrderBy *string
 }) (*gitRefConnectionResolver, error) {
-	if args.OrderBy != nil && (args.Type == nil || *args.Type != gitRefTypeBranch) {
-		return nil, errors.New("Repository.gitRefs orderBy parameter must be use with type: GIT_BRANCH")
-	}
-
 	vcsrepo := backend.Repos.CachedVCS(r.repo)
 
 	var branches []*vcs.Branch
@@ -96,10 +91,14 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		// Sort tags by reverse alpha.
-		sort.Slice(tags, func(i, j int) bool {
-			return tags[i].Name > tags[j].Name
-		})
+		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+			// Tags are already sorted by creatordate.
+		} else {
+			// Sort tags by reverse alpha.
+			sort.Slice(tags, func(i, j int) bool {
+				return tags[i].Name > tags[j].Name
+			})
+		}
 	}
 
 	// Combine branches and tags.
