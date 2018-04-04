@@ -16,7 +16,7 @@ func (r *signatureResolver) Person() *personResolver {
 }
 
 func (r *signatureResolver) Date() string {
-	return r.date.String()
+	return r.date.Format(time.RFC3339)
 }
 
 func toSignatureResolver(sig *vcs.Signature) *signatureResolver {
