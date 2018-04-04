@@ -1650,6 +1650,9 @@ type LangServer {
     # "go", "java", "typescript", etc.
     language: String!
 
+    # "Go", "Java", "TypeScript", "PHP", etc.
+    displayName: String!
+
     # URL to the language server's homepage.
     homepageURL: String!
 

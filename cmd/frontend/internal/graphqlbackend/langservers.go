@@ -11,6 +11,7 @@ import (
 
 type langServerResolver struct {
 	language                                     string
+	displayName                                  string
 	homepageURL, issuesURL, docsURL              string
 	dataCenter                                   bool
 	enabled                                      bool
@@ -20,6 +21,7 @@ type langServerResolver struct {
 }
 
 func (c *langServerResolver) Language(ctx context.Context) string    { return c.language }
+func (c *langServerResolver) DisplayName(ctx context.Context) string { return c.displayName }
 func (c *langServerResolver) HomepageURL(ctx context.Context) string { return c.homepageURL }
 func (c *langServerResolver) IssuesURL(ctx context.Context) string   { return c.issuesURL }
 func (c *langServerResolver) DocsURL(ctx context.Context) string     { return c.docsURL }
@@ -49,6 +51,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			// have less information.
 			results = append(results, &langServerResolver{
 				language:    language,
+				displayName: langservers.DisplayNames[language],
 				homepageURL: langservers.URLs[language].Homepage,
 				issuesURL:   langservers.URLs[language].Issues,
 				docsURL:     langservers.URLs[language].Docs,
@@ -71,6 +74,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 
 		results = append(results, &langServerResolver{
 			language:    language,
+			displayName: langservers.DisplayNames[language],
 			homepageURL: langservers.URLs[language].Homepage,
 			issuesURL:   langservers.URLs[language].Issues,
 			docsURL:     langservers.URLs[language].Docs,

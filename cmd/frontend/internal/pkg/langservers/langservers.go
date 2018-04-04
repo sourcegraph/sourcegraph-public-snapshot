@@ -21,6 +21,16 @@ import (
 // Languages is the list of languages that have a supported language server.
 var Languages []string
 
+// DisplayNames is a map of languages (always lowercase) to their display names.
+var DisplayNames = map[string]string{
+	"go":         "Go",
+	"typescript": "TypeScript",
+	"javascript": "JavaScript",
+	"python":     "Python",
+	"java":       "Java",
+	"php":        "PHP",
+}
+
 // URLs is a map of languages to their relevant project URLs.
 var URLs = map[string]struct {
 	Homepage, Issues, Docs string
@@ -84,6 +94,9 @@ func init() {
 		// Every language should be in the URLs map, even if the URLs are just
 		// empty strings.
 		_ = URLs[lang]
+
+		// Every language should be in the DisplayNames map.
+		_ = DisplayNames[lang]
 	}
 
 	if envvar.DebugMode() {
