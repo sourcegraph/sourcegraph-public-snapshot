@@ -11,6 +11,7 @@ import (
 
 type langServerResolver struct {
 	language                                     string
+	homepageURL, issuesURL, docsURL              string
 	dataCenter                                   bool
 	enabled                                      bool
 	pending                                      bool
@@ -18,15 +19,18 @@ type langServerResolver struct {
 	healthy                                      bool
 }
 
-func (c *langServerResolver) Language(ctx context.Context) string { return c.language }
-func (c *langServerResolver) DataCenter(ctx context.Context) bool { return c.dataCenter }
-func (c *langServerResolver) Enabled(ctx context.Context) bool    { return c.enabled }
-func (c *langServerResolver) Pending(ctx context.Context) bool    { return c.pending }
-func (c *langServerResolver) CanEnable(ctx context.Context) bool  { return c.canEnable }
-func (c *langServerResolver) CanDisable(ctx context.Context) bool { return c.canDisable }
-func (c *langServerResolver) CanRestart(ctx context.Context) bool { return c.canRestart }
-func (c *langServerResolver) CanUpdate(ctx context.Context) bool  { return c.canUpdate }
-func (c *langServerResolver) Healthy(ctx context.Context) bool    { return c.healthy }
+func (c *langServerResolver) Language(ctx context.Context) string    { return c.language }
+func (c *langServerResolver) HomepageURL(ctx context.Context) string { return c.homepageURL }
+func (c *langServerResolver) IssuesURL(ctx context.Context) string   { return c.issuesURL }
+func (c *langServerResolver) DocsURL(ctx context.Context) string     { return c.docsURL }
+func (c *langServerResolver) DataCenter(ctx context.Context) bool    { return c.dataCenter }
+func (c *langServerResolver) Enabled(ctx context.Context) bool       { return c.enabled }
+func (c *langServerResolver) Pending(ctx context.Context) bool       { return c.pending }
+func (c *langServerResolver) CanEnable(ctx context.Context) bool     { return c.canEnable }
+func (c *langServerResolver) CanDisable(ctx context.Context) bool    { return c.canDisable }
+func (c *langServerResolver) CanRestart(ctx context.Context) bool    { return c.canRestart }
+func (c *langServerResolver) CanUpdate(ctx context.Context) bool     { return c.canUpdate }
+func (c *langServerResolver) Healthy(ctx context.Context) bool       { return c.healthy }
 
 func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, error) {
 	// Note: This only affects whether or not the client displays
@@ -44,15 +48,18 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			// Running in Data Center. We cannot execute Docker commands, so we
 			// have less information.
 			results = append(results, &langServerResolver{
-				language:   language,
-				dataCenter: true,
-				enabled:    state == langservers.StateEnabled,
-				pending:    false,
-				canEnable:  false,
-				canDisable: false,
-				canRestart: false,
-				canUpdate:  false,
-				healthy:    false,
+				language:    language,
+				homepageURL: langservers.URLs[language].Homepage,
+				issuesURL:   langservers.URLs[language].Issues,
+				docsURL:     langservers.URLs[language].Docs,
+				dataCenter:  true,
+				enabled:     state == langservers.StateEnabled,
+				pending:     false,
+				canEnable:   false,
+				canDisable:  false,
+				canRestart:  false,
+				canUpdate:   false,
+				healthy:     false,
 			})
 			continue
 		}
@@ -63,15 +70,18 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 		}
 
 		results = append(results, &langServerResolver{
-			language:   language,
-			dataCenter: false,
-			enabled:    state == langservers.StateEnabled,
-			pending:    info.Pulling || info.Status == langservers.StatusStarting,
-			canEnable:  isSiteAdmin || state == langservers.StateNone,
-			canDisable: isSiteAdmin,
-			canRestart: isSiteAdmin,
-			canUpdate:  isSiteAdmin,
-			healthy:    info.Pulling || info.Status != langservers.StatusUnhealthy,
+			language:    language,
+			homepageURL: langservers.URLs[language].Homepage,
+			issuesURL:   langservers.URLs[language].Issues,
+			docsURL:     langservers.URLs[language].Docs,
+			dataCenter:  false,
+			enabled:     state == langservers.StateEnabled,
+			pending:     info.Pulling || info.Status == langservers.StatusStarting,
+			canEnable:   isSiteAdmin || state == langservers.StateNone,
+			canDisable:  isSiteAdmin,
+			canRestart:  isSiteAdmin,
+			canUpdate:   isSiteAdmin,
+			healthy:     info.Pulling || info.Status != langservers.StatusUnhealthy,
 		})
 	}
 	return results, nil

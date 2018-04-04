@@ -21,6 +21,42 @@ import (
 // Languages is the list of languages that have a supported language server.
 var Languages []string
 
+// URLs is a map of languages to their relevant project URLs.
+var URLs = map[string]struct {
+	Homepage, Issues, Docs string
+}{
+	"go": {
+		Homepage: "https://github.com/sourcegraph/go-langserver",
+		Issues:   "https://github.com/sourcegraph/go-langserver/issues",
+		Docs:     "https://github.com/sourcegraph/go-langserver/blob/master/README.md",
+	},
+	"typescript": {
+		Homepage: "https://github.com/sourcegraph/javascript-typescript-langserver",
+		Issues:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
+		Docs:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
+	},
+	"javascript": {
+		Homepage: "https://github.com/sourcegraph/javascript-typescript-langserver",
+		Issues:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
+		Docs:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
+	},
+	"python": {
+		Homepage: "https://github.com/sourcegraph/python-langserver",
+		Issues:   "https://github.com/sourcegraph/python-langserver/issues",
+		Docs:     "https://github.com/sourcegraph/python-langserver/blob/master/README.md",
+	},
+	"java": {
+		Homepage: "",
+		Issues:   "",
+		Docs:     "",
+	},
+	"php": {
+		Homepage: "https://github.com/felixfbecker/php-language-server",
+		Issues:   "https://github.com/felixfbecker/php-language-server/issues",
+		Docs:     "https://github.com/felixfbecker/php-language-server/blob/master/README.md",
+	},
+}
+
 var siteConfigs = map[string]schema.Langservers{
 	"go":         schema.Langservers{Language: "go", Address: "tcp://go:4389"},
 	"typescript": schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
@@ -44,6 +80,10 @@ var debugContainerPorts = map[string]struct {
 func init() {
 	for lang := range siteConfigs {
 		Languages = append(Languages, lang)
+
+		// Every language should be in the URLs map, even if the URLs are just
+		// empty strings.
+		_ = URLs[lang]
 	}
 
 	if envvar.DebugMode() {
