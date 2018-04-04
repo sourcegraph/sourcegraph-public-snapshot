@@ -3,6 +3,8 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"net/url"
+	"os"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -18,6 +20,21 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
+
+// federateBaseURL is a temporary variable we will use for switching on code
+// intelligence federation. It defaults to off. Before launching this will be
+// moved to our feature flag configuration.
+var federateBaseURL *url.URL
+
+func init() {
+	if u := os.Getenv("FEAT_FEDERATE_BASE_URL"); u != "" {
+		var err error
+		federateBaseURL, err = url.Parse(u)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 
 // xclient is an LSP client that transparently wraps xlang.Client,
 // except that it translates textDocument/definition requests into a
@@ -246,7 +263,7 @@ func (c *xclient) jumpToDefCrossRepo(ctx context.Context, params, result interfa
 // 2. Use textDocument/xdefinition (sg extension) to retrieve symbol information.
 // 3. symbolHover: Using the symbols, use the first successful hover in the
 //    definition repos.
-// 4. TODO If we do not find a non-empty hover and federation is enabled, we send
+// 4. If we do not find a non-empty hover and federation is enabled, we send
 //    the package query to Sourcegraph.com's xlang API. The assumption is the
 //    dependency is an OSS package so we can consult our public index. If the
 //    response is non-empty we return it.
@@ -285,6 +302,24 @@ func (c *xclient) hoverCrossRepo(ctx context.Context, params interface{}, opt ..
 		// hover range.
 		xhov.Range = hover.Range
 		return xhov, nil
+	}
+
+	// Failed to find the hover locally, try symbolHover on Sourcegraph.com
+	// which may have indexed the OSS repo used.
+	if federateBaseURL != nil {
+		// HACK we need a valid rootURI, even though we are doing symbol queries.
+		rootURI := lsp.DocumentURI("git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06")
+		var remoteHov lsp.Hover
+		err := xlang.RemoteOneShotClientRequest(ctx, federateBaseURL, c.mode, rootURI, "xsymbol/hover", syms, &remoteHov)
+		if err != nil {
+			return nil, err
+		}
+		if len(remoteHov.Contents) > 0 {
+			// Range is for the queried token, so we need to use the local
+			// hover range.
+			remoteHov.Range = hover.Range
+			return &remoteHov, nil
+		}
 	}
 
 	// Fallback to local hover contents.

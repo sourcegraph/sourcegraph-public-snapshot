@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"time"
+
+	"golang.org/x/net/context/ctxhttp"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -171,4 +174,94 @@ func UnsafeOneShotClientRequest(ctx context.Context, mode string, rootURI lsp.Do
 		return errors.Wrap(err, "LSP exit")
 	}
 	return nil
+}
+
+// RemoteOneShotClientRequest performs a one-shot LSP client request to the specified
+// method (e.g. "textDocument/definition") and stores the results in the given
+// pointer value. It does this against a remote Sourcegraph
+func RemoteOneShotClientRequest(ctx context.Context, remote *url.URL, mode string, rootURI lsp.DocumentURI, method string, params, results interface{}) error {
+	payload := []*jsonrpc2.Request{
+		// Initialize the connection.
+		{
+			ID:     jsonrpc2.ID{Num: 0},
+			Method: "initialize",
+		},
+
+		// Perform the request.
+		{
+			ID:     jsonrpc2.ID{Num: 1},
+			Method: method,
+		},
+
+		// Shutdown the connection.
+		{
+			ID:     jsonrpc2.ID{Num: 2},
+			Method: "shutdown",
+		},
+		{
+			ID:     jsonrpc2.ID{Num: 3},
+			Method: "exit",
+			Notif:  true,
+		},
+	}
+
+	initIdx := 0
+	requestIdx := 1
+
+	// init params
+	err := payload[initIdx].SetParams(&lspext.ClientProxyInitializeParams{
+		InitializeParams: lsp.InitializeParams{
+			// TODO(sqs): rootPath is deprecated
+			RootPath: string(rootURI),
+
+			RootURI: rootURI,
+		},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode},
+		Mode: mode,
+	})
+	if err != nil {
+		return err
+	}
+
+	// method params
+	err = payload[requestIdx].SetParams(params)
+	if err != nil {
+		return err
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	remote = &(*remote) // copy
+	remote.Path = "/.api/xlang/" + method
+	url := remote.String()
+
+	// TODO tracing, user-agent, local version, local whoami
+	resp, err := ctxhttp.Post(ctx, nil, url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var respPayload []*jsonrpc2.Response
+	if err := json.NewDecoder(resp.Body).Decode(&respPayload); err != nil {
+		return err
+	}
+
+	for _, resp := range respPayload {
+		if resp != nil && resp.ID.Num == payload[requestIdx].ID.Num { // the interesting request ID
+			if resp.Error != nil {
+				return resp.Error
+			}
+			b, err := resp.Result.MarshalJSON()
+			if err != nil {
+				return err
+			}
+			return json.Unmarshal(b, results)
+		}
+	}
+
+	return errors.New("no response found for request")
 }
