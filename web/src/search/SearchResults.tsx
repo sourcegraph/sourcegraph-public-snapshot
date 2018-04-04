@@ -1,11 +1,11 @@
 import ArrowCollapseVerticalIcon from '@sourcegraph/icons/lib/ArrowCollapseVertical'
 import ArrowExpandVerticalIcon from '@sourcegraph/icons/lib/ArrowExpandVertical'
 import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
+import DirectionalSign from '@sourcegraph/icons/lib/DirectionalSign'
 import DocumentIcon from '@sourcegraph/icons/lib/Document'
 import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
-import ReportIcon from '@sourcegraph/icons/lib/Report'
 import SaveIcon from '@sourcegraph/icons/lib/Save'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
@@ -31,7 +31,6 @@ import { FilterChip } from './FilterChip'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { ModalContainer } from './ModalContainer'
 import { queryTelemetryData } from './queryTelemetry'
-import { RepoSearchResult } from './RepoSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
 import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SearchAlert } from './SearchAlert'
@@ -71,8 +70,6 @@ const DATA_CENTER_UPGRADE_STRING =
 const SEARCH_TIMED_OUT_DEFAULT_TITLE = 'Search timed out'
 
 export class SearchResults extends React.Component<Props, State> {
-    private static SHOW_MISSING = true
-
     public state: State = {
         results: [],
         alert: null,
@@ -307,6 +304,8 @@ export class SearchResults extends React.Component<Props, State> {
 
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
+        const showMissingRepos = localStorage.getItem('showMissingRepos') && this.state.missing.length > 0
+
         return (
             <div className="search-results">
                 {this.state.results.length > 0 && (
@@ -343,9 +342,20 @@ export class SearchResults extends React.Component<Props, State> {
                     <div className="search-results__info">
                         {(this.state.timedout.length > 0 ||
                             this.state.cloning.length > 0 ||
-                            this.state.results.length > 0) && (
+                            this.state.results.length > 0 ||
+                            showMissingRepos) && (
                             <small className="search-results__info-row">
                                 <div className="search-results__info-row-left">
+                                    {showMissingRepos && (
+                                        <span className="search-results__info-notice">
+                                            <DirectionalSign className="icon-inline" />
+                                            <span data-tooltip={this.state.missing.join('\n')}>
+                                                {this.state.missing.length}&nbsp;
+                                                {pluralize('repository', this.state.missing.length, 'repositories')} not
+                                                found
+                                            </span>
+                                        </span>
+                                    )}
                                     {(this.state.timedout.length > 0 || this.state.cloning.length > 0) && (
                                         <span className="search-results__info-notice">
                                             <HourglassIcon className="icon-inline" />
@@ -427,10 +437,6 @@ export class SearchResults extends React.Component<Props, State> {
                             showDotComMarketing && <ServerBanner />}
                     </div>
                     {this.state.results.length > 0}
-                    {SearchResults.SHOW_MISSING &&
-                        this.state.missing.map((repoPath, i) => (
-                            <RepoSearchResult repoPath={repoPath} key={i} icon={ReportIcon} />
-                        ))}
                     {this.state.loading && <Loader className="icon-inline" />}
                     {this.state.results.slice(0, 75).map((result, i) => this.renderResult(i, result, i <= 15))}
                     {this.state.limitHit && (

@@ -657,11 +657,9 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 			if zoektCache == nil {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
-			if os.Getenv("SEARCH_UNINDEXED_NOMISSING") == "" {
-				common.missing = make([]api.RepoURI, len(searcherRepos))
-				for i, r := range searcherRepos {
-					common.missing[i] = r.repo.URI
-				}
+			common.missing = make([]api.RepoURI, len(searcherRepos))
+			for i, r := range searcherRepos {
+				common.missing[i] = r.repo.URI
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
