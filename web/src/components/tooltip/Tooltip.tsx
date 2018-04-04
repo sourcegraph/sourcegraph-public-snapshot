@@ -43,8 +43,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
         document.addEventListener('focusin', this.toggleHint)
         document.addEventListener('mouseover', this.toggleHint)
         document.addEventListener('touchend', this.toggleHint)
-        // Don't let click show hint to avoid enter on forms triggering it on 1st button.
-        document.addEventListener('click', this.hideHint)
+        document.addEventListener('click', this.toggleHint)
     }
 
     public componentDidUpdate(): void {
@@ -62,7 +61,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
         document.removeEventListener('focusin', this.toggleHint)
         document.removeEventListener('mouseover', this.toggleHint)
         document.removeEventListener('touchend', this.toggleHint)
-        document.removeEventListener('click', this.hideHint)
+        document.removeEventListener('click', this.toggleHint)
         if (this._timeout !== undefined) {
             clearTimeout(this._timeout)
         }
@@ -100,6 +99,19 @@ export class Tooltip extends React.PureComponent<Props, State> {
         if (this._timeout !== undefined) {
             clearTimeout(this._timeout)
         }
+
+        // As a special case, don't show the tooltip for click events on submit buttons that are probably triggered
+        // by the user pressing the enter button. It is not desirable for the tooltip to be shown in that case.
+        if (
+            e.type === 'click' &&
+            (e.target as HTMLElement).tagName === 'BUTTON' &&
+            (e.target as HTMLButtonElement).type === 'submit' &&
+            (e as MouseEvent).pageX === 0 &&
+            (e as MouseEvent).pageY === 0
+        ) {
+            return
+        }
+
         this._timeout = window.setTimeout(
             () =>
                 this.setState(() => ({
@@ -107,13 +119,6 @@ export class Tooltip extends React.PureComponent<Props, State> {
                 })),
             Tooltip.DELAY
         )
-    }
-
-    private hideHint = (e: Event): void => {
-        if (this._timeout !== undefined) {
-            clearTimeout(this._timeout)
-        }
-        this.setState({ subject: undefined })
     }
 
     /**
