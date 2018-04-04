@@ -218,6 +218,29 @@ func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
+	var req api.ReposGetInventoryRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		return err
+	}
+	repo, err := backend.Repos.Get(r.Context(), req.Repo)
+	if err != nil {
+		return err
+	}
+	inv, err := backend.Repos.GetInventory(r.Context(), repo, req.CommitID)
+	if err != nil {
+		return err
+	}
+	data, err := json.Marshal(inv)
+	if err != nil {
+		return err
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+	return nil
+}
+
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	var opt db.ReposListOptions
 	err := json.NewDecoder(r.Body).Decode(&opt)

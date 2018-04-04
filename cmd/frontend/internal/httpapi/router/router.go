@@ -35,6 +35,7 @@ const (
 	ReposCreateIfNotExists     = "internal.repos.create-if-not-exists"
 	ReposGetByURI              = "internal.repos.get-by-uri"
 	ReposInventoryUncached     = "internal.repos.inventory-uncached"
+	ReposInventory             = "internal.repos.inventory"
 	ReposList                  = "internal.repos.list"
 	ReposUnindexedDependencies = "internal.repos.unindexed-dependencies"
 	ReposUpdateIndex           = "internal.repos.update-index"
@@ -94,6 +95,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/repos/create-if-not-exists").Methods("POST").Name(ReposCreateIfNotExists)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
+	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/unindexed-dependencies").Methods("POST").Name(ReposUnindexedDependencies)
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)

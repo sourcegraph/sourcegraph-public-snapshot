@@ -291,6 +291,15 @@ func (c *internalClient) ReposGetInventoryUncached(ctx context.Context, repo Rep
 	return &inv, nil
 }
 
+func (c *internalClient) ReposGetInventory(ctx context.Context, repo RepoID, commitID CommitID) (*inventory.Inventory, error) {
+	var inv inventory.Inventory
+	err := c.postInternal(ctx, "repos/inventory", ReposGetInventoryRequest{Repo: repo, CommitID: commitID}, &inv)
+	if err != nil {
+		return nil, err
+	}
+	return &inv, nil
+}
+
 func (c *internalClient) GitoliteUpdateRepos(ctx context.Context) error {
 	return c.postInternal(ctx, "gitolite/update-repos", nil, nil)
 }

@@ -59,6 +59,11 @@ type ReposGetInventoryUncachedRequest struct {
 	CommitID
 }
 
+type ReposGetInventoryRequest struct {
+	Repo RepoID
+	CommitID
+}
+
 type PhabricatorRepoCreateRequest struct {
 	RepoURI  `json:"uri"`
 	Callsign string `json:"callsign"`
