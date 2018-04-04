@@ -1,6 +1,5 @@
 import formatDistance from 'date-fns/formatDistance'
 import { limitString } from '../../../util'
-import { parseCommitDateString } from '../../../util/time'
 import { BlameData } from './index'
 
 /**
@@ -58,7 +57,7 @@ export function setLineBlame(data: BlameData): void {
         return clearLineBlameContent()
     }
 
-    const timeSince = formatDistance(parseCommitDateString(hunk.author.date), new Date(), { addSuffix: true })
+    const timeSince = formatDistance(hunk.author.date, new Date(), { addSuffix: true })
     const blameContent = `${hunk.author.person.name}, ${timeSince} • ${limitString(
         hunk.message,
         80,

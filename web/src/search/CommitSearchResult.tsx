@@ -8,7 +8,6 @@ import { GitRefTag } from '../repo/GitRefTag'
 import { AbsoluteRepoFilePosition, RepoSpec } from '../repo/index'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
-import { parseCommitDateString } from '../util/time'
 import { externalCommitURL, toPrettyBlobURL } from '../util/url'
 import { ResultContainer } from './ResultContainer'
 
@@ -91,7 +90,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                     </a>
                 </code>{' '}
                 <a href={commitURL} onClick={stopPropagationToCollapseOrExpand} onMouseDown={logClickOnTimestamp}>
-                    {formatDistance(parseCommitDateString(props.result.commit.author.date), new Date(), {
+                    {formatDistance(props.result.commit.author.date, new Date(), {
                         addSuffix: true,
                     })}
                 </a>

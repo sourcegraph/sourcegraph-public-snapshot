@@ -28,7 +28,6 @@ import { SearchHelp } from '../search/SearchHelp'
 import { UserAvatar } from '../user/UserAvatar'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
-import { parseCommitDateString } from '../util/time'
 import { externalCommitURL, toPrettyBlobURL, toTreeURL } from '../util/url'
 import { searchQueryForRepoRev } from './RepoContainer'
 
@@ -345,7 +344,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                                                     {c.author.person && c.author.person.name}
                                                 </td>
                                                 <td className="directory-page__commit-date" title={c.author.date}>
-                                                    {formatDistance(parseCommitDateString(c.author.date), new Date(), {
+                                                    {formatDistance(c.author.date, new Date(), {
                                                         addSuffix: true,
                                                     })}
                                                 </td>
