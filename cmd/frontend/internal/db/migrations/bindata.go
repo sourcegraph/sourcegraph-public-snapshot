@@ -146,6 +146,8 @@
 // ../../../../../migrations/1520588597_user_emails_unique_verified_only.up.sql
 // ../../../../../migrations/1520708880_users_display_name_nullable.down.sql
 // ../../../../../migrations/1520708880_users_display_name_nullable.up.sql
+// ../../../../../migrations/1522555179_create_access_tokens_table.down.sql
+// ../../../../../migrations/1522555179_create_access_tokens_table.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3133,6 +3135,46 @@ func _1520708880_users_display_name_nullableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1522555179_create_access_tokens_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x48\x4c\x4e\x4e\x2d\x2e\x8e\x2f\xc9\xcf\x4e\xcd\x2b\xb6\xe6\x02\x04\x00\x00\xff\xff\xe4\x11\xa4\x4f\x1a\x00\x00\x00")
+
+func _1522555179_create_access_tokens_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1522555179_create_access_tokens_tableDownSql,
+		"1522555179_create_access_tokens_table.down.sql",
+	)
+}
+
+func _1522555179_create_access_tokens_tableDownSql() (*asset, error) {
+	bytes, err := _1522555179_create_access_tokens_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1522555179_create_access_tokens_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1522555179_create_access_tokens_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x90\xc1\x4e\x83\x40\x10\x86\xef\x3c\xc5\x1c\x21\xf1\x64\xa2\x97\x9e\xb0\x9d\x2a\x11\xb7\xba\x40\xb4\xa7\xcd\x16\x26\x65\x53\xca\x36\xcc\x60\xd5\xa7\x37\x41\x85\xea\xc1\xee\x6d\xb3\xdf\xfc\xff\xce\x37\xd7\x18\xe7\x08\x79\x7c\x93\x22\xd8\xb2\x24\x66\x23\x7e\x47\x2d\x43\x18\xc0\xd7\x71\x15\x6c\xdc\x96\xa9\x73\xb6\x01\xb5\xca\x41\x15\x69\x0a\x8f\x3a\x79\x88\xf5\x1a\xee\x71\x7d\xf1\x43\xf6\x4c\x9d\x71\x15\xb8\x56\x68\x4b\xdd\x04\x6b\x5c\xa2\x46\x35\xc7\x6c\x60\x18\x42\x57\x45\xe3\xd8\xab\x6d\x7a\x32\x5c\xdb\xcb\xab\x6b\xd8\xbc\x0b\xd9\x69\xb2\x50\xc9\x53\x81\x23\xda\x7a\x21\x10\x7a\x93\x91\x18\x9f\xca\x8e\xac\x50\x65\xac\x80\xb8\x3d\xb1\xd8\xfd\x01\x8e\x4e\xea\xe1\x0a\x1f\xbe\xa5\x29\x76\x81\xcb\xb8\x48\x73\x68\xfd\x31\x9c\x3e\xd2\x58\x16\xd3\xf3\xff\x21\x23\x5d\x51\x43\x67\x0a\x83\x68\x16\x7c\x2b\x4e\xd4\x02\x5f\x7e\x2b\x36\x8d\xf7\xbb\xfe\x00\x2b\xf5\x47\x7d\x91\x25\xea\x16\x6a\xcb\x75\x78\xea\x26\x82\xe7\x3b\xd4\x78\x5a\x9c\x64\xc3\x3e\xb3\xe0\x33\x00\x00\xff\xff\xce\x21\x02\x58\xc9\x01\x00\x00")
+
+func _1522555179_create_access_tokens_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1522555179_create_access_tokens_tableUpSql,
+		"1522555179_create_access_tokens_table.up.sql",
+	)
+}
+
+func _1522555179_create_access_tokens_tableUpSql() (*asset, error) {
+	bytes, err := _1522555179_create_access_tokens_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1522555179_create_access_tokens_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3331,6 +3373,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1520588597_user_emails_unique_verified_only.up.sql":          _1520588597_user_emails_unique_verified_onlyUpSql,
 	"1520708880_users_display_name_nullable.down.sql":             _1520708880_users_display_name_nullableDownSql,
 	"1520708880_users_display_name_nullable.up.sql":               _1520708880_users_display_name_nullableUpSql,
+	"1522555179_create_access_tokens_table.down.sql":              _1522555179_create_access_tokens_tableDownSql,
+	"1522555179_create_access_tokens_table.up.sql":                _1522555179_create_access_tokens_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3520,6 +3564,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1520588597_user_emails_unique_verified_only.up.sql":          &bintree{_1520588597_user_emails_unique_verified_onlyUpSql, map[string]*bintree{}},
 	"1520708880_users_display_name_nullable.down.sql":             &bintree{_1520708880_users_display_name_nullableDownSql, map[string]*bintree{}},
 	"1520708880_users_display_name_nullable.up.sql":               &bintree{_1520708880_users_display_name_nullableUpSql, map[string]*bintree{}},
+	"1522555179_create_access_tokens_table.down.sql":              &bintree{_1522555179_create_access_tokens_tableDownSql, map[string]*bintree{}},
+	"1522555179_create_access_tokens_table.up.sql":                &bintree{_1522555179_create_access_tokens_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

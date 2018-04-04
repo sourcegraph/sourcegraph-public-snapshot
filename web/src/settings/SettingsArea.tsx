@@ -10,6 +10,7 @@ import { siteFlags } from '../site/backend'
 import { UserAreaPageProps } from '../user/area/UserArea'
 import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPage'
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
+import { UserSettingsCreateAccessTokenPage } from '../user/settings/UserSettingsCreateAccessTokenPage'
 import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
 import { UserSettingsIntegrationsPage } from '../user/settings/UserSettingsIntegrationsPage'
 import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
@@ -31,6 +32,12 @@ interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
 
 interface State {
     externalAuthEnabled: boolean
+
+    /**
+     * Holds the newly created access token (from UserSettingsCreateAccessTokenPage), if any. After
+     * it is displayed to the user, this subject's value is set back to undefined.
+     */
+    newlyCreatedAccessToken?: GQL.ICreateAccessTokenResult
 }
 
 /**
@@ -132,7 +139,28 @@ export class SettingsArea extends React.Component<Props, State> {
                             path={`${this.props.match.url}/tokens`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            component={UserSettingsTokensPage}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <UserSettingsTokensPage
+                                    {...routeComponentProps}
+                                    {...this.props}
+                                    newToken={this.state.newlyCreatedAccessToken}
+                                    onDidPresentNewToken={this.setNewToken}
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/tokens/new`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <UserSettingsCreateAccessTokenPage
+                                    {...routeComponentProps}
+                                    {...this.props}
+                                    onDidCreateAccessToken={this.setNewToken}
+                                />
+                            )}
                         />
                         <Route
                             path={`${this.props.match.url}/integrations`}
@@ -145,5 +173,9 @@ export class SettingsArea extends React.Component<Props, State> {
                 </div>
             </div>
         )
+    }
+
+    private setNewToken = (value?: GQL.ICreateAccessTokenResult): void => {
+        this.setState({ newlyCreatedAccessToken: value })
     }
 }

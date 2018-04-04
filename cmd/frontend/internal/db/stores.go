@@ -1,6 +1,7 @@
 package db
 
 var (
+	AccessTokens = &accessTokens{}
 	GlobalDeps   = &globalDeps{}
 	Pkgs         = &pkgs{}
 	Repos        = &repos{}

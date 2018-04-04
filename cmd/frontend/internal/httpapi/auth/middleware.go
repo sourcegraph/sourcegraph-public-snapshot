@@ -44,6 +44,14 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 		switch strings.ToLower(parts[0]) {
 		case "session":
 			r = r.WithContext(session.AuthenticateBySession(r.Context(), parts[1]))
+		case "token":
+			userID, err := db.AccessTokens.Lookup(r.Context(), parts[1])
+			if err != nil {
+				log15.Error("Invalid access token.", "token", parts[1], "err", err)
+				http.Error(w, "invalid access token", http.StatusUnauthorized)
+				return
+			}
+			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
 		}
 
 		next.ServeHTTP(w, r)

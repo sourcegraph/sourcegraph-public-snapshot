@@ -108,7 +108,7 @@ func (r *userResolver) CreatedAt() string {
 }
 
 func (r *userResolver) UpdatedAt() *string {
-	t := r.user.CreatedAt.Format(time.RFC3339) // ISO
+	t := r.user.UpdatedAt.Format(time.RFC3339) // ISO
 	return &t
 }
 

@@ -88,6 +88,11 @@ type nodeResolver struct {
 	node
 }
 
+func (r *nodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
+	n, ok := r.node.(*accessTokenResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToComment() (*commentResolver, bool) {
 	n, ok := r.node.(*commentResolver)
 	return n, ok
@@ -155,6 +160,8 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 
 func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
+	case "AccessToken":
+		return accessTokenByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
 	case "Comment":
