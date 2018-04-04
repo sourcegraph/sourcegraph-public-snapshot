@@ -60,10 +60,10 @@ func NewAuthHandler(createCtx context.Context, handler http.Handler, appURL stri
 // username formatting rules (consistent with
 // https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap/#username-considerations-with-ldap):
 //
-// - Email address after the '@' is discarded
-// - Any characters that are non-alphanumeric and not a dash are coverted to dashes
-// - Usernames with consecutive dashes are not allowed
-// - Usernames that start or end with a dash are not allowed
+// - Any portion of the username after a '@' character is removed
+// - Any characters not in `[a-zA-Z0-9-]` are replaced with `-`
+// - Usernames with consecutive '-' characters are not allowed
+// - Usernames that start or end with '-' are not allowed
 //
 // Usernames that could not be converted return an error.
 func NormalizeUsername(name string) (string, error) {
