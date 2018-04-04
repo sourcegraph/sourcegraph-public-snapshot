@@ -11,6 +11,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Fixed
 
 * In Sourcegraph Data Center, searches no longer block if the index is unavailable (e.g., after the index pod restarts). Instead, it respects the normal search timeout and reports the situation to the user if the index is not yet available.
+* Repo results are no longer returned for filters that are not supported (e.g. if `file:` is part of the search query)
 
 ### Added
 

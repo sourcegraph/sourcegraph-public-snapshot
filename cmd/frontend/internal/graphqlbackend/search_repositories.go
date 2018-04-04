@@ -18,6 +18,23 @@ func searchRepositories(ctx context.Context, args *repoSearchArgs, query searchq
 		return mockSearchRepositories(args)
 	}
 
+	fieldWhitelist := map[string]struct{}{
+		searchquery.FieldRepo:      struct{}{},
+		searchquery.FieldRepoGroup: struct{}{},
+		searchquery.FieldType:      struct{}{},
+		searchquery.FieldDefault:   struct{}{},
+		searchquery.FieldIndex:     struct{}{},
+		searchquery.FieldMax:       struct{}{},
+		searchquery.FieldTimeout:   struct{}{},
+	}
+	// Don't return repo results if the search contains fields that aren't on the whitelist.
+	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
+	for field := range query.Fields {
+		if _, ok := fieldWhitelist[field]; !ok {
+			return nil, nil, nil
+		}
+	}
+
 	pattern, err := regexp.Compile(args.query.Pattern)
 	if err != nil {
 		return nil, nil, err
