@@ -95,8 +95,14 @@ func (r *gitCommitResolver) AbbreviatedOID() string        { return string(r.oid
 func (r *gitCommitResolver) Author() *signatureResolver    { return &r.author }
 func (r *gitCommitResolver) Committer() *signatureResolver { return r.committer }
 func (r *gitCommitResolver) Message() string               { return r.message }
-
-func (r *gitCommitResolver) Subject() string { return gitCommitSubject(r.message) }
+func (r *gitCommitResolver) Subject() string               { return gitCommitSubject(r.message) }
+func (r *gitCommitResolver) Body() *string {
+	body := gitCommitBody(r.message)
+	if body == "" {
+		return nil
+	}
+	return &body
+}
 
 func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
@@ -174,10 +180,20 @@ func (r *gitCommitResolver) repoRevURL() string {
 	return url
 }
 
+// gitCommitBody returns the first line of the Git commit message.
 func gitCommitSubject(message string) string {
 	i := strings.Index(message, "\n")
 	if i == -1 {
 		return message
 	}
 	return message[:i]
+}
+
+// gitCommitBody returns the contents of the Git commit message after the subject.
+func gitCommitBody(message string) string {
+	i := strings.Index(message, "\n")
+	if i == -1 {
+		return ""
+	}
+	return strings.TrimSpace(message[i:])
 }
