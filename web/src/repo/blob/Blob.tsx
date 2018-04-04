@@ -402,12 +402,13 @@ export class Blob extends React.Component<Props, State> {
                         map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } })),
                         switchMap(({ target, ctx }) => {
                             const tooltip = this.getTooltip(target, ctx)
-                            const tooltipWithJ2D: Observable<TooltipData> = tooltip.pipe(
-                                zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
-                                map(([tooltip, defResponse]) => ({ ...tooltip, defUrl: defResponse || undefined }))
-                            )
                             const loading = this.getLoadingTooltip(target, ctx, tooltip)
-                            return merge(loading, tooltip, tooltipWithJ2D).pipe(
+
+                            // Preemptively fetch the symbol's definition, but no need to pass it on to the hover
+                            // (getDefinition is called again when the hover is docked).
+                            this.getDefinition(ctx)
+
+                            return merge(loading, tooltip).pipe(
                                 catchError(err => {
                                     if (err.code !== EMODENOTFOUND) {
                                         console.error(err)
@@ -544,7 +545,11 @@ export class Blob extends React.Component<Props, State> {
             el.classList.remove('selection-highlight-sticky')
         }
         if (data) {
-            eventLogger.log('TooltipDocked')
+            if (data.defUrlOrError === undefined) {
+                eventLogger.log('TooltipDocked', { hoverHasDefUrl: false })
+            } else {
+                eventLogger.log('TooltipDockedWithDefinition', { hoverHasDefUrl: true })
+            }
             data.target.classList.add('selection-highlight-sticky')
         } else {
             hideTooltip()
@@ -690,7 +695,7 @@ export class Blob extends React.Component<Props, State> {
                 eventLogger.log('SymbolHoveredLoading')
                 // Don't log tooltips with no content
             } else if (!isEmpty(data.contents)) {
-                eventLogger.log('SymbolHovered', { hoverHasDefUrl: data.defUrlOrError !== undefined })
+                eventLogger.log('SymbolHovered')
             }
         }
     }

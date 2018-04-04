@@ -75,6 +75,7 @@ export function createTooltips(): void {
     j2dAction.appendChild(document.createTextNode('Go to definition'))
     j2dAction.className = `btn btn-sm BtnGroup-item`
     j2dAction.className = 'tooltip__action'
+    j2dAction.style.display = 'block'
 
     const referencesIcon = document.createElement('svg')
     referencesIcon.innerHTML = referencesIconSVG
@@ -84,6 +85,7 @@ export function createTooltips(): void {
     findRefsAction.appendChild(referencesIcon)
     findRefsAction.appendChild(document.createTextNode('Find references'))
     findRefsAction.className = 'tooltip__action'
+    findRefsAction.style.display = 'block'
 
     tooltipActions.appendChild(j2dAction)
     tooltipActions.appendChild(findRefsAction)
@@ -121,7 +123,6 @@ interface Actions {
  */
 export function updateTooltip(data: TooltipData, docked: boolean, actions: Actions): void {
     hideTooltip() // hide before updating tooltip text
-
     const { loading, target, ctx } = data
 
     if (!target) {
@@ -134,29 +135,32 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
     moreContext.style.display = docked || loading ? 'none' : 'flex'
     tooltipActions.style.display = docked ? 'flex' : 'none'
 
-    j2dAction.style.display = 'block'
-    j2dAction.href = data.defUrlOrError && typeof data.defUrlOrError === 'string' ? data.defUrlOrError : ''
+    // The j2d and find refs buttons/actions are only displayed/executable if the tooltip
+    // is docked. Otherwise, setting styles, handlers, and other props is unnecessary.
+    if (docked) {
+        j2dAction.href = data.defUrlOrError && typeof data.defUrlOrError === 'string' ? data.defUrlOrError : ''
 
-    // Omit the current location's search options when comparing, as those are cleared
-    // when we navigate.
-    const destinationIsCurrentLocation = j2dAction.href === urlWithoutSearchOptions(window.location)
-    if (data.defUrlOrError && typeof data.defUrlOrError === 'string' && !destinationIsCurrentLocation) {
-        j2dAction.style.cursor = 'pointer'
-        j2dAction.onclick = actions.definition(parseBrowserRepoURL(data.defUrlOrError) as AbsoluteRepoFilePosition)
-        j2dAction.title = ''
-    } else {
-        j2dAction.style.cursor = 'not-allowed'
-        j2dAction.onclick = () => false
-        j2dAction.title = data.defUrlOrError && typeof data.defUrlOrError !== 'string' ? data.defUrlOrError.message : ''
-    }
+        // Omit the current location's search options when comparing, as those are cleared
+        // when we navigate.
+        const destinationIsCurrentLocation = j2dAction.href === urlWithoutSearchOptions(window.location)
+        if (data.defUrlOrError && typeof data.defUrlOrError === 'string' && !destinationIsCurrentLocation) {
+            j2dAction.style.cursor = 'pointer'
+            j2dAction.onclick = actions.definition(parseBrowserRepoURL(data.defUrlOrError) as AbsoluteRepoFilePosition)
+            j2dAction.title = ''
+        } else {
+            j2dAction.style.cursor = 'not-allowed'
+            j2dAction.onclick = () => false
+            j2dAction.title =
+                data.defUrlOrError && typeof data.defUrlOrError !== 'string' ? data.defUrlOrError.message : ''
+        }
 
-    findRefsAction.style.display = 'block'
-    findRefsAction.onclick = actions.references(ctx)
+        findRefsAction.onclick = actions.references(ctx)
 
-    if (ctx) {
-        findRefsAction.href = toAbsoluteBlobURL({ ...ctx, viewState: 'references' })
-    } else {
-        findRefsAction.href = ''
+        if (ctx) {
+            findRefsAction.href = toAbsoluteBlobURL({ ...ctx, viewState: 'references' })
+        } else {
+            findRefsAction.href = ''
+        }
     }
 
     if (!loading) {
