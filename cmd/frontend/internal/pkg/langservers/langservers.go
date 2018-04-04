@@ -95,10 +95,7 @@ func Update(language string) error {
 	}
 
 	// Pull the latest image.
-	dockerPulling.set(language)
-	_, err := dockerCmd("pull", imageName(language))
-	dockerPulling.delete(language)
-	if err != nil {
+	if err := pull(language); err != nil {
 		return err
 	}
 
@@ -111,6 +108,14 @@ func Update(language string) error {
 	return start(language)
 }
 
+// pull pulls the latest image for the given language.
+func pull(language string) error {
+	dockerPulling.set(language)
+	_, err := dockerCmd("pull", imageName(language))
+	dockerPulling.delete(language)
+	return err
+}
+
 // Start starts the language server Docker container for the specified language.
 func Start(language string) error {
 	language = mapLanguage(language)
@@ -121,6 +126,23 @@ func Start(language string) error {
 	if err := validate(language); err != nil {
 		return err
 	}
+
+	// Check if the image exists locally or not. If it does not, we will pull
+	// it ourselves manually instead of letting start() implicitly do it below.
+	// This is so that dockerPulling is properly kept up-to-date on the initial
+	// image pull.
+	image, err := dockerInspectImage(imageName(language))
+	if err != nil {
+		return err
+	}
+	if image == nil {
+		// Pull the latest image so that it is correctly marked as being pulled.
+		if err := pull(language); err != nil {
+			return err
+		}
+	}
+
+	// Now start the container.
 	return start(language)
 }
 
