@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -39,8 +40,11 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 	// Get complete list of Gitolite repositories
 	log15.Debug("serveGitoliteUpdateRepos")
 
+	// This is fundamentally a background sync, so we don't care if the HTTP context gets canceled.
+	ctx := context.Background()
+
 	for _, gconf := range conf.Get().Gitolite {
-		rlist, err := gitserver.DefaultClient.ListGitolite(r.Context(), gconf.Host)
+		rlist, err := gitserver.DefaultClient.ListGitolite(ctx, gconf.Host)
 		if err != nil {
 			return err
 		}
@@ -49,21 +53,21 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 		for i, entry := range rlist {
 			insertRepoOps[i] = api.InsertRepoOp{URI: api.RepoURI(entry), Enabled: true}
 		}
-		if err := backend.Repos.TryInsertNewBatch(r.Context(), insertRepoOps); err != nil {
+		if err := backend.Repos.TryInsertNewBatch(ctx, insertRepoOps); err != nil {
 			log15.Warn("TryInsertNewBatch failed", "numRepos", len(insertRepoOps), "err", err)
 		}
 
 		// Assert existence of and initiate clone of each inserted repository
 		for i, entry := range rlist {
 			uri := api.RepoURI(entry)
-			repo, err := backend.Repos.GetByURI(r.Context(), uri)
+			repo, err := backend.Repos.GetByURI(ctx, uri)
 			if err != nil {
 				log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
 				continue
 			}
 
 			// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
-			cloned, err := gitserver.DefaultClient.IsRepoCloned(r.Context(), uri)
+			cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, uri)
 			if err != nil {
 				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 				continue
@@ -71,7 +75,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			if !conf.Get().DisableAutoGitUpdates || !cloned {
 				log15.Info("fetching Gitolite repo", "repo", uri, "cloned", cloned, "i", i, "total", len(rlist))
 				// TODO!(sqs): derive gitolite clone URL
-				err := gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), gitserver.Repo{Name: repo.URI})
+				err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: repo.URI})
 				if err != nil {
 					log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 					continue
@@ -79,7 +83,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			}
 
 			if gconf.PhabricatorMetadataCommand != "" {
-				tryUpdateGitolitePhabricatorMetadata(r.Context(), gconf, uri, entry)
+				tryUpdateGitolitePhabricatorMetadata(ctx, gconf, uri, entry)
 			}
 		}
 	}

@@ -305,9 +305,6 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	req.Repo = protocol.NormalizeRepo(req.Repo)
-	if req.URL == "" {
-		log15.Warn("RepoUpdate request is missing Git remote URL.", "repo", req.Repo)
-	}
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	if !repoCloned(dir) && !skipCloneForTests {
 		go func() {
