@@ -1650,6 +1650,15 @@ type LangServer {
     # "go", "java", "typescript", etc.
     language: String!
 
+    # URL to the LSP page.
+    homepageURL: String!
+
+    # URL to the LSP issues page.
+    issueURL: String!
+
+    # URL to the LSP Docs.
+    docsURL: String!
+
     # Whether or not we are running in Data Center mode.
     dataCenter: Boolean!
 
