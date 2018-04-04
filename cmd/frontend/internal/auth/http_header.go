@@ -23,6 +23,10 @@ var ssoUserHeader = conf.AuthHTTPHeader()
 // https://github.com/bitly/oauth2_proxy and is configured with the auth.provider=="http-header"
 // site config setting.
 //
+// TESTING: Use the testproxy test program to test HTTP auth proxy behavior. For example, run `go
+// run cmd/frontend/internal/auth/testproxy.go -username=alice` then go to
+// http://localhost:4080. See `-h` for flag help.
+//
 // 🚨 SECURITY
 func newHTTPHeaderAuthHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
