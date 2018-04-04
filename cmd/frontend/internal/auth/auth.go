@@ -43,12 +43,12 @@ func NewAuthHandler(createCtx context.Context, handler http.Handler, appURL stri
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")
 		return newSAMLAuthHandler(createCtx, handler, appURL)
 	}
+	if ssoUserHeader != "" {
+		log15.Info("SSO enabled", "protocol", "HTTP proxy header", "header", ssoUserHeader)
+		return newHTTPHeaderAuthHandler(handler), nil
+	}
 
-	// Note: auth.public should only have an effect when auth.provider == "builtin".
-	//
-	// This is important to check here because there is no
-	// auth.provider == "http-header" case above, and requiring builtin auth
-	// for that provider would effectively break it.
+	// auth.public should only have an effect when auth.provider == "builtin".
 	if conf.GetTODO().AuthProvider == "builtin" && !conf.GetTODO().AuthPublic {
 		return newUserRequiredAuthzHandler(handler), nil
 	}
