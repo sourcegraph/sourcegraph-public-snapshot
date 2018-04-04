@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -105,6 +107,20 @@ func (r *siteResolver) TelemetrySamples(ctx context.Context) ([]string, error) {
 
 func (r *siteResolver) HasCodeIntelligence() bool {
 	return envvar.HasCodeIntelligence()
+}
+
+func (r *siteResolver) Activity(ctx context.Context) (*siteActivityResolver, error) {
+	// 🚨 SECURITY
+	// TODO(Dan, Beyang): this endpoint should eventually only be accessible by site admins.
+	// It is temporarily exposed to all users on an instance.
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("Site analytics is not available on sourcegraph.com")
+	}
+	activity, err := useractivity.GetSiteActivity(nil)
+	if err != nil {
+		return nil, err
+	}
+	return &siteActivityResolver{activity}, nil
 }
 
 type siteConfigurationResolver struct{}

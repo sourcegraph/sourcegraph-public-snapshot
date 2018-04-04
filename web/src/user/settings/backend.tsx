@@ -218,8 +218,11 @@ export function setUserEmailVerified(user: GQLID, email: string, verified: boole
     )
 }
 
-export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
-    return mutateGraphQL(
+export function logUserEvent(event: GQL.IUserEventEnum): void {
+    if (window.context.sourcegraphDotComMode) {
+        return
+    }
+    mutateGraphQL(
         gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
                 logUserEvent(event: $event, userCookieID: $userCookieID) {
@@ -228,14 +231,16 @@ export function logUserEvent(event: GQL.IUserEventEnum): Observable<void> {
             }
         `,
         { event, userCookieID: eventLogger.uniqueUserCookieID() }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return
-        })
     )
+        .pipe(
+            map(({ data, errors }) => {
+                if (!data || (errors && errors.length > 0)) {
+                    throw createAggregateError(errors)
+                }
+                return
+            })
+        )
+        .subscribe()
 }
 
 refreshConfiguration()

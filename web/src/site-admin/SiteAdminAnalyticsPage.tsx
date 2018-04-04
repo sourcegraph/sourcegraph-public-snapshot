@@ -5,13 +5,17 @@ import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchUserAnalytics } from './backend'
+import { fetchUserAndSiteAnalytics } from './backend'
 
 interface Props extends RouteComponentProps<any> {}
 
 export interface State {
     users?: GQL.IUser[]
+    siteActivity?: GQL.ISiteActivity
+    error?: Error
 }
+
+const showExpandedAnalytics = localStorage.getItem('showExpandedAnalytics') !== null
 
 /**
  * A page displaying usage analytics for the site.
@@ -24,7 +28,12 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminAnalytics')
 
-        this.subscriptions.add(fetchUserAnalytics().subscribe(users => this.setState({ users: users || undefined })))
+        this.subscriptions.add(
+            fetchUserAndSiteAnalytics().subscribe(
+                ({ users, siteActivity }) => this.setState({ users: users || undefined, siteActivity }),
+                error => this.setState({ error })
+            )
+        )
     }
 
     public componentWillUnmount(): void {
@@ -36,19 +45,26 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
             <div className="site-admin-analytics-page">
                 <PageTitle title="Analytics - Admin" />
                 <h2>Analytics</h2>
+                {this.state.error && <p className="site-admin-analytics-page__error">{this.state.error.message}</p>}
                 <table className="table table-hover">
                     <thead>
                         <tr>
                             <th>User</th>
                             <th>Page views</th>
                             <th>Search queries</th>
-                            <th className="site-admin-analytics-page__date-column">Last active date</th>
+                            <th>Code intelligence actions</th>
+                            <th className="site-admin-analytics-page__date-column">Last active</th>
+                            {showExpandedAnalytics && (
+                                <th className="site-admin-analytics-page__date-column">
+                                    Last active in code host or code review
+                                </th>
+                            )}
                         </tr>
                     </thead>
                     <tbody>
                         {!this.state.users && (
                             <tr>
-                                <td colSpan={3}>
+                                <td colSpan={5}>
                                     <Loader className="icon-inline" />
                                 </td>
                             </tr>
@@ -59,13 +75,23 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                                     <td>{user.username}</td>
                                     <td>{user.activity ? user.activity.pageViews : '?'}</td>
                                     <td>{user.activity ? user.activity.searchQueries : '?'}</td>
+                                    <td>{user.activity ? user.activity.codeIntelligenceActions : '?'}</td>
                                     <td className="site-admin-analytics-page__date-column">
-                                        {user.activity && user.activity.lastPageViewTime ? (
-                                            <Timestamp date={user.activity.lastPageViewTime} />
+                                        {user.activity && user.activity.lastActiveTime ? (
+                                            <Timestamp date={user.activity.lastActiveTime} />
                                         ) : (
                                             '?'
                                         )}
                                     </td>
+                                    {showExpandedAnalytics && (
+                                        <td className="site-admin-analytics-page__date-column">
+                                            {user.activity && user.activity.lastActiveCodeHostIntegrationTime ? (
+                                                <Timestamp date={user.activity.lastActiveCodeHostIntegrationTime} />
+                                            ) : (
+                                                '?'
+                                            )}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                     </tbody>
@@ -82,7 +108,14 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                                         0
                                     )}
                                 </td>
+                                <td>
+                                    {this.state.users.reduce(
+                                        (c, v) => c + (v.activity ? v.activity.codeIntelligenceActions : 0),
+                                        0
+                                    )}
+                                </td>
                                 <td className="site-admin-analytics-page__date-column" />
+                                {showExpandedAnalytics && <td className="site-admin-analytics-page__date-column" />}
                             </tr>
                         </tfoot>
                     )}

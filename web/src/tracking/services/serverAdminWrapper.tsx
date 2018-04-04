@@ -19,13 +19,19 @@ class ServerAdminWrapper {
     }
 
     public trackPageView(): void {
-        logUserEvent('PAGEVIEW').subscribe()
+        logUserEvent('PAGEVIEW')
     }
 
     public trackAction(eventAction: string, eventProps: any): void {
         if (this.isAuthenicated) {
             if (eventAction === 'SearchSubmitted') {
-                logUserEvent('SEARCHQUERY').subscribe()
+                logUserEvent('SEARCHQUERY')
+            } else if (
+                eventAction === 'SymbolHovered' ||
+                eventAction === 'FindRefsClicked' ||
+                eventAction === 'GoToDefClicked'
+            ) {
+                logUserEvent('CODEINTEL')
             }
         }
     }

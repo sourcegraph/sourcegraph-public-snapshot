@@ -63,6 +63,18 @@ var baseURL = &url.URL{
 	Path:   "/.api/updates",
 }
 
+func getSiteActivityJSON() ([]byte, error) {
+	siteActivity, err := useractivity.GetSiteActivity(&useractivity.SiteActivityOptions{
+		Days:   1,
+		Weeks:  1,
+		Months: 1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(siteActivity)
+}
+
 func updateURL() string {
 	q := url.Values{}
 	q.Set("version", ProductVersion)
@@ -73,6 +85,11 @@ func updateURL() string {
 		log15.Error("useractivity.GetUsersActiveTodayCount failed", "error", err)
 	}
 	q.Set("u", strconv.Itoa(count))
+	if act, err := getSiteActivityJSON(); err != nil {
+		log15.Error("getSiteActivityJSON failed", "error", err)
+	} else {
+		q.Set("act", string(act))
+	}
 	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }

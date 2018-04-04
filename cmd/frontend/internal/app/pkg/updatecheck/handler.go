@@ -54,6 +54,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	clientVersionString := q.Get("version")
 	clientSiteID := q.Get("site")
 	uniqueUsers := q.Get("u")
+	activity := q.Get("act")
 	hasCodeIntelligence := q.Get("codeintel")
 	if clientVersionString == "" {
 		http.Error(w, "no version specified", http.StatusBadRequest)
@@ -93,6 +94,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			"has_update":            strconv.FormatBool(hasUpdate),
 			"unique_users_today":    uniqueUsers,
 			"has_code_intelligence": hasCodeIntelligence,
+			"site_activity":         activity,
 		})
 	}
 

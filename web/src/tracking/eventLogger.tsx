@@ -102,7 +102,7 @@ class EventLogger {
      * Log a pageview.
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
-    public logViewEvent(pageTitle: string, eventProperties?: any): void {
+    public logViewEvent(pageTitle: string, eventProperties?: any, logUserEvent = true): void {
         if (window.context.userAgentIsBot || !pageTitle) {
             return
         }
@@ -115,7 +115,9 @@ class EventLogger {
             page_title: pageTitle,
         }
         telligent.track('view', decoratedProps)
-        serverAdmin.trackPageView()
+        if (logUserEvent) {
+            serverAdmin.trackPageView()
+        }
         this.logToConsole(pageTitle, decoratedProps)
 
         // Use flag to ensure URL query params are only stripped once

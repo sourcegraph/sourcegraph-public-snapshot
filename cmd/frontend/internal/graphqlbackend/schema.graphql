@@ -1701,6 +1701,7 @@ type Site implements ConfigurationSubject {
     # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
     # verify users' email addresses.
     sendsEmailVerificationEmails: Boolean!
+    activity: SiteActivity!
 }
 
 # The configuration for a site.
@@ -2012,13 +2013,34 @@ type UserActivity {
     searchQueries: Int!
     # The number of page views that the user has performed.
     pageViews: Int!
-    # The last time the user viewed a page.
-    lastPageViewTime: String!
+    # The number of code intelligence actions that the user has performed.
+    codeIntelligenceActions: Int!
+    # The last time the user was active (any action, any platform).
+    lastActiveTime: String
+    # The last time the user was active on a code host integration.
+    lastActiveCodeHostIntegrationTime: String
 }
 
 enum UserEvent {
     PAGEVIEW
     SEARCHQUERY
+    CODEINTEL
+    CODEINTELINTEGRATION
+}
+
+# SiteActivity describes a site's aggregate activity level
+type SiteActivity {
+    DAUs: [SiteActivityPeriod!]!
+    WAUs: [SiteActivityPeriod!]!
+    MAUs: [SiteActivityPeriod!]!
+}
+
+# SiteActivityPeriod describes a site's activity level for a given timespan
+type SiteActivityPeriod {
+    startTime: String!
+    userCount: Int!
+    registeredUserCount: Int!
+    anonymousUserCount: Int!
 }
 
 type DeploymentConfiguration {

@@ -2,9 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
@@ -15,6 +16,9 @@ func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, err
 	// 🚨 SECURITY: Only the user and site admins are allowed to access user activity.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
 		return nil, err
+	}
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("Site analytics is not available on sourcegraph.com")
 	}
 
 	activity, err := useractivity.GetByUserID(r.user.ID)
@@ -32,26 +36,33 @@ func (s *userActivityResolver) PageViews() int32 { return s.userActivity.PageVie
 
 func (s *userActivityResolver) SearchQueries() int32 { return s.userActivity.SearchQueries }
 
-func (s *userActivityResolver) LastPageViewTime() string {
-	if s.userActivity.LastPageViewTime != nil {
-		return s.userActivity.LastPageViewTime.Format(time.RFC3339)
+func (s *userActivityResolver) CodeIntelligenceActions() int32 {
+	return s.userActivity.CodeIntelligenceActions
+}
+
+func (s *userActivityResolver) LastActiveTime() *string {
+	if s.userActivity.LastActiveTime != nil {
+		t := s.userActivity.LastActiveTime.Format(time.RFC3339)
+		return &t
 	}
-	return ""
+	return nil
+}
+
+func (s *userActivityResolver) LastActiveCodeHostIntegrationTime() *string {
+	if s.userActivity.LastCodeHostIntegrationTime != nil {
+		t := s.userActivity.LastCodeHostIntegrationTime.Format(time.RFC3339)
+		return &t
+	}
+	return nil
 }
 
 func (s *schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 }) (*EmptyResponse, error) {
-	actor := actor.FromContext(ctx)
-	switch args.Event {
-	case "SEARCHQUERY":
-		if !actor.IsAuthenticated() {
-			return nil, nil
-		}
-		return nil, useractivity.LogSearchQuery(actor.UID)
-	case "PAGEVIEW":
-		return nil, useractivity.LogPageView(actor.IsAuthenticated(), actor.UID, args.UserCookieID)
+	if envvar.SourcegraphDotComMode() {
+		return nil, nil
 	}
-	return nil, fmt.Errorf("unknown user event %s", args.Event)
+	actor := actor.FromContext(ctx)
+	return nil, useractivity.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
 }

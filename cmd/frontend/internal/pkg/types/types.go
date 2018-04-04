@@ -175,8 +175,23 @@ type PhabricatorRepo struct {
 }
 
 type UserActivity struct {
-	UserID           int32
-	PageViews        int32
-	SearchQueries    int32
-	LastPageViewTime *time.Time
+	UserID                      int32
+	PageViews                   int32
+	SearchQueries               int32
+	CodeIntelligenceActions     int32
+	LastActiveTime              *time.Time
+	LastCodeHostIntegrationTime *time.Time
+}
+
+type SiteActivity struct {
+	DAUs []*SiteActivityPeriod
+	WAUs []*SiteActivityPeriod
+	MAUs []*SiteActivityPeriod
+}
+
+type SiteActivityPeriod struct {
+	StartTime           time.Time
+	UserCount           int32
+	RegisteredUserCount int32
+	AnonymousUserCount  int32
 }

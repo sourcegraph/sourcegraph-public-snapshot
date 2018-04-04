@@ -165,7 +165,7 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SignUp')
+        eventLogger.logViewEvent('SignUp', {}, false)
     }
 
     public componentWillReceiveProps(nextProps: SignUpPageProps): void {

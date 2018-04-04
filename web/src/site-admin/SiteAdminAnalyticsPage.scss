@@ -2,4 +2,8 @@
     &__date-column {
         width: 40%;
     }
+
+    &__error {
+        color: $danger;
+    }
 }

@@ -363,7 +363,7 @@ export function deleteRepository(repository: GQLID): Observable<void> {
  *
  * @return Observable that emits the list of users and their usage data
  */
-export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
+export function fetchUserAndSiteAnalytics(): Observable<{ users: GQL.IUser[]; siteActivity: GQL.ISiteActivity }> {
     return queryGraphQL(gql`
         query Users {
             site {
@@ -374,10 +374,13 @@ export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
                         activity {
                             searchQueries
                             pageViews
-                            lastPageViewTime
+                            codeIntelligenceActions
+                            lastActiveTime
+                            lastActiveCodeHostIntegrationTime
                         }
                     }
                 }
+                # TODO(Dan): fetch site activity data here, and expose on SiteAdminAnalyticsPage
             }
         }
     `).pipe(
@@ -385,7 +388,7 @@ export function fetchUserAnalytics(): Observable<GQL.IUser[]> {
             if (!data || !data.site || !data.site.users) {
                 throw createAggregateError(errors)
             }
-            return data.site.users.nodes
+            return { users: data.site.users.nodes, siteActivity: data.site.activity }
         })
     )
 }
