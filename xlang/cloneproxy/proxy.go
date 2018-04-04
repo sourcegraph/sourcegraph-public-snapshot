@@ -67,15 +67,21 @@ func main() {
 		err = errors.Wrap(err, "setting up proxy listener failed")
 		log.Fatal(err)
 	}
-	defer lis.Close()
+
 	log.Printf("CloneProxy: accepting connections at %s", lis.Addr())
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go trapSignalsForShutdown(func() {
+
+	shutdown := func() {
 		cancel()
 		lis.Close()
-	})
+
+		// Remove the entire cache when the program is exiting
+		os.RemoveAll(*cacheDir)
+	}
+
+	defer shutdown()
+	go trapSignalsForShutdown(shutdown)
 
 	var wg sync.WaitGroup
 	for {
@@ -137,6 +143,9 @@ func main() {
 			case <-proxy.server.DisconnectNotify():
 				proxy.client.Close()
 			}
+
+			// Remove the cache contents for this workspace after the connection closes
+			proxy.cleanWorkspaceCache()
 		}(clientNetConn)
 	}
 
