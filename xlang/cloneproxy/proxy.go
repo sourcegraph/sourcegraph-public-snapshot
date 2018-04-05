@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"path/filepath"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/google/uuid"
 	multierror "github.com/hashicorp/go-multierror"
@@ -24,7 +22,6 @@ import (
 
 var (
 	proxyAddr = flag.String("proxyAddress", "127.0.0.1:8080", "proxy server listen address (tcp)")
-	lspAddr   = flag.String("lspAddress", "", "language server listen address (tcp)")
 	cacheDir  = flag.String("cacheDirectory", filepath.Join(os.TempDir(), "proxy-cache"), "cache directory location")
 	trace     = flag.Bool("trace", false, "trace logs to stderr")
 )
@@ -52,7 +49,7 @@ func (h jsonrpc2HandlerFunc) Handle(ctx context.Context, conn *jsonrpc2.Conn, re
 
 func main() {
 	flag.Usage = func() {
-		fmt.Printf("Usage: cloneproxy [OPTIONS] [LSP_COMMAND_ARGS...]\n\nOptions:\n")
+		fmt.Printf("Usage: cloneproxy [OPTIONS] LSP_COMMAND_ARGS...\n\nOptions:\n")
 		flag.PrintDefaults()
 	}
 
@@ -60,11 +57,8 @@ func main() {
 	log.SetFlags(log.Flags() | log.Lshortfile)
 
 	lspBin := flag.Args()
-	if len(lspBin) > 0 && *lspAddr != "" {
-		log.Fatalf("Both an LSP command (arguments %v) and an LSP address (-lspAddress %v) are specified. Please only specify one", lspBin, *lspAddr)
-	}
-	if len(lspBin) == 0 && *lspAddr == "" {
-		log.Fatal("Specify either an LSP command (positional arguments) or an LSP address (-lspAddress flag)")
+	if len(lspBin) == 0 {
+		log.Fatal("You must specify an LSP command (positional arguments).")
 	}
 
 	lis, err := net.Listen("tcp", *proxyAddr)
@@ -109,20 +103,10 @@ func main() {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
-			var lsConn io.ReadWriteCloser
-			if *lspAddr != "" {
-				lsConn, err = dialLanguageServer(ctx, *lspAddr)
-				if err != nil {
-					log.Println("dialing language server failed", err.Error())
-					return
-				}
-
-			} else {
-				lsConn, err = mkStdIoLSConn(ctx, lspBin[0], lspBin[1:]...)
-				if err != nil {
-					log.Println("connecting to language server over stdio failed", err.Error())
-					return
-				}
+			var lsConn, err = stdIoLSConn(ctx, lspBin[0], lspBin[1:]...)
+			if err != nil {
+				log.Println("connecting to language server over stdio failed", err.Error())
+				return
 			}
 
 			proxy := &cloneProxy{
@@ -155,17 +139,6 @@ func main() {
 	}
 
 	wg.Wait()
-}
-
-// dialLanguageServer creates a connection to the language server specified at addr.
-func dialLanguageServer(ctx context.Context, addr string) (net.Conn, error) {
-	if addr == "" {
-		return nil, errors.Errorf("language server not found at addr: %s", addr)
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-	return (&net.Dialer{}).DialContext(ctx, "tcp", addr)
 }
 
 func (p *cloneProxy) handleServerRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {

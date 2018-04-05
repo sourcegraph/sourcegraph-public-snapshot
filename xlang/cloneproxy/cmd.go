@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func mkStdIoLSConn(ctx context.Context, name string, arg ...string) (io.ReadWriteCloser, error) {
+func stdIoLSConn(ctx context.Context, name string, arg ...string) (io.ReadWriteCloser, error) {
 	cmd := exec.CommandContext(ctx, name, arg...)
 
 	stdin, err := cmd.StdinPipe()
