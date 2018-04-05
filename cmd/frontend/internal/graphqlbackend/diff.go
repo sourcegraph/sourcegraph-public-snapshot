@@ -1,10 +1,10 @@
 package graphqlbackend
 
-type diff struct {
+type diffResolver struct {
 	repo          *repositoryResolver
 	revisionRange *gitRevisionRange
 }
 
-func (d *diff) Repository() *repositoryResolver { return d.repo }
+func (d *diffResolver) Repository() *repositoryResolver { return d.repo }
 
-func (d *diff) Range() *gitRevisionRange { return d.revisionRange }
+func (d *diffResolver) Range() *gitRevisionRange { return d.revisionRange }
