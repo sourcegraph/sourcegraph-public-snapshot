@@ -169,7 +169,7 @@ func main() {
 			)
 			if app == "server" {
 				cmds = append(cmds,
-					Cmd(fmt.Sprintf("docker tag sourcegraph/server:%s sourcegraph/server:insiders", version)),
+					Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:insiders", image, version)),
 					Cmd("docker login -u sourcegraphci -p cf30a79c8783445f2141"),
 					Cmd("docker push sourcegraph/server:insiders"),
 				)
