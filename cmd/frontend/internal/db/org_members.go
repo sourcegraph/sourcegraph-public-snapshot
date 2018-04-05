@@ -36,14 +36,14 @@ func (*orgMembers) Create(ctx context.Context, orgID, userID int32) (*types.OrgM
 }
 
 func (m *orgMembers) GetByUserID(ctx context.Context, userID int32) ([]*types.OrgMembership, error) {
-	return m.getBySQL(ctx, "WHERE user_id=$1", userID)
+	return m.getBySQL(ctx, "INNER JOIN users ON org_members.user_id=users.id WHERE org_members.user_id=$1 AND users.deleted_at IS NULL", userID)
 }
 
 func (m *orgMembers) GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 	if Mocks.OrgMembers.GetByOrgIDAndUserID != nil {
 		return Mocks.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
 	}
-	return m.getOneBySQL(ctx, "WHERE org_id=$1 AND user_id=$2 LIMIT 1", orgID, userID)
+	return m.getOneBySQL(ctx, "INNER JOIN users ON org_members.user_id=users.id WHERE org_id=$1 AND user_id=$2 AND users.deleted_at IS NULL LIMIT 1", orgID, userID)
 }
 
 func (*orgMembers) Remove(ctx context.Context, orgID, userID int32) error {
@@ -57,7 +57,7 @@ func (*orgMembers) GetByOrgID(ctx context.Context, orgID int32) ([]*types.OrgMem
 	if err != nil {
 		return nil, err
 	}
-	return OrgMembers.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.id WHERE org_id=$1 ORDER BY upper(users.display_name)", org.ID)
+	return OrgMembers.getBySQL(ctx, "INNER JOIN users ON org_members.user_id = users.id WHERE org_id=$1 AND users.deleted_at IS NULL ORDER BY upper(users.display_name)", org.ID)
 }
 
 // ErrOrgMemberNotFound is the error that is returned when
@@ -124,7 +124,7 @@ func (*orgMembers) CreateMembershipInOrgsForAllUsers(ctx context.Context, dbh in
 
 	sqlQuery := sqlf.Sprintf(`
 			WITH org_ids AS (SELECT id FROM orgs WHERE name IN (%s)),
-				 user_ids AS (SELECT id FROM users),
+				 user_ids AS (SELECT id FROM users WHERE deleted_at IS NULL),
 				 to_join AS (SELECT org_ids.id AS org_id, user_ids.id AS user_id
 						  FROM org_ids join user_ids ON true
 						  LEFT JOIN org_members ON org_members.org_id=org_ids.id AND
