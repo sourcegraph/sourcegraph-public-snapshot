@@ -32,6 +32,13 @@ func FileHistorySidebarEnabled() bool {
 	return p == "enabled"
 }
 
+// JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
+func JumpToDefOSSIndexEnabled() bool {
+	p := Get().ExperimentalFeatures.JumpToDefOSSIndex
+	// default is disabled
+	return p == "enabled"
+}
+
 // EmailVerificationRequired returns whether users must verify an email address before they
 // can perform most actions on this site.
 //

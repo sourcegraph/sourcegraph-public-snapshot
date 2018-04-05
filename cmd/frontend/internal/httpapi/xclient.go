@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
-	"os"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -17,24 +16,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
-
-// federateBaseURL is a temporary variable we will use for switching on code
-// intelligence federation. It defaults to off. Before launching this will be
-// moved to our feature flag configuration.
-var federateBaseURL *url.URL
-
-func init() {
-	if u := os.Getenv("FEAT_FEDERATE_BASE_URL"); u != "" {
-		var err error
-		federateBaseURL, err = url.Parse(u)
-		if err != nil {
-			panic(err)
-		}
-	}
-}
 
 // xclient is an LSP client that transparently wraps xlang.Client,
 // except that it translates textDocument/definition requests into a
@@ -254,10 +239,10 @@ func (c *xclient) jumpToDefCrossRepo(ctx context.Context, params interface{}, op
 
 	// Failed to find the definition locally, try symbolDefinition on Sourcegraph.com
 	// which may have indexed the OSS repo used.
-	if len(locs) == 0 && len(nolocSyms) > 0 && federateBaseURL != nil {
+	if len(locs) == 0 && len(nolocSyms) > 0 && conf.JumpToDefOSSIndexEnabled() {
 		// HACK we need a valid rootURI, even though we are doing symbol queries.
 		rootURI := lsp.DocumentURI("git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06")
-		err := xlang.RemoteOneShotClientRequest(ctx, federateBaseURL, c.mode, rootURI, "xsymbol/definition", nolocSyms, &locs)
+		err := xlang.RemoteOneShotClientRequest(ctx, sourcegraphDotComBaseURL, c.mode, rootURI, "xsymbol/definition", nolocSyms, &locs)
 		if err != nil {
 			return nil, err
 		}
@@ -335,11 +320,11 @@ func (c *xclient) hoverCrossRepo(ctx context.Context, params interface{}, opt ..
 
 	// Failed to find the hover locally, try symbolHover on Sourcegraph.com
 	// which may have indexed the OSS repo used.
-	if federateBaseURL != nil {
+	if conf.JumpToDefOSSIndexEnabled() {
 		// HACK we need a valid rootURI, even though we are doing symbol queries.
 		rootURI := lsp.DocumentURI("git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06")
 		var remoteHov lsp.Hover
-		err := xlang.RemoteOneShotClientRequest(ctx, federateBaseURL, c.mode, rootURI, "xsymbol/hover", syms, &remoteHov)
+		err := xlang.RemoteOneShotClientRequest(ctx, sourcegraphDotComBaseURL, c.mode, rootURI, "xsymbol/hover", syms, &remoteHov)
 		if err != nil {
 			return nil, err
 		}
@@ -393,3 +378,5 @@ func (c *xclient) symbolHover(ctx context.Context, syms []lspext.SymbolLocationI
 	// nothing found, so empty response
 	return &lsp.Hover{}, nil
 }
+
+var sourcegraphDotComBaseURL = &url.URL{Scheme: "https", Host: "sourcegraph.com"}
