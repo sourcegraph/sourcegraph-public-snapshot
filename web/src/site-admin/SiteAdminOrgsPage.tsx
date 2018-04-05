@@ -55,7 +55,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         <DeleteIcon className="icon-inline" />
                     </button>
                     <Link
-                        to={`${orgURL(this.props.node.name)}/settings/members`}
+                        to={`${orgURL(this.props.node.name)}/members`}
                         className="btn btn-secondary site-admin-detail-list__action"
                         data-tooltip="Organization members"
                     >
