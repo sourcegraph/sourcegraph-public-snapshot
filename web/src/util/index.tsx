@@ -44,7 +44,7 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
  * Cherry picked from https://github.com/isagalaev/highlight.js/tree/master/src/languages
  * and https://github.com/github/linguist/blob/master/lib/linguist/languages.yml.
  */
-export function getModeFromExtension(ext: string): string {
+export function getModeFromExtension(ext: string): string | undefined {
     switch (ext.toLowerCase()) {
         // Ada
         case 'adb':
@@ -514,7 +514,7 @@ export function getModeFromExtension(ext: string): string {
             return 'yaml'
 
         default:
-            return ''
+            return undefined
     }
 }
 

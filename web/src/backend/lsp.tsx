@@ -6,7 +6,7 @@ import {
 import { Observable } from 'rxjs/Observable'
 import { ajax } from 'rxjs/observable/dom/ajax'
 import { AjaxResponse } from 'rxjs/observable/dom/AjaxObservable'
-import { ErrorObservable } from 'rxjs/observable/ErrorObservable'
+import { _throw as error } from 'rxjs/observable/throw'
 import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
 import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver-types'
@@ -36,7 +36,7 @@ export function firstMarkedString(hover: Hover): MarkedString | undefined {
     return hover.contents.value
 }
 
-const wrapLSPRequests = (ctx: AbsoluteRepo, path: string, requests: LSPRequest[]): any[] => [
+const wrapLSPRequests = (ctx: AbsoluteRepo, mode: string, requests: LSPRequest[]): any[] => [
     {
         id: 0,
         method: 'initialize',
@@ -46,7 +46,7 @@ const wrapLSPRequests = (ctx: AbsoluteRepo, path: string, requests: LSPRequest[]
             rootPath: `git://${ctx.repoPath}?${ctx.commitID}`,
 
             rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
-            mode: `${getModeFromExtension(getPathExtension(path))}`,
+            mode,
         },
     },
     ...requests.map((req, i) => ({ id: i + 1, ...req })),
@@ -85,15 +85,17 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
             )
             loggedSiteHasNoCodeIntelligence = true
         }
-        return ErrorObservable.create(
+        return error(
             Object.assign(new Error('Code intelligence is not enabled'), {
                 code: EMODENOTFOUND,
             })
         )
     }
 
-    if (unsupportedExtensions.has(getPathExtension(path))) {
-        return ErrorObservable.create(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
+    const extension = getPathExtension(path)
+    const mode = getModeFromExtension(extension)
+    if (unsupportedExtensions.has(extension) || !mode) {
+        return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
     }
 
     return ajax({
@@ -104,7 +106,7 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
             Accept: 'application/json',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(wrapLSPRequests(ctx, path, requests)),
+        body: JSON.stringify(wrapLSPRequests(ctx, mode, requests)),
     }).pipe(
         catchError<AjaxResponse, never>(err => {
             normalizeAjaxError(err)
@@ -115,7 +117,7 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
             for (const result of results) {
                 if (result && result.error) {
                     if (result.error.code === EMODENOTFOUND) {
-                        unsupportedExtensions.add(getPathExtension(path))
+                        unsupportedExtensions.add(extension)
                     }
                     throw Object.assign(new Error(result.error.message), result.error)
                 }
