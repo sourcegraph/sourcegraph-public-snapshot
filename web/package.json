@@ -15,7 +15,7 @@
     "webpack": "webpack --config webpack.config.ts --colors",
     "webpack-dev-server": "webpack-dev-server --config webpack.config.ts --colors",
     "graphql": "cat ../cmd/frontend/internal/graphqlbackend/schema.graphql | gql2ts -o typings/graphqlschema.d.ts && node introspect_schema",
-    "watch-graphql": "chokidar --silent ../cmd/frontend/internal/graphqlbackend/schema.graphql --initial -c \"npm run graphql\"",
+    "watch-graphql": "chokidar --silent ../cmd/frontend/internal/graphqlbackend/schema.graphql --initial -c \"npm run graphql;sleep 10;npm run graphql\"",
     "schema": "export DEBUG=; mkdir -p src/schema && cd ../schema && json2ts -i settings.schema.json -o ../web/src/schema/settings.schema.d.ts && json2ts -i site.schema.json -o ../web/src/schema/site.schema.d.ts && cd ../web",
     "watch-schema": "chokidar --silent '../schema/**.schema.json' --initial -c 'npm run schema'",
     "lint": "npm run tslint && npm run stylelint",
