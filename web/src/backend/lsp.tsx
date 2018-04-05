@@ -13,7 +13,7 @@ import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { siteFlags } from '../site/backend'
-import { getModeFromExtension, getPathExtension, supportedExtensions } from '../util'
+import { getModeFromExtension, getPathExtension } from '../util'
 import { normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
@@ -69,11 +69,6 @@ export const EMODENOTFOUND = -32000
  */
 const unsupportedExtensions = new Set<string>()
 
-const isSupported = (path: string): boolean => {
-    const ext = getPathExtension(path)
-    return supportedExtensions.has(ext) && !unsupportedExtensions.has(ext)
-}
-
 // TODO(sqs): This is a messy global var. Refactor this code after
 // https://github.com/sourcegraph/sourcegraph/pull/8893 is merged.
 let siteHasCodeIntelligence = false
@@ -97,7 +92,7 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
         )
     }
 
-    if (!isSupported(path)) {
+    if (unsupportedExtensions.has(getPathExtension(path))) {
         return ErrorObservable.create(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
     }
 

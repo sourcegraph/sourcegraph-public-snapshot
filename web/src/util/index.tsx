@@ -38,21 +38,6 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
 }
 
 /**
- * supportedExtensions are the file extensions
- * the extension will apply annotations to
- */
-export const supportedExtensions = new Set<string>([
-    'go', // Golang
-    'ts',
-    'tsx', // TypeScript
-    'js',
-    'jsx', // JavaScript
-    'java', // Java
-    'py', // Python
-    'php', // PHP
-])
-
-/**
  * getModeFromExtension returns the LSP mode for the
  * provided file extension (e.g. "jsx")
  *

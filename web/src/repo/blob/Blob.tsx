@@ -21,7 +21,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { Position, Range } from 'vscode-languageserver-types'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
-import { getPathExtension, scrollIntoView, supportedExtensions } from '../../util'
+import { scrollIntoView } from '../../util'
 import { asError } from '../../util/errors'
 import { LineOrPositionOrRange, parseHash, toAbsoluteBlobURL, toPrettyBlobURL } from '../../util/url'
 import {
@@ -285,155 +285,149 @@ export class Blob extends React.Component<Props, State> {
     }
 
     private addEventListeners = (ref: HTMLElement, props: Props): void => {
-        const isSupportedExtension = supportedExtensions.has(getPathExtension(props.filePath))
-        if (isSupportedExtension) {
-            this.subscriptions.add(
-                this.fixedTooltip
-                    .pipe(
-                        filter(props => {
-                            const parsed = parseHash(props.location.hash)
-                            if (parsed.line && parsed.character) {
-                                const cell = getCodeCell(parsed.line)
-                                if (cell) {
-                                    const td = cell.childNodes[1] as HTMLTableDataCellElement
-                                    if (td && !td.classList.contains('annotated')) {
-                                        td.classList.add('annotated')
-                                        convertNode(td)
-                                    }
-                                }
-                                if (!parsed.viewState) {
-                                    return true
-                                }
-                                // Don't show a tooltip when there is a panel (but do highlight the token)
-                                // TODO(john): this can probably be simplified.
-                                if (cell) {
-                                    const el = findElementWithOffset(
-                                        cell.childNodes[1]! as HTMLElement,
-                                        parsed.character!
-                                    )
-                                    if (el) {
-                                        el.classList.add('selection-highlight-sticky')
-                                        return false
-                                    }
+        this.subscriptions.add(
+            this.fixedTooltip
+                .pipe(
+                    filter(props => {
+                        const parsed = parseHash(props.location.hash)
+                        if (parsed.line && parsed.character) {
+                            const cell = getCodeCell(parsed.line)
+                            if (cell) {
+                                const td = cell.childNodes[1] as HTMLTableDataCellElement
+                                if (td && !td.classList.contains('annotated')) {
+                                    td.classList.add('annotated')
+                                    convertNode(td)
                                 }
                             }
-                            this.setFixedTooltip()
-                            return false
-                        }),
-                        map(props => parseHash(props.location.hash)),
-                        map(pos =>
-                            findElementWithOffset(getCodeCell(pos.line!).childNodes[1]! as HTMLElement, pos.character!)
-                        ),
-                        filter((el: HTMLElement | undefined): el is HTMLElement => !!el),
-                        map((target: HTMLElement) => {
-                            const data = { target, loc: getTargetLineAndOffset(target!, false) }
-                            if (!data.loc) {
-                                return null
+                            if (!parsed.viewState) {
+                                return true
                             }
-                            const ctx = { ...this.props, position: data.loc! }
-                            return { target: data.target, ctx }
-                        }),
-                        switchMap(data => {
-                            if (data === null) {
-                                return [null]
+                            // Don't show a tooltip when there is a panel (but do highlight the token)
+                            // TODO(john): this can probably be simplified.
+                            if (cell) {
+                                const el = findElementWithOffset(cell.childNodes[1]! as HTMLElement, parsed.character!)
+                                if (el) {
+                                    el.classList.add('selection-highlight-sticky')
+                                    return false
+                                }
                             }
-                            const { target, ctx } = data
-                            return this.getTooltip(target, ctx).pipe(
-                                tap(tooltip => {
-                                    if (!tooltip) {
-                                        this.setFixedTooltip()
-                                        return
-                                    }
-
-                                    const contents = tooltip.contents
-                                    if (!contents || isEmptyHover({ contents })) {
-                                        this.setFixedTooltip()
-                                        return
-                                    }
-
-                                    this.setFixedTooltip(tooltip)
-                                    updateTooltip(tooltip, true, this.tooltipActions(ctx))
-                                }),
-                                zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
-                                map(([tooltip, defResponse]) => ({
-                                    ...tooltip,
-                                    defUrlOrError: defResponse || undefined,
-                                })),
-                                catchError(err => {
-                                    if (err.code !== EMODENOTFOUND) {
-                                        console.error(err)
-                                    }
-                                    const data: TooltipData = { target, ctx }
-                                    return [data]
-                                })
-                            )
-                        })
-                    )
-                    .subscribe(data => {
-                        if (!data) {
-                            this.setFixedTooltip()
-                            return
                         }
-
-                        const contents = data.contents
-                        if (!contents || isEmptyHover({ contents })) {
-                            this.setFixedTooltip()
-                            return
+                        this.setFixedTooltip()
+                        return false
+                    }),
+                    map(props => parseHash(props.location.hash)),
+                    map(pos =>
+                        findElementWithOffset(getCodeCell(pos.line!).childNodes[1]! as HTMLElement, pos.character!)
+                    ),
+                    filter((el: HTMLElement | undefined): el is HTMLElement => !!el),
+                    map((target: HTMLElement) => {
+                        const data = { target, loc: getTargetLineAndOffset(target!, false) }
+                        if (!data.loc) {
+                            return null
                         }
+                        const ctx = { ...this.props, position: data.loc! }
+                        return { target: data.target, ctx }
+                    }),
+                    switchMap(data => {
+                        if (data === null) {
+                            return [null]
+                        }
+                        const { target, ctx } = data
+                        return this.getTooltip(target, ctx).pipe(
+                            tap(tooltip => {
+                                if (!tooltip) {
+                                    this.setFixedTooltip()
+                                    return
+                                }
 
-                        this.setFixedTooltip(data)
-                        updateTooltip(data, true, this.tooltipActions(data.ctx))
+                                const contents = tooltip.contents
+                                if (!contents || isEmptyHover({ contents })) {
+                                    this.setFixedTooltip()
+                                    return
+                                }
+
+                                this.setFixedTooltip(tooltip)
+                                updateTooltip(tooltip, true, this.tooltipActions(ctx))
+                            }),
+                            zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
+                            map(([tooltip, defResponse]) => ({
+                                ...tooltip,
+                                defUrlOrError: defResponse || undefined,
+                            })),
+                            catchError(err => {
+                                if (err.code !== EMODENOTFOUND) {
+                                    console.error(err)
+                                }
+                                const data: TooltipData = { target, ctx }
+                                return [data]
+                            })
+                        )
                     })
-            )
-            this.subscriptions.add(
-                fromEvent<MouseEvent>(ref, 'mouseover')
-                    .pipe(
-                        debounceTime(50),
-                        map(e => e.target as HTMLElement),
-                        tap(target => {
-                            const td = getTableDataCell(target)
-                            if (td && !td.classList.contains('annotated')) {
-                                td.classList.add('annotated')
-                                convertNode(td)
-                            }
-                        }),
-                        map(target => ({ target, loc: getTargetLineAndOffset(target, false) })),
-                        filter(data => Boolean(data.loc)),
-                        map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } })),
-                        switchMap(({ target, ctx }) => {
-                            const tooltip = this.getTooltip(target, ctx)
-                            const loading = this.getLoadingTooltip(target, ctx, tooltip)
+                )
+                .subscribe(data => {
+                    if (!data) {
+                        this.setFixedTooltip()
+                        return
+                    }
 
-                            // Preemptively fetch the symbol's definition, but no need to pass it on to the hover
-                            // (getDefinition is called again when the hover is docked).
-                            this.getDefinition(ctx)
+                    const contents = data.contents
+                    if (!contents || isEmptyHover({ contents })) {
+                        this.setFixedTooltip()
+                        return
+                    }
 
-                            return merge(loading, tooltip).pipe(
-                                catchError(err => {
-                                    if (err.code !== EMODENOTFOUND) {
-                                        console.error(err)
-                                    }
-                                    const data: TooltipData = { target, ctx }
-                                    return [data]
-                                })
-                            )
-                        })
-                    )
-                    .subscribe(data => {
-                        this.logTelemetryOnTooltip(data)
-                        if (!this.state.fixedTooltip) {
-                            updateTooltip(data, false, this.tooltipActions(data.ctx))
+                    this.setFixedTooltip(data)
+                    updateTooltip(data, true, this.tooltipActions(data.ctx))
+                })
+        )
+        this.subscriptions.add(
+            fromEvent<MouseEvent>(ref, 'mouseover')
+                .pipe(
+                    debounceTime(50),
+                    map(e => e.target as HTMLElement),
+                    tap(target => {
+                        const td = getTableDataCell(target)
+                        if (td && !td.classList.contains('annotated')) {
+                            td.classList.add('annotated')
+                            convertNode(td)
                         }
+                    }),
+                    map(target => ({ target, loc: getTargetLineAndOffset(target, false) })),
+                    filter(data => Boolean(data.loc)),
+                    map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } })),
+                    switchMap(({ target, ctx }) => {
+                        const tooltip = this.getTooltip(target, ctx)
+                        const loading = this.getLoadingTooltip(target, ctx, tooltip)
+
+                        // Preemptively fetch the symbol's definition, but no need to pass it on to the hover
+                        // (getDefinition is called again when the hover is docked).
+                        this.getDefinition(ctx)
+
+                        return merge(loading, tooltip).pipe(
+                            catchError(err => {
+                                if (err.code !== EMODENOTFOUND) {
+                                    console.error(err)
+                                }
+                                const data: TooltipData = { target, ctx }
+                                return [data]
+                            })
+                        )
                     })
-            )
-        }
+                )
+                .subscribe(data => {
+                    this.logTelemetryOnTooltip(data)
+                    if (!this.state.fixedTooltip) {
+                        updateTooltip(data, false, this.tooltipActions(data.ctx))
+                    }
+                })
+        )
 
         this.subscriptions.add(
             fromEvent<MouseEvent>(ref, 'mouseout').subscribe(e => {
                 for (const el of document.querySelectorAll('.blob .selection-highlight')) {
                     el.classList.remove('selection-highlight')
                 }
-                if (isSupportedExtension && !this.state.fixedTooltip) {
+                if (!this.state.fixedTooltip) {
                     hideTooltip()
                 }
             })
