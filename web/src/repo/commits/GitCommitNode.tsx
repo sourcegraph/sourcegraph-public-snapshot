@@ -14,7 +14,8 @@ const GitCommitNodeByline: React.SFC<{
     author: GQL.ISignature
     committer: GQL.ISignature | null
     className: string
-}> = ({ author, committer, className }) => {
+    compact: boolean
+}> = ({ author, committer, className, compact }) => {
     if (
         committer &&
         committer.person.email !== author.person.email &&
@@ -33,8 +34,13 @@ const GitCommitNodeByline: React.SFC<{
                     user={committer.person}
                     tooltip={`${committer.person.displayName} (committer)`}
                 />{' '}
-                <strong>{author.person.displayName}</strong> authored and{' '}
-                <strong>{committer.person.displayName}</strong> committed <Timestamp date={committer.date} />
+                <strong>{author.person.displayName}</strong> {!compact && 'authored'} and{' '}
+                <strong>{committer.person.displayName}</strong>{' '}
+                {!compact && (
+                    <>
+                        committed <Timestamp date={committer.date} />
+                    </>
+                )}
             </small>
         )
     }
@@ -42,7 +48,12 @@ const GitCommitNodeByline: React.SFC<{
     return (
         <small className={`git-commit-node-byline git-commit-node-byline--no-committer ${className}`}>
             <UserAvatar className="icon-inline mr-1" user={author.person} tooltip={author.person.displayName} />{' '}
-            <strong>{author.person.displayName}</strong> committed <Timestamp date={author.date} />
+            <strong>{author.person.displayName}</strong>{' '}
+            {!compact && (
+                <>
+                    committed <Timestamp date={author.date} />
+                </>
+            )}
         </small>
     )
 }
@@ -55,6 +66,9 @@ export interface GitCommitNodeProps {
 
     /** An optional additional CSS class name to apply to this element. */
     className?: string
+
+    /** Display in a single line (more compactly). */
+    compact?: boolean
 }
 
 interface State {
@@ -70,62 +84,86 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
     }
 
     public render(): JSX.Element | null {
+        const bylineElement = (
+            <GitCommitNodeByline
+                className="text-muted git-commit-node__byline"
+                author={this.props.node.author}
+                committer={this.props.node.committer}
+                compact={Boolean(this.props.compact)}
+            />
+        )
+        const messageElement = (
+            <div className="git-commit-node__message">
+                <a
+                    href={externalCommitURL(this.props.repoName, this.props.node.oid)}
+                    className="git-commit-node__message-subject"
+                    title={this.props.node.message}
+                >
+                    {this.props.node.subject}
+                </a>
+                {this.props.node.body && (
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm git-commit-node__message-toggle"
+                        onClick={this.toggleShowCommitMessageBody}
+                    >
+                        <MoreIcon className="icon-inline" />
+                    </button>
+                )}
+            </div>
+        )
+        const oidElement = <code className="git-commit-node__oid">{this.props.node.abbreviatedOID}</code>
+
         return (
-            <div key={this.props.node.id} className={`git-commit-node ${this.props.className}`}>
+            <div
+                key={this.props.node.id}
+                className={`git-commit-node ${this.props.compact ? 'git-commit-node--compact' : ''} ${
+                    this.props.className
+                }`}
+            >
                 <div className="git-commit-node__row git-commit-node__main">
-                    <div className="git-commit-node__signature">
-                        <div className="git-commit-node__message">
-                            <Link
-                                to={externalCommitURL(this.props.repoName, this.props.node.oid)}
-                                className="git-commit-node__message-subject"
-                                title={this.props.node.message}
-                            >
-                                {this.props.node.subject}
-                            </Link>
-                            {this.props.node.body && (
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary btn-sm git-commit-node__message-toggle"
-                                    onClick={this.toggleShowCommitMessageBody}
+                    {!this.props.compact ? (
+                        <>
+                            <div className="git-commit-node__signature">
+                                {messageElement}
+                                {bylineElement}
+                            </div>
+                            <div className="git-commit-node__actions">
+                                <div className="btn-group btn-group-sm mr-2" role="group">
+                                    <a
+                                        className="btn btn-outline-primary"
+                                        href={externalCommitURL(this.props.repoName, this.props.node.oid)}
+                                        data-tooltip="View this commit"
+                                    >
+                                        <strong>{oidElement}</strong>
+                                    </a>
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-primary"
+                                        onClick={this.copyToClipboard}
+                                        data-tooltip={
+                                            this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
+                                        }
+                                    >
+                                        <CopyIcon className="icon-inline" />
+                                    </button>
+                                </div>
+                                <Link
+                                    className="btn btn-outline-primary btn-sm"
+                                    to={toRepoURL({ repoPath: this.props.repoName, rev: this.props.node.oid })}
+                                    data-tooltip="View files at this commit"
                                 >
-                                    <MoreIcon className="icon-inline" />
-                                </button>
-                            )}
-                        </div>
-                        <GitCommitNodeByline
-                            className="text-muted"
-                            author={this.props.node.author}
-                            committer={this.props.node.committer}
-                        />
-                    </div>
-                    <div className="git-commit-node__actions">
-                        <div className="btn-group btn-group-sm mr-2" role="group">
-                            <Link
-                                className="btn btn-outline-primary"
-                                to={externalCommitURL(this.props.repoName, this.props.node.oid)}
-                                data-tooltip="View this commit"
-                            >
-                                <strong>
-                                    <code className="git-commit-node__oid">{this.props.node.abbreviatedOID}</code>
-                                </strong>
-                            </Link>
-                            <button
-                                type="button"
-                                className="btn btn-outline-primary"
-                                onClick={this.copyToClipboard}
-                                data-tooltip={this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
-                            >
-                                <CopyIcon className="icon-inline" />
-                            </button>
-                        </div>
-                        <Link
-                            className="btn btn-outline-primary btn-sm"
-                            to={toRepoURL({ repoPath: this.props.repoName, rev: this.props.node.oid })}
-                            data-tooltip="View files at this commit"
-                        >
-                            <CodeTagsIcon className="icon-inline" />
-                        </Link>
-                    </div>
+                                    <CodeTagsIcon className="icon-inline" />
+                                </Link>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {bylineElement}
+                            {messageElement}
+                            <a href={externalCommitURL(this.props.repoName, this.props.node.oid)}>{oidElement}</a>
+                        </>
+                    )}
                 </div>
                 {this.state.showCommitMessageBody && (
                     <div className="git-commit-node__row">
