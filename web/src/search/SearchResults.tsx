@@ -62,12 +62,14 @@ interface State {
     user?: GQL.IUser | null
     dynamicFilters: GQL.ISearchFilter[]
     allExpanded?: boolean
+    uiLimit: number
 }
 
 const ALL_EXPANDED_LOCAL_STORAGE_KEY = 'allExpanded'
 const DATA_CENTER_UPGRADE_STRING =
     'Upgrade to Sourcegraph Data Center for distributed on-the-fly search and near-instant indexed search.'
 const SEARCH_TIMED_OUT_DEFAULT_TITLE = 'Search timed out'
+const UI_PAGE_SIZE = 75
 
 export class SearchResults extends React.Component<Props, State> {
     public state: State = {
@@ -83,6 +85,7 @@ export class SearchResults extends React.Component<Props, State> {
         showModal: false,
         dynamicFilters: [],
         allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
+        uiLimit: UI_PAGE_SIZE,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -133,6 +136,7 @@ export class SearchResults extends React.Component<Props, State> {
                                 ...res,
                                 error: undefined,
                                 loading: false,
+                                uiLimit: UI_PAGE_SIZE,
                             })),
                             catchError(error => [
                                 {
@@ -150,6 +154,7 @@ export class SearchResults extends React.Component<Props, State> {
                                     showModal: false,
                                     dynamicFilters: [],
                                     allExpanded: false,
+                                    uiLimit: UI_PAGE_SIZE,
                                 },
                             ])
                         )
@@ -184,6 +189,7 @@ export class SearchResults extends React.Component<Props, State> {
                         showModal: false,
                         dynamicFilters: [],
                         allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
+                        uiLimit: UI_PAGE_SIZE,
                     }))
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))
@@ -440,8 +446,10 @@ export class SearchResults extends React.Component<Props, State> {
                     </div>
                     {this.state.results.length > 0}
                     {this.state.loading && <Loader className="icon-inline" />}
-                    {this.state.results.slice(0, 75).map((result, i) => this.renderResult(i, result, i <= 15))}
-                    {this.state.limitHit && (
+                    {this.state.results
+                        .slice(0, this.state.uiLimit)
+                        .map((result, i) => this.renderResult(i, result, i <= 15))}
+                    {(this.state.limitHit || this.state.results.length > this.state.uiLimit) && (
                         <button className="btn btn-link search-results__more" onClick={this.showMoreResults}>
                             Show more
                         </button>
@@ -496,6 +504,16 @@ export class SearchResults extends React.Component<Props, State> {
     }
 
     private showMoreResults = () => {
+        if (this.state.results.length > this.state.uiLimit) {
+            // We already have results fetched that aren't being displayed.
+            // Increase the UI limit and rerender.
+            this.setState(state => ({
+                uiLimit: state.uiLimit + UI_PAGE_SIZE,
+            }))
+            return
+        }
+
+        // Requery with an increased max result count.
         const params = new URLSearchParams(this.props.location.search)
         let query = params.get('q') || ''
 

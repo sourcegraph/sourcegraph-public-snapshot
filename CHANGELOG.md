@@ -7,6 +7,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Changed
 
 * Missing repos no longer appear as search results. Instead, a count of repos that were not found is displayed above the search results. Hovering over the count will reveal the names of the missing repos.
+* "Show more" on the search results page will now reveal results that have already been fetched (if such results exist) without needing to do a new query.
 
 ### Fixed
 
