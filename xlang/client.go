@@ -6,18 +6,19 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
-
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -238,9 +239,24 @@ func RemoteOneShotClientRequest(ctx context.Context, remote *url.URL, mode strin
 	remote.Path = "/.api/xlang/" + method
 	url := remote.String()
 
-	// TODO tracing, user-agent, local version, local whoami
-	resp, err := ctxhttp.Post(ctx, nil, url, "application/json", bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Sourcegraph/"+env.Version)
+	req = req.WithContext(ctx)
+
+	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+		nethttp.OperationName("Remote "+method),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		return err
 	}
 	defer resp.Body.Close()
@@ -265,3 +281,5 @@ func RemoteOneShotClientRequest(ctx context.Context, remote *url.URL, mode strin
 
 	return errors.New("no response found for request")
 }
+
+var httpClient = &http.Client{Transport: &nethttp.Transport{}}
