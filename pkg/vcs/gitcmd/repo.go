@@ -31,12 +31,10 @@ var (
 
 	// gitCmdWhitelist are commands and arguments that are allowed to execute when calling GitCmdRaw.
 	gitCmdWhitelist = map[string][]string{
-		"log":    append([]string{}, gitCmdLogAndShowCommonWhitelist...),
-		"show":   append([]string{}, gitCmdLogAndShowCommonWhitelist...),
+		"log":    append([]string{}, gitCommonWhitelist...),
+		"show":   append([]string{}, gitCommonWhitelist...),
 		"remote": []string{"-v"},
-		"diff": []string{
-			"--name-status", "-R", "-C", "-U1", "--histogram",
-		},
+		"diff":   append([]string{}, gitCommonWhitelist...),
 		"blame":  []string{"--root", "--incremental", "--"},
 		"branch": []string{"-r", "-a", "--contains"},
 
@@ -46,8 +44,8 @@ var (
 		"symbolic-ref": []string{"--short"},
 	}
 
-	// `git log` and `git show` share a large common set of whitelisted args.
-	gitCmdLogAndShowCommonWhitelist = []string{
+	// `git log`, `git show`, `git diff`, etc., share a large common set of whitelisted args.
+	gitCommonWhitelist = []string{
 		"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
 		"--regexp-ignore-case", "--glob", "--cherry", "-z",
@@ -55,6 +53,10 @@ var (
 		"--all-match", "--invert-grep", "--extended-regexp",
 		"--no-color", "--decorate", "--no-patch", "--exclude",
 		"--no-merges",
+		"--full-index",
+		"--find-copies",
+		"--find-renames",
+		"--inter-hunk-context",
 	}
 )
 
