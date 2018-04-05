@@ -64,10 +64,9 @@ const wrapLSPRequests = (ctx: AbsoluteRepo, mode: string, requests: LSPRequest[]
 export const EMODENOTFOUND = -32000
 
 /**
- * A static list of what is supported on Sourcegraph.com. However, on-prem instances may support
- * less so we prevent future requests after the first mode not found response.
+ * Modes that are known to not be supported because the server replied with a mode not found error
  */
-const unsupportedExtensions = new Set<string>()
+const unsupportedModes = new Set<string>()
 
 // TODO(sqs): This is a messy global var. Refactor this code after
 // https://github.com/sourcegraph/sourcegraph/pull/8893 is merged.
@@ -92,9 +91,10 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
         )
     }
 
+    // Check if mode is known to not be supported
     const extension = getPathExtension(path)
     const mode = getModeFromExtension(extension)
-    if (unsupportedExtensions.has(extension) || !mode) {
+    if (!mode || unsupportedModes.has(mode)) {
         return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
     }
 
@@ -117,7 +117,7 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
             for (const result of results) {
                 if (result && result.error) {
                     if (result.error.code === EMODENOTFOUND) {
-                        unsupportedExtensions.add(extension)
+                        unsupportedModes.add(mode)
                     }
                     throw Object.assign(new Error(result.error.message), result.error)
                 }
