@@ -2,7 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "sourceRoot": "src",
-    "isolatedModules": true
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": false
   },
   "include": [
     "typings/**/*.d.ts",
