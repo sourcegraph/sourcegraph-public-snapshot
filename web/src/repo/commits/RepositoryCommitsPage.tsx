@@ -11,7 +11,7 @@ import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 
-const gitCommitFragment = gql`
+export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
         id
         oid
@@ -87,9 +87,9 @@ interface Props {
     location: H.Location
 }
 
-class FilteredGitCommitConnection extends FilteredConnection<
+export class FilteredGitCommitConnection extends FilteredConnection<
     GQL.IGitCommit,
-    Pick<GitCommitNodeProps, 'repoName' | 'className'>
+    Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>
 > {}
 
 /** A page that shows a repository's commits at the current revision. */

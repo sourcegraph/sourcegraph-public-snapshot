@@ -1,0 +1,37 @@
+@import './DiffStat';
+@import './FileDiffHunks';
+
+.file-diff-node {
+    margin-bottom: 1rem;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        // decrease from .card-header
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+
+        &-path {
+            display: flex;
+            align-items: center;
+        }
+        &-stat {
+            margin-right: 0.5rem;
+        }
+
+        &-actions {
+            // unset from .card-header
+            font-weight: initial;
+            opacity: initial;
+
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    &__hunks {
+        flex: 1 1 auto;
+    }
+}

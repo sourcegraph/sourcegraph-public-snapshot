@@ -785,6 +785,13 @@ type Repository implements Node {
         # Return Git tags whose names match the query.
         query: String
     ): GitRefConnection!
+    # A Git comparison in this repository between a base and head commit.
+    comparison(
+        # The base of the diff ("old" or "left-hand side"), or "HEAD" if not specified.
+        base: String
+        # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
+        head: String
+    ): RepositoryComparison!
     # The repository's symbols (e.g., functions, variables, types, classes, etc.) on the default branch.
     #
     # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
@@ -905,6 +912,85 @@ type GitRefConnection {
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
+}
+
+# The differences between two Git commits in a repository.
+type RepositoryComparison {
+    # The range that this comparison represents.
+    range: GitRevisionRange!
+    # The commits in the comparison range, excluding the base and including the head.
+    commits(
+        # Return the first n commits from the list.
+        first: Int
+    ): GitCommitConnection!
+    # The file diffs for each changed file.
+    fileDiffs(
+        # Return the first n file diffs from the list.
+        first: Int
+    ): FileDiffConnection!
+}
+
+# A list of file diffs.
+type FileDiffConnection {
+    # A list of file diffs.
+    nodes: [FileDiff!]!
+    # The total count of file diffs in the connection, if available. This total count may be larger than the number
+    # of nodes in this object when the result is paginated.
+    totalCount: Int
+    # Pagination information.
+    pageInfo: PageInfo!
+    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    diffStat: DiffStat!
+    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    rawDiff: String!
+}
+
+# A diff for a single file.
+type FileDiff {
+    # The repository containing this file.
+    repository: Repository!
+    # The old (original) path of the file, or null if the file was added.
+    oldPath: String
+    # The new (changed) path of the file, or null if the file was deleted.
+    newPath: String
+    # Hunks that were changed from old to new.
+    hunks: [FileDiffHunk!]!
+    # The diff stat for the whole file.
+    stat: DiffStat!
+}
+
+# A changed region ("hunk") in a file diff.
+type FileDiffHunk {
+    # The range of the old file that the hunk applies to.
+    oldRange: FileDiffHunkRange!
+    # Whether the old file had a trailing newline.
+    oldNoNewlineAt: Boolean!
+    # The range of the new file that the hunk applies to.
+    newRange: FileDiffHunkRange!
+    # The diff hunk section heading, if any.
+    section: String
+    # The hunk body, with lines prefixed with '-', '+', or ' '.
+    body: String!
+}
+
+# A hunk range in one side (old/new) of a diff.
+type FileDiffHunkRange {
+    # The first line that the hunk applies to.
+    startLine: Int!
+    # The number of lines that the hunk applies to.
+    lines: Int!
+}
+
+# Statistics about a diff.
+type DiffStat {
+    # Number of additions.
+    added: Int!
+    # Number of changes.
+    changed: Int!
+    # Number of deletions.
+    deleted: Int!
 }
 
 # A code symbol (e.g., a function, variable, type, class, etc.).

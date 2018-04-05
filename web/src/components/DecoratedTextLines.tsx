@@ -27,7 +27,7 @@ interface Props {
     /**
      * Called when the mousedown event is triggered on the element.
      */
-    onMouseDown: () => void
+    onMouseDown?: () => void
 }
 
 interface DecoratedLine {

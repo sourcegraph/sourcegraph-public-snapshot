@@ -1,5 +1,6 @@
 import BranchIcon from '@sourcegraph/icons/lib/Branch'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
+import ColumnIcon from '@sourcegraph/icons/lib/Column'
 import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
@@ -244,6 +245,14 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         >
                             <TagIcon className="icon-inline" />
                             <span className="composite-container__header-action-text">Tags</span>
+                        </NavLink>
+                        <NavLink
+                            to={`/${this.props.repo.uri}/-/compare`}
+                            className="composite-container__header-action"
+                            activeClassName="composite-container__header-action-active"
+                        >
+                            <ColumnIcon className="icon-inline" />
+                            <span className="composite-container__header-action-text">Compare</span>
                         </NavLink>
                     </>
                 )}
