@@ -1049,9 +1049,12 @@ type GitObject {
     commit: GitCommit
 }
 
-# A Git revspec expression that (possibly) evaluates to a Git revision.
+# A Git revspec expression that (possibly) resolves to a Git revision.
 type GitRevSpecExpr {
+    # The original Git revspec expression.
     expr: String!
+    # The Git object that the revspec resolves to, or null otherwise.
+    object: GitObject
 }
 
 # A Git revspec.

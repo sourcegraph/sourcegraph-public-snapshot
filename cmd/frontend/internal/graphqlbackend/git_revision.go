@@ -1,10 +1,29 @@
 package graphqlbackend
 
+import (
+	"context"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+)
+
 type gitRevSpecExpr struct {
 	expr string
+	repo *repositoryResolver
 }
 
-func (e *gitRevSpecExpr) Expr() string { return e.expr }
+func (r *gitRevSpecExpr) Expr() string { return r.expr }
+
+func (r *gitRevSpecExpr) Object(ctx context.Context) (*gitObject, error) {
+	vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
+	oid, err := vcsrepo.ResolveRevision(ctx, r.expr, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &gitObject{
+		oid:  gitObjectID(oid),
+		repo: r.repo,
+	}, nil
+}
 
 type gitRevSpec struct {
 	ref    *gitRefResolver
