@@ -167,6 +167,13 @@ func main() {
 				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
 				Cmd(fmt.Sprintf("gcloud docker -- push %s:latest", image)),
 			)
+			if app == "server" {
+				cmds = append(cmds,
+					Cmd(fmt.Sprintf("docker tag sourcegraph/server:%s sourcegraph/server:insiders", version)),
+					Cmd("docker login -u sourcegraphci -p cf30a79c8783445f2141"),
+					Cmd("docker push sourcegraph/server:insiders"),
+				)
+			}
 		}
 		pipeline.AddStep(":docker:", cmds...)
 	}
