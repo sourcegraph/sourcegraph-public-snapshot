@@ -1,5 +1,6 @@
 import BranchIcon from '@sourcegraph/icons/lib/Branch'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
+import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
 import * as React from 'react'
@@ -218,14 +219,24 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <div className="repo-header__spacer" />
                 {this.state.rightActions && this.state.rightActions.map(a => a.element)}
                 {enableGitBrowsing && (
-                    <NavLink
-                        to={`/${this.props.repo.uri}/-/branches`}
-                        className="composite-container__header-action"
-                        activeClassName="composite-container__header-action-active"
-                    >
-                        <BranchIcon className="icon-inline" />
-                        <span className="composite-container__header-action-text">Branches</span>
-                    </NavLink>
+                    <>
+                        <NavLink
+                            to={`/${this.props.repo.uri}/-/commits`}
+                            className="composite-container__header-action"
+                            activeClassName="composite-container__header-action-active"
+                        >
+                            <CommitIcon className="icon-inline" />
+                            <span className="composite-container__header-action-text">Commits</span>
+                        </NavLink>
+                        <NavLink
+                            to={`/${this.props.repo.uri}/-/branches`}
+                            className="composite-container__header-action"
+                            activeClassName="composite-container__header-action-active"
+                        >
+                            <BranchIcon className="icon-inline" />
+                            <span className="composite-container__header-action-text">Branches</span>
+                        </NavLink>
+                    </>
                 )}
                 {this.props.repo.viewerCanAdminister && (
                     <NavLink

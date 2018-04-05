@@ -28,6 +28,7 @@ import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
 import { BlobPage } from './blob/BlobPage'
 import { BlobReferencesPanel } from './blob/references/BlobReferencesPanel'
+import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
 import { DirectoryPage } from './DirectoryPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
 import { RepositoryGraphArea } from './graph/RepositoryGraphArea'
@@ -330,6 +331,21 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 defaultBranch={(this.state.resolvedRevOrError as ResolvedRev).defaultBranch}
                                 commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
                                 routePrefix={this.props.routePrefix}
+                            />
+                        )}
+                    />
+                    <Route
+                        path={`${this.props.routePrefix}/-/commits`}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={(routeComponentProps: RouteComponentProps<{}>) => (
+                            <RepositoryCommitsPage
+                                {...routeComponentProps}
+                                repo={this.props.repo}
+                                rev={this.props.rev}
+                                commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
+                                location={this.props.location}
+                                history={this.props.history}
                             />
                         )}
                     />

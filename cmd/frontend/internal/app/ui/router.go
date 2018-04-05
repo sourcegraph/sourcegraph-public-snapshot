@@ -34,6 +34,7 @@ const (
 	routeRepo           = "repo"
 	routeRepoSettings   = "repo-settings"
 	routeRepoBranches   = "repo-branches"
+	routeRepoCommits    = "repo-commits"
 	routeRepoGraph      = "repo-graph"
 	routeThreads        = "threads"
 	routeTree           = "tree"
@@ -135,6 +136,7 @@ func newRouter() *mux.Router {
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
 
+	repoRev.PathPrefix("/commits").Methods("GET").Name(routeRepoCommits)
 	repoRev.PathPrefix("/graph").Methods("GET").Name(routeRepoGraph)
 
 	// blob
@@ -171,6 +173,7 @@ func initRouter() {
 	router.Get(routeAPIConsole).Handler(handler(serveBasicPageString("API explorer - Sourcegraph")))
 	router.Get(routeRepoSettings).Handler(handler(serveBasicPageString("Repository settings - Sourcegraph")))
 	router.Get(routeRepoBranches).Handler(handler(serveBasicPageString("Branches - Sourcegraph")))
+	router.Get(routeRepoCommits).Handler(handler(serveBasicPageString("Commits - Sourcegraph")))
 	router.Get(routeRepoGraph).Handler(handler(serveBasicPageString("Repository graph - Sourcegraph")))
 	router.Get(routeSearchScope).Handler(handler(serveBasicPageString("Search scope - Sourcegraph")))
 

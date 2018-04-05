@@ -219,7 +219,7 @@ export class RepoContainer extends React.Component<Props, State> {
                 />
                 {this.state.repoOrError.enabled || isSettingsPage ? (
                     <Switch>
-                        {['', `@${this.state.rev}`, '/-/blob', '/-/tree', '/-/graph'].map(routePath => (
+                        {['', `@${this.state.rev}`, '/-/blob', '/-/tree', '/-/graph', '/-/commits'].map(routePath => (
                             <Route
                                 path={`${repoMatchURL}${routePath}`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
