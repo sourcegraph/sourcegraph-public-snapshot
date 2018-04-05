@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -110,6 +111,10 @@ type Repository interface {
 
 	// Blames a file for the extension API returning GitBlame data as a raw string.
 	BlameFileRaw(ctx context.Context, path string, opt *BlameOptions) (string, error)
+
+	// ExecReader executes an arbitrary `git` command (`git [args...]`) and returns a reader
+	// connected to its stdout.
+	ExecReader(ctx context.Context, args []string) (r io.ReadCloser, err error)
 
 	// Allows VSCode extensions to execute whitelisted commands from gitserver.
 	GitCmdRaw(ctx context.Context, params []string) (string, error)

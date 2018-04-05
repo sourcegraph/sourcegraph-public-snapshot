@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -610,6 +611,18 @@ func (r *Repository) GitCmdRaw(ctx context.Context, params []string) (string, er
 	}
 
 	return string(out), nil
+}
+
+func (r *Repository) ExecReader(ctx context.Context, args []string) (io.ReadCloser, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExecReader")
+	span.SetTag("args", args)
+	defer span.Finish()
+
+	if !isWhitelistedGitCmd(args) {
+		return nil, fmt.Errorf("command failed: %v is not a whitelisted git command", args)
+	}
+	cmd := r.command("git", args...)
+	return gitserver.StdoutReader(ctx, cmd)
 }
 
 func (r *Repository) BlameFileRaw(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error) {

@@ -2,6 +2,7 @@ package testing
 
 import (
 	"context"
+	"io"
 	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -22,6 +23,7 @@ type MockRepository struct {
 
 	BlameFile_    func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error)
 	BlameFileRaw_ func(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error)
+	ExecReader_   func(ctx context.Context, args []string) (io.ReadCloser, error)
 	GitCmdRaw_    func(ctx context.Context, params []string) (string, error)
 
 	Lstat_    func(ctx context.Context, commit api.CommitID, name string) (os.FileInfo, error)
@@ -69,6 +71,10 @@ func (r MockRepository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]
 
 func (r MockRepository) CommitCount(ctx context.Context, opt vcs.CommitsOptions) (uint, error) {
 	return r.CommitCount_(ctx, opt)
+}
+
+func (r MockRepository) ExecReader(ctx context.Context, args []string) (io.ReadCloser, error) {
+	return r.ExecReader_(ctx, args)
 }
 
 func (r MockRepository) GitCmdRaw(ctx context.Context, params []string) (string, error) {
