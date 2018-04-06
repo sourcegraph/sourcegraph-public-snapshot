@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -21,9 +23,10 @@ import (
 )
 
 var (
-	proxyAddr = flag.String("proxyAddress", "127.0.0.1:8080", "proxy server listen address (tcp)")
-	cacheDir  = flag.String("cacheDirectory", filepath.Join(os.TempDir(), "proxy-cache"), "cache directory location")
-	trace     = flag.Bool("trace", false, "trace logs to stderr")
+	proxyAddr       = flag.String("proxyAddress", "127.0.0.1:8080", "proxy server listen address (tcp)")
+	cacheDir        = flag.String("cacheDirectory", filepath.Join(os.TempDir(), "proxy-cache"), "cache directory location")
+	didOpenLanguage = flag.String("didOpenLanguage", "", "(HACK) If non-empty, send 'textDocument/didOpen' notifications with the specified language field (e.x. 'python') to the language server for every file.")
+	trace           = flag.Bool("trace", false, "trace logs to stderr")
 )
 
 type cloneProxy struct {
@@ -35,6 +38,10 @@ type cloneProxy struct {
 
 	ready chan struct{} // barrier to block handling requests until the proxy is fully initalized
 	ctx   context.Context
+
+	// HACK
+	didOpenMu sync.Mutex
+	didOpen   map[string]bool
 }
 
 func (p *cloneProxy) start() {
@@ -114,6 +121,7 @@ func main() {
 				ctx:           ctx,
 				sessionID:     uuid.New(),
 				lastRequestID: newAtomicCounter(),
+				didOpen:       map[string]bool{},
 			}
 
 			var serverConnOpts []jsonrpc2.ConnOpt
@@ -177,7 +185,53 @@ func (p *cloneProxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.Con
 		src:  p.client,
 		dest: p.server,
 
-		updateURIFromSrc:  func(uri lsp.DocumentURI) lsp.DocumentURI { return clientToServerURI(uri, p.workspaceCacheDir()) },
+		updateURIFromSrc: func(uri lsp.DocumentURI) lsp.DocumentURI {
+			uri = clientToServerURI(uri, p.workspaceCacheDir())
+
+			// HACK
+			//
+			// Some language servers don't follow LSP correctly, and refuse to handle requests that
+			// operate on files that the language server hasn't received a a 'textDocument/didOpen'
+			// request for yet.
+			//
+			// See this issue for more context: https://github.com/Microsoft/language-server-protocol/issues/177
+			// There is also a corresponding PR to officialy put this clarification in the text:
+			// https://github.com/Microsoft/language-server-protocol/pull/431
+			//
+			// This hack is necessary to get those offending language servers to work at all.
+			//
+			// This is not indended to be a robust implementation, so there is no attempt to send
+			// matching 'textDocument/didClose' requests / etc.
+			if *didOpenLanguage != "" {
+				if parsedURI, err := url.Parse(string(uri)); err == nil && probablyFileURI(parsedURI) {
+					p.didOpenMu.Lock()
+					sent := p.didOpen[parsedURI.Path]
+					if !sent {
+						p.didOpen[parsedURI.Path] = true
+					}
+					p.didOpenMu.Unlock()
+
+					if !sent {
+						b, err := ioutil.ReadFile(parsedURI.Path)
+						if err == nil {
+							err = p.server.Notify(ctx, "textDocument/didOpen", &lsp.DidOpenTextDocumentParams{
+								TextDocument: lsp.TextDocumentItem{
+									URI:        uri,
+									LanguageID: *didOpenLanguage,
+									Version:    1,
+									Text:       string(b),
+								},
+							})
+							if err != nil {
+								log.Println("error sending didOpen", err)
+							}
+						}
+					}
+				}
+			}
+
+			return uri
+		},
 		updateURIFromDest: func(uri lsp.DocumentURI) lsp.DocumentURI { return serverToClientURI(uri, p.workspaceCacheDir()) },
 	}
 
