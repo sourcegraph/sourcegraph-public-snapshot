@@ -89,7 +89,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
 
 interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {}
 
-export class FilteredFileDiffConnection extends FilteredConnection<
+class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
     Pick<FileDiffNodeProps, 'repoName' | 'base' | 'head' | 'lineNumbers' | 'className'>
 > {}
