@@ -1649,6 +1649,19 @@ type ThreadConnection {
     totalCount: Int!
 }
 
+# The possible configuration states of a language server.
+enum LangServerState {
+    # The language server is neither enabled nor disabled. When a repo for this
+    # language is visited by any user, it will be enabled.
+    LANG_SERVER_STATE_NONE
+
+    # The language server was enabled by a plain user or admin user.
+    LANG_SERVER_STATE_ENABLED
+
+    # The language server was disabled by an admin user.
+    LANG_SERVER_STATE_DISABLED
+}
+
 # A language server.
 type LangServer {
     # "go", "java", "typescript", etc.
@@ -1673,11 +1686,10 @@ type LangServer {
     # come built in with Sourcegraph).
     custom: Boolean!
 
-    # Whether or not the language server for this language is enabled.
+    # The current configuration state of the language server.
     #
-    # In Data Center and for custom language servers, this field indicates if
-    # the language is configured.
-    enabled: Boolean!
+    # For custom language servers, this field is never LANG_SERVER_STATE_NONE.
+    state: LangServerState!
 
     # Whether or not the language server is being downloaded, starting, restarting.
     #

@@ -16,7 +16,7 @@ type langServerResolver struct {
 	homepageURL, issuesURL, docsURL              string
 	dataCenter                                   bool
 	custom                                       bool
-	enabled                                      bool
+	state                                        langservers.ConfigState
 	pending                                      bool
 	canEnable, canDisable, canRestart, canUpdate bool
 	healthy                                      bool
@@ -33,7 +33,18 @@ func (c *langServerResolver) IssuesURL(ctx context.Context) *string {
 func (c *langServerResolver) DocsURL(ctx context.Context) *string { return nullString(c.docsURL) }
 func (c *langServerResolver) DataCenter(ctx context.Context) bool { return c.dataCenter }
 func (c *langServerResolver) Custom(ctx context.Context) bool     { return c.custom }
-func (c *langServerResolver) Enabled(ctx context.Context) bool    { return c.enabled }
+func (c *langServerResolver) State(ctx context.Context) string {
+	switch c.state {
+	case langservers.StateNone:
+		return "LANG_SERVER_STATE_NONE"
+	case langservers.StateEnabled:
+		return "LANG_SERVER_STATE_ENABLED"
+	case langservers.StateDisabled:
+		return "LANG_SERVER_STATE_DISABLED"
+	default:
+		panic("invalid state")
+	}
+}
 func (c *langServerResolver) Pending(ctx context.Context) bool    { return c.pending }
 func (c *langServerResolver) CanEnable(ctx context.Context) bool  { return c.canEnable }
 func (c *langServerResolver) CanDisable(ctx context.Context) bool { return c.canDisable }
@@ -64,7 +75,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 				docsURL:     langservers.StaticInfo[language].DocsURL,
 				dataCenter:  true,
 				custom:      false,
-				enabled:     state == langservers.StateEnabled,
+				state:       state,
 				pending:     false,
 				canEnable:   false,
 				canDisable:  false,
@@ -88,7 +99,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			docsURL:     langservers.StaticInfo[language].DocsURL,
 			dataCenter:  false,
 			custom:      false,
-			enabled:     state == langservers.StateEnabled,
+			state:       state,
 			pending:     info.Pulling || info.Status == langservers.StatusStarting,
 			canEnable:   isSiteAdmin || state == langservers.StateNone,
 			canDisable:  isSiteAdmin,
@@ -106,6 +117,10 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 		if builtin {
 			continue
 		}
+		state := langservers.StateEnabled
+		if ls.Disabled {
+			state = langservers.StateDisabled
+		}
 		results = append(results, &langServerResolver{
 			language:    strings.ToLower(ls.Language),
 			displayName: strings.Title(ls.Language),
@@ -114,7 +129,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			docsURL:     "",
 			dataCenter:  conf.IsDataCenter(conf.DeployType()),
 			custom:      true,
-			enabled:     !ls.Disabled,
+			state:       state,
 			canEnable:   isSiteAdmin,
 			canDisable:  isSiteAdmin,
 			canRestart:  false,
