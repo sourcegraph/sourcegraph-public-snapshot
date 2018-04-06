@@ -19,4 +19,6 @@ type MockStores struct {
 	SiteConfig  MockSiteConfig
 	Users       MockUsers
 	UserEmails  MockUserEmails
+
+	Phabricator MockPhabricator
 }

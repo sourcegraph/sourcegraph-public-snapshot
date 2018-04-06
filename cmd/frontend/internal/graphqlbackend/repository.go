@@ -16,13 +16,10 @@ import (
 	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 type repositoryResolver struct {
@@ -156,65 +153,8 @@ func (r *repositoryResolver) UpdatedAt() *string {
 
 func (r *repositoryResolver) URL() string { return "/" + string(r.repo.URI) }
 
-func (r *repositoryResolver) ExternalURL(ctx context.Context) (*string, error) {
-	uri := r.repo.URI
-	repoListConfigs := repoListConfigs.Get().(map[api.RepoURI]schema.Repository)
-	rc, ok := repoListConfigs[uri]
-	if ok && rc.Links != nil && rc.Links.Repository != "" {
-		return &rc.Links.Repository, nil
-	}
-
-	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	if phabRepo != nil {
-		url := fmt.Sprintf("%s/diffusion/%s", phabRepo.URL, phabRepo.Callsign)
-		return &url, nil
-	}
-
-	if strings.HasPrefix(string(uri), "github.com/") {
-		url := fmt.Sprintf("https://%s", uri)
-		return &url, nil
-	}
-
-	host := strings.Split(string(uri), "/")[0]
-	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
-		url := fmt.Sprintf("%s%s", gheURL, strings.TrimPrefix(string(uri), host))
-		return &url, nil
-	}
-
-	if r.repo.ExternalRepo != nil {
-		info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{ExternalRepo: r.repo.ExternalRepo})
-		if err != nil {
-			return nil, err
-		}
-		if info.Repo != nil && info.Repo.Links != nil && info.Repo.Links.Root != "" {
-			return &info.Repo.Links.Root, nil
-		}
-	}
-
-	return nil, nil
-}
-
-func (r *repositoryResolver) HostType() *string {
-	uri := r.repo.URI
-
-	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	if phabRepo != nil {
-		host := "Phabricator"
-		return &host
-	}
-	if strings.HasPrefix(string(uri), "github.com/") {
-		host := "GitHub"
-		return &host
-	}
-	host := strings.Split(string(uri), "/")[0]
-	if _, ok := conf.GitHubEnterpriseURLs()[host]; ok {
-		host := "GitHub Enterprise"
-		return &host
-	}
-	if r.repo.ExternalRepo != nil {
-		return &r.repo.ExternalRepo.ServiceType
-	}
-	return nil
+func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+	return externallink.Repository(ctx, r.repo)
 }
 
 func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListResolver, error) {

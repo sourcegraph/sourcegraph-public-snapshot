@@ -1,15 +1,21 @@
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
 import ShareIcon from '@sourcegraph/icons/lib/Share'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
+import { merge } from 'rxjs/observable/merge'
+import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
+import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
+import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
-import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Position, Range } from 'vscode-languageserver-types'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchFileMetadata, FileMetadata } from '../backend'
+import { asError, ErrorLike, isErrorLike } from '../../util/errors'
+import { fetchFileExternalLinks } from '../backend'
 
 interface Props {
     repo?: GQL.IRepository | null
@@ -20,62 +26,47 @@ interface Props {
 }
 
 interface State {
-    file?: FileMetadata | undefined
+    /**
+     * The external links for the current file/dir, or undefined while loading, null while not
+     * needed (because not viewing a file/dir), or an error.
+     */
+    fileExternalLinksOrError?: GQL.IExternalLink[] | null | ErrorLike
 }
 
 /**
  * A repository header action that goes to the corresponding URL on an external code host.
  */
 export class GoToCodeHostAction extends React.PureComponent<Props, State> {
-    public state: State = {}
+    public state: State = { fileExternalLinksOrError: null }
 
-    private fileChanges = new Subject<string>()
+    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.fileChanges
+            this.componentUpdates
                 .pipe(
-                    tap(() => {
-                        if (this.state.file) {
-                            this.setState({ file: undefined })
+                    startWith(this.props),
+                    distinctUntilChanged((a, b) => a.repo === b.repo && a.rev === b.rev && a.filePath === b.filePath),
+                    switchMap(({ repo, rev, filePath }) => {
+                        if (!repo || !filePath) {
+                            return of({ fileExternalLinksOrError: null })
                         }
-                    }),
-                    switchMap(filePath => {
-                        if (!this.props.repo || !filePath) {
-                            return []
-                        }
-                        return fetchFileMetadata({
-                            repoPath: this.props.repo.uri,
-                            rev: this.props.rev,
-                            filePath,
-                        }).pipe(
-                            catchError(err => {
-                                console.error(err)
-                                return []
-                            })
+                        return merge(
+                            of({ fileExternalLinksOrError: undefined }),
+                            fetchFileExternalLinks({ repoPath: repo.uri, rev, filePath }).pipe(
+                                catchError(err => [asError(err)]),
+                                map(c => ({ fileExternalLinksOrError: c }))
+                            )
                         )
                     })
                 )
-                .subscribe(
-                    file => {
-                        if (file) {
-                            this.setState({
-                                file,
-                            })
-                        }
-                    },
-                    err => console.error(err)
-                )
+                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
-
-        this.fileChanges.next(this.props.filePath)
     }
 
     public componentWillReceiveProps(props: Props): void {
-        if (props.filePath !== this.props.filePath) {
-            this.fileChanges.next(props.filePath)
-        }
+        this.componentUpdates.next(props)
     }
 
     public componentWillUnmount(): void {
@@ -87,49 +78,47 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             return null
         }
 
-        const rawURL = urlToCodeHost(this.props.repo, this.state.file)
-        if (rawURL === null) {
+        // If the external link for the more specific resource within the repository is loading or errored, use the
+        // repository external link.
+        let externalURLs: GQL.IExternalLink[]
+        if (
+            this.state.fileExternalLinksOrError === null ||
+            this.state.fileExternalLinksOrError === undefined ||
+            isErrorLike(this.state.fileExternalLinksOrError) ||
+            this.state.fileExternalLinksOrError.length === 0
+        ) {
+            externalURLs = this.props.repo.externalURLs
+        } else {
+            externalURLs = this.state.fileExternalLinksOrError
+        }
+        if (externalURLs.length === 0) {
             return null
         }
-        const url = new URL(rawURL)
 
-        let tooltip: string
-        let label = ''
-        let icon: JSX.Element | null = null
+        // Only show the first external link for now.
+        const externalURL = externalURLs[0]
 
-        switch (this.props.repo.hostType) {
-            case 'GitHub':
-            case 'GitHub Enterprise':
-                tooltip = 'View on GitHub'
-                icon = <GitHubIcon className="icon-inline" />
-                if (this.props.range) {
-                    url.hash = `#L${this.props.range.start.line}-L${this.props.range.end.line}`
-                } else if (this.props.position) {
-                    url.hash = '#L' + this.props.position.line
-                }
-                break
-            case 'Phabricator':
-                tooltip = 'View on Phabricator'
-                icon = <PhabricatorIcon className="icon-inline" />
-                break
-            case 'gitlab':
-                tooltip = 'View on GitLab'
-                icon = <ShareIcon className="icon-inline" />
-                break
-            default:
-                label = 'View on code host'
-                tooltip = label
+        const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
+        const Icon = icon || ShareIcon
+
+        // Special-case for GitHub: add line numbers to URL.
+        let url = externalURL.url
+        if (externalURL.serviceType === 'github') {
+            if (this.props.range) {
+                url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
+            } else if (this.props.position) {
+                url += '#L' + this.props.position.line
+            }
         }
 
         return (
             <a
                 className="btn btn-link btn-sm composite-container__header-action"
                 onClick={onClick}
-                href={url.href}
-                data-tooltip={tooltip}
+                href={url}
+                data-tooltip={`View on ${displayName}`}
             >
-                {icon}
-                <span className="composite-container__header-action-text">{label}</span>
+                <Icon className="icon-inline" />
             </a>
         )
     }
@@ -139,12 +128,20 @@ function onClick(): void {
     eventLogger.log('OpenInCodeHostClicked')
 }
 
-function urlToCodeHost(repo: GQL.IRepository, file?: FileMetadata): string | null {
-    if (file && file.externalURL) {
-        return file.externalURL
+function serviceTypeDisplayNameAndIcon(
+    serviceType: string | null
+): { displayName: string; icon?: React.ComponentType<{ className: string }> } {
+    switch (serviceType) {
+        case 'github':
+            return { displayName: 'GitHub', icon: GitHubIcon }
+        case 'gitlab':
+            return { displayName: 'GitLab' }
+        case 'bitbucketserver':
+            return { displayName: 'Bitbucket Server' }
+        case 'phabricator':
+            return { displayName: 'Phabricator', icon: PhabricatorIcon }
+        case 'awscodecommit':
+            return { displayName: 'AWS CodeCommit' }
     }
-    if (!file && repo.externalURL) {
-        return repo.externalURL
-    }
-    return null
+    return { displayName: serviceType ? upperFirst(serviceType) : 'code host' }
 }

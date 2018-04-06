@@ -42,8 +42,10 @@ export const fetchRepository = memoizeObservable(
                     repository(uri: $repoPath) {
                         id
                         uri
-                        externalURL
-                        hostType
+                        externalURLs {
+                            url
+                            serviceType
+                        }
                         description
                         enabled
                         viewerCanAdminister
@@ -250,21 +252,18 @@ interface FetchFileMetadataCtx {
     filePath: string
 }
 
-export interface FileMetadata {
-    isDirectory: boolean
-    externalURL: string | null
-}
-
-export const fetchFileMetadata = memoizeObservable(
-    (ctx: FetchFileMetadataCtx): Observable<FileMetadata> =>
+export const fetchFileExternalLinks = memoizeObservable(
+    (ctx: FetchFileMetadataCtx): Observable<GQL.IExternalLink[]> =>
         queryGraphQL(
             gql`
-                query FileMetadata($repoPath: String!, $rev: String!, $filePath: String!) {
+                query FileExternalLinks($repoPath: String!, $rev: String!, $filePath: String!) {
                     repository(uri: $repoPath) {
                         commit(rev: $rev) {
                             file(path: $filePath) {
-                                isDirectory
-                                externalURL
+                                externalURLs {
+                                    url
+                                    serviceType
+                                }
                             }
                         }
                     }
@@ -273,35 +272,16 @@ export const fetchFileMetadata = memoizeObservable(
             ctx
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.repository || !data.repository.commit || !data.repository.commit.file) {
+                if (
+                    !data ||
+                    !data.repository ||
+                    !data.repository.commit ||
+                    !data.repository.commit.file ||
+                    !data.repository.commit.file.externalURLs
+                ) {
                     throw createAggregateError(errors)
                 }
-                const file = data.repository.commit.file
-                return file
-            })
-        ),
-    makeRepoURI
-)
-
-export const fetchPhabricatorRepo = memoizeObservable(
-    (ctx: { repoPath: string }): Observable<GQL.IPhabricatorRepo | null> =>
-        queryGraphQL(
-            gql`
-                query PhabricatorRepo($repoPath: String!) {
-                    phabricatorRepo(uri: $repoPath) {
-                        callsign
-                        uri
-                        url
-                    }
-                }
-            `,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.phabricatorRepo) {
-                    throw createAggregateError(errors)
-                }
-                return data.phabricatorRepo
+                return data.repository.commit.file.externalURLs
             })
         ),
     makeRepoURI

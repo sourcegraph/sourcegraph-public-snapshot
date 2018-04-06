@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
@@ -104,6 +105,10 @@ func (r *gitCommitResolver) Body() *string {
 	return &body
 }
 
+func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.oid))
+}
+
 func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
@@ -165,6 +170,13 @@ type behindAheadCountsResolver struct{ behind, ahead int32 }
 
 func (r *behindAheadCountsResolver) Behind() int32 { return r.behind }
 func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
+
+func (r *gitCommitResolver) revForURL() string {
+	if r.inputRev != nil && *r.inputRev != "" {
+		return *r.inputRev
+	}
+	return string(r.oid)
+}
 
 func (r *gitCommitResolver) repoRevURL() string {
 	url := r.repo.URL()

@@ -748,10 +748,8 @@ type Repository implements Node {
     textSearchIndex: RepositoryTextSearchIndex
     # The URL to this repository.
     url: String!
-    # The URL specifying where to view the repository at an external location.
-    externalURL: String
-    # The type of code host that hosts this repository at its external url (e.g. GitHub, Phabricator).
-    hostType: String
+    # The URLs to this repository on external services associated with it.
+    externalURLs: [ExternalLink!]!
     # The repository's default Git branch (HEAD symbolic ref). If the repository is currently being cloned or is
     # empty, this field will be null.
     defaultBranch: GitRef
@@ -829,6 +827,15 @@ type Repository implements Node {
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
+}
+
+# A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
+type ExternalLink {
+    # The URL to the resource.
+    url: String!
+    # The type of external service, such as "github", or null if unknown/unrecognized. This is used solely for
+    # displaying an icon that represents the service.
+    serviceType: String
 }
 
 # Information and status about the mirroring of a repository. In this case, the remote source repository
@@ -1212,6 +1219,8 @@ type GitCommit implements Node {
     subject: String!
     # The contents of the commit message after the first line.
     body: String
+    # The URLs to this commit on its repository's external services.
+    externalURLs: [ExternalLink!]!
     # Lists the Git tree as of this commit.
     tree(path: String = "", recursive: Boolean = false): Tree
     # Retrieves a Git blob (file) as of this commit.
@@ -1363,8 +1372,9 @@ type File implements TreeEntry {
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
 
-    # URL specifying where to view the file at an external location.
-    externalURL: String
+    # The URLs to this file on its repository's external services.
+    externalURLs: [ExternalLink!]!
+
     binary: Boolean!
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
     blame(startLine: Int!, endLine: Int!): [Hunk!]!

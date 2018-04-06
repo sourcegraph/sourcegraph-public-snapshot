@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"html/template"
 	"os"
 	"path"
@@ -17,14 +16,11 @@ import (
 	gfm "github.com/shurcooL/github_flavored_markdown"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/highlight"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	repoupdaterprotocol "sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 type fileResolver struct {
@@ -95,122 +91,12 @@ func (r *fileResolver) URL(ctx context.Context) (string, error) {
 	return url + "/" + r.path, nil
 }
 
-func (r *fileResolver) ExternalURL(ctx context.Context) (*string, error) {
+func (r *fileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	isDir, err := r.IsDirectory(ctx)
 	if err != nil {
 		return nil, nil
 	}
-
-	repo := r.commit.repo.repo
-	if repo == nil {
-		return nil, nil
-	}
-	var url *string
-	if isDir {
-		url, _ = r.treeURL(ctx)
-	} else {
-		url, _ = r.blobURL(ctx)
-	}
-	if url != nil {
-		return url, nil
-	}
-
-	if repo.ExternalRepo != nil {
-		info, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{ExternalRepo: repo.ExternalRepo})
-		if err != nil {
-			return nil, err
-		}
-		if info.Repo != nil && info.Repo.Links != nil {
-			var urlPattern string
-			if isDir {
-				urlPattern = info.Repo.Links.Tree
-			} else {
-				urlPattern = info.Repo.Links.Blob
-			}
-			if urlPattern != "" {
-				// TODO(sqs): use rev, not fully resolved commit ID. When we
-				// do this, we will need a way for templates to escape rev for
-				// path vs query string.
-				url := strings.NewReplacer("{rev}", string(r.commit.oid), "{path}", r.path).Replace(urlPattern)
-				return &url, nil
-			}
-		}
-	}
-	return nil, nil
-}
-
-func (r *fileResolver) treeURL(ctx context.Context) (*string, error) {
-	repo, err := r.Repository(ctx)
-	if err != nil {
-		return nil, err
-	}
-	uri, rev := repo.repo.URI, string(r.commit.oid)
-	repoListConfigs := repoListConfigs.Get().(map[api.RepoURI]schema.Repository)
-	rc, ok := repoListConfigs[uri]
-	if ok && rc.Links != nil && rc.Links.Tree != "" {
-		url := strings.Replace(strings.Replace(rc.Links.Tree, "{rev}", rev, 1), "{path}", r.path, 1)
-		return &url, nil
-	}
-
-	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	if phabRepo != nil {
-		defaultBranch, err := repo.DefaultBranch(ctx)
-		if err != nil {
-			return nil, nil
-		}
-		url := fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", phabRepo.URL, phabRepo.Callsign, defaultBranch.DisplayName(), r.path, rev)
-		return &url, nil
-	}
-
-	if strings.HasPrefix(string(uri), "github.com/") {
-		url := fmt.Sprintf("https://%s/tree/%s/%s", uri, rev, r.path)
-		return &url, nil
-	}
-
-	host := strings.Split(string(uri), "/")[0]
-	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
-		url := fmt.Sprintf("%s%s/tree/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
-		return &url, nil
-	}
-
-	return nil, nil
-}
-
-func (r *fileResolver) blobURL(ctx context.Context) (*string, error) {
-	repo, err := r.Repository(ctx)
-	if err != nil {
-		return nil, err
-	}
-	uri, rev := repo.repo.URI, string(r.commit.oid)
-	repoListConfigs := repoListConfigs.Get().(map[api.RepoURI]schema.Repository)
-	rc, ok := repoListConfigs[uri]
-	if ok && rc.Links != nil && rc.Links.Blob != "" {
-		url := strings.Replace(strings.Replace(rc.Links.Blob, "{rev}", rev, 1), "{path}", r.path, 1)
-		return &url, nil
-	}
-
-	phabRepo, _ := db.Phabricator.GetByURI(context.Background(), uri)
-	if phabRepo != nil {
-		defaultBranch, err := repo.DefaultBranch(ctx)
-		if err != nil {
-			return nil, nil
-		}
-		url := fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", phabRepo.URL, phabRepo.Callsign, defaultBranch.DisplayName(), r.path, rev)
-		return &url, nil
-	}
-
-	if strings.HasPrefix(string(uri), "github.com/") {
-		url := fmt.Sprintf("https://%s/blob/%s/%s", uri, rev, r.path)
-		return &url, nil
-	}
-
-	host := strings.Split(string(uri), "/")[0]
-	if gheURL, ok := conf.GitHubEnterpriseURLs()[host]; ok {
-		url := fmt.Sprintf("%s%s/blob/%s/%s", gheURL, strings.TrimPrefix(string(uri), host), rev, r.path)
-		return &url, nil
-	}
-
-	return nil, nil
+	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.revForURL(), r.path, isDir)
 }
 
 func (r *fileResolver) RichHTML(ctx context.Context) (string, error) {

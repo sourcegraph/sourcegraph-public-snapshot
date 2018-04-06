@@ -134,6 +134,12 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 			ExternalRepo: GitHubExternalRepoSpec(ghrepo, *conn.baseURL),
 			Description:  ghrepo.Description,
 			Fork:         ghrepo.IsFork,
+			Links: &protocol.RepoLinks{
+				Root:   ghrepo.URL,
+				Tree:   ghrepo.URL + "/tree/{rev}/{path}",
+				Blob:   ghrepo.URL + "/blob/{rev}/{path}",
+				Commit: ghrepo.URL + "/commit/{commit}",
+			},
 			VCS: protocol.VCSInfo{
 				URL: conn.authenticatedRemoteURL(ghrepo),
 			},
@@ -178,7 +184,13 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 				ExternalRepo: nil,
 				Description:  "",
 				Fork:         false,
-				VCS:          protocol.VCSInfo{URL: remoteURL},
+				Links: &protocol.RepoLinks{
+					Root:   remoteURL,
+					Tree:   remoteURL + "/tree/{rev}/{path}",
+					Blob:   remoteURL + "/blob/{rev}/{path}",
+					Commit: remoteURL + "/commit/{commit}",
+				},
+				VCS: protocol.VCSInfo{URL: remoteURL},
 			}, true, nil
 		}
 		return nil, false, nil

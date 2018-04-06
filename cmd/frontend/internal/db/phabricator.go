@@ -40,6 +40,8 @@ func (err errPhabricatorRepoNotFound) Error() string {
 	return fmt.Sprintf("phabricator repo not found: %v", err.args)
 }
 
+func (err errPhabricatorRepoNotFound) NotFound() bool { return true }
+
 func (*phabricator) Create(ctx context.Context, callsign string, uri api.RepoURI, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
@@ -101,9 +103,16 @@ func (p *phabricator) getOneBySQL(ctx context.Context, query string, args ...int
 }
 
 func (p *phabricator) GetByURI(ctx context.Context, uri api.RepoURI) (*types.PhabricatorRepo, error) {
+	if Mocks.Phabricator.GetByURI != nil {
+		return Mocks.Phabricator.GetByURI(uri)
+	}
 	phabricatorRepos := phabricatorRepos.Get().(map[api.RepoURI]*types.PhabricatorRepo)
 	if r := phabricatorRepos[uri]; r != nil {
 		return r, nil
 	}
 	return p.getOneBySQL(ctx, "WHERE uri=$1", uri)
+}
+
+type MockPhabricator struct {
+	GetByURI func(repo api.RepoURI) (*types.PhabricatorRepo, error)
 }
