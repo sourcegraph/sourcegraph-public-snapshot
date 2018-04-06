@@ -343,30 +343,30 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
             })
 
             it('shows commit information on a row', async () => {
-                await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983', {
+                    waitUntil: 'domcontentloaded',
+                })
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.directory-page__commit-message')
+                await page.waitForSelector('.git-commit-node__message')
                 await retry(async () =>
-                    assert.equal(
+                    assert.include(
                         await page.evaluate(
-                            () => document.querySelectorAll('.directory-page__commit-message')[2].textContent
+                            () => document.querySelectorAll('.git-commit-node__message')[2].textContent
                         ),
                         'Add fuzz testing corpus.'
                     )
                 )
                 await retry(async () =>
-                    assert.equal(
+                    assert.include(
                         await page.evaluate(() =>
-                            document.querySelectorAll('.directory-page__commit-author')[2].textContent!.trim()
+                            document.querySelectorAll('.git-commit-node-byline')[2].textContent!.trim()
                         ),
                         'Kamil Kisiel'
                     )
                 )
                 await retry(async () =>
                     assert.equal(
-                        await page.evaluate(
-                            () => document.querySelectorAll('.directory-page__commit-id')[2].textContent
-                        ),
+                        await page.evaluate(() => document.querySelectorAll('.git-commit-node__oid')[2].textContent),
                         'c13558c'
                     )
                 )
