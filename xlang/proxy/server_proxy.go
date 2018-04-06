@@ -441,30 +441,18 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (json.RawMessage, e
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// TODO(sqs): rootPath is deprecated but these workarounds are still necessary until
-	// all lang servers are upgraded.
-	rootPath := "/"
-	if c.id.mode != "php" && c.id.mode != "php_bg" {
-		// Only our PHP server follows the spec for rootPath, other
-		// servers take a URI.
-		rootPath = "file:///"
-	}
-
 	initParams := lspext.InitializeParams{
 		InitializeParams: lsp.InitializeParams{
-			// TODO(sqs): rootPath is deprecated but some lang servers may still need it
-			RootPath: rootPath,
-
-			RootURI: "file:///",
+			RootPath: "/",
+			RootURI:  "file:///",
 			Capabilities: lsp.ClientCapabilities{
 				XFilesProvider:   true,
 				XContentProvider: true,
 				XCacheProvider:   true,
 			},
 		},
-		OriginalRootURI:  lsp.DocumentURI(c.id.rootURI.String()),
-		OriginalRootPath: c.id.rootURI.String(), // TODO(sqs): this is deprecated, can be removed (see field docstring)
-		Mode:             c.id.mode,
+		OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
+		Mode:            c.id.mode,
 	}
 	if initOps := getInitializationOptions(c.id.mode); initOps != nil {
 		initParams.InitializationOptions = initOps

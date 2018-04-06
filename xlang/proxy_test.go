@@ -787,9 +787,8 @@ func TestProxy_connections(t *testing.T) {
 	time.Sleep(100 * time.Millisecond) // we're testing for a negative, so this is not as flaky as it seems; if a request is received later, it'll cause a test failure the next time we call wantReqs
 	want := []testRequest{
 		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{RootPath: "file:///", RootURI: "file:///", Capabilities: caps},
+			InitializeParams: lsp.InitializeParams{RootPath: "/", RootURI: "file:///", Capabilities: caps},
 			OriginalRootURI:  "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			OriginalRootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			Mode:             "test",
 		}},
 	}
@@ -857,9 +856,8 @@ func TestProxy_connections(t *testing.T) {
 		{"shutdown", nil},
 		{"exit", nil},
 		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{RootPath: "file:///", RootURI: "file:///", Capabilities: caps},
+			InitializeParams: lsp.InitializeParams{RootPath: "/", RootURI: "file:///", Capabilities: caps},
 			OriginalRootURI:  "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			OriginalRootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			Mode:             "test",
 		}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
