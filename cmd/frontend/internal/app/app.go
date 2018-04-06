@@ -35,7 +35,6 @@ func NewHandler() http.Handler {
 	r.Get(router.OpenSearch).Handler(trace.TraceRoute(http.HandlerFunc(openSearch)))
 
 	r.Get(router.RepoBadge).Handler(trace.TraceRoute(errorutil.Handler(serveRepoBadge)))
-	r.Get(router.RepoExternalCommit).Handler(trace.TraceRoute(errorutil.Handler(serveRepoExternalCommit)))
 
 	// Redirects
 	r.Get(router.OldToolsRedirect).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

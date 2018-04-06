@@ -29,6 +29,11 @@ export const gitCommitFragment = gql`
             oid
             abbreviatedOID
         }
+        url
+        externalURLs {
+            url
+            serviceType
+        }
     }
 
     fragment SignatureFields on Signature {

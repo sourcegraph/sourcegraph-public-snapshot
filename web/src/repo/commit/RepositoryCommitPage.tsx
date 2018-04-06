@@ -9,6 +9,7 @@ import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
@@ -55,6 +56,8 @@ const queryCommit = memoizeObservable(
 
 interface Props extends RouteComponentProps<{ revspec: string }> {
     repo: GQL.IRepository
+
+    onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
 }
 
 interface State {
@@ -88,7 +91,14 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
                             of({ commitOrError: undefined }),
                             queryCommit({ repo: repo.id, revspec: match.params.revspec }).pipe(
                                 catchError(error => [asError(error)]),
-                                map(c => ({ commitOrError: c }))
+                                map(c => ({ commitOrError: c })),
+                                tap(({ commitOrError }: { commitOrError: GQL.IGitCommit | ErrorLike }) => {
+                                    if (isErrorLike(commitOrError)) {
+                                        this.props.onDidUpdateExternalLinks(undefined)
+                                    } else {
+                                        this.props.onDidUpdateExternalLinks(commitOrError.externalURLs)
+                                    }
+                                })
                             )
                         )
                     )
@@ -103,6 +113,7 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
+        this.props.onDidUpdateExternalLinks(undefined)
         this.subscriptions.unsubscribe()
     }
 

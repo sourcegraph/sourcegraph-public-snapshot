@@ -15,8 +15,7 @@ const (
 
 	OpenSearch = "opensearch"
 
-	RepoBadge          = "repo.badge"
-	RepoExternalCommit = "repo.external.commit"
+	RepoBadge = "repo.badge"
 
 	Logout = "logout"
 
@@ -84,9 +83,6 @@ func newRouter() *mux.Router {
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
-
-	repoExternal := repo.PathPrefix("/external/").Subrouter()
-	repoExternal.Path("/commit/{commit}").Methods("GET").Name(RepoExternalCommit)
 
 	// Must come last
 	base.PathPrefix("/").Methods("GET").Name(UI)

@@ -53,6 +53,9 @@ interface State {
      * `undefined` while loading.
      */
     repoOrError?: GQL.IRepository | ErrorLike
+
+    /** The external links to show in the repository header, if any. */
+    externalLinks?: GQL.IExternalLink[]
 }
 
 const enableRepositoryGraph = localStorage.getItem('repositoryGraph') !== null
@@ -217,6 +220,7 @@ export class RepoContainer extends React.Component<Props, State> {
                             filePath={filePath}
                             position={position}
                             range={range}
+                            externalLinks={this.state.externalLinks}
                         />
                     }
                 />
@@ -243,7 +247,11 @@ export class RepoContainer extends React.Component<Props, State> {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryCommitPage {...routeComponentProps} {...transferProps} />
+                                <RepositoryCommitPage
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    onDidUpdateExternalLinks={this.onDidUpdateExternalLinks}
+                                />
                             )}
                         />
                         <Route
@@ -303,6 +311,9 @@ export class RepoContainer extends React.Component<Props, State> {
 
     private onDidUpdateRepository = (update: Partial<GQL.IRepository>) => this.repositoryUpdates.next(update)
     private onDidAddRepository = () => this.repositoryAdds.next()
+
+    private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
+        this.setState({ externalLinks })
 }
 
 /**

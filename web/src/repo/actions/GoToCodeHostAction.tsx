@@ -23,6 +23,8 @@ interface Props {
     filePath?: string
     position?: Position
     range?: Range
+
+    externalLinks?: GQL.IExternalLink[]
 }
 
 interface State {
@@ -78,15 +80,17 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             return null
         }
 
-        // If the external link for the more specific resource within the repository is loading or errored, use the
-        // repository external link.
         let externalURLs: GQL.IExternalLink[]
-        if (
+        if (this.props.externalLinks && this.props.externalLinks.length > 0) {
+            externalURLs = this.props.externalLinks
+        } else if (
             this.state.fileExternalLinksOrError === null ||
             this.state.fileExternalLinksOrError === undefined ||
             isErrorLike(this.state.fileExternalLinksOrError) ||
             this.state.fileExternalLinksOrError.length === 0
         ) {
+            // If the external link for the more specific resource within the repository is loading or errored, use the
+            // repository external link.
             externalURLs = this.props.repo.externalURLs
         } else {
             externalURLs = this.state.fileExternalLinksOrError
