@@ -315,7 +315,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                         </div>
                     ) : (
                         this.state.commitsOrError.length > 0 && (
-                            <section className="directory-page__section">
+                            <section className="directory-page__section directory-page__section--commits">
                                 {this.props.rev && (
                                     <div>
                                         From <code>{this.props.rev}</code>

@@ -27,9 +27,9 @@
             }
         }
 
-        &-commits {
+        &--commits {
             width: 100%;
-            table-layout: fixed;
+            max-width: 64rem;
         }
     }
 
