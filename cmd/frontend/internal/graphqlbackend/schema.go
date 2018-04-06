@@ -1669,14 +1669,19 @@ type LangServer {
     # Whether or not we are running in Data Center mode.
     dataCenter: Boolean!
 
+    # Whether or not this is a custom language server (i.e. one that does not
+    # come built in with Sourcegraph).
+    custom: Boolean!
+
     # Whether or not the language server for this language is enabled.
     #
-    # In Data Center, this field indicates if the language is configured.
+    # In Data Center and for custom language servers, this field indicates if
+    # the language is configured.
     enabled: Boolean!
 
     # Whether or not the language server is being downloaded, starting, restarting.
     #
-    # Always false in Data Center.
+    # Always false in Data Center and for custom language servers.
     pending: Boolean!
 
     # Whether or not the current user can enable the language server or not.
@@ -1691,12 +1696,12 @@ type LangServer {
 
     # Whether or not the current user can restart the language server or not.
     #
-    # Always false in Data Center.
+    # Always false in Data Center and for custom language servers.
     canRestart: Boolean!
 
     # Whether or not the current user can update the language server or not.
     #
-    # Always false in Data Center.
+    # Always false in Data Center and for custom language servers.
     canUpdate: Boolean!
 
     # Indicates whether or not the language server is healthy or
@@ -1713,7 +1718,7 @@ type LangServer {
     #
     # The value is true ("healthy") if the language server is not enabled.
     #
-    # Always false in Data Center.
+    # Always false in Data Center and for custom language servers.
     healthy: Boolean!
 }
 

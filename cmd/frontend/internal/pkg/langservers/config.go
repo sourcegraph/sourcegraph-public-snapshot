@@ -52,10 +52,8 @@ func State(language string) (ConfigState, error) {
 // This is done by updating the site configuration, and as such should never be
 // invoked in response to a conf.Watch callback, etc.
 func SetDisabled(language string, disabled bool) error {
-	// Check if the language is supported.
-	if err := checkSupported(language); err != nil {
-		return err
-	}
+	// Check if the language specified is for a custom language server or not.
+	customLangserver := checkSupported(language) != nil
 
 	return conf.Edit(func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error) {
 		// Copy the langservers slice, since we intend to edit it.
@@ -72,7 +70,13 @@ func SetDisabled(language string, disabled bool) error {
 		}
 		if !foundExisting {
 			// Doesn't already exist, so add a new entry.
-			newLangserver := StaticInfo[language].siteConfig
+			var newLangserver schema.Langservers
+			if !customLangserver {
+				newLangserver = StaticInfo[language].siteConfig
+			} else {
+				// best effort
+				newLangserver = schema.Langservers{Language: language}
+			}
 			newLangserver.Disabled = disabled
 			newLangservers = append(newLangservers, newLangserver)
 		}

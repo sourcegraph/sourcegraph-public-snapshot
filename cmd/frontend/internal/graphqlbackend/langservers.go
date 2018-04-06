@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
@@ -14,6 +15,7 @@ type langServerResolver struct {
 	displayName                                  string
 	homepageURL, issuesURL, docsURL              string
 	dataCenter                                   bool
+	custom                                       bool
 	enabled                                      bool
 	pending                                      bool
 	canEnable, canDisable, canRestart, canUpdate bool
@@ -30,6 +32,7 @@ func (c *langServerResolver) IssuesURL(ctx context.Context) *string {
 }
 func (c *langServerResolver) DocsURL(ctx context.Context) *string { return nullString(c.docsURL) }
 func (c *langServerResolver) DataCenter(ctx context.Context) bool { return c.dataCenter }
+func (c *langServerResolver) Custom(ctx context.Context) bool     { return c.custom }
 func (c *langServerResolver) Enabled(ctx context.Context) bool    { return c.enabled }
 func (c *langServerResolver) Pending(ctx context.Context) bool    { return c.pending }
 func (c *langServerResolver) CanEnable(ctx context.Context) bool  { return c.canEnable }
@@ -60,6 +63,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 				issuesURL:   langservers.StaticInfo[language].IssuesURL,
 				docsURL:     langservers.StaticInfo[language].DocsURL,
 				dataCenter:  true,
+				custom:      false,
 				enabled:     state == langservers.StateEnabled,
 				pending:     false,
 				canEnable:   false,
@@ -83,6 +87,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			issuesURL:   langservers.StaticInfo[language].IssuesURL,
 			docsURL:     langservers.StaticInfo[language].DocsURL,
 			dataCenter:  false,
+			custom:      false,
 			enabled:     state == langservers.StateEnabled,
 			pending:     info.Pulling || info.Status == langservers.StatusStarting,
 			canEnable:   isSiteAdmin || state == langservers.StateNone,
@@ -92,6 +97,32 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			healthy:     info.Pulling || info.Status != langservers.StatusUnhealthy,
 		})
 	}
+
+	// Also add in custom language servers that were added to the site
+	// configuration. These are language servers that do not come with
+	// Sourcegraph by default, and we cannot manage them via Docker etc.
+	for _, ls := range conf.Get().Langservers {
+		_, builtin := langservers.StaticInfo[ls.Language]
+		if builtin {
+			continue
+		}
+		results = append(results, &langServerResolver{
+			language:    strings.ToLower(ls.Language),
+			displayName: strings.Title(ls.Language),
+			homepageURL: "",
+			issuesURL:   "",
+			docsURL:     "",
+			dataCenter:  conf.IsDataCenter(conf.DeployType()),
+			custom:      true,
+			enabled:     !ls.Disabled,
+			canEnable:   isSiteAdmin,
+			canDisable:  isSiteAdmin,
+			canRestart:  false,
+			canUpdate:   false,
+			healthy:     false,
+		})
+	}
+
 	return results, nil
 }
 
@@ -104,6 +135,22 @@ func (s *schemaResolver) LangServers(ctx context.Context) *langServersResolver {
 func (c *langServersResolver) Enable(ctx context.Context, args *struct{ Language string }) (*EmptyResponse, error) {
 	if conf.IsDataCenter(conf.DeployType()) {
 		return nil, errors.New("cannot use this API (langServers.enable) in Data Center mode")
+	}
+
+	// For custom (non-builtin) language servers, Enable/Disable is just
+	// updating the site config. We do not do anything else. Only admins
+	// can perform this action, period.
+	_, builtin := langservers.StaticInfo[args.Language]
+	if !builtin {
+		// 🚨 SECURITY: Only admins can enable/disable custom language servers.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
+		// Set disabled=false in the site config.
+		if err := langservers.SetDisabled(args.Language, false); err != nil {
+			return nil, errors.Wrap(err, "langservers.SetDisabled")
+		}
+		return &EmptyResponse{}, nil
 	}
 
 	state, err := langservers.State(args.Language)
@@ -138,6 +185,10 @@ func (c *langServersResolver) Disable(ctx context.Context, args *struct{ Languag
 		return nil, errors.New("cannot use this API (langServers.disable) in Data Center mode")
 	}
 
+	// Note: For custom language servers, we do not need to do anything special
+	// since unlike the enable action, only admins can disable language servers
+	// regardless of whether or not they are custom.
+
 	// 🚨 SECURITY: Only admins may disable language servers.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -153,6 +204,10 @@ func (c *langServersResolver) Disable(ctx context.Context, args *struct{ Languag
 func (c *langServersResolver) Restart(ctx context.Context, args *struct{ Language string }) (*EmptyResponse, error) {
 	if conf.IsDataCenter(conf.DeployType()) {
 		return nil, errors.New("cannot use this API (langServers.restart) in Data Center mode")
+	}
+	_, builtin := langservers.StaticInfo[args.Language]
+	if !builtin {
+		return nil, errors.New("cannot use this API (langServers.restart) on custom language servers")
 	}
 
 	// 🚨 SECURITY: Only admins may restart language servers.
@@ -170,6 +225,10 @@ func (c *langServersResolver) Restart(ctx context.Context, args *struct{ Languag
 func (c *langServersResolver) Update(ctx context.Context, args *struct{ Language string }) (*EmptyResponse, error) {
 	if conf.IsDataCenter(conf.DeployType()) {
 		return nil, errors.New("cannot use this API (langServers.update) in Data Center mode")
+	}
+	_, builtin := langservers.StaticInfo[args.Language]
+	if !builtin {
+		return nil, errors.New("cannot use this API (langServers.update) on custom language servers")
 	}
 
 	// 🚨 SECURITY: Only admins may update language servers.
