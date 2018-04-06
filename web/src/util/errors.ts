@@ -4,7 +4,7 @@ export interface ErrorLike {
 }
 
 export const isErrorLike = (val: any): val is ErrorLike =>
-    !!val && typeof val === 'object' && (!!val.stack || ('message' in val || 'code' in val))
+    !!val && typeof val === 'object' && (!!val.stack || ('message' in val || 'code' in val)) && !('__typename' in val)
 
 /**
  * Converts an ErrorLike to a proper Error if needed, copying all properties
