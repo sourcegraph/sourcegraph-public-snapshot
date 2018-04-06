@@ -44,6 +44,8 @@ type StaticInfoT struct {
 	siteConfig schema.Langservers
 }
 
+// StaticInfo maps language keys to static information about the language
+// server.
 var StaticInfo = map[string]*StaticInfoT{
 	"go": {
 		DisplayName: "Go",
