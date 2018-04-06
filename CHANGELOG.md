@@ -17,6 +17,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue that caused "Could not ensure repository updated" log messages when trying to update a large number of repositories from gitolite.
 * When using an HTTP authentication proxy (`"auth.provider": "http-header"`), usernames are now properly normalized (special characters including `.` replaced with `-`). This fixes an issue preventing users from signing in if their username contained these special characters.
 * Fixed an issue where the site-admin Updates page would incorrectly report that update checking was turned off when `telemetryDisabled` was set, even as it continued to report new updates.
+* `repo:` filters that match multiple repositories and contain a revision specifier now correctly return partial results even if some of the matching repositories don't have a matching revision.
 
 ### Added
 

@@ -720,7 +720,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.revs) == 0 {
-			return nil, common, nil // no revs to search
+			continue
 		}
 		if len(repoRev.revs) >= 2 {
 			return nil, common, errMultipleRevsNotSupported
