@@ -22,17 +22,21 @@ type langServerResolver struct {
 
 func (c *langServerResolver) Language(ctx context.Context) string    { return c.language }
 func (c *langServerResolver) DisplayName(ctx context.Context) string { return c.displayName }
-func (c *langServerResolver) HomepageURL(ctx context.Context) string { return c.homepageURL }
-func (c *langServerResolver) IssuesURL(ctx context.Context) string   { return c.issuesURL }
-func (c *langServerResolver) DocsURL(ctx context.Context) string     { return c.docsURL }
-func (c *langServerResolver) DataCenter(ctx context.Context) bool    { return c.dataCenter }
-func (c *langServerResolver) Enabled(ctx context.Context) bool       { return c.enabled }
-func (c *langServerResolver) Pending(ctx context.Context) bool       { return c.pending }
-func (c *langServerResolver) CanEnable(ctx context.Context) bool     { return c.canEnable }
-func (c *langServerResolver) CanDisable(ctx context.Context) bool    { return c.canDisable }
-func (c *langServerResolver) CanRestart(ctx context.Context) bool    { return c.canRestart }
-func (c *langServerResolver) CanUpdate(ctx context.Context) bool     { return c.canUpdate }
-func (c *langServerResolver) Healthy(ctx context.Context) bool       { return c.healthy }
+func (c *langServerResolver) HomepageURL(ctx context.Context) *string {
+	return nullString(c.homepageURL)
+}
+func (c *langServerResolver) IssuesURL(ctx context.Context) *string {
+	return nullString(c.issuesURL)
+}
+func (c *langServerResolver) DocsURL(ctx context.Context) *string { return nullString(c.docsURL) }
+func (c *langServerResolver) DataCenter(ctx context.Context) bool { return c.dataCenter }
+func (c *langServerResolver) Enabled(ctx context.Context) bool    { return c.enabled }
+func (c *langServerResolver) Pending(ctx context.Context) bool    { return c.pending }
+func (c *langServerResolver) CanEnable(ctx context.Context) bool  { return c.canEnable }
+func (c *langServerResolver) CanDisable(ctx context.Context) bool { return c.canDisable }
+func (c *langServerResolver) CanRestart(ctx context.Context) bool { return c.canRestart }
+func (c *langServerResolver) CanUpdate(ctx context.Context) bool  { return c.canUpdate }
+func (c *langServerResolver) Healthy(ctx context.Context) bool    { return c.healthy }
 
 func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, error) {
 	// Note: This only affects whether or not the client displays
@@ -178,4 +182,12 @@ func (c *langServersResolver) Update(ctx context.Context, args *struct{ Language
 		return nil, errors.Wrap(err, "langservers.Update")
 	}
 	return &EmptyResponse{}, nil
+}
+
+// nullString returns nil if s == "", otherwise it returns a pointer to s.
+func nullString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
