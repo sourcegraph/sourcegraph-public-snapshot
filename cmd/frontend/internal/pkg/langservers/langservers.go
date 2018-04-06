@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -103,6 +104,7 @@ func init() {
 	for lang := range StaticInfo {
 		Languages = append(Languages, lang)
 	}
+	sort.Strings(Languages)
 
 	if envvar.DebugMode() {
 		// Running in debug / development mode. In this case, the frontend is
