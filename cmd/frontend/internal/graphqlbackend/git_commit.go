@@ -119,6 +119,8 @@ func (r *gitCommitResolver) Parents(ctx context.Context) ([]*gitCommitResolver, 
 	return resolvers, nil
 }
 
+func (r *gitCommitResolver) URL() string { return r.repo.URL() + "/-/commit/" + string(r.oid) }
+
 func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.oid))
 }

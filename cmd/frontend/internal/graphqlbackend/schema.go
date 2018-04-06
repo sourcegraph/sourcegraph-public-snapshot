@@ -1221,6 +1221,8 @@ type GitCommit implements Node {
     body: String
     # Parent commits of this commit.
     parents: [GitCommit!]!
+    # The URL to this commit.
+    url: String!
     # The URLs to this commit on its repository's external services.
     externalURLs: [ExternalLink!]!
     # Lists the Git tree as of this commit.
