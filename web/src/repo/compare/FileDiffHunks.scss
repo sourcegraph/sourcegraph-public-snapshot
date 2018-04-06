@@ -61,6 +61,10 @@
     overflow-y: hidden;
 
     border-collapse: separate;
+
+    &__table {
+        width: 100%;
+    }
 }
 
 .theme-light {
