@@ -21,59 +21,71 @@ import (
 // Languages is the list of languages that have a supported language server.
 var Languages []string
 
-// DisplayNames is a map of languages (always lowercase) to their display names.
-var DisplayNames = map[string]string{
-	"go":         "Go",
-	"typescript": "TypeScript",
-	"javascript": "JavaScript",
-	"python":     "Python",
-	"java":       "Java",
-	"php":        "PHP",
+// StaticInfoT represents static information about a language server.
+type StaticInfoT struct {
+	// DisplayName is the display name of the language. e.g. "PHP" and
+	// "TypeScript", rather than language keys which are always lowercase "php"
+	// and "typescript".
+	DisplayName string
+
+	// HomepageURL is the URL to the language server's homepage, or an empty
+	// string if there is none.
+	HomepageURL string
+
+	// IssuesURL is the URL to the language server's open/known issues, or an
+	// empty string if there is none.
+	IssuesURL string
+
+	// DocsURL is the URL to the language server's documentation, or an empty
+	// string if there is none.
+	DocsURL string
+
+	siteConfig schema.Langservers
 }
 
-// URLs is a map of languages to their relevant project URLs.
-var URLs = map[string]struct {
-	Homepage, Issues, Docs string
-}{
+var StaticInfo = map[string]*StaticInfoT{
 	"go": {
-		Homepage: "https://github.com/sourcegraph/go-langserver",
-		Issues:   "https://github.com/sourcegraph/go-langserver/issues",
-		Docs:     "https://github.com/sourcegraph/go-langserver/blob/master/README.md",
+		DisplayName: "Go",
+		HomepageURL: "https://github.com/sourcegraph/go-langserver",
+		IssuesURL:   "https://github.com/sourcegraph/go-langserver/issues",
+		DocsURL:     "https://github.com/sourcegraph/go-langserver/blob/master/README.md",
+		siteConfig:  schema.Langservers{Language: "go", Address: "tcp://go:4389"},
 	},
 	"typescript": {
-		Homepage: "https://github.com/sourcegraph/javascript-typescript-langserver",
-		Issues:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
-		Docs:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
+		DisplayName: "TypeScript",
+		HomepageURL: "https://github.com/sourcegraph/javascript-typescript-langserver",
+		IssuesURL:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
+		DocsURL:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
+		siteConfig:  schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
 	},
 	"javascript": {
-		Homepage: "https://github.com/sourcegraph/javascript-typescript-langserver",
-		Issues:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
-		Docs:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
+		DisplayName: "JavaScript",
+		HomepageURL: "https://github.com/sourcegraph/javascript-typescript-langserver",
+		IssuesURL:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
+		DocsURL:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
+		siteConfig:  schema.Langservers{Language: "javascript", Address: "tcp://typescript:2088"},
 	},
 	"python": {
-		Homepage: "https://github.com/sourcegraph/python-langserver",
-		Issues:   "https://github.com/sourcegraph/python-langserver/issues",
-		Docs:     "https://github.com/sourcegraph/python-langserver/blob/master/README.md",
+		DisplayName: "Python",
+		HomepageURL: "https://github.com/sourcegraph/python-langserver",
+		IssuesURL:   "https://github.com/sourcegraph/python-langserver/issues",
+		DocsURL:     "https://github.com/sourcegraph/python-langserver/blob/master/README.md",
+		siteConfig:  schema.Langservers{Language: "python", Address: "tcp://python:2087"},
 	},
 	"java": {
-		Homepage: "",
-		Issues:   "",
-		Docs:     "",
+		DisplayName: "Java",
+		HomepageURL: "",
+		IssuesURL:   "",
+		DocsURL:     "",
+		siteConfig:  schema.Langservers{Language: "php", Address: "tcp://java:2088"},
 	},
 	"php": {
-		Homepage: "https://github.com/felixfbecker/php-language-server",
-		Issues:   "https://github.com/felixfbecker/php-language-server/issues",
-		Docs:     "https://github.com/felixfbecker/php-language-server/blob/master/README.md",
+		DisplayName: "PHP",
+		HomepageURL: "https://github.com/felixfbecker/php-language-server",
+		IssuesURL:   "https://github.com/felixfbecker/php-language-server/issues",
+		DocsURL:     "https://github.com/felixfbecker/php-language-server/blob/master/README.md",
+		siteConfig:  schema.Langservers{Language: "php", Address: "tcp://php:2088"},
 	},
-}
-
-var siteConfigs = map[string]schema.Langservers{
-	"go":         schema.Langservers{Language: "go", Address: "tcp://go:4389"},
-	"typescript": schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
-	"javascript": schema.Langservers{Language: "javascript", Address: "tcp://typescript:2088"},
-	"python":     schema.Langservers{Language: "python", Address: "tcp://python:2087"},
-	"java":       schema.Langservers{Language: "php", Address: "tcp://java:2088"},
-	"php":        schema.Langservers{Language: "php", Address: "tcp://php:2088"},
 }
 
 var debugContainerPorts = map[string]struct {
@@ -88,15 +100,8 @@ var debugContainerPorts = map[string]struct {
 }
 
 func init() {
-	for lang := range siteConfigs {
+	for lang := range StaticInfo {
 		Languages = append(Languages, lang)
-
-		// Every language should be in the URLs map, even if the URLs are just
-		// empty strings.
-		_ = URLs[lang]
-
-		// Every language should be in the DisplayNames map.
-		_ = DisplayNames[lang]
 	}
 
 	if envvar.DebugMode() {
@@ -108,10 +113,10 @@ func init() {
 		// When running inside a Docker container, this is not desirable as it
 		// needlessly exposes services to the network which is a security
 		// concern.
-		for lang, ls := range siteConfigs {
+		for lang, ls := range StaticInfo {
 			// Save the port that the container is listening on internally so
 			// that we can specify it later with the docker run `-p` flag.
-			split := strings.Split(ls.Address, ":")
+			split := strings.Split(ls.siteConfig.Address, ":")
 			p := debugContainerPorts[lang]
 			p.ContainerPort = split[len(split)-1]
 			debugContainerPorts[lang] = p
@@ -119,8 +124,8 @@ func init() {
 			// Since some language servers (typescript, java, php) listen on
 			// the same internal port, we give all explicit host ports
 			// (otherwise they would conflict).
-			ls.Address = "tcp://localhost:" + debugContainerPorts[lang].HostPort
-			siteConfigs[lang] = ls
+			ls.siteConfig.Address = "tcp://localhost:" + debugContainerPorts[lang].HostPort
+			StaticInfo[lang] = ls
 		}
 	}
 }

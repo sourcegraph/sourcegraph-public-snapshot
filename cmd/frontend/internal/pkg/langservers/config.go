@@ -72,7 +72,7 @@ func SetDisabled(language string, disabled bool) error {
 		}
 		if !foundExisting {
 			// Doesn't already exist, so add a new entry.
-			newLangserver := siteConfigs[language]
+			newLangserver := StaticInfo[language].siteConfig
 			newLangserver.Disabled = disabled
 			newLangservers = append(newLangservers, newLangserver)
 		}
