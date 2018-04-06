@@ -141,7 +141,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
                         head: this.props.comparisonHeadSpec || 'HEAD',
                         lineNumbers: true,
                     }}
-                    defaultFirst={5}
+                    defaultFirst={25}
                     hideFilter={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
