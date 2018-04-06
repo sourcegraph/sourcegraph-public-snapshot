@@ -627,16 +627,17 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
             it('on repo navbar ("View on GitHub")', async () => {
                 await page.goto(
                     baseURL +
-                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19',
+                    { waitUntil: 'domcontentloaded' }
                 )
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.composite-container__header-action[href*="github"]')
+                await page.waitForSelector('.composite-container__header-action[href*="https://github"]')
                 await retry(async () =>
                     assert.equal(
                         await page.evaluate(
                             () =>
                                 (document.querySelector(
-                                    '.composite-container__header-action[href*="github"]'
+                                    '.composite-container__header-action[href*="https://github"]'
                                 ) as HTMLAnchorElement).href
                         ),
                         'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'
