@@ -1,7 +1,6 @@
 import { Folder as FolderIcon } from '@sourcegraph/icons/lib/Folder'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
-import formatDistance from 'date-fns/formatDistance'
 import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
 import * as React from 'react'
@@ -25,10 +24,11 @@ import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/QueryInput'
 import { SearchButton } from '../search/SearchButton'
 import { SearchHelp } from '../search/SearchHelp'
-import { UserAvatar } from '../user/UserAvatar'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
-import { externalCommitURL, toPrettyBlobURL, toTreeURL } from '../util/url'
+import { toPrettyBlobURL, toTreeURL } from '../util/url'
+import { GitCommitNode } from './commits/GitCommitNode'
+import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { searchQueryForRepoRev } from './RepoContainer'
 
 const DirectoryEntry: React.SFC<{
@@ -95,21 +95,13 @@ export const fetchTreeCommits = memoizeObservable(
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 commits {
-                                    oid
-                                    abbreviatedOID
-                                    message
-                                    author {
-                                        person {
-                                            name
-                                            avatarURL
-                                        }
-                                        date
-                                    }
+                                    ...GitCommitFields
                                 }
                             }
                         }
                     }
                 }
+                ${gitCommitFragment}
             `,
             ctx
         ).pipe(
@@ -324,37 +316,16 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                     ) : (
                         this.state.commitsOrError.length > 0 && (
                             <section className="directory-page__section">
-                                <h3 className="directory-page__section-header">Recent changes</h3>
                                 {this.props.rev && (
                                     <div>
                                         From <code>{this.props.rev}</code>
                                     </div>
                                 )}
-                                <table className="directory-page__section-commits table">
-                                    <tbody>
-                                        {this.state.commitsOrError.map((c, i) => (
-                                            <tr key={i} className="directory-page__commit">
-                                                <td className="directory-page__commit-id" title={c.abbreviatedOID}>
-                                                    <a href={externalCommitURL(this.props.repoPath, c.oid)}>
-                                                        <code>{c.abbreviatedOID}</code>
-                                                    </a>
-                                                </td>
-                                                <td className="directory-page__commit-author">
-                                                    {c.author.person && <UserAvatar user={c.author.person} />}{' '}
-                                                    {c.author.person && c.author.person.name}
-                                                </td>
-                                                <td className="directory-page__commit-date" title={c.author.date}>
-                                                    {formatDistance(c.author.date, new Date(), {
-                                                        addSuffix: true,
-                                                    })}
-                                                </td>
-                                                <td className="directory-page__commit-message" title={c.message}>
-                                                    {c.message}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                <div className="list-group">
+                                    {this.state.commitsOrError.map((c, i) => (
+                                        <GitCommitNode key={i} compact={true} node={c} repoName={this.props.repoPath} />
+                                    ))}
+                                </div>
                             </section>
                         )
                     ))}

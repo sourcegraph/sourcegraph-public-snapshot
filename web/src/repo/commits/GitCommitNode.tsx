@@ -104,11 +104,21 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                 {this.props.node.body && (
                     <button
                         type="button"
-                        className="btn btn-secondary btn-sm git-commit-node__message-toggle"
+                        className="btn btn-secondary btn-sm git-commit-node__message-toggle mr-2"
                         onClick={this.toggleShowCommitMessageBody}
                     >
                         <MoreIcon className="icon-inline" />
                     </button>
+                )}
+                {this.props.compact && (
+                    <small className="text-muted git-commit-node__message-timestamp">
+                        <Timestamp
+                            noAbout={true}
+                            date={
+                                this.props.node.committer ? this.props.node.committer.date : this.props.node.author.date
+                            }
+                        />
+                    </small>
                 )}
             </div>
         )

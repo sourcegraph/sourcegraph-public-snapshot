@@ -37,6 +37,10 @@
             font-size: 9px;
             padding: 0 0.175rem;
         }
+        &-timestamp {
+            flex: none;
+            white-space: nowrap;
+        }
         &-body {
             margin-top: 0.25rem;
             margin-bottom: 0.75rem;

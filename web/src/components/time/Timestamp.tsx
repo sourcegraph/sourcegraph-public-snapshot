@@ -4,6 +4,9 @@ import * as React from 'react'
 interface Props {
     /** The date string (RFC 3339). */
     date: string
+
+    /** Omit the "about". */
+    noAbout?: boolean
 }
 
 /**
@@ -26,9 +29,13 @@ export class Timestamp extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
+        let label = formatDistance(this.props.date, new Date(), { addSuffix: true, includeSeconds: true })
+        if (this.props.noAbout) {
+            label = label.replace('about ', '')
+        }
         return (
             <span className="timestamp" data-tooltip={this.props.date}>
-                {formatDistance(this.props.date, new Date(), { addSuffix: true, includeSeconds: true })}
+                {label}
             </span>
         )
     }
