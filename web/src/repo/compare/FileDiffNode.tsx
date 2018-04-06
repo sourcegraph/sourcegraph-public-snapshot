@@ -12,6 +12,7 @@ export interface FileDiffNodeProps {
     repoName: string
     base: string
     head: string
+    lineNumbers: boolean
     className?: string
 }
 
@@ -65,7 +66,13 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                         </button>
                     </div>
                 </div>
-                {this.state.expanded && <FileDiffHunks className="file-diff-node__hunks" hunks={node.hunks} />}
+                {this.state.expanded && (
+                    <FileDiffHunks
+                        className="file-diff-node__hunks"
+                        hunks={node.hunks}
+                        lineNumbers={this.props.lineNumbers}
+                    />
+                )}
             </div>
         )
     }

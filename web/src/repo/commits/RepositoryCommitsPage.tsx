@@ -25,6 +25,10 @@ export const gitCommitFragment = gql`
         committer {
             ...SignatureFields
         }
+        parents {
+            oid
+            abbreviatedOID
+        }
     }
 
     fragment SignatureFields on Signature {

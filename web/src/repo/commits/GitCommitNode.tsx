@@ -1,5 +1,5 @@
-import CodeTagsIcon from '@sourcegraph/icons/lib/CodeTags'
 import CopyIcon from '@sourcegraph/icons/lib/Copy'
+import FileDocumentIcon from '@sourcegraph/icons/lib/FileDocument'
 import MoreIcon from '@sourcegraph/icons/lib/More'
 import copy from 'copy-to-clipboard'
 import * as React from 'react'
@@ -8,6 +8,7 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { Tooltip } from '../../components/tooltip/Tooltip'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
+import { pluralize } from '../../util/strings'
 import { externalCommitURL, toRepoURL } from '../../util/url'
 
 const GitCommitNodeByline: React.SFC<{
@@ -69,6 +70,12 @@ export interface GitCommitNodeProps {
 
     /** Display in a single line (more compactly). */
     compact?: boolean
+
+    /** Expand the commit message body. */
+    expandCommitMessageBody?: boolean
+
+    /** Show the full 40-character SHA and parents on their own row. */
+    showSHAAndParentsRow?: boolean
 }
 
 interface State {
@@ -101,15 +108,16 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                 >
                     {this.props.node.subject}
                 </a>
-                {this.props.node.body && (
-                    <button
-                        type="button"
-                        className="btn btn-secondary btn-sm git-commit-node__message-toggle mr-2"
-                        onClick={this.toggleShowCommitMessageBody}
-                    >
-                        <MoreIcon className="icon-inline" />
-                    </button>
-                )}
+                {this.props.node.body &&
+                    !this.props.expandCommitMessageBody && (
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm git-commit-node__message-toggle"
+                            onClick={this.toggleShowCommitMessageBody}
+                        >
+                            <MoreIcon className="icon-inline" />
+                        </button>
+                    )}
                 {this.props.compact && (
                     <small className="text-muted git-commit-node__message-timestamp">
                         <Timestamp
@@ -127,9 +135,8 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
         return (
             <div
                 key={this.props.node.id}
-                className={`git-commit-node ${this.props.compact ? 'git-commit-node--compact' : ''} ${
-                    this.props.className
-                }`}
+                className={`git-commit-node ${this.props.compact ? 'git-commit-node--compact' : ''} ${this.props
+                    .className || ''}`}
             >
                 <div className="git-commit-node__row git-commit-node__main">
                     {!this.props.compact ? (
@@ -139,31 +146,33 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                 {bylineElement}
                             </div>
                             <div className="git-commit-node__actions">
-                                <div className="btn-group btn-group-sm mr-2" role="group">
-                                    <a
-                                        className="btn btn-outline-primary"
-                                        href={externalCommitURL(this.props.repoName, this.props.node.oid)}
-                                        data-tooltip="View this commit"
-                                    >
-                                        <strong>{oidElement}</strong>
-                                    </a>
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-primary"
-                                        onClick={this.copyToClipboard}
-                                        data-tooltip={
-                                            this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
-                                        }
-                                    >
-                                        <CopyIcon className="icon-inline" />
-                                    </button>
-                                </div>
+                                {!this.props.showSHAAndParentsRow && (
+                                    <div className="btn-group btn-group-sm mr-2" role="group">
+                                        <a
+                                            className="btn btn-outline-primary"
+                                            href={externalCommitURL(this.props.repoName, this.props.node.oid)}
+                                            data-tooltip="View this commit"
+                                        >
+                                            <strong>{oidElement}</strong>
+                                        </a>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-primary"
+                                            onClick={this.copyToClipboard}
+                                            data-tooltip={
+                                                this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
+                                            }
+                                        >
+                                            <CopyIcon className="icon-inline" />
+                                        </button>
+                                    </div>
+                                )}
                                 <Link
                                     className="btn btn-outline-primary btn-sm"
                                     to={toRepoURL({ repoPath: this.props.repoName, rev: this.props.node.oid })}
                                     data-tooltip="View files at this commit"
                                 >
-                                    <CodeTagsIcon className="icon-inline" />
+                                    <FileDocumentIcon className="icon-inline" />
                                 </Link>
                             </div>
                         </>
@@ -175,11 +184,51 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                         </>
                     )}
                 </div>
-                {this.state.showCommitMessageBody && (
+                {(this.props.expandCommitMessageBody || this.state.showCommitMessageBody) && (
                     <div className="git-commit-node__row">
                         <pre className="git-commit-node__message-body">
                             <code>{this.props.node.body}</code>
                         </pre>
+                    </div>
+                )}
+                {this.props.showSHAAndParentsRow && (
+                    <div className="git-commit-node__row git-commit-node__sha-and-parents">
+                        <code className="git-ref-tag-2 git-commit-node__sha-and-parents-sha">
+                            {this.props.node.oid}{' '}
+                            <button
+                                type="button"
+                                className="btn btn-icon git-commit-node__sha-and-parents-copy"
+                                onClick={this.copyToClipboard}
+                                data-tooltip={this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
+                            >
+                                <CopyIcon className="icon-inline" />
+                            </button>
+                        </code>
+                        <div className="git-commit-node__sha-and-parents-parents">
+                            {this.props.node.parents.length > 0 ? (
+                                <>
+                                    <span className="git-commit-node__sha-and-parents-label">
+                                        {this.props.node.parents.length === 1
+                                            ? 'Parent'
+                                            : `${this.props.node.parents.length} ${pluralize(
+                                                  'parent',
+                                                  this.props.node.parents.length
+                                              )}`}:
+                                    </span>{' '}
+                                    {this.props.node.parents.map((parent, i) => (
+                                        <Link
+                                            key={i}
+                                            className="git-ref-tag-2 git-commit-node__sha-and-parents-parent"
+                                            to={`/${this.props.repoName}/-/commit/${parent.oid}`}
+                                        >
+                                            <code>{parent.abbreviatedOID}</code>
+                                        </Link>
+                                    ))}
+                                </>
+                            ) : (
+                                '(root commit)'
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

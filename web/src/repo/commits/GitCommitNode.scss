@@ -63,6 +63,33 @@
         margin-top: 2px;
     }
 
+    &__sha-and-parents {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        &-sha {
+            display: flex;
+            align-items: center;
+            padding-left: 0.5rem;
+            margin-right: 2rem;
+        }
+        &-copy {
+            font-size: 11px;
+            padding: 0.25rem;
+            &:not(:hover) {
+                opacity: 0.8;
+            }
+        }
+
+        &-label {
+            opacity: 0.7;
+        }
+        &-parent {
+            margin-left: 0.25rem;
+            font-weight: normal;
+        }
+    }
+
     &--compact &__main {
         justify-content: flex-start;
     }

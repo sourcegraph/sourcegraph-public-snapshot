@@ -20,6 +20,7 @@ import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
 import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
+import { RepositoryCommitPage } from './commit/RepositoryCommitPage'
 import { RepositoryCompareArea } from './compare/RepositoryCompareArea'
 import { RepositoryGraphAction } from './graph/RepositoryGraphAction'
 import { RepositoryReleasesArea } from './releases/RepositoryReleasesArea'
@@ -237,6 +238,14 @@ export class RepoContainer extends React.Component<Props, State> {
                                 )}
                             />
                         ))}
+                        <Route
+                            path={`${repoMatchURL}/-/commit/:revspec+`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryCommitPage {...routeComponentProps} {...transferProps} />
+                            )}
+                        />
                         <Route
                             path={`${repoMatchURL}/-/branches`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

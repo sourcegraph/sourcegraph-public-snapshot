@@ -13,7 +13,7 @@ import { createAggregateError } from '../../util/errors'
 import { FileDiffNode, FileDiffNodeProps } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
-function queryRepositoryComparisonFileDiffs(args: {
+export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQLID
     base: string | null
     head: string | null
@@ -91,7 +91,7 @@ interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> 
 
 export class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'repoName' | 'base' | 'head' | 'className'>
+    Pick<FileDiffNodeProps, 'repoName' | 'base' | 'head' | 'lineNumbers' | 'className'>
 > {}
 
 /** A page with the file diffs in the comparison. */
@@ -139,6 +139,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
                         repoName: this.props.repo.uri,
                         base: this.props.comparisonBaseSpec || 'HEAD',
                         head: this.props.comparisonHeadSpec || 'HEAD',
+                        lineNumbers: true,
                     }}
                     defaultFirst={5}
                     hideFilter={true}

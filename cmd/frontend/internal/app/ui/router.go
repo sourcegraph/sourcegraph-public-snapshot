@@ -33,6 +33,7 @@ const (
 	routeOpen           = "open"
 	routeRepo           = "repo"
 	routeRepoSettings   = "repo-settings"
+	routeRepoCommit     = "repo-commit"
 	routeRepoBranches   = "repo-branches"
 	routeRepoCommits    = "repo-commits"
 	routeRepoTags       = "repo-tags"
@@ -146,6 +147,7 @@ func newRouter() *mux.Router {
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
+	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
 	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
@@ -176,6 +178,7 @@ func initRouter() {
 	router.Get(routeExplore).Handler(handler(serveBasicPageString("Explore - Sourcegraph")))
 	router.Get(routeAPIConsole).Handler(handler(serveBasicPageString("API explorer - Sourcegraph")))
 	router.Get(routeRepoSettings).Handler(handler(serveBasicPageString("Repository settings - Sourcegraph")))
+	router.Get(routeRepoCommit).Handler(handler(serveBasicPageString("Commit - Sourcegraph")))
 	router.Get(routeRepoBranches).Handler(handler(serveBasicPageString("Branches - Sourcegraph")))
 	router.Get(routeRepoCommits).Handler(handler(serveBasicPageString("Commits - Sourcegraph")))
 	router.Get(routeRepoTags).Handler(handler(serveBasicPageString("Tags - Sourcegraph")))
