@@ -13,13 +13,11 @@ import { SiteConfiguration } from '../schema/site.schema'
 import { parseJSON } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
-import { getTelemetryEnabled } from './configHelpers'
 
 interface Props extends RouteComponentProps<any> {}
 
 export interface State {
     channel?: string | null
-    telemetryEnabled?: boolean
     buildVersion?: string
     productVersion?: string
     updateCheck?: GQL.IUpdateCheck
@@ -44,7 +42,6 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                     ([site, { buildVersion, productVersion, updateCheck }]) =>
                         this.setState({
                             channel: getUpdateChannel(site.configuration.effectiveContents),
-                            telemetryEnabled: getTelemetryEnabled(site.configuration.effectiveContents),
                             buildVersion,
                             productVersion,
                             updateCheck,
@@ -60,7 +57,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const autoUpdateCheckingEnabled = this.state.channel === 'release' && this.state.telemetryEnabled
+        const autoUpdateCheckingEnabled = this.state.channel === 'release'
         return (
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />
