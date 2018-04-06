@@ -126,7 +126,10 @@ func addWatchers() {
 
 // DeployType tells the deployment type.
 func DeployType() string {
-	return os.Getenv("DEPLOY_TYPE")
+	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
+		return e
+	}
+	return "dev"
 }
 
 // IsDataCenter tells if the given deployment type is Data Center or, if not, Server.

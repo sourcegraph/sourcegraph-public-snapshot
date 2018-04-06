@@ -42,6 +42,9 @@ var defaultEnv = map[string]string{
 	"SEARCHER_CACHE_SIZE_MB": "50000",
 	"SYMBOLS_CACHE_SIZE_MB":  "50000",
 
+	// Used to differentiate between datacenter, server and dev.
+	"DEPLOY_TYPE": "server",
+
 	// enables the debug proxy (/-/debug)
 	"SRC_PROF_SERVICES": `
 [

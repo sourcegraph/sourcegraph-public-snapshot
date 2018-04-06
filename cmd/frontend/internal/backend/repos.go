@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -72,7 +73,12 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 		return db.Repos.GetByURI(ctx, uri)
 	} else if err != nil {
 		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(uri)), "github.com/") {
-			return nil, ErrRepoSeeOther{RedirectURL: fmt.Sprintf("https://sourcegraph.com/%s", uri)}
+			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
+				Scheme:   "https",
+				Host:     "sourcegraph.com",
+				Path:     string(uri),
+				RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
+			}).String()}
 		}
 		return nil, err
 	}
