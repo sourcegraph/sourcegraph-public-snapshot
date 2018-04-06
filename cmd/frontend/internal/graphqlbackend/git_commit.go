@@ -38,6 +38,7 @@ type gitCommitResolver struct {
 	author    signatureResolver
 	committer *signatureResolver
 	message   string
+	parents   []api.CommitID
 }
 
 func toGitCommitResolver(repo *repositoryResolver, commit *vcs.Commit) *gitCommitResolver {
@@ -48,6 +49,7 @@ func toGitCommitResolver(repo *repositoryResolver, commit *vcs.Commit) *gitCommi
 		author:    *authorResolver,
 		committer: toSignatureResolver(commit.Committer),
 		message:   commit.Message,
+		parents:   commit.Parents,
 	}
 }
 
@@ -103,6 +105,18 @@ func (r *gitCommitResolver) Body() *string {
 		return nil
 	}
 	return &body
+}
+
+func (r *gitCommitResolver) Parents(ctx context.Context) ([]*gitCommitResolver, error) {
+	resolvers := make([]*gitCommitResolver, len(r.parents))
+	for i, parent := range r.parents {
+		var err error
+		resolvers[i], err = r.repo.Commit(ctx, &struct{ Rev string }{Rev: string(parent)})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return resolvers, nil
 }
 
 func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
