@@ -178,6 +178,10 @@ export function toTreeURL(ctx: RepoFile): string {
     return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/tree/${ctx.filePath}`
 }
 
+export function toCommitURL(ctx: Repo & { commitID: string }): string {
+    return `/${ctx.repoPath}/-/commit/${ctx.commitID}`
+}
+
 export function toEditorURL(
     repoPath: string,
     rev?: string,
@@ -214,12 +218,4 @@ export function openFromJS(path: string, event?: MouseEvent): void {
     } else {
         window.location.href = path
     }
-}
-
-/**
- * Returns a URL that redirects to the commit for the given repository on the repository's
- * original code host.
- */
-export function externalCommitURL(repoPath: string, commitID: string): string {
-    return `/${repoPath}/-/external/commit/${commitID}`
 }

@@ -9,7 +9,7 @@ import { Tooltip } from '../../components/tooltip/Tooltip'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { pluralize } from '../../util/strings'
-import { externalCommitURL, toRepoURL } from '../../util/url'
+import { toRepoURL } from '../../util/url'
 
 const GitCommitNodeByline: React.SFC<{
     author: GQL.ISignature
@@ -101,13 +101,13 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
         )
         const messageElement = (
             <div className="git-commit-node__message">
-                <a
-                    href={externalCommitURL(this.props.repoName, this.props.node.oid)}
+                <Link
+                    to={this.props.node.url}
                     className="git-commit-node__message-subject"
                     title={this.props.node.message}
                 >
                     {this.props.node.subject}
-                </a>
+                </Link>
                 {this.props.node.body &&
                     !this.props.expandCommitMessageBody && (
                         <button
@@ -148,13 +148,13 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                             <div className="git-commit-node__actions">
                                 {!this.props.showSHAAndParentsRow && (
                                     <div className="btn-group btn-group-sm mr-2" role="group">
-                                        <a
+                                        <Link
                                             className="btn btn-outline-primary"
-                                            href={externalCommitURL(this.props.repoName, this.props.node.oid)}
+                                            to={this.props.node.url}
                                             data-tooltip="View this commit"
                                         >
                                             <strong>{oidElement}</strong>
-                                        </a>
+                                        </Link>
                                         <button
                                             type="button"
                                             className="btn btn-outline-primary"
@@ -180,7 +180,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                         <>
                             {bylineElement}
                             {messageElement}
-                            <a href={externalCommitURL(this.props.repoName, this.props.node.oid)}>{oidElement}</a>
+                            <Link to={this.props.node.url}>{oidElement}</Link>
                         </>
                     )}
                 </div>

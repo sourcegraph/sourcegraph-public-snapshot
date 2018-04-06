@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { take } from 'rxjs/operators/take'
 import { takeUntil } from 'rxjs/operators/takeUntil'
-import { openFromJS } from '../../../util/url'
+import { openFromJS, toCommitURL } from '../../../util/url'
 import { AbsoluteRepoFilePosition, AbsoluteRepoFileRange } from '../../index'
 import { fetchBlameFile } from './backend'
 import { clearLineBlameContent, setLineBlame } from './dom'
@@ -99,7 +99,7 @@ function maybeOpenCommit(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): v
         return // Not clicking on blame text
     }
 
-    openFromJS(`/${ctx.repoPath}/-/external/commit/${rev}`, clickEvent)
+    openFromJS(toCommitURL({ repoPath: ctx.repoPath, commitID: rev }), clickEvent)
 }
 
 export function triggerBlame(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): void {

@@ -38,7 +38,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
   * You will need to use the new `docker run` command at https://about.sourcegraph.com/docs/server/ in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://about.sourcegraph.com/docs/code-intelligence/install for more information.
 * The site admin Analytics page will now display the number of "Code Intelligence" actions each user has made, including hovers, jump to definitions, and find references, on the Sourcegraph webapp or in a code host integration or extension.
 * An experimental cross repository jump to definition which consults the OSS index on Sourcegraph.com. This is disabled by default; use `"experimentalFeatures": { "jumpToDefCrossRepo": "enabled" }` in your site configuration to enable it.
-* Users can now view Git branches, tags, and commits, and compare Git branches and revisions.
+* Users can now view Git branches, tags, and commits, and compare Git branches and revisions on Sourcegraph. (The code host icon in the header takes you to the commit on the code host.) Diffs in Sourcegraph do not yet show code intelligence.
 
 ## 2.6.8
 

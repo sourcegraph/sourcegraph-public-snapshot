@@ -2,13 +2,14 @@ import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import formatDistance from 'date-fns/formatDistance'
 import * as H from 'history'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { DecoratedTextLines } from '../components/DecoratedTextLines'
 import { RepoFileLink } from '../components/RepoFileLink'
 import { GitRefTag } from '../repo/GitRefTag'
 import { AbsoluteRepoFilePosition, RepoSpec } from '../repo/index'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
-import { externalCommitURL, toPrettyBlobURL } from '../util/url'
+import { toPrettyBlobURL } from '../util/url'
 import { ResultContainer } from './ResultContainer'
 
 interface Props {
@@ -59,41 +60,48 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
             commit_search_result: { ...telemetryData, target: 'text' },
         })
 
-    const commitURL = externalCommitURL(props.result.commit.repository.uri, props.result.commit.oid)
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoFileLink repoPath={props.result.commit.repository.uri} rev={props.result.commit.oid} filePath={''} />
-            <a
-                href={commitURL}
+            <Link
+                to={props.result.commit.url}
                 className="commit-search-result__title-person"
                 onClick={stopPropagationToCollapseOrExpand}
                 onMouseDown={logClickOnPerson}
             >
                 <UserAvatar user={props.result.commit.author.person!} size={32} />{' '}
                 {props.result.commit.author.person!.displayName}
-            </a>
-            <a
-                href={commitURL}
+            </Link>
+            <Link
+                to={props.result.commit.url}
                 className="commit-search-result__title-message"
                 onClick={stopPropagationToCollapseOrExpand}
                 onMouseDown={logClickOnMessage}
             >
                 {commitMessageSubject(props.result.commit.message) || '(empty commit message)'}
-            </a>
+            </Link>
             <span className="commit-search-result__title-signature">
                 {uniqueRefs([...props.result.refs, ...props.result.sourceRefs]).map((ref, i) => (
                     <GitRefTag key={i} gitRef={ref} onMouseDown={logClickOnTag} />
                 ))}
                 <code>
-                    <a href={commitURL} onClick={stopPropagationToCollapseOrExpand} onMouseDown={logClickOnCommitID}>
+                    <Link
+                        to={props.result.commit.url}
+                        onClick={stopPropagationToCollapseOrExpand}
+                        onMouseDown={logClickOnCommitID}
+                    >
                         {props.result.commit.abbreviatedOID}
-                    </a>
+                    </Link>
                 </code>{' '}
-                <a href={commitURL} onClick={stopPropagationToCollapseOrExpand} onMouseDown={logClickOnTimestamp}>
+                <Link
+                    to={props.result.commit.url}
+                    onClick={stopPropagationToCollapseOrExpand}
+                    onMouseDown={logClickOnTimestamp}
+                >
                     {formatDistance(props.result.commit.author.date, new Date(), {
                         addSuffix: true,
                     })}
-                </a>
+                </Link>
             </span>
         </div>
     )
