@@ -360,7 +360,7 @@ func (r *Repository) getCommit(ctx context.Context, id api.CommitID) (*vcs.Commi
 		return nil, err
 	}
 
-	commits, err := r.commitLog(ctx, vcs.CommitsOptions{Head: id, N: 1})
+	commits, err := r.commitLog(ctx, vcs.CommitsOptions{Range: string(id), N: 1})
 	if err != nil {
 		return nil, err
 	}
@@ -385,10 +385,7 @@ func (r *Repository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vc
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	if err := checkSpecArgSafety(string(opt.Head)); err != nil {
-		return nil, err
-	}
-	if err := checkSpecArgSafety(string(opt.Base)); err != nil {
+	if err := checkSpecArgSafety(string(opt.Range)); err != nil {
 		return nil, err
 	}
 
@@ -416,8 +413,8 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(stderr), string(opt.Head)) {
-			return nil, &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: string(opt.Head)}
+		if isBadObjectErr(string(stderr), string(opt.Range)) {
+			return nil, &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: string(opt.Range)}
 		}
 		return nil, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
 	}
@@ -439,10 +436,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 }
 
 func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions) (args []string, err error) {
-	if err := checkSpecArgSafety(string(opt.Base)); err != nil {
-		return nil, err
-	}
-	if err := checkSpecArgSafety(string(opt.Head)); err != nil {
+	if err := checkSpecArgSafety(string(opt.Range)); err != nil {
 		return nil, err
 	}
 
@@ -458,12 +452,9 @@ func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions) (args []string,
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
 	}
 
-	// Range
-	rng := string(opt.Head)
-	if opt.Base != "" {
-		rng += "..." + string(opt.Base)
+	if opt.Range != "" {
+		args = append(args, opt.Range)
 	}
-	args = append(args, rng)
 
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)

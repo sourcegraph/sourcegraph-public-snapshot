@@ -5,13 +5,11 @@ import (
 	"sync"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type gitCommitConnectionResolver struct {
-	base api.CommitID
-	head api.CommitID
+	range_ string
 
 	first *int32
 	query *string
@@ -43,8 +41,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commi
 			path = *r.path
 		}
 		return vcsrepo.Commits(ctx, vcs.CommitsOptions{
-			Base:         r.base,
-			Head:         r.head,
+			Range:        r.range_,
 			N:            uint(n),
 			MessageQuery: query,
 			Path:         path,

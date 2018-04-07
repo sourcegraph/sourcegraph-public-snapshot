@@ -562,13 +562,13 @@ func TestRepository_Commits(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: test.id})
+		commits, err := test.repo.Commits(ctx, vcs.CommitsOptions{Range: string(test.id)})
 		if err != nil {
 			t.Errorf("%s: Commits: %s", label, err)
 			continue
 		}
 
-		total, err := test.repo.CommitCount(ctx, vcs.CommitsOptions{Head: test.id})
+		total, err := test.repo.CommitCount(ctx, vcs.CommitsOptions{Range: string(test.id)})
 		if err != nil {
 			t.Errorf("%s: CommitCount: %s", label, err)
 			continue
@@ -596,7 +596,7 @@ func TestRepository_Commits(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := test.repo.Commits(ctx, vcs.CommitsOptions{Head: nonexistentCommitID}); !vcs.IsRevisionNotFound(err) {
+		if _, err := test.repo.Commits(ctx, vcs.CommitsOptions{Range: string(nonexistentCommitID)}); !vcs.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 	}
@@ -639,15 +639,14 @@ func TestRepository_Commits_options(t *testing.T) {
 	}{
 		"git cmd": {
 			repo:        makeGitRepositoryCmd(t, gitCommands...),
-			opt:         vcs.CommitsOptions{Head: "ade564eba4cf904492fb56dcd287ac633e6e082c", N: 1, Skip: 1},
+			opt:         vcs.CommitsOptions{Range: "ade564eba4cf904492fb56dcd287ac633e6e082c", N: 1, Skip: 1},
 			wantCommits: wantGitCommits,
 			wantTotal:   1,
 		},
 		"git cmd Head": {
 			repo: makeGitRepositoryCmd(t, gitCommands...),
 			opt: vcs.CommitsOptions{
-				Head: "ade564eba4cf904492fb56dcd287ac633e6e082c",
-				Base: "b266c7e3ca00b1a17ad0b1449825d0854225c007",
+				Range: "b266c7e3ca00b1a17ad0b1449825d0854225c007...ade564eba4cf904492fb56dcd287ac633e6e082c",
 			},
 			wantCommits: wantGitCommits2,
 			wantTotal:   1,
@@ -722,8 +721,8 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		"git cmd Path 0": {
 			repo: makeGitRepositoryCmd(t, gitCommands...),
 			opt: vcs.CommitsOptions{
-				Head: "master",
-				Path: "doesnt-exist",
+				Range: "master",
+				Path:  "doesnt-exist",
 			},
 			wantCommits: nil,
 			wantTotal:   0,
@@ -731,8 +730,8 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		"git cmd Path 1": {
 			repo: makeGitRepositoryCmd(t, gitCommands...),
 			opt: vcs.CommitsOptions{
-				Head: "master",
-				Path: "file1",
+				Range: "master",
+				Path:  "file1",
 			},
 			wantCommits: wantGitCommits,
 			wantTotal:   1,

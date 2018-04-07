@@ -179,7 +179,7 @@ func benchCommits(b *testing.B, openRepo func() vcs.Repository, tag string) {
 		return
 	}
 
-	_, err = r.Commits(ctx, vcs.CommitsOptions{Head: commitID})
+	_, err = r.Commits(ctx, vcs.CommitsOptions{Range: string(commitID)})
 	if err != nil {
 		b.Errorf("Commits: %s", err)
 		return

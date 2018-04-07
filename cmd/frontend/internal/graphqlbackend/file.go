@@ -188,9 +188,9 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
 	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
 	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
-		Head: api.CommitID(r.commit.oid),
-		N:    limit,
-		Path: r.path,
+		Range: string(r.commit.oid),
+		N:     limit,
+		Path:  r.path,
 	})
 	if err != nil {
 		return nil, err

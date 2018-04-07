@@ -70,10 +70,9 @@ func (r *repositoryComparisonResolver) Commits(args *struct {
 	First *int32
 }) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		base:  r.base,
-		head:  r.head,
-		first: args.First,
-		repo:  r.repo,
+		range_: string(r.base) + ".." + string(r.head),
+		first:  args.First,
+		repo:   r.repo,
 	}
 }
 

@@ -163,8 +163,7 @@ type Hunk struct {
 
 // CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
 type CommitsOptions struct {
-	Head api.CommitID // include all commits reachable from this commit (required)
-	Base api.CommitID // exlude all commits reachable from this commit (optional, like `git log Base..Head`)
+	Range string // commit range (revspec, "A..B", "A...B", etc.)
 
 	N    uint // limit the number of returned commits to this many (0 means no limit)
 	Skip uint // skip this many commits at the beginning
