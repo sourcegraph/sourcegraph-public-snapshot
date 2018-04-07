@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"net/url"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 )
@@ -53,3 +55,9 @@ func (r *gitRevisionRange) HeadRevSpec() *gitRevSpecExpr {
 	return expr
 }
 func (r *gitRevisionRange) MergeBase() *gitObject { return r.mergeBase }
+
+// escapeRevspecForURL escapes revspec for use in a Sourcegraph URL. For niceness/readability, we do
+// NOT escape slashes but we do escape other characters like '#' that are necessary for correctness.
+func escapeRevspecForURL(revspec string) string {
+	return strings.Replace(url.PathEscape(revspec), "%2F", "/", -1)
+}

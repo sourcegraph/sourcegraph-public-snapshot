@@ -173,7 +173,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
 func (r *gitCommitResolver) revForURL() string {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return *r.inputRev
+		return escapeRevspecForURL(*r.inputRev)
 	}
 	return string(r.oid)
 }
