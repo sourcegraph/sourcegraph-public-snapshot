@@ -2,15 +2,11 @@ import CopyWebpackPlugin from 'copy-webpack-plugin'
 import ExtractTextPlugin from 'extract-text-webpack-plugin'
 import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
-import * as Tapable from 'tapable'
+import { Tapable } from 'tapable'
 import * as webpack from 'webpack'
 import WriteFilePlugin from 'write-file-webpack-plugin'
-// const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 
 const plugins: webpack.Plugin[] = [
-    // Uncomment to analyze bundle size
-    // new BundleAnalyzerPlugin(),
-
     // Print some output for VS Code tasks to know when a build started
     function(this: Tapable): void {
         this.plugin('watch-run', (watching: any, cb: () => void) => {
@@ -26,9 +22,6 @@ if (process.env.NODE_ENV === 'production') {
             'process.env': {
                 NODE_ENV: JSON.stringify('production'),
             },
-        }),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: false,
         })
     )
 } else {
@@ -69,6 +62,10 @@ plugins.push(new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-p
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
 const config: webpack.Configuration = {
+    mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    optimization: {
+        minimize: process.env.NODE_ENV === 'production',
+    },
     entry: {
         app: path.join(__dirname, 'src/app.tsx'),
         style: path.join(__dirname, 'src/app.scss'),
@@ -90,7 +87,7 @@ const config: webpack.Configuration = {
         extensions: ['.ts', '.tsx', '.js'],
     },
     stats: 'minimal',
-    module: ((): webpack.NewModule => ({
+    module: ((): webpack.Module => ({
         rules: [
             ((): webpack.NewUseRule => ({
                 test: /\.tsx?$/,
