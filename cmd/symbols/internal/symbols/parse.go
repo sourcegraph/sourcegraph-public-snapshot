@@ -72,8 +72,9 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID 
 	defer cancel()
 
 	var (
-		wg sync.WaitGroup
-		mu sync.Mutex // protects symbols and err
+		mu  sync.Mutex // protects symbols and err
+		wg  sync.WaitGroup
+		sem = make(chan struct{}, 1000) // TODO: this is a super aggressive number, should we lower it further?
 	)
 	tr.LazyPrintf("parse")
 	totalParseRequests := 0
@@ -87,9 +88,13 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID 
 			}()
 			return nil, ctx.Err()
 		}
+		sem <- struct{}{}
 		wg.Add(1)
 		go func(req parseRequest) {
-			defer wg.Done()
+			defer func() {
+				wg.Done()
+				<-sem
+			}()
 			entries, parseErr := s.parse(ctx, req)
 			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
 				if err == nil {
