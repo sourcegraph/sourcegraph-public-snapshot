@@ -295,6 +295,9 @@ func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
 	}
 
 	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
+	if len(out) == 0 {
+		return nil, nil // no tags
+	}
 	lines := bytes.Split(out, []byte("\n"))
 	tags := make([]*vcs.Tag, len(lines))
 	for i, line := range lines {
