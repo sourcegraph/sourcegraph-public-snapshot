@@ -1,11 +1,9 @@
 {
-  "plugins": [
-    "add-module-exports",
-    "transform-new-target"
-  ],
+  "plugins": ["add-module-exports", "transform-new-target", "syntax-dynamic-import"],
   "presets": [
     [
-      "env", {
+      "env",
+      {
         "targets": {
           "browsers": ["last 2 versions", "safari >= 7"],
           "useBuiltIns": true
@@ -17,7 +15,8 @@
     "production": {
       "presets": [
         [
-          "env", {
+          "env",
+          {
             "targets": {
               "browsers": ["last 2 versions", "safari >= 7"],
               "uglify": true,

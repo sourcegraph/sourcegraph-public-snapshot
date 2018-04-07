@@ -1,15 +1,17 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import * as monaco from 'monaco-editor'
 import * as React from 'react'
-import MonacoEditor from 'react-monaco-editor'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
 import settingsSchemaJSON from '../schema/settings.schema.json'
 import siteSchemaJSON from '../schema/site.schema.json'
+import { eventLogger } from '../tracking/eventLogger'
 
-const isLightThemeToMonacoTheme = (isLightTheme: boolean): string => (isLightTheme ? 'vs' : 'sourcegraph-dark')
+const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
 interface Props {
     className: string
@@ -48,18 +50,18 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     private disposables: monaco.IDisposable[] = []
 
     public componentDidMount(): void {
+        const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
+
         this.subscriptions.add(
-            this.componentUpdates
-                .pipe(startWith(this.props), map(props => props.readOnly), distinctUntilChanged())
-                .subscribe(readOnly => {
-                    if (this.editor) {
-                        this.editor.updateOptions({ readOnly })
-                    }
-                })
+            componentUpdates.pipe(map(props => props.readOnly), distinctUntilChanged()).subscribe(readOnly => {
+                if (this.editor) {
+                    this.editor.updateOptions({ readOnly })
+                }
+            })
         )
         this.subscriptions.add(
-            this.componentUpdates
-                .pipe(map(props => props.isLightTheme), map(isLightThemeToMonacoTheme))
+            componentUpdates
+                .pipe(map(props => props.isLightTheme), distinctUntilChanged(), map(isLightThemeToMonacoTheme))
                 .subscribe(monacoTheme => {
                     if (this.monaco) {
                         this.monaco.editor.setTheme(monacoTheme)
@@ -73,10 +75,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        if (this.editor) {
-            this.editor.dispose()
-        }
-
         this.subscriptions.unsubscribe()
         for (const disposable of this.disposables) {
             disposable.dispose()
@@ -110,7 +108,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     readOnly: this.props.readOnly,
                     wordWrap: 'on',
                 }}
-                requireConfig={{ paths: { vs: '/.assets/scripts/vs' }, url: '/.assets/scripts/vs/loader.js' }}
             />
         )
     }
@@ -219,4 +216,84 @@ export function toMonacoEdits(
                 text: edit.content,
             } as monaco.editor.IIdentifiedSingleEditOperation)
     )
+}
+
+/**
+ * A helper function that modifies site configuration to configure specific
+ * common things, such as syncing GitHub repositories.
+ */
+export type ConfigInsertionFunction = (
+    configJSON: string
+) => {
+    /** The edits to make to the input configuration to insert the new configuration. */
+    edits: jsonc.Edit[]
+
+    /** Select text in inserted JSON. */
+    selectText?: string
+
+    /**
+     * If set, the selection is an empty selection that begins at the left-hand match of selectText plus this
+     * offset. For example, if selectText is "foo" and cursorOffset is 2, then the final selection will be a cursor
+     * "|" positioned as "fo|o".
+     */
+    cursorOffset?: number
+}
+
+export function addEditorAction(
+    inputEditor: monaco.editor.IStandaloneCodeEditor,
+    model: monaco.editor.IModel,
+    label: string,
+    id: string,
+    run: ConfigInsertionFunction
+): void {
+    inputEditor.addAction({
+        label,
+        id,
+        run: editor => {
+            eventLogger.log('SiteConfigurationActionExecuted', { id })
+            editor.focus()
+            editor.pushUndoStop()
+            const { edits, selectText, cursorOffset } = run(editor.getValue())
+            const monacoEdits = toMonacoEdits(model, edits)
+            let selection: monaco.Selection | undefined
+            if (typeof selectText === 'string') {
+                const afterText = jsonc.applyEdits(editor.getValue(), edits)
+                let offset = afterText.slice(edits[0].offset).indexOf(selectText)
+                if (offset !== -1) {
+                    offset += edits[0].offset
+                    if (typeof cursorOffset === 'number') {
+                        selection = monaco.Selection.fromPositions(
+                            getPositionAt(afterText, offset + cursorOffset),
+                            getPositionAt(afterText, offset + cursorOffset)
+                        )
+                    } else {
+                        selection = monaco.Selection.fromPositions(
+                            getPositionAt(afterText, offset),
+                            getPositionAt(afterText, offset + selectText.length)
+                        )
+                    }
+                }
+            }
+            if (!selection) {
+                selection = monaco.Selection.fromPositions(
+                    monacoEdits[0].range.getStartPosition(),
+                    monacoEdits[monacoEdits.length - 1].range.getEndPosition()
+                )
+            }
+            editor.executeEdits(id, monacoEdits, [selection])
+            editor.revealPositionInCenter(selection.getStartPosition())
+        },
+    })
+}
+
+function getPositionAt(text: string, offset: number): monaco.IPosition {
+    const lines = text.split('\n')
+    let pos = 0
+    for (const [i, line] of lines.entries()) {
+        if (offset < pos + line.length + 1) {
+            return new monaco.Position(i + 1, offset - pos + 1)
+        }
+        pos += line.length + 1
+    }
+    throw new Error(`offset ${offset} out of bounds in text of length ${text.length}`)
 }

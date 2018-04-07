@@ -1,5 +1,8 @@
+import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
+import { fromPromise } from 'rxjs/observable/fromPromise'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
@@ -9,8 +12,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
-import { addEditorAction } from '../util/monaco'
-import { isStandaloneCodeEditor, MonacoSettingsEditor } from './MonacoSettingsEditor'
+import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 
 interface Props {
     history: H.History
@@ -46,17 +48,20 @@ interface State {
      * scratch.
      */
     editingLastKnownSettingsID?: number | null
+
+    /** The dynamically imported MonacoSettingsEditor module, undefined while loading. */
+    monacoSettingsEditor?: typeof _monacoSettingsEditorModule
 }
 
 const emptySettings = '{\n  // add settings here (Cmd/Ctrl+Space to see hints)\n}'
 
-const disposableToFn = (disposable: monaco.IDisposable) => () => disposable.dispose()
+const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 export class SettingsFile extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
-    private editor?: monaco.editor.ICodeEditor
-    private monaco: typeof monaco | null = null
+    private editor?: _monaco.editor.ICodeEditor
+    private monaco: typeof _monaco | null = null
 
     constructor(props: Props) {
         super(props)
@@ -117,6 +122,10 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
+        this.subscriptions.add(
+            fromPromise(import('./MonacoSettingsEditor')).subscribe(m => this.setState({ monacoSettingsEditor: m }))
+        )
+
         // Prevent navigation when dirty.
         this.subscriptions.add(
             this.props.history.block((location: H.Location, action: H.Action) => {
@@ -148,6 +157,9 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         const contents =
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
+        const MonacoSettingsEditor =
+            this.state.monacoSettingsEditor && this.state.monacoSettingsEditor.MonacoSettingsEditor
+
         return (
             <div className="settings-file">
                 <div className="site-admin-configuration-page__action-groups">
@@ -175,23 +187,28 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     onSave={this.save}
                     onDiscard={this.discard}
                 />
-                <MonacoSettingsEditor
-                    className="settings-file__contents form-control"
-                    value={contents}
-                    jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
-                    onChange={this.onEditorChange}
-                    readOnly={this.state.saving}
-                    monacoRef={this.monacoRef}
-                    isLightTheme={this.props.isLightTheme}
-                    onDidSave={this.save}
-                />
+                {MonacoSettingsEditor ? (
+                    <MonacoSettingsEditor
+                        className="settings-file__contents form-control"
+                        value={contents}
+                        jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
+                        onChange={this.onEditorChange}
+                        readOnly={this.state.saving}
+                        monacoRef={this.monacoRef}
+                        isLightTheme={this.props.isLightTheme}
+                        onDidSave={this.save}
+                    />
+                ) : (
+                    <Loader className="icon-inline my-2" />
+                )}
             </div>
         )
     }
 
-    private monacoRef = (monacoValue: typeof monaco | null) => {
+    private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        if (this.monaco) {
+        const monacoSettingsEditor = this.state.monacoSettingsEditor
+        if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateEditor(editor => {
@@ -202,9 +219,9 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateModel(model => {
-                        if (this.editor && isStandaloneCodeEditor(this.editor)) {
+                        if (this.editor && monacoSettingsEditor.isStandaloneCodeEditor(this.editor)) {
                             for (const { id, label, run } of settingsActions) {
-                                addEditorAction(this.editor, model, label, id, run)
+                                monacoSettingsEditor.addEditorAction(this.editor, model, label, id, run)
                             }
                         }
                     })

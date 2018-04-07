@@ -3,7 +3,9 @@ package assets
 import (
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -14,6 +16,26 @@ import (
 // Mount mounts the static asset handler.
 func Mount(mux *http.ServeMux) {
 	const urlPathPrefix = "/.assets"
+
+	if urlStr := os.Getenv("WEBPACK_DEV_SERVER_URL"); urlStr != "" {
+		// When using the Webpack dev server, we need to proxy assets so they live on the same
+		// origin, because WebWorker scripts (required by the Monaco editor) can't be loaded
+		// cross-origin.
+		webpackDevServerURL, err := url.Parse(urlStr)
+		if err != nil {
+			log.Fatalln("WEBPACK_DEV_SERVER_URL:", err)
+		}
+		proxy := httputil.NewSingleHostReverseProxy(webpackDevServerURL)
+		mux.Handle(urlPathPrefix+"/", &httputil.ReverseProxy{
+			Director: func(r *http.Request) {
+				r.Host = webpackDevServerURL.Host
+				r.URL.Path = strings.TrimPrefix(r.URL.Path, urlPathPrefix)
+				proxy.Director(r)
+			},
+		})
+		return
+	}
+
 	fs := httpgzip.FileServer(Assets, httpgzip.FileServerOptions{})
 	mux.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Kludge to set proper MIME type. Automatic MIME detection somehow detects text/xml under

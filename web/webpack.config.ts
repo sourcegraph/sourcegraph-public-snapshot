@@ -1,10 +1,8 @@
-import CopyWebpackPlugin from 'copy-webpack-plugin'
 import ExtractTextPlugin from 'extract-text-webpack-plugin'
 import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 import { Tapable } from 'tapable'
 import * as webpack from 'webpack'
-import WriteFilePlugin from 'write-file-webpack-plugin'
 
 const plugins: webpack.Plugin[] = [
     // Print some output for VS Code tasks to know when a build started
@@ -41,22 +39,6 @@ plugins.push(
     })
 )
 
-plugins.push(
-    new CopyWebpackPlugin([
-        {
-            from: 'node_modules/monaco-editor/min/vs',
-            to: 'scripts/vs',
-        },
-    ])
-)
-
-plugins.push(
-    new WriteFilePlugin({
-        test: /scripts\/vs\//,
-        useHashIndex: true,
-    })
-)
-
 plugins.push(new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/))
 
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
@@ -69,20 +51,28 @@ const config: webpack.Configuration = {
     entry: {
         app: path.join(__dirname, 'src/app.tsx'),
         style: path.join(__dirname, 'src/app.scss'),
+        'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
+        'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
     },
     output: {
         path: path.join(__dirname, '../ui/assets'),
         filename: 'scripts/[name].bundle.js',
         chunkFilename: 'scripts/[id].chunk.js',
+        publicPath: '/.assets/',
     },
     devtool,
     devServer: {
         contentBase: '../ui/assets',
+        publicPath: '/',
         noInfo: true,
         port: 3088,
         headers: { 'Access-Control-Allow-Origin': '*' },
     },
-    plugins,
+    plugins: [
+        ...plugins,
+        // Ignore require() calls in vs/language/typescript/lib/typescriptServices.js
+        new webpack.IgnorePlugin(/^((fs)|(path)|(os)|(crypto)|(source-map-support))$/, /vs\/language\/typescript\/lib/),
+    ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
     },

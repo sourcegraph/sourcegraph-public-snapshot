@@ -1,4 +1,4 @@
-import { Edit, FormattingOptions } from '@sqs/jsonc-parser'
+import { FormattingOptions } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { SlackNotificationsConfig } from '../schema/settings.schema'
 import {
@@ -12,27 +12,7 @@ import {
     SiteConfiguration,
 } from '../schema/site.schema'
 import { parseJSON } from '../settings/configuration'
-
-/**
- * A helper function that modifies site configuration to configure specific
- * common things, such as syncing GitHub repositories.
- */
-export type ConfigInsertionFunction = (
-    configJSON: string
-) => {
-    /** The edits to make to the input configuration to insert the new configuration. */
-    edits: Edit[]
-
-    /** Select text in inserted JSON. */
-    selectText?: string
-
-    /**
-     * If set, the selection is an empty selection that begins at the left-hand match of selectText plus this
-     * offset. For example, if selectText is "foo" and cursorOffset is 2, then the final selection will be a cursor
-     * "|" positioned as "fo|o".
-     */
-    cursorOffset?: number
-}
+import { ConfigInsertionFunction } from '../settings/MonacoSettingsEditor'
 
 const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',

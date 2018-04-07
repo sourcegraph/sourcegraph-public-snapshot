@@ -47,7 +47,7 @@ export NPM_CONFIG_LOGLEVEL=silent
 # To use webpack-dev-server for auto-reloading, use:
 #   export USE_WEBPACK_DEV_SERVER=1
 if [ -n "${USE_WEBPACK_DEV_SERVER-}" ]; then
-	export ASSETS_ROOT=http://localhost:3088
+	export WEBPACK_DEV_SERVER_URL=http://localhost:3088
 fi
 
 export SOURCEGRAPH_CONFIG_FILE=./dev/config.json

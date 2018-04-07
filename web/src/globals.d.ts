@@ -8,6 +8,9 @@ interface PageError {
 interface Window {
     pageError?: PageError
     context: SourcegraphContext
+    MonacoEnvironment: {
+        getWorkerUrl(moduleId: string, label: string): string
+    }
 }
 
 /**

@@ -1,7 +1,9 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { fromPromise } from 'rxjs/observable/fromPromise'
 import { catchError } from 'rxjs/operators/catchError'
 import { concatMap } from 'rxjs/operators/concatMap'
 import { delay } from 'rxjs/operators/delay'
@@ -13,17 +15,16 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PageTitle } from '../components/PageTitle'
 import { SaveToolbar } from '../components/SaveToolbar'
-import { isStandaloneCodeEditor, MonacoSettingsEditor } from '../settings/MonacoSettingsEditor'
+import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { addEditorAction } from '../util/monaco'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { getTelemetryEnabled, siteConfigActions } from './configHelpers'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
  */
-const disposableToFn = (disposable: monaco.IDisposable) => () => disposable.dispose()
+const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -42,6 +43,9 @@ interface State {
     saving?: boolean
     restartToApply: boolean
     reloadStartedAt?: number
+
+    /** The dynamically imported MonacoSettingsEditor module, undefined while loading. */
+    monacoSettingsEditor?: typeof _monacoSettingsEditorModule
 }
 
 const EXPECTED_RELOAD_WAIT = 4 * 1000 // 4 seconds
@@ -60,11 +64,17 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
-    private monaco: typeof monaco | null = null
-    private configEditor?: monaco.editor.ICodeEditor
+    private monaco: typeof _monaco | null = null
+    private configEditor?: _monaco.editor.ICodeEditor
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
+
+        this.subscriptions.add(
+            fromPromise(import('../settings/MonacoSettingsEditor')).subscribe(m =>
+                this.setState({ monacoSettingsEditor: m })
+            )
+        )
 
         // Prevent navigation when dirty.
         this.subscriptions.add(
@@ -256,6 +266,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             )
         }
 
+        const MonacoSettingsEditor =
+            this.state.monacoSettingsEditor && this.state.monacoSettingsEditor.MonacoSettingsEditor
+
         return (
             <div className="site-admin-configuration-page">
                 <PageTitle title="Configuration - Admin" />
@@ -297,17 +310,21 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                     onDiscard={this.discard}
                                 />
                             )}
-                            <MonacoSettingsEditor
-                                className="site-admin-configuration-page__config"
-                                value={localContents}
-                                jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
-                                onChange={this.onDidChange}
-                                readOnly={isReloading || this.state.saving}
-                                height={600}
-                                monacoRef={this.monacoRef}
-                                isLightTheme={this.props.isLightTheme}
-                                onDidSave={this.save}
-                            />
+                            {MonacoSettingsEditor ? (
+                                <MonacoSettingsEditor
+                                    className="site-admin-configuration-page__config"
+                                    value={localContents}
+                                    jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
+                                    onChange={this.onDidChange}
+                                    readOnly={isReloading || this.state.saving}
+                                    height={600}
+                                    monacoRef={this.monacoRef}
+                                    isLightTheme={this.props.isLightTheme}
+                                    onDidSave={this.save}
+                                />
+                            ) : (
+                                <Loader className="icon-inline my-2" />
+                            )}
                             <p className="form-text">
                                 <small>Source: {formatEnvVar(this.state.site.configuration.source)}</small>
                             </p>
@@ -355,9 +372,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         this.siteReloads.next()
     }
 
-    private monacoRef = (monacoValue: typeof monaco | null) => {
+    private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        if (this.monaco) {
+        const monacoSettingsEditor = this.state.monacoSettingsEditor
+        if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateEditor(editor => {
@@ -368,9 +386,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateModel(model => {
-                        if (this.configEditor && isStandaloneCodeEditor(this.configEditor)) {
+                        if (this.configEditor && monacoSettingsEditor.isStandaloneCodeEditor(this.configEditor)) {
                             for (const { id, label, run } of siteConfigActions) {
-                                addEditorAction(this.configEditor, model, label, id, run)
+                                monacoSettingsEditor.addEditorAction(this.configEditor, model, label, id, run)
                             }
                         }
                     })
@@ -379,7 +397,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         }
     }
 
-    private runAction(id: string, editor?: monaco.editor.ICodeEditor): void {
+    private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
         if (editor) {
             const action = editor.getAction(id)
             action.run().done(() => void 0, (err: any) => console.error(err))
