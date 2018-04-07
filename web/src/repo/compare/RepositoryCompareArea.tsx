@@ -5,7 +5,6 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
-import { DismissibleAlert } from '../../site/DismissibleAlert'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
@@ -81,13 +80,6 @@ export class RepositoryCompareArea extends React.Component<Props> {
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="compare">Compare</RepoHeaderBreadcrumbNavItem>}
                 />
-                <div>
-                    <DismissibleAlert className="alert-warning" partialStorageKey="repository-compare-experimental">
-                        <span>
-                            The repository comparison area is an <strong>experimental</strong> feature.
-                        </span>
-                    </DismissibleAlert>
-                </div>
                 <RepositoryCompareHeader
                     className="area--vertical__header"
                     {...commonProps}

@@ -5,7 +5,6 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
-import { DismissibleAlert } from '../../site/DismissibleAlert'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
@@ -66,16 +65,6 @@ export class RepositoryReleasesArea extends React.Component<Props> {
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>}
                 />
-                <div>
-                    <DismissibleAlert
-                        className="alert-warning mb-1"
-                        partialStorageKey="repository-releases-experimental"
-                    >
-                        <span>
-                            The repository tags area is an <strong>experimental</strong> feature.
-                        </span>
-                    </DismissibleAlert>
-                </div>
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
                         <Switch>

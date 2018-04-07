@@ -5,7 +5,6 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../../components/HeroPage'
-import { DismissibleAlert } from '../../site/DismissibleAlert'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
@@ -65,16 +64,6 @@ export class RepositoryBranchesArea extends React.Component<Props> {
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>}
                 />
-                <div>
-                    <DismissibleAlert
-                        className="alert-warning mb-1"
-                        partialStorageKey="repository-branches-experimental"
-                    >
-                        <span>
-                            The repository branches area is an <strong>experimental</strong> feature.
-                        </span>
-                    </DismissibleAlert>
-                </div>
                 <RepositoryBranchesNavbar className="area--vertical__navbar" repo={this.props.repo.uri} />
                 <div className="area--vertical__content">
                     <Switch>

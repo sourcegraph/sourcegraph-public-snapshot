@@ -4,7 +4,6 @@ import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
-import { DismissibleAlert } from '../../site/DismissibleAlert'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
@@ -110,11 +109,6 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-commits-page">
-                <DismissibleAlert className="alert-warning mb-1" partialStorageKey="repository-commits-experimental">
-                    <span>
-                        The repository commits list is an <strong>experimental</strong> feature.
-                    </span>
-                </DismissibleAlert>
                 <RepoHeaderActionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="commits">Commits</RepoHeaderBreadcrumbNavItem>}
