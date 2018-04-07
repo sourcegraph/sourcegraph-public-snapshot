@@ -64,8 +64,8 @@ export function toFileStat(files: string[], options: ICustomResolveFileOptions, 
 
     const { parentPath, resolveSingleChildDescendants, resolveTo, resolveAllDescendants } = options
 
-    if (parentPath === '') {
-        throw new Error('parentPath must be undefined if empty (not empty string)')
+    if (parentPath === '' || parentPath === '.') {
+        throw new Error('parentPath must be undefined if empty or "." (not empty string)')
     }
     if (parentPath && parentPath.startsWith('/')) {
         throw new Error('parentPath must not have a leading slash: ' + parentPath)

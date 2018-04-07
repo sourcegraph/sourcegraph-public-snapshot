@@ -8,7 +8,7 @@ import sortBy from 'lodash/sortBy'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
-import { skip } from 'rxjs/operators/skip'
+import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Repo } from '../repo/index'
@@ -66,7 +66,9 @@ export class Tree2 extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        const parentPath = (props.activePathIsDir ? props.activePath : dirname(props.activePath)) || undefined
+        const parentPath = dotPathAsUndefined(
+            (props.activePathIsDir ? props.activePath : dirname(props.activePath)) || undefined
+        )
         // console.time('toFileStat (initial)')
         this.state = {
             selectedPath: undefined,
@@ -125,22 +127,24 @@ export class Tree2 extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            this.componentUpdates.pipe(distinctUntilChanged(isEqual), skip(1)).subscribe((props: Props) => {
-                // Recompute with new paths and parent path. But if the new active path is below where we are now,
-                // preserve the current parent path, so that it's easy for the user to go back up.
-                const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
-                this.setStateAndRecomputeTree(
-                    pathEqualToOrAncestor(this.state.parentPath || '', newParentPath)
-                        ? {}
-                        : {
-                              parentPath:
-                                  (props.activePathIsDir ? props.activePath : dirname(props.activePath)) || undefined,
-                          }
-                )
-            })
+            this.componentUpdates
+                .pipe(startWith(this.props), distinctUntilChanged(isEqual))
+                .subscribe((props: Props) => {
+                    // Recompute with new paths and parent path. But if the new active path is below where we are now,
+                    // preserve the current parent path, so that it's easy for the user to go back up.
+                    const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
+                    this.setStateAndRecomputeTree(
+                        pathEqualToOrAncestor(this.state.parentPath || '', newParentPath)
+                            ? {}
+                            : {
+                                  parentPath:
+                                      dotPathAsUndefined(
+                                          props.activePathIsDir ? props.activePath : dirname(props.activePath)
+                                      ) || undefined,
+                              }
+                    )
+                })
         )
-
-        this.componentUpdates.next(this.props)
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
@@ -533,4 +537,11 @@ class TreeRow extends React.PureComponent<TreeRowProps> {
 /** Returns whether path is an ancestor of (or equal to) candidate. */
 function pathEqualToOrAncestor(path: string, candidate: string): boolean {
     return path === candidate || path === '' || candidate.startsWith(path + '/')
+}
+
+function dotPathAsUndefined(path: string | undefined): string | undefined {
+    if (path === undefined || path === '.') {
+        return undefined
+    }
+    return path
 }
