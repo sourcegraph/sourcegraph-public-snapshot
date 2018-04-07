@@ -619,8 +619,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                     blame.dispatchEvent(ev)
                 })
                 await assertWindowLocation(
-                    'https://github.com/sourcegraph/go-diff/commit/f93a4e38b36b4003edbfdff66d3b92c6cd977c1c',
-                    true
+                    '/github.com/sourcegraph/go-diff/-/commit/f93a4e38b36b4003edbfdff66d3b92c6cd977c1c'
                 )
             })
 
