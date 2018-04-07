@@ -1,9 +1,5 @@
-import BranchIcon from '@sourcegraph/icons/lib/Branch'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
-import ColumnIcon from '@sourcegraph/icons/lib/Column'
-import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import TagIcon from '@sourcegraph/icons/lib/Tag'
 import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
@@ -12,9 +8,6 @@ import { AnonymousSubscription, Subscription } from 'rxjs/Subscription'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { RepositoriesPopover } from './RepositoriesPopover'
-
-/** Feature flag enabling Git branches, etc., pages. */
-const enableGitBrowsing = localStorage.getItem('gitBrowsing') !== null
 
 /**
  * An action link that is added to and displayed in the repository header.
@@ -220,42 +213,6 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 {this.state.leftActions && this.state.leftActions.map(a => a.element)}
                 <div className="repo-header__spacer" />
                 {this.state.rightActions && this.state.rightActions.map(a => a.element)}
-                {enableGitBrowsing && (
-                    <>
-                        <NavLink
-                            to={`/${this.props.repo.uri}/-/commits`}
-                            className="composite-container__header-action"
-                            activeClassName="composite-container__header-action-active"
-                        >
-                            <CommitIcon className="icon-inline" />
-                            <span className="composite-container__header-action-text">Commits</span>
-                        </NavLink>
-                        <NavLink
-                            to={`/${this.props.repo.uri}/-/branches`}
-                            className="composite-container__header-action"
-                            activeClassName="composite-container__header-action-active"
-                        >
-                            <BranchIcon className="icon-inline" />
-                            <span className="composite-container__header-action-text">Branches</span>
-                        </NavLink>
-                        <NavLink
-                            to={`/${this.props.repo.uri}/-/tags`}
-                            className="composite-container__header-action"
-                            activeClassName="composite-container__header-action-active"
-                        >
-                            <TagIcon className="icon-inline" />
-                            <span className="composite-container__header-action-text">Tags</span>
-                        </NavLink>
-                        <NavLink
-                            to={`/${this.props.repo.uri}/-/compare`}
-                            className="composite-container__header-action"
-                            activeClassName="composite-container__header-action-active"
-                        >
-                            <ColumnIcon className="icon-inline" />
-                            <span className="composite-container__header-action-text">Compare</span>
-                        </NavLink>
-                    </>
-                )}
                 {this.props.repo.viewerCanAdminister && (
                     <NavLink
                         to={`/${this.props.repo.uri}/-/settings`}

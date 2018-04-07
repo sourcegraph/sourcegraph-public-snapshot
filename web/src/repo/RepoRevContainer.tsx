@@ -280,6 +280,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         filePath={routeComponentProps.match.params.filePath || ''}
                                                         location={this.props.location}
                                                         history={this.props.history}
+                                                        isLightTheme={this.props.isLightTheme}
                                                     />
                                                 )}
                                                 {useNewBlobPanel ? (

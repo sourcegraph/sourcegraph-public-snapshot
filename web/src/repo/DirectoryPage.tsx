@@ -1,6 +1,10 @@
+import BranchIcon from '@sourcegraph/icons/lib/Branch'
+import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import { Folder as FolderIcon } from '@sourcegraph/icons/lib/Folder'
+import HistoryIcon from '@sourcegraph/icons/lib/History'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
+import TagIcon from '@sourcegraph/icons/lib/Tag'
 import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
 import * as React from 'react'
@@ -26,7 +30,7 @@ import { SearchButton } from '../search/SearchButton'
 import { SearchHelp } from '../search/SearchHelp'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
-import { toPrettyBlobURL, toTreeURL } from '../util/url'
+import { toPrettyBlobURL, toRepoURL, toTreeURL } from '../util/url'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { searchQueryForRepoRev } from './RepoContainer'
@@ -129,6 +133,7 @@ interface Props {
     filePath: string
     commitID: string
     rev?: string
+    isLightTheme: boolean
 
     location: H.Location
     history: H.History
@@ -223,6 +228,36 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             <RepositoryIcon className="icon-inline" /> {displayRepoPath(this.props.repoPath)}
                         </h1>
                         {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
+                        <div className="btn-group mb-3">
+                            <Link
+                                className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
+                                to={`${toRepoURL({ repoPath: this.props.repoPath, rev: this.props.rev })}/-/commits`}
+                            >
+                                <CommitIcon className="icon-inline" /> Commits
+                            </Link>
+                            <Link
+                                className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
+                                to={`/${this.props.repoPath}/-/branches`}
+                            >
+                                <BranchIcon className="icon-inline" /> Branches
+                            </Link>
+                            <Link
+                                className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
+                                to={`/${this.props.repoPath}/-/tags`}
+                            >
+                                <TagIcon className="icon-inline" /> Tags
+                            </Link>
+                            <Link
+                                className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
+                                to={
+                                    this.props.rev
+                                        ? `/${this.props.repoPath}/-/compare/...${this.props.rev}`
+                                        : `/${this.props.repoPath}/-/compare`
+                                }
+                            >
+                                <HistoryIcon className="icon-inline" /> Compare
+                            </Link>
+                        </div>
                     </header>
                 )}
 

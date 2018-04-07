@@ -110,7 +110,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
         return (
             <div className="repository-compare-page">
                 {this.state.rangeOrError === null ? (
-                    <p>Select a comparison to begin.</p>
+                    <p>Enter two Git revspecs to compare.</p>
                 ) : this.state.rangeOrError === undefined ? (
                     <Loader className="icon-inline" />
                 ) : isErrorLike(this.state.rangeOrError) ? (
