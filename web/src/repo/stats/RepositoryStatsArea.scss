@@ -1,0 +1,7 @@
+@import '../../components/Area';
+@import './RepositoryStatsPage';
+@import './RepositoryStatsContributorsPage';
+
+.repository-stats-area {
+    overflow: auto;
+}

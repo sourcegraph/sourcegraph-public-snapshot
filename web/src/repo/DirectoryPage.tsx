@@ -5,6 +5,7 @@ import HistoryIcon from '@sourcegraph/icons/lib/History'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
+import UserIcon from '@sourcegraph/icons/lib/User'
 import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
 import * as React from 'react'
@@ -152,6 +153,9 @@ interface State {
     query: string
 }
 
+/** Feature flag for showing the contributors link. */
+const showContributors = localStorage.getItem('contributors') !== null
+
 export class DirectoryPage extends React.PureComponent<Props, State> {
     public state: State = { query: '' }
 
@@ -257,6 +261,14 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             >
                                 <HistoryIcon className="icon-inline" /> Compare
                             </Link>
+                            {showContributors && (
+                                <Link
+                                    className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
+                                    to={`/${this.props.repoPath}/-/stats/contributors`}
+                                >
+                                    <UserIcon className="icon-inline" /> Contributors
+                                </Link>
+                            )}
                         </div>
                     </header>
                 )}

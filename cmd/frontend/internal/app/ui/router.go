@@ -38,6 +38,7 @@ const (
 	routeRepoCommits    = "repo-commits"
 	routeRepoTags       = "repo-tags"
 	routeRepoCompare    = "repo-compare"
+	routeRepoStats      = "repo-stats"
 	routeRepoGraph      = "repo-graph"
 	routeThreads        = "threads"
 	routeTree           = "tree"
@@ -151,6 +152,7 @@ func newRouter() *mux.Router {
 	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
+	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -183,6 +185,7 @@ func initRouter() {
 	router.Get(routeRepoCommits).Handler(handler(serveBasicPageString("Commits - Sourcegraph")))
 	router.Get(routeRepoTags).Handler(handler(serveBasicPageString("Tags - Sourcegraph")))
 	router.Get(routeRepoCompare).Handler(handler(serveBasicPageString("Compare - Sourcegraph")))
+	router.Get(routeRepoStats).Handler(handler(serveBasicPageString("Stats - Sourcegraph")))
 	router.Get(routeRepoGraph).Handler(handler(serveBasicPageString("Repository graph - Sourcegraph")))
 	router.Get(routeSearchScope).Handler(handler(serveBasicPageString("Search scope - Sourcegraph")))
 

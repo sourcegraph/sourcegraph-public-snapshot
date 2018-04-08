@@ -29,6 +29,7 @@ import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
 import { RepositoryErrorPage } from './RepositoryErrorPage'
 import { RepoSettingsArea } from './settings/RepoSettingsArea'
+import { RepositoryStatsArea } from './stats/RepositoryStatsArea'
 
 const RepoPageNotFound: React.SFC = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="The repository page was not found." />
@@ -280,6 +281,14 @@ export class RepoContainer extends React.Component<Props, State> {
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
                                 <RepositoryCompareArea {...routeComponentProps} {...transferProps} />
+                            )}
+                        />
+                        <Route
+                            path={`${repoMatchURL}/-/stats`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryStatsArea {...routeComponentProps} {...transferProps} />
                             )}
                         />
                         <Route

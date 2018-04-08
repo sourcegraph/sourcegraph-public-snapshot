@@ -790,6 +790,12 @@ type Repository implements Node {
         # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
         head: String
     ): RepositoryComparison!
+    contributors(
+        # The Git revision range to compute contributors in.
+        range: String
+        # Returns the first n contributors from the list.
+        first: Int
+    ): ContributorConnection!
     # The repository's symbols (e.g., functions, variables, types, classes, etc.) on the default branch.
     #
     # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
@@ -998,6 +1004,25 @@ type DiffStat {
     changed: Int!
     # Number of deletions.
     deleted: Int!
+}
+
+# A list of contributors to a repository.
+type ContributorConnection {
+    # A list of contributors.
+    nodes: [Contributor!]!
+    # The total count of contributors in the connection, if available. This total count may be larger than the
+    # number of nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A contributor to a repository.
+type Contributor {
+    # The personal information for the contributor.
+    person: Person!
+    # The number of contributions made by this contributor.
+    count: Int!
 }
 
 # A code symbol (e.g., a function, variable, type, class, etc.).
