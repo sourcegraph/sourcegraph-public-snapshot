@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators/map'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { eventLogger } from '../../tracking/eventLogger'
+import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
 import { createAggregateError } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
@@ -18,7 +19,7 @@ interface ContributorNodeProps {
 export const ContributorNode: React.SFC<ContributorNodeProps> = ({ node }) => (
     <div className="contributor-node list-group-item py-2">
         <UserAvatar className="icon-inline mr-1" user={node.person} />
-        <span className="mr-1"> {node.person.name}</span>{' '}
+        <PersonLink className="mr-1" userClassName="font-weight-bold" {...node.person} />{' '}
         <span className="badge badge-primary" data-tooltip={`${node.count} ${pluralize('contribution', node.count)}`}>
             {node.count}
         </span>
@@ -36,8 +37,13 @@ const queryContributors = memoizeObservable(
                                 nodes {
                                     person {
                                         name
+                                        displayName
                                         email
                                         avatarURL
+                                        user {
+                                            username
+                                            url
+                                        }
                                     }
                                     count
                                 }

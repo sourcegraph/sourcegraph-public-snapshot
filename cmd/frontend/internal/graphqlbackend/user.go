@@ -103,6 +103,10 @@ func (r *userResolver) AvatarURL() *string {
 	return &r.user.AvatarURL
 }
 
+func (r *userResolver) URL() string {
+	return "/users/" + r.user.Username
+}
+
 func (r *userResolver) CreatedAt() string {
 	return r.user.CreatedAt.Format(time.RFC3339)
 }

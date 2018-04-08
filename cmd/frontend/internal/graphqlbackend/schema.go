@@ -1311,6 +1311,9 @@ type Person {
     # The name if set; otherwise the email username.
     displayName: String!
     avatarURL: String!
+
+    # The corresponding user account for this person, if one exists.
+    user: User
 }
 
 type Tree {
@@ -1502,6 +1505,8 @@ type User implements Node, ConfigurationSubject {
     displayName: String
     # The URL of the user's avatar image.
     avatarURL: String
+    # The URL to the user's profile on Sourcegraph.
+    url: String!
     # The date when the user account was created on Sourcegraph.
     createdAt: String!
     # The date when the user account was last updated on Sourcegraph.
