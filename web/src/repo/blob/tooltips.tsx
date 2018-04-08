@@ -408,16 +408,12 @@ function consumeNextToken(txt: string): string {
     return txt[0]
 }
 
-export function getTableDataCell(target: HTMLElement): HTMLTableDataCellElement | undefined {
-    if (target.tagName === 'TD') {
-        // Short-circuit; we are hovering over a line of code, but no token in particular.
-        return undefined
-    }
-    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY') {
+export function getTableDataCell(target: HTMLElement, boundary: HTMLElement): HTMLTableDataCellElement | undefined {
+    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && target !== boundary) {
         // Find ancestor which wraps the whole line of code, not just the target token.
         target = target.parentNode as HTMLElement
     }
-    if (target.tagName === 'TD') {
+    if (target.tagName === 'TD' && target !== boundary) {
         return target as HTMLTableDataCellElement
     }
     return undefined
@@ -466,18 +462,15 @@ export function findElementWithOffset(cell: HTMLElement, offset: number): HTMLEl
  */
 export function getTargetLineAndOffset(
     target: HTMLElement,
+    boundary: HTMLElement,
     ignoreFirstChar = false
 ): { line: number; character: number; word: string } | undefined {
     const origTarget = target
-    if (target.tagName === 'TD') {
-        // Short-circuit; we are hovering over a line of code, but no token in particular.
-        return undefined
-    }
-    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY') {
+    while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && target !== boundary) {
         // Find ancestor which wraps the whole line of code, not just the target token.
         target = target.parentNode as HTMLElement
     }
-    if (!target || target.tagName !== 'TD') {
+    if (!target || target.tagName !== 'TD' || target === boundary) {
         // Make sure we're looking at an element we've annotated line number for (otherwise we have no idea )
         return undefined
     }

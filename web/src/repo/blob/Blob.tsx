@@ -326,7 +326,7 @@ export class Blob extends React.Component<Props, State> {
                     ),
                     filter((el: HTMLElement | undefined): el is HTMLElement => !!el),
                     map((target: HTMLElement) => {
-                        const data = { target, loc: getTargetLineAndOffset(target!, false) }
+                        const data = { target, loc: getTargetLineAndOffset(target!, this.blobElement!, false) }
                         if (!data.loc) {
                             return null
                         }
@@ -391,13 +391,13 @@ export class Blob extends React.Component<Props, State> {
                     debounceTime(50),
                     map(e => e.target as HTMLElement),
                     tap(target => {
-                        const td = getTableDataCell(target)
+                        const td = getTableDataCell(target, this.blobElement!)
                         if (td && !td.classList.contains('annotated')) {
                             td.classList.add('annotated')
                             convertNode(td)
                         }
                     }),
-                    map(target => ({ target, loc: getTargetLineAndOffset(target, false) })),
+                    map(target => ({ target, loc: getTargetLineAndOffset(target, this.blobElement!, false) })),
                     filter(data => Boolean(data.loc)),
                     map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } })),
                     switchMap(({ target, ctx }) => {
@@ -471,7 +471,7 @@ export class Blob extends React.Component<Props, State> {
                     const clickedLineNumber = target && target.classList.contains('line')
 
                     const targetLine = parseInt(row.firstElementChild!.getAttribute('data-line')!, 10)
-                    const data = { target, loc: getTargetLineAndOffset(target, false) }
+                    const data = { target, loc: getTargetLineAndOffset(target, this.blobElement!, false) }
                     const targetPos: Position = { line: targetLine, character: data.loc ? data.loc.character : 0 }
 
                     // Expand selection if shift-click on line number.
