@@ -1,8 +1,10 @@
 import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
+import isEmpty from 'lodash/isEmpty'
 import unescape from 'lodash/unescape'
 import marked from 'marked'
 import { Hover, MarkedString } from 'vscode-languageserver-types'
 import { urlWithoutSearchOptions } from '../../search'
+import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromExtension } from '../../util'
 import { toAbsoluteBlobURL } from '../../util/url'
 import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from './../index'
@@ -520,4 +522,16 @@ export function getTargetLineAndOffset(
         return { line, character, word: origTarget.innerText }
     }
     return undefined
+}
+
+export function logTelemetryOnTooltip(data: TooltipData, fixed: boolean): void {
+    // Only log an event if there is no fixed tooltip docked, we have a target element
+    if (!fixed && data.target) {
+        if (data.loading) {
+            eventLogger.log('SymbolHoveredLoading')
+            // Don't log tooltips with no content
+        } else if (!isEmpty(data.contents)) {
+            eventLogger.log('SymbolHovered')
+        }
+    }
 }

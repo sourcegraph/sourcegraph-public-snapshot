@@ -41,6 +41,7 @@ import {
     getTableDataCell,
     getTargetLineAndOffset,
     hideTooltip,
+    logTelemetryOnTooltip,
     TooltipData,
     updateTooltip,
 } from './tooltips'
@@ -419,7 +420,7 @@ export class Blob extends React.Component<Props, State> {
                     })
                 )
                 .subscribe(data => {
-                    this.logTelemetryOnTooltip(data)
+                    logTelemetryOnTooltip(data, !!this.state.fixedTooltip)
                     if (!this.state.fixedTooltip) {
                         updateTooltip(data, false, this.tooltipActions(data.ctx))
                     }
@@ -683,18 +684,6 @@ export class Blob extends React.Component<Props, State> {
         } else {
             // Unset fixed tooltip if it exists (no URL update necessary).
             this.setFixedTooltip()
-        }
-    }
-
-    private logTelemetryOnTooltip = (data: TooltipData) => {
-        // Only log an event if there is no fixed tooltip docked, we have a target element
-        if (!this.state.fixedTooltip && data.target) {
-            if (data.loading) {
-                eventLogger.log('SymbolHoveredLoading')
-                // Don't log tooltips with no content
-            } else if (!isEmpty(data.contents)) {
-                eventLogger.log('SymbolHovered')
-            }
         }
     }
 
