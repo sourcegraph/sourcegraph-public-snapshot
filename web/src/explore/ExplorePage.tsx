@@ -20,7 +20,7 @@ interface RepositoryNodeProps {
 }
 
 export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
-    <li key={repo.id} className="explore-page__item">
+    <li key={repo.id} className="explore-page__item" tabIndex={0}>
         <div className="explore-page__item-header">
             <RepoLink repoPath={repo.uri} className="explore-page__item-path" />
             {repo.mirrorInfo.cloneInProgress && (
@@ -38,6 +38,7 @@ export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) =
                     to={`/${repo.uri}/-/settings`}
                     className="btn btn-secondary btn-sm explore-page__item-action"
                     data-tooltip="Repository settings"
+                    tabIndex={-1}
                 >
                     <GearIcon className="icon-inline" />
                 </Link>
@@ -46,6 +47,7 @@ export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) =
                 to={`/${repo.uri}`}
                 className="btn btn-secondary btn-sm explore-page__item-action"
                 data-tooltip="Search and explore this repository"
+                tabIndex={-1}
             >
                 <RepoIcon className="icon-inline" />&nbsp;View
             </Link>
