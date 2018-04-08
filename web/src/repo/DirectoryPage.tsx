@@ -218,15 +218,15 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                 <PageTitle key="page-title" title={this.getPageTitle()} />
                 {this.props.filePath ? (
                     <header>
-                        <h1 className="directory-page__title">
+                        <h2 className="directory-page__title">
                             <FolderIcon className="icon-inline" /> {this.props.filePath}
-                        </h1>
+                        </h2>
                     </header>
                 ) : (
                     <header>
-                        <h1 className="directory-page__title">
+                        <h2 className="directory-page__title">
                             <RepositoryIcon className="icon-inline" /> {displayRepoPath(this.props.repoPath)}
-                        </h1>
+                        </h2>
                         {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
                         <div className="btn-group mb-3">
                             <Link
