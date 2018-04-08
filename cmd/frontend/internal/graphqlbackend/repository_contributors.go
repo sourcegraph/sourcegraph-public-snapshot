@@ -11,15 +11,15 @@ import (
 func (r *repositoryResolver) Contributors(args *struct {
 	Range *string
 	First *int32
-}) *contributorConnectionResolver {
-	return &contributorConnectionResolver{
+}) *repositoryContributorConnectionResolver {
+	return &repositoryContributorConnectionResolver{
 		range_: args.Range,
 		first:  args.First,
 		repo:   r,
 	}
 }
 
-type contributorConnectionResolver struct {
+type repositoryContributorConnectionResolver struct {
 	range_ *string
 	first  *int32
 
@@ -31,7 +31,7 @@ type contributorConnectionResolver struct {
 	err     error
 }
 
-func (r *contributorConnectionResolver) compute(ctx context.Context) ([]*vcs.PersonCount, error) {
+func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*vcs.PersonCount, error) {
 	r.once.Do(func() {
 		var opt vcs.ShortLogOptions
 		if r.range_ != nil {
@@ -44,7 +44,7 @@ func (r *contributorConnectionResolver) compute(ctx context.Context) ([]*vcs.Per
 	return r.results, r.err
 }
 
-func (r *contributorConnectionResolver) Nodes(ctx context.Context) ([]*contributorResolver, error) {
+func (r *repositoryContributorConnectionResolver) Nodes(ctx context.Context) ([]*repositoryContributorResolver, error) {
 	results, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -54,18 +54,19 @@ func (r *contributorConnectionResolver) Nodes(ctx context.Context) ([]*contribut
 		results = results[:*r.first]
 	}
 
-	resolvers := make([]*contributorResolver, len(results))
+	resolvers := make([]*repositoryContributorResolver, len(results))
 	for i, contributor := range results {
-		resolvers[i] = &contributorResolver{
+		resolvers[i] = &repositoryContributorResolver{
 			name:  contributor.Name,
 			email: contributor.Email,
 			count: contributor.Count,
+			repo:  r.repo,
 		}
 	}
 	return resolvers, nil
 }
 
-func (r *contributorConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *repositoryContributorConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	results, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
@@ -73,7 +74,7 @@ func (r *contributorConnectionResolver) TotalCount(ctx context.Context) (int32, 
 	return int32(len(results)), nil
 }
 
-func (r *contributorConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+func (r *repositoryContributorConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
 	results, err := r.compute(ctx)
 	if err != nil {
 		return nil, err

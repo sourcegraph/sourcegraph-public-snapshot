@@ -13,11 +13,11 @@ import { pluralize } from '../../util/strings'
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 
 interface ContributorNodeProps {
-    node: GQL.IContributor
+    node: GQL.IRepositoryContributor
 }
 
-export const ContributorNode: React.SFC<ContributorNodeProps> = ({ node }) => (
-    <div className="contributor-node list-group-item py-2">
+export const RepositoryContributorNode: React.SFC<ContributorNodeProps> = ({ node }) => (
+    <div className="repository-contributor-node list-group-item py-2">
         <UserAvatar className="icon-inline mr-1" user={node.person} />
         <PersonLink className="mr-1" userClassName="font-weight-bold" {...node.person} />{' '}
         <span className="badge badge-primary" data-tooltip={`${node.count} ${pluralize('contribution', node.count)}`}>
@@ -26,8 +26,8 @@ export const ContributorNode: React.SFC<ContributorNodeProps> = ({ node }) => (
     </div>
 )
 
-const queryContributors = memoizeObservable(
-    (args: { repo: GQLID; first?: number; range?: string }): Observable<GQL.IContributorConnection> =>
+const queryRepositoryContributors = memoizeObservable(
+    (args: { repo: GQLID; first?: number; range?: string }): Observable<GQL.IRepositoryContributorConnection> =>
         queryGraphQL(
             gql`
                 query RepositoryContributors($repo: ID!, $first: Int, $range: String) {
@@ -70,7 +70,7 @@ const queryContributors = memoizeObservable(
 
 interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {}
 
-class FilteredContributorsConnection extends FilteredConnection<GQL.IContributor> {}
+class FilteredContributorsConnection extends FilteredConnection<GQL.IRepositoryContributor> {}
 
 /** A page that shows a repository's contributors. */
 export class RepositoryStatsContributorsPage extends React.PureComponent<Props> {
@@ -86,8 +86,8 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props> 
                     listClassName="list-group list-group-flush"
                     noun="contributor"
                     pluralNoun="contributors"
-                    queryConnection={this.queryContributors}
-                    nodeComponent={ContributorNode}
+                    queryConnection={this.queryRepositoryContributors}
+                    nodeComponent={RepositoryContributorNode}
                     defaultFirst={20}
                     hideFilter={true}
                     autoFocus={true}
@@ -98,6 +98,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props> 
         )
     }
 
-    private queryContributors = (args: { first?: number; range?: string }) =>
-        queryContributors({ ...args, repo: this.props.repo.id })
+    private queryRepositoryContributors = (args: { first?: number; range?: string }) =>
+        queryRepositoryContributors({ ...args, repo: this.props.repo.id })
 }
