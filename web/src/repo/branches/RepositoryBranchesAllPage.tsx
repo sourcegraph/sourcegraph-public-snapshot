@@ -1,6 +1,5 @@
-import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, queryGraphQL } from '../../backend/graphql'
@@ -10,6 +9,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { numberWithCommas } from '../../util/strings'
+import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 
 interface GitRefNodeProps {
     node: GQL.IGitRef
@@ -106,12 +106,7 @@ const fetchGitBranches = memoizeObservable(
     args => `${args.repo}:${args.first}:${args.query}`
 )
 
-interface Props {
-    repo: GQL.IRepository
-
-    history: H.History
-    location: H.Location
-}
+interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
 
 class FilteredGitRefConnection extends FilteredConnection<GQL.IGitRef> {}
 

@@ -1,6 +1,4 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
-import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs/Subscription'
@@ -23,10 +21,6 @@ interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
 }
 
-interface State {
-    error?: string
-}
-
 /**
  * Properties passed to all page components in the repository branches area.
  */
@@ -41,8 +35,6 @@ export interface RepositoryBranchesAreaPageProps {
  * Renders pages related to repository branches.
  */
 export class RepositoryBranchesArea extends React.Component<Props> {
-    public state: State = {}
-
     private subscriptions = new Subscription()
 
     public componentWillUnmount(): void {
@@ -50,10 +42,6 @@ export class RepositoryBranchesArea extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
-        if (this.state.error) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.error)} />
-        }
-
         const transferProps: { repo: GQL.IRepository } = {
             repo: this.props.repo,
         }

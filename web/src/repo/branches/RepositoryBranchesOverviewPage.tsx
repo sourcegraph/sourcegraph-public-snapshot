@@ -1,6 +1,5 @@
 import { ChevronRight } from '@sourcegraph/icons/lib/ChevronRight'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
-import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
@@ -18,6 +17,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { gitBranchFragment, GitBranchNode } from './RepositoryBranchesAllPage'
+import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 
 interface Data {
     defaultBranch: GQL.IGitRef | null
@@ -71,12 +71,7 @@ const fetchGitBranches = memoizeObservable(
     args => `${args.repo}:${args.first}`
 )
 
-interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
-
-    history: H.History
-    location: H.Location
-}
+interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
 
 interface State {
     /** The page content, undefined while loading, or an error. */
