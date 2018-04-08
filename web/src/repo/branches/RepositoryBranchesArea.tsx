@@ -64,29 +64,33 @@ export class RepositoryBranchesArea extends React.Component<Props> {
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>}
                 />
-                <RepositoryBranchesNavbar className="area--vertical__navbar" repo={this.props.repo.uri} />
+                <div className="area--vertical__navbar">
+                    <RepositoryBranchesNavbar className="area--vertical__navbar-inner" repo={this.props.repo.uri} />
+                </div>
                 <div className="area--vertical__content">
-                    <Switch>
-                        <Route
-                            path={`${this.props.match.url}`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RepositoryBranchesOverviewPage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/all`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RepositoryBranchesAllPage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
-                        <Route key="hardcoded-key" component={NotFoundPage} />
-                    </Switch>
+                    <div className="area--vertical__content-inner">
+                        <Switch>
+                            <Route
+                                path={`${this.props.match.url}`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <RepositoryBranchesOverviewPage {...routeComponentProps} {...transferProps} />
+                                )}
+                            />
+                            <Route
+                                path={`${this.props.match.url}/all`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <RepositoryBranchesAllPage {...routeComponentProps} {...transferProps} />
+                                )}
+                            />
+                            <Route key="hardcoded-key" component={NotFoundPage} />
+                        </Switch>
+                    </div>
                 </div>
             </div>
         )
