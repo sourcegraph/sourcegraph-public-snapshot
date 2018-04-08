@@ -34,7 +34,7 @@ type MockRepository struct {
 	Diff_      func(ctx context.Context, base, head api.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error)
 	MergeBase_ func(ctx context.Context, a, b api.CommitID) (api.CommitID, error)
 
-	Committers_ func(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error)
+	ShortLog_ func(ctx context.Context, opt vcs.ShortLogOptions) ([]*vcs.PersonCount, error)
 
 	Search_ func(context.Context, api.CommitID, vcs.SearchOptions) ([]*vcs.SearchResult, error)
 
@@ -113,8 +113,8 @@ func (r MockRepository) MergeBase(ctx context.Context, a, b api.CommitID) (api.C
 	return r.MergeBase_(ctx, a, b)
 }
 
-func (r MockRepository) Committers(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
-	return r.Committers_(ctx, opt)
+func (r MockRepository) ShortLog(ctx context.Context, opt vcs.ShortLogOptions) ([]*vcs.PersonCount, error) {
+	return r.ShortLog_(ctx, opt)
 }
 
 func (r MockRepository) Search(ctx context.Context, commit api.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {

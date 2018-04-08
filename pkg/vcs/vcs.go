@@ -98,9 +98,9 @@ type SearchResult struct {
 	Match []byte `json:"Match,omitempty"`
 }
 
-// A Committer is a contributor to a repository.
-type Committer struct {
-	Name    string `json:"Name,omitempty"`
-	Email   string `json:"Email,omitempty"`
-	Commits int32  `json:"Commits,omitempty"`
+// A PersonCount is a contributor to a repository.
+type PersonCount struct {
+	Name  string
+	Email string
+	Count int32
 }

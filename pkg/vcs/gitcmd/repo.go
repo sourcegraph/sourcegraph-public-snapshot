@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -25,10 +26,6 @@ import (
 )
 
 var (
-	// logEntryPattern is the regexp pattern that matches entries in the output of
-	// the `git shortlog -sne` command.
-	logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+([A-Za-z]+(?:\s[A-Za-z]+)*)\s+<([A-Za-z@.]+)>\s*$`)
-
 	// gitCmdWhitelist are commands and arguments that are allowed to execute when calling GitCmdRaw.
 	gitCmdWhitelist = map[string][]string{
 		"log":    append([]string{}, gitCommonWhitelist...),
@@ -791,43 +788,54 @@ func (r *Repository) MergeBase(ctx context.Context, a, b api.CommitID) (api.Comm
 	return api.CommitID(bytes.TrimSpace(out)), nil
 }
 
-func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Committers")
+// logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
+// -sne` command.
+var logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+(.*)$`)
+
+func (r *Repository) ShortLog(ctx context.Context, opt vcs.ShortLogOptions) ([]*vcs.PersonCount, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	if opt.Rev == "" {
-		opt.Rev = "HEAD"
+	if opt.Range == "" {
+		opt.Range = "HEAD"
+	}
+	if err := checkSpecArgSafety(opt.Range); err != nil {
+		return nil, err
 	}
 
-	cmd := r.command("git", "shortlog", "-sne", opt.Rev)
+	cmd := r.command("git", "shortlog", "-sne", opt.Range)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git shortlog -sne` failed: %v", err)
 	}
-	out = bytes.TrimSpace(out)
 
-	allEntries := bytes.Split(out, []byte{'\n'})
-	numEntries := len(allEntries)
-	if opt.N > 0 && numEntries > opt.N {
-		numEntries = opt.N
+	out = bytes.TrimSpace(out)
+	if len(out) == 0 {
+		return nil, nil
 	}
-	var committers []*vcs.Committer
-	for i := 0; i < numEntries; i++ {
-		line := string(allEntries[i])
-		if match := logEntryPattern.FindStringSubmatch(line); match != nil {
-			commits, err2 := strconv.Atoi(match[1])
-			if err2 != nil {
-				continue
-			}
-			committers = append(committers, &vcs.Committer{
-				Commits: int32(commits),
-				Name:    match[2],
-				Email:   match[3],
-			})
+	lines := bytes.Split(out, []byte{'\n'})
+	results := make([]*vcs.PersonCount, len(lines))
+	for i, line := range lines {
+		match := logEntryPattern.FindSubmatch(line)
+		if match == nil {
+			return nil, fmt.Errorf("invalid git shortlog line: %q", line)
+		}
+		count, err := strconv.Atoi(string(match[1]))
+		if err != nil {
+			return nil, err
+		}
+		addr, err := mail.ParseAddress(string(match[2]))
+		if err != nil || addr == nil {
+			addr = &mail.Address{Name: string(match[2])}
+		}
+		results[i] = &vcs.PersonCount{
+			Count: int32(count),
+			Name:  addr.Name,
+			Email: addr.Address,
 		}
 	}
-	return committers, nil
+	return results, nil
 }
 
 func (r *Repository) ReadFile(ctx context.Context, commit api.CommitID, name string) ([]byte, error) {

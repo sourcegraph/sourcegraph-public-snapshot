@@ -90,8 +90,8 @@ type Repository interface {
 	// CommitCount returns the number of commits that would be returned by Commits.
 	CommitCount(context.Context, CommitsOptions) (total uint, err error)
 
-	// Committers returns the per-author commit statistics of the repo.
-	Committers(context.Context, CommittersOptions) ([]*Committer, error)
+	// ShortLog returns the per-author commit statistics of the repo.
+	ShortLog(context.Context, ShortLogOptions) ([]*PersonCount, error)
 
 	// Stat returns a FileInfo describing the named file at commit. If the file
 	// is a symbolic link, the returned FileInfo describes the symbolic link.
@@ -173,12 +173,9 @@ type CommitsOptions struct {
 	Path string // only commits modifying the given path are selected (optional)
 }
 
-// CommittersOptions specifies limits on the list of committers returned by
-// (Repository).Committers.
-type CommittersOptions struct {
-	N int // limit the number of returned committers, ordered by decreasing number of commits (0 means no limit)
-
-	Rev string // the rev for which committer stats will be fetched ("" means use the current revision)
+// ShortLogOptions contains options for (Repository).ShortLog.
+type ShortLogOptions struct {
+	Range string // the range for which stats will be fetched
 }
 
 // DiffOptions configures a diff.
