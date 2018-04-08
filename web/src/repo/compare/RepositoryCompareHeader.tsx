@@ -25,18 +25,18 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
     private static HEAD_INPUT_ID = 'repository-compare-header__head-spec'
 
     public state: State = {
-        comparisonBaseSpec: this.props.comparisonBaseSpec || '',
-        comparisonHeadSpec: this.props.comparisonHeadSpec || '',
+        comparisonBaseSpec: this.props.base.rev || '',
+        comparisonHeadSpec: this.props.head.rev || '',
     }
 
     public render(): JSX.Element | null {
         // Whether the user has entered new base/head values that differ from what's in the props and has not yet
         // submitted the form.
         const stateDiffers =
-            this.state.comparisonBaseSpec !== (this.props.comparisonBaseSpec || '') ||
-            this.state.comparisonHeadSpec !== (this.props.comparisonHeadSpec || '')
+            this.state.comparisonBaseSpec !== (this.props.base.rev || '') ||
+            this.state.comparisonHeadSpec !== (this.props.head.rev || '')
 
-        const specIsEmpty = this.props.comparisonBaseSpec === null && this.props.comparisonHeadSpec === null
+        const specIsEmpty = this.props.base === null && this.props.head === null
 
         return (
             <div className={`repository-compare-header area-header ${this.props.className}`}>
@@ -109,8 +109,8 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
     private onCancel: React.MouseEventHandler<HTMLButtonElement> = e => {
         e.preventDefault()
         this.setState({
-            comparisonBaseSpec: this.props.comparisonBaseSpec || '',
-            comparisonHeadSpec: this.props.comparisonHeadSpec || '',
+            comparisonBaseSpec: this.props.base.rev || '',
+            comparisonHeadSpec: this.props.head.rev || '',
         })
     }
 }

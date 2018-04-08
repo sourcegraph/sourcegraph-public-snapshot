@@ -1,6 +1,7 @@
 import { ArrowRight } from '@sourcegraph/icons/lib/ArrowRight'
 import { ChevronDown } from '@sourcegraph/icons/lib/ChevronDown'
 import { ChevronUp } from '@sourcegraph/icons/lib/ChevronUp'
+import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { toBlobURL } from '../../util/url'
@@ -9,11 +10,16 @@ import { FileDiffHunks } from './FileDiffHunks'
 
 export interface FileDiffNodeProps {
     node: GQL.IFileDiff
-    repoName: string
-    base: string
-    head: string
+
+    /** The base repository and revision. */
+    base: { repoPath: string; repoID: GQLID; rev: string; commitID: string }
+
+    /** The head repository and revision. */
+    head: { repoPath: string; repoID: GQLID; rev: string; commitID: string }
+
     lineNumbers: boolean
     className?: string
+    history: H.History
 }
 
 interface State {
@@ -29,8 +35,8 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
 
         const url =
             node.newPath !== null
-                ? toBlobURL({ repoPath: this.props.repoName, rev: this.props.head, filePath: node.newPath })
-                : toBlobURL({ repoPath: this.props.repoName, rev: this.props.base, filePath: node.oldPath! })
+                ? toBlobURL({ repoPath: this.props.head.repoPath, rev: this.props.head.rev, filePath: node.newPath })
+                : toBlobURL({ repoPath: this.props.base.repoPath, rev: this.props.base.rev, filePath: node.oldPath! })
 
         return (
             <div className={`file-diff-node card ${this.props.className || ''}`}>
@@ -69,8 +75,11 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                 {this.state.expanded && (
                     <FileDiffHunks
                         className="file-diff-node__hunks"
+                        base={{ ...this.props.base, filePath: node.oldPath }}
+                        head={{ ...this.props.head, filePath: node.newPath }}
                         hunks={node.hunks}
                         lineNumbers={this.props.lineNumbers}
+                        history={this.props.history}
                     />
                 )}
             </div>

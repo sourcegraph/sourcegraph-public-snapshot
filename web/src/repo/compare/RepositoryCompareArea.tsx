@@ -30,16 +30,14 @@ interface State {
  * Properties passed to all page components in the repository compare area.
  */
 export interface RepositoryCompareAreaPageProps {
-    /**
-     * The active repository.
-     */
+    /** The repository being compared. */
     repo: GQL.IRepository
 
-    /** The base Git revspec of the comparison. */
-    comparisonBaseSpec: string | null
+    /** The base of the comparison. */
+    base: { repoPath: string; repoID: GQLID; rev?: string | null }
 
-    /** The head Git revspec of the comparison. */
-    comparisonHeadSpec: string | null
+    /** The head of the comparison. */
+    head: { repoPath: string; repoID: GQLID; rev?: string | null }
 
     /** The URL route prefix for the comparison. */
     routePrefix: string
@@ -69,8 +67,8 @@ export class RepositoryCompareArea extends React.Component<Props> {
 
         const commonProps: RepositoryCompareAreaPageProps = {
             repo: this.props.repo,
-            comparisonBaseSpec: spec ? spec.base : null,
-            comparisonHeadSpec: spec ? spec.head : null,
+            base: { repoID: this.props.repo.id, repoPath: this.props.repo.uri, rev: spec && spec.base },
+            head: { repoID: this.props.repo.id, repoPath: this.props.repo.uri, rev: spec && spec.head },
             routePrefix: this.props.match.url,
         }
 
@@ -87,19 +85,22 @@ export class RepositoryCompareArea extends React.Component<Props> {
                 />
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
-                        {spec === null && <div className="alert alert-danger">Invalid comparison specifier</div>}
-                        <Switch>
-                            <Route
-                                path={`${this.props.match.url}`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <RepositoryCompareOverviewPage {...routeComponentProps} {...commonProps} />
-                                )}
-                            />
-                            <Route key="hardcoded-key" component={NotFoundPage} />
-                        </Switch>
+                        {spec === null ? (
+                            <div className="alert alert-danger">Invalid comparison specifier</div>
+                        ) : (
+                            <Switch>
+                                <Route
+                                    path={`${this.props.match.url}`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <RepositoryCompareOverviewPage {...routeComponentProps} {...commonProps} />
+                                    )}
+                                />
+                                <Route key="hardcoded-key" component={NotFoundPage} />
+                            </Switch>
+                        )}
                     </div>
                 </div>
             </div>

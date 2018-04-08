@@ -464,7 +464,7 @@ export function getTargetLineAndOffset(
     target: HTMLElement,
     boundary: HTMLElement,
     ignoreFirstChar = false
-): { line: number; character: number; word: string } | undefined {
+): { line: number; character: number; word: string; part?: 'old' | 'new' } | undefined {
     const origTarget = target
     while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && target !== boundary) {
         // Find ancestor which wraps the whole line of code, not just the target token.
@@ -474,12 +474,26 @@ export function getTargetLineAndOffset(
         // Make sure we're looking at an element we've annotated line number for (otherwise we have no idea )
         return undefined
     }
-    let line: number
+
+    let lineElement: HTMLElement
     if (target.classList.contains('line')) {
-        line = parseInt(target.getAttribute('data-line')!, 10)
+        lineElement = target
+    } else if (target.previousElementSibling && (target.previousElementSibling as HTMLElement).dataset.line) {
+        lineElement = target.previousElementSibling as HTMLTableDataCellElement
+    } else if (
+        target.previousElementSibling &&
+        target.previousElementSibling.previousElementSibling &&
+        (target.previousElementSibling.previousElementSibling as HTMLElement).dataset.line
+    ) {
+        lineElement = target.previousElementSibling.previousElementSibling as HTMLTableDataCellElement
     } else {
-        line = parseInt((target.previousElementSibling as HTMLTableDataCellElement).getAttribute('data-line')!, 10)
+        lineElement = target.parentElement as HTMLTableRowElement
     }
+    if (!lineElement || !lineElement.dataset.line) {
+        return undefined
+    }
+    const line = parseInt(lineElement.dataset.line!, 10)
+    const part = lineElement.dataset.part as 'old' | 'new' | undefined
 
     let character = 1
     // Iterate recursively over the current target's children until we find the original target;
@@ -512,7 +526,7 @@ export function getTargetLineAndOffset(
     }
     // Start recursion.
     if (findOrigTarget(target)) {
-        return { line, character, word: origTarget.innerText }
+        return { line, character, word: origTarget.innerText, part }
     }
     return undefined
 }

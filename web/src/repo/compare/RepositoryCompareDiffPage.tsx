@@ -87,11 +87,17 @@ export function queryRepositoryComparisonFileDiffs(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
+    /** The base of the comparison. */
+    base: { repoPath: string; repoID: GQLID; rev: string | null; commitID: string }
+
+    /** The head of the comparison. */
+    head: { repoPath: string; repoID: GQLID; rev: string | null; commitID: string }
+}
 
 class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'repoName' | 'base' | 'head' | 'lineNumbers' | 'className'>
+    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'history'>
 > {}
 
 /** A page with the file diffs in the comparison. */
@@ -108,10 +114,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
                 .pipe(
                     startWith(this.props),
                     distinctUntilChanged(
-                        (a, b) =>
-                            a.repo.id === b.repo.id &&
-                            a.comparisonBaseSpec === b.comparisonBaseSpec &&
-                            a.comparisonHeadSpec === b.comparisonHeadSpec
+                        (a, b) => a.repo.id === b.repo.id && a.base.rev === b.base.rev && a.head.rev === b.head.rev
                     )
                 )
                 .subscribe(() => this.updates.next())
@@ -136,10 +139,10 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
                     queryConnection={this.queryDiffs}
                     nodeComponent={FileDiffNode}
                     nodeComponentProps={{
-                        repoName: this.props.repo.uri,
-                        base: this.props.comparisonBaseSpec || 'HEAD',
-                        head: this.props.comparisonHeadSpec || 'HEAD',
+                        base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
+                        head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
                         lineNumbers: true,
+                        history: this.props.history,
                     }}
                     defaultFirst={25}
                     hideFilter={true}
@@ -155,7 +158,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,
-            base: this.props.comparisonBaseSpec,
-            head: this.props.comparisonHeadSpec,
+            base: this.props.base.commitID,
+            head: this.props.head.commitID,
         })
 }

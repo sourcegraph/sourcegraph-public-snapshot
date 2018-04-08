@@ -1,5 +1,4 @@
 import * as H from 'history'
-import isEmpty from 'lodash/isEmpty'
 import isEqual from 'lodash/isEqual'
 import omit from 'lodash/omit'
 import * as React from 'react'

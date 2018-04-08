@@ -25,7 +25,7 @@
         color: $color-text-1;
 
         &::before {
-            content: attr(data-line-number);
+            content: attr(data-line);
         }
     }
     &__content {
@@ -59,6 +59,8 @@
 .file-diff-hunks {
     overflow-x: auto;
     overflow-y: hidden;
+
+    position: relative;
 
     border-collapse: separate;
 

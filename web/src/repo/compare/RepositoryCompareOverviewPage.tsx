@@ -31,6 +31,16 @@ function queryRepositoryComparison(args: {
                         comparison(base: $base, head: $head) {
                             range {
                                 expr
+                                baseRevSpec {
+                                    object {
+                                        oid
+                                    }
+                                }
+                                headRevSpec {
+                                    object {
+                                        oid
+                                    }
+                                }
                             }
                         }
                     }
@@ -44,7 +54,15 @@ function queryRepositoryComparison(args: {
                 throw createAggregateError(errors)
             }
             const repo = data.node as GQL.IRepository
-            if (!repo.comparison || !repo.comparison.range || errors) {
+            if (
+                !repo.comparison ||
+                !repo.comparison.range ||
+                !repo.comparison.range.baseRevSpec ||
+                !repo.comparison.range.baseRevSpec.object ||
+                !repo.comparison.range.headRevSpec ||
+                !repo.comparison.range.headRevSpec.object ||
+                errors
+            ) {
                 throw createAggregateError(errors)
             }
             return repo.comparison.range
@@ -52,7 +70,13 @@ function queryRepositoryComparison(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
+    /** The base of the comparison. */
+    base: { repoPath: string; repoID: GQLID; rev?: string | null }
+
+    /** The head of the comparison. */
+    head: { repoPath: string; repoID: GQLID; rev?: string | null }
+}
 
 interface State {
     /** The comparison's range, null when no comparison is requested, undefined while loading, or an error. */
@@ -73,22 +97,19 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
             this.componentUpdates
                 .pipe(
                     distinctUntilChanged(
-                        (a, b) =>
-                            a.repo.id === b.repo.id &&
-                            a.comparisonBaseSpec === b.comparisonBaseSpec &&
-                            a.comparisonHeadSpec === b.comparisonHeadSpec
+                        (a, b) => a.repo.id === b.repo.id && a.base.rev === b.base.rev && a.head.rev === b.head.rev
                     ),
-                    switchMap(({ repo, comparisonBaseSpec, comparisonHeadSpec }) => {
+                    switchMap(({ repo, base, head }) => {
                         type PartialStateUpdate = Pick<State, 'rangeOrError'>
-                        if (!comparisonBaseSpec && !comparisonHeadSpec) {
+                        if (!base.rev && !head.rev) {
                             return of({ rangeOrError: null })
                         }
                         return merge(
                             of({ rangeOrError: undefined }),
                             queryRepositoryComparison({
                                 repo: repo.id,
-                                base: comparisonBaseSpec,
-                                head: comparisonHeadSpec,
+                                base: base.rev || null,
+                                head: head.rev || null,
                             }).pipe(catchError(error => [error]), map(c => ({ rangeOrError: c } as PartialStateUpdate)))
                         )
                     })
@@ -119,7 +140,21 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                     <>
                         <RepositoryCompareCommitsPage {...this.props} />
                         <div className="mb-3" />
-                        <RepositoryCompareDiffPage {...this.props} />
+                        <RepositoryCompareDiffPage
+                            {...this.props}
+                            base={{
+                                repoPath: this.props.base.repoPath,
+                                repoID: this.props.base.repoID,
+                                rev: this.props.base.rev || null,
+                                commitID: this.state.rangeOrError.baseRevSpec.object!.oid,
+                            }}
+                            head={{
+                                repoPath: this.props.head.repoPath,
+                                repoID: this.props.head.repoID,
+                                rev: this.props.head.rev || null,
+                                commitID: this.state.rangeOrError.headRevSpec.object!.oid,
+                            }}
+                        />
                     </>
                 )}
             </div>

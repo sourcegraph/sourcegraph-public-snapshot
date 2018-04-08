@@ -67,7 +67,7 @@ interface State {
 
 class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'repoName' | 'base' | 'head' | 'lineNumbers' | 'className'>
+    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'history'>
 > {}
 
 /** Displays a commit. */
@@ -147,10 +147,20 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
                                 queryConnection={this.queryDiffs}
                                 nodeComponent={FileDiffNode}
                                 nodeComponentProps={{
-                                    repoName: this.props.repo.uri,
-                                    base: commitParentOrEmpty(this.state.commitOrError),
-                                    head: this.state.commitOrError.oid,
-                                    lineNumbers: false,
+                                    base: {
+                                        repoPath: this.props.repo.uri,
+                                        repoID: this.props.repo.id,
+                                        rev: commitParentOrEmpty(this.state.commitOrError),
+                                        commitID: commitParentOrEmpty(this.state.commitOrError),
+                                    },
+                                    head: {
+                                        repoPath: this.props.repo.uri,
+                                        repoID: this.props.repo.id,
+                                        rev: this.state.commitOrError.oid,
+                                        commitID: this.state.commitOrError.oid,
+                                    },
+                                    lineNumbers: true,
+                                    history: this.props.history,
                                 }}
                                 defaultFirst={25}
                                 hideFilter={true}
