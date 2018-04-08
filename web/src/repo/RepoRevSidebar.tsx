@@ -3,6 +3,8 @@ import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
+import { fromEvent } from 'rxjs/observable/fromEvent'
+import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
@@ -124,6 +126,16 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 .subscribe(files => this.setState({ files }), err => this.setState({ error: err.message }))
         )
         this.specChanges.next({ repoPath: this.props.repoPath, commitID: this.props.commitID })
+
+        // Toggle sidebar visibility when the user presses 'alt+s'.
+        this.subscriptions.add(
+            fromEvent<KeyboardEvent>(window, 'keydown')
+                .pipe(filter(event => event.altKey && event.keyCode === 83))
+                .subscribe(event => {
+                    event.preventDefault()
+                    this.setState(prevState => ({ showSidebar: !prevState.showSidebar }))
+                })
+        )
     }
 
     public componentWillReceiveProps(props: Props): void {
@@ -143,7 +155,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                     type="button"
                     className={`btn btn-icon repo-rev-sidebar-toggle ${this.props.className}-toggle`}
                     onClick={this.onSidebarToggle}
-                    data-tooltip="Show sidebar"
+                    data-tooltip="Show sidebar (Alt+S/Opt+S)"
                 >
                     <ListIcon />
                 </button>
@@ -171,7 +183,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 <button
                                     onClick={this.onSidebarToggle}
                                     className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
-                                    data-tooltip="Close"
+                                    data-tooltip="Close sidebar (Alt+S/Opt+S)"
                                 >
                                     <CloseIcon />
                                 </button>
