@@ -787,6 +787,8 @@ type Repository implements Node {
     contributors(
         # The Git revision range to compute contributors in.
         range: String
+        # Return contributors to files in this path.
+        path: String
         # Returns the first n contributors from the list.
         first: Int
     ): RepositoryContributorConnection!
@@ -1019,6 +1021,11 @@ type RepositoryContributor {
     count: Int!
     # The repository in which the contributions occurred.
     repository: Repository!
+    # Commits by the contributor.
+    commits(
+        # Return the first n commits.
+        first: Int
+    ): GitCommitConnection!
 }
 
 # A code symbol (e.g., a function, variable, type, class, etc.).

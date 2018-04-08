@@ -1,6 +1,28 @@
 .repository-contributor-node {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+
+    &__count {
+        min-width: 2rem;
+        text-align: right;
+        margin-right: 1rem;
+        flex: none;
+    }
+    &__person {
+        min-width: 25%;
+        flex: none;
+        padding-right: 1.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    &__commit {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1 1;
+        min-width: 16rem;
+    }
 
     .badge {
         cursor: default;

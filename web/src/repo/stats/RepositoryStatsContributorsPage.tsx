@@ -1,9 +1,10 @@
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router-dom'
+import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
+import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
@@ -16,15 +17,31 @@ interface ContributorNodeProps {
     node: GQL.IRepositoryContributor
 }
 
-export const RepositoryContributorNode: React.SFC<ContributorNodeProps> = ({ node }) => (
-    <div className="repository-contributor-node list-group-item py-2">
-        <UserAvatar className="icon-inline mr-1" user={node.person} />
-        <PersonLink className="mr-1" userClassName="font-weight-bold" {...node.person} />{' '}
-        <span className="badge badge-primary" data-tooltip={`${node.count} ${pluralize('contribution', node.count)}`}>
-            {node.count}
-        </span>
-    </div>
-)
+export const RepositoryContributorNode: React.SFC<ContributorNodeProps> = ({ node }) => {
+    const commit = node.commits.nodes[0]
+    return (
+        <div className="repository-contributor-node list-group-item py-2">
+            <div className="repository-contributor-node__count">
+                <span
+                    className="badge badge-primary"
+                    data-tooltip={`${node.count} ${pluralize('contribution', node.count)}`}
+                >
+                    {node.count}
+                </span>
+            </div>
+            <div className="repository-contributor-node__person">
+                <UserAvatar className="icon-inline mr-2" user={node.person} />
+                <PersonLink userClassName="font-weight-bold" {...node.person} />
+            </div>
+            <div className="repository-contributor-node__commit">
+                <Timestamp date={commit.author.date} />:{' '}
+                <Link to={commit.url} className="repository-contributor-node__commit-subject">
+                    {commit.subject}
+                </Link>
+            </div>
+        </div>
+    )
+}
 
 const queryRepositoryContributors = memoizeObservable(
     (args: { repo: GQLID; first?: number; range?: string }): Observable<GQL.IRepositoryContributorConnection> =>
@@ -46,6 +63,17 @@ const queryRepositoryContributors = memoizeObservable(
                                         }
                                     }
                                     count
+                                    commits(first: 1) {
+                                        nodes {
+                                            oid
+                                            abbreviatedOID
+                                            url
+                                            subject
+                                            author {
+                                                date
+                                            }
+                                        }
+                                    }
                                 }
                                 totalCount
                                 pageInfo {

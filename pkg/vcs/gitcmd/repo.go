@@ -445,6 +445,10 @@ func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions) (args []string,
 		args = append(args, "--skip="+strconv.FormatUint(uint64(opt.Skip), 10))
 	}
 
+	if opt.Author != "" {
+		args = append(args, "--fixed-strings", "--author="+opt.Author)
+	}
+
 	if opt.MessageQuery != "" {
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
 	}

@@ -11,9 +11,10 @@ import (
 type gitCommitConnectionResolver struct {
 	range_ string
 
-	first *int32
-	query *string
-	path  *string
+	first  *int32
+	query  *string
+	path   *string
+	author *string
 
 	repo *repositoryResolver
 
@@ -40,10 +41,15 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commi
 		if r.path != nil {
 			path = *r.path
 		}
+		var author string
+		if r.author != nil {
+			author = *r.author
+		}
 		return vcsrepo.Commits(ctx, vcs.CommitsOptions{
 			Range:        r.range_,
 			N:            uint(n),
 			MessageQuery: query,
+			Author:       author,
 			Path:         path,
 		})
 	}

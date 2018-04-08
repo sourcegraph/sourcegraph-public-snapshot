@@ -8,20 +8,25 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-func (r *repositoryResolver) Contributors(args *struct {
+type repositoryContributorsArgs struct {
 	Range *string
+	Path  *string
+}
+
+func (r *repositoryResolver) Contributors(args *struct {
+	repositoryContributorsArgs
 	First *int32
 }) *repositoryContributorConnectionResolver {
 	return &repositoryContributorConnectionResolver{
-		range_: args.Range,
-		first:  args.First,
-		repo:   r,
+		args:  args.repositoryContributorsArgs,
+		first: args.First,
+		repo:  r,
 	}
 }
 
 type repositoryContributorConnectionResolver struct {
-	range_ *string
-	first  *int32
+	args  repositoryContributorsArgs
+	first *int32
 
 	repo *repositoryResolver
 
@@ -34,8 +39,8 @@ type repositoryContributorConnectionResolver struct {
 func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*vcs.PersonCount, error) {
 	r.once.Do(func() {
 		var opt vcs.ShortLogOptions
-		if r.range_ != nil {
-			opt.Range = *r.range_
+		if r.args.Range != nil {
+			opt.Range = *r.args.Range
 		}
 
 		vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
@@ -61,6 +66,7 @@ func (r *repositoryContributorConnectionResolver) Nodes(ctx context.Context) ([]
 			email: contributor.Email,
 			count: contributor.Count,
 			repo:  r.repo,
+			args:  r.args,
 		}
 	}
 	return resolvers, nil

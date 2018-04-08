@@ -170,6 +170,8 @@ type CommitsOptions struct {
 
 	MessageQuery string // include only commits whose commit message contains this substring
 
+	Author string // include only commits whose author matches this
+
 	Path string // only commits modifying the given path are selected (optional)
 }
 
