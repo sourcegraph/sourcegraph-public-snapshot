@@ -14,13 +14,6 @@ registerLanguage('java', require('highlight.js/lib/languages/java'))
 registerLanguage('python', require('highlight.js/lib/languages/python'))
 registerLanguage('php', require('highlight.js/lib/languages/php'))
 
-let tooltip: HTMLElement
-let loadingTooltip: HTMLElement
-let tooltipActions: HTMLElement
-let j2dAction: HTMLAnchorElement
-let findRefsAction: HTMLAnchorElement
-let moreContext: HTMLElement
-
 const closeIconSVG =
     // tslint:disable-next-line:max-line-length
     '<svg width="10px" height="10px"><path xmlns="http://www.w3.org/2000/svg" id="path0_fill" d="M 7.8565 7.86521C 7.66117 8.06054 7.3445 8.06054 7.14917 7.86521L 3.99917 4.71521L 0.851833 7.86254C 0.655167 8.05721 0.3385 8.05521 0.1445 7.85854C -0.0481667 7.66388 -0.0481667 7.34988 0.1445 7.15454L 3.29183 4.00721L 0.145167 0.860543C -0.0475001 0.663209 -0.0428332 0.346543 0.155167 0.153876C 0.349167 -0.0347905 0.6585 -0.0347905 0.8525 0.153876L 3.99917 3.30054L 7.1485 0.151209C 7.34117 -0.0467907 7.65783 -0.0507906 7.85583 0.141876C 8.05383 0.334543 8.05783 0.651209 7.86517 0.849209C 7.86183 0.852543 7.85917 0.855209 7.85583 0.858543L 4.7065 4.00788L 7.8565 7.15788C 8.05183 7.35321 8.0525 7.66988 7.8565 7.86521Z" /></svg >'
@@ -38,31 +31,55 @@ export interface TooltipData extends Partial<Hover> {
     loading?: boolean
 }
 
+/** Internal state for the tooltip. */
+interface TooltipElements {
+    /** The scrollable element in which the tooltip is attached. */
+    scrollable: HTMLElement
+
+    /** The tooltip element itself. */
+    tooltip: HTMLElement
+
+    loadingTooltip: HTMLElement
+    tooltipActions: HTMLElement
+    j2dAction: HTMLAnchorElement
+    findRefsAction: HTMLAnchorElement
+    moreContext: HTMLElement
+}
+
+/** The tooltip elements, a singleton. */
+let Elems: TooltipElements | undefined
+
 /**
- * createTooltips initializes the DOM elements used for the hover
- * tooltip and "Loading..." text indicator, adding the former
- * to the DOM (but hidden). It is idempotent.
+ * createTooltips initializes the DOM elements used for the hover tooltip and "Loading..." text indicator, adding
+ * the former to the DOM (but hidden). It is idempotent.
+ *
+ * Because the tooltip should scroll in sync with the code, it is created within a scrollable element.
  */
-export function createTooltips(): void {
-    if (document.querySelector('.sg-tooltip')) {
-        return // idempotence
+export function createTooltips(scrollableElement: HTMLElement): void {
+    if (Elems && Elems.scrollable === scrollableElement) {
+        return // idempotent
+    }
+    if (Elems) {
+        // Remove old tooltip.
+        Elems.tooltip.remove()
+        Elems.loadingTooltip.remove()
     }
 
-    tooltip = document.createElement('CODE')
+    const tooltip = document.createElement('CODE')
     tooltip.className = 'tooltip'
     tooltip.classList.add('sg-tooltip')
     tooltip.style.visibility = 'hidden'
 
-    document.querySelector('.blob')!.appendChild(tooltip)
+    scrollableElement.appendChild(tooltip)
 
-    loadingTooltip = document.createElement('DIV')
+    const loadingTooltip = document.createElement('DIV')
     loadingTooltip.appendChild(document.createTextNode('Loading...'))
     loadingTooltip.className = 'tooltip__loading'
 
-    tooltipActions = document.createElement('DIV')
+    const tooltipActions = document.createElement('DIV')
     tooltipActions.className = 'tooltip__actions'
 
-    moreContext = document.createElement('DIV')
+    const moreContext = document.createElement('DIV')
     moreContext.className = 'tooltip__more-actions'
     moreContext.appendChild(document.createTextNode('Click for more actions'))
 
@@ -70,7 +87,7 @@ export function createTooltips(): void {
     definitionIcon.innerHTML = definitionIconSVG
     definitionIcon.className = 'tooltip__definition-icon'
 
-    j2dAction = document.createElement('A') as HTMLAnchorElement
+    const j2dAction = document.createElement('A') as HTMLAnchorElement
     j2dAction.appendChild(definitionIcon)
     j2dAction.appendChild(document.createTextNode('Go to definition'))
     j2dAction.className = `btn btn-sm BtnGroup-item`
@@ -81,7 +98,7 @@ export function createTooltips(): void {
     referencesIcon.innerHTML = referencesIconSVG
     referencesIcon.className = 'tooltip__references-icon'
 
-    findRefsAction = document.createElement('A') as HTMLAnchorElement
+    const findRefsAction = document.createElement('A') as HTMLAnchorElement
     findRefsAction.appendChild(referencesIcon)
     findRefsAction.appendChild(document.createTextNode('Find references'))
     findRefsAction.className = 'tooltip__action'
@@ -89,26 +106,40 @@ export function createTooltips(): void {
 
     tooltipActions.appendChild(j2dAction)
     tooltipActions.appendChild(findRefsAction)
+
+    Elems = {
+        scrollable: scrollableElement,
+        tooltip,
+        loadingTooltip,
+        tooltipActions,
+        j2dAction,
+        findRefsAction,
+        moreContext,
+    }
 }
 
 function constructBaseTooltip(): void {
-    tooltip.appendChild(loadingTooltip)
-    tooltip.appendChild(moreContext)
-    tooltip.appendChild(tooltipActions)
+    if (!Elems) {
+        throw new Error('tooltip is not created')
+    }
+
+    Elems.tooltip.appendChild(Elems.loadingTooltip)
+    Elems.tooltip.appendChild(Elems.moreContext)
+    Elems.tooltip.appendChild(Elems.tooltipActions)
 }
 
 /**
  * hideTooltip makes the tooltip on the DOM invisible.
  */
 export function hideTooltip(): void {
-    if (!tooltip) {
+    if (!Elems) {
         return
     }
 
-    while (tooltip.firstChild) {
-        tooltip.removeChild(tooltip.firstChild)
+    while (Elems.tooltip.firstChild) {
+        Elems.tooltip.removeChild(Elems.tooltip.firstChild)
     }
-    tooltip.style.visibility = 'hidden' // prevent black dot of empty content
+    Elems.tooltip.style.visibility = 'hidden' // prevent black dot of empty content
 }
 
 interface Actions {
@@ -131,40 +162,45 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
     }
 
     constructBaseTooltip()
-    loadingTooltip.style.display = loading ? 'block' : 'none'
-    moreContext.style.display = docked || loading ? 'none' : 'flex'
-    tooltipActions.style.display = docked ? 'flex' : 'none'
+    if (!Elems) {
+        throw new Error('tooltip is not created')
+    }
+    Elems.loadingTooltip.style.display = loading ? 'block' : 'none'
+    Elems.moreContext.style.display = docked || loading ? 'none' : 'flex'
+    Elems.tooltipActions.style.display = docked ? 'flex' : 'none'
 
     // The j2d and find refs buttons/actions are only displayed/executable if the tooltip
     // is docked. Otherwise, setting styles, handlers, and other props is unnecessary.
     if (docked) {
-        j2dAction.href = data.defUrlOrError && typeof data.defUrlOrError === 'string' ? data.defUrlOrError : ''
+        Elems.j2dAction.href = data.defUrlOrError && typeof data.defUrlOrError === 'string' ? data.defUrlOrError : ''
 
         // Omit the current location's search options when comparing, as those are cleared
         // when we navigate.
-        const destinationIsCurrentLocation = j2dAction.href === urlWithoutSearchOptions(window.location)
+        const destinationIsCurrentLocation = Elems.j2dAction.href === urlWithoutSearchOptions(window.location)
         if (data.defUrlOrError && typeof data.defUrlOrError === 'string' && !destinationIsCurrentLocation) {
-            j2dAction.style.cursor = 'pointer'
-            j2dAction.onclick = actions.definition(parseBrowserRepoURL(data.defUrlOrError) as AbsoluteRepoFilePosition)
-            j2dAction.title = ''
+            Elems.j2dAction.style.cursor = 'pointer'
+            Elems.j2dAction.onclick = actions.definition(parseBrowserRepoURL(
+                data.defUrlOrError
+            ) as AbsoluteRepoFilePosition)
+            Elems.j2dAction.title = ''
         } else {
-            j2dAction.style.cursor = 'not-allowed'
-            j2dAction.onclick = () => false
-            j2dAction.title =
+            Elems.j2dAction.style.cursor = 'not-allowed'
+            Elems.j2dAction.onclick = () => false
+            Elems.j2dAction.title =
                 data.defUrlOrError && typeof data.defUrlOrError !== 'string' ? data.defUrlOrError.message : ''
         }
 
-        findRefsAction.onclick = actions.references(ctx)
+        Elems.findRefsAction.onclick = actions.references(ctx)
 
         if (ctx) {
-            findRefsAction.href = toAbsoluteBlobURL({ ...ctx, viewState: 'references' })
+            Elems.findRefsAction.href = toAbsoluteBlobURL({ ...ctx, viewState: 'references' })
         } else {
-            findRefsAction.href = ''
+            Elems.findRefsAction.href = ''
         }
     }
 
     if (!loading) {
-        loadingTooltip.style.visibility = 'hidden'
+        Elems.loadingTooltip.style.visibility = 'hidden'
 
         if (!data.contents) {
             return
@@ -196,7 +232,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         tooltipText.appendChild(document.createTextNode(title))
 
         container.appendChild(tooltipText)
-        tooltip.insertBefore(container, moreContext)
+        Elems.tooltip.insertBefore(container, Elems.moreContext)
 
         const closeContainer = document.createElement('a')
         closeContainer.className = 'tooltip__close-icon'
@@ -215,46 +251,46 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
             const tooltipDoc = document.createElement('DIV')
             tooltipDoc.className = 'tooltip__doc'
             tooltipDoc.innerHTML = marked(doc, { gfm: true, breaks: true, sanitize: true })
-            tooltip.insertBefore(tooltipDoc, moreContext)
+            Elems.tooltip.insertBefore(tooltipDoc, Elems.moreContext)
 
             // Handle scrolling ourselves so that scrolling to the bottom of
             // the tooltip documentation does not cause the page to start
             // scrolling (which is a very jarring experience).
-            tooltip.addEventListener('wheel', (e: WheelEvent) => {
+            Elems.tooltip.addEventListener('wheel', (e: WheelEvent) => {
                 e.preventDefault()
                 tooltipDoc.scrollTop += e.deltaY
             })
         }
     } else {
-        loadingTooltip.style.visibility = 'visible'
+        Elems.loadingTooltip.style.visibility = 'visible'
     }
 
-    const scrollingElement = document.querySelector('.blob')!
-    const scrollingElementBound = scrollingElement.getBoundingClientRect()
-    const blobTable = document.querySelector('.blob > table')! // table that we're positioning tooltips relative to.
-    const tableBound = blobTable.getBoundingClientRect() // tables bounds
+    // The scrollable element is the one with scrollbars. The scrolling element is the one with the content.
+    const scrollableBounds = Elems.scrollable.getBoundingClientRect()
+    const scrollingElement = Elems.scrollable.firstElementChild! // table that we're positioning tooltips relative to.
+    const scrollingBounds = scrollingElement.getBoundingClientRect() // tables bounds
     const targetBound = target.getBoundingClientRect() // our target elements bounds
 
     // Anchor it horizontally, prior to rendering to account for wrapping
     // changes to vertical height if the tooltip is at the edge of the viewport.
-    const relLeft = targetBound.left - tableBound.left
-    tooltip.style.left = relLeft + 'px'
+    const relLeft = targetBound.left - scrollingBounds.left
+    Elems.tooltip.style.left = relLeft + 'px'
 
     // Anchor the tooltip vertically.
-    const tooltipBound = tooltip.getBoundingClientRect()
-    const relTop = targetBound.top + scrollingElement.scrollTop - scrollingElementBound.top
+    const tooltipBound = Elems.tooltip.getBoundingClientRect()
+    const relTop = targetBound.top + Elems.scrollable.scrollTop - scrollableBounds.top
     const margin = 5
     let tooltipTop = relTop - (tooltipBound.height + margin)
-    if (tooltipTop - scrollingElement.scrollTop < 0) {
+    if (tooltipTop - Elems.scrollable.scrollTop < 0) {
         // Tooltip wouldn't be visible from the top, so display it at the
         // bottom.
-        const relBottom = targetBound.bottom + scrollingElement.scrollTop - scrollingElementBound.top
+        const relBottom = targetBound.bottom + Elems.scrollable.scrollTop - scrollableBounds.top
         tooltipTop = relBottom + margin
     }
-    tooltip.style.top = tooltipTop + 'px'
+    Elems.tooltip.style.top = tooltipTop + 'px'
 
     // Make it all visible to the user.
-    tooltip.style.visibility = 'visible'
+    Elems.tooltip.style.visibility = 'visible'
 }
 
 /**

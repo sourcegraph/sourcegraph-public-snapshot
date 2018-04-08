@@ -227,7 +227,11 @@ export class Blob extends React.Component<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         hideTooltip()
-        createTooltips()
+        if (this.blobElement) {
+            createTooltips(this.blobElement)
+        } else {
+            console.warn('No blob element in which to create tooltip.')
+        }
 
         const parsedHash = parseHash(this.props.location.hash)
         if (!parsedHash.viewState) {
@@ -275,7 +279,7 @@ export class Blob extends React.Component<Props, State> {
         if (ref) {
             // This is the first time the component is ever mounted. We need to set initial scroll.
             this.scrollToLine(this.props)
-            createTooltips()
+            createTooltips(ref)
             this.addEventListeners(ref, this.props)
             const parsedHash = parseHash(this.props.location.hash)
             if (parsedHash.line && parsedHash.character) {
