@@ -139,9 +139,6 @@ func WalkURIFields(o interface{}, collect func(lsp.DocumentURI), update func(lsp
 	walk(o)
 }
 
-// TODO(keegancsmith) work out why we have so many custom initializeparams
-// that look similiar.
-
 // ClientProxyInitializeParams are sent by the client to the proxy in
 // the "initialize" request. It has a non-standard field "mode", which
 // is the name of the language (using vscode terminology); "go" or
