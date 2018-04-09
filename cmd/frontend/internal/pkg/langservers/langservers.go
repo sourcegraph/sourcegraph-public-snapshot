@@ -79,7 +79,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		DisplayName: "Java",
 		HomepageURL: "https://github.com/sourcegraph/java-langserver-docs",
 		IssuesURL:   "https://github.com/sourcegraph/java-langserver-docs/issues",
-		DocsURL:     "https://github.com/sourcegraph/java-langserver-docs/blob/master/README.md,
+		DocsURL:     "https://github.com/sourcegraph/java-langserver-docs/blob/master/README.md",
 		siteConfig:  schema.Langservers{Language: "php", Address: "tcp://java:2088"},
 	},
 	"php": {
