@@ -19,6 +19,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where the site-admin Updates page would incorrectly report that update checking was turned off when `telemetryDisabled` was set, even as it continued to report new updates.
 * `repo:` filters that match multiple repositories and contain a revision specifier now correctly return partial results even if some of the matching repositories don't have a matching revision.
 * Removed hardcoded list of supported languages for code intelligence. Any language can work now and support is determined from the server response.
+* Fixed an issue where modifying `config.json` on disk would not correctly mark the server as needing a restart.
 
 ### Added
 
