@@ -23,50 +23,6 @@ type BitbucketServerConnection struct {
 	Username                    string `json:"username,omitempty"`
 }
 
-// ContainerOverrides
-type ContainerOverrides struct {
-	Image    string            `json:"image,omitempty"`
-	Limits   *ResourceOverride `json:"limits,omitempty"`
-	Requests *ResourceOverride `json:"requests,omitempty"`
-}
-
-// DatacenterOpsConfiguration Configuration for Sourcegraph Datacenter Ops. Defines all config parameters that can be used to change the operational parameters of Sourcegraph Datacenter (e.g., for scaling).
-type DatacenterOpsConfiguration struct {
-	AlertmanagerConfig      string                          `json:"alertmanagerConfig,omitempty"`
-	AlertmanagerURL         string                          `json:"alertmanagerURL,omitempty"`
-	AuthProxyIP             string                          `json:"authProxyIP,omitempty"`
-	AuthProxyPassword       string                          `json:"authProxyPassword,omitempty"`
-	DeploymentOverrides     map[string]*DeploymentOverrides `json:"deploymentOverrides,omitempty"`
-	ExperimentIndexedSearch bool                            `json:"experimentIndexedSearch,omitempty"`
-	GitoliteIP              string                          `json:"gitoliteIP,omitempty"`
-	GitserverCount          int                             `json:"gitserverCount,omitempty"`
-	GitserverDiskSize       string                          `json:"gitserverDiskSize,omitempty"`
-	GitserverSSH            map[string]string               `json:"gitserverSSH,omitempty"`
-	HttpNodePort            int                             `json:"httpNodePort,omitempty"`
-	HttpsNodePort           int                             `json:"httpsNodePort,omitempty"`
-	LangGo                  bool                            `json:"langGo,omitempty"`
-	LangJava                bool                            `json:"langJava,omitempty"`
-	LangJavaScript          bool                            `json:"langJavaScript,omitempty"`
-	LangPHP                 bool                            `json:"langPHP,omitempty"`
-	LangPython              bool                            `json:"langPython,omitempty"`
-	LangSwift               bool                            `json:"langSwift,omitempty"`
-	LangTypeScript          bool                            `json:"langTypeScript,omitempty"`
-	NodeSSDPath             string                          `json:"nodeSSDPath,omitempty"`
-	PhabricatorIP           string                          `json:"phabricatorIP,omitempty"`
-	Prometheus              *Prometheus                     `json:"prometheus,omitempty"`
-	PyPIIP                  string                          `json:"pyPIIP,omitempty"`
-	StorageClass            string                          `json:"storageClass,omitempty"`
-	UseAlertManager         bool                            `json:"useAlertManager,omitempty"`
-	UseRBAC                 bool                            `json:"useRBAC,omitempty"`
-}
-
-// DeploymentOverrides
-type DeploymentOverrides struct {
-	Containers   map[string]*ContainerOverrides `json:"containers,omitempty"`
-	NodeSelector map[string]string              `json:"nodeSelector,omitempty"`
-	Replicas     *int                           `json:"replicas,omitempty"`
-}
-
 // ExperimentalFeatures Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
 	FileHistorySidebar     string `json:"fileHistorySidebar,omitempty"`
@@ -139,12 +95,6 @@ type Phabricator struct {
 	Url   string  `json:"url,omitempty"`
 }
 
-// Prometheus Prometheus configuration. Set this to enable Prometheus for performance monitoring.
-type Prometheus struct {
-	CustomRules     string `json:"customRules,omitempty"`
-	NoDefaultAlerts bool   `json:"noDefaultAlerts,omitempty"`
-}
-
 // Repos
 type Repos struct {
 	Callsign string `json:"callsign"`
@@ -157,12 +107,6 @@ type Repository struct {
 	Path  string `json:"path"`
 	Type  string `json:"type,omitempty"`
 	Url   string `json:"url"`
-}
-
-// ResourceOverride
-type ResourceOverride struct {
-	Cpu    string `json:"cpu,omitempty"`
-	Memory string `json:"memory,omitempty"`
 }
 
 // SAMLAuthProvider Configures the SAML authentication provider for SSO.
