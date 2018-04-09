@@ -104,7 +104,7 @@ var (
 
 func init() {
 	// Read configuration initially.
-	if err := initConfig(); err != nil {
+	if err := initConfig(false); err != nil {
 		log.Fatalf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
 	}
 
@@ -121,7 +121,7 @@ func init() {
 			}
 			if IsDirty() {
 				// Read the new configuration from disk.
-				if err := initConfig(); err != nil {
+				if err := initConfig(true); err != nil {
 					log.Printf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
 				}
 				if signalDoneReading != nil {
@@ -190,7 +190,7 @@ func parseConfig(data string) (*schema.SiteConfiguration, error) {
 	return &tmpConfig, nil
 }
 
-func initConfig() error {
+func initConfig(reinitialize bool) error {
 	rawConfig, err := readConfig()
 	if err != nil {
 		return err
@@ -211,8 +211,14 @@ func initConfig() error {
 	}
 
 	cfgMu.Lock()
+	defer cfgMu.Unlock()
+	if reinitialize {
+		// Update global "needs restart" state.
+		if needRestartToApply(cfg, tmpConfig) {
+			markNeedServerRestart()
+		}
+	}
 	cfg = tmpConfig
-	cfgMu.Unlock()
 	return nil
 }
 
