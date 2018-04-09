@@ -5,7 +5,7 @@
 DATA=/tmp/sourcegraph
 
 echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-read clean 
+read clean
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
     echo "deleting $DATA"
@@ -26,4 +26,5 @@ gcloud docker -- run "$@" \
  --name sourcegraph \
  --volume $DATA/config:/etc/sourcegraph \
  --volume $DATA/data:/var/opt/sourcegraph \
+ -v /var/run/docker.sock:/var/run/docker.sock \
  $IMAGE
