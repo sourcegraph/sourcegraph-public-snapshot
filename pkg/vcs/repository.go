@@ -234,12 +234,6 @@ type TextSearchOptions struct {
 // PathOptions contains common options for commands that can be limited
 // to only certain paths.
 type PathOptions struct {
-	// ArgsHint, if provided, is passed directly to the Git command as the paths to limit the
-	// operation to. If it's not provided, the command is run over all paths and the output
-	// is filtered afterwards to only those items affecting the paths specified in this struct's
-	// other values.
-	ArgsHint []string
-
 	IncludePatterns []string // include paths matching all of these patterns
 	ExcludePattern  string   // exclude paths matching any of these patterns
 	IsRegExp        bool     // whether the pattern is a regexp (if false, treated as exact string)

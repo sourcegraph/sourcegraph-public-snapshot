@@ -217,7 +217,6 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 			ExcludePattern:  strv(op.info.ExcludePattern),
 			IsCaseSensitive: op.info.PathPatternsAreCaseSensitive,
 			IsRegExp:        op.info.PathPatternsAreRegExps,
-			// TODO(sqs): use ArgsHint for better perf
 		},
 		Diff:              op.diff,
 		OnlyMatchingHunks: true,
