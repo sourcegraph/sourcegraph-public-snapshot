@@ -25,9 +25,9 @@ export class ThemeSwitcher extends React.PureComponent<Props, {}> {
                 onClick={this.props.onThemeChange}
                 data-tooltip={this.props.isLightTheme ? 'Switch to dark color theme' : 'Switch to light color theme'}
             >
-                <div className="theme-switcher__button btn-icon">
+                <button className="theme-switcher__button btn-icon">
                     {this.props.isLightTheme ? <MoonIcon /> : <SunIcon />}
-                </div>
+                </button>
             </div>
         )
     }

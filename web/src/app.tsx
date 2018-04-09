@@ -12,8 +12,9 @@ import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
-import './components/tooltip/Tooltip'
 import { Tooltip } from './components/tooltip/Tooltip'
+import './components/tooltip/Tooltip'
+import { TwitterFeedbackForm } from './components/TwitterFeedbackForm'
 import { LinkExtension } from './extension/Link'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
@@ -31,6 +32,9 @@ interface LayoutProps extends RouteComponentProps<any> {
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     onFilterChosen: (value: string) => void
+    showTwitterFeedbackForm: boolean
+    onTwitterFeedbackFormClose: () => void
+    onShowTwitterFeedbackForm: () => void
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -46,6 +50,9 @@ const Layout: React.SFC<LayoutProps> = props => {
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
             {!needsSiteInit && !isSiteInit && !!props.user && <IntegrationsToast history={props.history} />}
             {!hideNavbar && <Navbar {...props} />}
+            {props.showTwitterFeedbackForm && (
+                <TwitterFeedbackForm user={props.user} onDismiss={props.onTwitterFeedbackFormClose} />
+            )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
                 {routes.map((route, i) => {
@@ -92,6 +99,7 @@ interface AppState {
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
+    showTwitterFeedbackForm: boolean
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -103,6 +111,7 @@ class App extends React.Component<{}, AppState> {
     public state: AppState = {
         isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
         navbarSearchQuery: '',
+        showTwitterFeedbackForm: false,
     }
 
     private subscriptions = new Subscription()
@@ -178,6 +187,9 @@ class App extends React.Component<{}, AppState> {
             navbarSearchQuery={this.state.navbarSearchQuery}
             onNavbarQueryChange={this.onNavbarQueryChange}
             onFilterChosen={this.onFilterChosen}
+            showTwitterFeedbackForm={this.state.showTwitterFeedbackForm}
+            onShowTwitterFeedbackForm={this.onShowTwitterFeedbackForm}
+            onTwitterFeedbackFormClose={this.onTwitterFeedbackFormClose}
         />
     )
 
@@ -189,9 +201,16 @@ class App extends React.Component<{}, AppState> {
             }
         )
     }
+    private onShowTwitterFeedbackForm = () => {
+        this.setState({ showTwitterFeedbackForm: true })
+    }
 
-    private onNavbarQueryChange = (query: string) => {
-        this.setState(state => ({ navbarSearchQuery: query }))
+    private onTwitterFeedbackFormClose = () => {
+        this.setState({ showTwitterFeedbackForm: false })
+    }
+
+    private onNavbarQueryChange = (navbarSearchQuery: string) => {
+        this.setState({ navbarSearchQuery })
     }
 
     // Used for search scopes and dynamic filters

@@ -1,5 +1,6 @@
 import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
 import ChevronUpIcon from '@sourcegraph/icons/lib/ChevronUp'
+import EmoticonIcon from '@sourcegraph/icons/lib/Emoticon'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -18,6 +19,9 @@ interface Props {
     showScopes?: boolean
     onShowScopes?: () => void
     className?: string
+    showTwitterFeedbackForm?: boolean
+    onTwitterFeedbackFormClose?: () => void
+    onShowTwitterFeedbackForm?: () => void
 }
 
 interface State {
@@ -110,6 +114,13 @@ export class NavLinks extends React.Component<Props, State> {
                         )}
                     </Link>
                 )}
+                <button
+                    onClick={this.props.onShowTwitterFeedbackForm}
+                    data-tooltip="Send feedback"
+                    className="btn btn-link nav-links__twitter-feedback"
+                >
+                    <EmoticonIcon className="icon-inline" />
+                </button>
                 {!this.state.user &&
                     this.props.location.pathname !== '/sign-in' && (
                         <Link className="nav-links__link btn btn-primary" to="/sign-in">

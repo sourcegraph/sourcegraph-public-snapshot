@@ -1,0 +1,56 @@
+// no need for light theme, since the feedback form only has a light theme design
+.twitter-feedback-form {
+    position: fixed;
+    right: 2rem;
+    top: 4rem;
+    z-index: 50; // Overlay any page contents
+    padding: 1rem;
+    display: flex;
+    border-radius: 0.25rem;
+    border: 1px solid $color-light-border;
+
+    &__close {
+        position: absolute;
+        top: 0.25rem;
+        right: 0.25rem;
+    }
+
+    &__contents {
+        flex: 1 1 auto;
+        margin: 0 1rem;
+        display: flex;
+        flex-direction: column;
+        max-width: 400px;
+    }
+
+    &__experience {
+        display: flex;
+    }
+
+    &__emoticon {
+        font-size: 24px;
+        padding: 0.5rem;
+
+        &--happy {
+            &,
+            &:active,
+            &:hover {
+                color: $success !important;
+            }
+        }
+
+        &--sad {
+            &,
+            &:active,
+            &:hover {
+                color: $danger !important;
+            }
+        }
+    }
+
+    // TODO: increase btn standard height 2.215rem so that it is not distorted by an icon
+    &__twitter-icon {
+        font-size: 12px;
+        vertical-align: sub;
+    }
+}

@@ -15,6 +15,9 @@ interface Props {
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     onFilterChosen: (value: string) => void
+    showTwitterFeedbackForm: boolean
+    onTwitterFeedbackFormClose: () => void
+    onShowTwitterFeedbackForm: () => void
 }
 
 interface State {
@@ -71,6 +74,9 @@ export class Navbar extends React.Component<Props, State> {
                         className="navbar__nav-links"
                         onShowScopes={this.onShowScopes}
                         showScopes={this.state.showScopes}
+                        onShowTwitterFeedbackForm={this.props.onShowTwitterFeedbackForm}
+                        onTwitterFeedbackFormClose={this.props.onTwitterFeedbackFormClose}
+                        showTwitterFeedbackForm={this.props.showTwitterFeedbackForm}
                     />
                 </div>
                 <div className={'navbar__scopesbar' + (this.state.showScopes ? '' : ' navbar__scopesbar--hidden')}>
