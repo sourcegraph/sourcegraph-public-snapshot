@@ -81,6 +81,11 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID 
 	for req := range parseRequests {
 		totalParseRequests++
 		if ctx.Err() != nil {
+			// Drain parseRequests
+			go func() {
+				for _ = range parseRequests {
+				}
+			}()
 			break
 		}
 		wg.Add(1)
