@@ -384,3 +384,24 @@ func Edit(computeEdits func(current *schema.SiteConfiguration, raw string) ([]js
 // FormatOptions is the default format options that should be used for jsonx
 // edit computation.
 var FormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}
+
+var (
+	needRestartMu sync.RWMutex
+	needRestart   bool
+)
+
+// NeedServerRestart tells if the server needs to restart for pending configuration
+// changes to take effect.
+func NeedServerRestart() bool {
+	needRestartMu.RLock()
+	defer needRestartMu.RUnlock()
+	return needRestart
+}
+
+// MarkNeedServerRestart marks the server as needing a restart so that pending
+// configuration changes can take effect.
+func MarkNeedServerRestart() {
+	needRestartMu.Lock()
+	needRestart = true
+	needRestartMu.Unlock()
+}
