@@ -30,6 +30,8 @@ export interface RepositoryStatsAreaPageProps {
     repo: GQL.IRepository
 }
 
+const showNavbar = false
+
 /**
  * Renders pages related to repository stats.
  */
@@ -49,11 +51,13 @@ export class RepositoryStatsArea extends React.Component<Props> {
             <div className="repository-stats-area area--vertical">
                 <RepoHeaderActionPortal
                     position="nav"
-                    element={<RepoHeaderBreadcrumbNavItem key="stats">Stats</RepoHeaderBreadcrumbNavItem>}
+                    element={<RepoHeaderBreadcrumbNavItem key="stats">Contributors</RepoHeaderBreadcrumbNavItem>}
                 />
-                <div className="area--vertical__navbar">
-                    <RepositoryStatsNavbar className="area--vertical__navbar-inner" repo={this.props.repo.uri} />
-                </div>
+                {showNavbar && (
+                    <div className="area--vertical__navbar">
+                        <RepositoryStatsNavbar className="area--vertical__navbar-inner" repo={this.props.repo.uri} />
+                    </div>
+                )}
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
                         <Switch>
