@@ -207,14 +207,8 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-	applyToRestart, err := conf.Write(args.Input)
-	if err != nil {
+	if err := conf.Write(args.Input); err != nil {
 		return false, err
 	}
-
-	// Update global "needs restart" state.
-	if applyToRestart {
-		conf.MarkNeedServerRestart()
-	}
-	return conf.NeedServerRestart(), err
+	return conf.NeedServerRestart(), nil
 }

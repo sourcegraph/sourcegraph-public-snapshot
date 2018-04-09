@@ -267,24 +267,23 @@ var doNotRequireRestart = []string{
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
-// or it's not editable, an error is returned. restartToApply indicates whether
-// or not the server must be restarted to apply the updated config.
-func Write(input string) (restartToApply bool, err error) {
+// or it's not editable, an error is returned.
+func Write(input string) error {
 	if !IsWritable() {
-		return false, errors.New("configuration is not writable")
+		return errors.New("configuration is not writable")
 	}
 
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
 	after, err := parseConfig(input)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	before := Get()
 
 	if err := ioutil.WriteFile(configFilePath, []byte(input), 0600); err != nil {
-		return false, err
+		return err
 	}
 
 	// Wait for the change to the configuration file to be detected. Otherwise
@@ -294,7 +293,11 @@ func Write(input string) (restartToApply bool, err error) {
 	fileWrite <- doneReading
 	<-doneReading
 
-	return needRestartToApply(before, after), nil
+	// Update global "needs restart" state.
+	if needRestartToApply(before, after) {
+		markNeedServerRestart()
+	}
+	return nil
 }
 
 // IsWritable reports whether the config can be overwritten.
@@ -374,7 +377,7 @@ func Edit(computeEdits func(current *schema.SiteConfiguration, raw string) ([]js
 	if err != nil {
 		return errors.Wrap(err, "jsonx.ApplyEdits")
 	}
-	_, err = Write(newConfig)
+	err = Write(newConfig)
 	if err != nil {
 		return errors.Wrap(err, "conf.Write")
 	}
@@ -398,9 +401,9 @@ func NeedServerRestart() bool {
 	return needRestart
 }
 
-// MarkNeedServerRestart marks the server as needing a restart so that pending
+// markNeedServerRestart marks the server as needing a restart so that pending
 // configuration changes can take effect.
-func MarkNeedServerRestart() {
+func markNeedServerRestart() {
 	needRestartMu.Lock()
 	needRestart = true
 	needRestartMu.Unlock()
