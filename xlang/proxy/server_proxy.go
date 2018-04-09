@@ -431,7 +431,7 @@ func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc
 
 func (c *serverProxyConn) lspInitialize(ctx context.Context) (json.RawMessage, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: initialize",
-		opentracing.Tags{"mode": c.id.mode, "rootPath": c.id.rootURI.String(), "rootURI": c.id.rootURI.String()},
+		opentracing.Tags{"mode": c.id.mode, "rootURI": c.id.rootURI.String()},
 	)
 	defer span.Finish()
 	timeout := 30 * time.Second
@@ -471,7 +471,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 	var c *serverProxyConn
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
-		opentracing.Tags{"mode": sid.mode, "rootPath": sid.rootURI.String(), "rootURI": sid.rootURI.String(), "method": method, "params": params},
+		opentracing.Tags{"mode": sid.mode, "rootURI": sid.rootURI.String(), "method": method, "params": params},
 	)
 	defer func() {
 		if c != nil {

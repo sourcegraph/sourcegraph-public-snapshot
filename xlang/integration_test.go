@@ -28,7 +28,7 @@ func TestIntegration(t *testing.T) {
 		t.Skip("skip long integration test")
 	}
 
-	tests := map[lsp.DocumentURI]struct { // map key is rootPath
+	tests := map[lsp.DocumentURI]struct { // map key is rootURI
 		mode              string
 		ciBlacklist       bool
 		pinDepReposToRev  map[string]string // so that file:line:col expectations are stable

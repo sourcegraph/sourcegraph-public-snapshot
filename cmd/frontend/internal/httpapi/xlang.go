@@ -18,7 +18,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -164,17 +163,13 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			initParams.Mode = initParams.InitializationOptions.Mode
 		}
 	}
-	span.SetTag("RootPath", initParams.RootPath) // TODO(sqs): deprecated rootPath in LSP
 	span.SetTag("RootURI", initParams.RootURI)
-	if initParams.RootURI == "" {
-		initParams.RootURI = lsp.DocumentURI(initParams.RootPath) // TODO(sqs): deprecated rootPath in LSP
-	}
 	if initParams.RootURI == "" {
 		return errors.New("invalid empty LSP root URI in initialize request")
 	}
 	rootURI, err := uri.Parse(string(initParams.RootURI))
 	if err != nil {
-		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
+		return fmt.Errorf("invalid LSP root URI %q: %s", initParams.RootURI, err)
 	}
 	addRootURIFields(ev, rootURI)
 	if initParams.InitializationOptions.Mode != "" {

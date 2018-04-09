@@ -233,7 +233,7 @@ func jsonTest(t testing.TB, gotData interface{}, testName string) {
 	}
 }
 
-func workspaceReferencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootPath *uri.URI, params lsext.WorkspaceReferencesParams, want []string) {
+func workspaceReferencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootURI *uri.URI, params lsext.WorkspaceReferencesParams, want []string) {
 	references, err := callWorkspaceReferences(ctx, c, params)
 	if err != nil {
 		t.Fatal(err)
@@ -243,7 +243,7 @@ func workspaceReferencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn
 	}
 }
 
-func workspacePackagesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootPath *uri.URI, want []string) {
+func workspacePackagesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootURI *uri.URI, want []string) {
 	packages, err := callWorkspacePackages(ctx, c)
 	if err != nil {
 		t.Fatal(err)

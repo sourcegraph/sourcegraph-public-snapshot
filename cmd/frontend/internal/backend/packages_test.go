@@ -16,15 +16,15 @@ import (
 func TestPackages_List(t *testing.T) {
 	ctx := testContext()
 
-	xlangDone := mockXLang(func(ctx context.Context, mode string, rootPath lsp.DocumentURI, method string, params, results interface{}) error {
+	xlangDone := mockXLang(func(ctx context.Context, mode string, rootURI lsp.DocumentURI, method string, params, results interface{}) error {
 		switch method {
 		case "workspace/xpackages":
 			res, ok := results.(*[]lspext.PackageInformation)
 			if !ok {
 				t.Fatalf("attempted to call workspace/xpackages with invalid return type %T", results)
 			}
-			if rootPath != "git://r?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
-				t.Fatalf("unexpected rootPath: %q", rootPath)
+			if rootURI != "git://r?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
+				t.Fatalf("unexpected rootURI: %q", rootURI)
 			}
 			switch mode {
 			case "typescript":

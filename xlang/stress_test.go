@@ -41,7 +41,7 @@ func BenchmarkStress(b *testing.B) {
 	cleanup := useGithubForVFS()
 	defer cleanup()
 
-	tests := map[string]struct { // map key is rootPath
+	tests := map[string]struct { // map key is rootURI
 		mode    string
 		fileExt string
 	}{
@@ -58,8 +58,8 @@ func BenchmarkStress(b *testing.B) {
 			fileExt: ".go",
 		},
 	}
-	for rootPath, test := range tests {
-		root, err := uri.Parse(rootPath)
+	for rootURI, test := range tests {
+		root, err := uri.Parse(rootURI)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -147,9 +147,6 @@ func UnsafeOneShotClientRequest(ctx context.Context, mode string, rootURI lsp.Do
 	// Initialize the connection.
 	err = c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 		InitializeParams: lsp.InitializeParams{
-			// TODO(sqs): rootPath is deprecated
-			RootPath: string(rootURI),
-
 			RootURI: rootURI,
 		},
 		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode},
@@ -212,9 +209,6 @@ func RemoteOneShotClientRequest(ctx context.Context, remote *url.URL, mode strin
 	// init params
 	err := payload[initIdx].SetParams(&lspext.ClientProxyInitializeParams{
 		InitializeParams: lsp.InitializeParams{
-			// TODO(sqs): rootPath is deprecated
-			RootPath: string(rootURI),
-
 			RootURI: rootURI,
 		},
 		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode},

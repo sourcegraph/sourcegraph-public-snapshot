@@ -17,7 +17,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -281,7 +280,6 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 
 		// Update span now that we have initParams.
 		if u := initParams.rootURI; u != nil {
-			span.SetTag("rootpath", u.String())
 			span.SetTag("rooturi", u.String())
 			span.SetTag("repo", u.Repo())
 			span.SetTag("commit", u.Rev())
@@ -332,20 +330,6 @@ func authorizeInitialize(ctx context.Context, req *jsonrpc2.Request) (*trackedIn
 
 	var params lspext.ClientProxyInitializeParams
 	if err := json.Unmarshal(*req.Params, &params); err != nil {
-		return nil, err
-	}
-
-	// TODO(sqs): remove this when rootPath is removed (it is merely deprecated for now).
-	if params.RootPath != "" && params.RootURI == "" {
-		params.RootURI = lsp.DocumentURI(params.RootPath)
-		params.RootPath = ""
-	}
-
-	// 🚨 SECURITY: LSP recently introduced a rootUri field on 🚨 InitializeParams and
-	// deprecated rootPath. Now that we support rootUri, unset rootPath so we guarantee
-	// only rootUri can specify the workspace. (It's safe that we use rootPath above if
-	// rootUri is not set; the point is that we only propagate a single field.)
-	if err := req.SetParams(params); err != nil {
 		return nil, err
 	}
 

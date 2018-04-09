@@ -15,7 +15,7 @@ import (
 
 func TestRemoteOneShotClientRequest(t *testing.T) {
 	var (
-		wantRequestBody = `[{"method":"initialize","params":{"rootPath":"git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06","rootUri":"git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06","capabilities":{"workspace":{},"textDocument":{"completion":{"completionItemKind":{},"completionItem":{}}}},"initializationOptions":{"mode":"go"},"mode":"go"},"id":0,"jsonrpc":"2.0"},{"method":"textDocument/hover","params":{"textDocument":{"uri":"git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06#mux.go"},"position":{"line":93,"character":10}},"id":1,"jsonrpc":"2.0"},{"method":"shutdown","id":2,"jsonrpc":"2.0"},{"method":"exit","jsonrpc":"2.0"}]`
+		wantRequestBody = `[{"method":"initialize","params":{"rootUri":"git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06","capabilities":{"workspace":{},"textDocument":{"completion":{"completionItemKind":{},"completionItem":{}}}},"initializationOptions":{"mode":"go"},"mode":"go"},"id":0,"jsonrpc":"2.0"},{"method":"textDocument/hover","params":{"textDocument":{"uri":"git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06#mux.go"},"position":{"line":93,"character":10}},"id":1,"jsonrpc":"2.0"},{"method":"shutdown","id":2,"jsonrpc":"2.0"},{"method":"exit","jsonrpc":"2.0"}]`
 		gotRequestBody  string
 
 		wantPath = "/.api/xlang/textDocument/hover"

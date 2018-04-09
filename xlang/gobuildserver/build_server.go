@@ -183,12 +183,6 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			return nil, err
 		}
 
-		// TODO(sqs): be backward-compatible with the pre-rootUri-migration xlang that
-		// sends rootPath==rootUri.
-		if params.RootPath != "" && params.RootPath == string(params.RootURI) {
-			params.RootPath = strings.TrimPrefix(params.RootPath, "file://")
-		}
-
 		if Debug {
 			var b []byte
 			if req.Params != nil {

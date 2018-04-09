@@ -40,8 +40,7 @@ const (
 // detect from the filesystem and what it received from the client's
 // InitializeParams.
 //
-// It is expected that fs will be mounted at the returns
-// InitializeParams.RootPath.
+// It is expected that fs will be mounted at InitializeParams.RootURI.
 func determineEnvironment(ctx context.Context, fs ctxvfs.FileSystem, params lspext.InitializeParams) (*langserver.InitializeParams, error) {
 	rootImportPath, err := determineRootImportPath(ctx, params.OriginalRootURI, fs)
 	if err != nil {
@@ -102,7 +101,6 @@ func determineEnvironment(ctx context.Context, fs ctxvfs.FileSystem, params lspe
 		},
 	}
 
-	langInitParams.RootPath = rootPath
 	langInitParams.RootURI = lsp.DocumentURI("file://" + rootPath)
 	langInitParams.RootImportPath = rootImportPath
 

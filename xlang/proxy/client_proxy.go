@@ -208,13 +208,16 @@ func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
 // anonymous clients are accessing the same repository at the same
 // commit.
 type contextID struct {
-	rootURI uri.URI // the rootPath in the initialize request (typically the repo clone URL + "?REV")
+	rootURI uri.URI // the rootURI in the initialize request (typically the repo clone URL + "?REV")
 	mode    string  // the mode (i.e., "go" or "typescript")
 
 	// session is the unique ID identifying this session, used when it
-	// shouldn't be shared by all users viewing the same rootPath and
+	// shouldn't be shared by all users viewing the same rootURI and
 	// mode (e.g., for Zap and/or when textDocument/didChange, etc.,
 	// should be enabled).
+	//
+	// NOTE: Session are not currently used, but may be in the future when we
+	// explore mutable workspaces again.
 	//
 	// 🚨 SECURITY: The session isolation that this provides is dependent 🚨
 	// on how difficult to guess this value is. Currently it is chosen
@@ -298,7 +301,7 @@ var LogTrackedErrors = true
 // responses, and returns them to the client.
 //
 // It modifies the request to rewrite paths (such as initialize's
-// rootPath and textDocument/definition's textDocument.uri fields) to
+// rootURI and textDocument/definition's textDocument.uri fields) to
 // point to file system paths, checking out the repo to that file
 // system path if necessary.
 //
@@ -392,6 +395,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// (https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#initialize-request)
 		// and all of our clients have sent rootUri in addition to rootPath for many
 		// months.
+		params.RootPath = ""
 
 		rootURI, err := uri.Parse(string(params.RootURI))
 		if err != nil {
@@ -401,7 +405,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
 		if len(rootURI.Rev()) != 40 {
-			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootURI)
+			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootURI %q", rootURI)
 		}
 		if repoBlacklist[rootURI.Repo()] {
 			return nil, fmt.Errorf("repo is blacklisted")
