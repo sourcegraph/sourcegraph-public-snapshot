@@ -716,3 +716,140 @@ export function fetchSiteUpdateCheck(): Observable<{
         })
     )
 }
+
+/**
+ * Fetches all known language server's information.
+ *
+ * @return Observable that emits the list of language servers.
+ */
+export function fetchLangServers(): Observable<GQL.ILangServer[]> {
+    return queryGraphQL(gql`
+        query LangServers {
+            site {
+                langServers {
+                    language
+                    displayName
+                    homepageURL
+                    issuesURL
+                    docsURL
+                    dataCenter
+                    custom
+                    state
+                    pending
+                    canEnable
+                    canDisable
+                    canRestart
+                    canUpdate
+                    healthy
+                }
+            }
+        }
+    `).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.site || !data.site.langServers) {
+                throw createAggregateError(errors)
+            }
+            return data.site.langServers
+        })
+    )
+}
+
+/**
+ * Enables the language server for the given language.
+ */
+export function enableLangServer(language: string): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation EnableLangServer($language: String!) {
+                langServers {
+                    enable(language: $language) {
+                        alwaysNil
+                    }
+                }
+            }
+        `,
+        { language }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+            return
+        })
+    )
+}
+
+/**
+ * Disables the language server for the given language.
+ */
+export function disableLangServer(language: string): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DisableLangServer($language: String!) {
+                langServers {
+                    disable(language: $language) {
+                        alwaysNil
+                    }
+                }
+            }
+        `,
+        { language }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+            return
+        })
+    )
+}
+
+/**
+ * Restarts the language server for the given language.
+ */
+export function restartLangServer(language: string): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation RestartLangServer($language: String!) {
+                langServers {
+                    restart(language: $language) {
+                        alwaysNil
+                    }
+                }
+            }
+        `,
+        { language }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+            return
+        })
+    )
+}
+
+/**
+ * Updates the language server for the given language.
+ */
+export function updateLangServer(language: string): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation UpdateLangServer($language: String!) {
+                langServers {
+                    update(language: $language) {
+                        alwaysNil
+                    }
+                }
+            }
+        `,
+        { language }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+            return
+        })
+    )
+}

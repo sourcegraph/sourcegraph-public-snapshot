@@ -108,6 +108,16 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             Global settings
                         </NavLink>
                     </li>
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/site-admin/code-intelligence"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                            exact={true}
+                        >
+                            Code intelligence
+                        </NavLink>
+                    </li>
                 </ul>
                 {showComments && (
                     <ul className="sidebar__items">

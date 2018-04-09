@@ -39,6 +39,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * The site admin Analytics page will now display the number of "Code Intelligence" actions each user has made, including hovers, jump to definitions, and find references, on the Sourcegraph webapp or in a code host integration or extension.
 * An experimental cross repository jump to definition which consults the OSS index on Sourcegraph.com. This is disabled by default; use `"experimentalFeatures": { "jumpToDefCrossRepo": "enabled" }` in your site configuration to enable it.
 * Users can now view Git branches, tags, and commits, and compare Git branches and revisions on Sourcegraph. (The code host icon in the header takes you to the commit on the code host.) Diffs in Sourcegraph do not yet show code intelligence.
+* A new admin panel allows you to view and manage language servers. For Server users, it allows you to enable/disable/update/restart language servers at the click of a button. For Data Center users, it shows the current status of language servers.
 
 ## 2.6.8
 

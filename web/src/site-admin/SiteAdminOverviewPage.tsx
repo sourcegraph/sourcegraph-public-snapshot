@@ -1,5 +1,4 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
-import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import CityIcon from '@sourcegraph/icons/lib/City'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
@@ -32,8 +31,6 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
     public state: State = {}
 
     private subscriptions = new Subscription()
-
-    private logEnableCodeIntelligenceClicked = () => eventLogger.log('EnableCodeIntelligenceClicked')
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminOverview')
@@ -116,16 +113,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             <OverviewItem
                                 icon={GlobeIcon}
                                 actions={
-                                    !this.state.info.hasCodeIntelligence && (
-                                        <a
-                                            href="https://about.sourcegraph.com/docs/code-intelligence/install?utm_source=server"
-                                            target="_blank"
-                                            className="btn btn-primary btn-sm"
-                                            onClick={this.logEnableCodeIntelligenceClicked}
-                                        >
-                                            <CheckmarkIcon className="icon-inline" /> Enable code intelligence
-                                        </a>
-                                    )
+                                    <Link to="/site-admin/code-intelligence" className="btn btn-primary btn-sm">
+                                        <GearIcon className="icon-inline" /> Manage code intelligence
+                                    </Link>
                                 }
                             >
                                 Code intelligence is {this.state.info.hasCodeIntelligence ? 'on' : 'off'}

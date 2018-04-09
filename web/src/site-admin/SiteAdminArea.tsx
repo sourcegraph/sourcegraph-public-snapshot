@@ -5,6 +5,7 @@ import { Redirect } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
+import { SiteAdminCodeIntelligencePage } from './SiteAdminCodeIntelligencePage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
 import { SiteAdminInviteUserPage } from './SiteAdminInviteUserPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
@@ -85,6 +86,11 @@ export class SiteAdminArea extends React.Component<Props> {
                         <Route
                             path={`${this.props.match.url}/repositories`}
                             component={SiteAdminRepositoriesPage}
+                            exact={true}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/code-intelligence`}
+                            component={SiteAdminCodeIntelligencePage}
                             exact={true}
                         />
                         <Route
