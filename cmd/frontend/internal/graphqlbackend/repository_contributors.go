@@ -9,8 +9,9 @@ import (
 )
 
 type repositoryContributorsArgs struct {
-	Range *string
-	Path  *string
+	RevisionRange *string
+	After         *string
+	Path          *string
 }
 
 func (r *repositoryResolver) Contributors(args *struct {
@@ -39,8 +40,14 @@ type repositoryContributorConnectionResolver struct {
 func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*vcs.PersonCount, error) {
 	r.once.Do(func() {
 		var opt vcs.ShortLogOptions
-		if r.args.Range != nil {
-			opt.Range = *r.args.Range
+		if r.args.RevisionRange != nil {
+			opt.Range = *r.args.RevisionRange
+		}
+		if r.args.Path != nil {
+			opt.Path = *r.args.Path
+		}
+		if r.args.After != nil {
+			opt.After = *r.args.After
 		}
 
 		vcsrepo := backend.Repos.CachedVCS(r.repo.repo)

@@ -449,6 +449,10 @@ func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions) (args []string,
 		args = append(args, "--fixed-strings", "--author="+opt.Author)
 	}
 
+	if opt.After != "" {
+		args = append(args, "--after="+opt.After)
+	}
+
 	if opt.MessageQuery != "" {
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
 	}
@@ -808,7 +812,15 @@ func (r *Repository) ShortLog(ctx context.Context, opt vcs.ShortLogOptions) ([]*
 		return nil, err
 	}
 
-	cmd := r.command("git", "shortlog", "-sne", opt.Range)
+	args := []string{"shortlog", "-sne"}
+	if opt.After != "" {
+		args = append(args, "--after="+opt.After)
+	}
+	args = append(args, opt.Range, "--")
+	if opt.Path != "" {
+		args = append(args, opt.Path)
+	}
+	cmd := r.command("git", args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git shortlog -sne` failed: %v", err)

@@ -786,7 +786,9 @@ type Repository implements Node {
     # The repository's contributors.
     contributors(
         # The Git revision range to compute contributors in.
-        range: String
+        revisionRange: String
+        # The date after which to count contributions.
+        after: String
         # Return contributors to files in this path.
         path: String
         # Returns the first n contributors from the list.

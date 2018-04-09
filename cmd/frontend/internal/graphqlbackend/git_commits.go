@@ -9,12 +9,13 @@ import (
 )
 
 type gitCommitConnectionResolver struct {
-	range_ string
+	revisionRange string
 
 	first  *int32
 	query  *string
 	path   *string
 	author *string
+	after  *string
 
 	repo *repositoryResolver
 
@@ -45,11 +46,16 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commi
 		if r.author != nil {
 			author = *r.author
 		}
+		var after string
+		if r.after != nil {
+			after = *r.after
+		}
 		return vcsrepo.Commits(ctx, vcs.CommitsOptions{
-			Range:        r.range_,
+			Range:        r.revisionRange,
 			N:            uint(n),
 			MessageQuery: query,
 			Author:       author,
+			After:        after,
 			Path:         path,
 		})
 	}

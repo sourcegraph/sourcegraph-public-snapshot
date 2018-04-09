@@ -171,6 +171,7 @@ type CommitsOptions struct {
 	MessageQuery string // include only commits whose commit message contains this substring
 
 	Author string // include only commits whose author matches this
+	After  string // include only commits after this date
 
 	Path string // only commits modifying the given path are selected (optional)
 }
@@ -178,6 +179,8 @@ type CommitsOptions struct {
 // ShortLogOptions contains options for (Repository).ShortLog.
 type ShortLogOptions struct {
 	Range string // the range for which stats will be fetched
+	After string // the date after which to collect commits
+	Path  string // compute stats for commits that touch this path
 }
 
 // DiffOptions configures a diff.
