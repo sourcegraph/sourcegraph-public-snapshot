@@ -12,6 +12,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
+// 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
+// when computing the `git diff` of the root commit.
+const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
 type repositoryComparisonInput struct {
 	Base *string
 	Head *string
@@ -31,9 +35,16 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 	}
 
 	vcsrepo := backend.Repos.CachedVCS(r.repo)
-	base, err := vcsrepo.ResolveRevision(ctx, baseRevspec, nil)
-	if err != nil {
-		return nil, err
+
+	var base api.CommitID
+	if baseRevspec == devNullSHA {
+		base = devNullSHA
+	} else {
+		var err error
+		base, err = vcsrepo.ResolveRevision(ctx, baseRevspec, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
 	head, err := vcsrepo.ResolveRevision(ctx, headRevspec, nil)
 	if err != nil {
@@ -102,7 +113,13 @@ type fileDiffConnectionResolver struct {
 
 func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
 	do := func() ([]*diff.FileDiff, error) {
-		rangeSpec := string(r.base) + "..." + string(r.head)
+		var rangeSpec string
+		if r.base == devNullSHA {
+			// Rare case: the base is the empty tree, in which case we need ".." not "..." because the latter only works for commits.
+			rangeSpec = string(r.base) + ".." + string(r.head)
+		} else {
+			rangeSpec = string(r.base) + "..." + string(r.head)
+		}
 		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
 			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be
 			// extra careful to avoid letting user input add additional `git diff` command-line

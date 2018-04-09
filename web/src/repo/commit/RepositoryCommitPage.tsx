@@ -148,7 +148,7 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
                                 nodeComponent={FileDiffNode}
                                 nodeComponentProps={{
                                     repoName: this.props.repo.uri,
-                                    base: this.state.commitOrError.oid + '~',
+                                    base: commitParentOrEmpty(this.state.commitOrError),
                                     head: this.state.commitOrError.oid,
                                     lineNumbers: false,
                                 }}
@@ -169,7 +169,13 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,
-            base: (this.state.commitOrError as GQL.IGitCommit).oid + '~',
+            base: commitParentOrEmpty(this.state.commitOrError as GQL.IGitCommit),
             head: (this.state.commitOrError as GQL.IGitCommit).oid,
         })
+}
+
+function commitParentOrEmpty(commit: GQL.IGitCommit): string {
+    // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
+    // when computing the `git diff` of the root commit.
+    return commit.parents.length > 0 ? commit.parents[0].oid : '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 }
