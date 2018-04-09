@@ -153,6 +153,6 @@
     "rxjs": "^5.5.2",
     "string-score": "^1.0.1",
     "vscode-languageserver-types": "^3.4.0",
-    "whatwg-url": "^6.2.1"
+    "whatwg-url": "^6.4.0"
   }
 }
