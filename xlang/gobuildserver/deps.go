@@ -8,7 +8,6 @@ import (
 	"path"
 	"runtime"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -20,12 +19,9 @@ import (
 	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
-
-var cloneFromGitserver, _ = strconv.ParseBool(env.Get("CLONE_FROM_GITSERVER", "false", "log HTTP requests"))
 
 type keyMutex struct {
 	mu  sync.Mutex
@@ -277,7 +273,7 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 	if err != nil {
 		return err
 	}
-	fs, err := NewDepRepoVFS(cloneURL, rev)
+	fs, err := NewDepRepoVFS(ctx, cloneURL, rev)
 	if err != nil {
 		return err
 	}
@@ -449,28 +445,23 @@ func FetchCommonDeps() {
 	// github.com/golang/go
 	d, _ := resolveStaticImportPath("time")
 	u, _ := url.Parse(d.cloneURL)
-	_, _ = NewDepRepoVFS(u, d.rev)
+	_, _ = NewDepRepoVFS(context.Background(), u, d.rev)
 }
 
 // NewDepRepoVFS returns a virtual file system interface for accessing
 // the files in the specified (public) repo at the given commit.
-//
-// TODO(sqs): design a way for the Go build/lang server to access
-// private repos. Private repos are currently only supported for the
-// main workspace repo, not as dependencies.
-var NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+var NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	// First check if we can clone from gitserver.
+	cmd := gitcmd.Open(api.RepoURI(cloneURL.Host+cloneURL.Path), cloneURL.String())
+	if _, err := cmd.ResolveRevision(ctx, rev, nil); err == nil {
+		return vfsutil.ArchiveFileSystem(cmd, rev), nil
+	}
+
 	// Fast-path for GitHub repos, which we can fetch on-demand from
 	// GitHub's repo .zip archive download endpoint.
 	if cloneURL.Host == "github.com" {
 		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
 		return vfsutil.NewGitHubRepoVFS(fullName, rev)
-	}
-
-	// In enterprise deployments, all dependencies are "public", so we can
-	// use gitserver
-	if cloneFromGitserver {
-		repo := api.RepoURI(cloneURL.Host + cloneURL.Path)
-		return vfsutil.ArchiveFileSystem(gitcmd.Open(repo, cloneURL.String()), rev), nil
 	}
 
 	// Fall back to a full git clone for non-github.com repos.

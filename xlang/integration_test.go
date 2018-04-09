@@ -211,7 +211,7 @@ func TestIntegration(t *testing.T) {
 				// "HEAD", or else any file:line:col expectations we
 				// have will break if the dep repo's files change.
 				orig := gobuildserver.NewDepRepoVFS
-				gobuildserver.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+				gobuildserver.NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					if pinRev, ok := test.pinDepReposToRev[cloneURL.String()]; ok {
 						rev = pinRev
 					} else if len(rev) != 40 && rev != gobuildserver.RuntimeVersion {
@@ -223,7 +223,7 @@ func TestIntegration(t *testing.T) {
 						// We panic since t.Fatal does not interact nicely with subtests
 						panic(fmt.Sprintf("TestIntegration/%s: must specify pinDepReposToRev in integration test definition so that test analysis is deterministic/stable (and not dependent on the mutable git rev spec %q for repo %q)", label, rev, cloneURL))
 					}
-					return orig(cloneURL, rev)
+					return orig(ctx, cloneURL, rev)
 				}
 				defer func() {
 					gobuildserver.NewDepRepoVFS = orig
