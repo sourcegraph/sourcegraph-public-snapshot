@@ -64,7 +64,7 @@ func (s *Service) Start() error {
 	s.cache = &diskcache.Store{
 		Dir:               s.Path,
 		Component:         "symbols",
-		BackgroundTimeout: 2 * time.Minute,
+		BackgroundTimeout: 20 * time.Minute,
 	}
 	go s.watchAndEvict()
 
