@@ -282,13 +282,6 @@ func Write(input string) (restartToApply bool, err error) {
 	}
 
 	before := Get()
-	diff := diff(before, after)
-
-	// Delete fields that do not require a process restart from the diff. Then
-	// len(diff) > 0 tells us if we need to restart or not.
-	for _, option := range doNotRequireRestart {
-		delete(diff, option)
-	}
 
 	if err := ioutil.WriteFile(configFilePath, []byte(input), 0600); err != nil {
 		return false, err
@@ -301,7 +294,7 @@ func Write(input string) (restartToApply bool, err error) {
 	fileWrite <- doneReading
 	<-doneReading
 
-	return len(diff) > 0, nil
+	return needRestartToApply(before, after), nil
 }
 
 // IsWritable reports whether the config can be overwritten.
@@ -315,6 +308,19 @@ func IsDirty() bool {
 	}
 	data, err := ioutil.ReadFile(configFilePath)
 	return err != nil || string(data) != raw
+}
+
+// needRestartToApply determines if a restart is needed to apply the changes
+// between the two configurations.
+func needRestartToApply(before, after *schema.SiteConfiguration) bool {
+	diff := diff(before, after)
+
+	// Delete fields that do not require a process restart from the diff. Then
+	// len(diff) > 0 tells us if we need to restart or not.
+	for _, option := range doNotRequireRestart {
+		delete(diff, option)
+	}
+	return len(diff) > 0
 }
 
 // diff returns names of the Go fields that have different values between the
