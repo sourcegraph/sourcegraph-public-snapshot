@@ -1,27 +1,35 @@
 .repository-contributor-node {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
 
-    &__count {
-        min-width: 2rem;
-        text-align: right;
-        margin-right: 1rem;
-        flex: none;
-    }
     &__person {
         min-width: 25%;
         flex: none;
-        padding-right: 1.5rem;
+        margin-right: 2rem;
         white-space: nowrap;
         overflow: hidden;
     }
+    &__commits {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 20rem;
+        white-space: nowrap;
+    }
+    &__count {
+        flex: none;
+        min-width: 5rem;
+        text-align: right;
+    }
     &__commit {
+        flex: 1 1;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        flex: 1 1;
-        min-width: 16rem;
+        margin-right: 2rem;
     }
 
     .badge {
