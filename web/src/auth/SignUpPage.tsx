@@ -204,7 +204,7 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
                                 />
                             </div>
                         ) : (
-                            <p>Signup is not enabled on this server.</p>
+                            <p>Signup is disabled. Contact the site admin to request an account.</p>
                         )
                     }
                 />

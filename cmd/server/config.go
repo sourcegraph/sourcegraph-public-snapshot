@@ -63,7 +63,7 @@ func generateConfigFile(path string) (configJSON string, err error) {
 	// The default site configuration.
 	defaultSiteConfig := schema.SiteConfiguration{
 		SecretKey:        string(mustCryptoRand()),
-		AuthAllowSignup:  true,
+		AuthAllowSignup:  false,
 		AuthProvider:     "builtin",
 		UpdateChannel:    "release",
 		MaxReposToSearch: 50,
