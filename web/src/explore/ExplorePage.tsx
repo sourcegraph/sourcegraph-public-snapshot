@@ -13,7 +13,7 @@ import { RepoLink } from '../repo/RepoLink'
 import { fetchAllRepositoriesAndPollIfAnyCloning } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
-import { pluralize } from '../util/strings'
+import { numberWithCommas, pluralize } from '../util/strings'
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
@@ -109,7 +109,7 @@ export class ExplorePage extends React.PureComponent<Props, State> {
                     typeof this.state.disabledRepositoriesCount === 'number' &&
                     this.state.disabledRepositoriesCount > 0 && (
                         <div className="alert alert-info explore-page__notice">
-                            {this.state.disabledRepositoriesCount}{' '}
+                            {numberWithCommas(this.state.disabledRepositoriesCount)}{' '}
                             {pluralize(
                                 'disabled repository is',
                                 this.state.disabledRepositoriesCount,
