@@ -94,18 +94,6 @@
     {
       "address": "tcp://localhost:4389",
       "language": "go"
-    },
-    {
-      "address": "tcp://localhost:2082",
-      "language": "javascript"
-    },
-    {
-      "address": "tcp://localhost:2083",
-      "language": "python"
-    },
-    {
-      "address": "tcp://localhost:2082",
-      "language": "typescript"
     }
   ],
   "update.channel": "release",
