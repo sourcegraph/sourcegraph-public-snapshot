@@ -10,8 +10,7 @@ import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -125,18 +124,13 @@ export class UserArea extends React.Component<Props> {
                 .pipe(
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'userOrError'>
-                        const result = fetchUser({ username }, forceRefresh).pipe(
+                        return fetchUser({ username }, forceRefresh).pipe(
                             catchError(error => [error]),
                             map(c => ({ userOrError: c } as PartialStateUpdate)),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
-                        )
-                        return merge(
+
                             // Don't clear old user data while we reload, to avoid unmounting all components during
                             // loading.
-                            of(forceRefresh ? {} : { userOrError: undefined }),
-
-                            result
+                            startWith<PartialStateUpdate>(forceRefresh ? {} : { userOrError: undefined })
                         )
                     })
                 )

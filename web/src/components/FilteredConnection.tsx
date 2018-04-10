@@ -11,8 +11,6 @@ import { debounceTime } from 'rxjs/operators/debounceTime'
 import { delay } from 'rxjs/operators/delay'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { takeUntil } from 'rxjs/operators/takeUntil'
@@ -424,9 +422,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                             connectionQuery: query,
                                             loading: false,
                                         } as PartialStateUpdate)
-                                ),
-                                publishReplay<PartialStateUpdate>(),
-                                refCount()
+                                )
                             )
 
                         const showLoading = query !== lastQuery || filter !== lastFilter

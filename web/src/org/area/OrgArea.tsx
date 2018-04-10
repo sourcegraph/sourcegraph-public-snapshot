@@ -4,13 +4,10 @@ import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable } from 'rxjs/Observable'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -106,13 +103,11 @@ export class OrgArea extends React.Component<Props> {
                     distinctUntilChanged(),
                     switchMap(name => {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
-                        const result = fetchOrg({ name }).pipe(
+                        return fetchOrg({ name }).pipe(
                             catchError(error => [error]),
                             map(c => ({ orgOrError: c } as PartialStateUpdate)),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
+                            startWith<PartialStateUpdate>({ orgOrError: undefined })
                         )
-                        return merge(of({ orgOrError: undefined }), result)
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))

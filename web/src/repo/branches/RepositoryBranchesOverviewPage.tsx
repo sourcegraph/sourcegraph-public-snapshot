@@ -4,11 +4,10 @@ import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -95,11 +94,11 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                     distinctUntilChanged((a, b) => a.repo.id === b.repo.id),
                     switchMap(({ repo }) => {
                         type PartialStateUpdate = Pick<State, 'dataOrError'>
-                        const result = fetchGitBranches({ repo: repo.id, first: 10 }).pipe(
+                        return fetchGitBranches({ repo: repo.id, first: 10 }).pipe(
                             catchError(error => [error]),
-                            map(c => ({ dataOrError: c } as PartialStateUpdate))
+                            map(c => ({ dataOrError: c } as PartialStateUpdate)),
+                            startWith<PartialStateUpdate>({ dataOrError: undefined })
                         )
-                        return merge(of({ dataOrError: undefined }), result)
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))

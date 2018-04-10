@@ -3,14 +3,11 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
@@ -20,7 +17,7 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { OrgAreaPageProps } from '../area/OrgArea'
 import { removeUserFromOrg } from '../backend'
 import { InviteForm } from '../invite/InviteForm'
@@ -67,21 +64,18 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 : `Really remove the user ${this.props.node.username}?`
                         )
                     ),
-                    switchMap(() => {
-                        type PartialStateUpdate = Pick<UserNodeState, 'removalOrError'>
-                        const result = removeUserFromOrg(this.props.org.id, this.props.node.id).pipe(
-                            catchError(error => [error]),
-                            map(c => ({ removalOrError: c })),
+                    switchMap(() =>
+                        removeUserFromOrg(this.props.org.id, this.props.node.id).pipe(
+                            catchError(error => [asError(error)]),
+                            map(c => ({ removalOrError: c || null })),
                             tap(() => {
                                 if (this.props.onDidUpdate) {
                                     this.props.onDidUpdate()
                                 }
                             }),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
+                            startWith<Pick<UserNodeState, 'removalOrError'>>({ removalOrError: null })
                         )
-                        return merge(of({ removalOrError: null }), result)
-                    })
+                    )
                 )
                 .subscribe(
                     stateUpdate => {

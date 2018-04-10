@@ -8,8 +8,6 @@ import { concat } from 'rxjs/operators/concat'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
@@ -77,9 +75,7 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
                         type PartialStateUpdate = Pick<State, 'settingsOrError'>
                         return fetchOrgSettings({ id }).pipe(
                             catchError(error => [error]),
-                            map(c => ({ settingsOrError: c } as PartialStateUpdate)),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
+                            map(c => ({ settingsOrError: c } as PartialStateUpdate))
                         )
                     })
                 )

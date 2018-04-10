@@ -6,8 +6,6 @@ import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
@@ -55,9 +53,7 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
                             of({ settingsOrError: undefined }),
                             fetchUserSettings(user.id).pipe(
                                 catchError(error => [asError(error)]),
-                                map(c => ({ settingsOrError: c } as Pick<State, 'settingsOrError'>)),
-                                publishReplay<Pick<State, 'settingsOrError'>>(),
-                                refCount()
+                                map(c => ({ settingsOrError: c } as Pick<State, 'settingsOrError'>))
                             )
                         )
                     )

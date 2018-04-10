@@ -11,8 +11,6 @@ import { catchError } from 'rxjs/operators/catchError'
 import { delay } from 'rxjs/operators/delay'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { takeUntil } from 'rxjs/operators/takeUntil'
 import { tap } from 'rxjs/operators/tap'
@@ -70,9 +68,7 @@ export class RepositoryGraphOverviewPage extends React.PureComponent<Props, Stat
                         type PartialStateUpdate = Pick<State, 'overviewOrError' | 'loading'>
                         const result = this.fetchOverview(repo.id, commitID).pipe(
                             catchError(error => [error]),
-                            map(c => ({ overviewOrError: c, loading: false } as PartialStateUpdate)),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
+                            map(c => ({ overviewOrError: c, loading: false } as PartialStateUpdate))
                         )
                         return merge(result, of({ loading: true }).pipe(delay(250), takeUntil(result)))
                     })

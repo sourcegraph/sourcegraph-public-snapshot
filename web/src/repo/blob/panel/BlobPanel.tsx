@@ -13,8 +13,6 @@ import { concat } from 'rxjs/operators/concat'
 import { delay } from 'rxjs/operators/delay'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { scan } from 'rxjs/operators/scan'
 import { skip } from 'rxjs/operators/skip'
 import { startWith } from 'rxjs/operators/startWith'
@@ -125,15 +123,10 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                     ),
                     switchMap(subject => {
                         type PartialStateUpdate = Pick<State, 'serverCapabilitiesOrError'>
-                        const result = fetchServerCapabilities(subject).pipe(
+                        return fetchServerCapabilities(subject).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ serverCapabilitiesOrError: c } as PartialStateUpdate)),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
-                        )
-                        return merge(
-                            of({ serverCapabilitiesOrError: undefined }), // clear old data immediately
-                            result
+                            startWith<PartialStateUpdate>({ serverCapabilitiesOrError: undefined })
                         )
                     })
                 )
@@ -148,15 +141,13 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         type PartialStateUpdate = Pick<State, 'hoverOrError'>
                         const result = fetchHover(subject).pipe(
                             catchError(error => [asError(error)]),
-                            map(c => ({ hoverOrError: c } as PartialStateUpdate)),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
+                            map(c => ({ hoverOrError: c } as PartialStateUpdate))
                         )
-
                         return merge(
-                            of({ hoverOrError: undefined }), // clear old data immediately
                             result,
                             of({ hoverOrError: LOADING }).pipe(delay(150), takeUntil(result)) // delay loading spinner to reduce jitter
+                        ).pipe(
+                            startWith<PartialStateUpdate>({ hoverOrError: undefined }) // clear old data immediately)
                         )
                     })
                 )

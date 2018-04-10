@@ -5,8 +5,6 @@ import { merge } from 'rxjs/observable/merge'
 import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
@@ -41,14 +39,12 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                 .pipe(
                     tap(e => e.preventDefault()),
                     switchMap(() =>
-                        merge(
+                        merge<Pick<State, 'email' | 'error'>>(
                             of({ error: undefined }),
                             this.addUserEmail(this.state.email).pipe(
                                 tap(() => this.props.onDidAdd()),
                                 map(c => ({ error: null, email: '' })),
-                                catchError(error => [{ error, email: this.state.email }]),
-                                publishReplay<Pick<State, 'email' | 'error'>>(),
-                                refCount()
+                                catchError(error => [{ error, email: this.state.email }])
                             )
                         )
                     )

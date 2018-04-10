@@ -11,8 +11,6 @@ import { catchError } from 'rxjs/operators/catchError'
 import { delay } from 'rxjs/operators/delay'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
@@ -109,9 +107,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                             checkMirrorRepositoryConnection({ name: repo }).pipe(
                                 map(c => c.error === null),
                                 catchError(error => [asError(error)]),
-                                map(c => ({ canAddOrError: c } as PartialStateUpdate)),
-                                publishReplay<PartialStateUpdate>(),
-                                refCount()
+                                map(c => ({ canAddOrError: c } as PartialStateUpdate))
                             )
                         )
                     })
@@ -142,9 +138,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                 delay(1500),
 
                                 catchError(error => [asError(error)]),
-                                map(c => ({ addedOrError: c } as Pick<State, 'addedOrError'>)),
-                                publishReplay<Pick<State, 'addedOrError'>>(),
-                                refCount()
+                                map(c => ({ addedOrError: c } as Pick<State, 'addedOrError'>))
                             )
                         )
                     )
@@ -197,9 +191,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                 delay(1500),
 
                                 catchError(error => [asError(error)]),
-                                map(c => ({ enabledOrError: c } as Pick<State, 'enabledOrError'>)),
-                                publishReplay<Pick<State, 'enabledOrError'>>(),
-                                refCount()
+                                map(c => ({ enabledOrError: c } as Pick<State, 'enabledOrError'>))
                             )
                         )
                     )

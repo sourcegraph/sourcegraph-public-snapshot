@@ -11,8 +11,6 @@ import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { mergeMap } from 'rxjs/operators/mergeMap'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
@@ -106,9 +104,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     switchMap(([user]) =>
                         queryUser(user.id).pipe(
                             catchError(error => [asError(error)]),
-                            map(c => ({ userOrError: c } as Pick<State, 'userOrError'>)),
-                            publishReplay<Pick<State, 'userOrError'>>(),
-                            refCount()
+                            map(c => ({ userOrError: c } as Pick<State, 'userOrError'>))
                         )
                     )
                 )

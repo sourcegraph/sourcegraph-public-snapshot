@@ -7,14 +7,11 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { mapTo } from 'rxjs/operators/mapTo'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
@@ -138,9 +135,8 @@ class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, AccessTo
                             'Really delete and revoke this token? Any clients using it will no longer be able to access the Sourcegraph API.'
                         )
                     ),
-                    switchMap(() => {
-                        type PartialStateUpdate = Pick<AccessTokenNodeState, 'deletionOrError'>
-                        const result = deleteAccessToken(this.props.node.id).pipe(
+                    switchMap(() =>
+                        deleteAccessToken(this.props.node.id).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
                             map(c => ({ deletionOrError: c })),
@@ -149,11 +145,9 @@ class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, AccessTo
                                     this.props.onDidUpdate()
                                 }
                             }),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
+                            startWith<Pick<AccessTokenNodeState, 'deletionOrError'>>({ deletionOrError: null })
                         )
-                        return merge(of({ deletionOrError: null }), result)
-                    })
+                    )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )

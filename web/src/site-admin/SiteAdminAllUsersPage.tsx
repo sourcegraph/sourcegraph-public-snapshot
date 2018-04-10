@@ -10,8 +10,6 @@ import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -68,11 +66,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             }),
                             setUserEmailVerified(this.props.node.id, email, verified).pipe(
                                 map(() => ({ loading: false })),
-                                catchError(error => [{ loading: false, errorDescription: asError(error).message }]),
-                                publishReplay<
-                                    Pick<UserNodeState, 'loading' | 'errorDescription' | 'resetPasswordURL'>
-                                >(),
-                                refCount()
+                                catchError(error => [{ loading: false, errorDescription: asError(error).message }])
                             )
                         )
                     )

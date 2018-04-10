@@ -16,8 +16,6 @@ import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -179,17 +177,10 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                                 State,
                                 'treeOrError' | 'commitsOrError'
                             >),
-                            fetchTree(props).pipe(
-                                catchError(err => [asError(err)]),
-                                map(c => ({ treeOrError: c })),
-                                publishReplay<Pick<State, 'treeOrError'>>(),
-                                refCount()
-                            ),
+                            fetchTree(props).pipe(catchError(err => [asError(err)]), map(c => ({ treeOrError: c }))),
                             fetchTreeCommits(props).pipe(
                                 catchError(err => [asError(err)]),
-                                map(c => ({ commitsOrError: c })),
-                                publishReplay<Pick<State, 'commitsOrError'>>(),
-                                refCount()
+                                map(c => ({ commitsOrError: c }))
                             )
                         )
                     )

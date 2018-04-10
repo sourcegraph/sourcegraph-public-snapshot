@@ -11,8 +11,6 @@ import { catchError } from 'rxjs/operators/catchError'
 import { delay } from 'rxjs/operators/delay'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { takeUntil } from 'rxjs/operators/takeUntil'
@@ -115,16 +113,13 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                                         locationsOrError: isError(c) ? c : c.locations,
                                         loading: isError(c) ? false : c.loading,
                                     } as PartialStateUpdate)
-                            ),
-                            publishReplay<PartialStateUpdate>(),
-                            refCount()
+                            )
                         )
 
                         return merge(
-                            of({ locationsOrError: undefined, loading: false }), // clear old data immediately
                             result,
                             of({ loading: true }).pipe(delay(50), takeUntil(result)) // delay loading spinner to reduce jitter
-                        )
+                        ).pipe(startWith<PartialStateUpdate>({ locationsOrError: undefined, loading: false })) // clear old data immediately
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))

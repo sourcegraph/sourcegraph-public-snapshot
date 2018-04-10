@@ -8,8 +8,6 @@ import { concat } from 'rxjs/operators/concat'
 import { delay } from 'rxjs/operators/delay'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { mergeMap } from 'rxjs/operators/mergeMap'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
 import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
@@ -71,9 +69,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                             ),
                             catchError((error: Error) => [{ error: error.message, loading: false }]),
                             // Disable button while loading
-                            startWith<Partial<State>>({ loading: true }),
-                            publishReplay<Partial<State>>(),
-                            refCount()
+                            startWith<Partial<State>>({ loading: true, error: undefined })
                         )
                     )
                 )
