@@ -107,7 +107,10 @@ type TextDocumentSyncOptionsOrKind struct {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (v TextDocumentSyncOptionsOrKind) MarshalJSON() ([]byte, error) {
+func (v *TextDocumentSyncOptionsOrKind) MarshalJSON() ([]byte, error) {
+	if v == nil {
+		return []byte("null"), nil
+	}
 	if v.Kind != nil {
 		return json.Marshal(v.Kind)
 	}
@@ -146,7 +149,7 @@ type SaveOptions struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync                 TextDocumentSyncOptionsOrKind    `json:"textDocumentSync,omitempty"`
+	TextDocumentSync                 *TextDocumentSyncOptionsOrKind   `json:"textDocumentSync,omitempty"`
 	HoverProvider                    bool                             `json:"hoverProvider,omitempty"`
 	CompletionProvider               *CompletionOptions               `json:"completionProvider,omitempty"`
 	SignatureHelpProvider            *SignatureHelpOptions            `json:"signatureHelpProvider,omitempty"`
@@ -301,7 +304,7 @@ type CompletionParams struct {
 }
 
 type Hover struct {
-	Contents []MarkedString `json:"contents,omitempty"`
+	Contents []MarkedString `json:"contents"`
 	Range    *Range         `json:"range,omitempty"`
 }
 

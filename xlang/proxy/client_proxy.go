@@ -437,10 +437,34 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			}
 		}()
 
-		// TODO(keegancsmith) downgrade TextDocumentSync to lsp.TDSKNone. This
-		// is not a security issue right now, since sync operations will be
-		// denied by the proxy.
-		return c.proxy.initializeServer(ctx, serverID{contextID: c.context})
+		initResult, err := c.proxy.initializeServer(ctx, serverID{contextID: c.context})
+		if err != nil {
+			return nil, err
+		}
+
+		// We don't send the full initialize response down the wire, instead
+		// we whitelist the response. This is needed so we don't expose
+		// capabilities our lsp-proxy does not support.
+		caps := initResult.Capabilities
+		return &lsp.InitializeResult{
+			Capabilities: lsp.ServerCapabilities{
+				// We only return the capabilities which make sense for
+				// read-only documents.
+				HoverProvider:                caps.HoverProvider,
+				DefinitionProvider:           caps.DefinitionProvider,
+				ReferencesProvider:           caps.ReferencesProvider,
+				DocumentHighlightProvider:    caps.DocumentHighlightProvider,
+				DocumentSymbolProvider:       caps.DocumentSymbolProvider,
+				WorkspaceSymbolProvider:      caps.WorkspaceSymbolProvider,
+				ImplementationProvider:       caps.ImplementationProvider,
+				XWorkspaceReferencesProvider: caps.XWorkspaceReferencesProvider,
+				XDefinitionProvider:          caps.XDefinitionProvider,
+				XWorkspaceSymbolByProperties: caps.XWorkspaceSymbolByProperties,
+
+				// Intentionally left out TextDocumentSync since no value
+				// means no syncing
+			},
+		}, nil
 
 	case "initialized":
 		if err := ensureInitialized(); err != nil {

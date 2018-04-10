@@ -54,7 +54,7 @@ type serverProxyConn struct {
 	// goroutines wait until the 1st goroutine completes those tasks.
 	initOnce sync.Once
 	// initResult and initErr are only safe to write inside initOnce.Do(...), only safe to read after calling initOnce.Do(...)
-	initResult json.RawMessage
+	initResult *lsp.InitializeResult
 	initErr    error
 
 	mu          sync.Mutex
@@ -241,7 +241,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 
 // getServerConn returns an existing connection to the specified
 // server or creates one if none exists.
-func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyConn, initResponse json.RawMessage, err error) {
+func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyConn, initResult *lsp.InitializeResult, err error) {
 	// Check for an already established connection.
 	p.mu.Lock()
 	for cc := range p.servers {
@@ -408,7 +408,7 @@ func (p *Proxy) shouldStripBGMode(mode string) bool {
 // initializeServer will ensure we either have an open connection or will open
 // one to ID. It returns the initializeResult as a json.RawMessage. If it
 // fails, it will return a non-nil error.
-func (p *Proxy) initializeServer(ctx context.Context, id serverID) (json.RawMessage, error) {
+func (p *Proxy) initializeServer(ctx context.Context, id serverID) (*lsp.InitializeResult, error) {
 	_, initResult, err := p.getServerConn(ctx, id)
 	return initResult, err
 }
@@ -429,7 +429,7 @@ func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc
 	}
 }
 
-func (c *serverProxyConn) lspInitialize(ctx context.Context) (json.RawMessage, error) {
+func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeResult, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: initialize",
 		opentracing.Tags{"mode": c.id.mode, "rootURI": c.id.rootURI.String()},
 	)
@@ -457,12 +457,12 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (json.RawMessage, e
 	if initOps := getInitializationOptions(c.id.mode); initOps != nil {
 		initParams.InitializationOptions = initOps
 	}
-	var res json.RawMessage
+	var res lsp.InitializeResult
 	err := c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	return &res, nil
 }
 
 // callServer sends an LSP request to the specified server

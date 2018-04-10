@@ -885,7 +885,7 @@
     "pkg/lspext",
     "pkg/tools"
   ]
-  revision = "7e016370b5dcb7c929e563a2eea65b1c42ba01e3"
+  revision = "8b9e51381f9e6e5a3bd24fc02b098a0c5d1d8d07"
 
 [[projects]]
   branch = "master"
@@ -1043,13 +1043,9 @@
     "acme/autocert",
     "bcrypt",
     "blowfish",
-    "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
-    "internal/chacha20",
-    "poly1305",
     "ripemd160",
-    "ssh",
     "ssh/terminal"
   ]
   revision = "c3a3ad6d03f7a915c0f7e194b7152974bb73d287"
@@ -1412,6 +1408,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ac367b9623e1c12207be53875d6156f305f4c21de07d7eb5c719c02e0951a5b6"
+  inputs-digest = "ff4310c889cfa0f55d63714afe6e241727e687e3c0ac3cb10e66db4e4e5ecb4b"
   solver-name = "gps-cdcl"
   solver-version = 1

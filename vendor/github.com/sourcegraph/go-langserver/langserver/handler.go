@@ -231,7 +231,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 		}
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
-				TextDocumentSync: lsp.TextDocumentSyncOptionsOrKind{
+				TextDocumentSync: &lsp.TextDocumentSyncOptionsOrKind{
 					Kind: &kind,
 				},
 				CompletionProvider:           completionOp,
