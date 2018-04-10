@@ -6,7 +6,6 @@ import (
 	"context"
 	"io"
 	"path"
-	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -24,10 +23,6 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoURI, 
 	fetchQueueSize.Inc()
 	s.fetchSem <- 1 // acquire concurrent fetches semaphore
 	fetchQueueSize.Dec()
-
-	// We expect git archive, even for large repos, to finish relatively
-	// quickly.
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 
 	fetching.Inc()
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.fetch")
@@ -52,7 +47,6 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoURI, 
 		}
 
 		<-s.fetchSem // release concurrent fetches semaphore
-		cancel()     // release context resources
 		close(requestCh)
 		close(errCh)
 
