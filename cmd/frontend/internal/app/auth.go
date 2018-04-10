@@ -139,7 +139,7 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 
 func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.User, error) {
 	if strings.Contains(emailOrUsername, "@") {
-		return db.Users.GetByEmail(ctx, emailOrUsername)
+		return db.Users.GetByVerifiedEmail(ctx, emailOrUsername)
 	}
 	return db.Users.GetByUsername(ctx, emailOrUsername)
 }
@@ -248,7 +248,7 @@ func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr, err := db.Users.GetByEmail(ctx, creds.Email)
+	usr, err := db.Users.GetByVerifiedEmail(ctx, creds.Email)
 	if err != nil {
 		httpLogAndError(w, "No user found for email", http.StatusBadRequest, "email", creds.Email)
 		return
@@ -314,7 +314,7 @@ func serveResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 🚨 SECURITY: require correct authed user to reset password
-	usr, err := db.Users.GetByEmail(ctx, params.Email)
+	usr, err := db.Users.GetByVerifiedEmail(ctx, params.Email)
 	if err != nil {
 		httpLogAndError(w, fmt.Sprintf("User with email %s not found", params.Email), http.StatusNotFound)
 		return

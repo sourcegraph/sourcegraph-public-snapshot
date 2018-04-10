@@ -298,6 +298,39 @@ func TestUsers_Update(t *testing.T) {
 	}
 }
 
+func TestUsers_GetByVerifiedEmail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	user, err := Users.Create(ctx, NewUser{
+		Email:     "a@a.com",
+		Username:  "u",
+		Password:  "p",
+		EmailCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := Users.GetByVerifiedEmail(ctx, "a@a.com"); !errcode.IsNotFound(err) {
+		t.Errorf("for unverified email, got error %v, want IsNotFound", err)
+	}
+
+	if err := UserEmails.SetVerified(ctx, user.ID, "a@a.com", true); err != nil {
+		t.Fatal(err)
+	}
+
+	gotUser, err := Users.GetByVerifiedEmail(ctx, "a@a.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotUser.ID != user.ID {
+		t.Errorf("got user %d, want %d", gotUser.ID, user.ID)
+	}
+}
+
 func TestUsers_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

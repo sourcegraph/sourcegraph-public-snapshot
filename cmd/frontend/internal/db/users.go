@@ -393,8 +393,11 @@ func (u *users) GetByExternalID(ctx context.Context, provider, id string) (*type
 	return u.getOneBySQL(ctx, "WHERE external_provider=$1 AND external_id=$2 AND deleted_at IS NULL LIMIT 1", provider, id)
 }
 
-func (u *users) GetByEmail(ctx context.Context, email string) (*types.User, error) {
-	return u.getOneBySQL(ctx, "WHERE id=(SELECT user_id FROM user_emails WHERE email=$1) AND deleted_at IS NULL LIMIT 1", email)
+// GetByVerifiedEmail returns the user (if any) with the specified verified email address. If a user
+// has a matching *unverified* email address, they will not be returned by this method. At most one
+// user may have any given verified email address.
+func (u *users) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
+	return u.getOneBySQL(ctx, "WHERE id=(SELECT user_id FROM user_emails WHERE email=$1 AND verified_at IS NOT NULL) AND deleted_at IS NULL LIMIT 1", email)
 }
 
 func (u *users) GetByUsername(ctx context.Context, username string) (*types.User, error) {

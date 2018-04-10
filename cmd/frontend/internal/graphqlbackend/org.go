@@ -334,7 +334,7 @@ func getUserToInviteToOrganization(ctx context.Context, usernameOrEmail string, 
 	if isEmailAddress := strings.Contains(usernameOrEmail, "@"); isEmailAddress {
 		// Invite user by email address.
 		var err error
-		userToInvite, err = db.Users.GetByEmail(ctx, usernameOrEmail)
+		userToInvite, err = db.Users.GetByVerifiedEmail(ctx, usernameOrEmail)
 		if errcode.IsNotFound(err) {
 			err = nil // not a fatal error, can send invite link to user
 		}
