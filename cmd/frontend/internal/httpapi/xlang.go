@@ -233,7 +233,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// return the result of "textDocument/definition" if "initialize"
 	// is followed by a "textDocument/definition") because that's all
 	// the client needs.
-	resps := make([]*jsonrpc2.Response, len(reqs))
+	resps := make([]*jsonrpc2.Response, 0, len(reqs))
 	for i, req := range reqs {
 		// ?prepare indicates we are only doing the request to warm up
 		// the LSP servers. Only the HTTP gateway understands this, so
@@ -244,16 +244,17 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 				return err
 			}
 		} else {
-			resps[i] = &jsonrpc2.Response{ID: jsonrpc2.ID{Num: uint64(i)}}
-			err := c.Call(ctx, req.Method, req.Params, &resps[i].Result)
-			if err == nil && resps[i].Result == nil {
+			resp := &jsonrpc2.Response{ID: reqs[i].ID}
+			resps = append(resps, resp)
+			err := c.Call(ctx, req.Method, req.Params, &resp.Result)
+			if err == nil && resp.Result == nil {
 				// c.Call sets Result to Go nil if the response has a
 				// JSON "null" result (per the rules of
 				// json.Unmarshal). But a JSON-RPC 2.0 response
 				// requires either the "result" or "error" field, so
 				// we must prevent the "result" field from being
 				// omitted altogether.
-				resps[i].Result = &jsonNull
+				resp.Result = &jsonNull
 			}
 			if e, ok := err.(*jsonrpc2.Error); ok {
 				// We do not mark the handler as failed, but
@@ -265,16 +266,16 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 					otlog.Error(err))
 				ev.AddField("lsp_error", e.Message)
 				success = false
-				resps[i].Error = e
+				resp.Error = e
 			} else if err != nil {
 				return err
 			} else if err == nil && i == 1 {
 				// We want to mark whether or not we've gotten a result or not
 				// in the response.
 				var result interface{}
-				if resps[i].Result == nil {
+				if resp.Result == nil {
 					emptyResponse = true // nil result
-				} else if err := json.Unmarshal(*resps[i].Result, &result); err != nil {
+				} else if err := json.Unmarshal(*resp.Result, &result); err != nil {
 					emptyResponse = true // unmarshal error
 				} else {
 					emptyResponse = isEmpty(result) // empty unmarshaled result
