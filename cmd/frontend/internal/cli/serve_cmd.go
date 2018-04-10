@@ -34,7 +34,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
@@ -265,9 +264,6 @@ func Main() error {
 	// 🚨 SECURITY: The main frontend handler should always be wrapped in a
 	// basic auth handler
 	h = handlerutil.NewBasicAuthHandler(h)
-
-	// Add license generation endpoint (has its own basic auth)
-	h = license.WithLicenseGenerator(h)
 
 	// Don't leak memory through gorilla/session items stored in context
 	h = gcontext.ClearHandler(h)

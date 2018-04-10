@@ -15,7 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/license"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -46,15 +45,13 @@ type JSContext struct {
 
 	DisableTelemetry bool `json:"disableTelemetry"`
 
-	GithubEnterpriseURLs map[string]string     `json:"githubEnterpriseURLs"`
-	SentryDSN            string                `json:"sentryDSN"`
-	SiteID               string                `json:"siteID"`
-	Debug                bool                  `json:"debug"`
-	SessionID            string                `json:"sessionID"`
-	License              *license.License      `json:"license"`
-	LicenseStatus        license.LicenseStatus `json:"licenseStatus"`
-	ShowOnboarding       bool                  `json:"showOnboarding"`
-	EmailEnabled         bool                  `json:"emailEnabled"`
+	GithubEnterpriseURLs map[string]string `json:"githubEnterpriseURLs"`
+	SentryDSN            string            `json:"sentryDSN"`
+	SiteID               string            `json:"siteID"`
+	Debug                bool              `json:"debug"`
+	SessionID            string            `json:"sessionID"`
+	ShowOnboarding       bool              `json:"showOnboarding"`
+	EmailEnabled         bool              `json:"emailEnabled"`
 
 	Site                schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
@@ -110,13 +107,9 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	siteID := siteid.Get()
 
-	// For legacy configurations that have a license key already set we should not overwrite their existing configuration details.
-	license, licenseStatus := license.Get(siteID)
-	var showOnboarding = false
-	if license == nil || license.SiteID == "" {
-		siteConfig, err := db.SiteConfig.Get(req.Context())
-		showOnboarding = err == nil && !siteConfig.Initialized
-	}
+	// Show the site init screen?
+	siteConfig, err := db.SiteConfig.Get(req.Context())
+	showOnboarding := err == nil && !siteConfig.Initialized
 
 	return JSContext{
 		AppURL:               globals.AppURL.String(),
@@ -132,8 +125,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Debug:                envvar.DebugMode(),
 		SiteID:               siteID,
 		SessionID:            sessionID,
-		License:              license,
-		LicenseStatus:        licenseStatus,
 		ShowOnboarding:       showOnboarding,
 		EmailEnabled:         conf.CanSendEmail(),
 		Site:                 publicSiteConfiguration,

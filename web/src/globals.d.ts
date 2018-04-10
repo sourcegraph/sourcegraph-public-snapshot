@@ -80,19 +80,9 @@ interface SourcegraphContext {
     githubEnterpriseURLs: { [key: string]: string }
 
     /**
-     * Status of license
-     */
-    licenseStatus: string
-
-    /**
      * Status of onboarding
      */
     showOnboarding: boolean
-
-    /**
-     * Server License
-     */
-    license: License | null
 
     /**
      * Emails support enabled
