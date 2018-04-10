@@ -23,7 +23,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
-* Users (and site admins) may now create and manage access tokens to authenticate API clients. The site config `auth.disableAccessTokens` disables this new feature.
+* Users (and site admins) may now create and manage access tokens to authenticate API clients. The site config `auth.disableAccessTokens` disables this new feature. Access tokens are currently only supported when using the `builtin` and `http-header` authentication providers (not OpenID or SAML).
 * User and site admin management capabilities for user email addresses are improved.
 * The user and organization management UI has been greatly improved. Site admins may now administer all organizations (even those they aren't a member of) and may edit profile info and configuration for all users.
 * If SSO is enabled (via OpenID or SAML) and the SSO system provides user avatar images and/or display names, those are now used by Sourcegraph.
