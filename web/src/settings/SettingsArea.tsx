@@ -135,33 +135,37 @@ export class SettingsArea extends React.Component<Props, State> {
                                 <AcceptInvitePage {...routeComponentProps} {...this.props} />
                             )}
                         />
-                        <Route
-                            path={`${this.props.match.url}/tokens`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <UserSettingsTokensPage
-                                    {...routeComponentProps}
-                                    {...this.props}
-                                    newToken={this.state.newlyCreatedAccessToken}
-                                    onDidPresentNewToken={this.setNewToken}
-                                />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/tokens/new`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <UserSettingsCreateAccessTokenPage
-                                    {...routeComponentProps}
-                                    {...this.props}
-                                    onDidCreateAccessToken={this.setNewToken}
-                                />
-                            )}
-                        />
+                        {window.context.accessTokensEnabled && (
+                            <Route
+                                path={`${this.props.match.url}/tokens`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <UserSettingsTokensPage
+                                        {...routeComponentProps}
+                                        {...this.props}
+                                        newToken={this.state.newlyCreatedAccessToken}
+                                        onDidPresentNewToken={this.setNewToken}
+                                    />
+                                )}
+                            />
+                        )}
+                        {window.context.accessTokensEnabled && (
+                            <Route
+                                path={`${this.props.match.url}/tokens/new`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <UserSettingsCreateAccessTokenPage
+                                        {...routeComponentProps}
+                                        {...this.props}
+                                        onDidCreateAccessToken={this.setNewToken}
+                                    />
+                                )}
+                            />
+                        )}
                         <Route
                             path={`${this.props.match.url}/integrations`}
                             key="hardcoded-key"

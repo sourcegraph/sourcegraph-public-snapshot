@@ -8,6 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // AuthorizationMiddleware authenticates the user based on the "Authorization" header.
@@ -25,13 +26,15 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 		case "session":
 			r = r.WithContext(session.AuthenticateBySession(r.Context(), parts[1]))
 		case "token":
-			userID, err := db.AccessTokens.Lookup(r.Context(), parts[1])
-			if err != nil {
-				log15.Error("Invalid access token.", "token", parts[1], "err", err)
-				http.Error(w, "invalid access token", http.StatusUnauthorized)
-				return
+			if conf.AccessTokensEnabled() {
+				userID, err := db.AccessTokens.Lookup(r.Context(), parts[1])
+				if err != nil {
+					log15.Error("Invalid access token.", "token", parts[1], "err", err)
+					http.Error(w, "invalid access token", http.StatusUnauthorized)
+					return
+				}
+				r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
 			}
-			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
 		}
 
 		next.ServeHTTP(w, r)

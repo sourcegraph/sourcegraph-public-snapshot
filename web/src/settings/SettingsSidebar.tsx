@@ -102,15 +102,17 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                         Emails
                     </NavLink>
                 </li>
-                <li className="sidebar__item">
-                    <NavLink
-                        to={`${props.match.path}/tokens`}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
-                    >
-                        Access tokens
-                    </NavLink>
-                </li>
+                {window.context.accessTokensEnabled && (
+                    <li className="sidebar__item">
+                        <NavLink
+                            to={`${props.match.path}/tokens`}
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                        >
+                            Access tokens
+                        </NavLink>
+                    </li>
+                )}
             </ul>
 
             {!siteAdminViewingOtherUser && (

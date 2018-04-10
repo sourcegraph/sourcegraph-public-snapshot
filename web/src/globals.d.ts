@@ -96,6 +96,9 @@ interface SourcegraphContext {
         'auth.allowSignup': boolean
     }
 
+    /** Whether access tokens are enabled. */
+    accessTokensEnabled: boolean
+
     /**
      * Likely running within a Docker container under a Mac host OS.
      */
