@@ -674,13 +674,13 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
             await page.goto(baseURL + '/search')
 
             // Update the input value
-            await page.waitForSelector('input')
+            await page.waitForSelector('input.query-input2__input')
             await page.keyboard.type('test repo:sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
 
             // TODO: test search scopes
 
             // Submit the search
-            await page.click('button')
+            await page.click('button.search-button')
 
             await page.waitForSelector('.search-results__stats')
             await retry(async () => {
