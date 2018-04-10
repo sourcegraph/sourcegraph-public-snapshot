@@ -13,4 +13,5 @@ docker run \
 	--rm \
 	--volume /tmp/sourcegraph/config:/etc/sourcegraph \
 	--volume /tmp/sourcegraph/data:/var/opt/sourcegraph \
+	-v /var/run/docker.sock:/var/run/docker.sock \
 	sourcegraph/server:$USER-dev
