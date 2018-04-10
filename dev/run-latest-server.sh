@@ -16,8 +16,8 @@ echo "creating lsp network bridge..."
 docker network create --driver bridge lsp
 
 echo "pulling new docker image..."
-IMAGE=us.gcr.io/sourcegraph-dev/server:latest
-docker pull us.gcr.io/sourcegraph-dev/server:latest
+IMAGE=sourcegraph/server:insiders
+docker pull $IMAGE
 
 echo "starting server..."
 gcloud docker -- run "$@" \
