@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -57,7 +58,26 @@ func (c *serverProxyConn) handleWorkspaceFilesExt(ctx context.Context, req *json
 		return nil, err
 	}
 
-	// TODO(keegancsmith): Filter based on lspext.FilesParams.Base
+	// Our FS is rooted at file:///, so we can just filter based on the path
+	// using simple prefix checks (if we ensure base has a / suffix)
+	basePath := "/"
+	if params.Base != "" {
+		base, err := url.Parse(params.Base)
+		if err != nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: err.Error()}
+		}
+		if base.Scheme != "file" {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: "Only support file scheme for base."}
+		}
+		basePath = base.Path
+		if !strings.HasPrefix(basePath, "/") {
+			basePath = "/" + basePath
+		}
+		if !strings.HasSuffix(basePath, "/") {
+			basePath = basePath + "/"
+		}
+	}
+
 	filenames, err := c.rootFS.ListAllFiles(ctx)
 	if err != nil {
 		return nil, err
@@ -69,7 +89,9 @@ func (c *serverProxyConn) handleWorkspaceFilesExt(ctx context.Context, req *json
 	}
 	for _, filename := range filenames {
 		u.Path = "/" + filename
-		res = append(res, lsp.TextDocumentIdentifier{URI: lsp.DocumentURI(u.String())})
+		if strings.HasPrefix(u.Path, basePath) {
+			res = append(res, lsp.TextDocumentIdentifier{URI: lsp.DocumentURI(u.String())})
+		}
 	}
 
 	return res, nil
