@@ -12,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
@@ -91,11 +92,22 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 		code = &tmp
 	}
 
+	// Another user may have already verified this email address. If so, do not send another
+	// verification email (it would be pointless and also be an abuse vector). Do not tell the
+	// user that another user has already verified it, to avoid needlessly leaking the existence
+	// of emails.
+	var emailAlreadyExistsAndIsVerified bool
+	if _, err := db.Users.GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
+		return err
+	} else if err == nil {
+		emailAlreadyExistsAndIsVerified = true
+	}
+
 	if err := db.UserEmails.Add(ctx, userID, email, code); err != nil {
 		return err
 	}
 
-	if conf.EmailVerificationRequired() {
+	if conf.EmailVerificationRequired() && !emailAlreadyExistsAndIsVerified {
 		// Send email verification email.
 		if err := SendUserEmailVerificationEmail(ctx, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
