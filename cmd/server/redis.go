@@ -40,7 +40,10 @@ func maybeRedisProcFile() (string, error) {
 		}
 
 		dataDir := filepath.Join(os.Getenv("DATA_DIR"), "redis")
-		os.MkdirAll(dataDir, os.FileMode(0755))
+		err := os.MkdirAll(dataDir, os.FileMode(0755))
+		if err != nil {
+			return "", err
+		}
 
 		f, err := os.Create(path)
 		if err != nil {
