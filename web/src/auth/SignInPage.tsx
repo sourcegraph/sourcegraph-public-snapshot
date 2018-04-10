@@ -1,6 +1,7 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
@@ -36,13 +37,13 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
     public render(): JSX.Element | null {
         return (
             <form className="signin-signup-form signin-form" onSubmit={this.handleSubmit}>
-                {this.state.errorDescription !== '' && (
-                    <p className="signin-signup-form__error">{this.state.errorDescription}</p>
-                )}
                 {window.context.site['auth.allowSignup'] && (
                     <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
                         Don't have an account? Sign up.
                     </Link>
+                )}
+                {this.state.errorDescription !== '' && (
+                    <div className="alert alert-danger my-2">Error: {upperFirst(this.state.errorDescription)}</div>
                 )}
                 <div className="form-group">
                     <input
