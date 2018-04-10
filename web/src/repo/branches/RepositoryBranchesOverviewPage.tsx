@@ -13,6 +13,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
+import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
@@ -117,6 +118,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
     public render(): JSX.Element | null {
         return (
             <div className="repository-branches-page">
+                <PageTitle title="Branches" />
                 {this.state.dataOrError === undefined ? (
                     <LoaderIcon className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.dataOrError) ? (

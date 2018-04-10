@@ -14,6 +14,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
@@ -120,6 +121,7 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-commit-page area">
+                <PageTitle title={`Commit ${this.props.match.params.revspec}`} />
                 <div className="area__content">
                     {this.state.commitOrError === undefined ? (
                         <LoaderIcon className="icon-inline mt-2" />

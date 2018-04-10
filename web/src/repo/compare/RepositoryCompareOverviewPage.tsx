@@ -12,6 +12,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
+import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -130,6 +131,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
     public render(): JSX.Element | null {
         return (
             <div className="repository-compare-page">
+                <PageTitle title="Compare" />
                 {this.state.rangeOrError === null ? (
                     <p>Enter two Git revspecs to compare.</p>
                 ) : this.state.rangeOrError === undefined ? (

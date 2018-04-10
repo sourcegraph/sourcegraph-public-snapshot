@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { buildSearchURLQuery } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -203,6 +204,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
 
         return (
             <div className="repository-stats-page">
+                <PageTitle title="Contributors" />
                 <div className="card repository-stats-page__card repository-stats-page__card--form">
                     <div className="card-header">Contributions filter</div>
                     <div className="card-body">

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
@@ -109,6 +110,7 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-commits-page">
+                <PageTitle title="Commits" />
                 <RepoHeaderActionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="commits">Commits</RepoHeaderBreadcrumbNavItem>}

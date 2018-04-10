@@ -4,6 +4,7 @@ import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
@@ -119,6 +120,7 @@ export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-branches-page">
+                <PageTitle title="All branches" />
                 <FilteredGitRefConnection
                     className=""
                     listClassName="list-group list-group-flush"
