@@ -45,7 +45,7 @@ export class SiteInitPage extends React.Component<RouteComponentProps<any>, {}> 
             body: JSON.stringify(args),
         }).then(resp => {
             if (resp.status !== 200) {
-                return resp.text().then(text => Promise.reject(text))
+                return resp.text().then(text => Promise.reject(new Error(text)))
             }
 
             eventLogger.log('ServerInstallationComplete', {
