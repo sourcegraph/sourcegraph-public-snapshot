@@ -94,7 +94,19 @@ func (w *Worker) enableLangservers(inv *inventory.Inventory) {
 	// Enable the language server for each language detected in the repository.
 	for _, language := range inv.Languages {
 		err := langServersEnableLanguage(w.Ctx, strings.ToLower(language.Name))
-		if err != nil && !strings.Contains(err.Error(), "language not supported") {
+
+		// Note: We ignore "not authenticated" errors here as they would just
+		// indicate one of two things:
+		//
+		// 1. The language is a built-in one, but an admin user has explicitly
+		//    disabled it. We do not want to act as an admin and explicitly
+		//    override their disable action.
+		// 2. The language is not a built-in one, and by 'enabling' it we would
+		//    actually just be modifying an entry to the site config. Only
+		//    admins can do this, and this is not an action we want to perform
+		//    here.
+		//
+		if err != nil && !strings.Contains(err.Error(), "not authenticated") {
 			// Failure here should never be fatal to the rest of the
 			// indexing operations.
 			log15.Error("failed to automatically enable language server", "language", strings.ToLower(language.Name), "error", err)
