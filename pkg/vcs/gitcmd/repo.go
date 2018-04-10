@@ -812,7 +812,7 @@ func (r *Repository) ShortLog(ctx context.Context, opt vcs.ShortLogOptions) ([]*
 		return nil, err
 	}
 
-	args := []string{"shortlog", "-sne"}
+	args := []string{"shortlog", "-sne", "--no-merges"}
 	if opt.After != "" {
 		args = append(args, "--after="+opt.After)
 	}
