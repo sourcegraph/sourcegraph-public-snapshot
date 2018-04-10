@@ -16,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventlogger"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 
@@ -107,7 +108,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-		if err != nil {
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && vcs.IsRevisionNotFound(errors.Cause(err)) // should reply with HTTP 200
+		if err != nil && !isRepoEmptyError {
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
 				// was renamed to "github.com/moby/moby" -> redirect the user now.

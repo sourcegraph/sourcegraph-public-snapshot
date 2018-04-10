@@ -1,6 +1,7 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
+import RepoQuestionIcon from '@sourcegraph/icons/lib/RepoQuestion'
 import isEqual from 'lodash/isEqual'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
@@ -158,6 +159,10 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         />
                     )
                 case EREVNOTFOUND:
+                    if (!this.props.rev) {
+                        return <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
+                    }
+
                     return (
                         <HeroPage
                             icon={DirectionalSignIcon}
