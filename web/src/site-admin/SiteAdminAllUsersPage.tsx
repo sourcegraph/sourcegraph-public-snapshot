@@ -1,6 +1,6 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
+import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import format from 'date-fns/format'
 import isEqual from 'lodash/isEqual'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -16,10 +16,10 @@ import { Subscription } from 'rxjs/Subscription'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
 import { asError } from '../util/errors'
 import { deleteUser, fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
-import { SettingsInfo } from './util/SettingsInfo'
 
 interface UserNodeProps {
     /**
@@ -88,136 +88,63 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 
     public render(): JSX.Element | null {
-        const actions: JSX.Element[] = []
-        if (this.props.node.id !== this.props.currentUser.id) {
-            if (this.props.node.siteAdmin) {
-                actions.push(
-                    <button
-                        key="demote"
-                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                        onClick={this.demoteFromSiteAdmin}
-                        disabled={this.state.loading}
-                    >
-                        Revoke site admin
-                    </button>
-                )
-            } else {
-                actions.push(
-                    <button
-                        key="promote"
-                        className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                        onClick={this.promoteToSiteAdmin}
-                        disabled={this.state.loading}
-                    >
-                        Promote to site admin
-                    </button>
-                )
-            }
-            actions.push(
-                <button
-                    key="randomizePassword"
-                    className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                    onClick={this.randomizePassword}
-                    disabled={this.state.loading || !!this.state.resetPasswordURL}
-                >
-                    Reset password
-                </button>
-            )
-            actions.push(
-                <button
-                    key="deleteUser"
-                    className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                    onClick={this.deleteUser}
-                    disabled={this.state.loading}
-                >
-                    Delete user
-                </button>
-            )
-        }
-
         return (
-            <li className="site-admin-detail-list__item site-admin-all-users-page__item-container">
-                <div className="site-admin-all-users-page__item">
-                    <div className="site-admin-detail-list__header">
-                        <Link className="site-admin-detail-list__name" to={`/users/${this.props.node.username}`}>
-                            {this.props.node.username}
+            <li className="list-group-item py-2">
+                <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                        <Link to={`/users/${this.props.node.username}`}>
+                            <strong>{this.props.node.username}</strong>
                         </Link>
                         <br />
-                        <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
+                        <span className="text-muted">{this.props.node.displayName}</span>
                     </div>
-                    <ul className="site-admin-detail-list__info">
-                        {this.props.node.siteAdmin && (
-                            <li>
-                                <strong>Site admin</strong>
-                            </li>
-                        )}
-                        {this.props.node.emails && (
-                            <li>
-                                Emails:{' '}
-                                {this.props.node.emails.length === 0 ? (
-                                    '(none)'
-                                ) : (
-                                    <ul className="ml-3">
-                                        {this.props.node.emails.map(({ email, verified, verificationPending }, i) => (
-                                            <li key={i} className="site-admin-all-users-page__item-email pr-2">
-                                                <span
-                                                    data-tooltip={
-                                                        verificationPending ? 'Verification pending' : 'Verified'
-                                                    }
-                                                >
-                                                    {email}
-                                                </span>{' '}
-                                                &ndash;{' '}
-                                                {(verificationPending || verified) && (
-                                                    <a
-                                                        href=""
-                                                        // tslint:disable-next-line:jsx-no-lambda
-                                                        onClick={e => {
-                                                            e.preventDefault()
-                                                            this.emailVerificationClicks.next({
-                                                                email,
-                                                                verified: !verified,
-                                                            })
-                                                        }}
-                                                    >
-                                                        Mark as {verificationPending ? 'verified' : 'unverified'}
-                                                    </a>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </li>
-                        )}
-                        {this.props.node.createdAt && (
-                            <li>Created: {format(this.props.node.createdAt, 'YYYY-MM-DD')}</li>
-                        )}
-                        {this.props.node.orgs &&
-                            this.props.node.orgs.length > 0 && (
-                                <li>Orgs: {this.props.node.orgs.map(org => org.name).join(', ')}</li>
-                            )}
-                        {this.props.node.latestSettings && (
-                            <li>
-                                <SettingsInfo
-                                    settings={this.props.node.latestSettings}
-                                    filename={`user-settings-${this.props.node.id}.json`}
-                                />
-                            </li>
-                        )}
-                        {this.props.node.tags &&
-                            this.props.node.tags.length > 0 && (
-                                <li>Tags: {this.props.node.tags.map(tag => tag.name).join(', ')}</li>
-                            )}
-                    </ul>
-                    <div className="site-admin-detail-list__actions">
-                        {actions}
-                        {this.state.errorDescription && (
-                            <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
+                    <div>
+                        <Link className="btn btn-sm btn-secondary" to={`${userURL(this.props.node.username)}/settings`}>
+                            <GearIcon className="icon-inline" /> Settings
+                        </Link>{' '}
+                        <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={this.randomizePassword}
+                            disabled={this.state.loading || !!this.state.resetPasswordURL}
+                        >
+                            Reset password
+                        </button>{' '}
+                        {this.props.node.id !== this.props.currentUser.id &&
+                            (this.props.node.siteAdmin ? (
+                                <button
+                                    className="btn btn-sm btn-secondary"
+                                    onClick={this.demoteFromSiteAdmin}
+                                    disabled={this.state.loading}
+                                >
+                                    Revoke site admin
+                                </button>
+                            ) : (
+                                <button
+                                    key="promote"
+                                    className="btn btn-sm btn-secondary"
+                                    onClick={this.promoteToSiteAdmin}
+                                    disabled={this.state.loading}
+                                >
+                                    Promote to site admin
+                                </button>
+                            ))}{' '}
+                        {this.props.node.id !== this.props.currentUser.id && (
+                            <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={this.deleteUser}
+                                disabled={this.state.loading}
+                                data-tooltip="Delete user"
+                            >
+                                <DeleteIcon className="icon-inline" />
+                            </button>
                         )}
                     </div>
                 </div>
+                {this.state.errorDescription && (
+                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
+                )}
                 {this.state.resetPasswordURL && (
-                    <div className="alert alert-success site-admin-all-users-page__item-alert">
+                    <div className="alert alert-success mt-2">
                         <p>
                             Password was reset. You must manually send <strong>{this.props.node.username}</strong> this
                             reset link:
@@ -356,23 +283,21 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         }
 
         return (
-            <div className="site-admin-detail-list site-admin-all-users-page">
+            <div className="site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
                 <h2>Users</h2>
-                <div className="site-admin-page__actions">
-                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm site-admin-page__actions-btn">
+                <div>
+                    <Link to="/site-admin/invite-user" className="btn btn-primary">
                         <AddIcon className="icon-inline" /> Invite user
                     </Link>
                     &nbsp;
-                    <Link
-                        to="/site-admin/configuration"
-                        className="btn btn-secondary btn-sm site-admin-page__actions-btn"
-                    >
+                    <Link to="/site-admin/configuration" className="btn btn-secondary">
                         <GearIcon className="icon-inline" /> Configure SSO
                     </Link>
                 </div>
                 <FilteredUserConnection
-                    className="site-admin-page__filtered-connection"
+                    className="mt-3"
+                    listClassName="list-group list-group-flush"
                     noun="user"
                     pluralNoun="users"
                     queryConnection={fetchAllUsers}

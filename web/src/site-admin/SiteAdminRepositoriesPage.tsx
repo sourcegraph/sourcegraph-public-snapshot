@@ -47,82 +47,75 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
 
     public render(): JSX.Element | null {
         return (
-            <li
-                key={this.props.node.id}
-                className={`site-admin-detail-list__item site-admin-repositories-page__repo site-admin-repositories-page__repo--${
-                    this.props.node.enabled ? 'enabled' : 'disabled'
-                }`}
-            >
-                <div className="site-admin-detail-list__header site-admin-repositories-page__repo-header">
-                    <RepoLink
-                        repoPath={this.props.node.uri}
-                        to={`/${this.props.node.uri}`}
-                        className="site-admin-repositories-page__repo-link"
-                    />
-                    {this.props.node.enabled ? (
-                        <small
-                            data-tooltip="Access to this repository is enabled. All users can view and search it."
-                            className="site-admin-repositories-page__repo-info site-admin-repositories-page__repo-access"
-                        >
-                            <Checkmark className="icon-inline" />Enabled
-                        </small>
-                    ) : (
-                        <small
-                            data-tooltip="Access to this repository is disabled. Enable access to it to allow users to view and search it."
-                            className="site-admin-repositories-page__repo-info site-admin-repositories-page__repo-access"
-                        >
-                            <Close className="icon-inline" />Disabled
-                        </small>
-                    )}
-                    {this.props.node.mirrorInfo.cloneInProgress && (
-                        <small className="site-admin-repositories-page__repo-info">
-                            <Loader className="icon-inline" /> Cloning
-                        </small>
-                    )}
-                    {this.props.node.enabled &&
-                        !this.props.node.mirrorInfo.cloneInProgress &&
-                        !this.props.node.mirrorInfo.cloned && (
+            <li className="list-group-item py-2">
+                <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                        <RepoLink repoPath={this.props.node.uri} to={`/${this.props.node.uri}`} />
+                        {this.props.node.enabled ? (
                             <small
-                                data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
-                                className="site-admin-repositories-page__repo-info"
+                                data-tooltip="Access to this repository is enabled. All users can view and search it."
+                                className="ml-2 text-success"
                             >
-                                Not yet cloned
+                                <Checkmark className="icon-inline" />Enabled
+                            </small>
+                        ) : (
+                            <small
+                                data-tooltip="Access to this repository is disabled. Enable access to it to allow users to view and search it."
+                                className="ml-2 text-danger"
+                            >
+                                <Close className="icon-inline" />Disabled
                             </small>
                         )}
+                        {this.props.node.mirrorInfo.cloneInProgress && (
+                            <small className="ml-2 text-success">
+                                <Loader className="icon-inline" /> Cloning
+                            </small>
+                        )}
+                        {this.props.node.enabled &&
+                            !this.props.node.mirrorInfo.cloneInProgress &&
+                            !this.props.node.mirrorInfo.cloned && (
+                                <small
+                                    className="text-muted"
+                                    data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
+                                >
+                                    Not yet cloned
+                                </small>
+                            )}
+                    </div>
+                    <div>
+                        {
+                            <Link
+                                className="btn btn-secondary btn-sm"
+                                to={`/${this.props.node.uri}/-/settings`}
+                                data-tooltip="Repository settings"
+                            >
+                                <GearIcon className="icon-inline" /> Settings
+                            </Link>
+                        }{' '}
+                        {this.props.node.enabled ? (
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={this.disableRepository}
+                                disabled={this.state.loading}
+                                data-tooltip="Disable access to the repository. Users will be unable to view and search it."
+                            >
+                                Disable
+                            </button>
+                        ) : (
+                            <button
+                                className="btn btn-success btn-sm"
+                                onClick={this.enableRepository}
+                                disabled={this.state.loading}
+                                data-tooltip="Enable access to the repository. Users will be able to view and search it."
+                            >
+                                Enable
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <div className="site-admin-detail-list__actions">
-                    {
-                        <Link
-                            className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                            to={`/${this.props.node.uri}/-/settings`}
-                            data-tooltip="Repository settings"
-                        >
-                            <GearIcon className="icon-inline" />
-                        </Link>
-                    }
-                    {this.props.node.enabled ? (
-                        <button
-                            className="btn btn-secondary btn-sm site-admin-detail-list__action"
-                            onClick={this.disableRepository}
-                            disabled={this.state.loading}
-                            data-tooltip="Disable access to the repository. Users will be unable to view and search it."
-                        >
-                            Disable
-                        </button>
-                    ) : (
-                        <button
-                            className="btn btn-success btn-sm site-admin-detail-list__action"
-                            onClick={this.enableRepository}
-                            disabled={this.state.loading}
-                            data-tooltip="Enable access to the repository. Users will be able to view and search it."
-                        >
-                            Enable
-                        </button>
-                    )}
-                    {this.state.errorDescription && (
-                        <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
-                    )}
-                </div>
+                {this.state.errorDescription && (
+                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
+                )}
             </li>
         )
     }
@@ -345,40 +338,33 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
         }
 
         return (
-            <div className="site-admin-detail-list site-admin-repositories-page">
+            <div className="site-admin-repositories-page">
                 <PageTitle title="Repositories - Admin" />
-                <div className="site-admin-page__header">
-                    <h2 className="site-admin-page__header-title">Repositories</h2>
-                    <div className="site-admin-page__actions">
-                        <button
-                            onClick={this.toggleAddPublicRepositoryForm}
-                            className={`btn btn-sm site-admin-page__actions-btn ${
-                                this.state.addPublicRepositoryFormVisible ? 'btn-secondary' : 'btn-primary'
-                            }`}
-                        >
-                            {this.state.addPublicRepositoryFormVisible ? (
-                                <>
-                                    <Close className="icon-inline" /> Close
-                                </>
-                            ) : (
-                                <>
-                                    <AddIcon className="icon-inline" /> Add public GitHub.com repository
-                                </>
-                            )}
-                        </button>
-                        <Link
-                            to="/site-admin/configuration"
-                            className="btn btn-secondary btn-sm site-admin-page__actions-btn"
-                        >
-                            <GearIcon className="icon-inline" /> Configure repositories
-                        </Link>
-                    </div>
+                <h2>Repositories</h2>
+                <div>
+                    <button
+                        onClick={this.toggleAddPublicRepositoryForm}
+                        className={`btn ${this.state.addPublicRepositoryFormVisible ? 'btn-secondary' : 'btn-primary'}`}
+                    >
+                        {this.state.addPublicRepositoryFormVisible ? (
+                            <>
+                                <Close className="icon-inline" /> Close
+                            </>
+                        ) : (
+                            <>
+                                <AddIcon className="icon-inline" /> Add public GitHub.com repository
+                            </>
+                        )}
+                    </button>{' '}
+                    <Link to="/site-admin/configuration" className="btn btn-secondary">
+                        <GearIcon className="icon-inline" /> Configure repositories
+                    </Link>
                 </div>
                 {this.state.addPublicRepositoryFormVisible && (
                     <AddPublicRepositoryForm onSuccess={this.onDidUpdateRepository} />
                 )}
                 <FilteredRepositoryConnection
-                    className="site-admin-page__filtered-connection"
+                    className="list-group list-group-flush mt-3"
                     noun="repository"
                     pluralNoun="repositories"
                     queryConnection={this.queryRepositories}
@@ -390,17 +376,11 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                     location={this.props.location}
                 />
                 {!window.context.sourcegraphDotComMode && (
-                    <div className="site-admin-repositories-page__enable-all">
-                        <button
-                            className="btn btn-secondary site-admin-repositories-page__enable-all-button"
-                            onClick={this.disableAllRepostiories}
-                        >
+                    <div className="my-4">
+                        <button className="btn btn-secondary" onClick={this.disableAllRepostiories}>
                             Disable all
-                        </button>
-                        <button
-                            className="btn btn-secondary site-admin-repositories-page__enable-all-button"
-                            onClick={this.enableAllRepostiories}
-                        >
+                        </button>{' '}
+                        <button className="btn btn-secondary" onClick={this.enableAllRepostiories}>
                             Enable and clone all
                         </button>
                     </div>

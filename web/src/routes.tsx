@@ -122,7 +122,6 @@ export const routes: LayoutRouteProps[] = [
         path: '/explore',
         component: canListAllRepositories ? ExplorePage : ErrorNotSupportedPage,
         exact: true,
-        forceNarrowWidth: true,
     },
     {
         path: '/search/scope/:id',

@@ -2,36 +2,13 @@ import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
 import { fetchAllThreads } from './backend'
 
-interface ThreadNodeProps {
-    /**
-     * The thread to display in this list item.
-     */
-    node: GQL.IThread
-
-    /**
-     * Called when the thread is updated by an action in this list item.
-     */
-    onDidUpdate?: () => void
-}
-
-interface ThreadNodeState {
-    loading: boolean
-    errorDescription?: string
-}
-
-class ThreadNode extends React.PureComponent<ThreadNodeProps, ThreadNodeState> {
-    public state: ThreadNodeState = {
-        loading: false,
-    }
-
+class ThreadNode extends React.PureComponent<{ node: GQL.IThread }> {
     public render(): JSX.Element | null {
         const commentsTitle = this.props.node.comments
             .map(c => `${c.author.username} on ${format(c.createdAt, 'YYYY-MM-DD')}:\n\n${c.contents}\n`)
@@ -40,13 +17,13 @@ class ThreadNode extends React.PureComponent<ThreadNodeProps, ThreadNodeState> {
         const url = `/threads/${this.props.node.id}`
 
         return (
-            <li className="site-admin-detail-list__item">
-                <div className="site-admin-detail-list__header">
+            <li>
+                <div>
                     <Link to={url}>{this.props.node.title}</Link>
                     <br />
-                    <span className="site-admin-detail-list__display-name">{this.props.node.author.username}</span>
+                    <span className="text-muted">{this.props.node.author.username}</span>
                 </div>
-                <ul className="site-admin-detail-list__info">
+                <ul>
                     <li title={commentsTitle}>
                         <Link to={url}>
                             {this.props.node.comments.length} {pluralize('comment', this.props.node.comments.length)}
@@ -63,11 +40,6 @@ class ThreadNode extends React.PureComponent<ThreadNodeProps, ThreadNodeState> {
                         <li>Archived: {format(this.props.node.archivedAt, 'YYYY-MM-DD')}</li>
                     )}
                 </ul>
-                <div className="site-admin-detail-list__actions">
-                    {this.state.errorDescription && (
-                        <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
-                    )}
-                </div>
             </li>
         )
     }
@@ -88,45 +60,26 @@ class FilteredThreadConnection extends FilteredConnection<GQL.IThread> {}
 export class SiteAdminThreadsPage extends React.Component<Props, State> {
     public state: State = {}
 
-    private threadUpdates = new Subject<void>()
-    private subscriptions = new Subscription()
-
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminThreads')
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
     public render(): JSX.Element | null {
-        const nodeProps: Pick<ThreadNodeProps, 'onDidUpdate'> = {
-            onDidUpdate: this.onDidUpdateThread,
-        }
-
         return (
-            <div className="site-admin-detail-list site-admin-threads-page">
+            <div className="site-admin-threads-page">
                 <PageTitle title="Threads - Admin" />
                 <h2>Threads and comments (beta)</h2>
-                <p>
-                    Code comments are in beta and require{' '}
-                    <a href="https://about.sourcegraph.com/products/editor">Sourcegraph Editor</a>.
-                </p>
                 <FilteredThreadConnection
-                    className="site-admin-page__filtered-connection"
+                    className="mt-3"
                     noun="thread"
                     pluralNoun="threads"
                     queryConnection={fetchAllThreads}
                     hideFilter={true}
                     nodeComponent={ThreadNode}
-                    nodeComponentProps={nodeProps}
-                    updates={this.threadUpdates}
                     history={this.props.history}
                     location={this.props.location}
                 />
             </div>
         )
     }
-
-    private onDidUpdateThread = () => this.threadUpdates.next()
 }

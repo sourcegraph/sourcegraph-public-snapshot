@@ -13,11 +13,9 @@ export class SiteAdminCodeIntelligencePage extends React.PureComponent {
 
     public render(): JSX.Element {
         return (
-            <div className="site-admin-detail-list">
-                <div className="site-admin-detail-list">
-                    <PageTitle title="Code Intelligence" />
-                    <SiteAdminLangServers />
-                </div>
+            <div>
+                <PageTitle title="Code Intelligence" />
+                <SiteAdminLangServers />
             </div>
         )
     }

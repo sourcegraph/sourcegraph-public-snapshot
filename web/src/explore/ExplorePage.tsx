@@ -1,6 +1,5 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
@@ -20,38 +19,13 @@ interface RepositoryNodeProps {
 }
 
 export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
-    <li key={repo.id} className="explore-page__item" tabIndex={0}>
-        <div className="explore-page__item-header">
-            <RepoLink repoPath={repo.uri} className="explore-page__item-path" />
-            {repo.mirrorInfo.cloneInProgress && (
-                <span className="explore-page__item-cloning">
-                    <small>
-                        <Loader className="icon-inline" /> Cloning
-                    </small>
-                </span>
-            )}
-        </div>
-        <div className="explore-page__item-spacer" />
-        <div className="explore-page__item-actions">
-            {repo.viewerCanAdminister && (
-                <Link
-                    to={`/${repo.uri}/-/settings`}
-                    className="btn btn-secondary btn-sm explore-page__item-action"
-                    data-tooltip="Repository settings"
-                    tabIndex={-1}
-                >
-                    <GearIcon className="icon-inline" />
-                </Link>
-            )}
-            <Link
-                to={`/${repo.uri}`}
-                className="btn btn-secondary btn-sm explore-page__item-action"
-                data-tooltip="Search and explore this repository"
-                tabIndex={-1}
-            >
-                <RepoIcon className="icon-inline" />&nbsp;View
-            </Link>
-        </div>
+    <li key={repo.id} className="list-group-item py-2">
+        <RepoLink repoPath={repo.uri} className="explore-page__item-path" />
+        {repo.mirrorInfo.cloneInProgress && (
+            <small className="ml-2 text-success">
+                <Loader className="icon-inline" /> Cloning
+            </small>
+        )}
     </li>
 )
 
@@ -88,49 +62,46 @@ export class ExplorePage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="explore-page">
-                <PageTitle title="Repositories" />
-                <div className="explore-page__header">
+            <div className="explore-page area">
+                <div className="area__content">
+                    <PageTitle title="Repositories" />
                     <h2>Explore repositories</h2>
                     {this.props.user &&
                         this.props.user.siteAdmin && (
-                            <div className="explore-page__actions">
-                                <Link
-                                    to="/site-admin/repositories"
-                                    className="btn btn-primary btn-sm site-admin-page__actions-btn"
-                                >
-                                    <GearIcon className="icon-inline" /> Repositories (site admin)
+                            <div>
+                                <Link to="/site-admin/repositories" className="btn btn-primary">
+                                    <GearIcon className="icon-inline" /> Configure repositories
                                 </Link>
                             </div>
                         )}
+                    {this.props.user &&
+                        this.props.user.siteAdmin &&
+                        typeof this.state.disabledRepositoriesCount === 'number' &&
+                        this.state.disabledRepositoriesCount > 0 && (
+                            <div className="alert alert-info mt-3 mb-2">
+                                {numberWithCommas(this.state.disabledRepositoriesCount)}{' '}
+                                {pluralize(
+                                    'disabled repository is',
+                                    this.state.disabledRepositoriesCount,
+                                    'disabled repositories are'
+                                )}{' '}
+                                not shown here.{' '}
+                                <Link to="/site-admin/repositories?filter=disabled">
+                                    Enable more repositories in site admin.
+                                </Link>
+                            </div>
+                        )}
+                    <FilteredRepositoryConnection
+                        className="mt-3"
+                        listClassName="list-group list-group-flush"
+                        noun="repository"
+                        pluralNoun="repositories"
+                        queryConnection={fetchAllRepositoriesAndPollIfAnyCloning}
+                        nodeComponent={RepositoryNode}
+                        history={this.props.history}
+                        location={this.props.location}
+                    />
                 </div>
-                {this.props.user &&
-                    this.props.user.siteAdmin &&
-                    typeof this.state.disabledRepositoriesCount === 'number' &&
-                    this.state.disabledRepositoriesCount > 0 && (
-                        <div className="alert alert-info explore-page__notice">
-                            {numberWithCommas(this.state.disabledRepositoriesCount)}{' '}
-                            {pluralize(
-                                'disabled repository is',
-                                this.state.disabledRepositoriesCount,
-                                'disabled repositories are'
-                            )}{' '}
-                            not shown here.{' '}
-                            <Link to="/site-admin/repositories?filter=disabled">
-                                Enable repositories in site admin.
-                            </Link>
-                        </div>
-                    )}
-                <FilteredRepositoryConnection
-                    className="explore-page__filtered-connection"
-                    listClassName="explore-page__items"
-                    noun="repository"
-                    pluralNoun="repositories"
-                    queryConnection={fetchAllRepositoriesAndPollIfAnyCloning}
-                    nodeComponent={RepositoryNode}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
             </div>
         )
     }

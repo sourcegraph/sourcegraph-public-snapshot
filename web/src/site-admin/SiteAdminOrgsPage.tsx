@@ -11,6 +11,7 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
+import { pluralize } from '../util/strings'
 import { deleteOrganization, fetchAllOrgs } from './backend'
 
 interface OrgNodeProps {
@@ -37,42 +38,49 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
 
     public render(): JSX.Element | null {
         return (
-            <li className="site-admin-detail-list__item">
-                <div className="site-admin-detail-list__header">
-                    <Link to={orgURL(this.props.node.name)} className="site-admin-detail-list__name">
-                        {this.props.node.name}
-                    </Link>
-                    <br />
-                    <span className="site-admin-detail-list__display-name">{this.props.node.displayName}</span>
+            <li className="list-group-item py-2">
+                <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                        <Link to={orgURL(this.props.node.name)}>
+                            <strong>{this.props.node.name}</strong>
+                        </Link>
+                        <br />
+                        <span className="text-muted">{this.props.node.displayName}</span>
+                    </div>
+                    <div>
+                        <Link
+                            to={`${orgURL(this.props.node.name)}/settings`}
+                            className="btn btn-sm btn-secondary"
+                            data-tooltip="Organization settings"
+                        >
+                            <GearIcon className="icon-inline" /> Settings
+                        </Link>{' '}
+                        <Link
+                            to={`${orgURL(this.props.node.name)}/members`}
+                            className="btn btn-sm btn-secondary"
+                            data-tooltip="Organization members"
+                        >
+                            <UserIcon className="icon-inline" />{' '}
+                            {this.props.node.members && (
+                                <>
+                                    {this.props.node.members.totalCount}{' '}
+                                    {pluralize('member', this.props.node.members.totalCount)}
+                                </>
+                            )}
+                        </Link>{' '}
+                        <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={this.deleteOrg}
+                            disabled={this.state.loading}
+                            data-tooltip="Delete organization"
+                        >
+                            <DeleteIcon className="icon-inline" />
+                        </button>
+                    </div>
                 </div>
-                <div className="site-admin-detail-list__actions">
-                    <button
-                        className="btn btn-outline-danger site-admin-detail-list__action"
-                        onClick={this.deleteOrg}
-                        disabled={this.state.loading}
-                        data-tooltip="Delete organization"
-                    >
-                        <DeleteIcon className="icon-inline" />
-                    </button>
-                    <Link
-                        to={`${orgURL(this.props.node.name)}/members`}
-                        className="btn btn-secondary site-admin-detail-list__action"
-                        data-tooltip="Organization members"
-                    >
-                        <UserIcon className="icon-inline" />{' '}
-                        {this.props.node.members && this.props.node.members.totalCount}
-                    </Link>
-                    <Link
-                        to={`${orgURL(this.props.node.name)}/settings`}
-                        className="btn btn-secondary site-admin-detail-list__action"
-                        data-tooltip="Organization settings"
-                    >
-                        <GearIcon className="icon-inline" />
-                    </Link>
-                    {this.state.errorDescription && (
-                        <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
-                    )}
-                </div>
+                {this.state.errorDescription && (
+                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
+                )}
             </li>
         )
     }
@@ -133,18 +141,16 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
         }
 
         return (
-            <div className="site-admin-detail-list site-admin-orgs-page">
+            <div className="site-admin-orgs-page">
                 <PageTitle title="Organizations - Admin" />
-                <div className="site-admin-page__header">
-                    <h2 className="site-admin-page__header-title">Organizations</h2>
-                    <div className="site-admin-page__actions">
-                        <Link to="/organizations/new" className="btn btn-primary btn-sm site-admin-page__actions-btn">
-                            <AddIcon className="icon-inline" /> Create organization
-                        </Link>
-                    </div>
+                <h2>Organizations</h2>
+                <div>
+                    <Link to="/organizations/new" className="btn btn-primary">
+                        <AddIcon className="icon-inline" /> Create organization
+                    </Link>
                 </div>
                 <FilteredOrgConnection
-                    className="site-admin-page__filtered-connection"
+                    className="list-group list-group-flush mt-3"
                     noun="organization"
                     pluralNoun="organizations"
                     queryConnection={fetchAllOrgs}

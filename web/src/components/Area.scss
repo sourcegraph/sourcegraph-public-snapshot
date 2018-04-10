@@ -15,11 +15,11 @@ $area-max-width: 54rem;
 
         &__sidebar {
             flex: 1 0 auto;
-            margin-left: 1rem;
-            margin-right: 1rem;
+            margin-left: 0.75rem;
+            margin-right: 0.75rem;
         }
         &__content {
-            padding: 1rem;
+            padding: 1rem 0.75rem;
             flex: 1 0 auto;
         }
     }
@@ -29,7 +29,7 @@ $area-max-width: 54rem;
             flex: 0 0 auto;
         }
         &__content {
-            padding: 0 2rem;
+            padding: 0 1.5rem;
         }
     }
 
@@ -58,7 +58,7 @@ $area-max-width: 54rem;
 
     &__navbar,
     &__content {
-        padding: 1rem 0.5rem;
+        padding: 1rem 0.75rem;
         flex: none;
     }
 }

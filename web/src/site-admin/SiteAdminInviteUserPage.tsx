@@ -97,10 +97,7 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                                 {this.state.newUserPasswordResetURL}
                             </code>
                         </p>
-                        <button
-                            className="btn btn-primary btn-sm site-admin-invite-user-page__alert-button"
-                            onClick={this.dismissAlert}
-                        >
+                        <button className="btn btn-primary mt-2" onClick={this.dismissAlert}>
                             Invite another user
                         </button>
                     </div>
@@ -133,9 +130,7 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                                 </dd>
                             </dl>
                             {this.state.errorDescription && (
-                                <div className="alert alert-danger form-group site-admin-invite-user-page__error">
-                                    {this.state.errorDescription}
-                                </div>
+                                <div className="alert alert-danger my-2">{this.state.errorDescription}</div>
                             )}
                             <button className="btn btn-primary" disabled={this.state.loading} type="submit">
                                 Generate password reset link

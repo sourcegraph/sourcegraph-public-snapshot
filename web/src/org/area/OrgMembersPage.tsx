@@ -93,18 +93,16 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public render(): JSX.Element | null {
         const loading = this.state.removalOrError === undefined
         return (
-            <li className="site-admin-detail-list__item site-admin-all-users-page__item-container">
-                <div className="site-admin-all-users-page__item">
-                    <div className="site-admin-detail-list__header">
-                        <Link to={userURL(this.props.node.username)} className="site-admin-detail-list__name">
-                            {this.props.node.username}
+            <li className="list-group-item py-2">
+                <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                        <Link to={userURL(this.props.node.username)}>
+                            <strong>{this.props.node.username}</strong>
                         </Link>
                         {this.props.node.displayName && (
                             <>
                                 <br />
-                                <span className="site-admin-detail-list__display-name">
-                                    {this.props.node.displayName}
-                                </span>
+                                <span className="text-muted">{this.props.node.displayName}</span>
                             </>
                         )}
                     </div>
@@ -119,13 +117,11 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     {this.isSelf ? 'Leave organization' : 'Remove from organization'}
                                 </button>
                             )}
-                        {isErrorLike(this.state.removalOrError) && (
-                            <p className="site-admin-detail-list__error">
-                                {upperFirst(this.state.removalOrError.message)}
-                            </p>
-                        )}
                     </div>
                 </div>
+                {isErrorLike(this.state.removalOrError) && (
+                    <div className="alert alert-danger mt-2">{upperFirst(this.state.removalOrError.message)}</div>
+                )}
             </li>
         )
     }
@@ -204,7 +200,7 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
                     />
                 )}
                 <FilteredUserConnection
-                    className="site-admin-page__filtered-connection"
+                    className="list-group list-group-flush mt-3"
                     noun="member"
                     pluralNoun="members"
                     queryConnection={this.fetchOrgMembers}

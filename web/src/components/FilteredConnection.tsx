@@ -457,7 +457,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.props.updates) {
             this.subscriptions.add(
                 this.props.updates.subscribe(c => {
-                    this.setState({ loading: true, connectionOrError: undefined }, () => refreshRequests.next())
+                    this.setState({ loading: true }, () => refreshRequests.next())
                 })
             )
         }

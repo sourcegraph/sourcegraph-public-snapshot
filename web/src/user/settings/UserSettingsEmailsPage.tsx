@@ -43,32 +43,34 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
         }
 
         return (
-            <li key={this.props.node.email} className="site-admin-detail-list__item">
-                <div className="site-admin-detail-list__header site-admin-detail-list__header--center">
-                    <strong>{this.props.node.email}</strong> &nbsp;{statusFragment}
-                </div>
-                <div className="site-admin-detail-list__actions">
-                    <button
-                        className="btn btn-sm btn-outline-danger site-admin-detail-list__action"
-                        onClick={this.remove}
-                        disabled={this.state.loading}
-                        data-tooltip="Remove email address"
-                    >
-                        <DeleteIcon className="icon-inline" />
-                    </button>
-                    {this.props.node.viewerCanManuallyVerify && (
+            <li className="list-group-item py-2">
+                <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                        <strong>{this.props.node.email}</strong> &nbsp;{statusFragment}
+                    </div>
+                    <div>
                         <button
-                            className="btn btn-sm btn-secondary site-admin-detail-list__action"
-                            onClick={this.props.node.verified ? this.setAsUnverified : this.setAsVerified}
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={this.remove}
                             disabled={this.state.loading}
+                            data-tooltip="Remove email address"
                         >
-                            {this.props.node.verified ? 'Mark as unverified' : 'Mark as verified'}
-                        </button>
-                    )}
-                    {this.state.errorDescription && (
-                        <p className="site-admin-detail-list__error">{this.state.errorDescription}</p>
-                    )}
+                            <DeleteIcon className="icon-inline" />
+                        </button>{' '}
+                        {this.props.node.viewerCanManuallyVerify && (
+                            <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={this.props.node.verified ? this.setAsUnverified : this.setAsVerified}
+                                disabled={this.state.loading}
+                            >
+                                {this.props.node.verified ? 'Mark as unverified' : 'Mark as verified'}
+                            </button>
+                        )}
+                    </div>
                 </div>
+                {this.state.errorDescription && (
+                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
+                )}
             </li>
         )
     }
@@ -174,18 +176,18 @@ export class UserSettingsEmailsPage extends React.Component<Props, State> {
         }
 
         return (
-            <div className="site-admin-detail-list user-settings-emails-page">
+            <div className="user-settings-emails-page">
                 <PageTitle title="Emails" />
-                <h2 className="site-admin-page__header-title">Emails</h2>
+                <h2>Emails</h2>
                 {this.state.siteFlags &&
                     !this.state.siteFlags.sendsEmailVerificationEmails && (
-                        <div className="alert alert-warning mt-2 mb-3">
+                        <div className="alert alert-warning mt-2">
                             Sourcegraph is not configured to send email verifications. Newly added email addresses must
                             be manually verified by a site admin.
                         </div>
                     )}
                 <FilteredUserEmailConnection
-                    className="site-admin-page__filtered-connection"
+                    className="list-group list-group-flush mt-3"
                     noun="email address"
                     pluralNoun="email addresses"
                     queryConnection={this.queryUserEmails}
