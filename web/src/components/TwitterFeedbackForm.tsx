@@ -7,6 +7,7 @@ import { fromEvent } from 'rxjs/observable/fromEvent'
 import { filter } from 'rxjs/operators/filter'
 import { Subscription } from 'rxjs/Subscription'
 import { eventLogger } from '../tracking/eventLogger'
+import { pluralize } from '../util/strings'
 
 interface Props {
     user: GQL.IUser | null
@@ -88,7 +89,10 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                     </div>
                     <div className="form-group">
                         <label>Tell us why?</label>{' '}
-                        <small>{MAX_CHARACTERS - this.state.description.length} chacters left</small>
+                        <small>
+                            {MAX_CHARACTERS - this.state.description.length}{' '}
+                            {pluralize('characters', MAX_CHARACTERS - this.state.description.length)} left
+                        </small>
                         <textarea
                             name="description"
                             id="description"
