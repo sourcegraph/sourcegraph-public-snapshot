@@ -435,6 +435,15 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		//   file:///src/github.com/user/repo/dir/file.go -> file:///dir/file.go
 		var walkErr error
 		lspext.WalkURIFields(result, nil, func(uri lsp.DocumentURI) lsp.DocumentURI {
+			// HACK: Work around https://github.com/sourcegraph/sourcegraph/issues/10541 by
+			// converting uri == "file://" (which is actually an empty URI in the langserver result)
+			// to "file:///" instead of emitting an error. This will likely cause the result to be displayed
+			// with an error on the client, but it's better than the whole
+			// textDocument/implementation request failing.
+			if req.Method == "textDocument/implementation" && (uri == "" || uri == "file://") {
+				return "file:///"
+			}
+
 			newURI, err := h.rewriteURIFromLangServer(uri)
 			if err != nil {
 				walkErr = err
