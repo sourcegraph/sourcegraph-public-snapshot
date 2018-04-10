@@ -57,9 +57,11 @@
 }
 
 .file-diff-hunks {
-    overflow-x: auto;
-    overflow-y: hidden;
-
+    &__container {
+        // Must apply overflow-x to the container, not to the outer .file-diff-hunks, or else per the CSS spec
+        // overflow-y:auto would also be applied, and the code intel hover would be clipped.
+        overflow-x: auto;
+    }
     position: relative;
 
     border-collapse: separate;
