@@ -193,8 +193,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         return (
             <>
                 {this.props.connectionQuery && summary}
-                {!this.props.loading &&
-                    this.props.connection &&
+                {this.props.connection &&
                     this.props.connection.nodes.length > 0 && (
                         <ul className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
                             {this.props.connection.nodes.map((node, i) => (
@@ -448,17 +447,23 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         this.subscriptions.add(
             this.showMoreClicks
                 .pipe(map(() => this.state.first * 2))
-                .subscribe(first => this.setState({ first }, () => refreshRequests.next()))
+                .subscribe(first => this.setState({ first, loading: true }, () => refreshRequests.next()))
         )
 
         if (this.props.updates) {
-            this.subscriptions.add(this.props.updates.subscribe(c => refreshRequests.next()))
+            this.subscriptions.add(
+                this.props.updates.subscribe(c => {
+                    this.setState({ loading: true, connectionOrError: undefined }, () => refreshRequests.next())
+                })
+            )
         }
 
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(distinctUntilChanged((a, b) => a.updateOnChange === b.updateOnChange))
-                .subscribe(() => refreshRequests.next())
+                .subscribe(() => {
+                    this.setState({ loading: true, connectionOrError: undefined }, () => refreshRequests.next())
+                })
         )
 
         // Reload collection when the query callback changes.
@@ -469,7 +474,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     distinctUntilChanged(),
                     tap(() => this.focusFilter())
                 )
-                .subscribe(() => this.setState({ loading: true }, () => refreshRequests.next()))
+                .subscribe(() =>
+                    this.setState({ loading: true, connectionOrError: undefined }, () => refreshRequests.next())
+                )
         )
         this.componentUpdates.next(this.props)
     }
@@ -535,7 +542,6 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             )}
                     </form>
                 )}
-                {this.state.loading && <Loader className="icon-inline filtered-connection__loader" />}
                 {isErrorLike(this.state.connectionOrError) ? (
                     <div className="alert alert-danger filtered-connection__error">
                         {upperFirst(this.state.connectionOrError.message)}
@@ -559,6 +565,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         />
                     )
                 )}
+                {this.state.loading && <Loader className="icon-inline filtered-connection__loader" />}
             </div>
         )
     }
