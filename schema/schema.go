@@ -158,6 +158,7 @@ type SiteConfiguration struct {
 	AdminUsernames                    string                      `json:"adminUsernames,omitempty"`
 	AppURL                            string                      `json:"appURL,omitempty"`
 	AuthAllowSignup                   bool                        `json:"auth.allowSignup,omitempty"`
+	AuthDisableAccessTokens           bool                        `json:"auth.disableAccessTokens,omitempty"`
 	AuthOpenIDConnect                 *OpenIDConnectAuthProvider  `json:"auth.openIDConnect,omitempty"`
 	AuthProvider                      string                      `json:"auth.provider,omitempty"`
 	AuthPublic                        bool                        `json:"auth.public,omitempty"`

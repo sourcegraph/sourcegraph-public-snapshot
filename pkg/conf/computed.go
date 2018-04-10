@@ -39,12 +39,13 @@ func JumpToDefOSSIndexEnabled() bool {
 	return p == "enabled"
 }
 
-// AccessTokensEnabled returns true when using an auth provider that currently supports access
-// tokens. SAML and OpenID do not because of the way access tokens were implemented. That will be
-// fixed soon.
+// AccessTokensEnabled returns whether access tokens are enabled.
+//
+// NOTE: It currently also returns false if the auth provider does not support access tokens.  SAML
+// and OpenID do not because of the way access tokens were implemented. That will be fixed soon.
 func AccessTokensEnabled() bool {
-	v := AuthProvider()
-	return v == "builtin" || v == "http-header"
+	providerSupportsAccessTokens := AuthProvider() == "builtin" || AuthProvider() == "http-header"
+	return !Get().AuthDisableAccessTokens && providerSupportsAccessTokens
 }
 
 // EmailVerificationRequired returns whether users must verify an email address before they
