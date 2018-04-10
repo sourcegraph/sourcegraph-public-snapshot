@@ -75,6 +75,9 @@ interface ConnectionPropsCommon<N, NP = {}> {
     /** CSS class name for the <ul> element. */
     listClassName?: string
 
+    /** CSS class name for the "Show more" button. */
+    showMoreClassName?: string
+
     /** The component type to use to display each node. */
     nodeComponent: React.ComponentType<{ node: N } & NP>
 
@@ -211,7 +214,8 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                     this.props.connection &&
                     hasNextPage && (
                         <button
-                            className="btn btn-secondary btn-sm filtered-connection__show-more"
+                            className={`btn btn-secondary btn-sm filtered-connection__show-more ${this.props
+                                .showMoreClassName || ''}`}
                             onClick={this.onClickShowMore}
                         >
                             Show more
@@ -557,6 +561,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             noun={this.props.noun}
                             pluralNoun={this.props.pluralNoun}
                             listClassName={this.props.listClassName}
+                            showMoreClassName={this.props.showMoreClassName}
                             nodeComponent={this.props.nodeComponent}
                             nodeComponentProps={this.props.nodeComponentProps}
                             noShowMore={this.props.noShowMore}

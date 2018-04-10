@@ -83,6 +83,7 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
             <div className="repositories-popover popover">
                 <FilteredRepositoryConnection
                     className="popover__content"
+                    showMoreClassName="popover__show-more"
                     compact={true}
                     noun="repository"
                     pluralNoun="repositories"

@@ -228,6 +228,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 <FilteredGitRefConnection
                                     key={tab.id}
                                     className="popover__content"
+                                    showMoreClassName="popover__show-more"
                                     compact={true}
                                     noun={tab.noun}
                                     pluralNoun={tab.pluralNoun}

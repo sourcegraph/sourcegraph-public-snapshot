@@ -9,7 +9,6 @@ $popover-item-padding-v: 0.325rem;
     max-width: 70vw;
 
     &__content {
-        overflow: auto;
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
@@ -35,6 +34,15 @@ $popover-item-padding-v: 0.325rem;
                 font-weight: bold;
             }
         }
+    }
+
+    &__show-more {
+        flex: 0 0;
+        border: none;
+        border-radius: 0;
+        text-align: left;
+        font-size: 12px;
+        padding: $popover-item-padding-v $popover-item-padding-h;
     }
 }
 
