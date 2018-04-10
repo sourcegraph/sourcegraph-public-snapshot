@@ -108,12 +108,11 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Matches:  matches,
 		LimitHit: limitHit,
 	}
-	err = json.NewEncoder(w).Encode(&resp)
-	if err != nil {
-		// We may have already started writing to w
-		http.Error(w, "failed to encode response: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// The only reasonable error is the client going away now since we know we
+	// can encode resp. This happens relatively often due to our
+	// graphqlbackend regularly cancelling in-flight requests. We can't send
+	// an error response, so we just ignore.
+	_ = json.NewEncoder(w).Encode(&resp)
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit bool, err error) {
