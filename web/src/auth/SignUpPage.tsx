@@ -2,6 +2,7 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import * as H from 'history'
 import { Base64 } from 'js-base64'
+import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
@@ -10,6 +11,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { asError } from '../util/errors'
 import { signupTerms } from '../util/features'
 import { EmailInput, getReturnTo, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 
@@ -54,7 +56,9 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     public render(): JSX.Element | null {
         return (
             <form className="signin-signup-form signup-form" onSubmit={this.handleSubmit}>
-                {this.state.error && <p className="signin-signup-form__error">{this.state.error.message}</p>}
+                {this.state.error && (
+                    <div className="alert alert-danger my-2">Error: {upperFirst(this.state.error.message)}</div>
+                )}
                 <div className="form-group">
                     <EmailInput
                         className="signin-signup-form__input"
@@ -132,7 +136,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         username: this.state.username,
                         password: this.state.password,
                     })
-                    .catch(error => this.setState({ error, loading: false }))
+                    .catch(error => this.setState({ error: asError(error), loading: false }))
             ).subscribe()
         )
         eventLogger.log('InitiateSignUp', {
@@ -230,7 +234,7 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
             body: JSON.stringify(args),
         }).then(resp => {
             if (resp.status !== 200) {
-                return resp.text().then(text => Promise.reject(text))
+                return resp.text().then(text => Promise.reject(new Error(text)))
             }
             window.location.replace(getReturnTo(this.props.location))
             return Promise.resolve()
