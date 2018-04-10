@@ -11,11 +11,10 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
+import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -31,7 +30,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/e
 import { memoizeObservable } from '../util/memoize'
 import { toPrettyBlobURL, toRepoURL, toTreeURL } from '../util/url'
 import { GitCommitNode } from './commits/GitCommitNode'
-import { gitCommitFragment } from './commits/RepositoryCommitsPage'
+import { FilteredGitCommitConnection, gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { searchQueryForRepoRev } from './RepoContainer'
 
 const DirectoryEntry: React.SFC<{
@@ -89,16 +88,21 @@ export const fetchTree = memoizeObservable(
     makeRepoURI
 )
 
-export const fetchTreeCommits = memoizeObservable(
-    (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.IGitCommit[]> =>
+const fetchTreeCommits = memoizeObservable(
+    (args: { repo: GQLID; revspec: string; first?: number; filePath?: string }): Observable<GQL.IGitCommitConnection> =>
         queryGraphQL(
             gql`
-                query TreeCommits($repoPath: String!, $commitID: String!, $filePath: String!) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            file(path: $filePath) {
-                                commits {
-                                    ...GitCommitFields
+                query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String) {
+                    node(id: $repo) {
+                        ... on Repository {
+                            commit(rev: $revspec) {
+                                ancestors(first: $first, path: $filePath) {
+                                    nodes {
+                                        ...GitCommitFields
+                                    }
+                                    pageInfo {
+                                        hasNextPage
+                                    }
                                 }
                             }
                         }
@@ -106,27 +110,25 @@ export const fetchTreeCommits = memoizeObservable(
                 }
                 ${gitCommitFragment}
             `,
-            ctx
+            args
         ).pipe(
             map(({ data, errors }) => {
-                if (
-                    !data ||
-                    errors ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.file ||
-                    !data.repository.commit.file.commits
-                ) {
+                if (!data || !data.node) {
                     throw createAggregateError(errors)
                 }
-                return data.repository.commit.file.commits
+                const repo = data.node as GQL.IRepository
+                if (!repo.commit || !repo.commit.ancestors || !repo.commit.ancestors.nodes) {
+                    throw createAggregateError(errors)
+                }
+                return repo.commit.ancestors
             })
         ),
-    makeRepoURI
+    args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
 interface Props {
     repoPath: string
+    repoID: GQLID
     repoDescription: string
     // filePath is a directory path in DirectoryPage. We call it filePath for consistency elsewhere.
     filePath: string
@@ -141,9 +143,6 @@ interface Props {
 interface State {
     /** This directory's tree, or an error. Undefined while loading. */
     treeOrError?: GQL.ITree | ErrorLike
-
-    /** A log of the most recent commits for this tree, or an error. Undefined while loading. */
-    commitsOrError?: GQL.IGitCommit[] | ErrorLike
 
     /**
      * The value of the search query input field.
@@ -172,16 +171,10 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             x.filePath === y.filePath
                     ),
                     switchMap(props =>
-                        merge(
-                            of({ treeOrError: undefined, commitsOrError: undefined } as Pick<
-                                State,
-                                'treeOrError' | 'commitsOrError'
-                            >),
-                            fetchTree(props).pipe(catchError(err => [asError(err)]), map(c => ({ treeOrError: c }))),
-                            fetchTreeCommits(props).pipe(
-                                catchError(err => [asError(err)]),
-                                map(c => ({ commitsOrError: c }))
-                            )
+                        fetchTree(props).pipe(
+                            catchError(err => [asError(err)]),
+                            map(c => ({ treeOrError: c })),
+                            startWith<Pick<State, 'treeOrError'>>({ treeOrError: undefined })
                         )
                     )
                 )
@@ -335,38 +328,28 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             )}
                         </>
                     ))}
-                {this.state.commitsOrError === undefined &&
-                    this.state.treeOrError !== undefined && (
-                        <div>
-                            <Loader className="icon-inline directory-page__entries-loader" /> Loading commits
-                        </div>
-                    )}
-                {this.state.commitsOrError !== undefined &&
-                    (isErrorLike(this.state.commitsOrError) ? (
-                        <div className="alert alert-danger">
-                            <p>Unable to list commits</p>
-                            {this.state.commitsOrError.message && (
-                                <div>
-                                    <pre>{this.state.commitsOrError.message.slice(0, 100)}</pre>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        this.state.commitsOrError.length > 0 && (
-                            <section className="directory-page__section directory-page__section--commits">
-                                {this.props.rev && (
-                                    <div>
-                                        From <code>{this.props.rev}</code>
-                                    </div>
-                                )}
-                                <div className="list-group">
-                                    {this.state.commitsOrError.map((c, i) => (
-                                        <GitCommitNode key={i} compact={true} node={c} repoName={this.props.repoPath} />
-                                    ))}
-                                </div>
-                            </section>
-                        )
-                    ))}
+                <div className="directory-page__section">
+                    <h3 className="directory-page__section-header">Changes</h3>
+                    <FilteredGitCommitConnection
+                        className="mt-2 directory-page__section--commits"
+                        listClassName="list-group list-group-flush"
+                        noun="commit in this tree"
+                        pluralNoun="commits in this tree"
+                        queryConnection={this.queryCommits}
+                        nodeComponent={GitCommitNode}
+                        nodeComponentProps={{
+                            repoName: this.props.repoPath,
+                            className: 'list-group-item',
+                            compact: true,
+                        }}
+                        updateOnChange={`${this.props.repoPath}:${this.props.rev}:${this.props.filePath}`}
+                        defaultFirst={7}
+                        history={this.props.history}
+                        shouldUpdateURLQuery={false}
+                        hideFilter={true}
+                        location={this.props.location}
+                    />
+                </div>
             </div>
         )
     }
@@ -391,4 +374,12 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
         }
         return `${repoStr}`
     }
+
+    private queryCommits = (args: { first?: number }) =>
+        fetchTreeCommits({
+            ...args,
+            repo: this.props.repoID,
+            revspec: this.props.commitID,
+            filePath: this.props.filePath,
+        })
 }

@@ -277,6 +277,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                 ) : (
                                                     <DirectoryPage
                                                         repoPath={this.props.repo.uri}
+                                                        repoID={this.props.repo.id}
                                                         repoDescription={this.props.repo.description}
                                                         commitID={
                                                             (this.state.resolvedRevOrError as ResolvedRev).commitID

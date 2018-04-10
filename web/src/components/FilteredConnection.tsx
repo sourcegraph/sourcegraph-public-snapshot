@@ -245,8 +245,17 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}> extends C
     /** Called to fetch the connection data to populate this component. */
     queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
 
-    /** An observable that upon emission causes the connection to refresh the data (by calling queryConnection). */
+    /**
+     * An observable that upon emission causes the connection to refresh the data (by calling queryConnection).
+     *
+     * In most cases, it's simpler to use updateOnChange.
+     */
     updates?: Observable<void>
+
+    /**
+     * Refresh the data when this value changes. It is typically constructed as a key from the query args.
+     */
+    updateOnChange?: string
 
     /** The number of items to fetch, by default. */
     defaultFirst?: number
@@ -445,6 +454,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.props.updates) {
             this.subscriptions.add(this.props.updates.subscribe(c => refreshRequests.next()))
         }
+
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(distinctUntilChanged((a, b) => a.updateOnChange === b.updateOnChange))
+                .subscribe(() => refreshRequests.next())
+        )
 
         // Reload collection when the query callback changes.
         this.subscriptions.add(
