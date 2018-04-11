@@ -71,5 +71,8 @@ export const DiffStat: React.SFC<{
 }
 
 function allocateSquares(n: number, total: number): number {
+    if (total === 0) {
+        return 0
+    }
     return Math.max(Math.round(n / total), n > 0 ? 1 : 0)
 }
