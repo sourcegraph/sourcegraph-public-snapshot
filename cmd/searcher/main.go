@@ -70,7 +70,19 @@ func main() {
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
 
 	addr := ":3181"
-	server := &http.Server{Addr: addr, Handler: handler}
+	server := &http.Server{
+		Addr: addr,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// For kubernetes liveness and readiness probes
+			if r.URL.Path == "/healthz" {
+				w.WriteHeader(200)
+				w.Write([]byte("ok"))
+				return
+			}
+
+			handler.ServeHTTP(w, r)
+		}),
+	}
 	go shutdownOnSIGINT(server)
 
 	log15.Info("searcher: listening", "addr", ":3181")
