@@ -1,10 +1,9 @@
-import Copy from '@sourcegraph/icons/lib/Copy'
-import copy from 'copy-to-clipboard'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
+import { CopyableText } from '../../components/CopyableText'
 import { PageTitle } from '../../components/PageTitle'
 import { IS_CHROME, IS_FIREFOX } from '../../marketing/util'
 import { browserExtensionMessageReceived } from '../../tracking/analyticsUtils'
@@ -15,7 +14,6 @@ interface Props {}
 
 interface State {
     browserExtensionInstalled: boolean
-    remoteUrlCopied: boolean
     openSearchUrlCopied: boolean
     info: { hasCodeIntelligence: boolean }
 }
@@ -26,7 +24,6 @@ interface State {
 export class UserSettingsIntegrationsPage extends React.Component<Props, State> {
     public state: State = {
         browserExtensionInstalled: false,
-        remoteUrlCopied: false,
         openSearchUrlCopied: false,
         info: {
             hasCodeIntelligence: false,
@@ -48,16 +45,6 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-    }
-
-    private copyRemoteUrl = () => {
-        eventLogger.log('CopySourcegraphURLClicked')
-        copy(window.context.appURL)
-        this.setState({ remoteUrlCopied: true })
-
-        setTimeout(() => {
-            this.setState({ remoteUrlCopied: false })
-        }, 2000)
     }
 
     private installFirefoxExtension = () => {
@@ -160,17 +147,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
 
                 <h3 className="mt-2">Editor extensions and other integrations</h3>
                 <p>Use the following Sourcegraph URL to connect other extensions to this Sourcegraph instance.</p>
-                <div>
-                    <input
-                        id="remote-url-input"
-                        className="form-control"
-                        value={window.context.appURL}
-                        readOnly={true}
-                    />
-                    <button className="btn btn-primary mt-2" onClick={this.copyRemoteUrl}>
-                        <Copy className="icon-inline" /> {this.state.remoteUrlCopied ? 'Copied' : 'Copy'}
-                    </button>
-                </div>
+                <CopyableText text={window.context.appURL} size={52} />
             </div>
         )
     }

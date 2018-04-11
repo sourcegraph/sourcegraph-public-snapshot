@@ -6,6 +6,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
+import { CopyableText } from '../components/CopyableText'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createUserBySiteAdmin } from './backend'
@@ -92,11 +93,7 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                             Account created for <strong>{this.state.username}</strong>. You must manually send this
                             password reset link to the new user:
                         </p>
-                        <p>
-                            <code className="site-admin-invite-user-page__url">
-                                {this.state.newUserPasswordResetURL}
-                            </code>
-                        </p>
+                        <CopyableText text={this.state.newUserPasswordResetURL} size={40} />
                         <button className="btn btn-primary mt-2" onClick={this.dismissAlert}>
                             Invite another user
                         </button>

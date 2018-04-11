@@ -1,7 +1,5 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import CircleCheckmarkIcon from '@sourcegraph/icons/lib/CircleCheckmark'
-import CopyIcon from '@sourcegraph/icons/lib/Copy'
-import copy from 'copy-to-clipboard'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -17,6 +15,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
+import { CopyableText } from '../../components/CopyableText'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -29,32 +28,15 @@ interface AccessTokenCreatedAlertProps {
     token: string
 }
 
-interface AccessTokenCreatedAlertState {
-    flashCopiedToClipboardMessage?: boolean
-}
-
-class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCreatedAlertProps, AccessTokenCreatedAlertState> {
-    public state: AccessTokenCreatedAlertState = {}
-
+class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCreatedAlertProps> {
     public render(): JSX.Element | null {
         return (
             <div className={`access-token-created-alert ${this.props.className}`}>
-                <p className="mt-2">
-                    <code className="mr-2">{this.props.token}</code>
-                    <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={this.copyToClipboard}
-                        disabled={this.state.flashCopiedToClipboardMessage}
-                    >
-                        <CopyIcon className="icon-inline" />{' '}
-                        {this.state.flashCopiedToClipboardMessage ? 'Copied to clipboard!' : 'Copy to clipboard'}
-                    </button>
-                </p>
                 <p>
                     <CircleCheckmarkIcon className="icon-inline" /> Copy your new personal access token now. You won't
                     be able to see it again.
                 </p>
+                <CopyableText text={this.props.token} size={48} />
                 <h5 className="mt-4">
                     <strong>Example usage</strong>
                 </h5>
@@ -63,16 +45,6 @@ class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCreatedAler
                 </pre>
             </div>
         )
-    }
-
-    private copyToClipboard = (): void => {
-        eventLogger.log('AccessTokenCopiedToClipboard')
-        copy(this.props.token)
-        this.setState({ flashCopiedToClipboardMessage: true })
-
-        setTimeout(() => {
-            this.setState({ flashCopiedToClipboardMessage: false })
-        }, 1500)
     }
 }
 

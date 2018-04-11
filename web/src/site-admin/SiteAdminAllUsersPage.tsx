@@ -13,6 +13,7 @@ import { map } from 'rxjs/operators/map'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { CopyableText } from '../components/CopyableText'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -149,9 +150,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             Password was reset. You must manually send <strong>{this.props.node.username}</strong> this
                             reset link:
                         </p>
-                        <div>
-                            <code className="site-admin-all-users-page__url">{this.state.resetPasswordURL}</code>
-                        </div>
+                        <CopyableText text={this.state.resetPasswordURL} size={40} />
                     </div>
                 )}
             </li>
