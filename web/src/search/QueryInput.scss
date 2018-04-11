@@ -45,9 +45,9 @@
     &__loading-notifier {
         position: absolute;
         z-index: 1;
-        right: 0.25rem;
+        right: 0.5rem;
         padding-left: 0.25rem;
-        top: 0.25rem;
+        bottom: 0.375rem;
         background-color: $color-bg-4;
     }
 }
