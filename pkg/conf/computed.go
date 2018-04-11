@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"strconv"
@@ -128,12 +129,23 @@ func IsDev(deployType string) bool {
 // This only exists for dev mode / debugging purposes, and should never be used
 // in a production setting. It panics if the deploy type is not "dev".
 func DebugManageDocker() bool {
-	if !IsDev(DeployType()) {
-		panic("DebugManageDocker cannot be called except when DEPLOY_TYPE=dev")
+	if deployType := DeployType(); !IsDev(deployType) {
+		panic(fmt.Sprintf("DebugManageDocker cannot be called except when DEPLOY_TYPE=dev (found %q)", deployType))
 	}
 	v, err := strconv.ParseBool(os.Getenv("DEBUG_MANAGE_DOCKER"))
 	if err != nil {
-		return true // always manage Docker when not set
+		// We do not use managed Docker by default in dev mode. This is because
+		// there appear to be bugs in Docker For Mac that we encounter due to
+		// goreman restarting our frontend process quickly. For example,
+		// pkg/langservers/langservers.go tries to stop Docker containers on
+		// process shutdown and tries to start them on startup -- and it also
+		// tries to create the lsp network on startup -- some combination of
+		// these actions occurring at the same time is believed to cause
+		// issues such as https://github.com/sourcegraph/sourcegraph/issues/10587
+		// where the Docker "lsp" network we create suddenly has an extreme
+		// amount of packet loss, and where containers like codeintel-go get
+		// stuck permanently in a "starting" state.
+		return false
 	}
 	return v
 }
