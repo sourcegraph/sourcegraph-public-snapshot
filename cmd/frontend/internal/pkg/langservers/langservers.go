@@ -514,6 +514,10 @@ func init() {
 		// about not finding the docker socket.
 		return
 	}
+	if conf.DeployType() != "dev" {
+		// DebugManageDocker only is supported in dev mode at the moment.
+		return
+	}
 	if !conf.DebugManageDocker() {
 		return
 	}
