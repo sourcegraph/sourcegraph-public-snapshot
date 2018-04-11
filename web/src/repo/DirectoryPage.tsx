@@ -16,6 +16,7 @@ import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { map } from 'rxjs/operators/map'
 import { startWith } from 'rxjs/operators/startWith'
 import { switchMap } from 'rxjs/operators/switchMap'
+import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
@@ -27,6 +28,7 @@ import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/QueryInput'
 import { SearchButton } from '../search/SearchButton'
 import { SearchHelp } from '../search/SearchHelp'
+import { eventLogger } from '../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toPrettyBlobURL, toRepoURL, toTreeURL } from '../util/url'
@@ -159,6 +161,14 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
+    private logViewEvent(props: Props): void {
+        if (props.filePath === '') {
+            eventLogger.logViewEvent('Repository')
+        } else {
+            eventLogger.logViewEvent('Directory')
+        }
+    }
+
     public componentDidMount(): void {
         this.subscriptions.add(
             this.componentUpdates
@@ -170,6 +180,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             x.commitID === y.commitID &&
                             x.filePath === y.filePath
                     ),
+                    tap(props => this.logViewEvent(props)),
                     switchMap(props =>
                         fetchTree(props).pipe(
                             catchError(err => [asError(err)]),
