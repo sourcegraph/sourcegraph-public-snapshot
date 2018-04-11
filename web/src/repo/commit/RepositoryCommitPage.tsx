@@ -121,7 +121,13 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-commit-page area">
-                <PageTitle title={`Commit ${this.props.match.params.revspec}`} />
+                <PageTitle
+                    title={
+                        this.state.commitOrError && !isErrorLike(this.state.commitOrError)
+                            ? this.state.commitOrError.subject
+                            : `Commit ${this.props.match.params.revspec}`
+                    }
+                />
                 <div className="area__content">
                     {this.state.commitOrError === undefined ? (
                         <LoaderIcon className="icon-inline mt-2" />
