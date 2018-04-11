@@ -59,6 +59,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 stat {
                     ...DiffStatFields
                 }
+                internalID
             }
 
             fragment FileDiffHunkRangeFields on FileDiffHunkRange {

@@ -1,7 +1,6 @@
 import { ChevronDown } from '@sourcegraph/icons/lib/ChevronDown'
 import { ChevronUp } from '@sourcegraph/icons/lib/ChevronUp'
 import * as H from 'history'
-import { Base64 } from 'js-base64'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { toBlobURL } from '../../util/url'
@@ -52,15 +51,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             path = <span title={node.oldPath!}>{node.oldPath!}</span>
         }
 
-        const anchor =
-            'diff-' +
-            Base64.encode(
-                JSON.stringify(
-                    this.props.node.oldPath === this.props.node.newPath
-                        ? this.props.node.oldPath
-                        : [this.props.node.oldPath, this.props.node.newPath]
-                )
-            ).replace(/=*$/, '')
+        const anchor = `diff-${node.internalID}`
 
         return (
             <>
@@ -94,7 +85,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                     {this.state.expanded && (
                         <FileDiffHunks
                             className="file-diff-node__hunks"
-                            fileDiffAnchor={anchor + '-'}
+                            fileDiffAnchor={anchor}
                             base={{ ...this.props.base, filePath: node.oldPath }}
                             head={{ ...this.props.head, filePath: node.newPath }}
                             hunks={node.hunks}

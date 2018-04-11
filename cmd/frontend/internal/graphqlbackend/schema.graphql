@@ -970,6 +970,11 @@ type FileDiff {
     hunks: [FileDiffHunk!]!
     # The diff stat for the whole file.
     stat: DiffStat!
+    # FOR INTERNAL USE ONLY.
+    #
+    # An identifier for the file diff that is unique among all other file diffs in the list that
+    # contains it.
+    internalID: String!
 }
 
 # A changed region ("hunk") in a file diff.

@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"strings"
@@ -261,6 +263,10 @@ func (r *fileDiffResolver) Stat() *diffStat {
 		changed: stat.Changed,
 		deleted: stat.Deleted,
 	}
+}
+func (r *fileDiffResolver) InternalID() string {
+	b := sha256.Sum256([]byte(fmt.Sprintf("%d:%s:%s", len(r.fileDiff.OrigName), r.fileDiff.OrigName, r.fileDiff.NewName)))
+	return hex.EncodeToString(b[:])[:32]
 }
 
 func diffPathOrNull(path string) *string {
