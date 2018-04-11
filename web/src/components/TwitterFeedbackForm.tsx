@@ -21,7 +21,8 @@ interface State {
 }
 
 const TWITTER_URL = 'https://twitter.com/intent/tweet?'
-const MAX_CHARACTERS = 280 - ' 😄 #UseTheSource via @srcgraph'.length
+const TWEET_ADDON = ' #UseTheSource via @srcgraph'
+
 export class TwitterFeedbackForm extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
@@ -68,7 +69,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                             <button
                                 type="button"
                                 className={
-                                    'btn btn-icon btn-lg twitter-feedback-form__emoticon' +
+                                    'btn btn-icon twitter-feedback-form__emoticon' +
                                     (this.state.experience === 'good' ? ' twitter-feedback-form__emoticon--happy' : '')
                                 }
                                 onClick={this.saveGoodExperience}
@@ -78,7 +79,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                             <button
                                 type="button"
                                 className={
-                                    'btn btn-icon btn-lg twitter-feedback-form__emoticon' +
+                                    'btn btn-icon twitter-feedback-form__emoticon' +
                                     (this.state.experience === 'bad' ? ' twitter-feedback-form__emoticon--sad' : '')
                                 }
                                 onClick={this.saveBadExperience}
@@ -89,9 +90,10 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                     </div>
                     <div className="form-group">
                         <label>Tell us why?</label>{' '}
-                        <small>
-                            {MAX_CHARACTERS - this.state.description.length}{' '}
-                            {pluralize('characters', MAX_CHARACTERS - this.state.description.length)} left
+                        <small className="text-muted">
+                            {this.calculateMaxCharacters() - this.state.description.length}{' '}
+                            {pluralize('characters', this.calculateMaxCharacters() - this.state.description.length)}{' '}
+                            left
                         </small>
                         <textarea
                             name="description"
@@ -101,7 +103,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                             onChange={this.handleDescriptionChange}
                             value={this.state.description}
                             required={true}
-                            maxLength={MAX_CHARACTERS}
+                            maxLength={this.calculateMaxCharacters()}
                             autoFocus={true}
                             onFocus={this.handleInputFocus}
                             onBlur={this.handleInputBlur}
@@ -128,19 +130,35 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
         event.preventDefault()
 
         const url = new URL(TWITTER_URL)
-        url.searchParams.set(
-            'text',
-            this.state.description +
-                (this.state.experience === undefined || this.state.experience === 'good' ? ' 😄' : ' 😞') +
-                '#UseTheSource via @srcgraph'
-        )
+
+        let experienceEmoji = ''
+
+        if (this.state.experience === 'good') {
+            experienceEmoji = ' 😄'
+        }
+
+        if (this.state.experience === 'bad') {
+            experienceEmoji = ' 😞'
+        }
+
+        url.searchParams.set('text', this.state.description + experienceEmoji + TWEET_ADDON)
         window.open(url.href)
         eventLogger.log('TwitterFeedbackButtonClicked', {
             user: this.props.user,
-            experience: this.state.experience ? { experience: 'good' } : { experience: 'bad' },
+            experience: this.state.experience,
         })
 
         this.props.onDismiss()
+    }
+    /**
+     * Calculates max characters for the description field
+     */
+    private calculateMaxCharacters(): number {
+        if (this.state.experience === undefined) {
+            return 280 - TWEET_ADDON.length
+        } else {
+            return 280 - (' 😄' + TWEET_ADDON).length
+        }
     }
     /**
      * Keeps track of text field focus to enable/disable box closing via escape key
