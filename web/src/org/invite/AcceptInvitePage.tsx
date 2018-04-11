@@ -143,36 +143,16 @@ export const AcceptInvitePage = reactive<Props>(props => {
                             !error &&
                             hasSubmitted &&
                             orgName && <Redirect to={`/organizations/${orgName}/settings`} />}
-                        <PageTitle title="Accept invite" />
-                        <h1>You were invited to join {orgName} on Sourcegraph!</h1>
+                        <PageTitle title="Accept invitation" />
+                        <h2>
+                            You were invited to join the <strong>{orgName}</strong> organization
+                        </h2>
 
                         {error && <p className="form-text text-danger">{error.message}</p>}
 
-                        {/* TODO(john): provide action to re-send verification email */}
-                        {hasSubmitted && (
-                            <p className="form-text text-danger">
-                                Please verify your email address to accept this invitation; check your inbox for a
-                                verification link.
-                            </p>
-                        )}
-
-                        <div className="form-group">
-                            <label>Your company email</label>
-                            <input
-                                type="email"
-                                className="form-control"
-                                placeholder="you@yourcompany.com"
-                                required={true}
-                                autoCorrect="off"
-                                spellCheck={false}
-                                value={email}
-                                disabled={true}
-                            />
-                        </div>
-
                         <div className="form-group accept-invite-page__actions">
                             <button type="submit" className="btn btn-primary" disabled={loading}>
-                                Accept Invite
+                                Accept invitation
                             </button>
                             {loading && <LoaderIcon className="icon-inline" />}
                         </div>
