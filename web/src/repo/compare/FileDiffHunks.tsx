@@ -295,22 +295,26 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className={`file-diff-hunks ${this.props.className}`} ref={this.setElement}>
-                <div className="file-diff-hunks__container">
-                    <table className="file-diff-hunks__table">
-                        {this.props.lineNumbers && (
-                            <colgroup>
-                                <col width="40" />
-                                <col width="40" />
-                                <col />
-                            </colgroup>
-                        )}
-                        <tbody>
-                            {this.props.hunks.map((hunk, i) => (
-                                <DiffHunk key={i} hunk={hunk} lineNumbers={this.props.lineNumbers} />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                {this.props.hunks.length === 0 ? (
+                    <div className="text-muted m-2">No changes</div>
+                ) : (
+                    <div className="file-diff-hunks__container">
+                        <table className="file-diff-hunks__table">
+                            {this.props.lineNumbers && (
+                                <colgroup>
+                                    <col width="40" />
+                                    <col width="40" />
+                                    <col />
+                                </colgroup>
+                            )}
+                            <tbody>
+                                {this.props.hunks.map((hunk, i) => (
+                                    <DiffHunk key={i} hunk={hunk} lineNumbers={this.props.lineNumbers} />
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         )
     }
