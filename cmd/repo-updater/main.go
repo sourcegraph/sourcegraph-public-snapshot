@@ -8,7 +8,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -44,7 +43,7 @@ func main() {
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 
 	// Sync relies on access to frontend, so wait until it has started up.
-	waitForFrontend(ctx)
+	api.WaitForFrontend(ctx)
 
 	// Repos List syncing thread
 	go repos.RunRepositorySyncWorker(ctx)
@@ -68,12 +67,4 @@ func main() {
 	go repos.RunBitbucketServerRepositorySyncWorker(ctx)
 
 	select {}
-}
-
-func waitForFrontend(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	if err := api.InternalClient.RetryPingUntilAvailable(ctx); err != nil {
-		log15.Warn("frontend not available at startup (will periodically try to reconnect)", "err", err)
-	}
 }

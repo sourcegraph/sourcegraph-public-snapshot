@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"golang.org/x/net/context/ctxhttp"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -26,6 +28,17 @@ type internalClient struct {
 }
 
 var InternalClient = &internalClient{URL: "http://" + frontendInternal}
+
+// WaitForFrontend should be called by services that intend to wait for the
+// frontend to start. It uses a 5s timeout with the given context, and logs an
+// error if it fails.
+func WaitForFrontend(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	if err := InternalClient.RetryPingUntilAvailable(ctx); err != nil {
+		log15.Warn("frontend not available at startup (will periodically try to reconnect)", "err", err)
+	}
+}
 
 // RetryPingUntilAvailable retries a noop request to the internal API until it is able to reach
 // the endpoint, indicating that the endpoint is available.

@@ -65,6 +65,9 @@ func main() {
 
 	go debugserver.Start()
 
+	// Secondary queue relies on access to frontend, so wait until it has started up.
+	api.WaitForFrontend(ctx)
+
 	worker := idx.NewWorker(ctx, idx.NewQueue(queueLength), idx.SecondaryQueue(ctx))
 	n, _ := strconv.Atoi(numWorkers)
 	for i := 0; i < n; i++ {
