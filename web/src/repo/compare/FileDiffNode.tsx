@@ -1,4 +1,3 @@
-import { ArrowRight } from '@sourcegraph/icons/lib/ArrowRight'
 import { ChevronDown } from '@sourcegraph/icons/lib/ChevronDown'
 import { ChevronUp } from '@sourcegraph/icons/lib/ChevronUp'
 import * as H from 'history'
@@ -43,8 +42,8 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             path = <span title={node.newPath}>{node.newPath}</span>
         } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
             path = (
-                <span title={`${node.oldPath} -> ${node.newPath}`}>
-                    {node.oldPath} <ArrowRight className="icon-inline" /> {node.newPath}
+                <span title={`${node.oldPath} ⟶ ${node.newPath}`}>
+                    {node.oldPath} ⟶ {node.newPath}
                 </span>
             )
         } else {
