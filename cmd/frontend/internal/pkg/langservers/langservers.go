@@ -509,12 +509,12 @@ func CanManage() bool {
 }
 
 func init() {
-	if !conf.DebugManageDocker() {
-		return
-	}
 	if conf.IsDataCenter(conf.DeployType()) {
 		// Do not run in Data Center, or else we would print log messages below
 		// about not finding the docker socket.
+		return
+	}
+	if !conf.DebugManageDocker() {
 		return
 	}
 	// Check if we have a docker socket or not. Situations where we may not
