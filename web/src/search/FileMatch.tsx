@@ -60,7 +60,7 @@ const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== 
 
 export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
     const parsed = new URL(props.result.resource)
-    const repoPath = parsed.hostname + parsed.pathname
+    const repoPath = parsed.hostname + decodeURIComponent(parsed.pathname)
     const rev = parsed.search.substr('?'.length)
     const filePath = parsed.hash.substr('#'.length)
     const items = props.result.lineMatches.map(match => ({

@@ -9,14 +9,13 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { buildSearchURLQuery } from '../../search'
+import { buildSearchURLQuery, quoteIfNeeded, searchQueryForRepoRev } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
 import { createAggregateError } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { numberWithCommas, pluralize } from '../../util/strings'
-import { searchQueryForRepoRev } from '../RepoContainer'
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 
 interface QuerySpec {
@@ -42,9 +41,9 @@ export const RepositoryContributorNode: React.SFC<RepositoryContributorNodeProps
     const query: string = [
         searchQueryForRepoRev(repoPath),
         'type:diff',
-        `author:${node.person.email}`,
-        `after:${JSON.stringify(after || '5 years ago')}`,
-        path ? `file:${escapeRegexp(path)}` : '',
+        `author:${quoteIfNeeded(node.person.email)}`,
+        `after:${quoteIfNeeded(after || '5 years ago')}`,
+        path ? `file:${quoteIfNeeded(escapeRegexp(path))}` : '',
     ]
         .join(' ')
         .replace(/\s+/, ' ')

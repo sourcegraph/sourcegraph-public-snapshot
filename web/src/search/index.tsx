@@ -1,3 +1,5 @@
+import escapeRegexp from 'escape-string-regexp'
+
 /** The options that describe a search */
 export interface SearchOptions {
     /** The query entered by the user */
@@ -49,4 +51,22 @@ export function urlWithoutSearchOptions(location: Location): string {
     params.delete('sq')
     const query = Array.from(params.keys()).length > 0 ? `?${params.toString()}` : ''
     return location.protocol + '//' + location.host + location.pathname + query + location.hash
+}
+
+export function searchQueryForRepoRev(repoPath: string, rev?: string): string {
+    return `repo:${quoteIfNeeded(`^${escapeRegexp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
+}
+
+function abbreviateOID(oid: string): string {
+    if (oid.length === 40) {
+        return oid.slice(0, 7)
+    }
+    return oid
+}
+
+export function quoteIfNeeded(s: string): string {
+    if (/["' ]/.test(s)) {
+        return JSON.stringify(s)
+    }
+    return s
 }

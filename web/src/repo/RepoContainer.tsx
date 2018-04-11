@@ -1,6 +1,5 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
-import escapeRegexp from 'escape-string-regexp'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { merge } from 'rxjs/observable/merge'
@@ -15,6 +14,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { parseBrowserRepoURL } from '.'
 import { parseRepoRev, redirectToExternalHost } from '.'
 import { HeroPage } from '../components/HeroPage'
+import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
@@ -336,15 +336,4 @@ function parseURLPath(repoRevAndRest: string): { repoPath: string; rev?: string;
     const [repoRev, rest] = repoRevAndRest.split('/-/', 2)
     const { repoPath, rev } = parseRepoRev(repoRev)
     return { repoPath, rev, rest }
-}
-
-function abbreviateOID(oid: string): string {
-    if (oid.length === 40) {
-        return oid.slice(0, 7)
-    }
-    return oid
-}
-
-export function searchQueryForRepoRev(repoPath: string, rev?: string): string {
-    return `repo:^${escapeRegexp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''} `
 }

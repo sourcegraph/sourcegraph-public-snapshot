@@ -22,6 +22,7 @@ import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
+import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/QueryInput'
 import { SearchButton } from '../search/SearchButton'
@@ -31,7 +32,6 @@ import { memoizeObservable } from '../util/memoize'
 import { toPrettyBlobURL, toRepoURL, toTreeURL } from '../util/url'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { FilteredGitCommitConnection, gitCommitFragment } from './commits/RepositoryCommitsPage'
-import { searchQueryForRepoRev } from './RepoContainer'
 
 const DirectoryEntry: React.SFC<{
     isDir: boolean

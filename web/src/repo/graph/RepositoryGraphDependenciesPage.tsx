@@ -15,11 +15,10 @@ import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { buildSearchURLQuery } from '../../search'
+import { buildSearchURLQuery, searchQueryForRepoRev } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { pluralize } from '../../util/strings'
-import { searchQueryForRepoRev } from '../RepoContainer'
 
 interface DependencyNodePropsCommon {
     repo: GQL.IRepository
