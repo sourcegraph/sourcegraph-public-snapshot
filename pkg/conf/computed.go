@@ -108,16 +108,29 @@ func DeployType() string {
 	return "dev"
 }
 
-// IsDataCenter tells if the given deployment type is Data Center or, if not, Server.
+// IsDataCenter tells if the given deployment type is "datacenter".
 func IsDataCenter(deployType string) bool {
 	return deployType == "datacenter"
+}
+
+// IsServer tells if the given deployment type is "server".
+func IsServer(deployType string) bool {
+	return deployType == "server"
+}
+
+// IsDev tells if the given deployment type is "dev".
+func IsDev(deployType string) bool {
+	return deployType == "dev"
 }
 
 // DebugManageDocker tells if Docker language servers should be managed or not.
 //
 // This only exists for dev mode / debugging purposes, and should never be used
-// in a production setting.
+// in a production setting. It panics if the deploy type is not "dev".
 func DebugManageDocker() bool {
+	if !IsDev(DeployType()) {
+		panic("DebugManageDocker cannot be called except when DEPLOY_TYPE=dev")
+	}
 	v, err := strconv.ParseBool(os.Getenv("DEBUG_MANAGE_DOCKER"))
 	if err != nil {
 		return true // always manage Docker when not set
