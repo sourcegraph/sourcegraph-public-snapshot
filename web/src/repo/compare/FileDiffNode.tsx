@@ -38,6 +38,19 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                 ? toBlobURL({ repoPath: this.props.head.repoPath, rev: this.props.head.rev, filePath: node.newPath })
                 : toBlobURL({ repoPath: this.props.base.repoPath, rev: this.props.base.rev, filePath: node.oldPath! })
 
+        let path: React.ReactFragment
+        if (node.newPath && (node.newPath === node.oldPath || !node.oldPath)) {
+            path = node.newPath
+        } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
+            path = (
+                <>
+                    {node.oldPath} <ArrowRight className="icon-inline" /> {node.newPath}
+                </>
+            )
+        } else {
+            path = node.oldPath!
+        }
+
         return (
             <div className={`file-diff-node card ${this.props.className || ''}`}>
                 <div className="card-header file-diff-node__header">
@@ -48,16 +61,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             deleted={node.stat.deleted}
                             className="file-diff-node__header-stat"
                         />
-                        {node.newPath &&
-                            (node.newPath === node.oldPath || !node.oldPath) && <code>{node.newPath}</code>}
-                        {node.newPath &&
-                            node.oldPath &&
-                            node.newPath !== node.oldPath && (
-                                <code>
-                                    {node.oldPath} <ArrowRight className="icon-inline" /> {node.newPath}
-                                </code>
-                            )}
-                        {!node.newPath && node.oldPath && <code>{node.oldPath}</code>}
+                        <code>{path}</code>
                     </div>
                     <div className="file-diff-node__header-actions">
                         <Link to={url} className="btn btn-sm" data-tooltip="View file at revision">
