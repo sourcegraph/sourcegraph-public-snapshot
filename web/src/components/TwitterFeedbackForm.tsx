@@ -143,7 +143,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
 
         url.searchParams.set('text', this.state.description + experienceEmoji + TWEET_ADDON)
         window.open(url.href)
-        eventLogger.log('TwitterFeedbackButtonClicked', {
+        eventLogger.log('TwitterFeedbackSubmitted', {
             user: this.props.user,
             experience: this.state.experience,
         })
@@ -173,10 +173,12 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
 
     private saveGoodExperience = (): void => {
         this.setState({ experience: 'good' })
+        eventLogger.log('TwitterFeedbackExprienceClicked')
     }
 
     private saveBadExperience = (): void => {
         this.setState({ experience: 'bad' })
+        eventLogger.log('TwitterFeedbackExprienceClicked')
     }
     /**
      * Handles description change by updating the component's state

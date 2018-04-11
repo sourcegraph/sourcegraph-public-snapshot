@@ -203,6 +203,7 @@ class App extends React.Component<{}, AppState> {
     }
     private onShowTwitterFeedbackForm = () => {
         this.setState({ showTwitterFeedbackForm: true })
+        eventLogger.log('TwitterFeedbackFormOpened')
     }
 
     private onTwitterFeedbackFormClose = () => {
