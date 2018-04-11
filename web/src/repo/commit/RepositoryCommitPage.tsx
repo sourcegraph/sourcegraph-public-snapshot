@@ -68,7 +68,7 @@ interface State {
 
 class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'history'>
+    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'location' | 'history'>
 > {}
 
 /** Displays a commit. */
@@ -168,6 +168,7 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
                                         commitID: this.state.commitOrError.oid,
                                     },
                                     lineNumbers: true,
+                                    location: this.props.location,
                                     history: this.props.history,
                                 }}
                                 defaultFirst={25}

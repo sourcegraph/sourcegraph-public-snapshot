@@ -24,6 +24,9 @@
             white-space: pre;
             text-overflow: ellipsis;
             overflow: hidden;
+            font-family: $code-font-family;
+            color: $color-text-2;
+            font-size: $code-font-size;
         }
         &-stat {
             margin-right: 0.5rem;
@@ -41,5 +44,15 @@
 
     &__hunks {
         flex: 1 1 auto;
+    }
+}
+
+.theme-light {
+    .file-diff-node {
+        &__header {
+            &-path {
+                color: $color-light-text-5;
+            }
+        }
     }
 }

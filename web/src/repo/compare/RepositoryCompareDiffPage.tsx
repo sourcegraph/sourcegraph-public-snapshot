@@ -97,7 +97,7 @@ interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> 
 
 class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'history'>
+    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'location' | 'history'>
 > {}
 
 /** A page with the file diffs in the comparison. */
@@ -142,6 +142,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
                         base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
                         head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
                         lineNumbers: true,
+                        location: this.props.location,
                         history: this.props.history,
                     }}
                     defaultFirst={25}

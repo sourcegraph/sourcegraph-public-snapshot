@@ -1,6 +1,7 @@
 import { ChevronDown } from '@sourcegraph/icons/lib/ChevronDown'
 import { ChevronUp } from '@sourcegraph/icons/lib/ChevronUp'
 import * as H from 'history'
+import { Base64 } from 'js-base64'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { toBlobURL } from '../../util/url'
@@ -18,6 +19,7 @@ export interface FileDiffNodeProps {
 
     lineNumbers: boolean
     className?: string
+    location: H.Location
     history: H.History
 }
 
@@ -50,42 +52,57 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             path = <span title={node.oldPath!}>{node.oldPath!}</span>
         }
 
+        const anchor =
+            'diff-' +
+            Base64.encode(
+                JSON.stringify(
+                    this.props.node.oldPath === this.props.node.newPath
+                        ? this.props.node.oldPath
+                        : [this.props.node.oldPath, this.props.node.newPath]
+                )
+            )
+
         return (
-            <div className={`file-diff-node card ${this.props.className || ''}`}>
-                <div className="card-header file-diff-node__header">
-                    <div className="file-diff-node__header-path-stat">
-                        <DiffStat
-                            added={node.stat.added}
-                            changed={node.stat.changed}
-                            deleted={node.stat.deleted}
-                            className="file-diff-node__header-stat"
+            <>
+                <a id={anchor} />
+                <div className={`file-diff-node card ${this.props.className || ''}`}>
+                    <div className="card-header file-diff-node__header">
+                        <div className="file-diff-node__header-path-stat">
+                            <DiffStat
+                                added={node.stat.added}
+                                changed={node.stat.changed}
+                                deleted={node.stat.deleted}
+                                className="file-diff-node__header-stat"
+                            />
+                            <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
+                                {path}
+                            </Link>
+                        </div>
+                        <div className="file-diff-node__header-actions">
+                            <Link to={url} className="btn btn-sm" data-tooltip="View file at revision">
+                                View
+                            </Link>
+                            <button type="button" className="btn btn-sm btn-icon ml-2" onClick={this.toggleExpand}>
+                                {this.state.expanded ? (
+                                    <ChevronDown className="icon-inline" />
+                                ) : (
+                                    <ChevronUp className="icon-inline" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                    {this.state.expanded && (
+                        <FileDiffHunks
+                            className="file-diff-node__hunks"
+                            base={{ ...this.props.base, filePath: node.oldPath }}
+                            head={{ ...this.props.head, filePath: node.newPath }}
+                            hunks={node.hunks}
+                            lineNumbers={this.props.lineNumbers}
+                            history={this.props.history}
                         />
-                        <code className="file-diff-node__header-path">{path}</code>
-                    </div>
-                    <div className="file-diff-node__header-actions">
-                        <Link to={url} className="btn btn-sm" data-tooltip="View file at revision">
-                            View
-                        </Link>
-                        <button type="button" className="btn btn-sm btn-icon ml-2" onClick={this.toggleExpand}>
-                            {this.state.expanded ? (
-                                <ChevronDown className="icon-inline" />
-                            ) : (
-                                <ChevronUp className="icon-inline" />
-                            )}
-                        </button>
-                    </div>
+                    )}
                 </div>
-                {this.state.expanded && (
-                    <FileDiffHunks
-                        className="file-diff-node__hunks"
-                        base={{ ...this.props.base, filePath: node.oldPath }}
-                        head={{ ...this.props.head, filePath: node.newPath }}
-                        hunks={node.hunks}
-                        lineNumbers={this.props.lineNumbers}
-                        history={this.props.history}
-                    />
-                )}
-            </div>
+            </>
         )
     }
 
