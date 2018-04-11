@@ -81,11 +81,11 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 		return
 	}
 	usr, err := db.Users.Create(r.Context(), db.NewUser{
-		Email:                creds.Email,
-		Username:             creds.Username,
-		Password:             creds.Password,
-		EmailCode:            emailCode,
-		FailIfNotInitialUser: failIfNewUserIsNotInitialSiteAdmin,
+		Email:                 creds.Email,
+		Username:              creds.Username,
+		Password:              creds.Password,
+		EmailVerificationCode: emailCode,
+		FailIfNotInitialUser:  failIfNewUserIsNotInitialSiteAdmin,
 	})
 	if err != nil {
 		var (

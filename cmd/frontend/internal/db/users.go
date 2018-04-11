@@ -88,8 +88,17 @@ type NewUser struct {
 	DisplayName      string
 	ExternalProvider string
 	Password         string
-	EmailCode        string
 	AvatarURL        string // the new user's avatar URL, if known
+
+	// EmailVerificationCode, if given, causes the new user's email address to be unverified until
+	// they perform the email verification process and provied this code.
+	EmailVerificationCode string // forbid this field being set by JSON, just in case
+
+	// EmailIsVerified is whether the email address should be considered already verified.
+	//
+	// 🚨 SECURITY: Only site admins are allowed to create users whose email addresses are initially
+	// verified (i.e., with EmailVerificationCode == "" and ExternalProvider == "").
+	EmailIsVerified bool // forbid this field being set by JSON, just in case
 
 	// FailIfNotInitialUser causes the (users).Create call to return an error and not create the
 	// user if at least one of the following is true: (1) the site has already been initialized or
@@ -102,8 +111,7 @@ type NewUser struct {
 // - If the provider is empty, the user is a builtin user with no external auth account associated
 // - If the provider is something else, the user was authenticated by an SSO provider
 //
-// Builtin users must also specify a password and email verification code upon creation. When the user's email is
-// verified, the email verification code is set to null in the DB. All other users have a null password and email verification code.
+// Builtin users must also specify a password and email upon creation.
 //
 // CREATION OF SITE ADMINS
 //
@@ -128,10 +136,13 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 	if info.ExternalProvider != "" && info.ExternalID == "" {
 		return nil, errors.New("external provider is set but external ID is empty")
 	}
-	if info.ExternalID == "" && (info.Password == "" || info.EmailCode == "") {
-		return nil, errors.New("no password or email code provided for new builtin user")
+	if info.ExternalID == "" && (info.Password == "" || info.Email == "") {
+		return nil, errors.New("no password or email provided for new builtin user")
 	}
-	if info.ExternalID != "" && (info.Password != "" || info.EmailCode != "") {
+	if info.ExternalID == "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {
+		return nil, errors.New("no email verification code provided for new builtin user")
+	}
+	if info.ExternalID != "" && (info.Password != "" || info.EmailVerificationCode != "") {
 		return nil, errors.New("password and/or email verification code provided for external user")
 	}
 
@@ -161,8 +172,8 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 	dbExternalProvider := sql.NullString{String: info.ExternalProvider}
 	dbExternalProvider.Valid = info.ExternalProvider != ""
 
-	dbEmailCode := sql.NullString{String: info.EmailCode}
-	dbEmailCode.Valid = info.EmailCode != ""
+	dbEmailCode := sql.NullString{String: info.EmailVerificationCode}
+	dbEmailCode.Valid = info.EmailVerificationCode != ""
 
 	// Wrap in transaction so we can execute hooks below atomically.
 	tx, err := globalDB.BeginTx(ctx, nil)
@@ -221,9 +232,13 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 	}
 
 	if info.Email != "" {
-		if _, err := tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)",
-			id, info.Email, info.EmailCode,
-		); err != nil {
+		var err error
+		if info.EmailIsVerified {
+			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verified_at) VALUES ($1, $2, now())", id, info.Email)
+		} else {
+			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)", id, info.Email, info.EmailVerificationCode)
+		}
+		if err != nil {
 			if pqErr, ok := err.(*pq.Error); ok {
 				switch pqErr.Constraint {
 				case "user_emails_email_key":

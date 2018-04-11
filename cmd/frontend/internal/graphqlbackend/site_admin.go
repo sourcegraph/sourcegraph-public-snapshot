@@ -25,15 +25,12 @@ func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	code, err := backend.MakeEmailVerificationCode()
-	if err != nil {
-		return nil, err
-	}
+	// The new user will be created with a verified email address.
 	user, err := db.Users.Create(ctx, db.NewUser{
-		Email:     args.Email,
-		Username:  args.Username,
-		Password:  backend.MakeRandomHardToGuessPassword(),
-		EmailCode: code,
+		Email:           args.Email,
+		EmailIsVerified: true,
+		Username:        args.Username,
+		Password:        backend.MakeRandomHardToGuessPassword(),
 	})
 	if err != nil {
 		return nil, err

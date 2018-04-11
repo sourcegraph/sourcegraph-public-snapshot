@@ -15,10 +15,10 @@ func TestThreads_Count(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@a.com",
-		Username:  "u",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -53,10 +53,10 @@ func TestThreads_Delete(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@a.com",
-		Username:  "u",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)

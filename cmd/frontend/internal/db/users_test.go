@@ -67,10 +67,10 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 
 	// Create site admin.
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@a.com",
-		Username:  "u",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -81,10 +81,10 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 
 	// Creating a non-site-admin now that the site has already been initialized.
 	u2, err := Users.Create(ctx, NewUser{
-		Email:     "a2@a2.com",
-		Username:  "u2",
-		Password:  "p2",
-		EmailCode: "c2",
+		Email:                 "a2@a2.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -94,11 +94,11 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	}
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
 	_, err = Users.Create(ctx, NewUser{
-		Email:                "a3@a3.com",
-		Username:             "u3",
-		Password:             "p3",
-		EmailCode:            "c3",
-		FailIfNotInitialUser: true,
+		Email:                 "a3@a3.com",
+		Username:              "u3",
+		Password:              "p3",
+		EmailVerificationCode: "c3",
+		FailIfNotInitialUser:  true,
 	})
 	if want := (errCannotCreateUser{"site_already_initialized"}); err != want {
 		t.Fatalf("got error %v, want %v", err, want)
@@ -114,10 +114,10 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		t.Fatal(err)
 	}
 	u4, err := Users.Create(ctx, NewUser{
-		Email:     "a4@a4.com",
-		Username:  "u4",
-		Password:  "p4",
-		EmailCode: "c4",
+		Email:                 "a4@a4.com",
+		Username:              "u4",
+		Password:              "p4",
+		EmailVerificationCode: "c4",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -130,11 +130,11 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = Users.Create(ctx, NewUser{
-		Email:                "a5@a5.com",
-		Username:             "u5",
-		Password:             "p5",
-		EmailCode:            "c5",
-		FailIfNotInitialUser: true,
+		Email:                 "a5@a5.com",
+		Username:              "u5",
+		Password:              "p5",
+		EmailVerificationCode: "c5",
+		FailIfNotInitialUser:  true,
 	})
 	if want := (errCannotCreateUser{"initial_site_admin_must_be_first_user"}); err != want {
 		t.Fatalf("got error %v, want %v", err, want)
@@ -148,10 +148,10 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@a.com",
-		Username:  "u",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -196,10 +196,10 @@ func TestUsers_Count(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@a.com",
-		Username:  "u",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -229,10 +229,10 @@ func TestUsers_Update(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@a.com",
-		Username:  "u",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -280,10 +280,10 @@ func TestUsers_Update(t *testing.T) {
 
 	// Can't update to duplicate username.
 	user2, err := Users.Create(ctx, NewUser{
-		Email:     "a2@a.com",
-		Username:  "u2",
-		Password:  "p2",
-		EmailCode: "c2",
+		Email:                 "a2@a.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -305,10 +305,10 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@a.com",
-		Username:  "u",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -338,10 +338,10 @@ func TestUsers_Delete(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@a.com",
-		Username:  "u",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a@a.com",
+		Username:              "u",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)

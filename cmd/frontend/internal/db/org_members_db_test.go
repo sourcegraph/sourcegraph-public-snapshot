@@ -29,19 +29,19 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 	user1, err := Users.Create(ctx, NewUser{
-		Email:     "a1@example.com",
-		Username:  "u1",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, err = Users.Create(ctx, NewUser{
-		Email:     "a2@example.com",
-		Username:  "u2",
-		Password:  "p",
-		EmailCode: "c",
+		Email:                 "a2@example.com",
+		Username:              "u2",
+		Password:              "p",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)

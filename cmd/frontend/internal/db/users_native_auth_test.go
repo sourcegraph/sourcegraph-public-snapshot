@@ -36,22 +36,22 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 		t.Fatal("sso user created with password")
 	}
 	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:       "sso:foo@bar.com",
-		Email:            "foo@bar.com",
-		Username:         "foo",
-		DisplayName:      "foo",
-		ExternalProvider: "sso",
-		EmailCode:        "qwer",
+		ExternalID:            "sso:foo@bar.com",
+		Email:                 "foo@bar.com",
+		Username:              "foo",
+		DisplayName:           "foo",
+		ExternalProvider:      "sso",
+		EmailVerificationCode: "qwer",
 	}); err == nil {
 		t.Fatal("sso user created with email verification code")
 	}
 
 	usr, err := Users.Create(ctx, NewUser{
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Password:    "right-password",
-		EmailCode:   "email-code",
+		Email:                 "foo@bar.com",
+		Username:              "foo",
+		DisplayName:           "foo",
+		Password:              "right-password",
+		EmailVerificationCode: "email-code",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -111,6 +111,31 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	}
 }
 
+func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	user, err := Users.Create(ctx, NewUser{
+		Email:           "foo@bar.com",
+		Username:        "foo",
+		Password:        "asdf",
+		EmailIsVerified: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, verified, err := UserEmails.GetPrimaryEmail(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !verified {
+		t.Error("!verified")
+	}
+}
+
 func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -124,11 +149,11 @@ func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 
 	passwordResetRateLimit = "24 hours"
 	usr, err := Users.Create(ctx, NewUser{
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Password:    "right-password",
-		EmailCode:   "email-code",
+		Email:                 "foo@bar.com",
+		Username:              "foo",
+		DisplayName:           "foo",
+		Password:              "right-password",
+		EmailVerificationCode: "email-code",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -156,10 +181,10 @@ func TestUsers_UpdatePassword(t *testing.T) {
 	ctx := testContext()
 
 	usr, err := Users.Create(ctx, NewUser{
-		Email:     "foo@bar.com",
-		Username:  "foo",
-		Password:  "right-password",
-		EmailCode: "c",
+		Email:                 "foo@bar.com",
+		Username:              "foo",
+		Password:              "right-password",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)

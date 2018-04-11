@@ -11,10 +11,10 @@ func TestAccessTokens_Create(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@example.com",
-		Username:  "u1",
-		Password:  "p1",
-		EmailCode: "c1",
+		Email:                 "a@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -64,19 +64,19 @@ func TestAccessTokens_List(t *testing.T) {
 
 	// Creating a non-site-admin now that the site has already been initialized.
 	u1, err := Users.Create(ctx, NewUser{
-		Email:     "a@example.com",
-		Username:  "u1",
-		Password:  "p1",
-		EmailCode: "c1",
+		Email:                 "a@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	u2, err := Users.Create(ctx, NewUser{
-		Email:     "a2@example.com",
-		Username:  "u2",
-		Password:  "p2",
-		EmailCode: "c2",
+		Email:                 "a2@example.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -142,10 +142,10 @@ func TestAccessTokens_Lookup(t *testing.T) {
 
 	// Creating a non-site-admin now that the site has already been initialized.
 	u1, err := Users.Create(ctx, NewUser{
-		Email:     "a@example.com",
-		Username:  "u1",
-		Password:  "p1",
-		EmailCode: "c1",
+		Email:                 "a@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
 	})
 	if err != nil {
 		t.Fatal(err)

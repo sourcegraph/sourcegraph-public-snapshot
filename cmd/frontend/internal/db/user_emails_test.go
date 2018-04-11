@@ -17,10 +17,10 @@ func TestUserEmails_Get_GetPrimary(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@example.com",
-		Username:  "u2",
-		Password:  "pw",
-		EmailCode: "c",
+		Email:                 "a@example.com",
+		Username:              "u2",
+		Password:              "pw",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -74,10 +74,10 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	ctx := testContext()
 
 	user, err := Users.Create(ctx, NewUser{
-		Email:     "a@example.com",
-		Username:  "u2",
-		Password:  "pw",
-		EmailCode: "c",
+		Email:                 "a@example.com",
+		Username:              "u2",
+		Password:              "pw",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -122,10 +122,10 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	const emailA = "a@example.com"
 	const emailB = "b@example.com"
 	user, err := Users.Create(ctx, NewUser{
-		Email:     emailA,
-		Username:  "u2",
-		Password:  "pw",
-		EmailCode: "c",
+		Email:                 emailA,
+		Username:              "u2",
+		Password:              "pw",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -183,10 +183,10 @@ func TestUserEmails_SetVerified(t *testing.T) {
 
 	const email = "a@example.com"
 	user, err := Users.Create(ctx, NewUser{
-		Email:     email,
-		Username:  "u2",
-		Password:  "pw",
-		EmailCode: "c",
+		Email:                 email,
+		Username:              "u2",
+		Password:              "pw",
+		EmailVerificationCode: "c",
 	})
 	if err != nil {
 		t.Fatal(err)
