@@ -40,28 +40,28 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
 
         let path: React.ReactFragment
         if (node.newPath && (node.newPath === node.oldPath || !node.oldPath)) {
-            path = node.newPath
+            path = <span title={node.newPath}>{node.newPath}</span>
         } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
             path = (
-                <>
+                <span title={`${node.oldPath} -> ${node.newPath}`}>
                     {node.oldPath} <ArrowRight className="icon-inline" /> {node.newPath}
-                </>
+                </span>
             )
         } else {
-            path = node.oldPath!
+            path = <span title={node.oldPath!}>{node.oldPath!}</span>
         }
 
         return (
             <div className={`file-diff-node card ${this.props.className || ''}`}>
                 <div className="card-header file-diff-node__header">
-                    <div className="file-diff-node__header-path">
+                    <div className="file-diff-node__header-path-stat">
                         <DiffStat
                             added={node.stat.added}
                             changed={node.stat.changed}
                             deleted={node.stat.deleted}
                             className="file-diff-node__header-stat"
                         />
-                        <code>{path}</code>
+                        <code className="file-diff-node__header-path">{path}</code>
                     </div>
                     <div className="file-diff-node__header-actions">
                         <Link to={url} className="btn btn-sm" data-tooltip="View file at revision">

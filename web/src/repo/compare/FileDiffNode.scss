@@ -9,13 +9,21 @@
         align-items: center;
         justify-content: space-between;
 
+        overflow-x: hidden;
+
         // decrease from .card-header
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
 
-        &-path {
+        &-path-stat {
             display: flex;
             align-items: center;
+            overflow: hidden;
+        }
+        &-path {
+            white-space: pre;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
         &-stat {
             margin-right: 0.5rem;
