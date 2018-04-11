@@ -19,10 +19,14 @@
         white-space: nowrap;
         text-align: right;
         user-select: none;
+        cursor: pointer;
         vertical-align: top;
 
         font-family: $code-font-family;
         color: $color-text-1;
+        &:hover {
+            color: $color-text-2;
+        }
 
         &::before {
             content: attr(data-line);
@@ -34,6 +38,13 @@
         font-family: $code-font-family;
         white-space: pre;
         font-size: 12px;
+    }
+
+    &__line--active &__num {
+        background-color: rgba($oc-yellow-5, 0.35) !important;
+    }
+    &__line--active &__content {
+        background-color: rgba($oc-yellow-5, 0.25) !important;
     }
 
     $color-addition: $oc-green-7;
@@ -75,6 +86,9 @@
     .diff-hunk {
         &__num {
             color: $color-light-text-2;
+            &:hover {
+                color: $color-light-text-1;
+            }
         }
         &__line--both .diff-hunk__num,
         &__num--both {

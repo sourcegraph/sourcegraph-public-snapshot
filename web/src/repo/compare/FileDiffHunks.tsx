@@ -61,9 +61,14 @@ const DiffBoundary: React.SFC<{
 )
 
 const DiffHunk: React.SFC<{
+    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+    fileDiffAnchor: string
+
     hunk: GQL.IFileDiffHunk
     lineNumbers: boolean
-}> = ({ hunk, lineNumbers }) => {
+
+    location: H.Location
+}> = ({ fileDiffAnchor, hunk, lineNumbers, location }) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
     return (
@@ -84,22 +89,39 @@ const DiffHunk: React.SFC<{
                     if (line[0] !== '-') {
                         newLine++
                     }
+                    const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
+                    const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
                     return (
                         <tr
                             key={i}
                             className={`diff-hunk__line ${line[0] === ' ' ? 'diff-hunk__line--both' : ''} ${
                                 line[0] === '-' ? 'diff-hunk__line--deletion' : ''
-                            } ${line[0] === '+' ? 'diff-hunk__line--addition' : ''}`}
+                            } ${line[0] === '+' ? 'diff-hunk__line--addition' : ''} ${
+                                (line[0] !== '+' && location.hash === '#' + oldAnchor) ||
+                                (line[0] !== '-' && location.hash === '#' + newAnchor)
+                                    ? 'diff-hunk__line--active'
+                                    : ''
+                            }`}
                         >
                             {lineNumbers && (
                                 <>
                                     {line[0] !== '+' ? (
-                                        <td className="diff-hunk__num" data-line={oldLine - 1} data-part="old" />
+                                        <td
+                                            className="diff-hunk__num"
+                                            data-line={oldLine - 1}
+                                            data-part="old"
+                                            id={oldAnchor}
+                                        />
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
                                     )}
                                     {line[0] !== '-' ? (
-                                        <td className="diff-hunk__num" data-line={newLine - 1} data-part="new" />
+                                        <td
+                                            className="diff-hunk__num"
+                                            data-line={newLine - 1}
+                                            data-part="new"
+                                            id={newAnchor}
+                                        />
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
                                     )}
@@ -114,6 +136,9 @@ const DiffHunk: React.SFC<{
 }
 
 interface Props {
+    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+    fileDiffAnchor: string
+
     /** The base repository, revision, and file. */
     base: { repoPath: string; repoID: GQLID; rev: string; commitID: string; filePath: string | null }
 
@@ -127,6 +152,7 @@ interface Props {
     lineNumbers: boolean
 
     className: string
+    location: H.Location
     history: H.History
 }
 
@@ -286,6 +312,21 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
                     this.handleDismiss()
                 })
         )
+
+        // Make diff hunk line numbers clickable.
+        this.subscriptions.add(
+            fromEvent<MouseEvent>(ref, 'click')
+                .pipe(
+                    filter(e => {
+                        // .diff-hunk__num has no children, so we don't need to check if the target is a child of it.
+                        const target = e.target as HTMLElement
+                        return target.classList.contains('diff-hunk__num') && !!target.id
+                    })
+                )
+                .subscribe(e => {
+                    this.props.history.push({ hash: (e.target as HTMLElement).id })
+                })
+        )
     }
 
     public componentWillUnmount(): void {
@@ -309,7 +350,13 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
                             )}
                             <tbody>
                                 {this.props.hunks.map((hunk, i) => (
-                                    <DiffHunk key={i} hunk={hunk} lineNumbers={this.props.lineNumbers} />
+                                    <DiffHunk
+                                        key={i}
+                                        fileDiffAnchor={this.props.fileDiffAnchor}
+                                        hunk={hunk}
+                                        lineNumbers={this.props.lineNumbers}
+                                        location={this.props.location}
+                                    />
                                 ))}
                             </tbody>
                         </table>

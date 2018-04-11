@@ -60,7 +60,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                         ? this.props.node.oldPath
                         : [this.props.node.oldPath, this.props.node.newPath]
                 )
-            )
+            ).replace(/=*$/, '')
 
         return (
             <>
@@ -94,11 +94,13 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                     {this.state.expanded && (
                         <FileDiffHunks
                             className="file-diff-node__hunks"
+                            fileDiffAnchor={anchor + '-'}
                             base={{ ...this.props.base, filePath: node.oldPath }}
                             head={{ ...this.props.head, filePath: node.newPath }}
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
                             history={this.props.history}
+                            location={this.props.location}
                         />
                     )}
                 </div>
