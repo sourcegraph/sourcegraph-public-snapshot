@@ -45,13 +45,12 @@ type JSContext struct {
 
 	DisableTelemetry bool `json:"disableTelemetry"`
 
-	GithubEnterpriseURLs map[string]string `json:"githubEnterpriseURLs"`
-	SentryDSN            string            `json:"sentryDSN"`
-	SiteID               string            `json:"siteID"`
-	Debug                bool              `json:"debug"`
-	SessionID            string            `json:"sessionID"`
-	ShowOnboarding       bool              `json:"showOnboarding"`
-	EmailEnabled         bool              `json:"emailEnabled"`
+	SentryDSN      string `json:"sentryDSN"`
+	SiteID         string `json:"siteID"`
+	Debug          bool   `json:"debug"`
+	SessionID      string `json:"sessionID"`
+	ShowOnboarding bool   `json:"showOnboarding"`
+	EmailEnabled   bool   `json:"emailEnabled"`
 
 	Site                schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
@@ -113,25 +112,24 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	showOnboarding := err == nil && !siteConfig.Initialized
 
 	return JSContext{
-		AppURL:               globals.AppURL.String(),
-		XHRHeaders:           headers,
-		CSRFToken:            csrfToken,
-		UserAgentIsBot:       isBot(req.UserAgent()),
-		AssetsRoot:           assets.URL("").String(),
-		Version:              env.Version,
-		User:                 user,
-		DisableTelemetry:     conf.Get().DisableTelemetry,
-		GithubEnterpriseURLs: conf.GitHubEnterpriseURLs(),
-		SentryDSN:            sentryDSNFrontend,
-		Debug:                envvar.DebugMode(),
-		SiteID:               siteID,
-		SessionID:            sessionID,
-		ShowOnboarding:       showOnboarding,
-		EmailEnabled:         conf.CanSendEmail(),
-		Site:                 publicSiteConfiguration,
-		LikelyDockerOnMac:    likelyDockerOnMac(),
-		NeedServerRestart:    conf.NeedServerRestart(),
-		IsRunningDataCenter:  os.Getenv("GOREMAN_RPC_ADDR") != "",
+		AppURL:              globals.AppURL.String(),
+		XHRHeaders:          headers,
+		CSRFToken:           csrfToken,
+		UserAgentIsBot:      isBot(req.UserAgent()),
+		AssetsRoot:          assets.URL("").String(),
+		Version:             env.Version,
+		User:                user,
+		DisableTelemetry:    conf.Get().DisableTelemetry,
+		SentryDSN:           sentryDSNFrontend,
+		Debug:               envvar.DebugMode(),
+		SiteID:              siteID,
+		SessionID:           sessionID,
+		ShowOnboarding:      showOnboarding,
+		EmailEnabled:        conf.CanSendEmail(),
+		Site:                publicSiteConfiguration,
+		LikelyDockerOnMac:   likelyDockerOnMac(),
+		NeedServerRestart:   conf.NeedServerRestart(),
+		IsRunningDataCenter: os.Getenv("GOREMAN_RPC_ADDR") != "",
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 

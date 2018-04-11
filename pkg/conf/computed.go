@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -100,30 +98,6 @@ func EnabledLangservers() []schema.Langservers {
 		results = append(results, langserver)
 	}
 	return results
-}
-
-// GitHubEnterpriseURLs is a map of GitHub Enterprise hosts to their full URLs.
-// This can be used for the purposes of generating external GitHub enterprise links.
-func GitHubEnterpriseURLs() map[string]string {
-	return gitHubEnterpriseURLs.Get().(map[string]string)
-}
-
-var gitHubEnterpriseURLs = atomicvalue.New()
-
-func addWatchers() {
-	Watch(func() {
-		gitHubEnterpriseURLs.Set(func() interface{} {
-			urls := make(map[string]string)
-			for _, c := range Get().Github {
-				gheURL, err := url.Parse(c.Url)
-				if err != nil {
-					log15.Error("error parsing GitHub config", "error", err)
-				}
-				urls[gheURL.Host] = strings.TrimSuffix(c.Url, "/")
-			}
-			return urls
-		})
-	})
 }
 
 // DeployType tells the deployment type.

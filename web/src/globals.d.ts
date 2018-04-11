@@ -75,11 +75,6 @@ interface SourcegraphContext {
     siteID: string
 
     /**
-     * githubEnterpriseURLs is a map of GitHub Enerprise hosts to their full URLs for outbound GitHub links.
-     */
-    githubEnterpriseURLs: { [key: string]: string }
-
-    /**
      * Status of onboarding
      */
     showOnboarding: boolean
