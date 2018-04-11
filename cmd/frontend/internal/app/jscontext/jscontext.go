@@ -61,7 +61,6 @@ type JSContext struct {
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
 	// Experimental features
-	FileHistorySidebarEnabled     bool `json:"fileHistorySidebarEnabled"`
 	SearchTimeoutParameterEnabled bool `json:"searchTimeoutParameterEnabled"`
 	ShowMissingReposEnabled       bool `json:"showMissingReposEnabled"`
 
@@ -138,7 +137,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		// Experiments. We pass these through explicitly so we can
 		// do the default behavior only in Go land.
-		FileHistorySidebarEnabled:     conf.FileHistorySidebarEnabled(),
 		SearchTimeoutParameterEnabled: conf.SearchTimeoutParameterEnabled(),
 		ShowMissingReposEnabled:       conf.ShowMissingReposEnabled(),
 

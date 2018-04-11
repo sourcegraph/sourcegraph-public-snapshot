@@ -25,13 +25,6 @@ func SearchTimeoutParameterEnabled() bool {
 	return p == "enabled"
 }
 
-// FileHistorySidebarEnabled returns true if FileHistorySidebar experiment is enabled.
-func FileHistorySidebarEnabled() bool {
-	p := Get().ExperimentalFeatures.FileHistorySidebar
-	// default is disabled
-	return p == "enabled"
-}
-
 // JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
 func JumpToDefOSSIndexEnabled() bool {
 	p := Get().ExperimentalFeatures.JumpToDefOSSIndex

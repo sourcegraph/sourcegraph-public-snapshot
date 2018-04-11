@@ -55,12 +55,6 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "fileHistorySidebar": {
-          "description": "Enables or disables the file history sidebar.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "searchTimeoutParameter": {
           "description": "Enables or disables the ` + "`" + `timeout:` + "`" + ` parameter in searches.",
           "type": "string",

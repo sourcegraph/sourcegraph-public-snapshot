@@ -116,11 +116,6 @@ interface SourcegraphContext {
     isRunningDataCenter: boolean
 
     /**
-     * Whether the fileHistorySidebar feature flag is enabled.
-     */
-    fileHistorySidebarEnabled: bool
-
-    /**
      * Whether the searchTimeoutParameter feature flag is enabled.
      */
     searchTimeoutParameterEnabled: bool

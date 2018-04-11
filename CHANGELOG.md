@@ -55,7 +55,6 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * The duration that the frontend waits for the PostgreSQL database to become available is now configurable with the `DB_STARTUP_TIMEOUT` env var (the value is any valid Go duration string).
 * Dynamic search filters now suggest exclusions of Go test files, vendored files and node_modules files.
-* An experimental "file history" sidebar now exists to expose all commits that affect the current file. This is disabled by default; use `"experimentalFeatures": { "fileHistorySidebar": "enabled" }` in your site configuration to enable it.
 
 ## 2.6.6
 
