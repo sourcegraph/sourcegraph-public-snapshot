@@ -63,7 +63,7 @@
     }
     &__line--both &__num,
     &__num--both {
-        background-color: $color-bg-3;
+        background-color: $color-bg-2;
     }
 }
 
@@ -92,7 +92,7 @@
         }
         &__line--both .diff-hunk__num,
         &__num--both {
-            background-color: $color-light-bg-2;
+            background-color: rgba($color-light-bg-2, 0.5);
         }
     }
 }
