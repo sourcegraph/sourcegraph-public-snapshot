@@ -68,7 +68,7 @@ export class SettingsArea extends React.Component<Props, State> {
         if (!this.props.authenticatedUser) {
             const currUrl = new URL(window.location.href)
             const newUrl = new URL(window.location.href)
-            newUrl.pathname = currUrl.pathname === '/settings/accept-invite' ? '/sign-up' : '/sign-in'
+            newUrl.pathname = currUrl.pathname.endsWith('/settings/accept-invite') ? '/sign-up' : '/sign-in'
             // Return to the current page after sign up/in.
             newUrl.searchParams.set('returnTo', window.location.href)
             return <Redirect to={newUrl.pathname + newUrl.search} />

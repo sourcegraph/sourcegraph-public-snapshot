@@ -17,10 +17,10 @@ export const RedirectToUserSettings: React.SFC<{
         newURL.pathname = location.pathname === '/settings/accept-invite' ? '/sign-up' : '/sign-in'
         // Return to the current page after sign up/in.
         newURL.searchParams.set('returnTo', window.location.href)
-        return <Redirect to={newURL.pathname + newURL.search} />
+        return <Redirect to={{ pathname: newURL.pathname, search: newURL.search }} />
     }
 
     // Append full location.pathname instead of just "/settings" so that we support /settings/accept-invite
     // redirect, too.
-    return <Redirect to={`${userURL(user.username)}${location.pathname}`} />
+    return <Redirect to={{ pathname: `${userURL(user.username)}${location.pathname}`, search: location.search }} />
 }
