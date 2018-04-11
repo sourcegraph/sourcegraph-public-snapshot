@@ -430,6 +430,9 @@ func validate(language string) error {
 	if conf.IsDataCenter(conf.DeployType()) {
 		return errors.New("data center is not supported")
 	}
+	if conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker() {
+		return errors.New("DEPLOY_TYPE=dev managed docker disabled by default (set DEBUG_MANAGE_DOCKER=t to enable)")
+	}
 
 	// Check if Docker socket is present.
 	haveSocket, err := haveDockerSocket()
@@ -514,11 +517,8 @@ func init() {
 		// about not finding the docker socket.
 		return
 	}
-	if conf.DeployType() != "dev" {
-		// DebugManageDocker only is supported in dev mode at the moment.
-		return
-	}
-	if !conf.DebugManageDocker() {
+	if conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker() {
+		// Running in dev mode with managed docker disabled.
 		return
 	}
 	// Check if we have a docker socket or not. Situations where we may not

@@ -86,11 +86,7 @@ func (w *Worker) enableLangservers(inv *inventory.Inventory) {
 		// Running in Data Center mode, do not auto-enable language servers.
 		return
 	}
-	if conf.DeployType() != "dev" {
-		// DebugManageDocker only is supported in dev mode at the moment.
-		return
-	}
-	if !conf.DebugManageDocker() {
+	if conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker() {
 		// Running in dev mode with managed docker disabled.
 		return
 	}
