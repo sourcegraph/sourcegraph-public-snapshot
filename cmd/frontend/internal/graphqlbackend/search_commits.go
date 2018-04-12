@@ -326,10 +326,12 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query s
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.query, query)
-			if ctx.Err() != nil {
-				// Our request has been canceled, we can just ignore searchFilesInRepo for this repo.
+			if ctx.Err() == context.Canceled {
+				// Our request has been canceled (either because another one of args.repos had a
+				// fatal error, or otherwise), so we can just ignore these results.
 				return
 			}
+			repoTimedOut = repoTimedOut || ctx.Err() == context.DeadlineExceeded
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
@@ -385,10 +387,12 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query sea
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.query, query)
-			if ctx.Err() != nil {
-				// Our request has been canceled, we can just ignore searchFilesInRepo for this repo.
+			if ctx.Err() == context.Canceled {
+				// Our request has been canceled (either because another one of args.repos had a
+				// fatal error, or otherwise), so we can just ignore these results.
 				return
 			}
+			repoTimedOut = repoTimedOut || ctx.Err() == context.DeadlineExceeded
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}

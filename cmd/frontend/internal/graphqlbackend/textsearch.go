@@ -284,11 +284,11 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 		// Useful trace for debugging:
 		//
 		// tr.LazyPrintf("%d matches, limitHit=%v, err=%v, ctx.Err()=%v", len(matches), limitHit, err, ctx.Err())
-		if err == nil {
-			return matches, limitHit, nil
+		if err == nil || errcode.IsTimeout(err) {
+			return matches, limitHit, err
 		}
 
-		// If we are canceled return that error.
+		// If we are canceled, return that error.
 		if err := ctx.Err(); err != nil {
 			return nil, false, err
 		}
@@ -322,7 +322,8 @@ func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool,
 
 	resp, err := searchHTTPClient.Do(req)
 	if err != nil {
-		// If we failed due to cancellation or timeout, rather return that
+		// If we failed due to cancellation or timeout (with no partial results in the response
+		// body), return just that.
 		if ctx.Err() != nil {
 			err = ctx.Err()
 		}
@@ -797,11 +798,12 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 			}
 			// non-diff search reports timeout through searchErr, so pass false for timedOut
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {
-				if ctx.Err() != nil {
-					// Our request has been canceled, we can just ignore
-					// searchFilesInRepo for this repo. We only check this condition
-					// here since handleRepoSearchResult handles deadlines
-					// exceeded differently to canceled.
+				if ctx.Err() == context.Canceled {
+					// Our request has been canceled (either because another one of searcherRepos
+					// had a fatal error, or otherwise), so we can just ignore these results. We
+					// handle this here, not in handleRepoSearchResult, because different callers of
+					// handleRepoSearchResult (for different result types) currently all need to
+					// handle cancellations differently.
 					return
 				}
 				err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
