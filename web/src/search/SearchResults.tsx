@@ -526,23 +526,24 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public render(): JSX.Element | null {
         return (
             <div className="search-results">
-                {this.state.results.length > 0 && (
-                    <div className="search-results__filters-bar">
-                        Filters:
-                        <div className="search-results__filters">
-                            {this.state.dynamicFilters
-                                .filter(filter => filter.value !== '')
-                                .map((filter, i) => (
-                                    <FilterChip
-                                        query={this.props.navbarSearchQuery}
-                                        onFilterChosen={this.onDynamicFilterClicked}
-                                        key={i}
-                                        value={filter.value}
-                                    />
-                                ))}
+                {this.state.results.length > 0 &&
+                    this.state.dynamicFilters.length > 0 && (
+                        <div className="search-results__filters-bar">
+                            Filters:
+                            <div className="search-results__filters">
+                                {this.state.dynamicFilters
+                                    .filter(filter => filter.value !== '')
+                                    .map((filter, i) => (
+                                        <FilterChip
+                                            query={this.props.navbarSearchQuery}
+                                            onFilterChosen={this.onDynamicFilterClicked}
+                                            key={i}
+                                            value={filter.value}
+                                        />
+                                    ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
                 <SearchResultsList
                     showModal={this.state.showModal}
                     onDidCreateSavedQuery={this.onDidCreateSavedQuery}
