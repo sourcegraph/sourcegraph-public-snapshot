@@ -38,10 +38,12 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
     public render(): JSX.Element | null {
         return (
             <Form className="signin-signup-form signin-form" onSubmit={this.handleSubmit}>
-                {window.context.site['auth.allowSignup'] && (
+                {window.context.site['auth.allowSignup'] ? (
                     <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
                         Don't have an account? Sign up.
                     </Link>
+                ) : (
+                    <p className="text-muted">To create an account, contact the site admin.</p>
                 )}
                 {this.state.errorDescription !== '' && (
                     <div className="alert alert-danger my-2">Error: {upperFirst(this.state.errorDescription)}</div>

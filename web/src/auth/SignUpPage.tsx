@@ -183,6 +183,10 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
             return <Redirect to={returnTo} />
         }
 
+        if (!window.context.site['auth.allowSignup']) {
+            return <Redirect to="/sign-in" />
+        }
+
         return (
             <div className="signin-signup-page sign-up-page">
                 <PageTitle title="Sign up" />
@@ -190,23 +194,16 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
                     icon={UserIcon}
                     title="Sign up for Sourcegraph"
                     cta={
-                        window.context.site['auth.allowSignup'] ? (
-                            <div>
-                                <Link
-                                    className="signin-signup-form__mode"
-                                    to={`/sign-in?${this.props.location.search}`}
-                                >
-                                    Already have an account? Sign in.
-                                </Link>
-                                <SignUpForm
-                                    {...this.props}
-                                    prefilledEmail={this.state.prefilledEmail}
-                                    doSignUp={this.doSignUp}
-                                />
-                            </div>
-                        ) : (
-                            <p>Signup is disabled. Contact the site admin to request an account.</p>
-                        )
+                        <div>
+                            <Link className="signin-signup-form__mode" to={`/sign-in?${this.props.location.search}`}>
+                                Already have an account? Sign in.
+                            </Link>
+                            <SignUpForm
+                                {...this.props}
+                                prefilledEmail={this.state.prefilledEmail}
+                                doSignUp={this.doSignUp}
+                            />
+                        </div>
                     }
                 />
             </div>
