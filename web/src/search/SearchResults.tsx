@@ -166,7 +166,7 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                                 {/* Time stats */}
                                 {typeof this.props.approximateResultCount === 'string' &&
                                     typeof this.props.resultCount === 'number' && (
-                                        <div className="search-results__notice">
+                                        <div className="search-results__notice e2e-search-results-stats">
                                             <span>
                                                 <CalculatorIcon className="icon-inline" />{' '}
                                                 {this.props.approximateResultCount}{' '}

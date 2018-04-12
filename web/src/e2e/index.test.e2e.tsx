@@ -682,10 +682,10 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
             // Submit the search
             await page.click('button.search-button')
 
-            await page.waitForSelector('.search-results__stats')
+            await page.waitForSelector('.e2e-search-results-stats')
             await retry(async () => {
                 const label: string = await page.evaluate(
-                    () => document.querySelector('.search-results__stats')!.textContent
+                    () => document.querySelector('.e2e-search-results-stats')!.textContent
                 )
                 const match = /(\d+) results/.exec(label)
                 const numberOfResults = parseInt(match![1], 10)
