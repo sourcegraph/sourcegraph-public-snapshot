@@ -75,7 +75,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                             !this.props.node.mirrorInfo.cloneInProgress &&
                             !this.props.node.mirrorInfo.cloned && (
                                 <small
-                                    className="text-muted"
+                                    className="ml-2 text-muted"
                                     data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                                 >
                                     Not yet cloned
