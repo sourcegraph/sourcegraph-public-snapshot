@@ -25,7 +25,6 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	zoektrpc "github.com/google/zoekt/rpc"
-	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -41,7 +40,7 @@ import (
 
 var (
 	// textSearchLimiter limits the number of open TCP connections created by frontend to searcher.
-	textSearchLimiter = parallel.NewRun(500)
+	textSearchLimiter = make(semaphore, 500)
 
 	searchHTTPClient = &http.Client{
 		// nethttp.Transport will propogate opentracing spans
@@ -266,8 +265,11 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 	defer ht.Finish()
 
 	// Limit number of outstanding searcher requests
-	textSearchLimiter.Acquire()
+	if err := textSearchLimiter.Acquire(ctx); err != nil {
+		return nil, false, err
+	}
 	defer textSearchLimiter.Release()
+
 	resp, err := searchHTTPClient.Do(req)
 	if err != nil {
 		// If we failed due to cancellation or timeout, rather return that
@@ -833,6 +835,25 @@ func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) 
 	})
 
 	return flattened
+}
+
+type semaphore chan struct{}
+
+// Acquire increments the semaphore. Up to cap(sem) can be acquired
+// concurrently. If the context is canceled before acquiring the context
+// error is returned.
+func (sem semaphore) Acquire(ctx context.Context) error {
+	select {
+	case sem <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// Release decrements the semaphore.
+func (sem semaphore) Release() {
+	<-sem
 }
 
 var zoektCl zoekt.Searcher
