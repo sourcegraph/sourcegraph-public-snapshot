@@ -1,8 +1,10 @@
 import ArrowCollapseVerticalIcon from '@sourcegraph/icons/lib/ArrowCollapseVertical'
 import ArrowExpandVerticalIcon from '@sourcegraph/icons/lib/ArrowExpandVertical'
+import CalculatorIcon from '@sourcegraph/icons/lib/Calculator'
 import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import DirectionalSign from '@sourcegraph/icons/lib/DirectionalSign'
 import DocumentIcon from '@sourcegraph/icons/lib/Document'
+import DownloadIcon from '@sourcegraph/icons/lib/Download'
 import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -161,71 +163,81 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                         showMissingRepos) && (
                         <small className="search-results__info-row">
                             <div className="search-results__info-row-left">
-                                {showMissingRepos && (
-                                    <span className="search-results__info-notice">
-                                        <DirectionalSign className="icon-inline" />
-                                        <span data-tooltip={this.props.missing.join('\n')}>
-                                            {this.props.missing.length}&nbsp;
-                                            {pluralize('repository', this.props.missing.length, 'repositories')} not
-                                            found
-                                        </span>
-                                    </span>
-                                )}
-                                {(this.props.timedout.length > 0 || this.props.cloning.length > 0) && (
-                                    <span className="search-results__info-notice">
-                                        <HourglassIcon className="icon-inline" />
-                                        {this.props.timedout.length > 0 && (
-                                            <span data-tooltip={this.props.timedout.join('\n')}>
-                                                {this.props.timedout.length}&nbsp;
-                                                {pluralize(
-                                                    'repository',
-                                                    this.props.timedout.length,
-                                                    'repositories'
-                                                )}{' '}
-                                                timed out
-                                            </span>
-                                        )}
-                                        {this.props.timedout.length > 0 &&
-                                            this.props.cloning.length > 0 && <span>&nbsp;and&nbsp;</span>}
-                                        {this.props.cloning.length > 0 && (
-                                            <span data-tooltip={this.props.cloning.join('\n')}>
-                                                {this.props.cloning.length}&nbsp;
-                                                {pluralize(
-                                                    'repository',
-                                                    this.props.cloning.length,
-                                                    'repositories'
-                                                )}{' '}
-                                                cloning
-                                            </span>
-                                        )}
-                                        &nbsp;(reload to try again
-                                        {searchTimeoutParameterEnabled &&
-                                            ", or specify a longer 'timeout:' in your query"}
-                                        )
-                                    </span>
-                                )}
+                                {/* Time stats */}
                                 {typeof this.props.approximateResultCount === 'string' &&
                                     typeof this.props.resultCount === 'number' && (
-                                        <span className="search-results__stats">
-                                            {this.props.approximateResultCount}{' '}
-                                            {pluralize('result', this.props.resultCount)}
-                                            {typeof this.props.elapsedMilliseconds === 'number' && (
-                                                <> in {(this.props.elapsedMilliseconds / 1000).toFixed(2)} seconds</>
-                                            )}
-                                        </span>
+                                        <div className="search-results__notice">
+                                            <span>
+                                                <CalculatorIcon className="icon-inline" />{' '}
+                                                {this.props.approximateResultCount}{' '}
+                                                {pluralize('result', this.props.resultCount)}
+                                                {typeof this.props.elapsedMilliseconds === 'number' && (
+                                                    <>
+                                                        {' '}
+                                                        in {(this.props.elapsedMilliseconds / 1000).toFixed(2)} seconds
+                                                    </>
+                                                )}
+                                                {this.props.indexUnavailable && ' (index unavailable)'}
+                                            </span>
+                                        </div>
                                     )}
-                                {this.props.indexUnavailable && <span>&nbsp;(index unavailable)</span>}
+                                {/* Missing repos */}
+                                {showMissingRepos && (
+                                    <div
+                                        className="search-results__notice"
+                                        data-tooltip={this.props.missing.join('\n')}
+                                    >
+                                        <span>
+                                            <DirectionalSign className="icon-inline" /> {this.props.missing.length}{' '}
+                                            {pluralize('repository', this.props.missing.length, 'repositories')} not{' '}
+                                            found
+                                        </span>
+                                    </div>
+                                )}
+                                {/* Timed out repos */}
+                                {this.props.timedout.length > 0 && (
+                                    <div
+                                        className="search-results__notice"
+                                        data-tooltip={this.props.timedout.join('\n')}
+                                    >
+                                        <span>
+                                            <HourglassIcon className="icon-inline" /> {this.props.timedout.length}{' '}
+                                            {pluralize('repository', this.props.timedout.length, 'repositories')} timed{' '}
+                                            out (reload to try again, or specify a longer "timeout:" in your query)
+                                        </span>
+                                    </div>
+                                )}
+                                {/* Cloning repos */}
+                                {this.props.cloning.length > 0 && (
+                                    <div
+                                        className="search-results__notice"
+                                        data-tooltip={this.props.cloning.join('\n')}
+                                    >
+                                        <span>
+                                            <DownloadIcon className="icon-inline" /> {this.props.cloning.length}{' '}
+                                            {pluralize('repository', this.props.cloning.length, 'repositories')} cloning{' '}
+                                            (reload to try again)
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div className="search-results__info-row-right">
-                                {this.props.allExpanded ? (
-                                    <button onClick={this.props.onExpandAllResultsClick} className="btn btn-link">
-                                        <ArrowCollapseVerticalIcon className="icon-inline" data-tooltip="Collapse" />
-                                    </button>
-                                ) : (
-                                    <button onClick={this.props.onExpandAllResultsClick} className="btn btn-link">
-                                        <ArrowExpandVerticalIcon className="icon-inline" data-tooltip="Expand" />
-                                    </button>
-                                )}
+                                <button onClick={this.props.onExpandAllResultsClick} className="btn btn-link">
+                                    {this.props.allExpanded ? (
+                                        <>
+                                            <ArrowCollapseVerticalIcon
+                                                className="icon-inline"
+                                                data-tooltip="Collapse"
+                                            />{' '}
+                                            Collapse all
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ArrowExpandVerticalIcon className="icon-inline" data-tooltip="Expand" />{' '}
+                                            Expand all
+                                        </>
+                                    )}
+                                </button>
                                 {!this.props.didSave &&
                                     this.props.user && (
                                         <button onClick={this.props.onSaveQueryClick} className="btn btn-link">
