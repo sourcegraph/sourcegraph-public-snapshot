@@ -247,16 +247,63 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 	// these fields from old frontends that do not (and provide a default in the latter case).
 	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
 	q.Set("PatternMatchesPath", strconv.FormatBool(p.PatternMatchesPath))
-	searcherURL, err := searcherURLs.Get(string(repo.Name) + "@" + string(commit))
+	rawQuery := q.Encode()
+
+	// Searcher caches the file contents for repo@commit since it is
+	// relatively expensive to fetch from gitserver. So we use consistent
+	// hashing to increase cache hits.
+	consistentHashKey := string(repo.Name) + "@" + string(commit)
+	tr.LazyPrintf("%s", consistentHashKey)
+
+	var (
+		// When we retry do not use a host we already tried.
+		excludedSearchURLs = map[string]bool{}
+		attempt            = 0
+		maxAttempts        = 2
+	)
+	for {
+		attempt++
+
+		searcherURL, err := searcherURLs.Get(consistentHashKey, excludedSearchURLs)
+		if err != nil {
+			return nil, false, err
+		}
+
+		// Fallback to a bad host if nothing is left
+		if searcherURL == "" {
+			tr.LazyPrintf("failed to find endpoint, trying again without excludes")
+			searcherURL, err = searcherURLs.Get(consistentHashKey, nil)
+			if err != nil {
+				return nil, false, err
+			}
+		}
+
+		url := searcherURL + "?" + rawQuery
+		tr.LazyPrintf("attempt %d: %s", attempt, url)
+		matches, limitHit, err = textSearchURL(ctx, url)
+		if err == nil {
+			return matches, limitHit, nil
+		}
+
+		// If we are canceled return that error.
+		if err := ctx.Err(); err != nil {
+			return nil, false, err
+		}
+
+		// If not temporary or our last attempt then don't try again.
+		if !errcode.IsTemporary(err) || attempt == maxAttempts {
+			return nil, false, err
+		}
+
+		tr.LazyPrintf("transient error %s", err.Error())
+	}
+}
+
+func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool, error) {
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, false, err
 	}
-	req, err := http.NewRequest("GET", searcherURL, nil)
-	if err != nil {
-		return nil, false, err
-	}
-	req.URL.RawQuery = q.Encode()
-	tr.LazyPrintf("%s", req.URL)
 	req = req.WithContext(ctx)
 
 	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,

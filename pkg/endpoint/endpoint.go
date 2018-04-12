@@ -21,7 +21,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/golang/groupcache/consistenthash"
 	"github.com/pkg/errors"
 )
 
@@ -31,7 +30,7 @@ import (
 type Map struct {
 	mu   sync.Mutex
 	err  error
-	urls *consistenthash.Map
+	urls *hashMap
 }
 
 // New creates a new Map for rawurl. We treat schemes prefixed with k8s+
@@ -90,8 +89,13 @@ func New(rawurl string) (*Map, error) {
 	return m, nil
 }
 
-// Get the closest URL in the hash to the provided key.
-func (m *Map) Get(key string) (string, error) {
+// Get the closest URL in the hash to the provided key that is not in
+// exclude. If no URL is found, "" is returned.
+//
+// Note: For k8s URLs we return URLs based on the registered endpoints. The
+// endpoint may not actually be available yet / at the moment. So users of the
+// URL should implement a retry strategy.
+func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	m.mu.Lock()
 	urls, err := m.urls, m.err
 	m.mu.Unlock()
@@ -99,7 +103,7 @@ func (m *Map) Get(key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return urls.Get(key), nil
+	return urls.get(key, exclude), nil
 }
 
 func inform(cl *kubernetes.Clientset, m *Map, u *k8sURL) {
@@ -161,7 +165,7 @@ func (b *urlMapBuilder) Add(ep *v1.Endpoints) {
 	}
 }
 
-func (b *urlMapBuilder) Build() (*consistenthash.Map, error) {
+func (b *urlMapBuilder) Build() (*hashMap, error) {
 	if len(b.urls) == 0 {
 		return nil, errors.Errorf("No %s endpoints", b.K8sURL.Service)
 	}
@@ -211,11 +215,11 @@ func parseURL(rawurl string) (*k8sURL, error) {
 	}, nil
 }
 
-func newConsistentHashMap(keys []string) *consistenthash.Map {
+func newConsistentHashMap(keys []string) *hashMap {
 	// 50 replicas and crc32.ChecksumIEEE are the defaults used by
 	// groupcache.
-	m := consistenthash.New(50, crc32.ChecksumIEEE)
-	m.Add(keys...)
+	m := hashMapNew(50, crc32.ChecksumIEEE)
+	m.add(keys...)
 	return m
 }
 

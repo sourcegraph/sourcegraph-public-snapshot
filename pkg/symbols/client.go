@@ -69,7 +69,7 @@ func (c *Client) url(key key) (string, error) {
 			return "", err
 		}
 	}
-	return c.endpoint.Get(string(key.repo) + ":" + string(key.commitID))
+	return c.endpoint.Get(string(key.repo)+":"+string(key.commitID), nil)
 }
 
 // Search performs a symbol search on the symbols service.
