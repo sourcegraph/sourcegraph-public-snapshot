@@ -540,10 +540,9 @@ func init() {
 	}
 	canManage = true
 
-	goroutine.Go(func() {
-		setContainerID()
-		createLSPBridge()
+	setupNetworking()
 
+	goroutine.Go(func() {
 		// Wait for our process to shutdown.
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
@@ -551,6 +550,71 @@ func init() {
 
 		stopAllLanguageServers()
 		os.Exit(1)
+	})
+}
+
+// setupNetworking handles setting up the networking required for our
+// Sourcegraph Server container and language server containers.
+//
+// This function MUST be invoked inside at init.
+func setupNetworking() {
+	// 🦄🐉🦄 Docker for Mac bug / issue workaround 🦄🐉🦄
+	//
+	// For some reason, in Docker for Mac versions as recent as 18.03.0-ce and
+	// probably much later versions than this, the lsp bridge network we create
+	// gets into a completely broken DNS state:
+	//
+	// 	dial tcp: lookup go on 127.0.0.11:53: no such host
+	//
+	// It is completely unclear to us why this happens, but what we do know is:
+	//
+	// 1. It seems to be a bug in Docker for Mac, specifically around running
+	//    multiple `docker` commands at once. For example, we do not have this
+	//    managed Docker running in development mode because process restarting
+	//    would trigger this situation much more frequently (see https://github.com/sourcegraph/sourcegraph/pull/10600)
+	//
+	// 2. When the network does become bugged, it is still connected but
+	//    experiences EXTREME packet loss (about 79%), i.e. `docker exec sourcegraph ping go`
+	//    does work, but only very rarely and only after multiple minutes.
+	//
+	// 3. The issue is not reliably reproducible, but does happen.
+	//
+	// 4. Deleting the lsp network via `docker network rm lsp` resolves the
+	//    issue.
+	//
+	// Bugs that may be related, but are not specifically this issue:
+	//
+	// - https://github.com/docker/for-mac/issues/997
+	// - https://github.com/moby/moby/issues/24344
+	// - https://github.com/theupdateframework/notary/pull/753
+	//
+
+	// Workaround #1: Do not allow Docker container modification commands (like
+	// Start/Stop/Restart/Pull funcs in this package) to run while we create
+	// the network. We do this by locking every language.
+	for _, lang := range Languages {
+		dockerContainerAccess.lock(lang)
+	}
+
+	// Do not block server startup, since we're running inside init.
+	goroutine.Go(func() {
+		// Unlock container access for all languages once we're done.
+		defer func() {
+			for _, lang := range Languages {
+				dockerContainerAccess.unlock(lang)
+			}
+		}()
+
+		// Set our container ID now, so we can attach it to the network later.
+		setContainerID()
+
+		// Workaround #2: Since we're creating the LSP network below anyway,
+		// we may as well delete the existing one as it could be in a bugged
+		// state.
+		deleteLSPBridge()
+
+		// Now create the LSP bridge network.
+		createLSPBridge()
 	})
 }
 
@@ -574,6 +638,14 @@ func setContainerID() {
 			log15.Error("langservers: error renaming Docker container", "error", err)
 		}
 		return
+	}
+}
+
+// deleteLSPBridge deletes the lsp bridge network if it exists.
+func deleteLSPBridge() {
+	_, err := dockerCmd("network", "rm", "lsp")
+	if err != nil && !strings.Contains(err.Error(), "No such network") {
+		log15.Error("langservers: error deleting Docker lsp bridge network", "error", err)
 	}
 }
 
