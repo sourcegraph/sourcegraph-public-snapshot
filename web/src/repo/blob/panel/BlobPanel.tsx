@@ -60,7 +60,7 @@ interface ContextSubject {
     character: number
 }
 
-type BlobPanelTabID = 'def' | 'references' | 'references:external' | 'impl'
+type BlobPanelTabID = 'info' | 'def' | 'references' | 'references:external' | 'impl' | 'history'
 
 function toSubject(props: Props): ContextSubject {
     const parsedHash = parseHash(props.location.hash)
@@ -199,6 +199,8 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         const isValidToken =
             this.state.hoverOrError && this.state.hoverOrError !== LOADING && !isErrorLike(this.state.hoverOrError)
 
+        const viewState = parseHash<BlobPanelTabID>(this.props.location.hash).viewState
+
         return (
             <>
                 <RepoHeaderActionPortal
@@ -222,7 +224,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         element={<div className="mt-2">{extraRendered}</div>}
                     />
                 )}
-                {isValidToken && (
+                {(isValidToken || viewState === 'def') && (
                     <PanelItemPortal
                         id="def"
                         label="Definition"
@@ -243,7 +245,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         }
                     />
                 )}
-                {isValidToken && (
+                {(isValidToken || viewState === 'references') && (
                     <PanelItemPortal
                         id="references"
                         label="References"
@@ -264,7 +266,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         }
                     />
                 )}
-                {isValidToken && (
+                {(isValidToken || viewState === 'references:external') && (
                     <PanelItemPortal
                         id="references:external"
                         label="External references"
@@ -284,7 +286,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         }
                     />
                 )}
-                {isValidToken && (
+                {(isValidToken || viewState === 'impl') && (
                     <PanelItemPortal
                         id="impl"
                         label="Implementation"
