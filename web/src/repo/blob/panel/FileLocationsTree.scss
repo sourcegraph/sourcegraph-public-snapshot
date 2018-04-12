@@ -21,14 +21,18 @@
         justify-content: space-between;
         align-items: center;
 
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-
         &-name {
             margin-right: 0.5rem;
             display: flex;
             align-items: center;
+
+            min-width: 0;
+
+            &-text {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
         }
         &-icon {
             opacity: 0.8;

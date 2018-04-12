@@ -192,9 +192,11 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                                     // tslint:disable-next-line:jsx-no-lambda
                                     onClick={e => this.onSelectTree(e, repo)}
                                 >
-                                    <span className="file-locations-tree__item-name">
+                                    <span className="file-locations-tree__item-name" title={repo}>
                                         <RepoIcon className="icon-inline file-locations-tree__item-icon" />
-                                        <RepoLink to={null} repoPath={repo} />
+                                        <span className="file-locations-tree__item-name-text">
+                                            <RepoLink to={null} repoPath={repo} />
+                                        </span>
                                     </span>
                                     <span className="badge badge-secondary badge-pill file-locations-tree__item-badge">
                                         {locationsByRepo.get(repo)!.length}
