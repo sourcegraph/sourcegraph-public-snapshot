@@ -39,7 +39,7 @@ import { parseHash } from '../../../util/url'
 import { AbsoluteRepoFilePosition } from '../../index'
 import { RepoHeaderActionPortal } from '../../RepoHeaderActionPortal'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
-import { ToggleBlobPanel } from '../actions/ToggleBlobPanel'
+import { ToggleHistoryPanel } from '../actions/ToggleHistoryPanel'
 import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
 import { FileLocationsTree } from './FileLocationsTree'
@@ -60,7 +60,7 @@ interface ContextSubject {
     character: number
 }
 
-type BlobPanelTabID = 'info' | 'def' | 'references' | 'references:external' | 'impl' | 'history'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'references:external' | 'impl' | 'history'
 
 function toSubject(props: Props): ContextSubject {
     const parsedHash = parseHash(props.location.hash)
@@ -207,7 +207,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                     position="right"
                     priority={20}
                     element={
-                        <ToggleBlobPanel
+                        <ToggleHistoryPanel
                             key="toggle-blob-panel"
                             location={this.props.location}
                             history={this.props.history}

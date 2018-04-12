@@ -42,6 +42,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Users can now view Git branches, tags, and commits, and compare Git branches and revisions on Sourcegraph. (The code host icon in the header takes you to the commit on the code host.)
 * A new admin panel allows you to view and manage language servers. For Server users, it allows you to enable/disable/update/restart language servers at the click of a button. For Data Center users, it shows the current status of language servers.
 * Users can now tweet their feedback about Sourcegraph when clicking on the feedback smiley located in the navbar and filling out a Twitter feedback form.
+* A new button in the repository header toggles on/off the Git history panel for the current file.
 
 ## 2.6.8
 

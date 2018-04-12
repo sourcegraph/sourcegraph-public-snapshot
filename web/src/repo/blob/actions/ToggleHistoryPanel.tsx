@@ -1,4 +1,4 @@
-import NewsIcon from '@sourcegraph/icons/lib/News'
+import HistoryIcon from '@sourcegraph/icons/lib/History'
 import * as H from 'history'
 import * as React from 'react'
 import { fromEvent } from 'rxjs/observable/fromEvent'
@@ -8,11 +8,12 @@ import { Subscription } from 'rxjs/Subscription'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { lprToRange, parseHash, toPositionOrRangeHash, toViewStateHashComponent } from '../../../util/url'
+import { BlobPanelTabID } from '../panel/BlobPanel'
 
 /**
- * A repository header action that toggles the visibility of the blob panel.
+ * A repository header action that toggles the visibility of the history panel.
  */
-export class ToggleBlobPanel extends React.PureComponent<{
+export class ToggleHistoryPanel extends React.PureComponent<{
     location: H.Location
     history: H.History
 }> {
@@ -23,7 +24,7 @@ export class ToggleBlobPanel extends React.PureComponent<{
      * Reports the current visibility (derived from the location).
      */
     public static isVisible(location: H.Location): boolean {
-        return !!parseHash(location.hash).viewState
+        return parseHash<BlobPanelTabID>(location.hash).viewState === 'history'
     }
 
     /**
@@ -31,9 +32,9 @@ export class ToggleBlobPanel extends React.PureComponent<{
      * the given value.
      */
     private static locationWithVisibility(location: H.Location, visible: boolean): H.LocationDescriptorObject {
-        const hash = parseHash(location.hash)
+        const hash = parseHash<BlobPanelTabID>(location.hash)
         if (visible) {
-            hash.viewState = 'references'
+            hash.viewState = 'history' // defaults to last-viewed tab, or first tab
         } else {
             delete hash.viewState
         }
@@ -43,18 +44,17 @@ export class ToggleBlobPanel extends React.PureComponent<{
     public componentDidMount(): void {
         this.subscriptions.add(
             this.toggles.subscribe(() => {
-                const visible = ToggleBlobPanel.isVisible(this.props.location)
-                eventLogger.log(visible ? 'HidePanel' : 'ShowPanel')
-                this.props.history.push(ToggleBlobPanel.locationWithVisibility(this.props.location, !visible))
+                const visible = ToggleHistoryPanel.isVisible(this.props.location)
+                eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
+                this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
                 Tooltip.forceUpdate()
             })
         )
 
-        // Toggle when the user presses 'alt+x'.
+        // Toggle when the user presses 'alt+h' or 'opt+h'.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                // Opt/alt+x shortcut
-                .pipe(filter(event => event.altKey && event.keyCode === 88))
+                .pipe(filter(event => event.altKey && event.keyCode === 72))
                 .subscribe(event => {
                     event.preventDefault()
                     this.toggles.next()
@@ -67,14 +67,14 @@ export class ToggleBlobPanel extends React.PureComponent<{
     }
 
     public render(): JSX.Element | null {
-        const visible = ToggleBlobPanel.isVisible(this.props.location)
+        const visible = ToggleHistoryPanel.isVisible(this.props.location)
         return (
             <button
                 className="btn btn-link btn-sm composite-container__header-action"
                 onClick={this.onClick}
-                data-tooltip={`${visible ? 'Hide' : 'Show'} panel (Alt+X/Opt+X)`}
+                data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
             >
-                <NewsIcon className="icon-inline" />
+                <HistoryIcon className="icon-inline" />
             </button>
         )
     }
