@@ -1,6 +1,7 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import { Checkmark } from '@sourcegraph/icons/lib/Checkmark'
 import { Close } from '@sourcegraph/icons/lib/Close'
+import { Cloud } from '@sourcegraph/icons/lib/Cloud'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import upperFirst from 'lodash/upperFirst'
@@ -78,7 +79,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                                     className="ml-2 text-muted"
                                     data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                                 >
-                                    Not yet cloned
+                                    <Cloud className="icon-inline" /> Not yet cloned
                                 </small>
                             )}
                     </div>
