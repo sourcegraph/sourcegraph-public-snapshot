@@ -22,3 +22,11 @@
     --input-group-addon-bg: $color-light-bg-4;
     --input-group-addon-border-color: $color-light-bg-4;
 }
+
+// Prevent Firefox's default red outline for inputs
+:not(output):-moz-ui-invalid:not(:focus) {
+    box-shadow: none;
+}
+:not(output):-moz-ui-invalid:-moz-focusring:not(:focus) {
+    box-shadow: none;
+}
