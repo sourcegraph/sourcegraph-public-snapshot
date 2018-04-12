@@ -120,6 +120,7 @@
     "tsify": "^3.0.4",
     "tslint": "^5.8.0",
     "tslint-language-service": "^0.9.6",
+    "tslint-react": "^3.5.1",
     "typescript": "~2.7.1",
     "uglifyjs-webpack-plugin": "^1.2.4",
     "webpack": "^4.5.0",
