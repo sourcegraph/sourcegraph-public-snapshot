@@ -2,6 +2,12 @@
   "extends": ["@sourcegraph/tslint-config"],
   "rules": {
     "await-promise": false,
-    "jsx-ban-elements": [true, ["^form$", "Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback"]]
+    "jsx-ban-elements": [
+      true,
+      [
+        "^form$",
+        "Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback"
+      ]
+    ]
   }
 }
