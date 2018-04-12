@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	basictracer "github.com/opentracing/basictracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -43,6 +45,8 @@ func (id serverID) String() string {
 
 type serverProxyConn struct {
 	conn *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the server
+
+	done chan struct{} // when closed the connection will be shutdown
 
 	id serverID
 
@@ -172,55 +176,21 @@ func (p *Proxy) shutdownServers(ctx context.Context, filter func(*serverProxyCon
 	}
 
 	errs := &errorList{}
-	var wg sync.WaitGroup
 	for _, s := range shutdown {
-		wg.Add(1)
-		go func(s *serverProxyConn) {
-			defer wg.Done()
-			s.didRemove()
-			shutdownOK := true
-			if err := s.shutdownAndExit(ctx); err != nil {
-				errs.add(err)
-				shutdownOK = false
-			}
-			if err := s.conn.Close(); err != nil && shutdownOK {
-				errs.add(err)
-			}
-		}(s)
+		err := s.Close()
+		if err != nil {
+			errs.add(err)
+		}
 	}
-	wg.Wait()
 	return errs.error()
 }
 
 // shutDownServer will terminate the server matching ID. If no such server
 // exists, no action is taken.
 func (p *Proxy) shutDownServer(ctx context.Context, id serverID) error {
-	var c *serverProxyConn
-
-	p.mu.Lock()
-	for cc := range p.servers {
-		if cc.id == id {
-			c = cc
-			break
-		}
-	}
-	p.mu.Unlock()
-
-	if c == nil {
-		return nil
-	}
-
-	// We have found a server. Remove it from the list and do a
-	// best-effort shutdown.
-	errs := &errorList{}
-	p.removeServerConn(c)
-	if err := c.shutdownAndExit(ctx); err != nil {
-		errs.add(err)
-	}
-	if err := c.conn.Close(); err != nil {
-		errs.add(err)
-	}
-	return errs.error()
+	return p.shutdownServers(ctx, func(c *serverProxyConn) bool {
+		return c.id == id
+	})
 }
 
 // LogServerStats, if true, will log the statistics of a serverProxyConn when
@@ -259,6 +229,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 		// proxy.
 		c = &serverProxyConn{
 			id:              id,
+			done:            make(chan struct{}),
 			clientBroadcast: p.clientBroadcastFunc(id.contextID),
 			stats: serverProxyConnStats{
 				Created: time.Now(),
@@ -343,11 +314,37 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 		// free up associated resources (e.g., if the VFS is backed by a file
 		// on disk, this will close the file).
 		go func() {
+			doShutdown := false
 			select {
 			case <-c.conn.DisconnectNotify():
+				close(c.done)
+			case <-c.done:
+				// Told to shutdown, do best effort LSP shutdown
+				doShutdown = true
 			}
 
-			p.removeServerConn(c)
+			// Remove ourselves from the list ASAP to prevent other clients
+			// using the connection. We do this in its own goroutine so we can
+			// proceed with shutdown even if someone else holds the proxy
+			// mutex.
+			go p.removeServerConn(c)
+
+			if doShutdown {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				defer cancel()
+				if err := c.conn.Call(ctx, "shutdown", nil, nil); err != nil {
+					// The only interesting error to log is application level
+					// errors and timeouts. Connection errors are not
+					// interesting due to timeout.
+					if _, isAppError := err.(*jsonrpc2.Error); isAppError || err == context.DeadlineExceeded {
+						log15.Debug("shutdown request failed", "id", c.id, "error", err)
+					}
+				}
+				// no application level errors for notifications, so ignore error
+				_ = c.conn.Notify(ctx, "exit", nil)
+			}
+
+			c.conn.Close()
 			if fs, ok := c.rootFS.(io.Closer); ok && fs != nil {
 				_ = fs.Close()
 			}
@@ -755,35 +752,12 @@ func (c *serverProxyConn) Stats() serverProxyConnStats {
 	return s
 }
 
-// shutdownAndExit sends LSP "shutdown" and "exit" to the LSP server
-// and closes this connection. The caller must ensure c is removed
-// from proxy.servers.
-func (c *serverProxyConn) shutdownAndExit(ctx context.Context) error {
-	var errs errorList
-	done := make(chan struct{})
-	go func() {
-		if err := c.conn.Call(ctx, "shutdown", nil, nil); err != nil {
-			errs.add(err)
-		}
-		// Even if "shutdown" failed, still call "exit" to (hopefully)
-		// tell the server to REALLY exit.
-		if err := c.conn.Notify(ctx, "exit", nil); err != nil {
-			errs.add(err)
-		}
-		close(done)
-	}()
-
-	// Respect the ctx deadline so we don't block for too long on an
-	// unresponsive server or work.
-	select {
-	case <-done:
-	case <-ctx.Done():
-		if err := ctx.Err(); err != nil {
-			errs.add(err)
-		}
-	}
-
-	return errs.error()
+// Close will close and free resources associated with the server. It will
+// also send shutdown and notify to the server if it is running. This is done
+// in its own goroutine.
+func (c *serverProxyConn) Close() error {
+	close(c.done)
+	return nil
 }
 
 var proxySaveDiagnostics, _ = strconv.ParseBool(env.Get("LSP_PROXY_SAVE_DIAGNOSTICS", "false", "save diagnostics published for each file to send to subsequently connected clients"))

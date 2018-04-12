@@ -173,16 +173,7 @@ func (p *Proxy) Close(ctx context.Context) error {
 		}(c)
 	}
 	for s := range p.servers {
-		par.Acquire()
-		go func(s *serverProxyConn) {
-			defer par.Release()
-			if err := s.shutdownAndExit(ctx); err != nil {
-				par.Error(err)
-			}
-			if err := s.conn.Close(); err != nil {
-				par.Error(err)
-			}
-		}(s)
+		s.Close()
 	}
 
 	// Set to nil so that calls to DisconnectIdleClients and
