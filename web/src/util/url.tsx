@@ -41,7 +41,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
     if (hash.startsWith('#')) {
         hash = hash.substr('#'.length)
     }
-    if (!/^L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?(\$.*)?$/.test(hash)) {
+    if (!/^(L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?)?(\$.*)?$/.test(hash)) {
         // invalid or empty hash
         return {}
     }

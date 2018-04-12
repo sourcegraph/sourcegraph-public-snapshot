@@ -51,6 +51,7 @@ describe('util/url', () => {
         })
 
         it('parses hash with local references', () => {
+            assert.deepStrictEqual(parseHash('$references'), { viewState: 'references' })
             assert.deepStrictEqual(parseHash('L1:1$references'), localRefMode)
             assert.deepStrictEqual(parseHash('L1:1$references'), localRefMode)
         })

@@ -233,14 +233,17 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                                 history={this.props.history}
                             />
-                            {useNewBlobPanel &&
-                                lprToRange(parseHash(this.props.location.hash)) && (
-                                    <BlobPanel
-                                        {...this.props}
-                                        repoID={this.props.repoID}
-                                        position={lprToRange(parseHash(this.props.location.hash))!.start}
-                                    />
-                                )}
+                            {useNewBlobPanel && (
+                                <BlobPanel
+                                    {...this.props}
+                                    repoID={this.props.repoID}
+                                    position={
+                                        lprToRange(parseHash(this.props.location.hash))
+                                            ? lprToRange(parseHash(this.props.location.hash))!.start
+                                            : undefined
+                                    }
+                                />
+                            )}
                         </>
                     )}
                 {!this.state.blobOrError.richHTML &&

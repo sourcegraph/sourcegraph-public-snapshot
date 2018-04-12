@@ -20,7 +20,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { takeUntil } from 'rxjs/operators/takeUntil'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { Hover, Location, MarkedString } from 'vscode-languageserver-types'
+import { Hover, Location, MarkedString, Position } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
     fetchDefinition,
@@ -36,7 +36,7 @@ import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
-import { AbsoluteRepoFilePosition } from '../../index'
+import { AbsoluteRepoFile, AbsoluteRepoFilePosition } from '../../index'
 import { RepoHeaderActionPortal } from '../../RepoHeaderActionPortal'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { ToggleHistoryPanel } from '../actions/ToggleHistoryPanel'
@@ -44,10 +44,11 @@ import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
 import { FileLocationsTree } from './FileLocationsTree'
 
-interface Props extends AbsoluteRepoFilePosition {
+interface Props extends AbsoluteRepoFile {
     location: H.Location
     history: H.History
     repoID: GQLID
+    position?: Position
     isLightTheme: boolean
 }
 
@@ -137,9 +138,12 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             subjectChanges
                 .pipe(
-                    switchMap(subject => {
+                    switchMap((subject: AbsoluteRepoFile & { position?: Position }) => {
+                        if (!subject.position) {
+                            return [{ hoverOrError: undefined }]
+                        }
                         type PartialStateUpdate = Pick<State, 'hoverOrError'>
-                        const result = fetchHover(subject).pipe(
+                        const result = fetchHover(subject as AbsoluteRepoFilePosition).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ hoverOrError: c } as PartialStateUpdate))
                         )
@@ -336,7 +340,9 @@ export class BlobPanel extends React.PureComponent<Props, State> {
     private onSelectLocation = (tab: BlobPanelTabID): void => eventLogger.log('BlobPanelLocationSelected', { tab })
 
     private queryDefinition = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchDefinition(this.props).pipe(map(c => ({ loading: false, locations: Array.isArray(c) ? c : [c] })))
+        fetchDefinition(this.props as AbsoluteRepoFilePosition).pipe(
+            map(c => ({ loading: false, locations: Array.isArray(c) ? c : [c] }))
+        )
 
     private queryReferencesLocal = (): Observable<{ loading: boolean; locations: Location[] }> =>
         fetchReferences({ ...(this.props as AbsoluteRepoFilePosition), includeDeclaration: false }).pipe(
@@ -344,7 +350,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         )
 
     private queryReferencesExternal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchExternalReferences(this.props).pipe(
+        fetchExternalReferences(this.props as AbsoluteRepoFilePosition).pipe(
             map(c => ({ loading: true, locations: c })),
             concat([{ loading: false, locations: [] }]),
             bufferTime(500), // reduce UI jitter
@@ -358,7 +364,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         )
 
     private queryImplementation = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        queryImplementation(this.props).pipe(map(c => ({ loading: false, locations: c })))
+        queryImplementation(this.props as AbsoluteRepoFilePosition).pipe(map(c => ({ loading: false, locations: c })))
 }
 
 function renderMarkedString(markedString: MarkedString): React.ReactFragment {
