@@ -253,7 +253,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             </Link>
                             {showContributors && (
                                 <Link
-                                    className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
+                                    className={`btn btn-secondary`}
                                     to={`/${this.props.repoPath}/-/stats/contributors`}
                                 >
                                     <UserIcon className="icon-inline" /> Contributors
