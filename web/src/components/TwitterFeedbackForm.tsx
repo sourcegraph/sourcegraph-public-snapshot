@@ -14,12 +14,14 @@ interface Props {
     onDismiss: () => void
 }
 
+type Experience = 'good' | 'bad'
 interface State {
-    experience?: 'good' | 'bad'
+    experience?: Experience
     description: string
-    isFocused: boolean
 }
 
+const DESCRIPTION_LOCAL_STORAGE_KEY = 'twitter-feedback-description'
+const EXPERIENCE_LOCAL_STORAGE_KEY = 'twitter-feedback-experience'
 const TWITTER_URL = 'https://twitter.com/intent/tweet?'
 const TWEET_ADDON = ' #UseTheSource via @srcgraph'
 
@@ -30,8 +32,8 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
         super(props)
 
         this.state = {
-            description: '',
-            isFocused: false,
+            description: localStorage.getItem(DESCRIPTION_LOCAL_STORAGE_KEY) || '',
+            experience: (localStorage.getItem(EXPERIENCE_LOCAL_STORAGE_KEY) as Experience | null) || undefined,
         }
     }
 
@@ -39,9 +41,14 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => !this.state.isFocused && event.key === 'Escape'))
+                .pipe(filter(event => event.key === 'Escape'))
                 .subscribe(() => this.props.onDismiss())
         )
+    }
+
+    public componentDidUpdate(): void {
+        localStorage.setItem(DESCRIPTION_LOCAL_STORAGE_KEY, this.state.description + '')
+        localStorage.setItem(EXPERIENCE_LOCAL_STORAGE_KEY, this.state.experience + '')
     }
 
     public componentWillUnmount(): void {
@@ -104,8 +111,6 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                             required={true}
                             maxLength={this.calculateMaxCharacters()}
                             autoFocus={true}
-                            onFocus={this.handleInputFocus}
-                            onBlur={this.handleInputBlur}
                         />
                     </div>
                     <div>
@@ -149,6 +154,8 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
             },
         })
 
+        localStorage.removeItem(DESCRIPTION_LOCAL_STORAGE_KEY)
+        localStorage.removeItem(EXPERIENCE_LOCAL_STORAGE_KEY)
         this.props.onDismiss()
     }
     /**
@@ -160,16 +167,6 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
         } else {
             return 280 - (' 😄' + TWEET_ADDON).length
         }
-    }
-    /**
-     * Keeps track of text field focus to enable/disable box closing via escape key
-     */
-    private handleInputFocus = (event: React.FocusEvent<HTMLTextAreaElement>) => {
-        this.setState({ isFocused: true })
-    }
-
-    private handleInputBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
-        this.setState({ isFocused: false })
     }
 
     private saveGoodExperience = (): void => {
