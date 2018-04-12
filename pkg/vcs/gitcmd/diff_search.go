@@ -32,7 +32,15 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 
 // RawLogDiffSearch implements vcs.Repository.
 func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) (results []*vcs.LogCommitSearchResult, complete bool, err error) {
-	tr, ctx := trace.New(ctx, "Git: RawLogDiffSearch", fmt.Sprintf("%+v", opt))
+	deadline, ok := ctx.Deadline()
+	var timeoutLabel string
+	if ok {
+		timeoutLabel = deadline.Sub(time.Now()).String()
+	} else {
+		timeoutLabel = "unlimited"
+	}
+
+	tr, ctx := trace.New(ctx, "Git: RawLogDiffSearch", fmt.Sprintf("%+v, timeout=%s", opt, timeoutLabel))
 	defer func() {
 		tr.LazyPrintf("%d results, complete=%v, err=%v", len(results), complete, err)
 		tr.SetError(err)
@@ -139,14 +147,14 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	//
 	// TODO(sqs): this can be made much more efficient in many ways
 	withTimeout := func(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
-		if opt.Deadline.IsZero() {
+		if deadline.IsZero() {
 			return ctx, func() {}
 		}
 		return context.WithTimeout(ctx, timeout)
 	}
 	// Run `git log` oneline command and read list of matching commits.
 	onelineCmd := r.command("git", onelineArgs...)
-	logTimeout := opt.Deadline.Sub(time.Now()) / 2
+	logTimeout := deadline.Sub(time.Now()) / 2
 	tr.LazyPrintf("git log %v with timeout %s", onelineCmd.Args, logTimeout)
 	ctxLog, cancel := withTimeout(ctx, logTimeout)
 	data, complete, err := readUntilTimeout(ctxLog, onelineCmd)
@@ -220,7 +228,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 	showCmd := r.command("git", showArgs...)
 	var complete2 bool
-	showTimeout := opt.Deadline.Sub(time.Now())
+	showTimeout := time.Duration(float64(deadline.Sub(time.Now())) * 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
 	tr.LazyPrintf("git show %v with timeout %s", showCmd.Args, showTimeout)
 	ctxShow, cancel := withTimeout(ctx, showTimeout)
 	data, complete2, err = readUntilTimeout(ctxShow, showCmd)
@@ -251,11 +259,15 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			SourceRefs: []string{commitSourceRefs[string(commit.ID)]},
 		}
 		result.Refs, err = r.filterAndResolveRefs(ctx, result.Refs)
-		if err != nil {
-			return nil, false, err
+		if err == nil {
+			result.SourceRefs, err = r.filterAndResolveRefs(ctx, result.SourceRefs)
 		}
-		result.SourceRefs, err = r.filterAndResolveRefs(ctx, result.SourceRefs)
 		if err != nil {
+			if ctx.Err() != nil {
+				// Return partial data.
+				complete = false
+				return results, complete, err
+			}
 			return nil, false, err
 		}
 

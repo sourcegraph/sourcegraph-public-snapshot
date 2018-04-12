@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
@@ -284,11 +283,6 @@ type RawLogDiffSearchOptions struct {
 	// No arguments that affect the format of the output should be present in this
 	// slice.
 	Args []string
-
-	// Deadline is the context deadline for the operation. It is provided as a hint to the implementation of
-	// RawLogDiffSearch (which currently needs to perform 2 operations, so it needs to be able to set a shorter
-	// timeout on the first operation in order to be able to perform the second operation).
-	Deadline time.Time
 }
 
 // LogCommitSearchResult describes a matching diff from (Repository).RawLogDiffSearch.
