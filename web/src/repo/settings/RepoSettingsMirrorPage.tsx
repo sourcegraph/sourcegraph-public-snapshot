@@ -281,49 +281,39 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                 <h2>Mirroring and cloning</h2>
                 {this.state.loading && <LoaderIcon className="icon-inline" />}
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
-                <dl>
-                    <dt>
+                <div className="form-group">
+                    <label>
                         Remote repository URL{' '}
-                        <div className="settings-page__form-label-badge">
+                        <small className="text-info">
                             <LockIcon className="icon-inline" /> Only visible to site admins
-                        </div>
-                    </dt>
-                    <dd>
-                        <div className="form-control settings-page__form-fake-input">
-                            <code className="settings-page__form-fake-input--code">
-                                {this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
-                            </code>
-                        </div>
-                    </dd>
-                    <p className="settings-page__form-notice">
-                        <small>
-                            Configure repository mirroring in{' '}
-                            {this.state.repo.viewerCanAdminister ? (
-                                <Link to="/site-admin/configuration">site configuration</Link>
-                            ) : (
-                                'site configuration'
-                            )}.
                         </small>
-                    </p>
-                </dl>
-                {
-                    <UpdateMirrorRepositoryActionContainer
-                        repo={this.state.repo}
-                        onDidUpdateRepository={this.onDidUpdateRepository}
-                        disabled={typeof this.state.reachable === 'boolean' && !this.state.reachable}
-                        disabledReason={
-                            typeof this.state.reachable === 'boolean' && !this.state.reachable
-                                ? 'Not reachable'
-                                : undefined
-                        }
+                    </label>
+                    <input
+                        className="form-control"
+                        value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
+                        readOnly={true}
                     />
-                }
-                {
-                    <CheckMirrorRepositoryConnectionActionContainer
-                        repo={this.state.repo}
-                        onDidUpdateReachability={this.onDidUpdateReachability}
-                    />
-                }
+                    <small className="form-text text-muted">
+                        Configure repository mirroring in{' '}
+                        {this.state.repo.viewerCanAdminister ? (
+                            <Link to="/site-admin/configuration">site configuration</Link>
+                        ) : (
+                            'site configuration'
+                        )}.
+                    </small>
+                </div>
+                <UpdateMirrorRepositoryActionContainer
+                    repo={this.state.repo}
+                    onDidUpdateRepository={this.onDidUpdateRepository}
+                    disabled={typeof this.state.reachable === 'boolean' && !this.state.reachable}
+                    disabledReason={
+                        typeof this.state.reachable === 'boolean' && !this.state.reachable ? 'Not reachable' : undefined
+                    }
+                />
+                <CheckMirrorRepositoryConnectionActionContainer
+                    repo={this.state.repo}
+                    onDidUpdateReachability={this.onDidUpdateReachability}
+                />
                 {typeof this.state.reachable === 'boolean' &&
                     !this.state.reachable && (
                         <div className="alert alert-info repo-settings-mirror-page__troubleshooting">

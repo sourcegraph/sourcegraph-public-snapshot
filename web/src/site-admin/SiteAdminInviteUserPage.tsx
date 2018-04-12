@@ -101,39 +101,31 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                     </div>
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-invite-user-page__form">
-                        <dl className="form-group">
-                            <dl className="form-group">
-                                <dt className="input-label">Username</dt>
-                                <dd>
-                                    <UsernameInput
-                                        className="form-control"
-                                        onChange={this.onUsernameFieldChange}
-                                        value={this.state.username}
-                                        required={true}
-                                        disabled={this.state.loading}
-                                        autoFocus={true}
-                                    />
-                                </dd>
-                            </dl>
-                            <dl className="form-group">
-                                <dt className="input-label">Email</dt>
-                                <dd>
-                                    <EmailInput
-                                        className="form-control"
-                                        onChange={this.onEmailFieldChange}
-                                        required={true}
-                                        value={this.state.email}
-                                        disabled={this.state.loading}
-                                    />
-                                </dd>
-                            </dl>
-                            {this.state.errorDescription && (
-                                <div className="alert alert-danger my-2">{this.state.errorDescription}</div>
-                            )}
-                            <button className="btn btn-primary" disabled={this.state.loading} type="submit">
-                                Generate password reset link
-                            </button>
-                        </dl>
+                        <div className="form-group">
+                            <label>Username</label>
+                            <UsernameInput
+                                onChange={this.onUsernameFieldChange}
+                                value={this.state.username}
+                                required={true}
+                                disabled={this.state.loading}
+                                autoFocus={true}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Email</label>
+                            <EmailInput
+                                onChange={this.onEmailFieldChange}
+                                required={true}
+                                value={this.state.email}
+                                disabled={this.state.loading}
+                            />
+                        </div>
+                        {this.state.errorDescription && (
+                            <div className="alert alert-danger my-2">{this.state.errorDescription}</div>
+                        )}
+                        <button className="btn btn-primary" disabled={this.state.loading} type="submit">
+                            Generate password reset link
+                        </button>
                     </Form>
                 )}
                 <hr />

@@ -67,7 +67,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <h2>Settings</h2>
                 {this.state.loading && <LoaderIcon className="icon-inline" />}
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
-                <Form className="settings-page__form">
+                <Form>
                     <div className="form-group">
                         <label>Repository name</label>
                         <input
