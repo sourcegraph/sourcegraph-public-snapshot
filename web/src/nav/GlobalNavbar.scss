@@ -67,8 +67,7 @@
         justify-content: space-between;
 
         background-color: $color-bg-2;
-        $global-navbar-search-height: 2.75rem;
-        height: $global-navbar-search-height; // +.05 to avoid the search box leaking
+        height: 2.75rem;
     }
 
     &__scopesbar {

@@ -8,12 +8,7 @@
     overflow: hidden;
 
     &__header {
-        flex: 0 0 auto;
-        padding: 0 0.5rem 0 0.25rem;
-
         border-bottom: 1px solid #233043;
-        display: flex;
-        align-items: center;
 
         &-action {
             display: flex;
@@ -22,14 +17,13 @@
             cursor: pointer;
             white-space: nowrap;
             text-overflow: ellipsis;
-            padding: 0;
+            padding: 0 !important;
             margin-left: 0.75rem;
+            user-select: none;
 
             &:not(&-active) {
                 opacity: 0.8;
             }
-
-            user-select: none;
 
             @media (max-width: $media-md) {
                 margin-left: 0.25rem;

@@ -172,8 +172,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.uri))
         return (
-            <div className={`repo-header composite-container__header ${this.props.className || ''}`}>
-                <div className="repo-header__section">
+            <nav
+                className={`repo-header composite-container__header navbar navbar-expand ${this.props.className || ''}`}
+            >
+                <div className="navbar-nav">
                     <PopoverButton
                         className="repo-header__section-btn repo-header__repo"
                         link={`/${this.props.repo.uri}`}
@@ -204,27 +206,46 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     )}
                 </div>
                 {this.state.navActions &&
-                    this.state.navActions.map(a => [
-                        <ChevronRightIcon key={1} className="icon-inline repo-header__icon-chevron" />,
-                        <div key={0} className="repo-header__section repo-header__rev">
-                            {a.element}
-                        </div>,
-                    ])}
-                {this.state.leftActions && this.state.leftActions.map(a => a.element)}
-                <div className="repo-header__spacer" />
-                {this.state.rightActions && this.state.rightActions.map(a => a.element)}
-                {this.props.repo.viewerCanAdminister && (
-                    <NavLink
-                        to={`/${this.props.repo.uri}/-/settings`}
-                        className="composite-container__header-action"
-                        activeClassName="composite-container__header-action-active"
-                        data-tooltip="Repository settings"
-                    >
-                        <GearIcon className="icon-inline" />
-                        <span className="composite-container__header-action-text">Settings</span>
-                    </NavLink>
+                    this.state.navActions.map((a, i) => (
+                        <div className="navbar-nav" key={a.element.key || i}>
+                            <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
+                            <div className="repo-header__rev">{a.element}</div>
+                        </div>
+                    ))}
+                {this.state.leftActions && (
+                    <ul className="navbar-nav">
+                        {this.state.leftActions.map((a, i) => (
+                            <li className="nav-item" key={a.element.key || i}>
+                                {a.element}
+                            </li>
+                        ))}
+                    </ul>
                 )}
-            </div>
+                <div className="repo-header__spacer" />
+                {(this.state.rightActions || this.props.repo.viewerCanAdminister) && (
+                    <ul className="navbar-nav">
+                        {this.state.rightActions &&
+                            this.state.rightActions.map((a, i) => (
+                                <li className="nav-item" key={a.element.key || i}>
+                                    {a.element}
+                                </li>
+                            ))}
+                        {this.props.repo.viewerCanAdminister && (
+                            <li className="nav-item">
+                                <NavLink
+                                    to={`/${this.props.repo.uri}/-/settings`}
+                                    className="nav-link composite-container__header-action"
+                                    activeClassName="composite-container__header-action-active"
+                                    data-tooltip="Repository settings"
+                                >
+                                    <GearIcon className="icon-inline" />
+                                    <span className="composite-container__header-action-text">Settings</span>
+                                </NavLink>
+                            </li>
+                        )}
+                    </ul>
+                )}
+            </nav>
         )
     }
 }

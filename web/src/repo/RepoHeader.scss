@@ -4,12 +4,10 @@
 @import './RepoHeaderBreadcrumbNavItem';
 
 .repo-header {
-    padding: 0.5rem;
-    white-space: nowrap;
+    flex: none;
 
-    &__section {
-        display: flex;
-        align-items: center;
+    .navbar-nav {
+        white-space: nowrap;
     }
 
     &__repo {
