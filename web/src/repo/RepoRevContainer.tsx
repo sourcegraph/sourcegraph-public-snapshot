@@ -1,7 +1,5 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
-import RepoQuestionIcon from '@sourcegraph/icons/lib/RepoQuestion'
 import isEqual from 'lodash/isEqual'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
@@ -35,6 +33,7 @@ import { FilePathBreadcrumb } from './FilePathBreadcrumb'
 import { RepositoryGraphArea } from './graph/RepositoryGraphArea'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
+import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
 
 interface RepoRevContainerProps extends RouteComponentProps<{}> {
@@ -139,17 +138,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             // Show error page
             switch (this.state.resolvedRevOrError.code) {
                 case ECLONEINPROGESS:
-                    return (
-                        <HeroPage
-                            icon={RepoIcon}
-                            title={this.props.repo.uri
-                                .split('/')
-                                .slice(1)
-                                .join('/')}
-                            className="repository-cloning-page"
-                            subtitle="Cloning in progress"
-                        />
-                    )
+                    return <RepositoryCloningInProgressPage repoName={this.props.repo.uri} />
                 case EREPONOTFOUND:
                     return (
                         <HeroPage
@@ -160,7 +149,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     )
                 case EREVNOTFOUND:
                     if (!this.props.rev) {
-                        return <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
+                        return <EmptyRepositoryPage />
                     }
 
                     return (

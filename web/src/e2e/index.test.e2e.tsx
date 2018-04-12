@@ -81,7 +81,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                 ),
 
             // Repository is cloning.
-            page.waitForSelector('.repository-cloning-page'),
+            page.waitForSelector('.repository-cloning-in-progress-page'),
 
             // Repository is already enabled and added; nothing to do.
             page.waitForSelector('.repo-rev-container'),

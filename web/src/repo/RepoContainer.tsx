@@ -28,6 +28,7 @@ import { RepoHeader } from './RepoHeader'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
 import { RepositoryErrorPage } from './RepositoryErrorPage'
+import { RepositoryGitDataContainer } from './RepositoryGitDataContainer'
 import { RepoSettingsArea } from './settings/RepoSettingsArea'
 import { RepositoryStatsArea } from './stats/RepositoryStatsArea'
 
@@ -174,13 +175,14 @@ export class RepoContainer extends React.Component<Props, State> {
             }
         }
 
+        const repoMatchURL = `/${this.state.repoOrError.uri}`
+
         const transferProps = {
             repo: this.state.repoOrError,
             user: this.props.user,
             isLightTheme: this.props.isLightTheme,
+            repoMatchURL,
         }
-
-        const repoMatchURL = `/${this.state.repoOrError.uri}`
 
         const isSettingsPage =
             location.pathname === `${repoMatchURL}/-/settings` ||
@@ -248,11 +250,13 @@ export class RepoContainer extends React.Component<Props, State> {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryCommitPage
-                                    {...routeComponentProps}
-                                    {...transferProps}
-                                    onDidUpdateExternalLinks={this.onDidUpdateExternalLinks}
-                                />
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                    <RepositoryCommitPage
+                                        {...routeComponentProps}
+                                        {...transferProps}
+                                        onDidUpdateExternalLinks={this.onDidUpdateExternalLinks}
+                                    />
+                                </RepositoryGitDataContainer>
                             )}
                         />
                         <Route
@@ -260,7 +264,9 @@ export class RepoContainer extends React.Component<Props, State> {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryBranchesArea {...routeComponentProps} {...transferProps} />
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                    <RepositoryBranchesArea {...routeComponentProps} {...transferProps} />
+                                </RepositoryGitDataContainer>
                             )}
                         />
                         <Route
@@ -268,11 +274,9 @@ export class RepoContainer extends React.Component<Props, State> {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryReleasesArea
-                                    {...routeComponentProps}
-                                    {...transferProps}
-                                    repoMatchURL={repoMatchURL}
-                                />
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                    <RepositoryReleasesArea {...routeComponentProps} {...transferProps} />
+                                </RepositoryGitDataContainer>
                             )}
                         />
                         <Route
@@ -280,7 +284,9 @@ export class RepoContainer extends React.Component<Props, State> {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryCompareArea {...routeComponentProps} {...transferProps} />
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                    <RepositoryCompareArea {...routeComponentProps} {...transferProps} />
+                                </RepositoryGitDataContainer>
                             )}
                         />
                         <Route
@@ -288,7 +294,9 @@ export class RepoContainer extends React.Component<Props, State> {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RepositoryStatsArea {...routeComponentProps} {...transferProps} />
+                                <RepositoryGitDataContainer repoPath={this.state.repoPath}>
+                                    <RepositoryStatsArea {...routeComponentProps} {...transferProps} />
+                                </RepositoryGitDataContainer>
                             )}
                         />
                         <Route
