@@ -521,7 +521,7 @@ func (*schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 	if userToInvite == nil {
-		return nil, errors.New("user not found")
+		return nil, errors.New("user does not exist (the user must sign up first before they can be added to an organization, but you can invite users without an account, and they'll be prompted to sign up and join the organization)")
 	}
 
 	if _, err := db.OrgMembers.Create(ctx, orgID, userToInvite.ID); err != nil {

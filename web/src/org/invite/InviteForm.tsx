@@ -265,7 +265,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                     type="submit"
                                     disabled={!!this.state.loading}
                                     className="btn btn-primary mb-2 mr-sm-2"
-                                    data-tooltip="Add without sending invitation (site admins only)"
+                                    data-tooltip="Add existing user without sending invitation (site admins only)"
                                 >
                                     {this.state.loading === 'addUserToOrganization' ? (
                                         <LoaderIcon className="icon-inline" />
