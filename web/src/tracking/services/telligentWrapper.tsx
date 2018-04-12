@@ -75,6 +75,11 @@ class TelligentWrapper {
                 platform: eventProps.platform,
                 server: eventProps.server,
                 tab: eventProps.tab,
+                feedback: eventProps.feedback
+                    ? {
+                          experience: eventProps.feedback.experience,
+                      }
+                    : undefined,
             }
             this.telligent('track', eventAction, limitedEventProps)
             return

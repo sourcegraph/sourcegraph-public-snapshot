@@ -143,9 +143,11 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
 
         url.searchParams.set('text', this.state.description + experienceEmoji + TWEET_ADDON)
         window.open(url.href)
+
         eventLogger.log('TwitterFeedbackSubmitted', {
-            user: this.props.user,
-            experience: this.state.experience,
+            feedback: {
+                experience: this.state.experience ? this.state.experience : undefined,
+            },
         })
 
         this.props.onDismiss()
