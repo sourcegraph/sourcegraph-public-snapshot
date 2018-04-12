@@ -1,20 +1,2 @@
 @import './FileLocations';
 @import './FileLocationsTree';
-
-.theme-light {
-    .blob-panel {
-        .result-container {
-            margin-bottom: 0;
-
-            &__header {
-                border-left: none;
-                border-right: none;
-            }
-        }
-
-        .file-match__item {
-            border-left: none;
-            border-right: none;
-        }
-    }
-}
