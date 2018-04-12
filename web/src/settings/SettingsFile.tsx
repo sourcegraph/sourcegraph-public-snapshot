@@ -1,8 +1,10 @@
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import upperFirst from 'lodash/upperFirst'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { fromPromise } from 'rxjs/observable/fromPromise'
+import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
@@ -12,6 +14,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 
 interface Props {
@@ -49,8 +52,8 @@ interface State {
      */
     editingLastKnownSettingsID?: number | null
 
-    /** The dynamically imported MonacoSettingsEditor module, undefined while loading. */
-    monacoSettingsEditor?: typeof _monacoSettingsEditorModule
+    /** The dynamically imported MonacoSettingsEditor module, error or undefined while loading. */
+    monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
 }
 
 const emptySettings = '{\n  // add settings here (Cmd/Ctrl+Space to see hints)\n}'
@@ -123,7 +126,16 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            fromPromise(import('./MonacoSettingsEditor')).subscribe(m => this.setState({ monacoSettingsEditor: m }))
+            fromPromise(import('./MonacoSettingsEditor'))
+                .pipe(
+                    catchError(error => {
+                        console.error(error)
+                        return [asError(error)]
+                    })
+                )
+                .subscribe(m => {
+                    this.setState({ monacoSettingsEditorOrError: m })
+                })
         )
 
         // Prevent navigation when dirty.
@@ -157,49 +169,59 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         const contents =
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
-        const MonacoSettingsEditor =
-            this.state.monacoSettingsEditor && this.state.monacoSettingsEditor.MonacoSettingsEditor
-
         return (
             <div className="settings-file">
-                <div className="site-admin-configuration-page__action-groups">
-                    <div className="site-admin-configuration-page__action-groups">
-                        <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
-                        <div className="site-admin-configuration-page__actions">
-                            {settingsActions.map(({ id, label }) => (
-                                <button
-                                    key={id}
-                                    className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onClick={() => this.runAction(id)}
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
+                {this.state.monacoSettingsEditorOrError === undefined ? (
+                    <Loader className="icon-inline" />
+                ) : isErrorLike(this.state.monacoSettingsEditorOrError) ? (
+                    <div className="alert alert-danger">
+                        Error loading settings editor: {upperFirst(this.state.monacoSettingsEditorOrError.message)}
                     </div>
-                </div>
-                <SaveToolbar
-                    dirty={dirty}
-                    disabled={this.state.saving || !dirty}
-                    error={this.props.commitError}
-                    saving={this.state.saving}
-                    onSave={this.save}
-                    onDiscard={this.discard}
-                />
-                {MonacoSettingsEditor ? (
-                    <MonacoSettingsEditor
-                        className="settings-file__contents form-control"
-                        value={contents}
-                        jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
-                        onChange={this.onEditorChange}
-                        readOnly={this.state.saving}
-                        monacoRef={this.monacoRef}
-                        isLightTheme={this.props.isLightTheme}
-                        onDidSave={this.save}
-                    />
                 ) : (
-                    <Loader className="icon-inline my-2" />
+                    (() => {
+                        const MonacoSettingsEditor = this.state.monacoSettingsEditorOrError.MonacoSettingsEditor
+                        return (
+                            <>
+                                <div className="site-admin-configuration-page__action-groups">
+                                    <div className="site-admin-configuration-page__action-groups">
+                                        <div className="site-admin-configuration-page__action-group-header">
+                                            Quick configure:
+                                        </div>
+                                        <div className="site-admin-configuration-page__actions">
+                                            {settingsActions.map(({ id, label }) => (
+                                                <button
+                                                    key={id}
+                                                    className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                                    // tslint:disable-next-line:jsx-no-lambda
+                                                    onClick={() => this.runAction(id)}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <SaveToolbar
+                                    dirty={dirty}
+                                    disabled={this.state.saving || !dirty}
+                                    error={this.props.commitError}
+                                    saving={this.state.saving}
+                                    onSave={this.save}
+                                    onDiscard={this.discard}
+                                />
+                                <MonacoSettingsEditor
+                                    className="settings-file__contents form-control"
+                                    value={contents}
+                                    jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
+                                    onChange={this.onEditorChange}
+                                    readOnly={this.state.saving}
+                                    monacoRef={this.monacoRef}
+                                    isLightTheme={this.props.isLightTheme}
+                                    onDidSave={this.save}
+                                />
+                            </>
+                        )
+                    })()
                 )}
             </div>
         )
@@ -207,7 +229,8 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
     private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        const monacoSettingsEditor = this.state.monacoSettingsEditor
+        // This function can only be called if the editor was loaded correctly so casting is correct here.
+        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof _monacoSettingsEditorModule
         if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(

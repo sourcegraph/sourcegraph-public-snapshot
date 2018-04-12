@@ -1,5 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import upperFirst from 'lodash/upperFirst'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -18,6 +19,7 @@ import { SaveToolbar } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { getTelemetryEnabled, siteConfigActions } from './configHelpers'
 
@@ -45,7 +47,7 @@ interface State {
     reloadStartedAt?: number
 
     /** The dynamically imported MonacoSettingsEditor module, undefined while loading. */
-    monacoSettingsEditor?: typeof _monacoSettingsEditorModule
+    monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
 }
 
 const EXPECTED_RELOAD_WAIT = 4 * 1000 // 4 seconds
@@ -71,9 +73,16 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         eventLogger.logViewEvent('SiteAdminConfiguration')
 
         this.subscriptions.add(
-            fromPromise(import('../settings/MonacoSettingsEditor')).subscribe(m =>
-                this.setState({ monacoSettingsEditor: m })
-            )
+            fromPromise(import('../settings/MonacoSettingsEditor'))
+                .pipe(
+                    catchError(error => {
+                        console.error(error)
+                        return [asError(error)]
+                    })
+                )
+                .subscribe(m => {
+                    this.setState({ monacoSettingsEditorOrError: m })
+                })
         )
 
         // Prevent navigation when dirty.
@@ -266,9 +275,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             )
         }
 
-        const MonacoSettingsEditor =
-            this.state.monacoSettingsEditor && this.state.monacoSettingsEditor.MonacoSettingsEditor
-
         return (
             <div className="site-admin-configuration-page">
                 <PageTitle title="Configuration - Admin" />
@@ -282,48 +288,61 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 {this.state.site &&
                     this.state.site.configuration && (
                         <div>
-                            <div className="site-admin-configuration-page__action-groups">
-                                <div className="site-admin-configuration-page__action-groups">
-                                    <div className="site-admin-configuration-page__action-group-header">
-                                        Quick configure:
-                                    </div>
-                                    <div className="site-admin-configuration-page__actions">
-                                        {siteConfigActions.map(({ id, label }) => (
-                                            <button
-                                                key={id}
-                                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                                // tslint:disable-next-line:jsx-no-lambda
-                                                onClick={() => this.runAction(id, this.configEditor)}
-                                            >
-                                                {label}
-                                            </button>
-                                        ))}
-                                    </div>
+                            {this.state.monacoSettingsEditorOrError === undefined ? (
+                                <Loader className="icon-inline" />
+                            ) : isErrorLike(this.state.monacoSettingsEditorOrError) ? (
+                                <div className="alert alert-danger">
+                                    Error loading site configuration editor:{' '}
+                                    {upperFirst(this.state.monacoSettingsEditorOrError.message)}
                                 </div>
-                            </div>
-                            {this.state.site.configuration.canUpdate && (
-                                <SaveToolbar
-                                    dirty={localDirty}
-                                    disabled={isReloading || this.state.saving || !localDirty}
-                                    saving={this.state.saving}
-                                    onSave={this.save}
-                                    onDiscard={this.discard}
-                                />
-                            )}
-                            {MonacoSettingsEditor ? (
-                                <MonacoSettingsEditor
-                                    className="site-admin-configuration-page__config"
-                                    value={localContents}
-                                    jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
-                                    onChange={this.onDidChange}
-                                    readOnly={isReloading || this.state.saving}
-                                    height={600}
-                                    monacoRef={this.monacoRef}
-                                    isLightTheme={this.props.isLightTheme}
-                                    onDidSave={this.save}
-                                />
                             ) : (
-                                <Loader className="icon-inline my-2" />
+                                (() => {
+                                    const MonacoSettingsEditor = this.state.monacoSettingsEditorOrError
+                                        .MonacoSettingsEditor
+                                    return (
+                                        <>
+                                            <div className="site-admin-configuration-page__action-groups">
+                                                <div className="site-admin-configuration-page__action-groups">
+                                                    <div className="site-admin-configuration-page__action-group-header">
+                                                        Quick configure:
+                                                    </div>
+                                                    <div className="site-admin-configuration-page__actions">
+                                                        {siteConfigActions.map(({ id, label }) => (
+                                                            <button
+                                                                key={id}
+                                                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                                                // tslint:disable-next-line:jsx-no-lambda
+                                                                onClick={() => this.runAction(id, this.configEditor)}
+                                                            >
+                                                                {label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {this.state.site.configuration.canUpdate && (
+                                                <SaveToolbar
+                                                    dirty={localDirty}
+                                                    disabled={isReloading || this.state.saving || !localDirty}
+                                                    saving={this.state.saving}
+                                                    onSave={this.save}
+                                                    onDiscard={this.discard}
+                                                />
+                                            )}
+                                            <MonacoSettingsEditor
+                                                className="site-admin-configuration-page__config"
+                                                value={localContents}
+                                                jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
+                                                onChange={this.onDidChange}
+                                                readOnly={isReloading || this.state.saving}
+                                                height={600}
+                                                monacoRef={this.monacoRef}
+                                                isLightTheme={this.props.isLightTheme}
+                                                onDidSave={this.save}
+                                            />
+                                        </>
+                                    )
+                                })()
                             )}
                             <p className="form-text">
                                 <small>Source: {formatEnvVar(this.state.site.configuration.source)}</small>
@@ -374,7 +393,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
 
     private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        const monacoSettingsEditor = this.state.monacoSettingsEditor
+        // This funciton can only be called if the editor was loaded so it is okay to cast here
+        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof _monacoSettingsEditorModule
         if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(
