@@ -41,6 +41,15 @@ type StaticInfoT struct {
 	// string if there is none.
 	DocsURL string
 
+	// Whether or not the language server should be killed via
+	// `docker kill <container>` or `docker stop <container>`. This is used for
+	// some language servers that do not yet properly handle SIGTERM, as
+	// otherwise `docker stop <container>` would do nothing and timeout after
+	// 10s, ultimately just making e.g. the server restart process much slower.
+	//
+	// TODO: Remove the need for this: https://github.com/sourcegraph/sourcegraph/issues/10693
+	kill bool
+
 	siteConfig schema.Langservers
 }
 
@@ -60,6 +69,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
 		DocsURL:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
 		siteConfig:  schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
+		kill:        true,
 	},
 	"javascript": {
 		DisplayName: "JavaScript",
@@ -67,6 +77,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
 		DocsURL:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
 		siteConfig:  schema.Langservers{Language: "javascript", Address: "tcp://typescript:2088"},
+		kill:        true,
 	},
 	"python": {
 		DisplayName: "Python",
@@ -74,6 +85,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:   "https://github.com/sourcegraph/python-langserver/issues",
 		DocsURL:     "https://github.com/sourcegraph/python-langserver/blob/master/README.md",
 		siteConfig:  schema.Langservers{Language: "python", Address: "tcp://python:2087"},
+		kill:        true,
 	},
 	"java": {
 		DisplayName: "Java",
@@ -81,6 +93,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:   "https://github.com/sourcegraph/java-langserver-docs/issues",
 		DocsURL:     "https://github.com/sourcegraph/java-langserver-docs/blob/master/README.md",
 		siteConfig:  schema.Langservers{Language: "java", Address: "tcp://java:2088"},
+		kill:        true,
 	},
 	"php": {
 		DisplayName: "PHP",
@@ -255,7 +268,11 @@ func startProdArgs(language string) (args []string) {
 }
 
 func stop(language string) error {
-	_, err := dockerCmd("stop", language)
+	cmdName := "stop"
+	if StaticInfo[language].kill {
+		cmdName = "kill"
+	}
+	_, err := dockerCmd(cmdName, language)
 	if err != nil && strings.Contains(err.Error(), "No such container") {
 		// already stopped
 		return nil
