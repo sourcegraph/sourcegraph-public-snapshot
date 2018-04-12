@@ -7,6 +7,7 @@ import { catchError } from 'rxjs/operators/catchError'
 import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
 import { Subscription } from 'rxjs/Subscription'
+import { Form } from '../components/Form'
 import { Settings } from '../schema/settings.schema'
 import { configurationCascade, parseJSON } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
@@ -125,7 +126,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
         } = this.state
 
         return (
-            <form className="saved-query-form" onSubmit={this.handleSubmit}>
+            <Form className="saved-query-form" onSubmit={this.handleSubmit}>
                 <button type="reset" className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
                     <CloseIcon />
                 </button>
@@ -263,7 +264,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                         Cancel
                     </button>
                 </div>
-            </form>
+            </Form>
         )
     }
 

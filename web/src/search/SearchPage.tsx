@@ -1,5 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
+import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { NavLinks } from '../nav/NavLinks'
 import { eventLogger } from '../tracking/eventLogger'
@@ -67,7 +68,7 @@ export class SearchPage extends React.Component<Props, State> {
                         '-head-logo.svg'
                     }
                 />
-                <form className="search search-page__container" onSubmit={this.onSubmit}>
+                <Form className="search search-page__container" onSubmit={this.onSubmit}>
                     <div className="search-page__input-container">
                         <QueryInput
                             {...this.props}
@@ -87,7 +88,7 @@ export class SearchPage extends React.Component<Props, State> {
                             query={this.state.userQuery}
                         />
                     </div>
-                </form>
+                </Form>
                 <div className="search search-page__query-container">
                     <SavedQueries {...this.props} hideExampleSearches={true} />
                 </div>

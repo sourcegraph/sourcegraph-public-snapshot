@@ -13,6 +13,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -93,7 +94,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
             <div className="org-settings-profile-page">
                 <PageTitle title={this.props.org.name} />
                 <h2>Organization profile</h2>
-                <form className="org-settings-profile-page" onSubmit={this.onSubmit}>
+                <Form className="org-settings-profile-page" onSubmit={this.onSubmit}>
                     <div className="form-group">
                         <label>Display name</label>
                         <input
@@ -123,7 +124,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                         <small>Updated!</small>
                     </div>
                     {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
-                </form>
+                </Form>
             </div>
         )
     }

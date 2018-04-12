@@ -8,6 +8,7 @@ import { filter } from 'rxjs/operators/filter'
 import { Subscription } from 'rxjs/Subscription'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
+import { Form } from './Form'
 
 interface Props {
     user: GQL.IUser | null
@@ -60,7 +61,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
         const submitLabel = 'Tweet us'
 
         return (
-            <form className="twitter-feedback-form theme-light" onSubmit={this.handleSubmit}>
+            <Form className="twitter-feedback-form theme-light" onSubmit={this.handleSubmit}>
                 <button
                     type="reset"
                     className="btn btn-icon twitter-feedback-form__close"
@@ -123,7 +124,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                         </button>
                     </div>
                 </div>
-            </form>
+            </Form>
         )
     }
 

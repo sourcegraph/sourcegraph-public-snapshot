@@ -7,6 +7,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { REPO_DELETE_CONFIRMATION_MESSAGE } from '.'
+import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { deleteRepository, setRepositoryEnabled } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -66,7 +67,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <h2>Settings</h2>
                 {this.state.loading && <LoaderIcon className="icon-inline" />}
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
-                <form className="settings-page__form">
+                <Form className="settings-page__form">
                     <div className="form-group">
                         <label>Repository name</label>
                         <input
@@ -93,7 +94,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             Rename
                         </button>
                     </div>
-                </form>
+                </Form>
                 <ActionContainer
                     title={this.state.repo.enabled ? 'Disable access' : 'Enable access'}
                     description={

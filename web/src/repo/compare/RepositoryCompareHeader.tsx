@@ -1,5 +1,6 @@
 import MoreIcon from '@sourcegraph/icons/lib/More'
 import * as React from 'react'
+import { Form } from '../../components/Form'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 interface Props extends RepositoryCompareAreaPageProps {
@@ -41,7 +42,7 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
         return (
             <div className={`repository-compare-header area-header ${this.props.className}`}>
                 <div className={`${this.props.className}-inner`}>
-                    <form className="form-inline mb-2" onSubmit={this.onSubmit}>
+                    <Form className="form-inline mb-2" onSubmit={this.onSubmit}>
                         <label htmlFor={RepositoryCompareHeader.BASE_INPUT_ID} className="sr-only">
                             Base Git revspec for comparison
                         </label>
@@ -86,7 +87,7 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
                                     Cancel
                                 </button>
                             )}
-                    </form>
+                    </Form>
                 </div>
             </div>
         )

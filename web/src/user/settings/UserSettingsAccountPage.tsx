@@ -9,6 +9,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { PasswordInput } from '../../auth/SignInSignUpCommon'
+import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { updatePassword } from './backend'
@@ -83,7 +84,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
                 <h2>Change password</h2>
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 {this.state.saved && <p className="alert alert-success">Password changed!</p>}
-                <form className="user-settings-account-page__form" onSubmit={this.handleSubmit}>
+                <Form className="user-settings-account-page__form" onSubmit={this.handleSubmit}>
                     <div className="form-group">
                         <label>Old password</label>
                         <PasswordInput
@@ -127,7 +128,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
                             <Loader className="icon-inline" />
                         </div>
                     )}
-                </form>
+                </Form>
             </div>
         )
     }

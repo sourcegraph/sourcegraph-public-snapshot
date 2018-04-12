@@ -18,6 +18,7 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionQueryArgs,
 } from '../components/FilteredConnection'
+import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { RepoLink } from '../repo/RepoLink'
 import { refreshSiteFlags } from '../site/backend'
@@ -210,7 +211,7 @@ export class AddPublicRepositoryForm extends React.PureComponent<
         return (
             <div className="add-public-repository-form">
                 <h3 className="add-public-repository-form__title">Add a public repository</h3>
-                <form className="add-public-repository-form__form" onSubmit={this.onSubmit}>
+                <Form className="add-public-repository-form__form" onSubmit={this.onSubmit}>
                     <div className="add-public-repository-form__input-scope">
                         <span className="add-public-repository-form__input-scope-text">{'https://github.com'}/</span>
                     </div>
@@ -231,7 +232,7 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                     >
                         Add
                     </button>
-                </form>
+                </Form>
                 {this.state.error && (
                     <div className="alert alert-danger add-public-repository-form__alert">
                         {upperFirst(this.state.error)}

@@ -21,6 +21,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
+import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
 import { searchQueryForRepoRev } from '../search'
@@ -266,7 +267,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                     <h3 className="directory-page__section-header">
                         Search in this {this.props.filePath ? 'directory' : 'repository'}
                     </h3>
-                    <form className="directory-page__section-search" onSubmit={this.onSubmit}>
+                    <Form className="directory-page__section-search" onSubmit={this.onSubmit}>
                         <QueryInput
                             value={this.state.query}
                             onChange={this.onQueryChange}
@@ -278,7 +279,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                         />
                         <SearchButton />
                         <SearchHelp />
-                    </form>
+                    </Form>
                 </section>
                 {this.state.treeOrError === undefined && (
                     <div>

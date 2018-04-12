@@ -12,6 +12,7 @@ import { scan } from 'rxjs/operators/scan'
 import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
+import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
 import { addCommentToThread } from './backend'
 
@@ -83,7 +84,7 @@ export const CommentsInput = reactive<Props>(props => {
     ).pipe(
         scan<Update, State>((state: State, update: Update) => update(state), {} as State),
         map(({ editorURL, onOpenEditor, textAreaValue, submitting, error }: State): JSX.Element | null => (
-            <form className="comments-input" onSubmit={nextSubmit}>
+            <Form className="comments-input" onSubmit={nextSubmit}>
                 <small className="comments-input__row comments-input__info">
                     Markdown supported.
                     {editorURL && (
@@ -124,7 +125,7 @@ export const CommentsInput = reactive<Props>(props => {
                         Error posting comment: {error.message}
                     </div>
                 )}
-            </form>
+            </Form>
         ))
     )
 })

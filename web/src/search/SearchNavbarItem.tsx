@@ -5,6 +5,7 @@ import { skip } from 'rxjs/operators/skip'
 import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { Form } from '../components/Form'
 import { submitSearch } from './helpers'
 import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
 import { QueryInput } from './QueryInput'
@@ -70,7 +71,7 @@ export class SearchNavbarItem extends React.Component<Props> {
         const autoFocus = this.props.location.pathname === '/search'
 
         return (
-            <form className="search search--navbar-item" onSubmit={this.onSubmit}>
+            <Form className="search search--navbar-item" onSubmit={this.onSubmit}>
                 <QueryInput
                     {...this.props}
                     value={this.props.navbarSearchQuery}
@@ -79,7 +80,7 @@ export class SearchNavbarItem extends React.Component<Props> {
                     hasGlobalQueryBehavior={true}
                 />
                 <SearchButton />
-            </form>
+            </Form>
         )
     }
 

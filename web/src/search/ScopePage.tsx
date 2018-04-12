@@ -13,14 +13,15 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
+import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { RepoFileLink } from '../components/RepoFileLink'
 import { SearchScope } from '../schema/settings.schema'
 import { fetchReposByQuery } from '../search/backend'
 import { submitSearch } from '../search/helpers'
-import { QueryInput } from '../search/QueryInput'
 import { queryUpdates } from '../search/QueryInput'
+import { QueryInput } from '../search/QueryInput'
 import { SearchButton } from '../search/SearchButton'
 import { currentConfiguration } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
@@ -165,7 +166,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                         )}
                     </header>
                     <section>
-                        <form className="scope-page__section-search" onSubmit={this.onSubmit}>
+                        <Form className="scope-page__section-search" onSubmit={this.onSubmit}>
                             <div className="scope-page__input-scope" title={this.state.value}>
                                 <span className="scope-page__input-scope-text">{this.state.value}</span>
                             </div>
@@ -179,7 +180,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 placeholder="Search in this scope..."
                             />
                             <SearchButton />
-                        </form>
+                        </Form>
                     </section>
                     <PageTitle title={this.state.name} />
                     <section className="scope-page__repos">

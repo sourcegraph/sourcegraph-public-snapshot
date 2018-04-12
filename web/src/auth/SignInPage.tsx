@@ -5,6 +5,7 @@ import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
+import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -36,7 +37,7 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
 
     public render(): JSX.Element | null {
         return (
-            <form className="signin-signup-form signin-form" onSubmit={this.handleSubmit}>
+            <Form className="signin-signup-form signin-form" onSubmit={this.handleSubmit}>
                 {window.context.site['auth.allowSignup'] && (
                     <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
                         Don't have an account? Sign up.
@@ -81,7 +82,7 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
                         <Loader className="icon-inline" />
                     </div>
                 )}
-            </form>
+            </Form>
         )
     }
 

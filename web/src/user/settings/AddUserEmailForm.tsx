@@ -10,6 +10,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, mutateGraphQL } from '../../backend/graphql'
+import { Form } from '../../components/Form'
 import { createAggregateError, ErrorLike } from '../../util/errors'
 
 interface Props {
@@ -62,7 +63,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
         return (
             <div className={`add-user-email-form ${this.props.className || ''}`}>
                 <h3>Add email address</h3>
-                <form className="form-inline" onSubmit={this.onSubmit}>
+                <Form className="form-inline" onSubmit={this.onSubmit}>
                     <label className="sr-only" htmlFor="AddUserEmailForm-email">
                         Email address
                     </label>
@@ -83,7 +84,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                     <button type="submit" className="btn btn-primary" disabled={loading}>
                         {loading ? 'Adding...' : 'Add'}
                     </button>
-                </form>
+                </Form>
                 {this.state.error && (
                     <div className="alert alert-danger mt-2">{upperFirst(this.state.error.message)}</div>
                 )}

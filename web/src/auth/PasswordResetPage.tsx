@@ -1,6 +1,7 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
+import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -31,7 +32,7 @@ class PasswordResetForm extends React.Component<{}, State> {
             // If `code` and `email` are provided in the URL, then display a form that reset a user's password
             // on submission if the code matches the email.
             return (
-                <form className="password-reset-page__form" onSubmit={this.handleSubmitResetPassword}>
+                <Form className="password-reset-page__form" onSubmit={this.handleSubmitResetPassword}>
                     {this.state.error !== '' && (
                         <p className="password-reset-page__error">{upperFirst(this.state.error)}</p>
                     )}
@@ -46,7 +47,7 @@ class PasswordResetForm extends React.Component<{}, State> {
                     <button className="btn btn-primary btn-block" type="submit">
                         Reset Password
                     </button>
-                </form>
+                </Form>
             )
         }
 
@@ -56,7 +57,7 @@ class PasswordResetForm extends React.Component<{}, State> {
             return <p className="password-reset-page__reset-confirm">Password reset email sent.</p>
         }
         return (
-            <form className="password-reset-page__form" onSubmit={this.handleSubmitResetPasswordInit}>
+            <Form className="password-reset-page__form" onSubmit={this.handleSubmitResetPasswordInit}>
                 {this.state.error !== '' && (
                     <p className="password-reset-page__error">{upperFirst(this.state.error)}</p>
                 )}
@@ -75,7 +76,7 @@ class PasswordResetForm extends React.Component<{}, State> {
                 <button className="btn btn-primary btn-block" type="submit">
                     Reset Password
                 </button>
-            </form>
+            </Form>
         )
     }
 

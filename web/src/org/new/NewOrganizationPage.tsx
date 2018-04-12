@@ -8,6 +8,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrg } from '../backend'
@@ -84,7 +85,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
         return (
             <div className="new-org-page">
                 <PageTitle title="New organization" />
-                <form className="settings-form" onSubmit={this.onSubmit}>
+                <Form className="settings-form" onSubmit={this.onSubmit}>
                     <h1>Create a new organization</h1>
                     <p>
                         An organization is a set of users with associated configuration. See{' '}
@@ -135,7 +136,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         Create organization
                     </button>
                     {this.state.loading && <LoaderIcon className="icon-inline" />}
-                </form>
+                </Form>
             </div>
         )
     }

@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators/map'
 import { Subject } from 'rxjs/Subject'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
+import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { buildSearchURLQuery, quoteIfNeeded, searchQueryForRepoRev } from '../../search'
@@ -207,7 +208,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                 <div className="card repository-stats-page__card repository-stats-page__card--form">
                     <div className="card-header">Contributions filter</div>
                     <div className="card-body">
-                        <form onSubmit={this.onSubmit}>
+                        <Form onSubmit={this.onSubmit}>
                             <div className="repository-stats-page__row form-inline">
                                 <div className="input-group mb-2 mr-sm-2">
                                     <div className="input-group-prepend">
@@ -332,7 +333,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                     </div>
                                 )}
                             </div>
-                        </form>
+                        </Form>
                     </div>
                 </div>
                 <FilteredContributorsConnection

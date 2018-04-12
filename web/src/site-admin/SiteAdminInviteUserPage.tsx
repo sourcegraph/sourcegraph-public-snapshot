@@ -7,6 +7,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { CopyableText } from '../components/CopyableText'
+import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createUserBySiteAdmin } from './backend'
@@ -99,7 +100,7 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                         </button>
                     </div>
                 ) : (
-                    <form onSubmit={this.onSubmit} className="site-admin-invite-user-page__form">
+                    <Form onSubmit={this.onSubmit} className="site-admin-invite-user-page__form">
                         <dl className="form-group">
                             <dl className="form-group">
                                 <dt className="input-label">Username</dt>
@@ -133,7 +134,7 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                                 Generate password reset link
                             </button>
                         </dl>
-                    </form>
+                    </Form>
                 )}
                 <hr />
                 <p>

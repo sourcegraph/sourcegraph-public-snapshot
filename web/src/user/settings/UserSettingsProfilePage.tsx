@@ -18,6 +18,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { refreshCurrentUser } from '../../auth'
 import { gql, queryGraphQL } from '../../backend/graphql'
+import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -171,7 +172,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                 )}
                 {this.state.userOrError &&
                     !isErrorLike(this.state.userOrError) && (
-                        <form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
+                        <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                             <div className="form-group">
                                 <label>Username</label>
                                 <input
@@ -261,7 +262,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                         View public profile
                                     </Link>
                                 )}
-                        </form>
+                        </Form>
                     )}
             </div>
         )

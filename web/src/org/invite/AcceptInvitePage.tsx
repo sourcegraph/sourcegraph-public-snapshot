@@ -18,6 +18,7 @@ import { tap } from 'rxjs/operators/tap'
 import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { refreshCurrentUser } from '../../auth'
+import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { acceptUserInvite } from '../backend'
@@ -138,7 +139,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                     hasSubmitted: false,
                 }),
                 map(({ email, loading, error, orgName, hasSubmitted }) => (
-                    <form className="accept-invite-page" onSubmit={nextSubmitEvent}>
+                    <Form className="accept-invite-page" onSubmit={nextSubmitEvent}>
                         {!loading &&
                             !error &&
                             hasSubmitted &&
@@ -156,7 +157,7 @@ export const AcceptInvitePage = reactive<Props>(props => {
                             </button>
                             {loading && <LoaderIcon className="icon-inline" />}
                         </div>
-                    </form>
+                    </Form>
                 ))
             )
     )

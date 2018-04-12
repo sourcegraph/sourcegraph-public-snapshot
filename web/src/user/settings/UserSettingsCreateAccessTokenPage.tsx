@@ -15,6 +15,7 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, mutateGraphQL } from '../../backend/graphql'
+import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -117,7 +118,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                         Creating access token for other user <strong>{this.props.user.username}</strong>
                     </SiteAdminAlert>
                 )}
-                <form onSubmit={this.onSubmit}>
+                <Form onSubmit={this.onSubmit}>
                     <div className="form-group">
                         <label className="font-weight-bold" htmlFor="user-settings-create-access-token-page__note">
                             Token description
@@ -162,7 +163,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                     <Link className="btn btn-link" to={`${this.props.match.url}/tokens`}>
                         Cancel
                     </Link>
-                </form>
+                </Form>
                 {isErrorLike(this.state.creationOrError) && (
                     <div className="invite-form__alert alert alert-danger">
                         Error: {upperFirst(this.state.creationOrError.message)}

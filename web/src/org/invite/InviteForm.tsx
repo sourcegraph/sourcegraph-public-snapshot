@@ -18,6 +18,7 @@ import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, mutateGraphQL } from '../../backend/graphql'
+import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 
@@ -241,7 +242,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                 <div className="card invite-form__container">
                     <div className="card-body">
                         <h4 className="card-title">Invite member</h4>
-                        <form className="form-inline" onSubmit={this.onSubmit}>
+                        <Form className="form-inline" onSubmit={this.onSubmit}>
                             <label className="sr-only" htmlFor="invite-form__email">
                                 Username or email address
                             </label>
@@ -294,7 +295,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                 )}{' '}
                                 {emailInvitesEnabled ? 'Invite' : 'Make invite link'}
                             </button>
-                        </form>
+                        </Form>
                     </div>
                 </div>
                 {this.state.invited &&

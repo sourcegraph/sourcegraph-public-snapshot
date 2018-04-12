@@ -19,6 +19,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { pluralize } from '../util/strings'
+import { Form } from './Form'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
 const hasID = (obj: any): obj is { id: GQLID } => obj && typeof obj.id === 'string'
@@ -558,7 +559,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         return (
             <div className={`filtered-connection ${compactnessClass} ${this.props.className || ''}`}>
                 {!this.props.hideFilter && (
-                    <form className="filtered-connection__form" onSubmit={this.onSubmit}>
+                    <Form className="filtered-connection__form" onSubmit={this.onSubmit}>
                         <input
                             className="form-control filtered-connection__filter"
                             type="search"
@@ -581,7 +582,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                     value={this.state.activeFilter.id}
                                 />
                             )}
-                    </form>
+                    </Form>
                 )}
                 {isErrorLike(this.state.connectionOrError) ? (
                     <div className="alert alert-danger filtered-connection__error">

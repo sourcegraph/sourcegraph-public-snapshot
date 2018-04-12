@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'
 import { from } from 'rxjs/observable/from'
 import { Subscription } from 'rxjs/Subscription'
+import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -55,7 +56,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
 
     public render(): JSX.Element | null {
         return (
-            <form className="signin-signup-form signup-form" onSubmit={this.handleSubmit}>
+            <Form className="signin-signup-form signup-form" onSubmit={this.handleSubmit}>
                 {this.state.error && (
                     <div className="alert alert-danger my-2">Error: {upperFirst(this.state.error.message)}</div>
                 )}
@@ -105,7 +106,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         </a>.
                     </small>
                 )}
-            </form>
+            </Form>
         )
     }
 
