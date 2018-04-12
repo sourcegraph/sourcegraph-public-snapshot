@@ -57,7 +57,7 @@ const config: webpack.Configuration = {
     output: {
         path: path.join(__dirname, '../ui/assets'),
         filename: 'scripts/[name].bundle.js',
-        chunkFilename: 'scripts/[id].chunk.js',
+        chunkFilename: 'scripts/[id]-[chunkhash].chunk.js',
         publicPath: '/.assets/',
     },
     devtool,
