@@ -2,6 +2,7 @@ package updatecheck
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -87,15 +88,23 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			clientAddr = r.RemoteAddr
 		}
 
-		eventlogger.LogEvent("", "ServerUpdateCheck", map[string]interface{}{
-			"remote_ip":             clientAddr,
-			"remote_site_version":   clientVersionString,
-			"remote_site_id":        clientSiteID,
-			"has_update":            strconv.FormatBool(hasUpdate),
-			"unique_users_today":    uniqueUsers,
-			"has_code_intelligence": hasCodeIntelligence,
-			"site_activity":         activity,
-		})
+		eventlogger.LogEvent("", "ServerUpdateCheck", json.RawMessage(fmt.Sprintf(`{
+			"remote_ip": "%s",
+			"remote_site_version": "%s",
+			"remote_site_id": "%s",
+			"has_update": "%s",
+			"unique_users_today": "%s",
+			"has_code_intelligence": "%s",
+			"site_activity": %s
+		}`,
+			clientAddr,
+			clientVersionString,
+			clientSiteID,
+			strconv.FormatBool(hasUpdate),
+			uniqueUsers,
+			hasCodeIntelligence,
+			activity,
+		)))
 	}
 
 	if !hasUpdate {

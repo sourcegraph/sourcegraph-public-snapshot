@@ -65,7 +65,7 @@ var baseURL = &url.URL{
 
 func getSiteActivityJSON() ([]byte, error) {
 	siteActivity, err := useractivity.GetSiteActivity(&useractivity.SiteActivityOptions{
-		Days:   1,
+		Days:   2,
 		Weeks:  1,
 		Months: 1,
 	})

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -399,7 +400,7 @@ func serveComment(w http.ResponseWriter, r *http.Request) error {
 	if service != "" {
 		// Link unfurled by some service in specific (i.e. not just some user
 		// visiting this link in their browser)
-		eventlogger.LogEvent("", "CommentUnfurled", map[string]interface{}{"unfurl_service": service})
+		eventlogger.LogEvent("", "CommentUnfurled", json.RawMessage(fmt.Sprintf(`{"unfurl_service": "%s"}`, service)))
 	}
 
 	common.Title = fmt.Sprintf("%s - Sourcegraph", title)
@@ -486,7 +487,7 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 	if service != "" {
 		// Link unfurled by some service in specific (i.e. not just some user
 		// visiting this link in their browser)
-		eventlogger.LogEvent("", "DeepLinkUnfurled", map[string]interface{}{"unfurl_service": service})
+		eventlogger.LogEvent("", "DeepLinkUnfurled", json.RawMessage(fmt.Sprintf(`{"unfurl_service": "%s"}`, service)))
 	}
 
 	return renderTemplate(w, "app.html", common)

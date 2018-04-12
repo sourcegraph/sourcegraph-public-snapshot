@@ -333,9 +333,5 @@ func searchURL(query, utmSource string) string {
 }
 
 func logEvent(email, eventName, eventType string) {
-	eventlogger.LogEvent(email, eventName, map[string]interface{}{
-		"saved_searches": map[string]interface{}{
-			"event_type": eventType,
-		},
-	})
+	eventlogger.LogEvent(email, eventName, json.RawMessage(fmt.Sprintf(`{"saved_searches": {"event_type": "%s"}}`, eventType)))
 }

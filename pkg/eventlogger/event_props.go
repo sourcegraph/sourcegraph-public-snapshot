@@ -1,5 +1,7 @@
 package eventlogger
 
+import "encoding/json"
+
 // Payload represents context about a user event to be tracked
 type Payload struct {
 	DeviceInfo *DeviceInfo `json:"device_info,omitempty"`
@@ -46,6 +48,6 @@ type Event struct {
 
 // Context represents custom event-level context/properties that can be passed with an event
 type Context struct {
-	EventLabel string                 `json:"event_label"`
-	Backend    map[string]interface{} `json:"backend,omitempty"`
+	EventLabel string          `json:"event_label"`
+	Backend    json.RawMessage `json:"backend,omitempty"`
 }
