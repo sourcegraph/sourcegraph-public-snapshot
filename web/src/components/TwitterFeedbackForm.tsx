@@ -92,8 +92,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                         <label>Tell us why?</label>{' '}
                         <small className="text-muted">
                             {this.calculateMaxCharacters() - this.state.description.length}{' '}
-                            {pluralize('characters', this.calculateMaxCharacters() - this.state.description.length)}{' '}
-                            left
+                            {pluralize('character', this.calculateMaxCharacters() - this.state.description.length)} left
                         </small>
                         <textarea
                             name="description"
