@@ -47,7 +47,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
 
     public render(): JSX.Element | null {
         return (
-            <li className="list-group-item py-2">
+            <li className="repository-node list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <RepoLink repoPath={this.props.node.uri} to={`/${this.props.node.uri}`} />
@@ -82,7 +82,7 @@ export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Rep
                                 </small>
                             )}
                     </div>
-                    <div>
+                    <div className="repository-node__actions">
                         {
                             <Link
                                 className="btn btn-secondary btn-sm"
