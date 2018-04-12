@@ -229,25 +229,19 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                         {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
                         <div className="btn-group mb-3">
                             <Link
-                                className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
+                                className="btn btn-secondary"
                                 to={`${toRepoURL({ repoPath: this.props.repoPath, rev: this.props.rev })}/-/commits`}
                             >
                                 <CommitIcon className="icon-inline" /> Commits
                             </Link>
-                            <Link
-                                className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
-                                to={`/${this.props.repoPath}/-/branches`}
-                            >
+                            <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/branches`}>
                                 <BranchIcon className="icon-inline" /> Branches
                             </Link>
-                            <Link
-                                className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
-                                to={`/${this.props.repoPath}/-/tags`}
-                            >
+                            <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/tags`}>
                                 <TagIcon className="icon-inline" /> Tags
                             </Link>
                             <Link
-                                className={`btn btn-outline-${this.props.isLightTheme ? 'dark' : 'light'}`}
+                                className="btn btn-secondary"
                                 to={
                                     this.props.rev
                                         ? `/${this.props.repoPath}/-/compare/...${this.props.rev}`
