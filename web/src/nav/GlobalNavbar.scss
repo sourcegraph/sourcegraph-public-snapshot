@@ -1,6 +1,4 @@
-$navbar-search-height: 2.75rem;
-
-.navbar {
+.global-navbar {
     width: 100%;
 
     &__right {
@@ -69,7 +67,8 @@ $navbar-search-height: 2.75rem;
         justify-content: space-between;
 
         background-color: $color-bg-2;
-        height: $navbar-search-height; // +.05 to avoid the search box leaking
+        $global-navbar-search-height: 2.75rem;
+        height: $global-navbar-search-height; // +.05 to avoid the search box leaking
     }
 
     &__scopesbar {
@@ -88,7 +87,7 @@ $navbar-search-height: 2.75rem;
 }
 
 .theme-light {
-    .navbar {
+    .global-navbar {
         &__search {
             background-color: $color-light-bg-2;
         }

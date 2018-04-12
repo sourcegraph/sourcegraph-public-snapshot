@@ -18,7 +18,7 @@ import { LinkExtension } from './extension/Link'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { updateUserSessionStores } from './marketing/util'
-import { Navbar } from './nav/Navbar'
+import { GlobalNavbar } from './nav/GlobalNavbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { toggleSearchFilter } from './search/helpers'
@@ -45,7 +45,7 @@ const Layout: React.SFC<LayoutProps> = props => {
         <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
             {!needsSiteInit && !isSiteInit && !!props.user && <IntegrationsToast history={props.history} />}
-            {!hideNavbar && <Navbar {...props} />}
+            {!hideNavbar && <GlobalNavbar {...props} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
                 {routes.map((route, i) => {

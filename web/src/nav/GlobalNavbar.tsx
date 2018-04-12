@@ -24,7 +24,7 @@ interface State {
 
 const SHOW_SCOPES_LOCAL_STORAGE_KEY = 'show-scopes'
 
-export class Navbar extends React.Component<Props, State> {
+export class GlobalNavbar extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
@@ -53,14 +53,14 @@ export class Navbar extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="navbar">
-                <div className="navbar__search">
-                    <div className="navbar__left">
-                        <Link to="/search" className="navbar__logo-link">
-                            <img className="navbar__logo" src="/.assets/img/sourcegraph-mark.svg" />
+            <div className="global-navbar">
+                <div className="global-navbar__search">
+                    <div className="global-navbar__left">
+                        <Link to="/search" className="global-navbar__logo-link">
+                            <img className="global-navbar__logo" src="/.assets/img/sourcegraph-mark.svg" />
                         </Link>
                     </div>
-                    <div className="navbar__search-box-container">
+                    <div className="global-navbar__search-box-container">
                         <SearchNavbarItem
                             {...this.props}
                             navbarSearchQuery={this.props.navbarSearchQuery}
@@ -69,12 +69,16 @@ export class Navbar extends React.Component<Props, State> {
                     </div>
                     <NavLinks
                         {...this.props}
-                        className="navbar__nav-links"
+                        className="global-navbar__nav-links"
                         onShowScopes={this.onShowScopes}
                         showScopes={this.state.showScopes}
                     />
                 </div>
-                <div className={'navbar__scopesbar' + (this.state.showScopes ? '' : ' navbar__scopesbar--hidden')}>
+                <div
+                    className={
+                        'global-navbar__scopesbar' + (this.state.showScopes ? '' : ' global-navbar__scopesbar--hidden')
+                    }
+                >
                     <SearchFilterChips
                         location={this.props.location}
                         onFilterChosen={this.props.onFilterChosen}
