@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -32,9 +32,12 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 
 // RawLogDiffSearch implements vcs.Repository.
 func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) (results []*vcs.LogCommitSearchResult, complete bool, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: RawLogDiffSearch")
-	span.SetTag("Opt", opt)
-	defer span.Finish()
+	tr, ctx := trace.New(ctx, "Git: RawLogDiffSearch", fmt.Sprintf("%+v", opt))
+	defer func() {
+		tr.LazyPrintf("%d results, complete=%v, err=%v", len(results), complete, err)
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	if opt.FormatArgs == nil {
 		if opt.Diff {
@@ -143,8 +146,11 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 	// Run `git log` oneline command and read list of matching commits.
 	onelineCmd := r.command("git", onelineArgs...)
-	ctxLog, cancel := withTimeout(ctx, opt.Deadline.Sub(time.Now())/2)
+	logTimeout := opt.Deadline.Sub(time.Now()) / 2
+	tr.LazyPrintf("git log %v with timeout %s", onelineCmd.Args, logTimeout)
+	ctxLog, cancel := withTimeout(ctx, logTimeout)
 	data, complete, err := readUntilTimeout(ctxLog, onelineCmd)
+	tr.LazyPrintf("git log done: data %d bytes, complete=%v, err=%v", len(data), complete, err)
 	cancel()
 	if err != nil {
 		// Don't fail if the repository is empty.
@@ -214,8 +220,11 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 	showCmd := r.command("git", showArgs...)
 	var complete2 bool
-	ctxShow, cancel := withTimeout(ctx, opt.Deadline.Sub(time.Now()))
+	showTimeout := opt.Deadline.Sub(time.Now())
+	tr.LazyPrintf("git show %v with timeout %s", showCmd.Args, showTimeout)
+	ctxShow, cancel := withTimeout(ctx, showTimeout)
 	data, complete2, err = readUntilTimeout(ctxShow, showCmd)
+	tr.LazyPrintf("git show done: data %d bytes, complete=%v, err=%v", len(data), complete2, err)
 	cancel()
 	if err != nil {
 		return nil, complete, err

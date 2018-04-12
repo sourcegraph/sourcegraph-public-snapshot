@@ -103,6 +103,13 @@ type commitSearchOp struct {
 }
 
 func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.repoRevs, op.info))
+	defer func() {
+		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", len(results), limitHit, timedOut)
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	repo := op.repoRevs.repo
 
 	args := []string{
