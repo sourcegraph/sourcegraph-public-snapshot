@@ -88,6 +88,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			clientAddr = r.RemoteAddr
 		}
 
+		// Prevent nil activity data (i.e., "") from breaking json marshaling.
+		// This is an issue with all Server and Data Center instances at versions < 2.7.0.
+		if activity == "" {
+			activity = `{}`
+		}
+
 		eventlogger.LogEvent("", "ServerUpdateCheck", json.RawMessage(fmt.Sprintf(`{
 			"remote_ip": "%s",
 			"remote_site_version": "%s",
