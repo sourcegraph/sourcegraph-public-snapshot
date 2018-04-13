@@ -222,6 +222,7 @@ export class AddPublicRepositoryForm extends React.PureComponent<
                             value={this.state.repoName}
                             onChange={this.onPublicRepositoryNameFieldChange}
                             placeholder="organization/repository"
+                            autoFocus={true}
                             ref={input => (this.inputElement = input)}
                         />
                     </div>
