@@ -27,7 +27,7 @@ func (a *Actor) String() string {
 
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.
 func (a *Actor) IsAuthenticated() bool {
-	return a.UID != 0
+	return a != nil && a.UID != 0
 }
 
 type key int

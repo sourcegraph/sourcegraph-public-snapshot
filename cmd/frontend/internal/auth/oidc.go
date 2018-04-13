@@ -85,7 +85,7 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 		}
 
 		// If not authenticated, redirect to login and begin the OIDC Authn flow.
-		if actr := actor.FromContext(r.Context()); actr == nil || !actr.IsAuthenticated() {
+		if actr := actor.FromContext(r.Context()); !actr.IsAuthenticated() {
 			redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
 			query := url.Values(map[string][]string{"redirect": {redirectURL.String()}})
 			http.Redirect(w, r, authURLPrefix+"/login?"+query.Encode(), http.StatusFound)
