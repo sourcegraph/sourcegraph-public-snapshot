@@ -602,7 +602,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 		var err error
 		d, err = time.ParseDuration(timeout)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, errors.WithMessage(err, `invalid "timeout:" value (examples: "timeout:2s", "timeout:200ms")`)
 		}
 	}
 	// don't run queries longer than 1 minute.
