@@ -25,8 +25,7 @@ import (
 )
 
 var (
-	gitLogSearchTimeout       = mustParseDuration(env.Get("GIT_LOG_SEARCH_TIMEOUT", "15s", "maximum duration for type:commit and type:diff queries before incomplete results are returned"))
-	maxGitLogSearchResults, _ = strconv.Atoi(env.Get("GIT_LOG_MAX_RESULTS", "20", "maximum number of results for type:commit and type:diff queries"))
+	gitLogSearchTimeout = mustParseDuration(env.Get("GIT_LOG_SEARCH_TIMEOUT", "15s", "maximum duration for type:commit and type:diff queries before incomplete results are returned"))
 )
 
 func mustParseDuration(s string) time.Duration {
@@ -112,9 +111,10 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	}()
 
 	repo := op.repoRevs.repo
+	maxResults := int(op.info.FileMatchLimit)
 
 	args := []string{
-		"--max-count=" + strconv.Itoa(maxGitLogSearchResults+1),
+		"--max-count=" + strconv.Itoa(maxResults+1),
 	}
 	if op.diff {
 		args = append(args,
@@ -241,9 +241,9 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 
 	// if the result is incomplete, git log timed out and the client should be notified of that
 	timedOut = !complete
-	if len(rawResults) > maxGitLogSearchResults {
+	if len(rawResults) > maxResults {
 		limitHit = true
-		rawResults = rawResults[:maxGitLogSearchResults]
+		rawResults = rawResults[:maxResults]
 	}
 
 	repoResolver := &repositoryResolver{repo: repo}

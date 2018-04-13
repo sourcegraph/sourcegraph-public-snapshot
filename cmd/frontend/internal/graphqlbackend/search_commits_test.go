@@ -26,7 +26,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 				t.Errorf("got %q, want %q", opt.Query.Pattern, want)
 			}
 			if want := []string{
-				"--max-count=" + strconv.Itoa(maxGitLogSearchResults+1),
+				"--max-count=" + strconv.Itoa(defaultMaxSearchResults+1),
 				"--unified=0",
 				"--no-prefix",
 				"--regexp-ignore-case",
@@ -55,7 +55,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,
-		info:              &patternInfo{Pattern: "p"},
+		info:              &patternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
 		query:             *query,
 		diff:              true,
 		textSearchOptions: vcs.TextSearchOptions{Pattern: "p"},
