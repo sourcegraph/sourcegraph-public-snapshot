@@ -290,10 +290,8 @@ func Restart(language string) error {
 	if err := validate(language); err != nil {
 		return err
 	}
-	if err := stop(language); err != nil {
-		return err
-	}
-	return start(language)
+	_, err := dockerCmd("restart", language)
+	return err
 }
 
 // Status represents the status of a language server Docker container.
