@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -12,6 +11,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 // addDebugHandlers registers the reverse proxies to each services debug
@@ -28,7 +28,7 @@ func addDebugHandlers(r *mux.Router) {
 					req.URL.Path = req.URL.Path[i+len(prefix):]
 				}
 			},
-			ErrorLog: log.New(ioutil.Discard, "", 0), // disable
+			ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", svc.Name), log.LstdFlags),
 		}))
 	}
 

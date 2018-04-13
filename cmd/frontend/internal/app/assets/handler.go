@@ -32,6 +32,7 @@ func Mount(mux *http.ServeMux) {
 				r.URL.Path = strings.TrimPrefix(r.URL.Path, urlPathPrefix)
 				proxy.Director(r)
 			},
+			ErrorLog: log.New(env.DebugOut, "assets proxy: ", log.LstdFlags),
 		})
 		return
 	}

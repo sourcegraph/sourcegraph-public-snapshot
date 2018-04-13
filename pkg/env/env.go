@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"expvar"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"sort"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var descriptions = make(map[string]string)
@@ -17,6 +21,34 @@ var (
 	Version  = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
 	LogLevel = Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
 )
+
+var (
+	// DebugOut is os.Stderr if LogLevel includes dbug
+	DebugOut io.Writer
+	// InfoOut is os.Stderr if LogLevel includes info
+	InfoOut io.Writer
+	// WarnOut is os.Stderr if LogLevel includes warn
+	WarnOut io.Writer
+	// ErrorOut is os.Stderr if LogLevel includes error
+	ErrorOut io.Writer
+	// CritOut is os.Stderr if LogLevel includes crit
+	CritOut io.Writer
+)
+
+func init() {
+	lvl, _ := log15.LvlFromString(LogLevel)
+	lvlFilterStderr := func(maxLvl log15.Lvl) io.Writer {
+		if lvl <= maxLvl {
+			return os.Stderr
+		}
+		return ioutil.Discard
+	}
+	DebugOut = lvlFilterStderr(log15.LvlDebug)
+	InfoOut = lvlFilterStderr(log15.LvlInfo)
+	WarnOut = lvlFilterStderr(log15.LvlWarn)
+	ErrorOut = lvlFilterStderr(log15.LvlError)
+	CritOut = lvlFilterStderr(log15.LvlCrit)
+}
 
 // Get returns the value of the given environment variable. It also registers the description for
 // PrintHelp. Calling Get with the same name twice causes a panic. Get should only be called on

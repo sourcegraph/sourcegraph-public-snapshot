@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httputil"
 
@@ -15,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 var telemetryReverseProxy http.Handler
@@ -43,10 +45,12 @@ func init() {
 					req.Host = "sourcegraph-logging.telligentdata.com"
 					req.URL.Path = "/" + mux.Vars(req)["TelemetryPath"]
 				},
+				ErrorLog: log.New(env.DebugOut, "telemetry proxy: ", log.LstdFlags),
 			}
 		} else {
 			telemetryReverseProxy = &httputil.ReverseProxy{
 				Director: serveOnPremTelemetryModification,
+				ErrorLog: log.New(env.DebugOut, "telemetry proxy: ", log.LstdFlags),
 			}
 		}
 	}

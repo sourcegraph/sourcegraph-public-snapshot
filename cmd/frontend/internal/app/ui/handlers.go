@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventlogger"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -415,6 +417,7 @@ var searchBadgeHandler = &httputil.ReverseProxy{
 		r.URL.Host = "search-badger"
 		r.URL.Path = "/"
 	},
+	ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
 }
 
 func serveOpen(w http.ResponseWriter, r *http.Request) error {

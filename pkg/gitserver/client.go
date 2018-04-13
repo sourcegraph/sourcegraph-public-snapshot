@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -450,5 +451,8 @@ func (c *Client) UploadPack(repoURI api.RepoURI, w http.ResponseWriter, r *http.
 		Director: func(r *http.Request) {
 			r.URL = u
 		},
+		ErrorLog: uploadPackErrorLog,
 	}).ServeHTTP(w, r)
 }
+
+var uploadPackErrorLog = log.New(env.DebugOut, "git upload-pack proxy: ", log.LstdFlags)
