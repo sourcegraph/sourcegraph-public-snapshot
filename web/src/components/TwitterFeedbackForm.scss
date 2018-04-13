@@ -1,10 +1,14 @@
 // no need for light theme, since the feedback form only has a light theme design
 .twitter-feedback-form {
-    position: fixed;
-    right: 2rem;
-    top: 4rem;
+    position: absolute;
+    top: 2.3rem;
+    right: 0;
     z-index: 50; // Overlay any page contents
-    padding: 1rem;
+    width: 20rem;
+    max-width: 90vw;
+    margin: 0 1rem;
+
+    padding: 1rem 1.25rem;
     display: flex;
     border-radius: 0.25rem;
     border: 1px solid $color-light-border;
@@ -17,10 +21,8 @@
 
     &__contents {
         flex: 1 1 auto;
-        margin: 0 1rem;
         display: flex;
         flex-direction: column;
-        max-width: 400px;
     }
 
     &__experience {

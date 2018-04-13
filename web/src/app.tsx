@@ -14,7 +14,6 @@ import { currentUser } from './auth'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
 import './components/tooltip/Tooltip'
-import { TwitterFeedbackForm } from './components/TwitterFeedbackForm'
 import { LinkExtension } from './extension/Link'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
@@ -32,9 +31,6 @@ interface LayoutProps extends RouteComponentProps<any> {
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     onFilterChosen: (value: string) => void
-    showTwitterFeedbackForm: boolean
-    onTwitterFeedbackFormClose: () => void
-    onShowTwitterFeedbackForm: () => void
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -50,9 +46,6 @@ const Layout: React.SFC<LayoutProps> = props => {
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
             {!needsSiteInit && !isSiteInit && !!props.user && <IntegrationsToast history={props.history} />}
             {!hideNavbar && <Navbar {...props} />}
-            {props.showTwitterFeedbackForm && (
-                <TwitterFeedbackForm user={props.user} onDismiss={props.onTwitterFeedbackFormClose} />
-            )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
                 {routes.map((route, i) => {
@@ -187,9 +180,6 @@ class App extends React.Component<{}, AppState> {
             navbarSearchQuery={this.state.navbarSearchQuery}
             onNavbarQueryChange={this.onNavbarQueryChange}
             onFilterChosen={this.onFilterChosen}
-            showTwitterFeedbackForm={this.state.showTwitterFeedbackForm}
-            onShowTwitterFeedbackForm={this.onShowTwitterFeedbackForm}
-            onTwitterFeedbackFormClose={this.onTwitterFeedbackFormClose}
         />
     )
 
@@ -200,14 +190,6 @@ class App extends React.Component<{}, AppState> {
                 eventLogger.log(this.state.isLightTheme ? 'LightThemeClicked' : 'DarkThemeClicked')
             }
         )
-    }
-    private onShowTwitterFeedbackForm = () => {
-        this.setState({ showTwitterFeedbackForm: true })
-        eventLogger.log('TwitterFeedbackFormOpened')
-    }
-
-    private onTwitterFeedbackFormClose = () => {
-        this.setState({ showTwitterFeedbackForm: false })
     }
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {

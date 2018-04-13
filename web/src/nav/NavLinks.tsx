@@ -5,8 +5,8 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../auth'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { TwitterFeedbackForm } from '../components/TwitterFeedbackForm'
 import { SearchHelp } from '../search/SearchHelp'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
@@ -14,6 +14,7 @@ import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
 interface Props {
     location: H.Location
+    user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
     showScopes?: boolean
@@ -25,23 +26,17 @@ interface Props {
 }
 
 interface State {
-    user?: GQL.IUser | null
+    showFeedbackForm: boolean
 }
 
 const isGQLUser = (val: any): val is GQL.IUser => val && typeof val === 'object' && val.__typename === 'User'
 
 export class NavLinks extends React.Component<Props, State> {
-    public state: State = {}
+    public state: State = {
+        showFeedbackForm: false,
+    }
 
     private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            currentUser.subscribe(user => {
-                this.setState({ user })
-            })
-        )
-    }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
@@ -87,7 +82,7 @@ export class NavLinks extends React.Component<Props, State> {
                         Install <span className="nav-links__widescreen-only">Sourcegraph Server</span>
                     </a>
                 )}
-                {this.state.user && (
+                {this.props.user && (
                     <Link to="/search/searches" className="nav-links__link">
                         Searches
                     </Link>
@@ -97,31 +92,34 @@ export class NavLinks extends React.Component<Props, State> {
                         Explore
                     </Link>
                 )}
-                {this.state.user &&
-                    this.state.user.siteAdmin && (
+                {this.props.user &&
+                    this.props.user.siteAdmin && (
                         <Link to="/site-admin" className="nav-links__link">
                             Admin
                         </Link>
                     )}
-                {this.state.user && (
+                {this.props.user && (
                     <Link className="nav-links__link nav-links__link-user" to="/settings/profile">
-                        {isGQLUser(this.state.user) && this.state.user.avatarURL ? (
+                        {isGQLUser(this.props.user) && this.props.user.avatarURL ? (
                             <UserAvatar size={64} />
-                        ) : isGQLUser(this.state.user) ? (
-                            this.state.user.username
+                        ) : isGQLUser(this.props.user) ? (
+                            this.props.user.username
                         ) : (
                             'Profile'
                         )}
                     </Link>
                 )}
                 <button
-                    onClick={this.props.onShowTwitterFeedbackForm}
-                    data-tooltip="Send feedback"
                     className="btn btn-link nav-links__twitter-feedback"
+                    data-tooltip="Send feedback"
+                    onClick={this.onFeedbackButtonClick}
                 >
                     <EmoticonIcon className="icon-inline" />
                 </button>
-                {!this.state.user &&
+                {this.state.showFeedbackForm && (
+                    <TwitterFeedbackForm onDismiss={this.onFeedbackFormDismiss} user={this.props.user} />
+                )}
+                {!this.props.user &&
                     this.props.location.pathname !== '/sign-in' && (
                         <Link className="nav-links__link btn btn-primary" to="/sign-in">
                             Sign in
@@ -136,5 +134,14 @@ export class NavLinks extends React.Component<Props, State> {
                 <SearchHelp className="nav-links__link" />
             </div>
         )
+    }
+
+    private onFeedbackButtonClick = (): void => {
+        eventLogger.log('TwitterFeedbackFormOpened')
+        this.setState({ showFeedbackForm: true })
+    }
+
+    private onFeedbackFormDismiss = (): void => {
+        this.setState({ showFeedbackForm: false })
     }
 }

@@ -3,7 +3,7 @@
     padding-right: 0.25rem;
     justify-content: flex-end;
     align-items: center;
-    overflow-x: auto;
+    position: relative; // For feedback form
 
     &__link,
     &__border-link {
