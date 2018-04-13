@@ -59,6 +59,7 @@ const config: webpack.Configuration = {
         filename: 'scripts/[name].bundle.js',
         chunkFilename: 'scripts/[id]-[chunkhash].chunk.js',
         publicPath: '/.assets/',
+        globalObject: 'self',
     },
     devtool,
     devServer: {
