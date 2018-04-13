@@ -912,24 +912,27 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// alert is a potential alert shown to the user
 	var alert *searchAlert
-	if _, isDiff := seenResultTypes["diff"]; isDiff && alert == nil && !common.limitHit && len(r.query.Values("before")) == 0 && len(r.query.Values("after")) == 0 {
-		alert = &searchAlert{
-			description: "Diff search limited to last month by default. Use after: to search older commits.",
-			proposedQueries: []*searchQueryDescription{
-				{
-					description: "commits in the last 6 months",
-					query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"6 months ago\""},
+
+	if !conf.SearchTimeoutParameterEnabled() {
+		if _, isDiff := seenResultTypes["diff"]; isDiff && alert == nil && !common.limitHit && len(r.query.Values("before")) == 0 && len(r.query.Values("after")) == 0 {
+			alert = &searchAlert{
+				description: "Diff search limited to last month by default. Use after: to search older commits.",
+				proposedQueries: []*searchQueryDescription{
+					{
+						description: "commits in the last 6 months",
+						query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"6 months ago\""},
+					},
+					{
+						description: "commits in the last 2 years",
+						query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"2 years ago\""},
+					},
 				},
-				{
-					description: "commits in the last 2 years",
-					query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"2 years ago\""},
-				},
-			},
-		}
-		if len(results) == 0 {
-			alert.title = "No results found"
-		} else {
-			alert.title = "Only diff search results from last month are shown"
+			}
+			if len(results) == 0 {
+				alert.title = "No results found"
+			} else {
+				alert.title = "Only diff search results from last month are shown"
+			}
 		}
 	}
 	if len(missingRepoRevs) > 0 {

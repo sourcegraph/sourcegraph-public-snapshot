@@ -16,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
@@ -157,9 +158,11 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	for _, s := range afterValues {
 		args = append(args, "--since="+s)
 	}
-	// Default to searching back 1 month
-	if len(beforeValues) == 0 && len(afterValues) == 0 {
-		args = append(args, "--since=1 month ago")
+	if !conf.SearchTimeoutParameterEnabled() {
+		// Default to searching back 1 month. Don't do this if the timeout: experiment is enabled, because that is a better way of ensuring searches are fast.
+		if len(beforeValues) == 0 && len(afterValues) == 0 {
+			args = append(args, "--since=1 month ago")
+		}
 	}
 
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
