@@ -1,7 +1,9 @@
 package server
 
 import (
+	"context"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -42,6 +44,9 @@ var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
 // CleanupRepos walks the repos directory and removes repositories that haven't been updated
 // within a certain amount of time.
 func (s *Server) CleanupRepos() {
+	bCtx, bCancel := s.serverContext()
+	defer bCancel()
+
 	filepath.Walk(s.ReposDir, func(p string, fi os.FileInfo, fileErr error) (rtnErr error) {
 		if fileErr != nil {
 			return nil
@@ -88,8 +93,14 @@ func (s *Server) CleanupRepos() {
 			}
 			defer os.RemoveAll(tmp)
 
-			ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
-			defer cancel()
+			ctx, cancel1, err := s.acquireCloneLimiter(bCtx)
+			if err != nil {
+				log.Println("unexpected error while acquiring clone limiter:", err)
+				return
+			}
+			defer cancel1()
+			ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+			defer cancel2()
 
 			remoteURL := OriginMap(uri)
 			if remoteURL == "" {
@@ -107,8 +118,6 @@ func (s *Server) CleanupRepos() {
 			// TODO: this will not work for private repos which require authenticated
 			// access.
 			cmd := cloneCmd(ctx, remoteURL, tmpCloneRoot)
-			cloneLimiter := s.acquireCloneLimiter()
-			defer cloneLimiter.Release()
 			if output, err := cmd.CombinedOutput(); err != nil {
 				log15.Error("reclone failed", "error", err, "repo", uri, "output", string(output))
 				// Update the access time for the repo in the event of a clone failure.

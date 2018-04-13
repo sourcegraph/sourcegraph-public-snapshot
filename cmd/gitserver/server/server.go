@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -24,7 +25,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	nettrace "golang.org/x/net/trace"
 
-	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -32,6 +32,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
@@ -83,9 +84,8 @@ type Server struct {
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
 	// s.acquireClonableLimiter() instead of using these directly.
-	cloneLimitersMu  sync.RWMutex
-	cloneLimiter     *parallel.Run
-	cloneableLimiter *parallel.Run
+	cloneLimiter     *mutablelimiter.Limiter
+	cloneableLimiter *mutablelimiter.Limiter
 
 	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
@@ -138,18 +138,23 @@ func (s *Server) Handler() http.Handler {
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[api.RepoURI]*locks)
+
+	// GitMaxConcurrentClones controls the maximum number of clones that
+	// can happen at once. Used to prevent throttle limits from a code
+	// host. Defaults to 5.
+	maxConcurrentClones := conf.Get().GitMaxConcurrentClones
+	if maxConcurrentClones == 0 {
+		maxConcurrentClones = 5
+	}
+	s.cloneLimiter = mutablelimiter.New(maxConcurrentClones)
+	s.cloneableLimiter = mutablelimiter.New(maxConcurrentClones)
 	conf.Watch(func() {
-		// GitMaxConcurrentClones controls the maximum number of clones that
-		// can happen at once. Used to prevent throttle limits from a code
-		// host. Defaults to 5.
-		maxConcurrentClones := conf.Get().GitMaxConcurrentClones
-		if maxConcurrentClones == 0 {
-			maxConcurrentClones = 5
+		limit := conf.Get().GitMaxConcurrentClones
+		if limit == 0 {
+			limit = 5
 		}
-		s.cloneLimitersMu.Lock()
-		s.cloneLimiter = parallel.NewRun(maxConcurrentClones)
-		s.cloneableLimiter = parallel.NewRun(maxConcurrentClones)
-		s.cloneLimitersMu.Unlock()
+		s.cloneLimiter.SetLimit(limit)
+		s.cloneableLimiter.SetLimit(limit)
 	})
 
 	mux := http.NewServeMux()
@@ -174,8 +179,8 @@ func (s *Server) Stop() {
 	s.wg.Wait()
 }
 
-// backgroundWithTimeout returns a context tied to the lifecycle of server.
-func (s *Server) backgroundWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
+// serverContext returns a child context tied to the lifecycle of server.
+func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 	// if we are already canceled don't increment our waitgroup. This is to
 	// prevent a loop somewhere preventing us from ever finishing the
 	// waitgroup, even though all calls fails instantly due to the canceled
@@ -188,7 +193,7 @@ func (s *Server) backgroundWithTimeout(timeout time.Duration) (context.Context, 
 	s.wg.Add(1)
 	s.cancelMu.Unlock()
 
-	ctx, cancel := context.WithTimeout(s.ctx, timeout)
+	ctx, cancel := context.WithCancel(s.ctx)
 
 	// we need to track if we have called cancel, since we are only allowed to
 	// call wg.Done() once, but CancelFuncs can be called any number of times.
@@ -202,28 +207,16 @@ func (s *Server) backgroundWithTimeout(timeout time.Duration) (context.Context, 
 	}
 }
 
-func (s *Server) acquireCloneLimiter() *parallel.Run {
+func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	cloneQueue.Inc()
 	defer cloneQueue.Dec()
-
-	s.cloneLimitersMu.RLock()
-	cloneLimiter := s.cloneLimiter
-	s.cloneLimitersMu.RUnlock()
-
-	cloneLimiter.Acquire()
-	return cloneLimiter
+	return s.cloneLimiter.Acquire(ctx)
 }
 
-func (s *Server) acquireCloneableLimiter() *parallel.Run {
+func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	lsRemoteQueue.Inc()
 	defer lsRemoteQueue.Dec()
-
-	s.cloneLimitersMu.RLock()
-	cloneableLimiter := s.cloneableLimiter
-	s.cloneLimitersMu.RUnlock()
-
-	cloneableLimiter.Acquire()
-	return cloneableLimiter
+	return s.cloneableLimiter.Acquire(ctx)
 }
 
 func cloneCmd(ctx context.Context, origin, dir string) *exec.Cmd {
@@ -308,8 +301,10 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	if !repoCloned(dir) && !skipCloneForTests {
 		go func() {
-			ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
-			defer cancel()
+			ctx, cancel1 := s.serverContext()
+			defer cancel1()
+			ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+			defer cancel2()
 			err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
 			if err != nil {
 				log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
@@ -508,8 +503,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	// checks being blocked by a few slow clones will lead to poor feedback to
 	// users. We can defer since the rest of the function does not block this
 	// goroutine.
-	cloneableLimiter := s.acquireCloneableLimiter()
-	defer cloneableLimiter.Release()
+	ctx, cancel, err := s.acquireCloneableLimiter(ctx)
+	if err != nil {
+		return err // err will be a context error
+	}
+	defer cancel()
 	if err := s.isCloneable(ctx, url); err != nil {
 		return fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
 	}
@@ -532,15 +530,19 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	}
 
 	go func() {
-		cloneLimiter := s.acquireCloneLimiter()
-		defer cloneLimiter.Release()
+		defer s.releaseCloneLock(dir)
 
 		// Create a new context because this is in a background goroutine.
-		ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
-		defer func() {
-			cancel()
-			s.releaseCloneLock(dir)
-		}()
+		ctx, cancel1 := s.serverContext()
+		defer cancel1()
+		ctx, cancel2, err := s.acquireCloneLimiter(ctx)
+		if err != nil {
+			log.Println("unexpected error while acquiring clone limiter:", err)
+			return
+		}
+		defer cancel2()
+		ctx, cancel3 := context.WithTimeout(ctx, longGitCommandTimeout)
+		defer cancel3()
 
 		path := filepath.Join(dir, ".git")
 		cmd := cloneCmd(ctx, url, path)
@@ -642,8 +644,10 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 			go func(req updateRepoRequest) {
 				// Create a new context with a new timeout (instead of passing one through updateRepoRequest)
 				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
-				ctx, cancel := s.backgroundWithTimeout(longGitCommandTimeout)
-				defer cancel()
+				ctx, cancel1 := s.serverContext()
+				defer cancel1()
+				ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+				defer cancel2()
 				s.doRepoUpdate(ctx, req.repo, req.url)
 			}(req)
 		}
