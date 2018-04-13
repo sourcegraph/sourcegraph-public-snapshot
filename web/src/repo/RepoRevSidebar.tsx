@@ -79,7 +79,8 @@ interface State {
     files?: string[]
 }
 
-const TreeOrTree2 = localStorage.getItem('tree2') === null ? Tree : Tree2
+// Run `localStorage.oldTree=true;location.reload()` to enable the old file tree in case of issues.
+const TreeOrTree2 = localStorage.getItem('oldTree') !== null ? Tree : Tree2
 
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
