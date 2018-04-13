@@ -240,7 +240,7 @@ func Main() error {
 		})
 	})(h)
 
-	// The internal HTTP handler does not include the SSO or Basic Auth middleware handlers
+	// The internal HTTP handler does not include the SSO handlers
 	smi := http.NewServeMux()
 	smi.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
 	smi.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
@@ -252,10 +252,6 @@ func Main() error {
 	if err != nil {
 		return err
 	}
-
-	// 🚨 SECURITY: The main frontend handler should always be wrapped in a
-	// basic auth handler
-	h = handlerutil.NewBasicAuthHandler(h)
 
 	// Don't leak memory through gorilla/session items stored in context
 	h = gcontext.ClearHandler(h)

@@ -64,11 +64,6 @@ This is a partial picture of the HTTP handler structure as it pertains to authen
    <tbody align="center">
       <tr class="c22">
          <td class="c4" colspan="8" rowspan="1">
-            <p class="c9"><span class="c0">handlerutil.NewBasicAuthHandler</span></p>
-         </td>
-      </tr>
-      <tr class="c22">
-         <td class="c4" colspan="8" rowspan="1">
             <p class="c9"><span class="c0">auth.NewAuthHandler</span></p>
          </td>
       </tr>
