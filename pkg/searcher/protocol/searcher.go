@@ -118,8 +118,11 @@ func (p PatternInfo) AllIncludePatterns() []string {
 type Response struct {
 	Matches []FileMatch
 
-	// LimitHit is true if Matches may not include all FileMatches.
+	// LimitHit is true if Matches may not include all FileMatches because a match limit was hit.
 	LimitHit bool
+
+	// DeadlineHit is true if Matches may not include all FileMatches because a deadline was hit.
+	DeadlineHit bool
 }
 
 // FileMatch is the struct used by vscode to receive search results

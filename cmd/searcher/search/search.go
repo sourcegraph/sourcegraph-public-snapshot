@@ -85,7 +85,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	matches, limitHit, err := s.search(ctx, &p)
+	matches, limitHit, deadlineHit, err := s.search(ctx, &p)
 	if err != nil {
 		code := http.StatusInternalServerError
 		if isBadRequest(err) || ctx.Err() == context.Canceled {
@@ -105,8 +105,9 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	resp := protocol.Response{
-		Matches:  matches,
-		LimitHit: limitHit,
+		Matches:     matches,
+		LimitHit:    limitHit,
+		DeadlineHit: deadlineHit,
 	}
 	// The only reasonable error is the client going away now since we know we
 	// can encode resp. This happens relatively often due to our
@@ -115,7 +116,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(&resp)
 }
 
-func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit bool, err error) {
+func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
 	tr := trace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
 
@@ -136,11 +137,16 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	span.SetTag("deadline", p.Deadline)
 	defer func(start time.Time) {
 		code := "200"
-		// We often have canceled requests. We do not want to
+		// We often have canceled and timed out requests. We do not want to
 		// record them as errors to avoid noise
 		if ctx.Err() == context.Canceled {
 			code = "canceled"
 			span.SetTag("err", err)
+		} else if ctx.Err() == context.DeadlineExceeded {
+			code = "timedout"
+			span.SetTag("err", err)
+			deadlineHit = true
+			err = nil // error is fully described by deadlineHit=true return value
 		} else if err != nil {
 			tr.LazyPrintf("error: %v", err)
 			tr.SetError()
@@ -154,11 +160,12 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 				code = "500"
 			}
 		}
-		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, len(matches), limitHit)
+		tr.LazyPrintf("code=%s matches=%d limitHit=%v deadlineHit=%v", code, len(matches), limitHit, deadlineHit)
 		tr.Finish()
 		requestTotal.WithLabelValues(code).Inc()
 		span.LogFields(otlog.Int("matches.len", len(matches)))
 		span.SetTag("limitHit", limitHit)
+		span.SetTag("deadlineHit", deadlineHit)
 		span.Finish()
 		if s.RequestLog != nil {
 			errS := ""
@@ -171,7 +178,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 
 	rg, err := compile(&p.PatternInfo)
 	if err != nil {
-		return nil, false, badRequestError{err.Error()}
+		return nil, false, false, badRequestError{err.Error()}
 	}
 
 	if p.FetchTimeout == "" {
@@ -179,17 +186,17 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	}
 	fetchTimeout, err := time.ParseDuration(p.FetchTimeout)
 	if err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 	path, err := s.Store.prepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
 	if err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 	zf, err := s.Store.zipCache.get(path)
 	if err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 	defer zf.Close()
 
@@ -202,7 +209,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveFiles.Observe(float64(nFiles))
 	archiveSize.Observe(float64(bytes))
 
-	return concurrentFind(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
+	matches, limitHit, err = concurrentFind(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
+	return matches, limitHit, false, err
 }
 
 func validateParams(p *protocol.Request) error {

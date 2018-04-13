@@ -281,6 +281,9 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		matches, limitHit, err = textSearchURL(ctx, url)
+		// Useful trace for debugging:
+		//
+		// tr.LazyPrintf("%d matches, limitHit=%v, err=%v, ctx.Err()=%v", len(matches), limitHit, err, ctx.Err())
 		if err == nil {
 			return matches, limitHit, nil
 		}
@@ -335,14 +338,18 @@ func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool,
 	}
 
 	r := struct {
-		Matches  []*fileMatchResolver
-		LimitHit bool
+		Matches     []*fileMatchResolver
+		LimitHit    bool
+		DeadlineHit bool
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&r)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "searcher response invalid")
 	}
-	return r.Matches, r.LimitHit, nil
+	if r.DeadlineHit {
+		err = context.DeadlineExceeded
+	}
+	return r.Matches, r.LimitHit, err
 }
 
 type searcherError struct {

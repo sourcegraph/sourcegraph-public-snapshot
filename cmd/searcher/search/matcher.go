@@ -421,12 +421,18 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 
 	wg.Wait()
 
+	err = wgErr
+	if err == nil && ctx.Err() == context.DeadlineExceeded {
+		// We stopped early because we were about to hit the deadline.
+		err = ctx.Err()
+	}
+
 	span.LogFields(
 		otlog.Int("filesSkipped", int(atomic.LoadUint32(&filesSkipped))),
 		otlog.Int("filesSearched", int(atomic.LoadUint32(&filesSearched))),
 	)
 
-	return matches, limitHit, wgErr
+	return matches, limitHit, err
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include
