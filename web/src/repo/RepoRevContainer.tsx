@@ -53,7 +53,8 @@ interface State {
     resolvedRevOrError?: ResolvedRev | ErrorLike
 }
 
-export const useNewBlobPanel = localStorage.getItem('newBlobPanel') !== null || window.context.sourcegraphDotComMode
+// Run `localStorage.oldBlobPanel=true;location.reload()` to enable the old blob panel in case of issues.
+export const useNewBlobPanel = localStorage.getItem('oldBlobPanel') === null || window.context.sourcegraphDotComMode
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
