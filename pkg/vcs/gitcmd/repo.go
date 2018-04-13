@@ -3,7 +3,6 @@ package gitcmd
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/mail"
@@ -18,7 +17,7 @@ import (
 
 	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
-
+	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -142,7 +141,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 		if bytes.Contains(stderr, []byte("unknown revision")) {
 			return "", &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
 		}
-		return "", fmt.Errorf("exec `git rev-parse` failed: %s. Stderr was:\n\n%s", err, stderr)
+		return "", errors.WithMessage(err, fmt.Sprintf("exec `git rev-parse` failed with stderr: %s", stderr))
 	}
 	commit := api.CommitID(bytes.TrimSpace(stdout))
 	if len(commit) != 40 {
