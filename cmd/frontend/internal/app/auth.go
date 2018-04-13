@@ -20,13 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/txemail"
 )
 
-type oauthCookie struct {
-	Nonce       string
-	RedirectURL string
-	ReturnTo    string
-	ReturnToNew string
-}
-
 type credentials struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
