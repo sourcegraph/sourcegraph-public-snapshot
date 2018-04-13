@@ -67,6 +67,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             merge(
                 this.updateButtonClicks.pipe(
+                    tap(langServer => this.logClick('LangServerUpdateClicked', langServer)),
                     map(langServer => ({
                         langServer,
                         mutation: updateLangServer,
@@ -75,6 +76,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                     }))
                 ),
                 this.restartButtonClicks.pipe(
+                    tap(langServer => this.logClick('LangServerRestartClicked', langServer)),
                     map(langServer => ({
                         langServer,
                         mutation: restartLangServer,
@@ -83,6 +85,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                     }))
                 ),
                 this.disableButtonClicks.pipe(
+                    tap(langServer => this.logClick('LangServerDisableClicked', langServer)),
                     map(langServer => ({
                         langServer,
                         mutation: disableLangServer,
@@ -91,6 +94,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                     }))
                 ),
                 this.enableButtonClicks.pipe(
+                    tap(langServer => this.logClick('LangServerEnableClicked', langServer)),
                     map(langServer => ({
                         langServer,
                         mutation: enableLangServer,
@@ -364,7 +368,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                                 className="site-admin-lang-servers__repo-link"
                                 href={langServer.homepageURL}
                                 target="_blank"
-                                onClick={this.logClick('LangServerHomepageClicked', langServer)}
+                                onClick={this.generateClickHandler('LangServerHomepageClicked', langServer)}
                             >
                                 {langServer.homepageURL.substr('https://github.com/'.length)}
                             </a>
@@ -376,7 +380,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                             className="site-admin-lang-servers__repo-link"
                             href={langServer.homepageURL}
                             target="_blank"
-                            onClick={this.logClick('LangServerHomepageClicked', langServer)}
+                            onClick={this.generateClickHandler('LangServerHomepageClicked', langServer)}
                         >
                             {langServer.homepageURL}
                         </a>
@@ -387,7 +391,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                         href={langServer.docsURL}
                         target="_blank"
                         data-tooltip="View documentation"
-                        onClick={this.logClick('LangServerDocsClicked', langServer)}
+                        onClick={this.generateClickHandler('LangServerDocsClicked', langServer)}
                     >
                         <FileDocumentBoxIcon className="icon-inline" />
                     </a>
@@ -398,7 +402,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                         href={langServer.issuesURL}
                         target="_blank"
                         data-tooltip="View issues"
-                        onClick={this.logClick('LangServerIssuesClicked', langServer)}
+                        onClick={this.generateClickHandler('LangServerIssuesClicked', langServer)}
                     >
                         <BugIcon className="icon-inline" />
                     </a>
@@ -407,14 +411,16 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
         )
     }
 
-    private logClick(eventLabel: string, langServer: GQL.ILangServer): () => void {
-        return () => {
-            eventLogger.log(eventLabel, {
-                // 🚨 PRIVACY: never provide any private data in { lang_server: { ... } }.
-                lang_server: {
-                    language: langServer.language,
-                },
-            })
-        }
+    private logClick(eventLabel: string, langServer: GQL.ILangServer): void {
+        eventLogger.log(eventLabel, {
+            // 🚨 PRIVACY: never provide any private data in { lang_server: { ... } }.
+            lang_server: {
+                language: langServer.language,
+            },
+        })
+    }
+
+    private generateClickHandler(eventLabel: string, langServer: GQL.ILangServer): () => void {
+        return () => this.logClick(eventLabel, langServer)
     }
 }

@@ -7,7 +7,6 @@ import { startWith } from 'rxjs/operators/startWith'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
-import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { FilteredGitCommitConnection, gitCommitFragment } from '../commits/RepositoryCommitsPage'
@@ -63,8 +62,6 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryCompareCommits')
-
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(

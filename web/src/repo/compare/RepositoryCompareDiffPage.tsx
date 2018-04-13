@@ -8,7 +8,6 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { FileDiffNode, FileDiffNodeProps } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -108,8 +107,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryCompareDiff')
-
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(

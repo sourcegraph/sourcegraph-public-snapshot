@@ -11,6 +11,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, mutateGraphQL } from '../../backend/graphql'
 import { Form } from '../../components/Form'
+import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike } from '../../util/errors'
 
 interface Props {
@@ -110,6 +111,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                 if (!data || (errors && errors.length > 0)) {
                     throw createAggregateError(errors)
                 }
+                eventLogger.log('NewUserEmailAddressAdded')
             })
         )
 }

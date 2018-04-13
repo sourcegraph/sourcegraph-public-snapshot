@@ -178,6 +178,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         const spec = this.getDerivedProps(this.props.location)
         const prevSpec = this.getDerivedProps(prevProps.location)
         if (!isEqual(spec, prevSpec)) {
+            eventLogger.log('RepositoryStatsContributorsPropsUpdated')
             this.setState(spec)
             this.specChanges.next()
         }

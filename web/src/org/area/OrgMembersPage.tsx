@@ -159,16 +159,13 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('OrgMembers', { organization: { org_name: this.props.org.name } })
+
         this.subscriptions.add(
-            this.orgChanges
-                .pipe(
-                    distinctUntilChanged((a, b) => a.id === b.id),
-                    tap(org => eventLogger.logViewEvent('OrgMembers', { organization: { org_name: org.name } }))
-                )
-                .subscribe(org => {
-                    this.setState({ viewerCanAdminister: org.viewerCanAdminister })
-                    this.userUpdates.next()
-                })
+            this.orgChanges.pipe(distinctUntilChanged((a, b) => a.id === b.id)).subscribe(org => {
+                this.setState({ viewerCanAdminister: org.viewerCanAdminister })
+                this.userUpdates.next()
+            })
         )
     }
 

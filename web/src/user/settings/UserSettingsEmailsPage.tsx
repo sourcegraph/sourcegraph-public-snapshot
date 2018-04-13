@@ -105,6 +105,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             .subscribe(
                 () => {
                     this.setState({ loading: false })
+                    eventLogger.log('UserEmailAddressDeleted')
                     if (this.props.onDidUpdate) {
                         this.props.onDidUpdate()
                     }
@@ -125,6 +126,11 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
         setUserEmailVerified(this.props.user.id, this.props.node.email, verified).subscribe(
             () => {
                 this.setState({ loading: false })
+                if (verified) {
+                    eventLogger.log('UserEmailAddressMarkedVerified')
+                } else {
+                    eventLogger.log('UserEmailAddressMarkedUnverified')
+                }
                 if (this.props.onDidUpdate) {
                     this.props.onDidUpdate()
                 }

@@ -13,7 +13,6 @@ export function queryTelemetryData(opt: SearchOptions): { [key: string]: any } {
 
 function queryStringTelemetryData(q: string): { [key: string]: any } {
     // 🚨 PRIVACY: never provide any private data in this function's return value.
-
     // This only takes ~1.7ms per call, so it does not need to be optimized.
     return {
         field_type: q.includes('type:')
@@ -126,7 +125,10 @@ function queryStringTelemetryData(q: string): { [key: string]: any } {
                   }
                 : undefined,
         field_case: {
-            count: count(q, /(^|\s)case: /g),
+            count: count(q, /(^|\s)case:/g),
+        },
+        field_timeout: {
+            count: count(q, /(^|\s)timeout:/g),
         },
         field_default: defaultQueryFieldTelemetryData(q),
         fields: {

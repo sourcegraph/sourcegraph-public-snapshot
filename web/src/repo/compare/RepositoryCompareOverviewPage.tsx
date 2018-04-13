@@ -66,6 +66,7 @@ function queryRepositoryComparison(args: {
             ) {
                 throw createAggregateError(errors)
             }
+            eventLogger.log('RepositoryComparisonFetched')
             return repo.comparison.range
         })
     )

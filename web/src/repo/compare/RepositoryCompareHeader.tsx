@@ -1,6 +1,7 @@
 import MoreIcon from '@sourcegraph/icons/lib/More'
 import * as React from 'react'
 import { Form } from '../../components/Form'
+import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 interface Props extends RepositoryCompareAreaPageProps {
@@ -104,11 +105,13 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
 
     private onSubmit: React.FormEventHandler<HTMLFormElement> = e => {
         e.preventDefault()
+        eventLogger.log('RepositoryComparisonSubmitted')
         this.props.onUpdateComparisonSpec(this.state.comparisonBaseSpec, this.state.comparisonHeadSpec)
     }
 
     private onCancel: React.MouseEventHandler<HTMLButtonElement> = e => {
         e.preventDefault()
+        eventLogger.log('RepositoryComparisonCanceled')
         this.setState({
             comparisonBaseSpec: this.props.base.rev || '',
             comparisonHeadSpec: this.props.head.rev || '',
