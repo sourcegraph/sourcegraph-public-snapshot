@@ -23,6 +23,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Removed hardcoded list of supported languages for code intelligence. Any language can work now and support is determined from the server response.
 * Fixed an issue where modifying `config.json` on disk would not correctly mark the server as needing a restart.
 * Fixed an issue where certain diff searches (with very sparse matches in a repository's history) would incorrectly report no results found.
+* Fixed an issue where the `langservers` field in the site-configuration didn't require both the `language` and `address` field to be specified for each entry
 
 ### Added
 

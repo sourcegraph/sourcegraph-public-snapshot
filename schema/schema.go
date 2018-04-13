@@ -64,10 +64,10 @@ type GitoliteConnection struct {
 
 // Langservers
 type Langservers struct {
-	Address               string                 `json:"address,omitempty"`
+	Address               string                 `json:"address"`
 	Disabled              bool                   `json:"disabled,omitempty"`
 	InitializationOptions map[string]interface{} `json:"initializationOptions,omitempty"`
-	Language              string                 `json:"language,omitempty"`
+	Language              string                 `json:"language"`
 }
 
 // Links

@@ -479,7 +479,8 @@ const SiteSchemaJSON = `{
             "type": "boolean",
             "default": false
           }
-        }
+        },
+        "required": ["language", "address"]
       }
     },
     "settings": {
