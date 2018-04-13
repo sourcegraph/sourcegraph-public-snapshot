@@ -15,7 +15,7 @@ var env = expvar.NewMap("env")
 
 var (
 	Version  = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
-	LogLevel = Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
+	LogLevel = Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
 )
 
 // Get returns the value of the given environment variable. It also registers the description for

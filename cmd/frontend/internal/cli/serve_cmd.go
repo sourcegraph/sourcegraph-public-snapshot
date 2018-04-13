@@ -143,20 +143,12 @@ func Main() error {
 
 	logHandler := log15.StderrHandler
 
-	// We have some noisey debug logs, so to aid development we have a
-	// special dbug level which excludes the noisey logs
-	logLevel := env.LogLevel
-	if logLevel == "dbug-dev" {
-		logLevel = "dbug"
-		logHandler = log15.FilterHandler(loghandlers.NotNoisey, logHandler)
-	}
-
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	logHandler = log15.FilterHandler(loghandlers.Trace(strings.Fields(trace), d), logHandler)
 
 	// Filter log output by level.
-	lvl, err := log15.LvlFromString(logLevel)
+	lvl, err := log15.LvlFromString(env.LogLevel)
 	if err != nil {
 		return err
 	}
