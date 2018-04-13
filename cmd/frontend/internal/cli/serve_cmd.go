@@ -235,22 +235,22 @@ func Main() error {
 			next.ServeHTTP(w, r)
 		})
 	})(h)
-
-	// The internal HTTP handler does not include the SSO handlers
-	smi := http.NewServeMux()
-	smi.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
-	smi.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-	var internalHandler http.Handler = smi
-	internalHandler = gcontext.ClearHandler(internalHandler)
-
 	// 🚨 SECURITY: Verify user identity if required
 	h, err = auth.NewAuthHandler(context.Background(), h, appURL)
 	if err != nil {
 		return err
 	}
-
 	// Don't leak memory through gorilla/session items stored in context
 	h = gcontext.ClearHandler(h)
+
+	// The internal HTTP handler does not include the auth handlers.
+	var internalHandler http.Handler
+	{
+		internalMux := http.NewServeMux()
+		internalMux.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
+		internalMux.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
+		internalHandler = gcontext.ClearHandler(internalMux)
+	}
 
 	// serve will serve h on l. It additionally handles graceful restarts.
 	srv := &httpServers{}
