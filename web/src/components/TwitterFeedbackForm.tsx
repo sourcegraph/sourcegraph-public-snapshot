@@ -106,7 +106,6 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                             name="description"
                             id="description"
                             className="form-control "
-                            placeholder="Sourcegraph code search is great #UseTheSource via @srcgraph"
                             onChange={this.handleDescriptionChange}
                             value={this.state.description}
                             required={true}
