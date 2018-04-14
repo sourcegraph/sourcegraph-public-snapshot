@@ -97,7 +97,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                         </div>
                     </div>
                     <div className="form-group">
-                        <label>Tell us why?</label>{' '}
+                        <label>Tell us why:</label>{' '}
                         <small className="text-muted">
                             {this.calculateMaxCharacters() - this.state.description.length}{' '}
                             {pluralize('character', this.calculateMaxCharacters() - this.state.description.length)} left
