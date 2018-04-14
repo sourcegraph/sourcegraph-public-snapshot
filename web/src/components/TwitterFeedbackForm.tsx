@@ -172,12 +172,12 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
 
     private saveGoodExperience = (): void => {
         this.setState({ experience: 'good' })
-        eventLogger.log('TwitterFeedbackExprienceClicked')
+        eventLogger.log('TwitterFeedbackExperienceClicked')
     }
 
     private saveBadExperience = (): void => {
         this.setState({ experience: 'bad' })
-        eventLogger.log('TwitterFeedbackExprienceClicked')
+        eventLogger.log('TwitterFeedbackExperienceClicked')
     }
     /**
      * Handles description change by updating the component's state
