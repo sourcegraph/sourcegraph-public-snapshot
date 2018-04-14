@@ -257,7 +257,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.tree__row--selected [data-tree-path="godockerize.go"]')
+                await page.waitForSelector('.tree__row--active [data-tree-path="godockerize.go"]')
             })
 
             it('shows partial tree when opening directory', async () => {
@@ -488,7 +488,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
                     )
                     // Verify file tree is highlighting the new path.
-                    return await page.waitForSelector('.tree__row--selected [data-tree-path="diff/diff.pb.go"]')
+                    return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]')
                 })
 
                 it('does navigation (external repo)', async () => {
