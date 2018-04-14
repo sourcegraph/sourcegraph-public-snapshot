@@ -413,6 +413,7 @@ class TreeRow extends React.PureComponent<TreeRowProps> {
         const className = [
             'tree__row',
             node.path === selectedPath && 'tree__row--selected',
+            this.props.isExpanded && 'tree__row--expanded',
             node.path === this.props.activePath && 'tree__row--active',
         ]
             .filter(c => !!c)
