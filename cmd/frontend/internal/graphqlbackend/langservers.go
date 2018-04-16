@@ -103,7 +103,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			pending:     info.Pulling || info.Status == langservers.StatusStarting,
 			canEnable:   isSiteAdmin || state == langservers.StateNone,
 			canDisable:  isSiteAdmin,
-			canRestart:  isSiteAdmin,
+			canRestart:  isSiteAdmin && state == langservers.StateEnabled,
 			canUpdate:   isSiteAdmin,
 			healthy:     info.Pulling || info.Status != langservers.StatusUnhealthy,
 		})
