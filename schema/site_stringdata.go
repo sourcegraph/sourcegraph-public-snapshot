@@ -7,7 +7,7 @@ const SiteSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "https://sourcegraph.com/v1/site.schema.json#",
   "title": "Site configuration",
-  "description": "Configuration for a Sourcegraph Server site.",
+  "description": "Configuration for a Sourcegraph site.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -24,7 +24,7 @@ const SiteSchemaJSON = `{
     },
     "siteID": {
       "description":
-        "The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph Server instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.",
+        "The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.",
       "type": "string"
     },
     "appURL": {
@@ -422,7 +422,7 @@ const SiteSchemaJSON = `{
       "default": "noreply@sourcegraph.com"
     },
     "update.channel": {
-      "description": "The channel on which to automatically check for Sourcegraph Server updates.",
+      "description": "The channel on which to automatically check for Sourcegraph updates.",
       "type": ["string"],
       "enum": ["release", "none"],
       "default": "release"
@@ -503,7 +503,7 @@ const SiteSchemaJSON = `{
         },
         "gitURLType": {
           "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/server/config/repositories#repositories-that-need-https-or-ssh-authentication.",
+            "The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"
@@ -519,13 +519,13 @@ const SiteSchemaJSON = `{
         },
         "repos": {
           "description":
-            "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph Server.",
+            "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",
           "type": "array",
           "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" }
         },
         "repositoryQuery": {
           "description":
-            "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph Server. The valid values are:\n\n- ` + "`" + `public` + "`" + ` mirrors all public repositories for GitHub Enterprise and is the equivalent of ` + "`" + `none` + "`" + ` for GitHub\n\n- ` + "`" + `affiliated` + "`" + ` mirrors all repositories affiliated with the configured token's user:\n\t- Private repositories with read access\n\t- Public repositories owned by the user or their orgs\n\t- Public repositories with write access\n\n- ` + "`" + `none` + "`" + ` mirrors no repositories (except those specified in the ` + "`" + `repos` + "`" + ` configuration property or added manually)\n\nIf multiple values are provided, their results are unioned.\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate the set in the \"repos\" configuration property), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
+            "An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:\n\n- ` + "`" + `public` + "`" + ` mirrors all public repositories for GitHub Enterprise and is the equivalent of ` + "`" + `none` + "`" + ` for GitHub\n\n- ` + "`" + `affiliated` + "`" + ` mirrors all repositories affiliated with the configured token's user:\n\t- Private repositories with read access\n\t- Public repositories owned by the user or their orgs\n\t- Public repositories with write access\n\n- ` + "`" + `none` + "`" + ` mirrors no repositories (except those specified in the ` + "`" + `repos` + "`" + ` configuration property or added manually)\n\nIf multiple values are provided, their results are unioned.\n\nIf you need to narrow the set of mirrored repositories further (and don't want to enumerate the set in the \"repos\" configuration property), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.",
           "type": "array",
           "items": {
             "type": "string",
@@ -575,7 +575,7 @@ const SiteSchemaJSON = `{
         },
         "gitURLType": {
           "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/server/config/repositories#repositories-that-need-https-or-ssh-authentication.",
+            "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"
@@ -586,7 +586,7 @@ const SiteSchemaJSON = `{
         },
         "projectQuery": {
           "description":
-            "An array of strings specifying which GitLab projects to mirror on Sourcegraph Server. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
+            "An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL query string for the GitLab projects API, such as \"?membership=true&search=foo\".\n\nThe query string is passed directly to GitLab to retrieve the list of projects. The special string \"none\" can be used as the only element to disable this feature. Projects matched by multiple query strings are only imported once. See https://docs.gitlab.com/ee/api/projects.html#list-all-projects for available query string options.",
           "type": "array",
           "default": ["?membership=true"],
           "items": {
@@ -639,7 +639,7 @@ const SiteSchemaJSON = `{
         },
         "gitURLType": {
           "description":
-            "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/server/config/repositories#repositories-that-need-https-or-ssh-authentication.",
+            "The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.\n\nIf \"http\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication.",
           "type": "string",
           "enum": ["http", "ssh"],
           "default": "http"

@@ -152,7 +152,7 @@ type Settings struct {
 	SearchScopes           []SearchScope             `json:"search.scopes,omitempty"`
 }
 
-// SiteConfiguration Configuration for a Sourcegraph Server site.
+// SiteConfiguration Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AdminUsernames                    string                      `json:"adminUsernames,omitempty"`
 	AppURL                            string                      `json:"appURL,omitempty"`
