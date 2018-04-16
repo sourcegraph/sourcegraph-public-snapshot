@@ -5,7 +5,7 @@ import marked from 'marked'
 import { Hover, MarkedString } from 'vscode-languageserver-types'
 import { urlWithoutSearchOptions } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
-import { getModeFromExtension } from '../../util'
+import { getModeFromPath } from '../../util'
 import { toAbsoluteBlobURL } from '../../util/url'
 import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from './../index'
 
@@ -231,7 +231,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         container.className = 'tooltip__divider'
 
         const tooltipText = document.createElement('DIV')
-        tooltipText.className = `tooltip__title ${getModeFromExtension(ctx.filePath)}`
+        tooltipText.className = `tooltip__title ${getModeFromPath(ctx.filePath)}`
         tooltipText.appendChild(document.createTextNode(title))
 
         container.appendChild(tooltipText)

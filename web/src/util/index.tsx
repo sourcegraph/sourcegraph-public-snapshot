@@ -1,3 +1,5 @@
+import { basename } from './path'
+
 /**
  * limitString limits the given string to N characters, optionally adding an
  * ellipsis (…) at the end.
@@ -38,13 +40,39 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
 }
 
 /**
+ * getModeFromPath returns the LSP mode for the provided file path.
+ */
+export function getModeFromPath(path: string): string | undefined {
+    const fileName = basename(path)
+    const ext = getPathExtension(path)
+
+    return getModeFromExactFilename(fileName) || getModeFromExtension(ext)
+}
+
+/**
+ * getModeFromExactFilename returns the LSP mode for the
+ * provided file name (e.g. "dockerfile")
+ *
+ * Cherry picked from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
+ */
+function getModeFromExactFilename(fileName: string): string | undefined {
+    switch (fileName.toLowerCase()) {
+        case 'dockerfile':
+            return 'dockerfile'
+
+        default:
+            return undefined
+    }
+}
+
+/**
  * getModeFromExtension returns the LSP mode for the
  * provided file extension (e.g. "jsx")
  *
  * Cherry picked from https://github.com/isagalaev/highlight.js/tree/master/src/languages
  * and https://github.com/github/linguist/blob/master/lib/linguist/languages.yml.
  */
-export function getModeFromExtension(ext: string): string | undefined {
+function getModeFromExtension(ext: string): string | undefined {
     switch (ext.toLowerCase()) {
         // Ada
         case 'adb':

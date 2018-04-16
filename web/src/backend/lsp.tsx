@@ -13,7 +13,7 @@ import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { siteFlags } from '../site/backend'
-import { getModeFromExtension, getPathExtension } from '../util'
+import { getModeFromPath } from '../util'
 import { normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
@@ -88,8 +88,7 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
     }
 
     // Check if mode is known to not be supported
-    const extension = getPathExtension(path)
-    const mode = getModeFromExtension(extension)
+    const mode = getModeFromPath(path)
     if (!mode || unsupportedModes.has(mode)) {
         return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
     }

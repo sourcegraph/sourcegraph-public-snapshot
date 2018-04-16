@@ -16,7 +16,7 @@ import { AbsoluteRepoFilePosition, makeRepoURI } from '../../index'
 
 export const fetchDependencyReferences = memoizeObservable(
     (ctx: AbsoluteRepoFilePosition): Observable<GQL.IDependencyReferences | null> => {
-        const mode = util.getModeFromExtension(util.getPathExtension(ctx.filePath))
+        const mode = util.getModeFromPath(ctx.filePath)
         return queryGraphQL(
             gql`
                 query DependencyReferences(
