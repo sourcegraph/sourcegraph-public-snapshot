@@ -102,6 +102,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			ev.AddField("mode", mode)
 			ev.AddField("duration_ms", duration.Seconds()*1000)
 			ev.AddField("client", r.Header.Get("x-sourcegraph-client"))
+			ev.AddField("referrer", r.Referer())
 			ev.AddField("user_agent", r.UserAgent())
 			if err != nil {
 				ev.AddField("error", err.Error())
