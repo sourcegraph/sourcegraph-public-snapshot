@@ -205,8 +205,12 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		}
 		sf.score++
 	}
-	addRepoFilter := func(uri string) {
-		add(fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri)))
+	addRepoFilter := func(uri string, rev string) {
+		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
+		if rev != "" {
+			filter = filter + fmt.Sprintf(`@%s`, regexp.QuoteMeta(rev))
+		}
+		add(filter)
 	}
 	addFileFilter := func(filematchPath string) {
 		if ext := path.Ext(filematchPath); ext != "" {
@@ -220,11 +224,20 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 	for _, result := range sr.results {
 		if result.fileMatch != nil {
-			addRepoFilter(string(result.fileMatch.repo.URI))
+			rev := ""
+			if result.fileMatch.inputRev != nil {
+				rev = *result.fileMatch.inputRev
+			}
+
+			addRepoFilter(string(result.fileMatch.repo.URI), rev)
 			addFileFilter(result.fileMatch.JPath)
 		}
+
 		if result.repo != nil {
-			addRepoFilter(result.repo.URI())
+			// It should be fine to leave this blank since revision specifiers
+			// can only be used with the 'repo:' scope. In that case,
+			// we shouldn't be getting any repositoy name matches back.
+			addRepoFilter(result.repo.URI(), "")
 		}
 	}
 

@@ -242,3 +242,89 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchResolver_DynamicFilters(t *testing.T) {
+	repo := &types.Repo{
+		URI: "testRepo",
+	}
+
+	repoMatch := &repositoryResolver{
+		repo: repo,
+	}
+
+	fileMatch := &fileMatchResolver{
+		JPath: "/testFile.md",
+		repo:  repo,
+	}
+
+	rev := "develop"
+	fileMatchRev := &fileMatchResolver{
+		JPath:    "/testFile.md",
+		repo:     repo,
+		inputRev: &rev,
+	}
+
+	type testCase struct {
+		descr                     string
+		searchResults             []*searchResultResolver
+		expectedDynamicFilterStrs map[string]struct{}
+	}
+
+	tests := []testCase{
+
+		testCase{
+			descr: "single repo match",
+			searchResults: []*searchResultResolver{
+				&searchResultResolver{
+					repo: repoMatch,
+				},
+			},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:^testRepo$`: struct{}{},
+			},
+		},
+
+		testCase{
+			descr: "single file match without revision in query",
+			searchResults: []*searchResultResolver{
+				&searchResultResolver{
+					fileMatch: fileMatch,
+				},
+			},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:^testRepo$`: struct{}{},
+				`file:\.md$`:      struct{}{},
+			},
+		},
+
+		testCase{
+			descr: "single file match with specified revision",
+			searchResults: []*searchResultResolver{
+				&searchResultResolver{
+					fileMatch: fileMatchRev,
+				},
+			},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:^testRepo$@develop`: struct{}{},
+				`file:\.md$`:              struct{}{},
+			},
+		},
+	}
+
+	for _, test := range tests {
+
+		t.Run(test.descr, func(t *testing.T) {
+
+			actualDynamicFilters := (&searchResultsResolver{results: test.searchResults}).DynamicFilters()
+			actualDynamicFilterStrs := make(map[string]struct{})
+
+			for _, filter := range actualDynamicFilters {
+				actualDynamicFilterStrs[filter.Value()] = struct{}{}
+			}
+
+			if !reflect.DeepEqual(actualDynamicFilterStrs, test.expectedDynamicFilterStrs) {
+				t.Errorf("actual: %v, expected: %v", actualDynamicFilterStrs, test.expectedDynamicFilterStrs)
+			}
+		})
+	}
+}
