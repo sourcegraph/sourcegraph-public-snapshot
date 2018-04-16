@@ -17,6 +17,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -147,21 +149,32 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 		var rootURIs []lsp.DocumentURI
 		// If we can extract the repository URL from the symbol metadata, do so
 		if repoURL := xlang.SymbolRepoURL(sym.Symbol); repoURL != "" {
-			span.LogFields(otlog.String("event", "extracted repo directly from symbol metadata"))
+			span.LogFields(otlog.String("event", "extracted repo directly from symbol metadata"),
+				otlog.String("repoURL", repoURL))
 
 			repoInfo, err := vcsurl.Parse(repoURL)
 			if err != nil {
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
 			repoURI := api.RepoURI(string(repoInfo.RepoHost) + "/" + repoInfo.FullName)
-			// SECURITY NOTE: The LSP proxy DOES NOT check permissions, so this line is a necessary
-			// security check
+
+			// We issue a workspace/symbols on the URL, so ensure we have the repo / it exists.
 			repo, err := backend.Repos.GetByURI(ctx, repoURI)
 			if err != nil {
+				span.LogFields(otlog.Error(err))
+				if _, isSeeOther := err.(backend.ErrRepoSeeOther); isSeeOther || errcode.IsNotFound(err) {
+					span.LogFields(otlog.String("event", "ignoring not found error"))
+					continue
+				}
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
 			rev, err := backend.Repos.ResolveRev(ctx, repo, "")
 			if err != nil {
+				span.LogFields(otlog.Error(err))
+				if vcs.IsRepoNotExist(err) {
+					span.LogFields(otlog.String("event", "ignoring not found error"))
+					continue
+				}
 				return nil, errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
 			rootURIs = append(rootURIs, lsp.DocumentURI(string(repoInfo.VCS)+"://"+string(repoURI)+"?"+string(rev)))
@@ -192,7 +205,6 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 						return nil, errors.Wrap(err, "resolve revision for package repo")
 					}
 				}
-				// TODO: store VCS type in *types.Repo object.
 				rootURIs = append(rootURIs, lsp.DocumentURI("git://"+string(repo.URI)+"?"+string(commit)))
 			}
 			span.LogFields(otlog.String("event", "resolved rootURIs"))
