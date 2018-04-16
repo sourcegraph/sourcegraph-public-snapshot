@@ -8,6 +8,9 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+* Fixed an issue where langservers that were not enabled would display the "Restart" button in the Code Intelligence management panel.
+* Fixed an issue where the "Update" button in the Code Intelligence management panel would be displayed inconsistently.
+
 ### Added
 
 ## 2.7.0
