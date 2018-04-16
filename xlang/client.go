@@ -238,6 +238,7 @@ func RemoteOneShotClientRequest(ctx context.Context, remote *url.URL, mode strin
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Sourcegraph-Client", "RemoteOneShotClientRequest")
 	req.Header.Set("User-Agent", "Sourcegraph/"+env.Version)
 	req = req.WithContext(ctx)
 
