@@ -124,48 +124,39 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
     }
 
     const assertNonemptyLocalRefs = async (): Promise<void> => {
-        // verify active group is 'local'
-        await page.waitForSelector('.blob-references-panel .tab-bar__tab--active')
+        // verify active group is local references
+        await page.waitForSelector('.panel__tabs .tab-bar__tab--active')
         assert.equal(
             await page.evaluate(() =>
-                document.querySelector('.blob-references-panel .tab-bar__tab--active')!.textContent!.replace(/\d/g, '')
+                document.querySelector('.panel__tabs .tab-bar__tab--active')!.textContent!.replace(/\d/g, '')
             ),
-            'This repository'
+            'References'
         )
 
-        await page.waitForSelector('.blob-references-panel .badge')
+        await page.waitForSelector('.panel__tabs-content .file-match__list')
         await retry(async () =>
             assert.ok(
-                parseInt(
-                    await page.evaluate(
-                        () => document.querySelector('.blob-references-panel .tab-bar__tab--active .badge')!.textContent
-                    ),
-                    10
-                ) > 0, // assert some (local) refs fetched
+                (await page.evaluate(
+                    () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
+                )) > 0, // assert some (local) refs fetched
                 'expected some local references, got none'
             )
         )
     }
 
     const assertNonemptyExternalRefs = async (): Promise<void> => {
-        // verify active group is 'external'
-        await page.waitForSelector('.blob-references-panel .tab-bar__tab--active')
+        // verify active group is external references
+        await page.waitForSelector('.panel__tabs .tab-bar__tab--active')
         assert.equal(
-            await page.evaluate(
-                () => document.querySelector('.blob-references-panel .tab-bar__tab--active')!.textContent
-            ),
-            'Other repositories'
+            await page.evaluate(() => document.querySelector('.panel__tabs .tab-bar__tab--active')!.textContent),
+            'External references'
         )
-        await page.waitForSelector('.blob-references-panel .tab-bar__tab--active .badge')
+        await page.waitForSelector('.panel__tabs .tab-bar__tab--active .badge')
         await retry(async () => {
             assert.ok(
-                parseInt(
-                    await page.evaluate(
-                        () =>
-                            document.querySelector('.blob-references-panel .tab-bar__tab--active .badge')!.textContent! // get the external refs count
-                    ),
-                    10
-                ) > 0, // assert some external refs fetched
+                (await page.evaluate(
+                    () => document.querySelectorAll('.panel__tabs .file-locations-tree__item').length // get the external refs count
+                )) > 0, // assert some external refs fetched
                 'expected some external references, got none'
             )
         })
@@ -521,13 +512,13 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
                     await assertNonemptyLocalRefs()
 
                     // verify the appropriate # of references are fetched
-                    await page.waitForSelector('.blob-references-panel .badge')
+                    await page.waitForSelector('.panel__tabs-content .file-match__list')
                     await retry(async () =>
                         assert.equal(
                             await page.evaluate(
-                                () => document.querySelector('.blob-references-panel .badge')!.textContent
+                                () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
                             ),
-                            '5'
+                            4
                         )
                     )
 
