@@ -41,19 +41,6 @@ func NewHandler(m *mux.Router) http.Handler {
 		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
-	// 🚨 SECURITY: The LSP endpoints specifically allows cookie authorization 🚨
-	// because the JavaScript WebSocket API does not allow us to set custom
-	// headers. It is possible to send a basic authorization header, but hacking
-	// it to send our auth cookie doesn't seem worth the complexity.
-	//
-	// This does not introduce a CSRF vulnerability (mentioned in the security comment below), because
-	// gorilla/websocket verifies the origin of the HTTP request before upgrading it to a web socket:
-	// https://sourcegraph.com/github.com/gorilla/websocket/-/blob/server.go#L126:1-130:1
-	//
-	// You can read more about this security issue here:
-	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
-	m.Get(apirouter.LSP).Handler(trace.TraceRoute(session.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
-
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
