@@ -300,19 +300,18 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                 {updating && (
                     <span className="site-admin-lang-servers__actions-updating">Pulling latest Docker image…</span>
                 )}
-                {langServer.state !== 'LANG_SERVER_STATE_DISABLED' &&
-                    langServer.canUpdate && (
-                        <button
-                            disabled={disabled}
-                            type="button"
-                            className="site-admin-lang-servers__actions-update btn btn-sm"
-                            data-tooltip={!disabled ? 'Update server' : undefined}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            onClick={() => this.updateButtonClicks.next(langServer)}
-                        >
-                            <DownloadSimpleIcon className="icon-inline" />
-                        </button>
-                    )}
+                {langServer.canUpdate && (
+                    <button
+                        disabled={disabled}
+                        type="button"
+                        className="site-admin-lang-servers__actions-update btn btn-sm"
+                        data-tooltip={!disabled ? 'Update server' : undefined}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        onClick={() => this.updateButtonClicks.next(langServer)}
+                    >
+                        <DownloadSimpleIcon className="icon-inline" />
+                    </button>
+                )}
                 {langServer.state !== 'LANG_SERVER_STATE_DISABLED' &&
                     langServer.canRestart && (
                         <button
