@@ -46,7 +46,8 @@ func (id serverID) String() string {
 type serverProxyConn struct {
 	conn *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the server
 
-	done chan struct{} // when closed the connection will be shutdown
+	doneOnce sync.Once     // protects closing done
+	done     chan struct{} // when closed the connection will be shutdown
 
 	id serverID
 
@@ -314,12 +315,13 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 		// free up associated resources (e.g., if the VFS is backed by a file
 		// on disk, this will close the file).
 		go func() {
-			doShutdown := false
+			var doShutdown bool
 			select {
 			case <-c.conn.DisconnectNotify():
-				close(c.done)
+				// Server conn gone so can't do LSP shutdown.
+				doShutdown = false
 			case <-c.done:
-				// Told to shutdown, do best effort LSP shutdown
+				// Told to shutdown, do best effort LSP shutdown.
 				doShutdown = true
 			}
 
@@ -756,7 +758,9 @@ func (c *serverProxyConn) Stats() serverProxyConnStats {
 // also send shutdown and notify to the server if it is running. This is done
 // in its own goroutine.
 func (c *serverProxyConn) Close() error {
-	close(c.done)
+	c.doneOnce.Do(func() {
+		close(c.done)
+	})
 	return nil
 }
 
