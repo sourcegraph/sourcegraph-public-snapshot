@@ -215,11 +215,13 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return *s
 	}
 
-	// Add default deadline if none exists.
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel func()
-		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(gitLogSearchTimeout))
-		defer cancel()
+	if !conf.SearchTimeoutParameterEnabled() {
+		// Add default deadline if none exists.
+		if _, ok := ctx.Deadline(); !ok {
+			var cancel func()
+			ctx, cancel = context.WithDeadline(ctx, time.Now().Add(gitLogSearchTimeout))
+			defer cancel()
+		}
 	}
 
 	vcsrepo := backend.Repos.CachedVCS(repo)
