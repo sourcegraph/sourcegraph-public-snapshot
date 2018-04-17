@@ -139,7 +139,7 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
             window.context.showMissingReposEnabled || localStorage.getItem('showMissingRepos')
 
         return (
-            <div className="search-results__list">
+            <div className="search-results-list">
                 {/* Saved Queries Form */}
                 {this.props.showModal && (
                     <ModalContainer
@@ -164,16 +164,16 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                         return (
                             <>
                                 {/* Info Bar */}
-                                <div className="search-results__info">
+                                <div className="search-results-list__info">
                                     {(results.timedout.length > 0 ||
                                         results.cloning.length > 0 ||
                                         results.results.length > 0 ||
                                         (showMissingReposEnabled && results.missing.length > 0)) && (
-                                        <small className="search-results__info-row">
-                                            <div className="search-results__info-row-left">
+                                        <small className="search-results-list__info-row">
+                                            <div className="search-results-list__info-row-left">
                                                 {/* Time stats */}
                                                 {
-                                                    <div className="search-results__notice e2e-search-results-stats">
+                                                    <div className="search-results-list__notice e2e-search-results-stats">
                                                         <span>
                                                             <CalculatorIcon className="icon-inline" />{' '}
                                                             {results.approximateResultCount}{' '}
@@ -187,7 +187,7 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                                                 {showMissingReposEnabled &&
                                                     results.missing.length > 0 && (
                                                         <div
-                                                            className="search-results__notice"
+                                                            className="search-results-list__notice"
                                                             data-tooltip={results.missing.join('\n')}
                                                         >
                                                             <span>
@@ -205,7 +205,7 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                                                 {/* Timed out repos */}
                                                 {results.timedout.length > 0 && (
                                                     <div
-                                                        className="search-results__notice"
+                                                        className="search-results-list__notice"
                                                         data-tooltip={results.timedout.join('\n')}
                                                     >
                                                         <span>
@@ -224,7 +224,7 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                                                 {/* Cloning repos */}
                                                 {results.cloning.length > 0 && (
                                                     <div
-                                                        className="search-results__notice"
+                                                        className="search-results-list__notice"
                                                         data-tooltip={results.cloning.join('\n')}
                                                     >
                                                         <span>
@@ -240,7 +240,7 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="search-results__info-row-right">
+                                            <div className="search-results-list__info-row-right">
                                                 <button
                                                     onClick={this.props.onExpandAllResultsClick}
                                                     className="btn btn-link"
@@ -291,7 +291,7 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                                 {/* Show more button */}
                                 {(results.limitHit || results.results.length > this.props.uiLimit) && (
                                     <button
-                                        className="btn btn-link search-results__more"
+                                        className="btn btn-link search-results-list__more"
                                         onClick={this.props.onShowMoreResultsClick}
                                     >
                                         Show more
@@ -302,7 +302,7 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                     })()}
                 {alert && (
                     <SearchAlert
-                        className="search-results__alert"
+                        className="search-results-list__alert"
                         title={alert.title}
                         description={alert.description || undefined}
                         proposedQueries={alert.proposedQueries}
