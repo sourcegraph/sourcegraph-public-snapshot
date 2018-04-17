@@ -1,14 +1,6 @@
-import ArrowCollapseVerticalIcon from '@sourcegraph/icons/lib/ArrowCollapseVertical'
-import ArrowExpandVerticalIcon from '@sourcegraph/icons/lib/ArrowExpandVertical'
-import CalculatorIcon from '@sourcegraph/icons/lib/Calculator'
-import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
-import DirectionalSign from '@sourcegraph/icons/lib/DirectionalSign'
 import DocumentIcon from '@sourcegraph/icons/lib/Document'
-import DownloadIcon from '@sourcegraph/icons/lib/Download'
-import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
-import SaveIcon from '@sourcegraph/icons/lib/Save'
 import * as H from 'history'
 import upperFirst from 'lodash/upperFirst'
 import * as React from 'react'
@@ -21,11 +13,8 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { ServerBanner } from '../marketing/ServerBanner'
 import { eventLogger } from '../tracking/eventLogger'
 import { ErrorLike, isErrorLike } from '../util/errors'
-import { showDotComMarketing } from '../util/features'
-import { pluralize } from '../util/strings'
 import { search } from './backend'
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileMatch } from './FileMatch'
@@ -36,6 +25,7 @@ import { queryTelemetryData } from './queryTelemetry'
 import { RepositorySearchResult } from './RepositorySearchResult'
 import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SearchAlert } from './SearchAlert'
+import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const ALL_EXPANDED_LOCAL_STORAGE_KEY = 'allExpanded'
 const DATA_CENTER_UPGRADE_STRING =
@@ -48,11 +38,13 @@ interface SearchResultsListProps {
     location: H.Location
     user: GQL.IUser | null
 
+    // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
     uiLimit: number
     onShowMoreResultsClick: () => void
 
-    allExpanded?: boolean
+    // Expand all feature
+    allExpanded: boolean
     onExpandAllResultsClick: () => void
 
     // Saved queries
@@ -60,7 +52,7 @@ interface SearchResultsListProps {
     onModalClose: () => void
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
-    didSave?: boolean
+    didSave: boolean
 }
 
 const isSearchResults = (val: any): val is GQL.ISearchResults =>
@@ -135,8 +127,6 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
         }
 
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
-        const showMissingReposEnabled =
-            window.context.showMissingReposEnabled || localStorage.getItem('showMissingRepos')
 
         return (
             <div className="search-results-list">
@@ -164,124 +154,15 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                         return (
                             <>
                                 {/* Info Bar */}
-                                <div className="search-results-list__info">
-                                    {(results.timedout.length > 0 ||
-                                        results.cloning.length > 0 ||
-                                        results.results.length > 0 ||
-                                        (showMissingReposEnabled && results.missing.length > 0)) && (
-                                        <small className="search-results-list__info-row">
-                                            <div className="search-results-list__info-row-left">
-                                                {/* Time stats */}
-                                                {
-                                                    <div className="search-results-list__notice e2e-search-results-stats">
-                                                        <span>
-                                                            <CalculatorIcon className="icon-inline" />{' '}
-                                                            {results.approximateResultCount}{' '}
-                                                            {pluralize('result', results.resultCount)} in{' '}
-                                                            {(results.elapsedMilliseconds / 1000).toFixed(2)} seconds
-                                                            {results.indexUnavailable && ' (index unavailable)'}
-                                                        </span>
-                                                    </div>
-                                                }
-                                                {/* Missing repos */}
-                                                {showMissingReposEnabled &&
-                                                    results.missing.length > 0 && (
-                                                        <div
-                                                            className="search-results-list__notice"
-                                                            data-tooltip={results.missing.join('\n')}
-                                                        >
-                                                            <span>
-                                                                <DirectionalSign className="icon-inline" />{' '}
-                                                                {results.missing.length}{' '}
-                                                                {pluralize(
-                                                                    'repository',
-                                                                    results.missing.length,
-                                                                    'repositories'
-                                                                )}{' '}
-                                                                not found
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                {/* Timed out repos */}
-                                                {results.timedout.length > 0 && (
-                                                    <div
-                                                        className="search-results-list__notice"
-                                                        data-tooltip={results.timedout.join('\n')}
-                                                    >
-                                                        <span>
-                                                            <HourglassIcon className="icon-inline" />{' '}
-                                                            {results.timedout.length}{' '}
-                                                            {pluralize(
-                                                                'repository',
-                                                                results.timedout.length,
-                                                                'repositories'
-                                                            )}{' '}
-                                                            timed out (reload to try again, or specify a longer
-                                                            "timeout:" in your query)
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {/* Cloning repos */}
-                                                {results.cloning.length > 0 && (
-                                                    <div
-                                                        className="search-results-list__notice"
-                                                        data-tooltip={results.cloning.join('\n')}
-                                                    >
-                                                        <span>
-                                                            <DownloadIcon className="icon-inline" />{' '}
-                                                            {results.cloning.length}{' '}
-                                                            {pluralize(
-                                                                'repository',
-                                                                results.cloning.length,
-                                                                'repositories'
-                                                            )}{' '}
-                                                            cloning (reload to try again)
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="search-results-list__info-row-right">
-                                                <button
-                                                    onClick={this.props.onExpandAllResultsClick}
-                                                    className="btn btn-link"
-                                                >
-                                                    {this.props.allExpanded ? (
-                                                        <>
-                                                            <ArrowCollapseVerticalIcon
-                                                                className="icon-inline"
-                                                                data-tooltip="Collapse"
-                                                            />{' '}
-                                                            Collapse all
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <ArrowExpandVerticalIcon
-                                                                className="icon-inline"
-                                                                data-tooltip="Expand"
-                                                            />{' '}
-                                                            Expand all
-                                                        </>
-                                                    )}
-                                                </button>
-                                                {!this.props.didSave &&
-                                                    this.props.user && (
-                                                        <button
-                                                            onClick={this.props.onSaveQueryClick}
-                                                            className="btn btn-link"
-                                                        >
-                                                            <SaveIcon className="icon-inline" /> Save this search query
-                                                        </button>
-                                                    )}
-                                                {this.props.didSave && (
-                                                    <span>
-                                                        <CheckmarkIcon className="icon-inline" /> Query saved
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </small>
-                                    )}
-                                    {!results.alert && showDotComMarketing && <ServerBanner />}
-                                </div>
+                                <SearchResultsInfoBar
+                                    user={this.props.user}
+                                    results={results}
+                                    allExpanded={this.props.allExpanded}
+                                    didSave={this.props.didSave}
+                                    onDidCreateSavedQuery={this.props.onDidCreateSavedQuery}
+                                    onExpandAllResultsClick={this.props.onExpandAllResultsClick}
+                                    onSaveQueryClick={this.props.onSaveQueryClick}
+                                />
 
                                 {/* Results */}
                                 {results.results
@@ -379,8 +260,8 @@ interface SearchResultsProps {
 interface SearchResultsState {
     resultsOrError?: GQL.ISearchResults
     showModal: boolean
-    didSave?: boolean
-    allExpanded?: boolean
+    didSave: boolean
+    allExpanded: boolean
     uiLimit: number
 }
 
