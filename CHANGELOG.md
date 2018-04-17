@@ -12,6 +12,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where the "Update" button in the Code Intelligence management panel would be displayed inconsistently.
 * Fixed an issue where toggling a dynamic search scope would not also remove `@rev` (if specified)
 * Fixed an issue where in the webui where modes that can only be determined by the full filename (not just the file extension) of a path weren't supported (Dockerfiles are the first example of this).
+* In Sourcegraph Data Center, Indexed Search no longer maintains its own git clones. This significantly reduces disk size requirements for the indexed-search pod.
 
 ### Added
 

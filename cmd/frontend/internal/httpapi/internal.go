@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -481,6 +482,43 @@ func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusNoContent)
 	w.Write([]byte("OK"))
 	return nil
+}
+
+func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
+	// used by zoekt-sourcegraph-mirror
+	vars := mux.Vars(r)
+	name := api.RepoURI(vars["RepoURI"])
+	spec := vars["Spec"]
+
+	// Use Repos.VCS since we do not want to trigger a repo-updater lookup
+	// since this is a batch job.
+	vcs := backend.Repos.VCS(gitserver.Repo{Name: name})
+	commitID, err := vcs.ResolveRevision(r.Context(), spec, nil)
+	if err != nil {
+		return err
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(commitID))
+	return nil
+}
+
+func serveGitTar(w http.ResponseWriter, r *http.Request) error {
+	// used by zoekt-sourcegraph-mirror
+	vars := mux.Vars(r)
+	name := api.RepoURI(vars["RepoURI"])
+	commit := api.CommitID(vars["Commit"])
+
+	src, err := gitserver.FetchTar(r.Context(), gitserver.DefaultClient, gitserver.Repo{Name: name}, commit)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	w.Header().Set("Content-Type", "application/x-tar")
+	w.WriteHeader(http.StatusOK)
+	_, err = io.Copy(w, src)
+	return err
 }
 
 func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
