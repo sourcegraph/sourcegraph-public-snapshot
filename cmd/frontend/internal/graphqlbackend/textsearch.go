@@ -490,7 +490,8 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 			searchOpts.MaxWallTime = time.Duration(0.9 * float64(deadline.Sub(time.Now())))
 		}
 	}
-	tr.LazyPrintf("maxwalltime %s", searchOpts.MaxWallTime)
+
+	tr.LogFields(otlog.String("maxWallTime", searchOpts.MaxWallTime.String()))
 
 	resp, err := zoektCl.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
