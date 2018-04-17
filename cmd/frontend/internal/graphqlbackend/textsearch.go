@@ -487,7 +487,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		if searchTimeoutFieldSet {
 			// If the user manually specified a timeout, allow zoekt to use most of that timeout.
 			deadline, _ := ctx.Deadline()
-			searchOpts.MaxWallTime = time.Duration(0.9 * float64(deadline.Sub(time.Now())))
+			searchOpts.MaxWallTime = time.Duration(0.8 * float64(deadline.Sub(time.Now())))
 		}
 	}
 
