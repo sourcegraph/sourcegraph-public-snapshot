@@ -63,3 +63,7 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
     // Scope exists in the search query, so remove it now.
     return (query.substring(0, idx).trim() + ' ' + query.substring(idx + searchFilter.length).trim()).trim()
 }
+
+/** Returns true if the given value is of the GraphQL SearchResults type */
+export const isSearchResults = (val: any): val is GQL.ISearchResults =>
+    val && typeof val === 'object' && val.__typename === 'SearchResults'
