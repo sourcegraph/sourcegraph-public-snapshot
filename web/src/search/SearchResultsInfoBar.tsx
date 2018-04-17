@@ -108,16 +108,18 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                         )}
                     </button>
                     {/* Saved Queries */}
-                    {!props.didSave &&
-                        props.user && (
-                            <button onClick={props.onSaveQueryClick} className="btn btn-link">
-                                <SaveIcon className="icon-inline" /> Save this search query
-                            </button>
-                        )}
-                    {props.didSave && (
-                        <span>
-                            <CheckmarkIcon className="icon-inline" /> Query saved
-                        </span>
+                    {props.user && (
+                        <button onClick={props.onSaveQueryClick} className="btn btn-link" disabled={props.didSave}>
+                            {props.didSave ? (
+                                <>
+                                    <CheckmarkIcon className="icon-inline" /> Query saved
+                                </>
+                            ) : (
+                                <>
+                                    <SaveIcon className="icon-inline" /> Save this search query
+                                </>
+                            )}
+                        </button>
                     )}
                 </div>
             </small>
