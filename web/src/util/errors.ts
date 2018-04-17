@@ -1,5 +1,5 @@
 export interface ErrorLike {
-    message?: string
+    message: string
     code?: string
 }
 

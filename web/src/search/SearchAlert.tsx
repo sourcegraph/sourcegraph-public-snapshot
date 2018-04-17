@@ -12,15 +12,7 @@ interface Props {
     location: H.Location
 }
 
-interface State {
-    alert: GQL.ISearchAlert | null
-}
-
-export class SearchAlert extends React.Component<Props, State> {
-    public state: State = {
-        alert: null,
-    }
-
+export class SearchAlert extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <div className={`search-alert ${this.props.className}`}>

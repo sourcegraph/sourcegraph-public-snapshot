@@ -21,9 +21,9 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { currentUser } from '../auth'
 import { ServerBanner } from '../marketing/ServerBanner'
 import { eventLogger } from '../tracking/eventLogger'
+import { ErrorLike, isErrorLike } from '../util/errors'
 import { showDotComMarketing } from '../util/features'
 import { pluralize } from '../util/strings'
 import { search } from './backend'
@@ -48,30 +48,23 @@ interface SearchResultsListProps {
     location: H.Location
     user: GQL.IUser | null
 
+    resultsOrError?: GQL.ISearchResults | ErrorLike
+    uiLimit: number
+    onShowMoreResultsClick: () => void
+
+    allExpanded?: boolean
+    onExpandAllResultsClick: () => void
+
     // Saved queries
     showModal: boolean
     onModalClose: () => void
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
-
-    results: GQL.IFileMatch[]
-    cloning: string[]
-    missing: string[]
-    timedout: string[]
-    resultCount?: number
-    approximateResultCount?: string
-    alert: GQL.ISearchAlert | null
-    elapsedMilliseconds?: number
-    loading: boolean
-    error?: Error
-    limitHit: boolean
-    indexUnavailable: boolean
     didSave?: boolean
-    allExpanded?: boolean
-    uiLimit: number
-    onExpandAllResultsClick: () => void
-    onShowMoreResultsClick: () => void
 }
+
+const isSearchResults = (val: any): val is GQL.ISearchResults =>
+    val && typeof val === 'object' && val.__typename === 'ISearchResults'
 
 class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> {
     public render(): React.ReactNode {
@@ -82,67 +75,72 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
             errorBody?: React.ReactFragment
         } | null = null
         const searchTimeoutParameterEnabled = window.context.searchTimeoutParameterEnabled
-        if (this.props.error) {
-            if (this.props.error.message.includes('no query terms or regexp specified')) {
-                alert = { title: '', description: 'Enter terms to search...' }
-            } else {
-                alert = { title: 'Something went wrong', description: upperFirst(this.props.error.message) }
-            }
-        } else if (this.props.alert) {
-            alert = this.props.alert
-        } else if (
-            !this.props.loading &&
-            this.props.results.length === 0 &&
-            this.props.missing.length === 0 &&
-            this.props.cloning.length === 0
-        ) {
-            const defaultTimeoutAlert = {
-                title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
-                description: searchTimeoutParameterEnabled
-                    ? "Try narrowing your query, or specifying a longer 'timeout:' in your query."
-                    : 'Try narrowing your query.',
-            }
-            const longerTimeoutString = searchTimeoutParameterEnabled
-                ? "Specify a longer 'timeout:' in your query."
-                : ''
-            if (this.props.timedout.length > 0) {
-                if (window.context.sourcegraphDotComMode) {
-                    alert = defaultTimeoutAlert
+        if (this.props.resultsOrError) {
+            if (isErrorLike(this.props.resultsOrError)) {
+                const error = this.props.resultsOrError
+                if (error.message.includes('no query terms or regexp specified')) {
+                    alert = { title: '', description: 'Enter terms to search...' }
                 } else {
-                    if (window.context.likelyDockerOnMac) {
-                        alert = {
-                            title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
-                            errorBody: this.renderSearchAlertTimeoutDetails([
-                                longerTimeoutString,
-                                DATA_CENTER_UPGRADE_STRING,
-                                'Use Docker Machine instead of Docker for Mac for better performance on macOS.',
-                            ]),
-                        }
-                    } else if (!window.context.likelyDockerOnMac && !window.context.isRunningDataCenter) {
-                        alert = {
-                            title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
-                            errorBody: this.renderSearchAlertTimeoutDetails([
-                                longerTimeoutString,
-                                DATA_CENTER_UPGRADE_STRING,
-                                'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
-                            ]),
-                        }
-                    } else {
-                        alert = defaultTimeoutAlert
-                    }
+                    alert = { title: 'Something went wrong', description: upperFirst(error.message) }
                 }
             } else {
-                alert = { title: 'No results' }
+                const results = this.props.resultsOrError
+                if (results.alert) {
+                    alert = results.alert
+                } else if (
+                    results.results.length === 0 &&
+                    results.missing.length === 0 &&
+                    results.cloning.length === 0
+                ) {
+                    const defaultTimeoutAlert = {
+                        title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
+                        description: searchTimeoutParameterEnabled
+                            ? "Try narrowing your query, or specifying a longer 'timeout:' in your query."
+                            : 'Try narrowing your query.',
+                    }
+                    const longerTimeoutString = searchTimeoutParameterEnabled
+                        ? "Specify a longer 'timeout:' in your query."
+                        : ''
+                    if (results.timedout.length > 0) {
+                        if (window.context.sourcegraphDotComMode) {
+                            alert = defaultTimeoutAlert
+                        } else {
+                            if (window.context.likelyDockerOnMac) {
+                                alert = {
+                                    title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
+                                    errorBody: this.renderSearchAlertTimeoutDetails([
+                                        longerTimeoutString,
+                                        DATA_CENTER_UPGRADE_STRING,
+                                        'Use Docker Machine instead of Docker for Mac for better performance on macOS.',
+                                    ]),
+                                }
+                            } else if (!window.context.likelyDockerOnMac && !window.context.isRunningDataCenter) {
+                                alert = {
+                                    title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
+                                    errorBody: this.renderSearchAlertTimeoutDetails([
+                                        longerTimeoutString,
+                                        DATA_CENTER_UPGRADE_STRING,
+                                        'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
+                                    ]),
+                                }
+                            } else {
+                                alert = defaultTimeoutAlert
+                            }
+                        }
+                    } else {
+                        alert = { title: 'No results' }
+                    }
+                }
             }
         }
 
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
         const showMissingReposEnabled =
             window.context.showMissingReposEnabled || localStorage.getItem('showMissingRepos')
-        const showMissingRepos = showMissingReposEnabled && this.props.missing.length > 0
 
         return (
             <div className="search-results__list">
+                {/* Saved Queries Form */}
                 {this.props.showModal && (
                     <ModalContainer
                         onClose={this.props.onModalClose}
@@ -156,123 +154,158 @@ class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> 
                         }
                     />
                 )}
-                <div className="search-results__info">
-                    {(this.props.timedout.length > 0 ||
-                        this.props.cloning.length > 0 ||
-                        this.props.results.length > 0 ||
-                        showMissingRepos) && (
-                        <small className="search-results__info-row">
-                            <div className="search-results__info-row-left">
-                                {/* Time stats */}
-                                {typeof this.props.approximateResultCount === 'string' &&
-                                    typeof this.props.resultCount === 'number' && (
-                                        <div className="search-results__notice e2e-search-results-stats">
-                                            <span>
-                                                <CalculatorIcon className="icon-inline" />{' '}
-                                                {this.props.approximateResultCount}{' '}
-                                                {pluralize('result', this.props.resultCount)}
-                                                {typeof this.props.elapsedMilliseconds === 'number' && (
-                                                    <>
-                                                        {' '}
-                                                        in {(this.props.elapsedMilliseconds / 1000).toFixed(2)} seconds
-                                                    </>
+
+                {/* Loader */}
+                {this.props.resultsOrError === undefined && <Loader className="icon-inline" />}
+
+                {isSearchResults(this.props.resultsOrError) &&
+                    (() => {
+                        const results = this.props.resultsOrError
+                        return (
+                            <>
+                                {/* Info Bar */}
+                                <div className="search-results__info">
+                                    {(results.timedout.length > 0 ||
+                                        results.cloning.length > 0 ||
+                                        results.results.length > 0 ||
+                                        (showMissingReposEnabled && results.missing.length > 0)) && (
+                                        <small className="search-results__info-row">
+                                            <div className="search-results__info-row-left">
+                                                {/* Time stats */}
+                                                {
+                                                    <div className="search-results__notice e2e-search-results-stats">
+                                                        <span>
+                                                            <CalculatorIcon className="icon-inline" />{' '}
+                                                            {results.approximateResultCount}{' '}
+                                                            {pluralize('result', results.resultCount)} in{' '}
+                                                            {(results.elapsedMilliseconds / 1000).toFixed(2)} seconds
+                                                            {results.indexUnavailable && ' (index unavailable)'}
+                                                        </span>
+                                                    </div>
+                                                }
+                                                {/* Missing repos */}
+                                                {showMissingReposEnabled &&
+                                                    results.missing.length > 0 && (
+                                                        <div
+                                                            className="search-results__notice"
+                                                            data-tooltip={results.missing.join('\n')}
+                                                        >
+                                                            <span>
+                                                                <DirectionalSign className="icon-inline" />{' '}
+                                                                {results.missing.length}{' '}
+                                                                {pluralize(
+                                                                    'repository',
+                                                                    results.missing.length,
+                                                                    'repositories'
+                                                                )}{' '}
+                                                                not found
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                {/* Timed out repos */}
+                                                {results.timedout.length > 0 && (
+                                                    <div
+                                                        className="search-results__notice"
+                                                        data-tooltip={results.timedout.join('\n')}
+                                                    >
+                                                        <span>
+                                                            <HourglassIcon className="icon-inline" />{' '}
+                                                            {results.timedout.length}{' '}
+                                                            {pluralize(
+                                                                'repository',
+                                                                results.timedout.length,
+                                                                'repositories'
+                                                            )}{' '}
+                                                            timed out (reload to try again, or specify a longer
+                                                            "timeout:" in your query)
+                                                        </span>
+                                                    </div>
                                                 )}
-                                                {this.props.indexUnavailable && ' (index unavailable)'}
-                                            </span>
-                                        </div>
+                                                {/* Cloning repos */}
+                                                {results.cloning.length > 0 && (
+                                                    <div
+                                                        className="search-results__notice"
+                                                        data-tooltip={results.cloning.join('\n')}
+                                                    >
+                                                        <span>
+                                                            <DownloadIcon className="icon-inline" />{' '}
+                                                            {results.cloning.length}{' '}
+                                                            {pluralize(
+                                                                'repository',
+                                                                results.cloning.length,
+                                                                'repositories'
+                                                            )}{' '}
+                                                            cloning (reload to try again)
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="search-results__info-row-right">
+                                                <button
+                                                    onClick={this.props.onExpandAllResultsClick}
+                                                    className="btn btn-link"
+                                                >
+                                                    {this.props.allExpanded ? (
+                                                        <>
+                                                            <ArrowCollapseVerticalIcon
+                                                                className="icon-inline"
+                                                                data-tooltip="Collapse"
+                                                            />{' '}
+                                                            Collapse all
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ArrowExpandVerticalIcon
+                                                                className="icon-inline"
+                                                                data-tooltip="Expand"
+                                                            />{' '}
+                                                            Expand all
+                                                        </>
+                                                    )}
+                                                </button>
+                                                {!this.props.didSave &&
+                                                    this.props.user && (
+                                                        <button
+                                                            onClick={this.props.onSaveQueryClick}
+                                                            className="btn btn-link"
+                                                        >
+                                                            <SaveIcon className="icon-inline" /> Save this search query
+                                                        </button>
+                                                    )}
+                                                {this.props.didSave && (
+                                                    <span>
+                                                        <CheckmarkIcon className="icon-inline" /> Query saved
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </small>
                                     )}
-                                {/* Missing repos */}
-                                {showMissingRepos && (
-                                    <div
-                                        className="search-results__notice"
-                                        data-tooltip={this.props.missing.join('\n')}
+                                    {!results.alert && showDotComMarketing && <ServerBanner />}
+                                </div>
+
+                                {/* Results */}
+                                {results.results
+                                    .slice(0, this.props.uiLimit)
+                                    .map((result, i) => this.renderResult(i, result, i <= 15))}
+
+                                {/* Show more button */}
+                                {(results.limitHit || results.results.length > this.props.uiLimit) && (
+                                    <button
+                                        className="btn btn-link search-results__more"
+                                        onClick={this.props.onShowMoreResultsClick}
                                     >
-                                        <span>
-                                            <DirectionalSign className="icon-inline" /> {this.props.missing.length}{' '}
-                                            {pluralize('repository', this.props.missing.length, 'repositories')} not{' '}
-                                            found
-                                        </span>
-                                    </div>
+                                        Show more
+                                    </button>
                                 )}
-                                {/* Timed out repos */}
-                                {this.props.timedout.length > 0 && (
-                                    <div
-                                        className="search-results__notice"
-                                        data-tooltip={this.props.timedout.join('\n')}
-                                    >
-                                        <span>
-                                            <HourglassIcon className="icon-inline" /> {this.props.timedout.length}{' '}
-                                            {pluralize('repository', this.props.timedout.length, 'repositories')} timed{' '}
-                                            out (reload to try again, or specify a longer "timeout:" in your query)
-                                        </span>
-                                    </div>
-                                )}
-                                {/* Cloning repos */}
-                                {this.props.cloning.length > 0 && (
-                                    <div
-                                        className="search-results__notice"
-                                        data-tooltip={this.props.cloning.join('\n')}
-                                    >
-                                        <span>
-                                            <DownloadIcon className="icon-inline" /> {this.props.cloning.length}{' '}
-                                            {pluralize('repository', this.props.cloning.length, 'repositories')} cloning{' '}
-                                            (reload to try again)
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="search-results__info-row-right">
-                                <button onClick={this.props.onExpandAllResultsClick} className="btn btn-link">
-                                    {this.props.allExpanded ? (
-                                        <>
-                                            <ArrowCollapseVerticalIcon
-                                                className="icon-inline"
-                                                data-tooltip="Collapse"
-                                            />{' '}
-                                            Collapse all
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ArrowExpandVerticalIcon className="icon-inline" data-tooltip="Expand" />{' '}
-                                            Expand all
-                                        </>
-                                    )}
-                                </button>
-                                {!this.props.didSave &&
-                                    this.props.user && (
-                                        <button onClick={this.props.onSaveQueryClick} className="btn btn-link">
-                                            <SaveIcon className="icon-inline" /> Save this search query
-                                        </button>
-                                    )}
-                                {this.props.didSave && (
-                                    <span>
-                                        <CheckmarkIcon className="icon-inline" /> Query saved
-                                    </span>
-                                )}
-                            </div>
-                        </small>
-                    )}
-                    {!this.props.alert &&
-                        !this.props.error &&
-                        !this.props.loading &&
-                        showDotComMarketing && <ServerBanner />}
-                </div>
-                {this.props.results.length > 0}
-                {this.props.loading && <Loader className="icon-inline" />}
-                {this.props.results
-                    .slice(0, this.props.uiLimit)
-                    .map((result, i) => this.renderResult(i, result, i <= 15))}
-                {(this.props.limitHit || this.props.results.length > this.props.uiLimit) && (
-                    <button className="btn btn-link search-results__more" onClick={this.props.onShowMoreResultsClick}>
-                        Show more
-                    </button>
-                )}
+                            </>
+                        )
+                    })()}
                 {alert && (
                     <SearchAlert
                         className="search-results__alert"
                         title={alert.title}
                         description={alert.description || undefined}
-                        proposedQueries={this.props.alert ? this.props.alert.proposedQueries : undefined}
+                        proposedQueries={alert.proposedQueries}
                         location={this.props.location}
                         errorBody={alert.errorBody}
                     />
@@ -344,39 +377,17 @@ interface SearchResultsProps {
 }
 
 interface SearchResultsState {
-    results: GQL.IFileMatch[]
-    resultCount?: number
-    approximateResultCount?: string
-    alert: GQL.ISearchAlert | null
-    elapsedMilliseconds?: number
-    loading: boolean
-    error?: Error
-    limitHit: boolean
-    cloning: string[]
-    missing: string[]
-    timedout: string[]
-    indexUnavailable: boolean
+    resultsOrError?: GQL.ISearchResults
     showModal: boolean
     didSave?: boolean
-    user?: GQL.IUser | null
-    dynamicFilters: GQL.ISearchFilter[]
     allExpanded?: boolean
     uiLimit: number
 }
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
-        results: [],
-        alert: null,
-        loading: true,
-        limitHit: false,
-        cloning: [],
-        missing: [],
-        timedout: [],
-        indexUnavailable: false,
         didSave: false,
         showModal: false,
-        dynamicFilters: [],
         allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
         uiLimit: UI_PAGE_SIZE,
     }
@@ -425,29 +436,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     console.error(error)
                                 }
                             ),
-                            map(res => ({
-                                ...res,
-                                error: undefined,
-                                loading: false,
-                                uiLimit: UI_PAGE_SIZE,
-                            })),
-                            catchError((error): SearchResultsState[] => [
+                            map(results => ({ resultsOrError: results, uiLimit: UI_PAGE_SIZE })),
+                            catchError(error => [
                                 {
-                                    results: [],
-                                    resultCount: undefined,
-                                    approximateResultCount: undefined,
-                                    alert: null,
-                                    elapsedMilliseconds: undefined,
-                                    missing: [],
-                                    cloning: [],
-                                    timedout: [],
-                                    indexUnavailable: false,
-                                    limitHit: false,
-                                    error,
-                                    loading: false,
+                                    resultsOrError: error,
                                     didSave: false,
                                     showModal: false,
-                                    dynamicFilters: [],
                                     allExpanded: false,
                                     uiLimit: UI_PAGE_SIZE,
                                 },
@@ -468,28 +462,15 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         setTimeout(() => this.searchRequested.next(searchOptions))
                     }),
                     map(() => ({
-                        results: [],
-                        resultCount: undefined,
-                        approximateResultCount: undefined,
-                        alert: null,
-                        elapsedMilliseconds: undefined,
-                        missing: [],
-                        cloning: [],
-                        timedout: [],
-                        indexUnavailable: false,
-                        limitHit: false,
-                        error: undefined,
-                        loading: true,
+                        resultsOrError: undefined,
                         didSave: false,
                         showModal: false,
-                        dynamicFilters: [],
                         allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
                         uiLimit: UI_PAGE_SIZE,
                     }))
                 )
                 .subscribe(newState => this.setState(newState as SearchResultsState), err => console.error(err))
         )
-        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
     }
 
     public componentWillReceiveProps(newProps: SearchResultsProps): void {
@@ -501,37 +482,28 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private showSaveQueryModal = () => {
-        this.setState({
-            showModal: true,
-            didSave: false,
-        })
+        this.setState({ showModal: true, didSave: false })
     }
 
     private onDidCreateSavedQuery = () => {
         eventLogger.log('SavedQueryCreated')
-        this.setState({
-            showModal: false,
-            didSave: true,
-        })
+        this.setState({ showModal: false, didSave: true })
     }
 
     private onModalClose = () => {
         eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-        this.setState({
-            didSave: false,
-            showModal: false,
-        })
+        this.setState({ didSave: false, showModal: false })
     }
 
     public render(): JSX.Element | null {
         return (
             <div className="search-results">
-                {this.state.results.length > 0 &&
-                    this.state.dynamicFilters.length > 0 && (
+                {isSearchResults(this.state.resultsOrError) &&
+                    this.state.resultsOrError.dynamicFilters.length > 0 && (
                         <div className="search-results__filters-bar">
                             Filters:
                             <div className="search-results__filters">
-                                {this.state.dynamicFilters
+                                {this.state.resultsOrError.dynamicFilters
                                     .filter(filter => filter.value !== '')
                                     .map((filter, i) => (
                                         <FilterChip
@@ -545,28 +517,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         </div>
                     )}
                 <SearchResultsList
+                    resultsOrError={this.state.resultsOrError}
                     showModal={this.state.showModal}
                     onDidCreateSavedQuery={this.onDidCreateSavedQuery}
                     onModalClose={this.onModalClose}
-                    results={this.state.results}
-                    timedout={this.state.timedout}
-                    missing={this.state.missing}
-                    alert={this.state.alert}
                     onExpandAllResultsClick={this.expandAllResults}
                     onShowMoreResultsClick={this.showMoreResults}
                     allExpanded={this.state.allExpanded}
-                    approximateResultCount={this.state.approximateResultCount}
                     isLightTheme={this.props.isLightTheme}
                     location={this.props.location}
                     user={this.props.user}
                     onSaveQueryClick={this.showSaveQueryModal}
-                    cloning={this.state.cloning}
-                    resultCount={this.state.resultCount}
-                    elapsedMilliseconds={this.state.elapsedMilliseconds}
-                    loading={this.state.loading}
-                    error={this.state.error}
-                    limitHit={this.state.limitHit}
-                    indexUnavailable={this.state.indexUnavailable}
                     didSave={this.state.didSave}
                     uiLimit={this.state.uiLimit}
                 />
@@ -575,12 +536,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private showMoreResults = () => {
-        if (this.state.results.length > this.state.uiLimit) {
+        // This function can only get called if the results were successfully loaded,
+        // so casting is the right thing to do here
+        const results = this.state.resultsOrError as GQL.ISearchResults
+        if (results.results.length > this.state.uiLimit) {
             // We already have results fetched that aren't being displayed.
             // Increase the UI limit and rerender.
-            this.setState(state => ({
-                uiLimit: state.uiLimit + UI_PAGE_SIZE,
-            }))
+            this.setState(state => ({ uiLimit: state.uiLimit + UI_PAGE_SIZE }))
             return
         }
 
@@ -588,7 +550,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         const params = new URLSearchParams(this.props.location.search)
         let query = params.get('q') || ''
 
-        const defaultMaxSearchResults = Math.max(this.state.resultCount || 0, 30)
+        const defaultMaxSearchResults = Math.max(results.resultCount || 0, 30)
 
         const m = query.match(/max:(\d+)/)
         if (m) {
