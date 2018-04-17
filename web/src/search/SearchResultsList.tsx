@@ -32,11 +32,11 @@ interface SearchResultsListProps {
 
     // Expand all feature
     allExpanded: boolean
-    onExpandAllResultsClick: () => void
+    onExpandAllResultsToggle: () => void
 
     // Saved queries
-    showModal: boolean
-    onModalClose: () => void
+    showSavedQueryModal: boolean
+    onSavedQueryModalClose: () => void
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
@@ -115,14 +115,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         return (
             <div className="search-results-list">
                 {/* Saved Queries Form */}
-                {this.props.showModal && (
+                {this.props.showSavedQueryModal && (
                     <ModalContainer
-                        onClose={this.props.onModalClose}
+                        onClose={this.props.onSavedQueryModalClose}
                         component={
                             <SavedQueryCreateForm
                                 user={this.props.user}
                                 values={{ query: parsedQuery ? parsedQuery.query : '' }}
-                                onDidCancel={this.props.onModalClose}
+                                onDidCancel={this.props.onSavedQueryModalClose}
                                 onDidCreate={this.props.onDidCreateSavedQuery}
                             />
                         }
@@ -144,7 +144,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     allExpanded={this.props.allExpanded}
                                     didSave={this.props.didSave}
                                     onDidCreateSavedQuery={this.props.onDidCreateSavedQuery}
-                                    onExpandAllResultsClick={this.props.onExpandAllResultsClick}
+                                    onExpandAllResultsToggle={this.props.onExpandAllResultsToggle}
                                     onSaveQueryClick={this.props.onSaveQueryClick}
                                 />
 

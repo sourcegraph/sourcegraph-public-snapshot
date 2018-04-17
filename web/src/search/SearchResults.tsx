@@ -1,5 +1,7 @@
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import * as React from 'react'
+import { concat } from 'rxjs/observable/concat'
 import { catchError } from 'rxjs/operators/catchError'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
 import { filter } from 'rxjs/operators/filter'
@@ -13,7 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { search } from './backend'
 import { FilterChip } from './FilterChip'
 import { isSearchResults } from './helpers'
-import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from './index'
+import { parseSearchURLQuery, SearchOptions } from './index'
 import { queryTelemetryData } from './queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
 
@@ -25,109 +27,89 @@ interface SearchResultsProps {
     location: H.Location
     history: H.History
     isLightTheme: boolean
-    onFilterChosen: (value: string) => void
     navbarSearchQuery: string
+    onFilterChosen: (value: string) => void
 }
 
 interface SearchResultsState {
+    /** The loaded search results, error or undefined while loading */
     resultsOrError?: GQL.ISearchResults
-    showModal: boolean
-    didSave: boolean
     allExpanded: boolean
     uiLimit: number
+
+    // Saved Queries
+    showSavedQueryModal: boolean
+    didSaveQuery: boolean
 }
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
-        didSave: false,
-        showModal: false,
+        didSaveQuery: false,
+        showSavedQueryModal: false,
         allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
         uiLimit: UI_PAGE_SIZE,
     }
 
+    /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
-    private searchRequested = new Subject<SearchOptions>()
+
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SearchResults')
 
         this.subscriptions.add(
-            this.searchRequested
-                // Don't search using stale search options.
-                .pipe(
-                    filter(searchOptions => {
-                        const currentSearchOptions = parseSearchURLQuery(this.props.location.search)
-                        return !currentSearchOptions || searchOptionsEqual(searchOptions, currentSearchOptions)
-                    }),
-                    switchMap(searchOptions => {
-                        eventLogger.log('SearchResultsQueried', {
-                            code_search: { query_data: queryTelemetryData(searchOptions) },
-                        })
-
-                        return search(searchOptions).pipe(
-                            tap(
-                                res =>
-                                    eventLogger.log('SearchResultsFetched', {
-                                        code_search: {
-                                            // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
-                                            // This field is whitelisted for on-premises Server users.
-                                            results: {
-                                                results_count: res.results.length,
-                                                result_items_count: res.results.reduce(
-                                                    (count, result) => count + resultItemsCount(result),
-                                                    0
-                                                ),
-                                                any_cloning: res.cloning.length > 0,
-                                            },
-                                        },
-                                    }),
-                                error => {
-                                    eventLogger.log('SearchResultsFetchFailed', {
-                                        code_search: { error_message: error.message },
-                                    })
-                                    console.error(error)
-                                }
-                            ),
-                            map(results => ({ resultsOrError: results, uiLimit: UI_PAGE_SIZE })),
-                            catchError(error => [
-                                {
-                                    resultsOrError: error,
-                                    didSave: false,
-                                    showModal: false,
-                                    allExpanded: false,
-                                    uiLimit: UI_PAGE_SIZE,
-                                },
-                            ])
-                        )
-                    })
-                )
-                .subscribe(newState => this.setState(newState as SearchResultsState), err => console.error(err))
-        )
-        this.subscriptions.add(
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => props.location),
-                    distinctUntilChanged(),
-                    tap(location => {
-                        const searchOptions = parseSearchURLQuery(location.search)
-                        setTimeout(() => this.searchRequested.next(searchOptions))
+                    map(props => parseSearchURLQuery(props.location.search)),
+                    // Search when a new search query was specified in the URL
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    filter((searchOptions): searchOptions is SearchOptions => !!searchOptions),
+                    tap(searchOptions => {
+                        eventLogger.log('SearchResultsQueried', {
+                            code_search: { query_data: queryTelemetryData(searchOptions) },
+                        })
                     }),
-                    map(() => ({
-                        resultsOrError: undefined,
-                        didSave: false,
-                        showModal: false,
-                        allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
-                        uiLimit: UI_PAGE_SIZE,
-                    }))
+                    switchMap(searchOptions =>
+                        concat(
+                            // Reset view state
+                            [{ resultsOrError: undefined, didSave: false, uiLimit: UI_PAGE_SIZE }],
+                            // Do async search request
+                            search(searchOptions).pipe(
+                                // Log telemetry
+                                tap(
+                                    results =>
+                                        eventLogger.log('SearchResultsFetched', {
+                                            code_search: {
+                                                // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
+                                                // This field is whitelisted for on-premises Server users.
+                                                results: {
+                                                    results_count: results.results.length,
+                                                    any_cloning: results.cloning.length > 0,
+                                                },
+                                            },
+                                        }),
+                                    error => {
+                                        eventLogger.log('SearchResultsFetchFailed', {
+                                            code_search: { error_message: error.message },
+                                        })
+                                        console.error(error)
+                                    }
+                                ),
+                                // Update view with results or error
+                                map(results => ({ resultsOrError: results })),
+                                catchError(error => [{ resultsOrError: error }])
+                            )
+                        )
+                    )
                 )
                 .subscribe(newState => this.setState(newState as SearchResultsState), err => console.error(err))
         )
     }
 
-    public componentWillReceiveProps(newProps: SearchResultsProps): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(prevProps: SearchResultsProps): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -135,17 +117,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private showSaveQueryModal = () => {
-        this.setState({ showModal: true, didSave: false })
+        this.setState({ showSavedQueryModal: true, didSaveQuery: false })
     }
 
     private onDidCreateSavedQuery = () => {
         eventLogger.log('SavedQueryCreated')
-        this.setState({ showModal: false, didSave: true })
+        this.setState({ showSavedQueryModal: false, didSaveQuery: true })
     }
 
     private onModalClose = () => {
         eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-        this.setState({ didSave: false, showModal: false })
+        this.setState({ didSaveQuery: false, showSavedQueryModal: false })
     }
 
     public render(): JSX.Element | null {
@@ -162,7 +144,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         <FilterChip
                                             query={this.props.navbarSearchQuery}
                                             onFilterChosen={this.onDynamicFilterClicked}
-                                            key={i}
+                                            key={filter.value}
                                             value={filter.value}
                                         />
                                     ))}
@@ -171,18 +153,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     )}
                 <SearchResultsList
                     resultsOrError={this.state.resultsOrError}
-                    showModal={this.state.showModal}
-                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                    onModalClose={this.onModalClose}
-                    onExpandAllResultsClick={this.expandAllResults}
+                    uiLimit={this.state.uiLimit}
                     onShowMoreResultsClick={this.showMoreResults}
+                    onExpandAllResultsToggle={this.onExpandAllResultsToggle}
                     allExpanded={this.state.allExpanded}
-                    isLightTheme={this.props.isLightTheme}
+                    showSavedQueryModal={this.state.showSavedQueryModal}
+                    onSaveQueryClick={this.showSaveQueryModal}
+                    onSavedQueryModalClose={this.onModalClose}
+                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
+                    didSave={this.state.didSaveQuery}
                     location={this.props.location}
                     user={this.props.user}
-                    onSaveQueryClick={this.showSaveQueryModal}
-                    didSave={this.state.didSave}
-                    uiLimit={this.state.uiLimit}
+                    isLightTheme={this.props.isLightTheme}
                 />
             </div>
         )
@@ -219,33 +201,20 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         this.props.history.replace({ search: params.toString() })
     }
 
-    private expandAllResults = () => {
-        const allExpanded = !this.state.allExpanded
-        localStorage.setItem(ALL_EXPANDED_LOCAL_STORAGE_KEY, allExpanded + '')
+    private onExpandAllResultsToggle = () => {
         this.setState(
-            state => ({ allExpanded }),
+            state => ({ allExpanded: !state.allExpanded }),
             () => {
-                eventLogger.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+                localStorage.setItem(ALL_EXPANDED_LOCAL_STORAGE_KEY, this.state.allExpanded + '')
+                eventLogger.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
             }
         )
     }
 
     private onDynamicFilterClicked = (value: string) => {
         eventLogger.log('DynamicFilterClicked', {
-            search_filter: {
-                value,
-            },
+            search_filter: { value },
         })
         this.props.onFilterChosen(value)
     }
-}
-
-function resultItemsCount(result: GQL.SearchResult): number {
-    switch (result.__typename) {
-        case 'FileMatch':
-            return 1
-        case 'CommitSearchResult':
-            return 1
-    }
-    return 1
 }

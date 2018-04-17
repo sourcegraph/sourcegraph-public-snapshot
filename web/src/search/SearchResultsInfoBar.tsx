@@ -22,7 +22,7 @@ interface SearchResultsInfoBarProps {
 
     // Expand all feature
     allExpanded: boolean
-    onExpandAllResultsClick: () => void
+    onExpandAllResultsToggle: () => void
 
     // Saved queries
     onDidCreateSavedQuery: () => void
@@ -95,7 +95,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                 </div>
                 <div className="search-results-info-bar__row-right">
                     {/* Expand all feature */}
-                    <button onClick={props.onExpandAllResultsClick} className="btn btn-link">
+                    <button onClick={props.onExpandAllResultsToggle} className="btn btn-link">
                         {props.allExpanded ? (
                             <>
                                 <ArrowCollapseVerticalIcon className="icon-inline" data-tooltip="Collapse" /> Collapse
