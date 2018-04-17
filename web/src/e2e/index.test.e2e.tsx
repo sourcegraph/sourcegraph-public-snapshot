@@ -151,7 +151,7 @@ Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var.
             await page.evaluate(() => document.querySelector('.panel__tabs .tab-bar__tab--active')!.textContent),
             'External references'
         )
-        await page.waitForSelector('.panel__tabs .tab-bar__tab--active .badge')
+        await page.waitForSelector('.panel__tabs .file-match__list')
         await retry(async () => {
             assert.ok(
                 (await page.evaluate(
