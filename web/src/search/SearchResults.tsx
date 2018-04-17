@@ -64,7 +64,7 @@ interface SearchResultsListProps {
 }
 
 const isSearchResults = (val: any): val is GQL.ISearchResults =>
-    val && typeof val === 'object' && val.__typename === 'ISearchResults'
+    val && typeof val === 'object' && val.__typename === 'SearchResults'
 
 class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> {
     public render(): React.ReactNode {

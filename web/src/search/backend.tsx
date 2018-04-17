@@ -15,6 +15,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
             query Search($query: String!) {
                 search(query: $query) {
                     results {
+                        __typename
                         limitHit
                         resultCount
                         approximateResultCount
