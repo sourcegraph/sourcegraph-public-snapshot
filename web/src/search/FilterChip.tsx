@@ -1,4 +1,4 @@
-import { truncate } from 'lodash-es'
+import { truncate } from 'lodash'
 import * as React from 'react'
 import { queryIndexOfScope } from './helpers'
 

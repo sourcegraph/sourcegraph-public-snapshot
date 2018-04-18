@@ -1,6 +1,6 @@
 import { ChevronRight } from '@sourcegraph/icons/lib/ChevronRight'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
-import { upperFirst } from 'lodash-es'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'

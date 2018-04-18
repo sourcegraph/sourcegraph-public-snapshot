@@ -1,6 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
-import { upperFirst } from 'lodash-es'
+import { upperFirst } from 'lodash'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'

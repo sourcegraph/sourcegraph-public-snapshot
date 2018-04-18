@@ -1,5 +1,5 @@
 import { highlightBlock } from 'highlight.js/lib/highlight'
-import { isEmpty, unescape } from 'lodash-es'
+import { isEmpty, unescape } from 'lodash'
 import marked from 'marked'
 import { Hover, MarkedString } from 'vscode-languageserver-types'
 import { urlWithoutSearchOptions } from '../../search'

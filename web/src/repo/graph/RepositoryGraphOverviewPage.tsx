@@ -1,7 +1,7 @@
 import DownloadIcon from '@sourcegraph/icons/lib/Download'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import PackageIcon from '@sourcegraph/icons/lib/Package'
-import { upperFirst } from 'lodash-es'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs/Observable'

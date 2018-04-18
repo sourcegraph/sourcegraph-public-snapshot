@@ -1,5 +1,5 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
-import { upperFirst } from 'lodash-es'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'

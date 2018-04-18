@@ -1,6 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
-import { isEqual, upperFirst } from 'lodash-es'
+import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { defer } from 'rxjs/observable/defer'

@@ -1,7 +1,7 @@
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import RepoQuestionIcon from '@sourcegraph/icons/lib/RepoQuestion'
-import { upperFirst } from 'lodash-es'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { defer } from 'rxjs/observable/defer'
 import { catchError } from 'rxjs/operators/catchError'

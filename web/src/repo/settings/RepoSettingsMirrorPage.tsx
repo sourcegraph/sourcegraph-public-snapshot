@@ -1,7 +1,7 @@
 import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import LockIcon from '@sourcegraph/icons/lib/Lock'
-import { upperFirst } from 'lodash-es'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'

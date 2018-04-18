@@ -3,7 +3,7 @@
 import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import * as H from 'history'
-import { isEqual, sortBy } from 'lodash-es'
+import { isEqual, sortBy } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'

@@ -1,6 +1,6 @@
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as H from 'history'
-import { isEqual, pick, upperFirst } from 'lodash-es'
+import { isEqual, pick, upperFirst } from 'lodash'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { combineLatest } from 'rxjs/observable/combineLatest'

@@ -1,4 +1,4 @@
-import { upperFirst } from 'lodash-es'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { merge } from 'rxjs/observable/merge'

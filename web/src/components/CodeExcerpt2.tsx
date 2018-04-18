@@ -26,7 +26,7 @@ export class CodeExcerpt2 extends React.PureComponent<Props> {
             <pre className="file-match__code">
                 {this.props.items.map(({ line, preview, highlightRanges }, i) => (
                     <code
-                        data-line={leftPad((line + 1).toString(), maxDigits, ' ')}
+                        data-line={(line + 1).toString().padStart(maxDigits)}
                         key={i}
                         ref={e => e && highlightNode(e, highlightRanges[0].start, highlightRanges[0].highlightLength)}
                     >
@@ -44,8 +44,4 @@ export class CodeExcerpt2 extends React.PureComponent<Props> {
             </pre>
         )
     }
-}
-
-function leftPad(s: string, len: number, pad: string): string {
-    return pad.repeat(len - s.length) + s
 }
