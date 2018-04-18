@@ -4,43 +4,6 @@ import * as path from 'path'
 import { Tapable } from 'tapable'
 import * as webpack from 'webpack'
 
-const plugins: webpack.Plugin[] = [
-    // Print some output for VS Code tasks to know when a build started
-    function(this: Tapable): void {
-        this.plugin('watch-run', (watching: any, cb: () => void) => {
-            console.log('Begin compile at ' + new Date())
-            cb()
-        })
-    },
-]
-
-if (process.env.NODE_ENV === 'production') {
-    plugins.push(
-        new webpack.DefinePlugin({
-            'process.env': {
-                NODE_ENV: JSON.stringify('production'),
-            },
-        })
-    )
-} else {
-    plugins.push(
-        new webpack.DefinePlugin({
-            'process.env': {
-                NODE_ENV: JSON.stringify('development'),
-            },
-        })
-    )
-}
-
-plugins.push(
-    new ExtractTextPlugin({
-        filename: 'styles/[name].bundle.css',
-        allChunks: true,
-    })
-)
-
-plugins.push(new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/))
-
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
 const config: webpack.Configuration = {
@@ -70,7 +33,21 @@ const config: webpack.Configuration = {
         headers: { 'Access-Control-Allow-Origin': '*' },
     },
     plugins: [
-        ...plugins,
+        // Print some output for VS Code tasks to know when a build started
+        function(this: Tapable): void {
+            this.plugin('watch-run', (watching: any, cb: () => void) => {
+                console.log('Begin compile at ' + new Date())
+                cb()
+            })
+        },
+        // Needed for React
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: JSON.stringify(process.env.NODE_ENV === 'production' ? 'production' : 'development'),
+            },
+        }),
+        new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
+        new ExtractTextPlugin({ filename: 'styles/[name].bundle.css', allChunks: true }),
         // Don't build the TypeScript services as we only want to edit JSON
         new webpack.IgnorePlugin(/\/typescriptServices.js$/),
     ],
