@@ -338,7 +338,7 @@ func Main() error {
 
 		log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
 		srv.GoServe(l, &http.Server{
-			Handler:     httpAddrInternal,
+			Handler:     internalHandler,
 			ReadTimeout: 75 * time.Second,
 			// Higher since for internal RPCs which can have large responses (eg git archive)
 			WriteTimeout: 10 * time.Minute,
