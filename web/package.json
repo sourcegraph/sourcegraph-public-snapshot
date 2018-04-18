@@ -146,7 +146,7 @@
     "open-color": "^1.6.2",
     "pretty-bytes": "^4.0.2",
     "react": "^16.3.2",
-    "react-dom": "^16.3.0-rc.0",
+    "react-dom": "^16.3.2",
     "react-router": "^4.2.0",
     "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.10.1",
