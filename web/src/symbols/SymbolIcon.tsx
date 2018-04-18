@@ -28,7 +28,7 @@ import * as React from 'react'
 /**
  * Returns the icon component for a given symbol kind
  */
-const getSymbolIconComponent = (kind: GQL.ISymbolKindEnum): React.ComponentType<React.HTMLAttributes<HTMLElement>> => {
+const getSymbolIconComponent = (kind: GQL.SymbolKind): React.ComponentType<React.HTMLAttributes<HTMLElement>> => {
     switch (kind) {
         case 'FILE':
             return FileDocumentIcon
@@ -89,7 +89,7 @@ const getSymbolIconComponent = (kind: GQL.ISymbolKindEnum): React.ComponentType<
 }
 
 export interface SymbolIconProps {
-    kind: GQL.ISymbolKindEnum
+    kind: GQL.SymbolKind
     className?: string
 }
 

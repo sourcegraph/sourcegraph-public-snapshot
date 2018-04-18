@@ -218,7 +218,7 @@ export function setUserEmailVerified(user: GQLID, email: string, verified: boole
     )
 }
 
-export function logUserEvent(event: GQL.IUserEventEnum): void {
+export function logUserEvent(event: GQL.UserEvent): void {
     if (window.context.sourcegraphDotComMode) {
         return
     }

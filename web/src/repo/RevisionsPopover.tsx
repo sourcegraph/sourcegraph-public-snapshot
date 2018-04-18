@@ -13,12 +13,7 @@ import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 
 const fetchGitRefs = memoizeObservable(
-    (args: {
-        repo: GQLID
-        first?: number
-        query?: string
-        type?: GQL.IGitRefTypeEnum
-    }): Observable<GQL.IGitRefConnection> =>
+    (args: { repo: GQLID; first?: number; query?: string; type?: GQL.GitRefType }): Observable<GQL.IGitRefConnection> =>
         queryGraphQL(
             gql`
                 query RepositoryGitRefs($repo: ID!, $first: Int, $query: String, $type: GitRefType) {
@@ -184,7 +179,7 @@ interface RevisionsPopoverTab {
     label: string
     noun: string
     pluralNoun: string
-    type?: GQL.IGitRefTypeEnum
+    type?: GQL.GitRefType
 }
 
 class FilteredGitRefConnection extends FilteredConnection<
@@ -205,8 +200,8 @@ export class RevisionsPopover extends React.PureComponent<Props> {
     private static LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
     private static TABS: RevisionsPopoverTab[] = [
-        { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: 'GIT_BRANCH' },
-        { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: 'GIT_TAG' },
+        { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GQL.GitRefType.GIT_BRANCH },
+        { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GQL.GitRefType.GIT_TAG },
         { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
     ]
 
@@ -280,10 +275,10 @@ export class RevisionsPopover extends React.PureComponent<Props> {
     }
 
     private queryGitBranches = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
-        fetchGitRefs({ ...args, repo: this.props.repo, type: 'GIT_BRANCH' })
+        fetchGitRefs({ ...args, repo: this.props.repo, type: GQL.GitRefType.GIT_BRANCH })
 
     private queryGitTags = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
-        fetchGitRefs({ ...args, repo: this.props.repo, type: 'GIT_TAG' })
+        fetchGitRefs({ ...args, repo: this.props.repo, type: GQL.GitRefType.GIT_TAG })
 
     private queryRepositoryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
         fetchRepositoryCommits({

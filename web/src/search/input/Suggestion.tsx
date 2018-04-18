@@ -23,7 +23,7 @@ interface BaseSuggestion {
 
 export interface SymbolSuggestion extends BaseSuggestion {
     type: 'symbol'
-    kind: GQL.ISymbolKindEnum
+    kind: GQL.SymbolKind
 }
 
 export interface RepoSuggestion extends BaseSuggestion {
@@ -101,7 +101,7 @@ const SuggestionIcon: React.StatelessComponent<SuggestionIconProps> = ({ suggest
         case 'dir':
             return <FolderIcon {...passThru} />
         case 'file':
-            return <SymbolIcon kind={'FILE'} {...passThru} />
+            return <SymbolIcon kind={GQL.SymbolKind.FILE} {...passThru} />
         case 'symbol':
             return <SymbolIcon kind={suggestion.kind} {...passThru} />
     }

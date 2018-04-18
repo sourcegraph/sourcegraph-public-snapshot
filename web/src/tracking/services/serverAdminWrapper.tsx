@@ -19,19 +19,19 @@ class ServerAdminWrapper {
     }
 
     public trackPageView(): void {
-        logUserEvent('PAGEVIEW')
+        logUserEvent(GQL.UserEvent.PAGEVIEW)
     }
 
     public trackAction(eventAction: string, eventProps: any): void {
         if (this.isAuthenicated) {
             if (eventAction === 'SearchSubmitted') {
-                logUserEvent('SEARCHQUERY')
+                logUserEvent(GQL.UserEvent.SEARCHQUERY)
             } else if (
                 eventAction === 'SymbolHovered' ||
                 eventAction === 'FindRefsClicked' ||
                 eventAction === 'GoToDefClicked'
             ) {
-                logUserEvent('CODEINTEL')
+                logUserEvent(GQL.UserEvent.CODEINTEL)
             }
         }
     }
