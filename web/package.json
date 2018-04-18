@@ -149,7 +149,7 @@
     "react-dom": "^16.3.2",
     "react-router": "^4.2.0",
     "react-router-dom": "^4.2.2",
-    "react-visibility-sensor": "^3.10.1",
+    "react-visibility-sensor": "^3.11.0",
     "rx-component": "^0.0.8",
     "rxjs": "^5.5.2",
     "string-score": "^1.0.1",
