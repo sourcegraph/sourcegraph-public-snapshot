@@ -3,5 +3,5 @@ npm-debug.log
 out/
 .nyc_output/
 coverage/
-typings/graphqlschema.d.ts
+src/backend/graphqlschema.ts
 graphqlschema.json

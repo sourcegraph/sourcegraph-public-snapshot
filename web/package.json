@@ -14,7 +14,7 @@
     "watch-webpack": "[ -n \"$USE_WEBPACK_DEV_SERVER\" ] && npm run webpack-dev-server || npm run webpack -- --watch",
     "webpack": "webpack-cli --config webpack.config.ts --colors",
     "webpack-dev-server": "webpack-dev-server --config webpack.config.ts --colors",
-    "graphql": "gql2ts ../cmd/frontend/internal/graphqlbackend/schema.graphql -o typings/graphqlschema.d.ts && node introspect_schema",
+    "graphql": "gql2ts ../cmd/frontend/internal/graphqlbackend/schema.graphql -o src/backend/graphqlschema.ts && node introspect_schema",
     "watch-graphql": "chokidar --silent ../cmd/frontend/internal/graphqlbackend/schema.graphql --initial -c \"npm run graphql;sleep 10;npm run graphql\"",
     "schema": "export DEBUG=; mkdir -p src/schema && cd ../schema && json2ts -i settings.schema.json -o ../web/src/schema/settings.schema.d.ts && json2ts -i site.schema.json -o ../web/src/schema/site.schema.d.ts && cd ../web",
     "watch-schema": "chokidar --silent '../schema/**.schema.json' --initial -c 'npm run schema'",

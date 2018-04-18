@@ -23,5 +23,6 @@
         "tag": "gql"
       }
     ]
-  }
+  },
+  "include": ["src/**/*", "typings/**/*"]
 }
