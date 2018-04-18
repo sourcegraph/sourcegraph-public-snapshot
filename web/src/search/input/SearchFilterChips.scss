@@ -1,0 +1,27 @@
+@import '../FilterChip';
+
+.search-filter-chips {
+    &__edit {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    &__add-scopes {
+        display: inline-block;
+        margin: 0.25rem;
+        padding: 0.25rem;
+    }
+
+    &__add-edit {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 0.25rem;
+    }
+
+    &__center {
+        display: flex;
+        align-items: center;
+        margin-right: 0.5rem;
+    }
+}

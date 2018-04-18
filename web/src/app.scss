@@ -12,7 +12,7 @@ $media-md: 768px;
 $media-lg: 992px;
 $media-xl: 1200px;
 
-@import 'open-color/open-color';
+@import 'open-color/open-color.scss';
 @import './global-styles/colors';
 
 // Bootstrap configuration before Bootstrap is imported
@@ -242,18 +242,12 @@ hr {
     border: none;
 }
 
+// Pages
 @import './api/APIConsole';
 @import './explore/ExplorePage';
-@import './search/ExampleSearches';
-@import './search/QueryButton';
-@import './search/SavedQueries';
-@import './search/ScopePage';
-@import './search/SearchNavbarItem';
-@import './search/SearchPage';
-@import './search/SearchResults';
-@import './search/QueryInput';
-@import './search/SearchButton';
-@import './search/FilterChip';
+@import './search/input/ScopePage';
+@import './search/input/SearchPage';
+@import './search/results/SearchResults';
 @import './site-admin/SiteInitPage';
 @import './site-admin/SiteAdmin';
 @import './site-admin/SiteAdminOverviewPage';

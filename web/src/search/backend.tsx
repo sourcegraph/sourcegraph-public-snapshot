@@ -217,24 +217,6 @@ export function fetchSearchScopes(): Observable<GQL.ISearchScope[]> {
     )
 }
 
-export function fetchRepoGroups(): Observable<GQL.IRepoGroup[]> {
-    return queryGraphQL(gql`
-        query RepoGroups {
-            repoGroups {
-                name
-                repositories
-            }
-        }
-    `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.repoGroups) {
-                throw createAggregateError(errors)
-            }
-            return data.repoGroups
-        })
-    )
-}
-
 export function fetchReposByQuery(query: string): Observable<string[]> {
     return queryGraphQL(
         gql`

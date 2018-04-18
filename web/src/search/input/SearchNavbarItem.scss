@@ -1,0 +1,10 @@
+@import './SearchHelp';
+@import './QueryInput';
+
+.search--navbar-item {
+    display: flex;
+
+    .search-help {
+        margin-left: 0.25rem;
+    }
+}
