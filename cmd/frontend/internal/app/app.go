@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/redirects"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
@@ -67,7 +66,6 @@ func NewHandler() http.Handler {
 	addDebugHandlers(r.Get(router.Debug).Subrouter())
 
 	var h http.Handler = m
-	h = redirects.RedirectsMiddleware(h)
 	h = session.CookieMiddleware(h)
 	h = httpapiauth.AuthorizationMiddleware(h)
 
