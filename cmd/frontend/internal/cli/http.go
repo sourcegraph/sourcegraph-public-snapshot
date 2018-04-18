@@ -45,6 +45,15 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	return h, nil
 }
 
+// newInternalHTTPHandler creates and returns the HTTP handler for the internal API (accessible to
+// other internal services).
+func newInternalHTTPHandler() http.Handler {
+	internalMux := http.NewServeMux()
+	internalMux.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
+	internalMux.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
+	return gcontext.ClearHandler(internalMux)
+}
+
 func secureHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// headers for security

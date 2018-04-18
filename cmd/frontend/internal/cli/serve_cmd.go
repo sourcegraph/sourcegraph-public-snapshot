@@ -17,9 +17,6 @@ import (
 
 	"context"
 
-	"github.com/NYTimes/gziphandler"
-	gcontext "github.com/gorilla/context"
-	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -28,8 +25,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -190,13 +185,7 @@ func Main() error {
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	var internalHandler http.Handler
-	{
-		internalMux := http.NewServeMux()
-		internalMux.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
-		internalMux.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-		internalHandler = gcontext.ClearHandler(internalMux)
-	}
+	internalHandler := newInternalHTTPHandler()
 
 	// serve will serve h on l. It additionally handles graceful restarts.
 	srv := &httpServers{}
