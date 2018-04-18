@@ -183,16 +183,16 @@ func Main() error {
 	}
 	db.AppURL = globals.AppURL
 
-	sm := http.NewServeMux()
-	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(), globals.AppURL.Scheme == "https"))
-	assets.Mount(sm)
-
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
 	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
 	if useTLS && globals.AppURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
 	}
+
+	sm := http.NewServeMux()
+	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
+	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(), globals.AppURL.Scheme == "https"))
+	assets.Mount(sm)
 
 	var h http.Handler = sm
 	h = middleware.SourcegraphComGoGetHandler(h)
