@@ -1,5 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
+import * as GQL from '../../backend/graphqlschema'
 import { QueryButton } from './QueryButton'
 
 interface Props {

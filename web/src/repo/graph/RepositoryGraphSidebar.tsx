@@ -2,6 +2,7 @@ import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import * as GQL from '../../backend/graphqlschema'
 
 interface Props extends RouteComponentProps<any> {
     className: string

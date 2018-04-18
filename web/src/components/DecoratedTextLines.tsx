@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
+import * as GQL from '../backend/graphqlschema'
 import { highlightNode } from '../util/dom'
 
 interface Props {

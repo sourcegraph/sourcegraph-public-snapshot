@@ -1,6 +1,7 @@
 import FolderIcon from '@sourcegraph/icons/lib/Folder'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
+import * as GQL from '../../backend/graphqlschema'
 import { SymbolIcon } from '../../symbols/SymbolIcon'
 import { basename, dirname } from '../../util/path'
 

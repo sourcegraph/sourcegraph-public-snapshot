@@ -1,5 +1,6 @@
 import { matchPath } from 'react-router'
 import { currentUser } from '../auth'
+import * as GQL from '../backend/graphqlschema'
 import { parseBrowserRepoURL } from '../repo'
 import { repoRevRoute } from '../routes'
 import { getPathExtension } from '../util'

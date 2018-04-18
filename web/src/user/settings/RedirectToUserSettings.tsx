@@ -2,6 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { Redirect } from 'react-router'
 import { userURL } from '..'
+import * as GQL from '../../backend/graphqlschema'
 
 /**
  * Redirects from /settings to /user/$USERNAME/settings, where $USERNAME is the currently authenticated user's

@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import * as GQL from '../../backend/graphqlschema'
 import { RepoFileLink } from '../../components/RepoFileLink'
 import { ResultContainer } from '../../components/ResultContainer'
 import { SymbolIcon } from '../../symbols/SymbolIcon'

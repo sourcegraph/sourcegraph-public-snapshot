@@ -1,3 +1,5 @@
+import * as GQL from '../backend/graphqlschema'
+
 // hasTag returns whether the user or org has the given tag.
 export function hasTag(arg: GQL.IUser | GQL.IOrg, tag: string): boolean {
     return arg.tags && (arg.tags as { name: string }[]).some(tag2 => tag2.name === tag)

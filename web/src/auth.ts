@@ -4,6 +4,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { tap } from 'rxjs/operators/tap'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { gql, queryGraphQL } from './backend/graphql'
+import * as GQL from './backend/graphqlschema'
 import { createAggregateError } from './util/errors'
 
 /**

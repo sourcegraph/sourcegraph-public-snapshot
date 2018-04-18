@@ -1,5 +1,6 @@
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
+import * as GQL from '../../backend/graphqlschema'
 import { ResultContainer } from '../../components/ResultContainer'
 import { RepoLink } from '../../repo/RepoLink'
 import { eventLogger } from '../../tracking/eventLogger'

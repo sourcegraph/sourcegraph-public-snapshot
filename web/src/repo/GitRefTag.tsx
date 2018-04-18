@@ -2,6 +2,7 @@ import BranchIcon from '@sourcegraph/icons/lib/Branch'
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import React from 'react'
+import * as GQL from '../backend/graphqlschema'
 
 interface Props {
     gitRef: GQL.IGitRef

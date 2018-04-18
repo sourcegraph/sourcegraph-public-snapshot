@@ -2,6 +2,7 @@ import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser/lib/main'
 import { Observable } from 'rxjs/Observable'
 import { map } from 'rxjs/operators/map'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
+import * as GQL from '../backend/graphqlschema'
 import { Settings } from '../schema/settings.schema'
 import { createAggregateError } from '../util/errors'
 

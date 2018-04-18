@@ -1,6 +1,7 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { NewOrganizationPage } from '../org/new/NewOrganizationPage'
 import { OrgArea } from './area/OrgArea'

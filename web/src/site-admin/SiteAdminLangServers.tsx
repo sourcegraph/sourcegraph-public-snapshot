@@ -17,6 +17,7 @@ import { switchMap } from 'rxjs/operators/switchMap'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 import { disableLangServer, enableLangServer, fetchLangServers, restartLangServer, updateLangServer } from './backend'
 

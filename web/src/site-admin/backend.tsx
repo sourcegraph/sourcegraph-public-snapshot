@@ -5,6 +5,7 @@ import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import * as GQL from '../backend/graphqlschema'
 import { createAggregateError } from '../util/errors'
 import { resetAllMemoizationCaches } from '../util/memoize'
 

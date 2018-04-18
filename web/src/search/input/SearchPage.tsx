@@ -1,5 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
+import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { NavLinks } from '../../nav/NavLinks'

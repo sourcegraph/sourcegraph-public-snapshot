@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import * as GQL from '../backend/graphqlschema'
 
 /**
  * A link to a user, or an unlinked person name.

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import * as GQL from '../backend/graphqlschema'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { pluralize } from '../util/strings'
 import { toPrettyBlobURL } from '../util/url'

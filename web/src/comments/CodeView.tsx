@@ -1,5 +1,6 @@
 import ChatIcon from '@sourcegraph/icons/lib/Chat'
 import * as React from 'react'
+import * as GQL from '../backend/graphqlschema'
 
 interface Line {
     number: number
