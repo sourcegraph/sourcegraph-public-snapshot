@@ -10,8 +10,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-// authorizationMiddleware authenticates the user based on the "Authorization" header.
-func authorizationMiddleware(next http.Handler) http.Handler {
+// accessTokenAuthMiddleware authenticates the user based on the "Authorization" header's access
+// token (if any).
+func accessTokenAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
 

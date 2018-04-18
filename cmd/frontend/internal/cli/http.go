@@ -24,9 +24,18 @@ import (
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
 func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
+	// HTTP API handler.
+	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))
+	apiHandler = gziphandler.GzipHandler(apiHandler)
+
+	// App handler (HTML pages).
+	appHandler := app.NewHandler()
+	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https")
+
+	// Mount handlers and assets.
 	sm := http.NewServeMux()
-	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-	sm.Handle("/", handlerutil.CSRFMiddleware(app.NewHandler(), globals.AppURL.Scheme == "https"))
+	sm.Handle("/.api/", apiHandler)
+	sm.Handle("/", appHandler)
 	assets.Mount(sm)
 
 	var h http.Handler = sm

@@ -52,7 +52,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	// would open it up to CSRF attacks.
 	var h http.Handler = m
 	h = session.CookieMiddlewareIfHeader(h, "X-Requested-By")
-	h = authorizationMiddleware(h)
+	h = accessTokenAuthMiddleware(h)
 
 	return h
 }
