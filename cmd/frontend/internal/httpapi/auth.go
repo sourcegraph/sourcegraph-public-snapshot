@@ -10,9 +10,9 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// accessTokenAuthMiddleware authenticates the user based on the "Authorization" header's access
+// AccessTokenAuthMiddleware authenticates the user based on the "Authorization" header's access
 // token (if any).
-func accessTokenAuthMiddleware(next http.Handler) http.Handler {
+func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
 

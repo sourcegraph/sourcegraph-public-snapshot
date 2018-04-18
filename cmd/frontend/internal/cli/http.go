@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
 )
@@ -26,11 +27,16 @@ import (
 func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// HTTP API handler.
 	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))
+	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
+	// X-Requested-By header). Doing so would open it up to CSRF attacks.
+	apiHandler = session.CookieMiddlewareIfHeader(apiHandler, "X-Requested-By") // API accepts cookies with X-Requested-By header
+	apiHandler = httpapi.AccessTokenAuthMiddleware(apiHandler)                  // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// App handler (HTML pages).
 	appHandler := app.NewHandler()
 	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https")
+	appHandler = session.CookieMiddleware(appHandler) // app accepts cookies
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()

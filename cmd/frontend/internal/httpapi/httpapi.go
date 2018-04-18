@@ -16,13 +16,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // NewHandler returns a new API handler that uses the provided API
 // router, which must have been created by httpapi/router.New, or
 // creates a new one if nil.
+//
+// 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
+// and sets the actor in the request context.
 func NewHandler(m *mux.Router) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
@@ -47,14 +49,7 @@ func NewHandler(m *mux.Router) http.Handler {
 		http.Error(w, "no route", http.StatusNotFound)
 	})
 
-	// SECURITY NOTE: The HTTP API should not accept cookies as
-	// authentication (except with CookieMiddlewareIfHeader). Doing so
-	// would open it up to CSRF attacks.
-	var h http.Handler = m
-	h = session.CookieMiddlewareIfHeader(h, "X-Requested-By")
-	h = accessTokenAuthMiddleware(h)
-
-	return h
+	return m
 }
 
 // NewInternalHandler returns a new API handler for internal endpoints that uses

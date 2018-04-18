@@ -14,6 +14,9 @@ import (
 )
 
 // NewHandler returns a new app handler that uses the app router.
+//
+// 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
+// and sets the actor in the request context.
 func NewHandler() http.Handler {
 	session.SetSessionStore(session.NewRedisStore(globals.AppURL.Scheme == "https"))
 
@@ -64,7 +67,7 @@ func NewHandler() http.Handler {
 	})))
 	addDebugHandlers(r.Get(router.Debug).Subrouter())
 
-	return session.CookieMiddleware(m)
+	return m
 }
 
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
