@@ -71,8 +71,8 @@ const config: webpack.Configuration = {
     },
     plugins: [
         ...plugins,
-        // Ignore require() calls in vs/language/typescript/lib/typescriptServices.js
-        new webpack.IgnorePlugin(/^((fs)|(path)|(os)|(crypto)|(source-map-support))$/, /vs\/language\/typescript\/lib/),
+        // Don't build the TypeScript services as we only want to edit JSON
+        new webpack.IgnorePlugin(/\/typescriptServices.js$/),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
