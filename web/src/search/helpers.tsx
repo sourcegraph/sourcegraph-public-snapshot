@@ -1,4 +1,5 @@
 import * as H from 'history'
+import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 import { buildSearchURLQuery, SearchOptions } from './index'
 

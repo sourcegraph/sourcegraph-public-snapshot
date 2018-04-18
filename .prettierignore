@@ -12,6 +12,5 @@ web/graphqlschema.json
 web/out/
 web/src/schema/
 web/ts-node-*
-web/backend/graphqlschema.ts
 xlang/testdata
 client/phabricator/scripts/loader.js

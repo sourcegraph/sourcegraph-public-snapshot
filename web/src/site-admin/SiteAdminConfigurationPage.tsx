@@ -14,6 +14,7 @@ import { tap } from 'rxjs/operators/tap'
 import { timeout } from 'rxjs/operators/timeout'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
 import { SaveToolbar } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only

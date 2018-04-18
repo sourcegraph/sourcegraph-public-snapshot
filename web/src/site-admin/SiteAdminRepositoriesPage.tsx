@@ -13,6 +13,7 @@ import { mergeMap } from 'rxjs/operators/mergeMap'
 import { switchMap } from 'rxjs/operators/switchMap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import * as GQL from '../backend/graphqlschema'
 import {
     FilteredConnection,
     FilteredConnectionFilter,

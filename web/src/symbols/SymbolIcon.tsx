@@ -24,6 +24,7 @@ import WebIcon from '@sourcegraph/icons/lib/Web'
 import WrenchIcon from '@sourcegraph/icons/lib/Wrench'
 import { kebabCase } from 'lodash'
 import * as React from 'react'
+import * as GQL from '../backend/graphqlschema'
 
 /**
  * Returns the icon component for a given symbol kind

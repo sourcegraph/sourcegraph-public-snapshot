@@ -4,6 +4,7 @@ import { AjaxResponse } from 'rxjs/observable/dom/AjaxObservable'
 import { catchError } from 'rxjs/operators/catchError'
 import { map } from 'rxjs/operators/map'
 import { normalizeAjaxError } from '../util/errors'
+import * as GQL from './graphqlschema'
 
 const graphQLContent = Symbol('graphQLContent')
 export interface GraphQLDocument {
