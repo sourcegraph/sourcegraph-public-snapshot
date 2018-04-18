@@ -5,7 +5,7 @@
       "env",
       {
         "targets": {
-          "browsers": ["last 2 versions", "safari >= 7"],
+          "browsers": ["last 2 versions"],
           "useBuiltIns": true,
           "modules": false
         }
@@ -19,7 +19,7 @@
           "env",
           {
             "targets": {
-              "browsers": ["last 2 versions", "safari >= 7"],
+              "browsers": ["last 2 versions"],
               "uglify": true,
               "useBuiltIns": true,
               "modules": false
