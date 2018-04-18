@@ -54,7 +54,6 @@ type JSContext struct {
 	SentryDSN      string `json:"sentryDSN"`
 	SiteID         string `json:"siteID"`
 	Debug          bool   `json:"debug"`
-	SessionID      string `json:"sessionID"`
 	ShowOnboarding bool   `json:"showOnboarding"`
 	EmailEnabled   bool   `json:"emailEnabled"`
 
@@ -134,7 +133,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		SentryDSN:           sentryDSNFrontend,
 		Debug:               envvar.DebugMode(),
 		SiteID:              siteID,
-		SessionID:           sessionID,
 		ShowOnboarding:      showOnboarding,
 		EmailEnabled:        conf.CanSendEmail(),
 		Site:                publicSiteConfiguration,

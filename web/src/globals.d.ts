@@ -32,7 +32,6 @@ interface License {
  */
 interface SourcegraphContext {
     xhrHeaders: { [key: string]: string }
-    sessionID: string
     csrfToken: string
     userAgentIsBot: boolean
 
