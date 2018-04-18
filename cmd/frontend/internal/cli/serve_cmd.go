@@ -22,19 +22,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -42,7 +37,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
-	tracepkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
@@ -189,23 +183,11 @@ func Main() error {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
 	}
 
-	sm := http.NewServeMux()
-	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(), globals.AppURL.Scheme == "https"))
-	assets.Mount(sm)
-
-	var h http.Handler = sm
-	h = middleware.SourcegraphComGoGetHandler(h)
-	h = middleware.BlackHole(h)
-	h = tracepkg.Middleware(h)
-	h = secureHeadersMiddleware(h)
-	// 🚨 SECURITY: Verify user identity if required
-	h, err = auth.NewAuthHandler(context.Background(), h, appURL)
+	// Create the external HTTP handler.
+	externalHandler, err := newExternalHTTPHandler(context.Background())
 	if err != nil {
 		return err
 	}
-	// Don't leak memory through gorilla/session items stored in context
-	h = gcontext.ClearHandler(h)
 
 	// The internal HTTP handler does not include the auth handlers.
 	var internalHandler http.Handler
@@ -265,7 +247,7 @@ func Main() error {
 			l = tls.NewListener(l, tlsConf)
 			log15.Debug("HTTPS running", "on", l.Addr())
 			srv.GoServe(l, &http.Server{
-				Handler:      h,
+				Handler:      externalHandler,
 				ReadTimeout:  75 * time.Second,
 				WriteTimeout: 60 * time.Second,
 			})
@@ -281,14 +263,14 @@ func Main() error {
 
 		if httpToHttpsRedirect {
 			// Use JS for the redirect because this is the most reliable solution if reverse proxies are involved.
-			h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			externalHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(`<script>window.location.protocol = "https:";</script>`))
 			})
 		}
 
 		log15.Debug("HTTP running", "on", httpAddr)
 		srv.GoServe(l, &http.Server{
-			Handler:      h,
+			Handler:      externalHandler,
 			ReadTimeout:  75 * time.Second,
 			WriteTimeout: 60 * time.Second,
 		})

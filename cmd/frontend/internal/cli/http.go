@@ -1,12 +1,49 @@
 package cli
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/NYTimes/gziphandler"
+	gcontext "github.com/gorilla/context"
+	"github.com/gorilla/mux"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	tracepkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
+
+// newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
+// external clients.
+func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
+	sm := http.NewServeMux()
+	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
+	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(), globals.AppURL.Scheme == "https"))
+	assets.Mount(sm)
+
+	var h http.Handler = sm
+	h = middleware.SourcegraphComGoGetHandler(h)
+	h = middleware.BlackHole(h)
+	h = tracepkg.Middleware(h)
+	h = secureHeadersMiddleware(h)
+	// 🚨 SECURITY: Verify user identity if required
+	var err error
+	h, err = auth.NewAuthHandler(ctx, h, appURL)
+	if err != nil {
+		return nil, err
+	}
+	// Don't leak memory through gorilla/session items stored in context
+	h = gcontext.ClearHandler(h)
+	return h, nil
+}
 
 func secureHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
