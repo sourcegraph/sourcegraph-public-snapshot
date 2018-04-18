@@ -127,4 +127,17 @@
   },
   "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK",
   "corsOrigin": "https://github.com http://phabricator.sgdev.org"
+
+  // To test SAML, set "auth.provider" to "saml" above and uncomment this section. When you access Sourcegraph,
+  // log into Okta as ghopper@bankofmanhattan.com with password "Password1".
+  //
+  // "appURL": "http://localhost:3080",
+  // "auth.saml": {
+  //   // Assumes app URL is http://localhost:3080.
+  //   "identityProviderMetadataURL": "https://dev-433675.oktapreview.com/app/exkcgo5zoe8HqHBdH0h7/sso/saml/metadata",
+  //   "serviceProviderCertificate":
+  //     "-----BEGIN CERTIFICATE-----\nMIIDEzCCAfugAwIBAgIJAJWPqXKa/qa4MA0GCSqGSIb3DQEBCwUAMCAxHjAcBgNV\nBAMMFW15c2VydmljZS5leGFtcGxlLmNvbTAeFw0xNzEwMTgyMjAxNDlaFw0xODEw\nMTgyMjAxNDlaMCAxHjAcBgNVBAMMFW15c2VydmljZS5leGFtcGxlLmNvbTCCASIw\nDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAOfS98TlXRYRX/IOYpHo9/azVMlJ\ndDVXGgqawi244vnY8LIkJspa/Ns01zhLcotWtgTZJvg69ZhvzPhTgxzlHEuni56Q\nnQpROBrVQygDxOk1Vjf43noO3x6GHHoki07b8pU2lzIRyrlWzX/ukFyj2ViNCiKw\nBSLxfVg80x0Vkv/RRz8MPZHntrLGQ26PltlzxhhqNs4a961giHFmfXnYWRcjMqPC\npCFPF6GzEVl5SYo+KfS7XuHnhfyFDSIaT4MVOaZrleOTR5yG64RHQqRKtF1ZVH2H\ne8Rb1wAZ1w0l7837hDdjy8kjYHn7Pau1tpXOi2AN2pW5NHmUrH/5m09HLM0CAwEA\nAaNQME4wHQYDVR0OBBYEFCD8uIR5o2g5S4YYDzZ7qI9v4mXQMB8GA1UdIwQYMBaA\nFCD8uIR5o2g5S4YYDzZ7qI9v4mXQMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEL\nBQADggEBAMwjcNBI+StGpnRyZd8iQoFpMWCHeBZanuF8XiI/6Yz/oSt2vL70JR1y\n7oJe6fbpwH86kucSDscNTKK7lTzqniX6wlqKiD1/ko+MTydZXFrYIbvv3Nu3zgr9\nE4Vh23qQXrOA6FP2Hp+GZ7SEOdry1w/QGOSPV3hdUAWtueDJ4UcNRTNQ+laZoE3A\nP2CSv5nit+i3H3cBwEF2CTFVEsZc6E8H4Atj1rQf85yoXmip/GLY43a/vdOeP9Pc\nAVmxf4Db2ZQa5CN/bh2Zw/JXPn17uI+5MbgrdkUDX+jaDRLjIOGgSJ5f/i7ohRMa\nfaYc3fZoo5Q3JXim5gq9dCJZnK0I08c=\n-----END CERTIFICATE-----",
+  //   "serviceProviderPrivateKey":
+  //     "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDn0vfE5V0WEV/y\nDmKR6Pf2s1TJSXQ1VxoKmsItuOL52PCyJCbKWvzbNNc4S3KLVrYE2Sb4OvWYb8z4\nU4Mc5RxLp4uekJ0KUTga1UMoA8TpNVY3+N56Dt8ehhx6JItO2/KVNpcyEcq5Vs1/\n7pBco9lYjQoisAUi8X1YPNMdFZL/0Uc/DD2R57ayxkNuj5bZc8YYajbOGvetYIhx\nZn152FkXIzKjwqQhTxehsxFZeUmKPin0u17h54X8hQ0iGk+DFTmma5Xjk0echuuE\nR0KkSrRdWVR9h3vEW9cAGdcNJe/N+4Q3Y8vJI2B5+z2rtbaVzotgDdqVuTR5lKx/\n+ZtPRyzNAgMBAAECggEAbdGs+iNFk5yrfPl/jGt2e/G8KpaXbGVUus1RS2OYco9o\nhptFnPq5agaAJfTn0EZFd8p/AXy8t3fO+5xkMh3+53/5TiZnnmmXUG7Sn3QZpfhU\nXbORgPTmkYkqmFoTfEoJgtIXkeqHxIDwXLhgvuIHpkE6GfCUnlcT7+bwg4ii2Hge\ngchTsYc+ZQm3HiJX9uxU6HF3P9YsGHnHxwmRCJA0/gHO/kOY8IrY5HnD9fyi3Wai\nsNwd/vsl2TkH4bZFGbVLcocko35HTQ91Nz+ZQ6pwY00J0q/FgVyFwYdtO641G1Qm\nqt0LM8ijxtVUdtPGYk8MbFaEdMy5ixtC7gDUM4S1QQKBgQD7XHqY5w9S2pYS5x2Z\nRlZi5bCSZduUOzCABqK1HkU7JznCHqK/1vV3X+EP632jRJXJwS1cMLk9PxXOaWhE\niI7Bw4EIFgXEZCDRdDDvY+e0qQbVbLVYjgwPPDMHFov8jg40BTxfpXBfuiFYI+wn\n6zDQpnPT73s8U6X8MKv13sPd2QKBgQDsGjA7OIzkT+qxQ6LSTn2VsHAf/CZJ6V+1\nStejVTcUpozlhxlEyC7mmYBE8tGBnF/+Pr7zYPjxesSc+03VN0s0Sd5oDFyoYaea\nuZTta+1Yz5qryxjzfhENqA3PEEiS6MZTt33OIEUwSGBgGFnqT1bofpH87MicoynT\n1sBT2jeKFQKBgQCEoOM/UovPV+7fwnrnqSljvXZRiNU3fZO1ucqYboRxFd1wA+Iz\n/yQ9/KUwVT1RrJqsffWFM2BKZMMIyq1tm/BXZOTsc1JPsdVvLzOy3LAhrx4f9uAo\n/ap3T3hNQSRT+lCcOjcE8LI+kGOPskSlO3/iWDG9nhsUVb67NqNFdGk84QKBgQDc\nypTGHNks/UtFoDGYqEwq+sewMZYA0pxtJmNH2/3ZcvMaBl/sAaRSg8P/NnAT3A+s\n7DKX2NyUvjE1eJFNzhqm+FljRgQ0drZNLDWIXcCkp+hFtXVM51y9P6ZCOEEWGVa2\nnUapx2XMhDKUStFzG+TzIMIXG7tzN+Z6sz5CbDQ6DQKBgQD39GPJ1u3R6MrIYg2G\n3XgMOej7Op3KohlUbfcbn38xmdd7cNWAY4xZaABfoossQ7LoR8VUE1R2fXdz+C2z\njzOAJHYhE6aPtb4oUyFttg2DcatA5oGSQH1LHmtxFHS5aIH8rw6gvxb3tyA1kKCN\nqDz2z6BOWZ+26Q4rEkP2LugqRg==\n-----END PRIVATE KEY-----"
+  // }
 }
