@@ -1,7 +1,7 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import isEqual from 'lodash/isEqual'
+import { isEqual } from 'lodash-es'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'

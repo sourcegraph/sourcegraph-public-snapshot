@@ -1,7 +1,7 @@
 import KeyIcon from '@sourcegraph/icons/lib/Key'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
-import upperFirst from 'lodash/upperFirst'
+import { upperFirst } from 'lodash-es'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'

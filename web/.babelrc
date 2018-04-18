@@ -1,12 +1,13 @@
 {
-  "plugins": ["add-module-exports", "transform-new-target", "syntax-dynamic-import"],
+  "plugins": ["add-module-exports", "transform-new-target", "syntax-dynamic-import", "lodash"],
   "presets": [
     [
       "env",
       {
         "targets": {
           "browsers": ["last 2 versions", "safari >= 7"],
-          "useBuiltIns": true
+          "useBuiltIns": true,
+          "modules": false
         }
       }
     ]
@@ -20,7 +21,8 @@
             "targets": {
               "browsers": ["last 2 versions", "safari >= 7"],
               "uglify": true,
-              "useBuiltIns": true
+              "useBuiltIns": true,
+              "modules": false
             }
           }
         ]

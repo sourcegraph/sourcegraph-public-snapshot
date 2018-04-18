@@ -22,7 +22,7 @@ import TextboxIcon from '@sourcegraph/icons/lib/Textbox'
 import TimetableIcon from '@sourcegraph/icons/lib/Timetable'
 import WebIcon from '@sourcegraph/icons/lib/Web'
 import WrenchIcon from '@sourcegraph/icons/lib/Wrench'
-import kebabCase from 'lodash/kebabCase'
+import { kebabCase } from 'lodash-es'
 import * as React from 'react'
 
 /**

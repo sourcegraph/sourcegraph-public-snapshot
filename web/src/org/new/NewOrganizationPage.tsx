@@ -1,6 +1,6 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
-import upperFirst from 'lodash/upperFirst'
+import { upperFirst } from 'lodash-es'
 import * as React from 'react'
 import { catchError } from 'rxjs/operators/catchError'
 import { filter } from 'rxjs/operators/filter'

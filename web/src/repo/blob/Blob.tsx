@@ -1,6 +1,5 @@
 import * as H from 'history'
-import isEqual from 'lodash/isEqual'
-import omit from 'lodash/omit'
+import { isEqual, omit } from 'lodash-es'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { fromEvent } from 'rxjs/observable/fromEvent'

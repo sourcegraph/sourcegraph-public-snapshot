@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { isEqual } from 'lodash-es'
 import * as React from 'react'
 import { concat } from 'rxjs/observable/concat'
 import { catchError } from 'rxjs/operators/catchError'

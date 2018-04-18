@@ -1,5 +1,5 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import truncate from 'lodash/truncate'
+import { truncate } from 'lodash-es'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { debounceTime } from 'rxjs/operators/debounceTime'

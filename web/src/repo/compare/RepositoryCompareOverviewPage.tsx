@@ -1,5 +1,5 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import upperFirst from 'lodash/upperFirst'
+import { upperFirst } from 'lodash-es'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs/Observable'

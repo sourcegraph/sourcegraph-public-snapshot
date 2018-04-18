@@ -1,6 +1,5 @@
-import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
-import isEmpty from 'lodash/isEmpty'
-import unescape from 'lodash/unescape'
+import { highlightBlock } from 'highlight.js/lib/highlight'
+import { isEmpty, unescape } from 'lodash-es'
 import marked from 'marked'
 import { Hover, MarkedString } from 'vscode-languageserver-types'
 import { urlWithoutSearchOptions } from '../../search'
@@ -8,13 +7,6 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
 import { toAbsoluteBlobURL } from '../../util/url'
 import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from './../index'
-
-registerLanguage('go', require('highlight.js/lib/languages/go'))
-registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
-registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))
-registerLanguage('java', require('highlight.js/lib/languages/java'))
-registerLanguage('python', require('highlight.js/lib/languages/python'))
-registerLanguage('php', require('highlight.js/lib/languages/php'))
 
 const closeIconSVG =
     // tslint:disable-next-line:max-line-length

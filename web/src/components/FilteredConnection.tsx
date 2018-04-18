@@ -1,6 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
-import upperFirst from 'lodash/upperFirst'
+import { upperFirst } from 'lodash-es'
 import * as React from 'react'
 import { Observable } from 'rxjs/Observable'
 import { combineLatest } from 'rxjs/observable/combineLatest'

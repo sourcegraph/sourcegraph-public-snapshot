@@ -1,7 +1,7 @@
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
 import ShareIcon from '@sourcegraph/icons/lib/Share'
-import upperFirst from 'lodash/upperFirst'
+import { upperFirst } from 'lodash-es'
 import * as React from 'react'
 import { merge } from 'rxjs/observable/merge'
 import { of } from 'rxjs/observable/of'

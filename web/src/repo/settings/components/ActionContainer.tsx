@@ -1,4 +1,4 @@
-import upperFirst from 'lodash/upperFirst'
+import { upperFirst } from 'lodash-es'
 import * as React from 'react'
 
 export const BaseActionContainer: React.SFC<{

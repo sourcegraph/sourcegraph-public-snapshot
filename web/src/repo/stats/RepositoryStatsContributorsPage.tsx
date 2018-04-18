@@ -1,5 +1,5 @@
 import escapeRegexp from 'escape-string-regexp'
-import isEqual from 'lodash/isEqual'
+import { isEqual } from 'lodash-es'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
