@@ -328,7 +328,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         <button type="submit" className="btn btn-primary mr-2 mt-2">
                                             Update
                                         </button>
-                                        <button type="reset" className="btn btn-outline mt-2" onClick={this.onCancel}>
+                                        <button type="reset" className="btn btn-secondary mt-2" onClick={this.onCancel}>
                                             Cancel
                                         </button>
                                     </div>

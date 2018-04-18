@@ -50,7 +50,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                     </div>
                     <div>
                         <button
-                            className="btn btn-sm btn-outline-danger"
+                            className="btn btn-sm btn-danger"
                             onClick={this.remove}
                             disabled={this.state.loading}
                             data-tooltip="Remove email address"

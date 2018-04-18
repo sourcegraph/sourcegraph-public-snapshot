@@ -69,7 +69,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                             )}
                         </Link>{' '}
                         <button
-                            className="btn btn-sm btn-outline-danger"
+                            className="btn btn-sm btn-danger"
                             onClick={this.deleteOrg}
                             disabled={this.state.loading}
                             data-tooltip="Delete organization"

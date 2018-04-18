@@ -149,7 +149,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                 {!this.props.showSHAAndParentsRow && (
                                     <div className="btn-group btn-group-sm mr-2" role="group">
                                         <Link
-                                            className="btn btn-outline-primary"
+                                            className="btn btn-secondary"
                                             to={this.props.node.url}
                                             data-tooltip="View this commit"
                                         >
@@ -157,7 +157,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         </Link>
                                         <button
                                             type="button"
-                                            className="btn btn-outline-primary"
+                                            className="btn btn-secondary"
                                             onClick={this.copyToClipboard}
                                             data-tooltip={
                                                 this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
@@ -168,7 +168,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                     </div>
                                 )}
                                 <Link
-                                    className="btn btn-outline-primary btn-sm"
+                                    className="btn btn-secondary btn-sm"
                                     to={toRepoURL({ repoPath: this.props.repoName, rev: this.props.node.oid })}
                                     data-tooltip="View files at this commit"
                                 >

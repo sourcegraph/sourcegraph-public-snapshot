@@ -84,7 +84,7 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
                         )}
                         {stateDiffers &&
                             !specIsEmpty && (
-                                <button type="reset" className="btn btn-outline mb-2" onClick={this.onCancel}>
+                                <button type="reset" className="btn btn-secondary mb-2" onClick={this.onCancel}>
                                     Cancel
                                 </button>
                             )}

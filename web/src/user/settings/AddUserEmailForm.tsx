@@ -81,6 +81,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                         spellCheck={false}
                         autoCapitalize="off"
                         readOnly={loading}
+                        placeholder="Email"
                     />{' '}
                     <button type="submit" className="btn btn-primary" disabled={loading}>
                         {loading ? 'Adding...' : 'Add'}

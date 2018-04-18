@@ -149,7 +149,7 @@ class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, AccessTo
                         </small>
                     </div>
                     <div>
-                        <button className="btn btn-outline-danger" onClick={this.deleteAccessToken} disabled={loading}>
+                        <button className="btn btn-danger" onClick={this.deleteAccessToken} disabled={loading}>
                             Delete
                         </button>
                         {isErrorLike(this.state.deletionOrError) && (

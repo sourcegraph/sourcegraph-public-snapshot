@@ -86,26 +86,26 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
 
                 <h3>Browser extension</h3>
                 <p>
-                    <a
-                        className={`btn btn-primary mr-2 ${
-                            this.state.browserExtensionInstalled && IS_CHROME ? 'disabled' : ''
-                        }`}
-                        target="_blank"
-                        href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
-                        onClick={this.installChromeExtension}
-                    >
-                        Install Chrome extension
-                    </a>
-                    <a
-                        className={`btn btn-primary ${
-                            this.state.browserExtensionInstalled && IS_FIREFOX ? 'disabled' : ''
-                        }`}
-                        target="_blank"
-                        href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-addon-for-github/"
-                        onClick={this.installFirefoxExtension}
-                    >
-                        Install Firefox add-on
-                    </a>
+                    {IS_CHROME && (
+                        <a
+                            className={`btn btn-primary mr-2 ${this.state.browserExtensionInstalled ? 'disabled' : ''}`}
+                            target="_blank"
+                            href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
+                            onClick={this.installChromeExtension}
+                        >
+                            Install Chrome extension
+                        </a>
+                    )}
+                    {IS_FIREFOX && (
+                        <a
+                            className={`btn btn-primary ${this.state.browserExtensionInstalled ? 'disabled' : ''}`}
+                            target="_blank"
+                            href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-addon-for-github/"
+                            onClick={this.installFirefoxExtension}
+                        >
+                            Install Firefox add-on
+                        </a>
+                    )}
                 </p>
                 {!this.state.info.hasCodeIntelligence && (
                     <div className="alert alert-warning">
@@ -123,8 +123,8 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                 <h3 className="mt-2">Browser address bar search shortcut</h3>
                 <ul className="list ml-3">
                     <li>
-                        <strong>With the Chrome extension installed:</strong> Type <kbd>src &lt;SPACE&gt;</kbd> in the
-                        address bar to search Sourcegraph.
+                        <strong>With the Chrome extension installed:</strong> Type <code>src</code> <kbd>SPACE</kbd> in
+                        the address bar to search Sourcegraph.
                     </li>
                     <li>
                         <strong>Other browsers:</strong> Add Sourcegraph as a search engine using the URL{' '}

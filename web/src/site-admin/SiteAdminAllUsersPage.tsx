@@ -131,7 +131,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             ))}{' '}
                         {this.props.node.id !== this.props.currentUser.id && (
                             <button
-                                className="btn btn-sm btn-outline-danger"
+                                className="btn btn-sm btn-danger"
                                 onClick={this.deleteUser}
                                 disabled={this.state.loading}
                                 data-tooltip="Delete user"
