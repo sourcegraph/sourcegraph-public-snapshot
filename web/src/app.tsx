@@ -3,6 +3,15 @@
 import { URL, URLSearchParams } from 'whatwg-url'
 Object.assign(window, { URL, URLSearchParams })
 
+// Load only a subset of the highlight.js languages
+import { registerLanguage } from 'highlight.js/lib/highlight'
+registerLanguage('go', require('highlight.js/lib/languages/go'))
+registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
+registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))
+registerLanguage('java', require('highlight.js/lib/languages/java'))
+registerLanguage('python', require('highlight.js/lib/languages/python'))
+registerLanguage('php', require('highlight.js/lib/languages/php'))
+
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'

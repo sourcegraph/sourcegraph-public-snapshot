@@ -1,6 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
-import { highlight } from 'highlight.js'
+import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
 import marked from 'marked'
 import * as React from 'react'

@@ -2,6 +2,7 @@
   "extends": ["@sourcegraph/tslint-config"],
   "rules": {
     "await-promise": false,
+    "import-blacklist": [true, "highlight.js"],
     "jsx-ban-elements": [
       true,
       [
