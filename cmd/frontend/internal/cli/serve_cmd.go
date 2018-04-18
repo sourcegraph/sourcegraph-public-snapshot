@@ -300,7 +300,11 @@ func Main() error {
 		if l != nil {
 			l = tls.NewListener(l, tlsConf)
 			log15.Debug("HTTPS running", "on", l.Addr())
-			srv.GoServe(l, h)
+			srv.GoServe(l, &http.Server{
+				Handler:      h,
+				ReadTimeout:  75 * time.Second,
+				WriteTimeout: 60 * time.Second,
+			})
 		}
 	}
 
@@ -319,7 +323,11 @@ func Main() error {
 		}
 
 		log15.Debug("HTTP running", "on", httpAddr)
-		srv.GoServe(l, h)
+		srv.GoServe(l, &http.Server{
+			Handler:      h,
+			ReadTimeout:  75 * time.Second,
+			WriteTimeout: 60 * time.Second,
+		})
 	}
 
 	if httpAddrInternal != "" {
@@ -329,7 +337,12 @@ func Main() error {
 		}
 
 		log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
-		srv.GoServe(l, internalHandler)
+		srv.GoServe(l, &http.Server{
+			Handler:     h,
+			ReadTimeout: 75 * time.Second,
+			// Higher since for internal RPCs which can have large responses (eg git archive)
+			WriteTimeout: 10 * time.Minute,
+		})
 	}
 
 	go func() {
@@ -368,10 +381,10 @@ func (s *httpServers) SetWrapper(w func(http.Handler) http.Handler) {
 	s.mu.Unlock()
 }
 
-// GoServe creates an http.Server for h on l in a new goroutine. If serve
-// returns an error other than http.ErrServerClosed it will fatal.
-func (s *httpServers) GoServe(l net.Listener, h http.Handler) {
-	srv := s.newServer(h)
+// GoServe serves srv in a new goroutine. If serve returns an error other than
+// http.ErrServerClosed it will fatal.
+func (s *httpServers) GoServe(l net.Listener, srv *http.Server) {
+	s.addServer(srv)
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
@@ -381,16 +394,11 @@ func (s *httpServers) GoServe(l net.Listener, h http.Handler) {
 	}()
 }
 
-func (s *httpServers) newServer(h http.Handler) *http.Server {
+func (s *httpServers) addServer(srv *http.Server) *http.Server {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.wrapper != nil {
-		h = s.wrapper(h)
-	}
-	srv := &http.Server{
-		Handler:      h,
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 60 * time.Second,
+		srv.Handler = s.wrapper(srv.Handler)
 	}
 	s.servers = append(s.servers, srv)
 	return srv
