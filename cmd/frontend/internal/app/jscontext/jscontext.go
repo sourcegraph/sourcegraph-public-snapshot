@@ -14,7 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
@@ -79,7 +79,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = globals.AppURL.String()
 	sessionCookie := session.SessionCookie(req)
-	sessionID := httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
+	sessionID := httpapi.AuthorizationHeaderWithSessionCookie(sessionCookie)
 	if sessionCookie != "" {
 		headers["Authorization"] = sessionID
 	}

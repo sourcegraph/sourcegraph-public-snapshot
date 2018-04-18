@@ -14,7 +14,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -53,7 +52,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	// would open it up to CSRF attacks.
 	var h http.Handler = m
 	h = session.CookieMiddlewareIfHeader(h, "X-Requested-By")
-	h = httpapiauth.AuthorizationMiddleware(h)
+	h = authorizationMiddleware(h)
 
 	return h
 }

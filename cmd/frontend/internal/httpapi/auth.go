@@ -1,4 +1,4 @@
-package auth
+package httpapi
 
 import (
 	"net/http"
@@ -11,8 +11,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-// AuthorizationMiddleware authenticates the user based on the "Authorization" header.
-func AuthorizationMiddleware(next http.Handler) http.Handler {
+// authorizationMiddleware authenticates the user based on the "Authorization" header.
+func authorizationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
 

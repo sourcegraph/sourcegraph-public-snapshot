@@ -8,7 +8,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
@@ -65,11 +64,7 @@ func NewHandler() http.Handler {
 	})))
 	addDebugHandlers(r.Get(router.Debug).Subrouter())
 
-	var h http.Handler = m
-	h = session.CookieMiddleware(h)
-	h = httpapiauth.AuthorizationMiddleware(h)
-
-	return h
+	return session.CookieMiddleware(m)
 }
 
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
