@@ -136,6 +136,7 @@ func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor,
 func DeleteSession(w http.ResponseWriter, r *http.Request) {
 	session, err := sessionStore.Get(r, "sg-session")
 	if err != nil {
+		// See the other "conf.AuthSAML() == nil" line below for why it's OK to skip logging when using SAML.
 		if conf.AuthSAML() == nil {
 			log15.Error("error getting session", "error", err)
 		}
@@ -214,6 +215,9 @@ func SessionHeaderToCookieMiddleware(h http.Handler) http.Handler {
 func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
 	session, err := sessionStore.Get(r, "sg-session")
 	if err != nil {
+		// Ignore this error (and skip logging) when using SAML because SAML's cookies have the same
+		// name (sg-session) but are actually SAML-specific JSON Web Tokens (JWTs) that are not
+		// validated using our own session store.
 		if conf.AuthSAML() == nil {
 			log15.Error("error getting session", "error", err)
 		}
