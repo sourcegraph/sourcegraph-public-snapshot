@@ -66,8 +66,6 @@ var (
 
 	httpToHttpsRedirect = conf.GetTODO().HttpToHttpsRedirect
 
-	biLoggerAddr = env.Get("BI_LOGGER", "", "address of business intelligence logger")
-
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
@@ -189,8 +187,6 @@ func Main() error {
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
 	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(), globals.AppURL.Scheme == "https"))
 	assets.Mount(sm)
-
-	handleBiLogger(sm)
 
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
 	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
