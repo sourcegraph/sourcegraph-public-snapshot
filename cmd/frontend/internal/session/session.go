@@ -150,6 +150,7 @@ func DeleteSession(w http.ResponseWriter, r *http.Request) {
 // header for a session cookie and uses that if it exists.
 func CookieOrSessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Cookie, Authorization")
 		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 		if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
 			next.ServeHTTP(w, r.WithContext(AuthenticateBySession(r.Context(), parts[1])))
@@ -163,6 +164,7 @@ func CookieOrSessionMiddleware(next http.Handler) http.Handler {
 // future HTTP request via cookie.
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Cookie")
 		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
 	})
 }
@@ -173,8 +175,10 @@ func CookieMiddleware(next http.Handler) http.Handler {
 // name. This protects against CSRF (see
 // https://security.stackexchange.com/questions/23371/csrf-protection-with-custom-headers-and-without-validating-token).
 func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler {
+	headerName = textproto.CanonicalMIMEHeaderKey(headerName)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := r.Header[textproto.CanonicalMIMEHeaderKey(headerName)]; ok {
+		w.Header().Add("Vary", "Cookie, Authorization, "+headerName)
+		if _, ok := r.Header[headerName]; ok {
 			r = r.WithContext(authenticateByCookie(r, w))
 		}
 		next.ServeHTTP(w, r)
@@ -198,6 +202,7 @@ func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Co
 // to the next handler in the chain.
 func SessionHeaderToCookieMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Authorization")
 		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 		if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
 			r.AddCookie(&http.Cookie{Name: "sg-session", Value: parts[1]})

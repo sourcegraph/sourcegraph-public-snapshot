@@ -14,7 +14,7 @@ import (
 // AuthorizationMiddleware authenticates the user based on the "Authorization" header.
 func AuthorizationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Vary", "Accept, Authorization, Cookie")
+		w.Header().Add("Vary", "Authorization")
 
 		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 		if len(parts) != 2 {
