@@ -84,7 +84,7 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	samlSP.CookieName = "sg-session"
 
 	idpID := samlSP.ServiceProvider.IDPMetadata.EntityID
-	authedHandler := session.SessionHeaderToCookieMiddleware(samlSP.RequireAccount(samlToActorMiddleware(handler, idpID)))
+	authedHandler := samlSP.RequireAccount(samlToActorMiddleware(handler, idpID))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Handle SAML ACS and metadata endpoints
 		if strings.HasPrefix(r.URL.Path, authURLPrefix+"/saml/") {

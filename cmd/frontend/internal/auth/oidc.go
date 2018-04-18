@@ -66,7 +66,7 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 		return nil, err
 	}
 
-	return session.CookieOrSessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return session.CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if oidcProvider.OverrideToken != "" && r.Header.Get("X-Oidc-Override") == oidcProvider.OverrideToken {
 			if err := startAnonUserSession(createCtx, w, r); err != nil {
 				log15.Error("Error initializing anonymous user", "error", err)

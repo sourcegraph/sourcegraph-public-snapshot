@@ -6,7 +6,6 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -23,8 +22,6 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 		}
 
 		switch strings.ToLower(parts[0]) {
-		case "session":
-			r = r.WithContext(session.AuthenticateBySession(r.Context(), parts[1]))
 		case "token":
 			if conf.AccessTokensEnabled() {
 				userID, err := db.AccessTokens.Lookup(r.Context(), parts[1])
@@ -39,14 +36,4 @@ func authorizationMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-// AuthorizationHeaderWithSessionCookie returns a value for the "Authorization" header that can be
-// used to authenticate the current user. This header can be sent to the client, but is a bit more
-// expensive to verify.
-func AuthorizationHeaderWithSessionCookie(sessionCookie string) string {
-	if sessionCookie == "" {
-		return ""
-	}
-	return "session " + sessionCookie
 }

@@ -14,9 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -78,11 +76,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = globals.AppURL.String()
-	sessionCookie := session.SessionCookie(req)
-	sessionID := httpapi.AuthorizationHeaderWithSessionCookie(sessionCookie)
-	if sessionCookie != "" {
-		headers["Authorization"] = sessionID
-	}
+	headers["X-Requested-By"] = "Sourcegraph" // required for httpapi to use cookie auth
 
 	// -- currently we don't associate XHR calls with the parent page's span --
 	// if span := opentracing.SpanFromContext(req.Context()); span != nil {

@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"net/http/httptest"
 	"net/textproto"
-	"strings"
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -147,20 +145,6 @@ func DeleteSession(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// CookieOrSessionMiddleware is like CookieMiddleware, but also inspects the HTTP Authorization
-// header for a session cookie and uses that if it exists.
-func CookieOrSessionMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Vary", "Cookie, Authorization")
-		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-		if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
-			next.ServeHTTP(w, r.WithContext(AuthenticateBySession(r.Context(), parts[1])))
-		} else {
-			next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
-		}
-	})
-}
-
 // CookieMiddleware is an http.Handler middleware that authenticates
 // future HTTP request via cookie.
 func CookieMiddleware(next http.Handler) http.Handler {
@@ -183,32 +167,6 @@ func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler
 			r = r.WithContext(authenticateByCookie(r, w))
 		}
 		next.ServeHTTP(w, r)
-	})
-}
-
-// AuthenticateBySession authenticates the context with the given session cookie.
-func AuthenticateBySession(ctx context.Context, sessionCookie string) context.Context {
-	fakeRequest := &http.Request{Header: http.Header{"Cookie": []string{"sg-session=" + sessionCookie}}}
-
-	// Note: we pass a httptest.NewRecorder() in this case, because we want to count editor activity
-	// toward renewing the session. The behavior of the Redis session store
-	// (https://sourcegraph.com/github.com/boj/redistore@4562487a4bee9a7c272b72bfaeda4917d0a47ab9/-/blob/redistore.go#L253-275)
-	// is such that only the session ID is stored in the cookie, so the same cookie value will work
-	// for the updated session.
-	return authenticateByCookie(fakeRequest.WithContext(ctx), httptest.NewRecorder())
-}
-
-// SessionHeaderToCookieMiddleware checks the request for a HTTP Authorization header that contains a
-// session value. If it exists, then it sets the session cookie in the request before forwarding
-// to the next handler in the chain.
-func SessionHeaderToCookieMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Vary", "Authorization")
-		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-		if len(parts) == 2 && strings.ToLower(parts[0]) == "session" {
-			r.AddCookie(&http.Cookie{Name: "sg-session", Value: parts[1]})
-		}
-		h.ServeHTTP(w, r)
 	})
 }
 
@@ -257,13 +215,4 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 	}
 
 	return r.Context()
-}
-
-// SessionCookie returns the session cookie from the header of the given request.
-func SessionCookie(r *http.Request) string {
-	c, err := r.Cookie("sg-session")
-	if err != nil {
-		return ""
-	}
-	return c.Value
 }

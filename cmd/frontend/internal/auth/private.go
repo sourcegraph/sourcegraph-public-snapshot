@@ -17,7 +17,7 @@ import (
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits.
 func newUserRequiredAuthzHandler(handler http.Handler) http.Handler {
-	return session.CookieOrSessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return session.CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
 
 		// If an anonymous user tries to access an endpoint that requires authentication, prevent access and

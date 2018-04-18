@@ -44,8 +44,8 @@ func TestStartDeleteSession(t *testing.T) {
 	if setCookie.Path != "" {
 		t.Fatalf("expected cookie path to be \"\", was %q", setCookie.Path)
 	}
-	if setCookie.Value != SessionCookie(authedReq) {
-		t.Errorf("SessionCookie value did not match actual session cookie value: %v != %v", setCookie.Value, SessionCookie(authedReq))
+	if setCookie.Value != sessionCookie(authedReq) {
+		t.Errorf("sessionCookie value did not match actual session cookie value: %v != %v", setCookie.Value, sessionCookie(authedReq))
 	}
 
 	// Check that actor exists in the session
@@ -180,79 +180,11 @@ func TestCookieMiddleware(t *testing.T) {
 	}
 }
 
-func TestCookieOrSessionMiddleware(t *testing.T) {
-	cleanup := ResetMockSessionStore(t)
-	defer cleanup()
-
-	actors := []*actor.Actor{{UID: 123}, {UID: 456}}
-
-	// Start new sessions for all actors and record authentication info
-	cookieAuthedReqs := make([]*http.Request, len(actors))
-	for i, actr := range actors {
-		w := httptest.NewRecorder()
-		if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour); err != nil {
-			t.Fatal(err)
-		}
-
-		// Test cases for when session exists
-		cookieAuthedReqs[i] = httptest.NewRequest("GET", "/", nil)
-		for _, cookie := range w.Result().Cookies() {
-			if cookie.Expires.After(time.Now()) || cookie.MaxAge > 0 {
-				cookieAuthedReqs[i].AddCookie(cookie)
-			}
-		}
+// sessionCookie returns the session cookie from the header of the given request.
+func sessionCookie(r *http.Request) string {
+	c, err := r.Cookie("sg-session")
+	if err != nil {
+		return ""
 	}
-
-	headerAuthedReqs := make([]*http.Request, len(cookieAuthedReqs))
-	for i, cookieAuthedReq := range cookieAuthedReqs {
-		headerAuthedReqs[i] = httptest.NewRequest("GET", "/", nil)
-		cookie, err := cookieAuthedReq.Cookie("sg-session")
-		if err != nil {
-			t.Fatal(err)
-		}
-		headerAuthedReqs[i].Header.Set("Authorization", "session "+cookie.Value)
-	}
-
-	testcases := []struct {
-		req      *http.Request
-		expActor *actor.Actor
-	}{{
-		req:      httptest.NewRequest("GET", "/", nil),
-		expActor: &actor.Actor{},
-	}, {
-		req:      cookieAuthedReqs[0],
-		expActor: actors[0],
-	}, {
-		req:      cookieAuthedReqs[1],
-		expActor: actors[1],
-	}, {
-		req:      headerAuthedReqs[0],
-		expActor: actors[0],
-	}, {
-		req:      headerAuthedReqs[1],
-		expActor: actors[1],
-	}}
-	for _, testcase := range testcases {
-		CookieOrSessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotActor := actor.FromContext(r.Context())
-			if !reflect.DeepEqual(testcase.expActor, gotActor) {
-				t.Errorf("on authenticated request, got actor %+v, expected %+v", gotActor, testcase.expActor)
-			}
-		})).ServeHTTP(httptest.NewRecorder(), testcase.req)
-	}
-}
-
-func TestSessionToCookieMiddleware(t *testing.T) {
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
-	r.Header.Set("Authorization", "session asdfasdf")
-	SessionHeaderToCookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("sg-session")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if cookie.Value != "asdfasdf" {
-			t.Errorf("expected sg-session cookie with value %q but got %q", "asdfasdf", cookie.Value)
-		}
-	})).ServeHTTP(w, r)
+	return c.Value
 }
