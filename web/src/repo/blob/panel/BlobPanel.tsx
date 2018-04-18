@@ -139,7 +139,11 @@ export class BlobPanel extends React.PureComponent<Props, State> {
             subjectChanges
                 .pipe(
                     switchMap((subject: AbsoluteRepoFile & { position?: Position }) => {
-                        if (!subject.position) {
+                        if (
+                            !subject.position ||
+                            subject.position.character ===
+                                0 /* 1-indexed, so this means only line (not position) is selected */
+                        ) {
                             return [{ hoverOrError: undefined }]
                         }
                         type PartialStateUpdate = Pick<State, 'hoverOrError'>
