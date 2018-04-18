@@ -5,12 +5,10 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
+import { concat } from 'rxjs/observable/concat'
 import { catchError } from 'rxjs/operators/catchError'
+import { concatMap } from 'rxjs/operators/concatMap'
 import { map } from 'rxjs/operators/map'
-import { mergeMap } from 'rxjs/operators/mergeMap'
-import { startWith } from 'rxjs/operators/startWith'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
@@ -54,42 +52,40 @@ interface State {
     /** The contents of the note input field. */
     note: string
 
-    /** Undefined means loading, null means done or not yet started, otherwise error. */
-    creationOrError?: null | ErrorLike
+    creationOrError?: 'loading' | GQL.ICreateAccessTokenResult | ErrorLike
 }
 
 /**
  * A page with a form to create an access token for a user.
  */
 export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props, State> {
-    public state: State = { note: '', creationOrError: null }
+    public state: State = { note: '' }
 
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        type Update = (prevState: State) => State
-
-        // Invite clicks.
         this.subscriptions.add(
-            merge(this.submits)
+            this.submits
                 .pipe(
                     tap(e => e.preventDefault()),
-                    mergeMap(() =>
-                        createAccessToken(this.props.user.id, this.state.note).pipe(
-                            tap(result => {
-                                // Go back to access tokens list page and display the token secret value.
-                                this.props.onDidCreateAccessToken(result)
-                                this.props.history.push(`${this.props.match.url}/tokens`)
-                            }),
-                            mergeMap(result => of((state: State) => ({ creationOrError: null } as Partial<State>))),
-                            startWith((state: State) => ({ creationOrError: undefined } as Partial<State>)),
-                            catchError(err => [(state: State) => ({ creationOrError: asError(err) } as Partial<State>)])
+                    concatMap(() =>
+                        concat(
+                            [{ creationOrError: 'loading' }],
+                            createAccessToken(this.props.user.id, this.state.note).pipe(
+                                tap(result => {
+                                    // Go back to access tokens list page and display the token secret value.
+                                    this.props.onDidCreateAccessToken(result)
+                                    this.props.history.push(`${this.props.match.url}/tokens`)
+                                }),
+                                map(result => ({ creationOrError: result })),
+                                catchError(error => [{ creationOrError: asError(error) }])
+                            )
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate as Update), err => console.error(err))
+                .subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
         )
 
         this.componentUpdates.next(this.props)
@@ -104,8 +100,6 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
     }
 
     public render(): JSX.Element | null {
-        const loading = this.state.creationOrError === undefined
-
         const siteAdminViewingOtherUser =
             this.props.authenticatedUser && this.props.authenticatedUser.id !== this.props.user.id
 
@@ -120,9 +114,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                 )}
                 <Form onSubmit={this.onSubmit}>
                     <div className="form-group">
-                        <label className="font-weight-bold" htmlFor="user-settings-create-access-token-page__note">
-                            Token description
-                        </label>
+                        <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
                         <input
                             type="text"
                             className="form-control"
@@ -130,13 +122,12 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                             onChange={this.onNoteChange}
                             required={true}
                             autoFocus={true}
+                            placeholder="Description"
                         />
                         <small className="form-help text-muted">What's this token for?</small>
                     </div>
                     <div className="form-group">
-                        <label className="font-weight-bold" htmlFor="user-settings-create-access-token-page__note">
-                            Token scope
-                        </label>
+                        <label htmlFor="user-settings-create-access-token-page__note">Token scope</label>
                         <div className="form-check">
                             <input
                                 className="form-check-input"
@@ -146,21 +137,26 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                                 disabled={true}
                             />
                             <label className="form-check-label" htmlFor="user-settings-create-access-token-page__scope">
-                                <strong>all</strong>{' '}
-                                <small className="form-help text-muted">
-                                    — Full control of all resources accessible to the user account
-                                </small>
+                                <strong>all</strong> — Full control of all resources accessible to the user account
                             </label>
                         </div>
                         <small className="form-help text-muted">
                             Tokens with limited scopes are not yet supported.
                         </small>
                     </div>
-                    <button type="submit" disabled={loading} className="btn btn-success">
-                        {loading ? <LoaderIcon className="icon-inline" /> : <AddIcon className="icon-inline" />}{' '}
+                    <button
+                        type="submit"
+                        disabled={this.state.creationOrError === 'loading'}
+                        className="btn btn-success"
+                    >
+                        {this.state.creationOrError === 'loading' ? (
+                            <LoaderIcon className="icon-inline" />
+                        ) : (
+                            <AddIcon className="icon-inline" />
+                        )}{' '}
                         Generate token
                     </button>
-                    <Link className="btn btn-link" to={`${this.props.match.url}/tokens`}>
+                    <Link className="btn btn-secondary ml-1" to={`${this.props.match.url}/tokens`}>
                         Cancel
                     </Link>
                 </Form>
