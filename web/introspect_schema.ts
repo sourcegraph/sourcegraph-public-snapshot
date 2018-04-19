@@ -9,13 +9,21 @@ import { readFile, writeFile } from 'mz/fs'
 import { format, resolveConfig } from 'prettier'
 Object.assign(global, require('abort-controller'))
 
+const onTerminatingSignal = (handler: () => void): void => {
+    for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP'] as NodeJS.Signals[]) {
+        process.on(signal, handler)
+    }
+}
+
 const GRAPHQL_SCHEMA_PATH = __dirname + '/../cmd/frontend/internal/graphqlbackend/schema.graphql'
 
 async function main(): Promise<void> {
     let abortController = new AbortController()
+    onTerminatingSignal(() => abortController.abort())
     await generate(abortController.signal)
     if (process.argv.includes('--watch')) {
         const watcher = watch(GRAPHQL_SCHEMA_PATH)
+        onTerminatingSignal(() => watcher.close())
         watcher.on(
             'change',
             debounce(
@@ -72,5 +80,5 @@ async function generate(signal: AbortSignal): Promise<void> {
 
 main().catch(err => {
     console.error(err)
-    process.exit(1)
+    process.exitCode = 1
 })
