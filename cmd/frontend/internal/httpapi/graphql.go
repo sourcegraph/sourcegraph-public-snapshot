@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/neelance/graphql-go/relay"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 )

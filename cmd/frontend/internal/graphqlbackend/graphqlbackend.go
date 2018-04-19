@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"time"
 
-	graphql "github.com/neelance/graphql-go"
-	gqlerrors "github.com/neelance/graphql-go/errors"
-	"github.com/neelance/graphql-go/relay"
-	"github.com/neelance/graphql-go/trace"
+	graphql "github.com/graph-gophers/graphql-go"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/graph-gophers/graphql-go/trace"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"

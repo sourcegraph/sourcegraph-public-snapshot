@@ -9,8 +9,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
-	graphql "github.com/neelance/graphql-go"
-	"github.com/neelance/graphql-go/relay"
+	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 )
 
 func gitCommitByID(ctx context.Context, id graphql.ID) (*gitCommitResolver, error) {

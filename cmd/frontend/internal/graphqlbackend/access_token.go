@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	graphql "github.com/neelance/graphql-go"
-	"github.com/neelance/graphql-go/relay"
+	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )

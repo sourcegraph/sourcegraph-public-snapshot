@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	graphql "github.com/neelance/graphql-go"
-	"github.com/neelance/graphql-go/relay"
+	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"

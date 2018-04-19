@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"testing"
 
-	"github.com/neelance/graphql-go/gqltesting"
+	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )

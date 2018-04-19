@@ -11,8 +11,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	graphql "github.com/neelance/graphql-go"
-	"github.com/neelance/graphql-go/relay"
+	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/neelance/parallel"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"

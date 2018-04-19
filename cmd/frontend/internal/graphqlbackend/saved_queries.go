@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	graphql "github.com/neelance/graphql-go"
-	"github.com/neelance/graphql-go/relay"
+	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/jsonx"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"

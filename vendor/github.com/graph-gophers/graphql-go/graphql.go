@@ -24,10 +24,11 @@ import (
 // resolver, then the schema can not be executed, but it may be inspected (e.g. with ToJSON).
 func ParseSchema(schemaString string, resolver interface{}, opts ...SchemaOpt) (*Schema, error) {
 	s := &Schema{
-		schema:         schema.New(),
-		maxParallelism: 10,
-		tracer:         trace.OpenTracingTracer{},
-		logger:         &log.DefaultLogger{},
+		schema:           schema.New(),
+		maxParallelism:   10,
+		tracer:           trace.OpenTracingTracer{},
+		validationTracer: trace.NoopValidationTracer{},
+		logger:           &log.DefaultLogger{},
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -62,13 +63,22 @@ type Schema struct {
 	schema *schema.Schema
 	res    *resolvable.Schema
 
-	maxParallelism int
-	tracer         trace.Tracer
-	logger         log.Logger
+	maxDepth         int
+	maxParallelism   int
+	tracer           trace.Tracer
+	validationTracer trace.ValidationTracer
+	logger           log.Logger
 }
 
 // SchemaOpt is an option to pass to ParseSchema or MustParseSchema.
 type SchemaOpt func(*Schema)
+
+// MaxDepth specifies the maximum field nesting depth in a query. The default is 0 which disables max depth checking.
+func MaxDepth(n int) SchemaOpt {
+	return func(s *Schema) {
+		s.maxDepth = n
+	}
+}
 
 // MaxParallelism specifies the maximum number of resolvers per request allowed to run in parallel. The default is 10.
 func MaxParallelism(n int) SchemaOpt {
@@ -81,6 +91,13 @@ func MaxParallelism(n int) SchemaOpt {
 func Tracer(tracer trace.Tracer) SchemaOpt {
 	return func(s *Schema) {
 		s.tracer = tracer
+	}
+}
+
+// ValidationTracer is used to trace validation errors. It defaults to trace.NoopValidationTracer.
+func ValidationTracer(tracer trace.ValidationTracer) SchemaOpt {
+	return func(s *Schema) {
+		s.validationTracer = tracer
 	}
 }
 
@@ -106,7 +123,7 @@ func (s *Schema) Validate(queryString string) []*errors.QueryError {
 		return []*errors.QueryError{qErr}
 	}
 
-	return validation.Validate(s.schema, doc)
+	return validation.Validate(s.schema, doc, s.maxDepth)
 }
 
 // Exec executes the given query with the schema's resolver. It panics if the schema was created
@@ -125,7 +142,9 @@ func (s *Schema) exec(ctx context.Context, queryString string, operationName str
 		return &Response{Errors: []*errors.QueryError{qErr}}
 	}
 
-	errs := validation.Validate(s.schema, doc)
+	validationFinish := s.validationTracer.TraceValidation()
+	errs := validation.Validate(s.schema, doc, s.maxDepth)
+	validationFinish(errs)
 	if len(errs) != 0 {
 		return &Response{Errors: errs}
 	}

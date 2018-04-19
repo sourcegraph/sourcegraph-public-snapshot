@@ -31,6 +31,7 @@ type context struct {
 	usedVars         map[*query.Operation]varSet
 	fieldMap         map[*query.Field]fieldInfo
 	overlapValidated map[selectionPair]struct{}
+	maxDepth         int
 }
 
 func (c *context) addErr(loc errors.Location, rule string, format string, a ...interface{}) {
@@ -50,21 +51,32 @@ type opContext struct {
 	ops []*query.Operation
 }
 
-func Validate(s *schema.Schema, doc *query.Document) []*errors.QueryError {
-	c := &context{
+func newContext(s *schema.Schema, doc *query.Document, maxDepth int) *context {
+	return &context{
 		schema:           s,
 		doc:              doc,
 		opErrs:           make(map[*query.Operation][]*errors.QueryError),
 		usedVars:         make(map[*query.Operation]varSet),
 		fieldMap:         make(map[*query.Field]fieldInfo),
 		overlapValidated: make(map[selectionPair]struct{}),
+		maxDepth:         maxDepth,
 	}
+}
+
+func Validate(s *schema.Schema, doc *query.Document, maxDepth int) []*errors.QueryError {
+	c := newContext(s, doc, maxDepth)
 
 	opNames := make(nameSet)
 	fragUsedBy := make(map[*query.FragmentDecl][]*query.Operation)
 	for _, op := range doc.Operations {
 		c.usedVars[op] = make(varSet)
 		opc := &opContext{c, []*query.Operation{op}}
+
+		// Check if max depth is exceeded, if it's set. If max depth is exceeded,
+		// don't continue to validate the document and exit early.
+		if validateMaxDepth(opc, op.Selections, 1) {
+			return c.errs
+		}
 
 		if op.Name.Name == "" && len(doc.Operations) != 1 {
 			c.addErr(op.Loc, "LoneAnonymousOperation", "This anonymous operation must be the only defined operation.")
@@ -164,6 +176,45 @@ func Validate(s *schema.Schema, doc *query.Document) []*errors.QueryError {
 	}
 
 	return c.errs
+}
+
+// validates the query doesn't go deeper than maxDepth (if set). Returns whether
+// or not query validated max depth to avoid excessive recursion.
+func validateMaxDepth(c *opContext, sels []query.Selection, depth int) bool {
+	// maxDepth checking is turned off when maxDepth is 0
+	if c.maxDepth == 0 {
+		return false
+	}
+
+	exceededMaxDepth := false
+
+	for _, sel := range sels {
+		switch sel := sel.(type) {
+		case *query.Field:
+			if depth > c.maxDepth {
+				exceededMaxDepth = true
+				c.addErr(sel.Alias.Loc, "MaxDepthExceeded", "Field %q has depth %d that exceeds max depth %d", sel.Name.Name, depth, c.maxDepth)
+				continue
+			}
+			exceededMaxDepth = exceededMaxDepth || validateMaxDepth(c, sel.Selections, depth+1)
+		case *query.InlineFragment:
+			// Depth is not checked because inline fragments resolve to other fields which are checked.
+			// Depth is not incremented because inline fragments have the same depth as neighboring fields
+			exceededMaxDepth = exceededMaxDepth || validateMaxDepth(c, sel.Selections, depth)
+		case *query.FragmentSpread:
+			// Depth is not checked because fragments resolve to other fields which are checked.
+			frag := c.doc.Fragments.Get(sel.Name.Name)
+			if frag == nil {
+				// In case of unknown fragment (invalid request), ignore max depth evaluation
+				c.addErr(sel.Loc, "MaxDepthEvaluationError", "Unknown fragment %q. Unable to evaluate depth.", sel.Name.Name)
+				continue
+			}
+			// Depth is not incremented because fragments have the same depth as surrounding fields
+			exceededMaxDepth = exceededMaxDepth || validateMaxDepth(c, frag.Selections, depth)
+		}
+	}
+
+	return exceededMaxDepth
 }
 
 func validateSelectionSet(c *opContext, sels []query.Selection, t schema.NamedType) {

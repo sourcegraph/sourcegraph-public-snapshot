@@ -209,21 +209,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/go-kit/kit"
-  packages = [
-    "log",
-    "util/conn"
-  ]
-  revision = "fadad6fffe0466b19df9efd9acde5c9a52df5fa4"
-  version = "v0.4.0"
-
-[[projects]]
-  name = "github.com/go-logfmt/logfmt"
-  packages = ["."]
-  revision = "390ab7935ee28ec6b286364bba9b4dd6410cb3d5"
-  version = "v0.3.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/go-openapi/jsonpointer"
   packages = ["."]
@@ -388,6 +373,7 @@
   packages = [
     ".",
     "errors",
+    "gqltesting",
     "internal/common",
     "internal/exec",
     "internal/exec/packer",
@@ -398,9 +384,10 @@
     "internal/validation",
     "introspection",
     "log",
+    "relay",
     "trace"
   ]
-  revision = "ce762577cbd55b7431607a3031cd4a9a1460248f"
+  revision = "9ebf33af539ab8cb832c7107bc0a978ca8dbc0de"
 
 [[projects]]
   branch = "master"
@@ -529,12 +516,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/kr/logfmt"
-  packages = ["."]
-  revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
-
-[[projects]]
-  branch = "master"
   name = "github.com/kr/text"
   packages = ["."]
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
@@ -622,18 +603,6 @@
   packages = ["."]
   revision = "1df9eeb2bb81f327b96228865c5687bc2194af3f"
   version = "1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/neelance/graphql-go"
-  packages = [
-    ".",
-    "errors",
-    "gqltesting",
-    "relay",
-    "trace"
-  ]
-  revision = "ce762577cbd55b7431607a3031cd4a9a1460248f"
 
 [[projects]]
   branch = "master"
@@ -1396,6 +1365,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d28900ab0131b770a8540726ac71a8c91f3f5bb84c605035dd7a270e5a8e23a5"
+  inputs-digest = "9b84853332d0c5029f1e9ede52a6b7f71f2fa516dd135ae6b1d6bc56ccb976ca"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -118,9 +118,8 @@ func (b *Builder) makeNonNullPacker(schemaType common.Type, reflectType reflect.
 		}, nil
 
 	case *schema.Enum:
-		want := reflect.TypeOf("")
-		if reflectType != want {
-			return nil, fmt.Errorf("wrong type, expected %s", want)
+		if reflectType.Kind() != reflect.String {
+			return nil, fmt.Errorf("wrong type, expected %s", reflect.String)
 		}
 		return &ValuePacker{
 			ValueType: reflectType,
@@ -349,6 +348,11 @@ func unmarshalInput(typ reflect.Type, input interface{}) (interface{}, error) {
 			return float64(input), nil
 		case int:
 			return float64(input), nil
+		}
+
+	case reflect.String:
+		if reflect.TypeOf(input).ConvertibleTo(typ) {
+			return reflect.ValueOf(input).Convert(typ).Interface(), nil
 		}
 	}
 
