@@ -33,7 +33,9 @@ const IndexFormatVersion = 15
 // without changing the format version
 // 2: Rank field for shards.
 // 3: Rank documents within shards
-const FeatureVersion = 3
+// 4: Dedup file bugfix
+// 5: Remove max line size limit
+const FeatureVersion = 5
 
 type indexTOC struct {
 	fileContents compoundSection

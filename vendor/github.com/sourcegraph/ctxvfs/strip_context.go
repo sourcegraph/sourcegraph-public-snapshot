@@ -39,4 +39,8 @@ func (fs *stripContext) ReadDir(path string) ([]os.FileInfo, error) {
 	return fs.fs.ReadDir(stripContextCtx, path)
 }
 
+func (fs *stripContext) RootType(path string) vfs.RootType {
+	return ""
+}
+
 func (fs *stripContext) String() string { return "stripContext(" + fs.fs.String() + ")" }

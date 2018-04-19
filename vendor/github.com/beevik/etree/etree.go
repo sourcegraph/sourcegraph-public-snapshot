@@ -135,6 +135,27 @@ func NewDocument() *Document {
 	}
 }
 
+// GetPath returns the absolute path of the element
+func (e *Element) GetPath() string {
+	path := e.GetRelativePath(nil)
+
+	return path[1:]
+}
+
+// GetPath returns the path of the element corresponding to the source element or document root
+func (e *Element) GetRelativePath(source *Element) string {
+	parts := []string{}
+
+	for element := e; element != nil && element.Tag != "" && element != source; element = element.Parent() {
+		parts = append(parts, "")
+		copy(parts[1:], parts)
+		parts[0] = element.Tag
+	}
+
+	path := strings.Join(parts, "/")
+	return "./" + path
+}
+
 // Copy returns a recursive, deep copy of the document.
 func (d *Document) Copy() *Document {
 	return &Document{*(d.dup(nil).(*Element)), d.ReadSettings, d.WriteSettings}

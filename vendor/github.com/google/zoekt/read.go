@@ -344,7 +344,10 @@ func (d *indexData) readDocSections(i uint32, buf []DocumentSection) ([]Document
 	return unmarshalDocSections(blob, buf), sec.sz, nil
 }
 
-// NewSearcher creates a Searcher for a single index file.
+// NewSearcher creates a Searcher for a single index file.  Search
+// results coming from this searcher are valid only for the lifetime
+// of the Searcher itself, ie. []byte members should be copied into
+// fresh buffers if the result is to survive closing the shard.
 func NewSearcher(r IndexFile) (Searcher, error) {
 	rd := &reader{r: r}
 

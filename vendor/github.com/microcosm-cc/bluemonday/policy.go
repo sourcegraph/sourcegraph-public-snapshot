@@ -384,7 +384,7 @@ func (p *Policy) AddSpaceWhenStrippingTag(allow bool) *Policy {
 }
 
 // SkipElementsContent adds the HTML elements whose tags is needed to be removed
-// with it's content.
+// with its content.
 func (p *Policy) SkipElementsContent(names ...string) *Policy {
 
 	p.init()

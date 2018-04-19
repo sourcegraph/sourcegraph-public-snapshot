@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package zoekt
+package zoekt // import "github.com/google/zoekt"
 
 import (
 	"context"
@@ -283,6 +283,10 @@ type SearchOptions struct {
 
 	// Abort the search after this much time has passed.
 	MaxWallTime time.Duration
+
+	// Trim the number of results after collating and sorting the
+	// results
+	MaxDocDisplayCount int
 }
 
 func (s *SearchOptions) String() string {

@@ -76,7 +76,7 @@ func (p *schemaPool) GetDocument(reference gojsonreference.JsonReference) (*sche
 	if !reference.IsCanonical() {
 		return nil, errors.New(formatErrorDescription(
 			Locale.ReferenceMustBeCanonical(),
-			ErrorDetails{"reference": reference},
+			ErrorDetails{"reference": reference.String()},
 		))
 	}
 	refToUrl := reference

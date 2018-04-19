@@ -16,6 +16,7 @@ package jaeger
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/apache/thrift/lib/go/thrift"
 
@@ -30,8 +31,6 @@ import (
 // Note that due to the use of Compact Thrift protocol, overhead grows with the number of spans
 // in the batch, because the length of the list is encoded as varint32, as well as SeqId.
 const emitBatchOverhead = 30
-
-const defaultUDPSpanServerHostPort = "localhost:6831"
 
 var errSpanTooLarge = errors.New("Span is too large")
 
@@ -50,7 +49,7 @@ type udpSender struct {
 // NewUDPTransport creates a reporter that submits spans to jaeger-agent
 func NewUDPTransport(hostPort string, maxPacketSize int) (Transport, error) {
 	if len(hostPort) == 0 {
-		hostPort = defaultUDPSpanServerHostPort
+		hostPort = fmt.Sprintf("%s:%d", DefaultUDPSpanServerHost, DefaultUDPSpanServerPort)
 	}
 	if maxPacketSize == 0 {
 		maxPacketSize = utils.UDPPacketMaxLength

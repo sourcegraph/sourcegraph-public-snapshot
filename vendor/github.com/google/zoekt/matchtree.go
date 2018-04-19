@@ -127,7 +127,6 @@ type substrMatchTree struct {
 	matchIterator
 
 	query         *query.Substring
-	coversContent bool
 	caseSensitive bool
 	fileName      bool
 
@@ -478,22 +477,16 @@ func (t *substrMatchTree) matches(cp *contentProvider, cost int, known map[match
 		return false, false
 	}
 
-	if !t.coversContent {
-		pruned := t.current[:0]
-		for _, m := range t.current {
-			if m.byteOffset == 0 && m.runeOffset > 0 {
-				m.byteOffset = cp.findOffset(m.fileName, m.runeOffset)
-			}
-			if m.matchContent(cp.data(m.fileName)) {
-				pruned = append(pruned, m)
-			}
+	pruned := t.current[:0]
+	for _, m := range t.current {
+		if m.byteOffset == 0 && m.runeOffset > 0 {
+			m.byteOffset = cp.findOffset(m.fileName, m.runeOffset)
 		}
-		t.current = pruned
-	} else {
-		for _, cm := range t.current {
-			cm.byteOffset = cp.findOffset(cm.fileName, cm.runeOffset)
+		if m.matchContent(cp.data(m.fileName)) {
+			pruned = append(pruned, m)
 		}
 	}
+	t.current = pruned
 
 	return len(t.current) > 0, true
 }
@@ -639,7 +632,6 @@ func (d *indexData) newSubstringMatchTree(s *query.Substring, stats *Stats) (mat
 	if err != nil {
 		return nil, err
 	}
-	st.coversContent = result.coversContent
 	st.matchIterator = result
 	return st, nil
 }

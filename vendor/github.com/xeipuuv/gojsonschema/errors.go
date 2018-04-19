@@ -56,6 +56,11 @@ type (
 		ResultErrorFields
 	}
 
+	// ConstError. ErrorDetails: allowed
+	ConstError struct {
+		ResultErrorFields
+	}
+
 	// EnumError. ErrorDetails: allowed
 	EnumError struct {
 		ResultErrorFields
@@ -81,6 +86,11 @@ type (
 		ResultErrorFields
 	}
 
+	// ArrayContainsError. ErrorDetails:
+	ArrayContainsError struct {
+		ResultErrorFields
+	}
+
 	// ArrayMinPropertiesError. ErrorDetails: min
 	ArrayMinPropertiesError struct {
 		ResultErrorFields
@@ -98,6 +108,11 @@ type (
 
 	// InvalidPropertyPatternError. ErrorDetails: property, pattern
 	InvalidPropertyPatternError struct {
+		ResultErrorFields
+	}
+
+	// InvalidPopertyNameError. ErrorDetails: property
+	InvalidPropertyNameError struct {
 		ResultErrorFields
 	}
 
@@ -186,6 +201,9 @@ func newError(err ResultError, context *JsonContext, value interface{}, locale l
 	case *InternalError:
 		t = "internal"
 		d = locale.Internal()
+	case *ConstError:
+		t = "const"
+		d = locale.Const()
 	case *EnumError:
 		t = "enum"
 		d = locale.Enum()
@@ -201,6 +219,9 @@ func newError(err ResultError, context *JsonContext, value interface{}, locale l
 	case *ItemsMustBeUniqueError:
 		t = "unique"
 		d = locale.Unique()
+	case *ArrayContainsError:
+		t = "contains"
+		d = locale.ArrayContains()
 	case *ArrayMinPropertiesError:
 		t = "array_min_properties"
 		d = locale.ArrayMinProperties()
@@ -213,6 +234,9 @@ func newError(err ResultError, context *JsonContext, value interface{}, locale l
 	case *InvalidPropertyPatternError:
 		t = "invalid_property_pattern"
 		d = locale.InvalidPropertyPattern()
+	case *InvalidPropertyNameError:
+		t = "invalid_property_name"
+		d = locale.InvalidPropertyName()
 	case *StringLengthGTEError:
 		t = "string_gte"
 		d = locale.StringGTE()

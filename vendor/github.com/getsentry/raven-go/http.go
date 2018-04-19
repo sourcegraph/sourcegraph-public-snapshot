@@ -28,6 +28,7 @@ func NewHttp(req *http.Request) *Http {
 	for k, v := range req.Header {
 		h.Headers[k] = strings.Join(v, ",")
 	}
+	h.Headers["Host"] = req.Host
 	return h
 }
 

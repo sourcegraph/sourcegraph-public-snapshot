@@ -262,7 +262,6 @@ func (b *IndexBuilder) AddFile(name string, content []byte) error {
 }
 
 const maxTrigramCount = 20000
-const maxLineSize = 1000
 
 // IsText returns false if the given contents are probably not source texts.
 func IsText(content []byte) bool {
@@ -272,19 +271,9 @@ func IsText(content []byte) bool {
 
 	trigrams := map[ngram]struct{}{}
 
-	lineSize := 0
-
 	var cur [3]rune
 	for len(content) > 0 {
 		if content[0] == 0 {
-			return false
-		}
-		if content[0] == '\n' {
-			lineSize = 0
-		} else {
-			lineSize++
-		}
-		if lineSize > maxLineSize {
 			return false
 		}
 

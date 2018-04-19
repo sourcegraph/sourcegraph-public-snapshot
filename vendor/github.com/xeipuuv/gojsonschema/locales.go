@@ -36,16 +36,19 @@ type (
 		NumberNot() string
 		MissingDependency() string
 		Internal() string
+		Const() string
 		Enum() string
 		ArrayNotEnoughItems() string
 		ArrayNoAdditionalItems() string
 		ArrayMinItems() string
 		ArrayMaxItems() string
 		Unique() string
+		ArrayContains() string
 		ArrayMinProperties() string
 		ArrayMaxProperties() string
 		AdditionalPropertyNotAllowed() string
 		InvalidPropertyPattern() string
+		InvalidPropertyName() string
 		StringGTE() string
 		StringLTE() string
 		DoesNotMatchPattern() string
@@ -119,6 +122,10 @@ func (l DefaultLocale) Internal() string {
 	return `Internal Error {{.error}}`
 }
 
+func (l DefaultLocale) Const() string {
+	return `{{.field}} does not match: {{.allowed}}`
+}
+
 func (l DefaultLocale) Enum() string {
 	return `{{.field}} must be one of the following: {{.allowed}}`
 }
@@ -143,6 +150,10 @@ func (l DefaultLocale) Unique() string {
 	return `{{.type}} items must be unique`
 }
 
+func (l DefaultLocale) ArrayContains() string {
+	return `At least one of the items must match`
+}
+
 func (l DefaultLocale) ArrayMinProperties() string {
 	return `Must have at least {{.min}} properties`
 }
@@ -157,6 +168,10 @@ func (l DefaultLocale) AdditionalPropertyNotAllowed() string {
 
 func (l DefaultLocale) InvalidPropertyPattern() string {
 	return `Property "{{.property}}" does not match pattern {{.pattern}}`
+}
+
+func (l DefaultLocale) InvalidPropertyName() string {
+	return `Property name of "{{.property}}" does not match`
 }
 
 func (l DefaultLocale) StringGTE() string {

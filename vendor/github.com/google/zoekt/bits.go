@@ -84,21 +84,24 @@ func caseFoldingEqualsASCII(lower, mixed []byte) bool {
 }
 
 // compare 'lower' and 'mixed', where lower is the needle. 'mixed' may
-// be larger than 'lower'.
-func caseFoldingEqualsRunes(lower, mixed []byte) bool {
+// be larger than 'lower'. Returns whether there was a match, and if
+// yes, the byte size of the match.
+func caseFoldingEqualsRunes(lower, mixed []byte) (int, bool) {
+	matchTotal := 0
 	for len(lower) > 0 && len(mixed) > 0 {
 		lr, lsz := utf8.DecodeRune(lower)
 		lower = lower[lsz:]
 
 		mr, msz := utf8.DecodeRune(mixed)
 		mixed = mixed[msz:]
+		matchTotal += msz
 
 		if lr != unicode.ToLower(mr) {
-			return false
+			return 0, false
 		}
 	}
 
-	return len(lower) == 0
+	return matchTotal, len(lower) == 0
 }
 
 type ngram uint64

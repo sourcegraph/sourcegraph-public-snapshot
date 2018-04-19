@@ -39,9 +39,12 @@ type candidateMatch struct {
 	byteMatchSz uint32
 }
 
+// Matches content against the substring, and populates byteMatchSz on success
 func (m *candidateMatch) matchContent(content []byte) bool {
 	if m.caseSensitive {
 		comp := bytes.Compare(m.substrBytes, content[m.byteOffset:m.byteOffset+uint32(len(m.substrBytes))]) == 0
+
+		m.byteMatchSz = uint32(len(m.substrBytes))
 		return comp
 	} else {
 		// It is tempting to try a simple ASCII based
@@ -51,7 +54,9 @@ func (m *candidateMatch) matchContent(content []byte) bool {
 		// as upper case variant). We can only degrade to
 		// ASCII if we are sure that both the corpus and the
 		// query is ASCII only
-		return caseFoldingEqualsRunes(m.substrLowered, content[m.byteOffset:])
+		sz, ok := caseFoldingEqualsRunes(m.substrLowered, content[m.byteOffset:])
+		m.byteMatchSz = uint32(sz)
+		return ok
 	}
 }
 

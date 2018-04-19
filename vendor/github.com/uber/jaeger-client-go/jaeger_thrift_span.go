@@ -25,6 +25,8 @@ import (
 
 // BuildJaegerThrift builds jaeger span based on internal span.
 func BuildJaegerThrift(span *Span) *j.Span {
+	span.Lock()
+	defer span.Unlock()
 	startTime := utils.TimeToMicrosecondsSinceEpochInt64(span.startTime)
 	duration := span.duration.Nanoseconds() / int64(time.Microsecond)
 	jaegerSpan := &j.Span{
@@ -45,6 +47,8 @@ func BuildJaegerThrift(span *Span) *j.Span {
 
 // BuildJaegerProcessThrift creates a thrift Process type.
 func BuildJaegerProcessThrift(span *Span) *j.Process {
+	span.Lock()
+	defer span.Unlock()
 	return buildJaegerProcessThrift(span.tracer)
 }
 

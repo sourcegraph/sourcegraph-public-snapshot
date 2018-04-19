@@ -172,15 +172,10 @@ func (data *indexData) ngramFrequency(ng ngram, filename bool) uint32 {
 type ngramIterationResults struct {
 	matchIterator
 
-	// The ngram matches cover the pattern, so no need to check
-	// contents.
-	coversContent bool
-
 	caseSensitive bool
 	fileName      bool
 	substrBytes   []byte
 	substrLowered []byte
-	byteMatchSz   uint32
 }
 
 func (r *ngramIterationResults) String() string {
@@ -194,7 +189,6 @@ func (r *ngramIterationResults) candidates() []*candidateMatch {
 		c.fileName = r.fileName
 		c.substrBytes = r.substrBytes
 		c.substrLowered = r.substrLowered
-		c.byteMatchSz = r.byteMatchSz
 	}
 	return cs
 }
@@ -244,7 +238,6 @@ func (d *indexData) iterateNgrams(query *query.Substring) (*ngramIterationResult
 		iter.ends = d.fileEndRunes
 	}
 
-	var coversContent bool
 	if firstI != lastI {
 		i, err := d.newDistanceTrigramIter(firstNG, lastNG, lastI-firstI, query.CaseSensitive, query.FileName)
 
@@ -253,15 +246,12 @@ func (d *indexData) iterateNgrams(query *query.Substring) (*ngramIterationResult
 		}
 
 		iter.iter = i
-
-		coversContent = (lastI-firstI <= ngramSize && iter.leftPad == 0 && iter.rightPad == (lastI+ngramSize))
 	} else {
 		hitIter, err := d.trigramHitIterator(lastNG, query.CaseSensitive, query.FileName)
 		if err != nil {
 			return nil, err
 		}
 		iter.iter = hitIter
-		coversContent = (iter.leftPad == 0 && iter.rightPad == 3)
 	}
 
 	patBytes := []byte(query.Pattern)
@@ -269,13 +259,10 @@ func (d *indexData) iterateNgrams(query *query.Substring) (*ngramIterationResult
 
 	return &ngramIterationResults{
 		matchIterator: iter,
-		coversContent: coversContent,
 		caseSensitive: query.CaseSensitive,
 		fileName:      query.FileName,
 		substrBytes:   patBytes,
 		substrLowered: lowerPatBytes,
-		// TODO - this is wrong for casefolding searches.
-		byteMatchSz: uint32(len(lowerPatBytes)),
 	}, nil
 }
 

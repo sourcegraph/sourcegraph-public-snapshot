@@ -29,6 +29,7 @@ type Options struct {
 	metrics             metrics.Factory
 	logger              jaeger.Logger
 	reporter            jaeger.Reporter
+	sampler             jaeger.Sampler
 	contribObservers    []jaeger.ContribObserver
 	observers           []jaeger.Observer
 	gen128Bit           bool
@@ -59,6 +60,13 @@ func Logger(logger jaeger.Logger) Option {
 func Reporter(reporter jaeger.Reporter) Option {
 	return func(c *Options) {
 		c.reporter = reporter
+	}
+}
+
+// Sampler can be provided explicitly to override the configuration.
+func Sampler(sampler jaeger.Sampler) Option {
+	return func(c *Options) {
+		c.sampler = sampler
 	}
 }
 
