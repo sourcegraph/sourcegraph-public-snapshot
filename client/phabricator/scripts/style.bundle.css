@@ -21,6 +21,15 @@
 .selection-highlight-sticky span {
   background-color: rgba(3, 102, 214, 0.3); }
 
+.annotated {
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+  will-change: transform; }
+
 .sg-tooltip {
   background-color: #fafbfc;
   max-width: 450px;
@@ -34,7 +43,14 @@
   overflow: auto;
   border-radius: 3px;
   -webkit-box-shadow: 0 3px 12px rgba(27, 31, 35, 0.15);
-          box-shadow: 0 3px 12px rgba(27, 31, 35, 0.15); }
+          box-shadow: 0 3px 12px rgba(27, 31, 35, 0.15);
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+  will-change: transform; }
   .sg-tooltip .tooltip__title {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; }
   .sg-tooltip__title-container {
@@ -316,6 +332,12 @@
     background-color: #1c7cd6; }
   .options__link {
     color: #1c7cd6; }
+  .options__input-spacer {
+    margin-bottom: 0.5rem; }
+  .options__button-right {
+    text-align: right; }
+  .options__row-padding {
+    padding-bottom: 0.5rem; }
 
 .sg-options-label {
   padding-left: 5px; }
@@ -792,5 +814,3 @@
       color: white; }
   .sg-alert .btn-icon:hover, .sg-alert .btn-icon:focus {
     color: white; }
-
-/*# sourceMappingURL=style.bundle.css.map*/
