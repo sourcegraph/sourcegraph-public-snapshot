@@ -16,7 +16,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 export interface SavedQueryFields {
     description: string
     query: string
-    subject: GQLID
+    subject: GQL.ID
     showOnHomepage: boolean
     notify: boolean
     notifySlack: boolean
@@ -40,7 +40,7 @@ interface State {
     isFocused: boolean
     error?: any
     sawUnsupportedNotifyQueryWarning: boolean
-    slackWebhooks: Map<GQLID, string | null> // subject GraphQL ID -> slack webhook
+    slackWebhooks: Map<GQL.ID, string | null> // subject GraphQL ID -> slack webhook
 }
 
 export class SavedQueryForm extends React.Component<Props, State> {
@@ -70,7 +70,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
             isSubmitting: false,
             isFocused: false,
             sawUnsupportedNotifyQueryWarning: false,
-            slackWebhooks: new Map<GQLID, string | null>(),
+            slackWebhooks: new Map<GQL.ID, string | null>(),
         }
     }
 

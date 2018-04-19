@@ -25,7 +25,7 @@ import { createAggregateError } from '../../util/errors'
 
 export function inviteUserToOrganization(
     usernameOrEmail: string,
-    organization: GQLID
+    organization: GQL.ID
 ): Observable<GQL.IInviteUserResult> {
     return mutateGraphQL(
         gql`
@@ -59,7 +59,7 @@ export function inviteUserToOrganization(
     )
 }
 
-export function addUserToOrganization(usernameOrEmail: string, organization: GQLID): Observable<void> {
+export function addUserToOrganization(usernameOrEmail: string, organization: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation AddUserToOrganization($organization: ID!, $usernameOrEmail: String!) {

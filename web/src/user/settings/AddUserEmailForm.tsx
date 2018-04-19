@@ -10,13 +10,14 @@ import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { gql, mutateGraphQL } from '../../backend/graphql'
+import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike } from '../../util/errors'
 
 interface Props {
     /** The GraphQL ID of the user with whom the new emails are associated. */
-    user: GQLID
+    user: GQL.ID
 
     /** Called after successfully adding an email to the user. */
     onDidAdd: () => void

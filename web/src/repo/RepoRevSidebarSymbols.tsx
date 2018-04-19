@@ -52,7 +52,7 @@ const SymbolNode: React.SFC<SymbolNodeProps> = ({ node, location }) => {
 class FilteredSymbolsConnection extends FilteredConnection<GQL.ISymbol, Pick<SymbolNodeProps, 'location'>> {}
 
 interface Props {
-    repoID: GQLID
+    repoID: GQL.ID
     rev: string | undefined
     history: H.History
     location: H.Location

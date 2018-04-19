@@ -42,7 +42,7 @@ function fetchRepositories(args: { first?: number; query?: string }): Observable
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
-    currentRepo?: GQLID
+    currentRepo?: GQL.ID
 }
 
 export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node, currentRepo }) => (
@@ -61,7 +61,7 @@ interface Props {
     /**
      * The current repository (shown as selected in the list), if any.
      */
-    currentRepo?: GQLID
+    currentRepo?: GQL.ID
 
     history: H.History
     location: H.Location

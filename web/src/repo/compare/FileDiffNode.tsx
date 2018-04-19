@@ -12,10 +12,10 @@ export interface FileDiffNodeProps {
     node: GQL.IFileDiff
 
     /** The base repository and revision. */
-    base: { repoPath: string; repoID: GQLID; rev: string; commitID: string }
+    base: { repoPath: string; repoID: GQL.ID; rev: string; commitID: string }
 
     /** The head repository and revision. */
-    head: { repoPath: string; repoID: GQLID; rev: string; commitID: string }
+    head: { repoPath: string; repoID: GQL.ID; rev: string; commitID: string }
 
     lineNumbers: boolean
     className?: string

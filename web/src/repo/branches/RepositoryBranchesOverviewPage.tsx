@@ -27,7 +27,7 @@ interface Data {
 }
 
 const fetchGitBranches = memoizeObservable(
-    (args: { repo: GQLID; first: number }): Observable<Data> =>
+    (args: { repo: GQL.ID; first: number }): Observable<Data> =>
         queryGraphQL(
             gql`
                 query RepositoryGitBranchesOverview($repo: ID!, $first: Int!) {

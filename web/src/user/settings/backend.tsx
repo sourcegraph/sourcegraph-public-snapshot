@@ -84,7 +84,7 @@ export const settingsFragment = gql`
  *
  * @return Observable that emits the settings or `null` if it doesn't exist
  */
-export function fetchUserSettings(user: GQLID): Observable<GQL.ISettings | null> {
+export function fetchUserSettings(user: GQL.ID): Observable<GQL.ISettings | null> {
     return queryGraphQL(
         gql`
             query UserSettings($user: ID!) {
@@ -115,7 +115,7 @@ export function fetchUserSettings(user: GQLID): Observable<GQL.ISettings | null>
  * @return Observable that emits the newly updated settings
  */
 export function updateUserSettings(
-    user: GQLID,
+    user: GQL.ID,
     lastKnownSettingsID: number | null,
     contents: string
 ): Observable<GQL.ISettings> {
@@ -151,7 +151,7 @@ export interface UpdateUserOptions {
 /**
  * Sends a GraphQL mutation to update a user's profile
  */
-export function updateUser(user: GQLID, args: UpdateUserOptions): Observable<void> {
+export function updateUser(user: GQL.ID, args: UpdateUserOptions): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation updateUser($user: ID!, $username: String, $displayName: String, $avatarURL: String) {
@@ -200,7 +200,7 @@ export function updatePassword(args: { oldPassword: string; newPassword: string 
  * @param email the email address to edit
  * @param verified the new verification state for the user email
  */
-export function setUserEmailVerified(user: GQLID, email: string, verified: boolean): Observable<void> {
+export function setUserEmailVerified(user: GQL.ID, email: string, verified: boolean): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {

@@ -11,6 +11,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
+import * as GQL from '../backend/graphqlschema'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
@@ -55,7 +56,7 @@ const fetchTree = memoizeObservable(
 type SidebarTabID = 'files' | 'symbols' | 'commits'
 
 interface Props {
-    repoID: GQLID
+    repoID: GQL.ID
     repoPath: string
     rev: string | undefined
     commitID: string

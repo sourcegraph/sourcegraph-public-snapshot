@@ -21,7 +21,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { UserAreaPageProps } from '../area/UserArea'
 
-function createAccessToken(user: GQLID, note: string): Observable<GQL.ICreateAccessTokenResult> {
+function createAccessToken(user: GQL.ID, note: string): Observable<GQL.ICreateAccessTokenResult> {
     return mutateGraphQL(
         gql`
             mutation CreateAccessToken($user: ID!, $note: String!) {

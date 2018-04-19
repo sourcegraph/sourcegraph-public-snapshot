@@ -8,7 +8,7 @@ import { createAggregateError } from '../util/errors'
  * Fetches symbols.
  */
 export function fetchSymbols(
-    repo: GQLID,
+    repo: GQL.ID,
     rev: string,
     args: { first?: number; query?: string }
 ): Observable<GQL.ISymbolConnection> {

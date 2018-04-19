@@ -21,7 +21,7 @@ import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 
 function queryRepositoryComparison(args: {
-    repo: GQLID
+    repo: GQL.ID
     base: string | null
     head: string | null
 }): Observable<GQL.IGitRevisionRange> {
@@ -75,10 +75,10 @@ function queryRepositoryComparison(args: {
 
 interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQLID; rev?: string | null }
+    base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQLID; rev?: string | null }
+    head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
 }
 
 interface State {

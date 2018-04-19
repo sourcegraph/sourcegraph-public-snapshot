@@ -99,7 +99,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<v
  * @param userID The user's ID to remove
  * @return An Observable that does emits `undefined` when done, then completes
  */
-export function removeUserFromOrg(orgID: GQLID, userID: GQLID): Observable<void> {
+export function removeUserFromOrg(orgID: GQL.ID, userID: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation removeUserFromOrg($userID: ID!, $orgID: ID!) {

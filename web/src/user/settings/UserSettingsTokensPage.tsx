@@ -56,7 +56,7 @@ function curlExampleCommand(token: string): string {
   ${window.context.appURL}/.api/graphql`
 }
 
-function deleteAccessToken(tokenID: GQLID): Observable<void> {
+function deleteAccessToken(tokenID: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteAccessToken($tokenID: ID!) {

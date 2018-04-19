@@ -76,7 +76,7 @@ export const gitBranchFragment = gql`
 `
 
 const fetchGitBranches = memoizeObservable(
-    (args: { repo: GQLID; first?: number; query?: string }): Observable<GQL.IGitRefConnection> =>
+    (args: { repo: GQL.ID; first?: number; query?: string }): Observable<GQL.IGitRefConnection> =>
         queryGraphQL(
             gql`
                 query RepositoryGitBranches($repo: ID!, $first: Int, $query: String) {

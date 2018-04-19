@@ -14,7 +14,7 @@ import { FilteredGitCommitConnection, gitCommitFragment } from '../commits/Repos
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 export function queryRepositoryComparisonCommits(args: {
-    repo: GQLID
+    repo: GQL.ID
     base: string | null
     head: string | null
     first?: number

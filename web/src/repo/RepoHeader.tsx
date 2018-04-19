@@ -32,9 +32,9 @@ interface Props {
     repo:
         | GQL.IRepository
         | {
-              /** The repository's GQLID, if it has one.
+              /** The repository's GQL.ID, if it has one.
                */
-              id?: GQLID
+              id?: GQL.ID
 
               uri: string
               enabled: boolean

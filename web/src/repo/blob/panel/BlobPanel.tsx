@@ -22,6 +22,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { Hover, Location, MarkedString, Position } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
+import * as GQL from '../../../backend/graphqlschema'
 import {
     fetchDefinition,
     fetchHover,
@@ -47,7 +48,7 @@ import { FileLocationsTree } from './FileLocationsTree'
 interface Props extends AbsoluteRepoFile {
     location: H.Location
     history: H.History
-    repoID: GQLID
+    repoID: GQL.ID
     position?: Position
     isLightTheme: boolean
 }

@@ -21,7 +21,7 @@ import { pluralize } from '../../util/strings'
 /**
  * Fetches a repository's text search index information.
  */
-function fetchRepositoryTextSearchIndex(id: GQLID): Observable<GQL.IRepositoryTextSearchIndex | null> {
+function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryTextSearchIndex | null> {
     return queryGraphQL(
         gql`
             query RepositoryTextSearchIndex($id: ID!) {

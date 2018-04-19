@@ -25,7 +25,7 @@ import { FileDiffNode, FileDiffNodeProps } from '../compare/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 
 const queryCommit = memoizeObservable(
-    (args: { repo: GQLID; revspec: string }): Observable<GQL.IGitCommit> =>
+    (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>
         queryGraphQL(
             gql`
                 query RepositoryCommit($repo: ID!, $revspec: String!) {

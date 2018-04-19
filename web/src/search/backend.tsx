@@ -289,7 +289,7 @@ function fetchSavedQueries(): Observable<GQL.ISavedQuery[]> {
 }
 
 export function createSavedQuery(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
+    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
     description: string,
     query: string,
     showOnHomepage: boolean,
@@ -344,8 +344,8 @@ export function createSavedQuery(
 }
 
 export function updateSavedQuery(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
-    id: GQLID,
+    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
+    id: GQL.ID,
     description: string,
     query: string,
     showOnHomepage: boolean,
@@ -392,8 +392,8 @@ export function updateSavedQuery(
 }
 
 export function deleteSavedQuery(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
-    id: GQLID,
+    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
+    id: GQL.ID,
     disableSubscriptionNotifications?: boolean
 ): Observable<void> {
     return mutateConfigurationGraphQL(

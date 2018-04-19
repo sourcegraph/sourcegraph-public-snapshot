@@ -93,7 +93,7 @@ export const fetchTree = memoizeObservable(
 )
 
 const fetchTreeCommits = memoizeObservable(
-    (args: { repo: GQLID; revspec: string; first?: number; filePath?: string }): Observable<GQL.IGitCommitConnection> =>
+    (args: { repo: GQL.ID; revspec: string; first?: number; filePath?: string }): Observable<GQL.IGitCommitConnection> =>
         queryGraphQL(
             gql`
                 query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String) {
@@ -132,7 +132,7 @@ const fetchTreeCommits = memoizeObservable(
 
 interface Props {
     repoPath: string
-    repoID: GQLID
+    repoID: GQL.ID
     repoDescription: string
     // filePath is a directory path in DirectoryPage. We call it filePath for consistency elsewhere.
     filePath: string

@@ -59,7 +59,7 @@ interface State {
     item: Item
     ulid?: string
     highlightLastComment?: boolean
-    highlightComment: GQLID | null
+    highlightComment: GQL.ID | null
     location: H.Location
     history: H.History
     isLightTheme: boolean

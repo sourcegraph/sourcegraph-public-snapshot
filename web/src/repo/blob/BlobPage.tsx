@@ -87,7 +87,7 @@ interface Props {
     history: H.History
     isLightTheme: boolean
     repoPath: string
-    repoID: GQLID
+    repoID: GQL.ID
     rev: string | undefined
     commitID: string
     filePath: string

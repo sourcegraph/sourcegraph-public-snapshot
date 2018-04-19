@@ -14,7 +14,7 @@ import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 
 const fetchGitRefs = memoizeObservable(
-    (args: { repo: GQLID; first?: number; query?: string; type?: GQL.GitRefType }): Observable<GQL.IGitRefConnection> =>
+    (args: { repo: GQL.ID; first?: number; query?: string; type?: GQL.GitRefType }): Observable<GQL.IGitRefConnection> =>
         queryGraphQL(
             gql`
                 query RepositoryGitRefs($repo: ID!, $first: Int, $query: String, $type: GitRefType) {
@@ -47,7 +47,7 @@ const fetchGitRefs = memoizeObservable(
 )
 
 const fetchRepositoryCommits = memoizeObservable(
-    (args: { repo: GQLID; rev?: string; first?: number; query?: string }): Observable<GQL.IGitCommitConnection> =>
+    (args: { repo: GQL.ID; rev?: string; first?: number; query?: string }): Observable<GQL.IGitCommitConnection> =>
         queryGraphQL(
             gql`
                 query RepositoryGitCommit($repo: ID!, $first: Int, $rev: String!, $query: String) {
@@ -160,7 +160,7 @@ export const GitCommitNode: React.SFC<GitCommitNodeProps> = ({ node, currentComm
 }
 
 interface Props {
-    repo: GQLID
+    repo: GQL.ID
     repoPath: string
     defaultBranch: string | undefined
 

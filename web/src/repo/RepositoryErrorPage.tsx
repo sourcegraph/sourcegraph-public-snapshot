@@ -26,7 +26,7 @@ interface Props {
     repo: string
 
     /** The GraphQL ID of the repository, or null if it doesn't exist. */
-    repoID: GQLID | null
+    repoID: GQL.ID | null
 
     /** The error that occurred while (unsuccessfully) retrieving the repository, or 'disabled' if
      *  the repository is disabled.

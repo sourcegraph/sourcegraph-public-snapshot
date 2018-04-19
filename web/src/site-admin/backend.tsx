@@ -210,7 +210,7 @@ export function addRepository(
     name: string
 ): Observable<{
     /** The ID of the newly added repository (or the existing repository, if it already existed). */
-    id: GQLID
+    id: GQL.ID
 }> {
     return mutateGraphQL(
         gql`
@@ -232,7 +232,7 @@ export function addRepository(
     )
 }
 
-export function setRepositoryEnabled(repository: GQLID, enabled: boolean): Observable<void> {
+export function setRepositoryEnabled(repository: GQL.ID, enabled: boolean): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation SetRepositoryEnabled($repository: ID!, $enabled: Boolean!) {
@@ -272,7 +272,7 @@ export function setAllRepositoriesEnabled(enabled: boolean): Observable<void> {
     )
 }
 
-export function updateMirrorRepository(args: { repository: GQLID }): Observable<void> {
+export function updateMirrorRepository(args: { repository: GQL.ID }): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation UpdateMirrorRepository($repository: ID!) {
@@ -314,7 +314,7 @@ export function updateAllMirrorRepositories(): Observable<void> {
 export function checkMirrorRepositoryConnection(
     args:
         | {
-              repository: GQLID
+              repository: GQL.ID
           }
         | {
               name: string
@@ -339,7 +339,7 @@ export function checkMirrorRepositoryConnection(
     )
 }
 
-export function deleteRepository(repository: GQLID): Observable<void> {
+export function deleteRepository(repository: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteRepository($repository: ID!) {
@@ -530,7 +530,7 @@ export function reloadSite(): Observable<void> {
     )
 }
 
-export function setUserIsSiteAdmin(userID: GQLID, siteAdmin: boolean): Observable<void> {
+export function setUserIsSiteAdmin(userID: GQL.ID, siteAdmin: boolean): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
@@ -549,7 +549,7 @@ export function setUserIsSiteAdmin(userID: GQLID, siteAdmin: boolean): Observabl
     )
 }
 
-export function randomizeUserPasswordBySiteAdmin(user: GQLID): Observable<GQL.IRandomizeUserPasswordBySiteAdminResult> {
+export function randomizeUserPasswordBySiteAdmin(user: GQL.ID): Observable<GQL.IRandomizeUserPasswordBySiteAdminResult> {
     return mutateGraphQL(
         gql`
             mutation RandomizeUserPasswordBySiteAdmin($user: ID!) {
@@ -569,7 +569,7 @@ export function randomizeUserPasswordBySiteAdmin(user: GQLID): Observable<GQL.IR
     )
 }
 
-export function deleteUser(user: GQLID): Observable<void> {
+export function deleteUser(user: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteUser($user: ID!) {
@@ -608,7 +608,7 @@ export function createUserBySiteAdmin(username: string, email: string): Observab
     )
 }
 
-export function deleteOrganization(organization: GQLID): Observable<void> {
+export function deleteOrganization(organization: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteOrganization($organization: ID!) {

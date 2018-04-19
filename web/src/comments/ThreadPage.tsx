@@ -22,7 +22,7 @@ const ThreadNotFound = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="Sorry, we can&#39;t find anything here." />
 )
 
-interface Props extends RouteComponentProps<{ threadID: GQLID }> {
+interface Props extends RouteComponentProps<{ threadID: GQL.ID }> {
     user: GQL.IUser | null
     isLightTheme: boolean
 }

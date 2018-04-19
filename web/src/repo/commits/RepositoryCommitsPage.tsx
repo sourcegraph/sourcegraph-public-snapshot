@@ -49,7 +49,7 @@ export const gitCommitFragment = gql`
 `
 
 const fetchGitCommits = (args: {
-    repo: GQLID
+    repo: GQL.ID
     revspec: string
     first?: number
     query?: string

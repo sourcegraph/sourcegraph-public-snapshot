@@ -28,7 +28,7 @@ import { userURL, VALID_USERNAME_REGEXP } from '../index'
 import { UserAvatar } from '../UserAvatar'
 import { updateUser } from './backend'
 
-function queryUser(user: GQLID): Observable<GQL.IUser> {
+function queryUser(user: GQL.ID): Observable<GQL.IUser> {
     return queryGraphQL(
         gql`
             query User($user: ID!) {

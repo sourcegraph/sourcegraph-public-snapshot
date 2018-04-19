@@ -36,7 +36,7 @@ const CommitNode: React.SFC<CommitNodeProps> = ({ node, location }) => (
 class FilteredCommitsConnection extends FilteredConnection<GQL.IGitCommit, Pick<CommitNodeProps, 'location'>> {}
 
 interface Props {
-    repoID: GQLID
+    repoID: GQL.ID
     rev: string | undefined
     filePath: string
     history: H.History

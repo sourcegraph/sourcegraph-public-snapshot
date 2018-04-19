@@ -28,11 +28,6 @@ interface License {
 }
 
 /**
- * The GraphQL ID type.
- */
-type GQLID = string
-
-/**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
 interface SourcegraphContext {

@@ -14,7 +14,7 @@ import { FileDiffNode, FileDiffNodeProps } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 export function queryRepositoryComparisonFileDiffs(args: {
-    repo: GQLID
+    repo: GQL.ID
     base: string | null
     head: string | null
     first?: number
@@ -90,10 +90,10 @@ export function queryRepositoryComparisonFileDiffs(args: {
 
 interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQLID; rev: string | null; commitID: string }
+    base: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQLID; rev: string | null; commitID: string }
+    head: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
 }
 
 class FilteredFileDiffConnection extends FilteredConnection<

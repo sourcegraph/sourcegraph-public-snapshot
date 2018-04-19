@@ -8,7 +8,7 @@ import { createAggregateError } from '../util/errors'
  * Fetches commits.
  */
 export function fetchCommits(
-    repo: GQLID,
+    repo: GQL.ID,
     rev: string,
     args: { first?: number; currentPath?: string; query?: string }
 ): Observable<GQL.IGitCommitConnection> {

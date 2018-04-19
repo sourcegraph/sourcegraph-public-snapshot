@@ -65,7 +65,7 @@ const gitTagFragment = gql`
 `
 
 const fetchGitTags = memoizeObservable(
-    (args: { repo: GQLID; first?: number; query?: string }): Observable<GQL.IGitRefConnection> =>
+    (args: { repo: GQL.ID; first?: number; query?: string }): Observable<GQL.IGitRefConnection> =>
         queryGraphQL(
             gql`
                 query RepositoryGitTags($repo: ID!, $first: Int, $query: String) {

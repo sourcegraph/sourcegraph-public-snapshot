@@ -63,7 +63,7 @@ interface State {
 export class OrgSettingsConfigurationPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
-    private orgChanges = new Subject<{ id: GQLID /* org ID */ }>()
+    private orgChanges = new Subject<{ id: GQL.ID /* org ID */ }>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {

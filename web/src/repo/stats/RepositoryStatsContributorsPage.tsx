@@ -89,7 +89,7 @@ export const RepositoryContributorNode: React.SFC<RepositoryContributorNodeProps
 
 const queryRepositoryContributors = memoizeObservable(
     (args: {
-        repo: GQLID
+        repo: GQL.ID
         first?: number
         revisionRange?: string
         after?: string

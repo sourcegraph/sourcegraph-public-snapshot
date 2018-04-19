@@ -35,10 +35,10 @@ export interface RepositoryCompareAreaPageProps {
     repo: GQL.IRepository
 
     /** The base of the comparison. */
-    base: { repoPath: string; repoID: GQLID; rev?: string | null }
+    base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
 
     /** The head of the comparison. */
-    head: { repoPath: string; repoID: GQLID; rev?: string | null }
+    head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
 
     /** The URL route prefix for the comparison. */
     routePrefix: string

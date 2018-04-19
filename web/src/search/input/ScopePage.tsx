@@ -41,7 +41,7 @@ const ScopeNotFound = () => (
     />
 )
 
-interface ScopePageProps extends RouteComponentProps<{ id: GQLID }> {}
+interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }> {}
 
 interface State {
     query: string

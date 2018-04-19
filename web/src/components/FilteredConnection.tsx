@@ -17,12 +17,13 @@ import { takeUntil } from 'rxjs/operators/takeUntil'
 import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import * as GQL from '../backend/graphqlschema'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { pluralize } from '../util/strings'
 import { Form } from './Form'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
-const hasID = (obj: any): obj is { id: GQLID } => obj && typeof obj.id === 'string'
+const hasID = (obj: any): obj is { id: GQL.ID } => obj && typeof obj.id === 'string'
 
 interface FilterProps {
     /** All filters. */

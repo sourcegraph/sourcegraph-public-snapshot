@@ -141,10 +141,10 @@ interface Props {
     fileDiffAnchor: string
 
     /** The base repository, revision, and file. */
-    base: { repoPath: string; repoID: GQLID; rev: string; commitID: string; filePath: string | null }
+    base: { repoPath: string; repoID: GQL.ID; rev: string; commitID: string; filePath: string | null }
 
     /** The head repository, revision, and file. */
-    head: { repoPath: string; repoID: GQLID; rev: string; commitID: string; filePath: string | null }
+    head: { repoPath: string; repoID: GQL.ID; rev: string; commitID: string; filePath: string | null }
 
     /** The file's hunks. */
     hunks: GQL.IFileDiffHunk[]

@@ -21,7 +21,7 @@ interface Props {
     editorURL?: string
     onOpenEditor?: () => void
     onThreadUpdated: (updatedThread: GQL.ISharedItemThread | GQL.IThread) => void
-    threadID: GQLID
+    threadID: GQL.ID
     ulid?: string
     isLightTheme: boolean
 }

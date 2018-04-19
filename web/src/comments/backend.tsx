@@ -133,7 +133,7 @@ export const fetchSharedItem = memoizeObservable(
  *
  * @return Observable that emits the thread or `null` if it doesn't exist
  */
-export function fetchThread(id: GQLID, isLightTheme: boolean): Observable<GQL.IThread | null> {
+export function fetchThread(id: GQL.ID, isLightTheme: boolean): Observable<GQL.IThread | null> {
     return queryGraphQL(
         gql`
             query Thread($id: ID!, $isLightTheme: Boolean!) {
@@ -160,7 +160,7 @@ export function fetchThread(id: GQLID, isLightTheme: boolean): Observable<GQL.IT
  * @return Observable that emits the updated thread.
  */
 export function addCommentToThread(
-    threadID: GQLID,
+    threadID: GQL.ID,
     contents: string,
     ulid: string | undefined,
     isLightTheme: boolean

@@ -15,7 +15,7 @@ import { createAggregateError } from '../util/errors'
  * @param update Called on a copy of the old (current) config to produce the new config
  */
 export function updateConfiguration(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
+    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
     input: GQL.IUpdateConfigurationInput
 ): Observable<void> {
     const subjectID = subject.id
@@ -75,7 +75,7 @@ function doUpdateConfiguration(
  * @param variables The GraphQL mutation's variables.
  */
 export function mutateConfigurationGraphQL(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQLID },
+    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
     mutation: GraphQLDocument,
     variables: any = {}
 ): Observable<MutationResult> {

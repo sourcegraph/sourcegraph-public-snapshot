@@ -137,7 +137,7 @@ export class RepositoryGraphOverviewPage extends React.PureComponent<Props, Stat
         )
     }
 
-    private fetchOverview(repo: GQLID, commitID: string): Observable<OverviewInfo> {
+    private fetchOverview(repo: GQL.ID, commitID: string): Observable<OverviewInfo> {
         return queryGraphQL(
             gql`
                 query RepositoryGraphOverview($repo: ID!, $commitID: String!) {
