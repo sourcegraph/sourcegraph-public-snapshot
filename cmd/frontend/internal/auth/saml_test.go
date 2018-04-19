@@ -221,8 +221,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		authnCookies    []*http.Cookie
 		authnRequestURL string
 	)
-	{
-		t.Logf("unauthenticated homepage visit -> IDP SSO URL")
+	t.Run("unauthenticated homepage visit -> IDP SSO URL", func(t *testing.T) {
 		resp := doRequest("GET", appURL, "", nil, nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		locURL, err := url.Parse(resp.Header.Get("Location"))
@@ -241,12 +240,11 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		if err := xml.NewDecoder(flate.NewReader(bytes.NewBuffer(deflatedSAMLRequest))).Decode(&authnRequest); err != nil {
 			t.Fatal(err)
 		}
-	}
+	})
 	var (
 		loggedInCookies []*http.Cookie
 	)
-	{
-		t.Logf("get SP metadata and register SP with IDP")
+	t.Run("get SP metadata and register SP with IDP", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/.auth/saml/metadata", "", nil, nil)
 		service := samlidp.Service{}
 		if err := xml.NewDecoder(resp.Body).Decode(&service.Metadata); err != nil {
@@ -263,9 +261,8 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		if resp, err := http.DefaultClient.Do(req); err != nil {
 			t.Fatalf("could not register SP with IDP, error: %s, resp: %v", err, resp)
 		}
-	}
-	{
-		t.Logf("get SAML assertion from IDP and post the assertion to the SP ACS URL")
+	})
+	t.Run("get SAML assertion from IDP and post the assertion to the SP ACS URL", func(t *testing.T) {
 		authnReq, err := http.NewRequest("GET", authnRequestURL, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -309,24 +306,21 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 
 		// save the cookies from the login response
 		loggedInCookies = unexpiredCookies(resp)
-	}
-	{
-		t.Logf("authenticated request to home page")
+	})
+	t.Run("authenticated request to home page", func(t *testing.T) {
 		resp := doRequest("GET", appURL, "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 		checkEq(t, "This is the home", string(respBody), "wrong response body")
-	}
-	{
-		t.Logf("authenticated request to sub page")
+	})
+	t.Run("authenticated request to sub page", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/page", "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 		checkEq(t, "This is a page", string(respBody), "wrong response body")
-	}
-	{
-		t.Logf("verify actor gets set in request context")
+	})
+	t.Run("verify actor gets set in request context", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/require-authn", "", loggedInCookies, nil)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
-	}
+	})
 }

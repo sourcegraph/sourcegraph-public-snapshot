@@ -170,26 +170,22 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		return respRecorder.Result()
 	}
 
-	{
-		t.Logf("unauthenticated homepage visit -> login redirect")
+	t.Run("unauthenticated homepage visit -> login redirect", func(t *testing.T) {
 		resp := doRequest("GET", appURL, "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		checkEq(t, "/.auth/login?redirect=", resp.Header.Get("Location"), "wrong redirect URL")
-	}
-	{
-		t.Logf("unauthenticated subpage visit -> login redirect")
+	})
+	t.Run("unauthenticated subpage visit -> login redirect", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/page", "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		checkEq(t, "/.auth/login?redirect=%2Fpage", resp.Header.Get("Location"), "wrong redirect URL")
-	}
-	{
-		t.Logf("unauthenticated non-existent page visit -> login redirect")
+	})
+	t.Run("unauthenticated non-existent page visit -> login redirect", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/nonexistent", "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		checkEq(t, "/.auth/login?redirect=%2Fnonexistent", resp.Header.Get("Location"), "wrong redirect URL")
-	}
-	{
-		t.Logf("login redirect -> sso login")
+	})
+	t.Run("login redirect -> sso login", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/.auth/login", "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		locHeader := resp.Header.Get("Location")
@@ -202,44 +198,38 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		checkEq(t, appURL+"/.auth/callback", idpLoginURL.Query().Get("redirect_uri"), "wrong redirect_uri")
 		checkEq(t, "code", idpLoginURL.Query().Get("response_type"), "response_type was not \"code\"")
 		checkEq(t, "openid profile email", idpLoginURL.Query().Get("scope"), "scope was not \"openid\"")
-	}
-	{
-		t.Logf("OIDC callback without CSRF token -> error")
+	})
+	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/.auth/callback?code=THECODE&state=ASDF", "", nil)
 		checkEq(t, http.StatusBadRequest, resp.StatusCode, "wrong status code")
-	}
+	})
 	var authCookies []*http.Cookie
-	{
-		t.Logf("OIDC callback with CSRF token -> set auth cookies")
+	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: oidcStateCookieName, Value: validState}})
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong status code")
 		checkEq(t, "/redirect", resp.Header.Get("Location"), "wrong redirect URL")
 		authCookies = unexpiredCookies(resp)
-	}
-	{
-		t.Logf("authenticated homepage visit")
+	})
+	t.Run("authenticated homepage visit", func(t *testing.T) {
 		resp := doRequest("GET", appURL, "", authCookies)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong response code")
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, "This is the home", string(respBody), "wrong response body")
-	}
-	{
-		t.Logf("authenticated subpage visit")
+	})
+	t.Run("authenticated subpage visit", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/page", "", authCookies)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong response code")
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, "This is a page", string(respBody), "wrong response body")
-	}
-	{
-		t.Logf("authenticated non-existent page visit -> 404")
+	})
+	t.Run("authenticated non-existent page visit -> 404", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/nonexistent", "", authCookies)
 		checkEq(t, http.StatusNotFound, resp.StatusCode, "wrong response code")
-	}
-	{
-		t.Logf("verify actor gets set in request context")
+	})
+	t.Run("verify actor gets set in request context", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/require-authn", "", authCookies)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
-	}
+	})
 }
 
 func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
@@ -289,12 +279,11 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 		return respRecorder.Result()
 	}
 
-	{
-		t.Logf("OIDC callback with CSRF token -> set auth cookies")
+	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
 		resp := doRequest("GET", appURL+"/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", []*http.Cookie{{Name: oidcStateCookieName, Value: state}})
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong status code")
 		checkEq(t, "/", resp.Header.Get("Location"), "wrong redirect URL") // Redirect to "/", NOT "http://evil.com"
-	}
+	})
 }
 
 // newAppHandler returns a new mock app handler meant to be wrapped by the OIDC handler in tests.
