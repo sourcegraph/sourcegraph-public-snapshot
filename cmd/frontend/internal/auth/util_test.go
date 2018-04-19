@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 )
@@ -12,23 +11,6 @@ func check(t *testing.T, condition bool, errMsg string) {
 	t.Helper()
 	if !condition {
 		t.Error(errMsg)
-	}
-}
-
-// checkEq checks for equality *if* the expected value is non-zero.
-func checkEq(t *testing.T, expected, actual interface{}, errMsg string) {
-	t.Helper()
-	if expected == nil {
-		return
-	}
-	if exp, ok := expected.(int); ok && exp == 0 {
-		return
-	}
-	if exp, ok := expected.(string); ok && exp == "" {
-		return
-	}
-	if !reflect.DeepEqual(expected, actual) {
-		t.Errorf("expected %v, but got %v (%s)", expected, actual, errMsg)
 	}
 }
 

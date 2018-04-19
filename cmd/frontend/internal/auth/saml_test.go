@@ -223,7 +223,9 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	)
 	t.Run("unauthenticated homepage visit -> IDP SSO URL", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com", "", nil, nil)
-		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
+		if want := http.StatusFound; resp.StatusCode != want {
+			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		}
 		locURL, err := url.Parse(resp.Header.Get("Location"))
 		if err != nil {
 			t.Fatal(err)
@@ -301,8 +303,12 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		reqParams.Set("SAMLResponse", samlResponse)
 		reqParams.Set("RelayState", idpAuthnReq.RelayState)
 		resp := doRequest("POST", "http://example.com/.auth/saml/acs", "", authnCookies, reqParams)
-		checkEq(t, http.StatusFound, resp.StatusCode, "wrong status code")
-		checkEq(t, "http://example.com", resp.Header.Get("Location"), "wrong redirect location")
+		if want := http.StatusFound; resp.StatusCode != want {
+			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+		}
+		if got, want := resp.Header.Get("Location"), "http://example.com"; got != want {
+			t.Errorf("got redirect location %v, want %v", got, want)
+		}
 
 		// save the cookies from the login response
 		loggedInCookies = unexpiredCookies(resp)
@@ -310,17 +316,27 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 	t.Run("authenticated request to home page", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com", "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
-		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
-		checkEq(t, "This is the home", string(respBody), "wrong response body")
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+		}
+		if got, want := string(respBody), "This is the home"; got != want {
+			t.Errorf("got response body %v, want %v", got, want)
+		}
 	})
 	t.Run("authenticated request to sub page", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
-		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
-		checkEq(t, "This is a page", string(respBody), "wrong response body")
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+		}
+		if got, want := string(respBody), "This is a page"; got != want {
+			t.Errorf("got response body %v, want %v", got, want)
+		}
 	})
 	t.Run("verify actor gets set in request context", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/require-authn", "", loggedInCookies, nil)
-		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+		}
 	})
 }
