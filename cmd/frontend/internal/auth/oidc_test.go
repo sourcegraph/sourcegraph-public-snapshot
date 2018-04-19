@@ -57,7 +57,9 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 		b, _ := ioutil.ReadAll(r.Body)
 		values, _ := url.ParseQuery(string(b))
 
-		check(t, code == values.Get("code"), "code did not match expected")
+		if values.Get("code") != code {
+			t.Errorf("got code %q, want %q", values.Get("code"), code)
+		}
 		if got, want := values.Get("grant_type"), "authorization_code"; got != want {
 			t.Errorf("got grant_type %v, want %v", got, want)
 		}
@@ -207,12 +209,16 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 		locHeader := resp.Header.Get("Location")
-		check(t, strings.HasPrefix(locHeader, oidcProvider.Issuer+"/"), "did not redirect to OIDC Provider")
+		if !strings.HasPrefix(locHeader, oidcProvider.Issuer+"/") {
+			t.Error("did not redirect to OIDC Provider")
+		}
 		idpLoginURL, err := url.Parse(locHeader)
 		if err != nil {
 			t.Fatal(err)
 		}
-		check(t, oidcProvider.ClientID == idpLoginURL.Query().Get("client_id"), "client id didn't match")
+		if got, want := idpLoginURL.Query().Get("client_id"), oidcProvider.ClientID; got != want {
+			t.Errorf("got client id %q, want %q", got, want)
+		}
 		if got, want := idpLoginURL.Query().Get("redirect_uri"), "http://example.com/.auth/callback"; got != want {
 			t.Errorf("got redirect_uri %v, want %v", got, want)
 		}

@@ -230,7 +230,9 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		check(t, strings.HasPrefix(locURL.String(), idpServer.IDP.SSOURL.String()), "wrong redirect URL")
+		if !strings.HasPrefix(locURL.String(), idpServer.IDP.SSOURL.String()) {
+			t.Error("wrong redirect URL")
+		}
 
 		// save cookies and Authn request
 		authnCookies = unexpiredCookies(resp)
