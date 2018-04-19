@@ -12,6 +12,7 @@ const appURL = "http://my-app.com"
 
 // check checks if condition is true and errors with errMsg if false.
 func check(t *testing.T, condition bool, errMsg string) {
+	t.Helper()
 	if !condition {
 		t.Error(errMsg)
 	}
@@ -19,6 +20,7 @@ func check(t *testing.T, condition bool, errMsg string) {
 
 // checkEq checks for equality *if* the expected value is non-zero.
 func checkEq(t *testing.T, expected, actual interface{}, errMsg string) {
+	t.Helper()
 	if expected == nil {
 		return
 	}
