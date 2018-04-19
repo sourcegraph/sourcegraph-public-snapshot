@@ -91,7 +91,7 @@ func TestNewUserRequiredAuthzHandler(t *testing.T) {
 		},
 		{
 			name:       "auth__public_route",
-			req:        httptest.NewRequest("GET", "/sign-in", nil),
+			req:        withAuth(httptest.NewRequest("GET", "/sign-in", nil)),
 			allowed:    true,
 			wantStatus: http.StatusOK,
 			location:   "",
