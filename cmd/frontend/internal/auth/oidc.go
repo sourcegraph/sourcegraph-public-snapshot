@@ -61,7 +61,7 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	}
 
 	// Create handler for OIDC Authentication Code Flow endpoints
-	oidcHandler, err := newOIDCLoginHandler(createCtx, handler, appURL)
+	oidcHandler, err := newOIDCLoginHandler(createCtx, appURL)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func startAnonUserSession(ctx context.Context, w http.ResponseWriter, r *http.Re
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
+func newOIDCLoginHandler(createCtx context.Context, appURL string) (http.Handler, error) {
 	// Log when fetching the OIDC config from the provider is slow. (It blocks frontend startup.)
 	// This can happen on very high latency connections, or when the provider is unreachable.
 	timer := time.AfterFunc(5*time.Second, func() {
