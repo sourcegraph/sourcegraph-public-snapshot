@@ -60,7 +60,7 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 		check(t, code == values.Get("code"), "code did not match expected")
 		checkEq(t, "authorization_code", values.Get("grant_type"), "wrong grant_type")
 		redirectURI, _ := url.QueryUnescape(values.Get("redirect_uri"))
-		checkEq(t, appURL+"/.auth/callback", redirectURI, "wrong redirect_uri")
+		checkEq(t, "http://example.com/.auth/callback", redirectURI, "wrong redirect_uri")
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(fmt.Sprintf(`{
 			"access_token": "aaaaa",
@@ -155,7 +155,7 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, mockUserID), appURL)
+	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, mockUserID), "http://example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,22 +171,22 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 	}
 
 	t.Run("unauthenticated homepage visit -> login redirect", func(t *testing.T) {
-		resp := doRequest("GET", appURL, "", nil)
+		resp := doRequest("GET", "http://example.com", "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		checkEq(t, "/.auth/login?redirect=", resp.Header.Get("Location"), "wrong redirect URL")
 	})
 	t.Run("unauthenticated subpage visit -> login redirect", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/page", "", nil)
+		resp := doRequest("GET", "http://example.com/page", "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		checkEq(t, "/.auth/login?redirect=%2Fpage", resp.Header.Get("Location"), "wrong redirect URL")
 	})
 	t.Run("unauthenticated non-existent page visit -> login redirect", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/nonexistent", "", nil)
+		resp := doRequest("GET", "http://example.com/nonexistent", "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		checkEq(t, "/.auth/login?redirect=%2Fnonexistent", resp.Header.Get("Location"), "wrong redirect URL")
 	})
 	t.Run("login redirect -> sso login", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/.auth/login", "", nil)
+		resp := doRequest("GET", "http://example.com/.auth/login", "", nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		locHeader := resp.Header.Get("Location")
 		check(t, strings.HasPrefix(locHeader, oidcProvider.Issuer+"/"), "did not redirect to OIDC Provider")
@@ -195,39 +195,39 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 			t.Fatal(err)
 		}
 		check(t, oidcProvider.ClientID == idpLoginURL.Query().Get("client_id"), "client id didn't match")
-		checkEq(t, appURL+"/.auth/callback", idpLoginURL.Query().Get("redirect_uri"), "wrong redirect_uri")
+		checkEq(t, "http://example.com/.auth/callback", idpLoginURL.Query().Get("redirect_uri"), "wrong redirect_uri")
 		checkEq(t, "code", idpLoginURL.Query().Get("response_type"), "response_type was not \"code\"")
 		checkEq(t, "openid profile email", idpLoginURL.Query().Get("scope"), "scope was not \"openid\"")
 	})
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/.auth/callback?code=THECODE&state=ASDF", "", nil)
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state=ASDF", "", nil)
 		checkEq(t, http.StatusBadRequest, resp.StatusCode, "wrong status code")
 	})
 	var authCookies []*http.Cookie
 	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: oidcStateCookieName, Value: validState}})
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: oidcStateCookieName, Value: validState}})
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong status code")
 		checkEq(t, "/redirect", resp.Header.Get("Location"), "wrong redirect URL")
 		authCookies = unexpiredCookies(resp)
 	})
 	t.Run("authenticated homepage visit", func(t *testing.T) {
-		resp := doRequest("GET", appURL, "", authCookies)
+		resp := doRequest("GET", "http://example.com", "", authCookies)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong response code")
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, "This is the home", string(respBody), "wrong response body")
 	})
 	t.Run("authenticated subpage visit", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/page", "", authCookies)
+		resp := doRequest("GET", "http://example.com/page", "", authCookies)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong response code")
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, "This is a page", string(respBody), "wrong response body")
 	})
 	t.Run("authenticated non-existent page visit -> 404", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/nonexistent", "", authCookies)
+		resp := doRequest("GET", "http://example.com/nonexistent", "", authCookies)
 		checkEq(t, http.StatusNotFound, resp.StatusCode, "wrong response code")
 	})
 	t.Run("verify actor gets set in request context", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/require-authn", "", authCookies)
+		resp := doRequest("GET", "http://example.com/require-authn", "", authCookies)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 	})
 }
@@ -264,7 +264,7 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, 123), appURL)
+	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, 123), "http://example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 	}
 
 	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", []*http.Cookie{{Name: oidcStateCookieName, Value: state}})
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", []*http.Cookie{{Name: oidcStateCookieName, Value: state}})
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong status code")
 		checkEq(t, "/", resp.Header.Get("Location"), "wrong redirect URL") // Redirect to "/", NOT "http://evil.com"
 	})

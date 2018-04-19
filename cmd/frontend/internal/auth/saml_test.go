@@ -196,7 +196,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		}
 	})
 
-	authedHandler, err := newSAMLAuthHandler(context.Background(), appHandler, appURL)
+	authedHandler, err := newSAMLAuthHandler(context.Background(), appHandler, "http://example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +222,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		authnRequestURL string
 	)
 	t.Run("unauthenticated homepage visit -> IDP SSO URL", func(t *testing.T) {
-		resp := doRequest("GET", appURL, "", nil, nil)
+		resp := doRequest("GET", "http://example.com", "", nil, nil)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong response code")
 		locURL, err := url.Parse(resp.Header.Get("Location"))
 		if err != nil {
@@ -245,7 +245,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		loggedInCookies []*http.Cookie
 	)
 	t.Run("get SP metadata and register SP with IDP", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/.auth/saml/metadata", "", nil, nil)
+		resp := doRequest("GET", "http://example.com/.auth/saml/metadata", "", nil, nil)
 		service := samlidp.Service{}
 		if err := xml.NewDecoder(resp.Body).Decode(&service.Metadata); err != nil {
 			t.Fatal(err)
@@ -300,27 +300,27 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		reqParams := url.Values{}
 		reqParams.Set("SAMLResponse", samlResponse)
 		reqParams.Set("RelayState", idpAuthnReq.RelayState)
-		resp := doRequest("POST", appURL+"/.auth/saml/acs", "", authnCookies, reqParams)
+		resp := doRequest("POST", "http://example.com/.auth/saml/acs", "", authnCookies, reqParams)
 		checkEq(t, http.StatusFound, resp.StatusCode, "wrong status code")
-		checkEq(t, appURL, resp.Header.Get("Location"), "wrong redirect location")
+		checkEq(t, "http://example.com", resp.Header.Get("Location"), "wrong redirect location")
 
 		// save the cookies from the login response
 		loggedInCookies = unexpiredCookies(resp)
 	})
 	t.Run("authenticated request to home page", func(t *testing.T) {
-		resp := doRequest("GET", appURL, "", loggedInCookies, nil)
+		resp := doRequest("GET", "http://example.com", "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 		checkEq(t, "This is the home", string(respBody), "wrong response body")
 	})
 	t.Run("authenticated request to sub page", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/page", "", loggedInCookies, nil)
+		resp := doRequest("GET", "http://example.com/page", "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 		checkEq(t, "This is a page", string(respBody), "wrong response body")
 	})
 	t.Run("verify actor gets set in request context", func(t *testing.T) {
-		resp := doRequest("GET", appURL+"/require-authn", "", loggedInCookies, nil)
+		resp := doRequest("GET", "http://example.com/require-authn", "", loggedInCookies, nil)
 		checkEq(t, http.StatusOK, resp.StatusCode, "wrong status code")
 	})
 }

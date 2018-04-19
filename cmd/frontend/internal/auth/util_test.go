@@ -7,9 +7,6 @@ import (
 	"time"
 )
 
-// appURL is the URL of our fake OIDC-enabled app
-const appURL = "http://my-app.com"
-
 // check checks if condition is true and errors with errMsg if false.
 func check(t *testing.T, condition bool, errMsg string) {
 	t.Helper()
