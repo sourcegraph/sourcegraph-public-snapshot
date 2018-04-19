@@ -26,7 +26,7 @@ import (
 func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(), globals.AppURL.Scheme == "https"))
+	sm.Handle("/", handlerutil.CSRFMiddleware(app.NewHandler(), globals.AppURL.Scheme == "https"))
 	assets.Mount(sm)
 
 	var h http.Handler = sm

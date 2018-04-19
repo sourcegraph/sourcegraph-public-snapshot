@@ -285,7 +285,7 @@ func newOIDCLoginHandler(createCtx context.Context, appURL string) (http.Handler
 		}
 		http.Redirect(w, r, redirect, http.StatusFound)
 	})
-	return http.StripPrefix(authURLPrefix, handlerutil.NewHandlerWithCSRFProtection(r, globals.AppURL.Scheme == "https")), nil
+	return http.StripPrefix(authURLPrefix, handlerutil.CSRFMiddleware(r, globals.AppURL.Scheme == "https")), nil
 }
 
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
