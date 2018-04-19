@@ -80,21 +80,18 @@ func TestNewUserRequiredAuthzHandler(t *testing.T) {
 			req:        httptest.NewRequest("GET", "/sign-in", nil),
 			allowed:    true,
 			wantStatus: http.StatusOK,
-			location:   "",
 		},
 		{
 			name:       "auth__private_route",
 			req:        withAuth(httptest.NewRequest("GET", "/", nil)),
 			allowed:    true,
 			wantStatus: http.StatusOK,
-			location:   "",
 		},
 		{
 			name:       "auth__public_route",
 			req:        withAuth(httptest.NewRequest("GET", "/sign-in", nil)),
 			allowed:    true,
 			wantStatus: http.StatusOK,
-			location:   "",
 		},
 	}
 	for _, tst := range testcases {
