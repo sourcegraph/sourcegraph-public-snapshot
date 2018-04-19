@@ -113,7 +113,7 @@ func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
 	return srv
 }
 
-func Test_newOIDCAuthHandler(t *testing.T) {
+func Test_newOIDCAuthMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -161,15 +161,21 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, mockUserID), "http://example.com")
+	middleware, err := newOIDCAuthMiddleware(context.Background(), "http://example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
+	authedHandler := http.NewServeMux()
+	authedHandler.Handle("/.api/", middleware.API(requireAuthenticatedActor(t)))
+	authedHandler.Handle("/", middleware.App(requireAuthenticatedActor(t)))
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
+	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
+		}
+		if authed {
+			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
 		authedHandler.ServeHTTP(respRecorder, req)
@@ -177,16 +183,16 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 	}
 
 	t.Run("unauthenticated homepage visit -> login redirect", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com", "", nil)
+		resp := doRequest("GET", "http://example.com/", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/.auth/login?redirect="; got != want {
+		if got, want := resp.Header.Get("Location"), "/.auth/login?redirect=%2F"; got != want {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		}
 	})
 	t.Run("unauthenticated subpage visit -> login redirect", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/page", "", nil)
+		resp := doRequest("GET", "http://example.com/page", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -195,7 +201,7 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated non-existent page visit -> login redirect", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/nonexistent", "", nil)
+		resp := doRequest("GET", "http://example.com/nonexistent", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -203,8 +209,14 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		}
 	})
+	t.Run("unauthenticated API request -> HTTP 401 Unauthorized", func(t *testing.T) {
+		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false)
+		if want := http.StatusUnauthorized; resp.StatusCode != want {
+			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		}
+	})
 	t.Run("login redirect -> sso login", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/login", "", nil)
+		resp := doRequest("GET", "http://example.com/.auth/login", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -230,57 +242,35 @@ func Test_newOIDCAuthHandler(t *testing.T) {
 		}
 	})
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state=ASDF", "", nil)
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state=ASDF", "", nil, false)
 		if want := http.StatusBadRequest; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 	})
-	var authCookies []*http.Cookie
 	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: oidcStateCookieName, Value: validState}})
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: oidcStateCookieName, Value: validState}}, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 		if got, want := resp.Header.Get("Location"), "/redirect"; got != want {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		}
-		authCookies = unexpiredCookies(resp)
 	})
-	t.Run("authenticated homepage visit", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com", "", authCookies)
+	t.Run("authenticated app request", func(t *testing.T) {
+		resp := doRequest("GET", "http://example.com/", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		respBody, _ := ioutil.ReadAll(resp.Body)
-		if got, want := string(respBody), "This is the home"; got != want {
-			t.Errorf("got response body %v, want %v", got, want)
-		}
 	})
-	t.Run("authenticated subpage visit", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/page", "", authCookies)
+	t.Run("authenticated API request", func(t *testing.T) {
+		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
-		}
-		respBody, _ := ioutil.ReadAll(resp.Body)
-		if got, want := string(respBody), "This is a page"; got != want {
-			t.Errorf("got response body %v, want %v", got, want)
-		}
-	})
-	t.Run("authenticated non-existent page visit -> 404", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/nonexistent", "", authCookies)
-		if want := http.StatusNotFound; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
-		}
-	})
-	t.Run("verify actor gets set in request context", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/require-authn", "", authCookies)
-		if want := http.StatusOK; resp.StatusCode != want {
-			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 	})
 }
 
-func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
+func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -312,10 +302,11 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	authedHandler, err := newOIDCAuthHandler(context.Background(), newAppHandler(t, 123), "http://example.com")
+	middleware, err := newOIDCAuthMiddleware(context.Background(), "http://example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
+	authedHandler := middleware.App(requireAuthenticatedActor(t))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -335,27 +326,5 @@ func Test_newOIDCAuthHandler_NoOpenRedirect(t *testing.T) {
 		if got, want := resp.Header.Get("Location"), "/"; got != want {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		} // Redirect to "/", NOT "http://evil.com"
-	})
-}
-
-// newAppHandler returns a new mock app handler meant to be wrapped by the OIDC handler in tests.
-func newAppHandler(t *testing.T, mockedUserID int32) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "":
-			w.Write([]byte("This is the home"))
-		case "/page":
-			w.Write([]byte("This is a page"))
-		case "/require-authn":
-			actr := actor.FromContext(r.Context())
-			if actr.UID == 0 {
-				t.Errorf("in authn expected-endpoint, no actor was set; expected actor with UID %d", mockedUserID)
-			} else if actr.UID != mockedUserID {
-				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %d != %d", actr.UID, mockedUserID)
-			}
-			w.Write([]byte("Authenticated"))
-		default:
-			http.Error(w, "", http.StatusNotFound)
-		}
 	})
 }

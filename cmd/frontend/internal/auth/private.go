@@ -8,36 +8,46 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
-// newUserRequiredAuthzHandler wraps the handler and requires an authenticated client for all HTTP requests, except those
-// whitelisted by allowAnonymousRequest.
+// newUserRequiredAuthzMiddleware returns middlewares that require an authenticated client for all
+// HTTP requests, except those whitelisted by allowAnonymousRequest.
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits.
-func newUserRequiredAuthzHandler(handler http.Handler) http.Handler {
-	return session.CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		actor := actor.FromContext(r.Context())
+func newUserRequiredAuthzMiddleware() *Middleware {
+	return &Middleware{
+		API: func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// If an anonymous user tries to access an API endpoint that requires authentication,
+				// prevent access.
+				if !actor.FromContext(r.Context()).IsAuthenticated() && !allowAnonymousRequest(r) {
+					// Report HTTP 401 Unauthorized for API requests.
+					http.Error(w, "Private mode requires authentication.", http.StatusUnauthorized)
+					return
+				}
 
-		// If an anonymous user tries to access an endpoint that requires authentication, prevent access and
-		// redirect them to the login page.
-		if !actor.IsAuthenticated() && !allowAnonymousRequest(r) {
-			if isAPIRequest := strings.HasPrefix(r.URL.Path, "/.api/"); isAPIRequest {
-				// Report 401 Unauthorized for API requests. Redirect 302 Found for web page requests.
-				http.Error(w, "Private mode requires authentication.", http.StatusUnauthorized)
-			} else {
-				// Redirect 302 Found for web page requests.
-				q := url.Values{}
-				q.Set("returnTo", r.URL.String())
-				http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
-			}
-			return
-		}
+				// The client is authenticated, or the request is accessible to anonymous clients.
+				next.ServeHTTP(w, r)
+			})
+		},
+		App: func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// If an anonymous user tries to access an app endpoint that requires authentication,
+				// prevent access and redirect them to the login page.
+				if !actor.FromContext(r.Context()).IsAuthenticated() && !allowAnonymousRequest(r) {
+					// Redirect 302 Found for web page requests.
+					q := url.Values{}
+					q.Set("returnTo", r.URL.String())
+					http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
+					return
+				}
 
-		// The client is authenticated, or the request is accessible to anonymous clients.
-		handler.ServeHTTP(w, r)
-	}))
+				// The client is authenticated, or the request is accessible to anonymous clients.
+				next.ServeHTTP(w, r)
+			})
+		},
+	}
 }
 
 var (

@@ -146,7 +146,7 @@ func newSAMLIDPServer(t *testing.T) (*httptest.Server, *samlidp.Server) {
 	return srv, idpServer
 }
 
-func Test_newSAMLAuthHandler(t *testing.T) {
+func Test_newSAMLAuthMiddleware(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
 
@@ -176,10 +176,20 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		ServiceProviderPrivateKey:   testSAMLSPKey,
 	}
 
-	// Simulate an app
-	appHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Set up the test handler.
+	middleware, err := newSAMLAuthMiddleware(context.Background(), "http://example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	authedHandler := http.NewServeMux()
+	authedHandler.Handle("/.api/", middleware.API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID {
+			t.Errorf("got actor UID %d, want %d", uid, mockedUserID)
+		}
+	})))
+	authedHandler.Handle("/", middleware.App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "":
+		case "/":
 			w.Write([]byte("This is the home"))
 		case "/page":
 			w.Write([]byte("This is a page"))
@@ -194,12 +204,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		default:
 			http.Error(w, "", http.StatusNotFound)
 		}
-	})
-
-	authedHandler, err := newSAMLAuthHandler(context.Background(), appHandler, "http://example.com")
-	if err != nil {
-		t.Fatal(err)
-	}
+	})))
 
 	// doRequest simulates a request to our authed handler (i.e., the SAML Service Provider)
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, form url.Values) *http.Response {
@@ -222,7 +227,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		authnRequestURL string
 	)
 	t.Run("unauthenticated homepage visit -> IDP SSO URL", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com", "", nil, nil)
+		resp := doRequest("GET", "http://example.com/", "", nil, nil)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -243,6 +248,12 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		}
 		if err := xml.NewDecoder(flate.NewReader(bytes.NewBuffer(deflatedSAMLRequest))).Decode(&authnRequest); err != nil {
 			t.Fatal(err)
+		}
+	})
+	t.Run("unauthenticated API visit -> HTTP 401 Unauthorized", func(t *testing.T) {
+		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, nil)
+		if got, want := resp.StatusCode, http.StatusUnauthorized; got != want {
+			t.Errorf("wrong response code: got %v, want %v", got, want)
 		}
 	})
 	var (
@@ -308,7 +319,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "http://example.com"; got != want {
+		if got, want := resp.Header.Get("Location"), "http://example.com/"; got != want {
 			t.Errorf("got redirect location %v, want %v", got, want)
 		}
 
@@ -316,7 +327,7 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		loggedInCookies = unexpiredCookies(resp)
 	})
 	t.Run("authenticated request to home page", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com", "", loggedInCookies, nil)
+		resp := doRequest("GET", "http://example.com/", "", loggedInCookies, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
@@ -339,6 +350,12 @@ func Test_newSAMLAuthHandler(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/require-authn", "", loggedInCookies, nil)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+		}
+	})
+	t.Run("verify actor gets set in API request context", func(t *testing.T) {
+		resp := doRequest("GET", "http://example.com/.api/foo", "", loggedInCookies, nil)
+		if got, want := resp.StatusCode, http.StatusOK; got != want {
+			t.Errorf("wrong status code: got %v, want %v", got, want)
 		}
 	})
 }

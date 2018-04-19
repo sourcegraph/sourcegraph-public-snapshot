@@ -16,7 +16,7 @@ const (
 
 var ssoUserHeader = conf.AuthHTTPHeader()
 
-// newHTTPHeaderAuthHandler wraps the handler and checks for an HTTP header from an auth proxy that
+// httpHeaderAuthMiddleware is middleware that checks for an HTTP header from an auth proxy that
 // specifies the client's authenticated username. It's for use with auth proxies like
 // https://github.com/bitly/oauth2_proxy and is configured with the auth.provider=="http-header"
 // site config setting.
@@ -26,7 +26,7 @@ var ssoUserHeader = conf.AuthHTTPHeader()
 // http://localhost:4080. See `-h` for flag help.
 //
 // 🚨 SECURITY
-func newHTTPHeaderAuthHandler(handler http.Handler) http.Handler {
+func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// If the HTTP request contains the header from the auth proxy, get or create the user and
 		// proceed with the authenticated request.
@@ -52,7 +52,7 @@ func newHTTPHeaderAuthHandler(handler http.Handler) http.Handler {
 			}
 
 			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
-			handler.ServeHTTP(w, r)
+			next.ServeHTTP(w, r)
 			return
 		}
 
@@ -62,5 +62,4 @@ func newHTTPHeaderAuthHandler(handler http.Handler) http.Handler {
 		// certain easy-to-construct header, so this doesn't actually provide any security.
 		http.Error(w, "must access via HTTP authentication proxy", http.StatusUnauthorized)
 	})
-
 }

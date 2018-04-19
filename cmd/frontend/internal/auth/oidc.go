@@ -38,20 +38,20 @@ type UserClaims struct {
 	Picture           string `json:"picture"`
 }
 
-// newOIDCAuthHandler wraps the passed in handler with OpenID Connect (OIDC) authentication, adding endpoints
+// newOIDCAuthMiddleware returns middlewares for OpenID Connect (OIDC) authentication, adding endpoints
 // under the auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
 //
 // The OIDC spec (http://openid.net/specs/openid-connect-core-1_0.html) describes an authentication protocol
 // that involves 3 parties: the Relying Party (e.g., Sourcegraph Server), the OpenID Provider (e.g., Okta, OneLogin,
 // or another SSO provider), and the End User (e.g., a user's web browser).
 //
-// The handler this method returns implements two things: (1) the OIDC Authorization Code Flow
+// The middlewares this method returns implement two things: (1) the OIDC Authorization Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) and (2) Sourcegraph-specific session management
 // (outside the scope of the OIDC spec). Upon successful completion of the OIDC login flow, the handler will create
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
+func newOIDCAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
 	// Return an error if the OIDC parameters are unset or missing
 	if oidcProvider == nil {
 		return nil, errors.New("No OpenID Connect Provider specified")
@@ -60,40 +60,63 @@ func newOIDCAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 		return nil, fmt.Errorf("OIDC Client ID or Client Secret was empty")
 	}
 
+	authIfNeededMiddleware := func(nextIfAuthed, nextIfUnauthed http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Respect already authenticated actor (e.g., via access token).
+			if actor.FromContext(r.Context()).IsAuthenticated() {
+				nextIfAuthed.ServeHTTP(w, r)
+				return
+			}
+
+			// Support override token for e2e tests.
+			if oidcProvider.OverrideToken != "" && r.Header.Get("X-Oidc-Override") == oidcProvider.OverrideToken {
+				if err := startAnonUserSession(createCtx, w, r); err != nil {
+					log15.Error("Error initializing anonymous user", "error", err)
+					http.Error(w, "Error initializing anonymous user", http.StatusInternalServerError)
+					return
+				}
+				nextIfAuthed.ServeHTTP(w, r)
+				return
+			}
+
+			// Otherwise require OpenID authentication.
+			nextIfUnauthed.ServeHTTP(w, r)
+		})
+	}
+
 	// Create handler for OIDC Authentication Code Flow endpoints
 	oidcHandler, err := newOIDCLoginHandler(createCtx, appURL)
 	if err != nil {
 		return nil, err
 	}
-
-	return session.CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if oidcProvider.OverrideToken != "" && r.Header.Get("X-Oidc-Override") == oidcProvider.OverrideToken {
-			if err := startAnonUserSession(createCtx, w, r); err != nil {
-				log15.Error("Error initializing anonymous user", "error", err)
-				http.Error(w, "Error initializing anonymous user", http.StatusInternalServerError)
+	return &Middleware{
+		API: func(next http.Handler) http.Handler {
+			return authIfNeededMiddleware(next, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, "requires authentication", http.StatusUnauthorized)
 				return
-			}
-			handler.ServeHTTP(w, r)
-			return
-		}
+			}))
+		},
+		App: func(next http.Handler) http.Handler {
+			next = authIfNeededMiddleware(next, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Not authenticated: redirect to login and begin the OIDC Authn flow.
+				redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
+				query := url.Values(map[string][]string{"redirect": {redirectURL.String()}})
+				http.Redirect(w, r, authURLPrefix+"/login?"+query.Encode(), http.StatusFound)
+				return
+			}))
 
-		// If the path is under the authentication path, serve the OIDC Authentication Code Flow handler
-		if strings.HasPrefix(r.URL.Path, authURLPrefix+"/") {
-			oidcHandler.ServeHTTP(w, r)
-			return
-		}
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// If the path is under the authentication path, serve the OIDC Authentication Code Flow handler
+				if strings.HasPrefix(r.URL.Path, authURLPrefix+"/") {
+					oidcHandler.ServeHTTP(w, r)
+					return
+				}
 
-		// If not authenticated, redirect to login and begin the OIDC Authn flow.
-		if actr := actor.FromContext(r.Context()); !actr.IsAuthenticated() {
-			redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
-			query := url.Values(map[string][]string{"redirect": {redirectURL.String()}})
-			http.Redirect(w, r, authURLPrefix+"/login?"+query.Encode(), http.StatusFound)
-			return
-		}
-
-		// At this point, we've verified that the request has a valid sesssion, so serve the requested resource.
-		handler.ServeHTTP(w, r)
-	})), nil
+				// Otherwise proceed (will check auth).
+				next.ServeHTTP(w, r)
+			})
+		},
+	}, nil
 }
 
 func startAnonUserSession(ctx context.Context, w http.ResponseWriter, r *http.Request) error {

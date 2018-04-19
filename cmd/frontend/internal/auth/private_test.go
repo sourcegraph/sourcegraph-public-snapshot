@@ -1,13 +1,12 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
@@ -44,22 +43,12 @@ func TestAllowAnonymousRequest(t *testing.T) {
 	}
 }
 
-func TestNewUserRequiredAuthzHandler(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
-
+func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 	withAuth := func(r *http.Request) *http.Request {
-		w := httptest.NewRecorder()
-		if err := session.StartNewSession(w, httptest.NewRequest("GET", "/", nil), &actor.Actor{UID: 123}, time.Hour); err != nil {
-			t.Fatal(err)
-		}
-		for _, cookie := range w.Result().Cookies() {
-			if cookie.Expires.After(time.Now()) || cookie.MaxAge > 0 {
-				r.AddCookie(cookie)
-			}
-		}
-		return r
+		return r.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
 	}
+
+	middleware := newUserRequiredAuthzMiddleware()
 
 	testcases := []struct {
 		name       string
@@ -76,6 +65,12 @@ func TestNewUserRequiredAuthzHandler(t *testing.T) {
 			location:   "/sign-in?returnTo=%2F",
 		},
 		{
+			name:       "no_auth__api_route",
+			req:        httptest.NewRequest("GET", "/.api/graphql", nil),
+			allowed:    false,
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
 			name:       "no_auth__public_route",
 			req:        httptest.NewRequest("GET", "/sign-in", nil),
 			allowed:    true,
@@ -84,6 +79,12 @@ func TestNewUserRequiredAuthzHandler(t *testing.T) {
 		{
 			name:       "auth__private_route",
 			req:        withAuth(httptest.NewRequest("GET", "/", nil)),
+			allowed:    true,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "auth__api_route",
+			req:        withAuth(httptest.NewRequest("GET", "/.api/graphql", nil)),
 			allowed:    true,
 			wantStatus: http.StatusOK,
 		},
@@ -98,9 +99,13 @@ func TestNewUserRequiredAuthzHandler(t *testing.T) {
 		t.Run(tst.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
 			allowed := false
-			newUserRequiredAuthzHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				allowed = true
-			})).ServeHTTP(rec, tst.req)
+			setAllowedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { allowed = true })
+
+			handler := http.NewServeMux()
+			handler.Handle("/.api/", middleware.API(setAllowedHandler))
+			handler.Handle("/", middleware.App(setAllowedHandler))
+			handler.ServeHTTP(rec, tst.req)
+
 			if allowed != tst.allowed {
 				t.Fatalf("got request allowed %v want %v", allowed, tst.allowed)
 			}

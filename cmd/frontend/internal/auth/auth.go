@@ -21,39 +21,58 @@ var (
 	initializedMu sync.Mutex
 )
 
-// NewAuthHandler wraps the passed in handler with the appropriate authentication protocol (either OIDC or SAML)
-// based on what environment variables are set. This will expose endpoints necessary for the login flow and require
-// login for all other endpoints.
+// Middleware holds the middlewares that perform authentication. See NewAuthMiddleware for more
+// information.
+type Middleware struct {
+	// API is the middleware that performs authentication on the API handler. See NewAuthMiddleware
+	// for more information.
+	API func(http.Handler) http.Handler
+
+	// App is the middleware that performs authentication on the app handler. See NewAuthMiddleware
+	// for more information.
+	App func(http.Handler) http.Handler
+}
+
+// NewAuthMiddleware returns middlewares that perform authentication based on the currently configured
+// authentication provider (OpenID, SAML, builtin, etc.) This will expose endpoints necessary for
+// the login flow and require login for all other endpoints.
+//
+// It returns two middlewares that have slightly different behaviors: the apiMiddleware will just
+// return an HTTP 401 Unauthorized if unauthenticated; the appMiddleware will redirect the user to
+// the login flow or show a nice error page if unauthenticated (depending on the auth provider)
 //
 // Note: this should only be called at most once (there is implicit shared state on the backend via the session store
 // and the frontend via cookies). This function will return an error if called more than once.
-func NewAuthHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
+func NewAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
 	initializedMu.Lock()
 	defer initializedMu.Unlock()
 	if initialized {
-		return nil, errors.New("NewAuthHandler was invoked more than once")
+		return nil, errors.New("NewAuthMiddleware was invoked more than once")
 	}
 	initialized = true
 
 	if oidcProvider != nil {
 		log15.Info("SSO enabled", "protocol", "OpenID Connect")
-		return newOIDCAuthHandler(createCtx, handler, appURL)
+		return newOIDCAuthMiddleware(createCtx, appURL)
 	}
 	if samlProvider != nil {
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")
-		return newSAMLAuthHandler(createCtx, handler, appURL)
+		return newSAMLAuthMiddleware(createCtx, appURL)
 	}
 	if ssoUserHeader != "" {
 		log15.Info("SSO enabled", "protocol", "HTTP proxy header", "header", ssoUserHeader)
-		return newHTTPHeaderAuthHandler(handler), nil
+		// Same behavior for API and app.
+		return &Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware}, nil
 	}
 
 	// auth.public should only have an effect when auth.provider == "builtin".
 	if conf.GetTODO().AuthProvider == "builtin" && !conf.GetTODO().AuthPublic {
-		return newUserRequiredAuthzHandler(handler), nil
+		return newUserRequiredAuthzMiddleware(), nil
 	}
 
-	return handler, nil
+	// No auth.
+	passThrough := func(h http.Handler) http.Handler { return h }
+	return &Middleware{API: passThrough, App: passThrough}, nil
 }
 
 // NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's

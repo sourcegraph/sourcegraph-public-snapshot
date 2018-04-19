@@ -13,10 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-// SEE ALSO FOR MANUAL TESTING: See the newHTTPHeaderAuthHandler docstring for information about the
+// SEE ALSO FOR MANUAL TESTING: See the httpHeaderAuthMiddleware docstring for information about the
 // testproxy helper program, which helps with manual testing of the HTTP auth proxy behavior.
-func Test_newHTTPHeaderAuthHandler(t *testing.T) {
-	handler := newHTTPHeaderAuthHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Test_httpHeaderAuthMiddleware(t *testing.T) {
+	handler := httpHeaderAuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
 		if actor.IsAuthenticated() {
 			fmt.Fprintf(w, "user %v", actor.UID)

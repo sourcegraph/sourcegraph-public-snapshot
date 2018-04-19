@@ -25,8 +25,15 @@ import (
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
 func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
+	// 🚨 SECURITY: Add middleware for authentication provider.
+	authMiddleware, err := auth.NewAuthMiddleware(ctx, appURL)
+	if err != nil {
+		return nil, err
+	}
+
 	// HTTP API handler.
 	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))
+	apiHandler = authMiddleware.API(apiHandler) // auth provider
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-By header). Doing so would open it up to CSRF attacks.
 	apiHandler = session.CookieMiddlewareIfHeader(apiHandler, "X-Requested-By") // API accepts cookies with X-Requested-By header
@@ -35,8 +42,9 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 
 	// App handler (HTML pages).
 	appHandler := app.NewHandler()
-	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https")
-	appHandler = session.CookieMiddleware(appHandler) // app accepts cookies
+	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
+	appHandler = authMiddleware.App(appHandler)                                           // auth provider
+	appHandler = session.CookieMiddleware(appHandler)                                     // app accepts cookies
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
@@ -45,13 +53,6 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	assets.Mount(sm)
 
 	var h http.Handler = sm
-
-	// 🚨 SECURITY: Verify user identity if required
-	var err error
-	h, err = auth.NewAuthHandler(ctx, h, appURL)
-	if err != nil {
-		return nil, err
-	}
 
 	// Wrap in middleware.
 	//

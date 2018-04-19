@@ -23,11 +23,11 @@ import (
 // SAML App creation vars
 var samlProvider = conf.AuthSAML()
 
-// newSAMLAuthHandler wraps the passed in handler with SAML authentication, adding endpoints under the auth
+// newSAMLAuthMiddleware returns middlewares for SAML authentication, adding endpoints under the auth
 // path prefix to enable the login flow an requiring login for all other endpoints.
 //
 // 🚨 SECURITY
-func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL string) (http.Handler, error) {
+func newSAMLAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
 	if samlProvider == nil {
 		return nil, errors.New("No SAML ID Provider specified")
 	}
@@ -84,16 +84,50 @@ func newSAMLAuthHandler(createCtx context.Context, handler http.Handler, appURL 
 	samlSP.CookieName = "sg-session"
 
 	idpID := samlSP.ServiceProvider.IDPMetadata.EntityID
-	authedHandler := samlSP.RequireAccount(samlToActorMiddleware(handler, idpID))
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Handle SAML ACS and metadata endpoints
-		if strings.HasPrefix(r.URL.Path, authURLPrefix+"/saml/") {
-			samlSP.ServeHTTP(w, r)
-			return
-		}
-		// Handle all other endpoints
-		authedHandler.ServeHTTP(w, r)
-	}), nil
+	samlAuthIfNeededMiddleware := func(next http.Handler) http.Handler {
+		authedHandler := samlSP.RequireAccount(samlToActorMiddleware(next, idpID))
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Respect already authenticated actor (e.g., via access token).
+			if actor.FromContext(r.Context()).IsAuthenticated() {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Otherwise require SAML authentication.
+			authedHandler.ServeHTTP(w, r)
+		})
+	}
+
+	return &Middleware{
+		API: func(next http.Handler) http.Handler {
+			nextWithSAMLAuth := samlAuthIfNeededMiddleware(next)
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if actor.FromContext(r.Context()).IsAuthenticated() {
+					// Request is already authenticated (e.g., by access token).
+					next.ServeHTTP(w, r)
+					return
+				}
+				if c, _ := r.Cookie(samlSP.CookieName); c != nil {
+					// Try to use cookie to authenticate via SAML.
+					nextWithSAMLAuth.ServeHTTP(w, r)
+					return
+				}
+				http.Error(w, "requires authentication", http.StatusUnauthorized)
+			})
+		},
+		App: func(next http.Handler) http.Handler {
+			next = samlAuthIfNeededMiddleware(next)
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Handle SAML ACS and metadata endpoints.
+				if strings.HasPrefix(r.URL.Path, authURLPrefix+"/saml/") {
+					samlSP.ServeHTTP(w, r)
+					return
+				}
+				// Handle all other endpoints
+				next.ServeHTTP(w, r)
+			})
+		},
+	}, nil
 }
 
 // samlToActorMiddleware translates the SAML session into an Actor and sets it in the request context
