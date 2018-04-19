@@ -26,6 +26,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * More detailed progress information is displayed on pages that are waiting for repos to clone.
 * Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
+* Access tokens are now supported for all authentication providers (including OpenID and SAML, which were previously not supported).
 
 ## 2.7.0
 

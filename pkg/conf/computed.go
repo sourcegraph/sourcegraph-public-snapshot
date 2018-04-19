@@ -39,12 +39,8 @@ func HostSurveysLocallyEnabled() bool {
 }
 
 // AccessTokensEnabled returns whether access tokens are enabled.
-//
-// NOTE: It currently also returns false if the auth provider does not support access tokens.  SAML
-// and OpenID do not because of the way access tokens were implemented. That will be fixed soon.
 func AccessTokensEnabled() bool {
-	providerSupportsAccessTokens := AuthProvider() == "builtin" || AuthProvider() == "http-header"
-	return !Get().AuthDisableAccessTokens && providerSupportsAccessTokens
+	return !Get().AuthDisableAccessTokens
 }
 
 // EmailVerificationRequired returns whether users must verify an email address before they
