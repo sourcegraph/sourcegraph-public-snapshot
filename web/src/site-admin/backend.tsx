@@ -549,7 +549,9 @@ export function setUserIsSiteAdmin(userID: GQL.ID, siteAdmin: boolean): Observab
     )
 }
 
-export function randomizeUserPasswordBySiteAdmin(user: GQL.ID): Observable<GQL.IRandomizeUserPasswordBySiteAdminResult> {
+export function randomizeUserPasswordBySiteAdmin(
+    user: GQL.ID
+): Observable<GQL.IRandomizeUserPasswordBySiteAdminResult> {
     return mutateGraphQL(
         gql`
             mutation RandomizeUserPasswordBySiteAdmin($user: ID!) {

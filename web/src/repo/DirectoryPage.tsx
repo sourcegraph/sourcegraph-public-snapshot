@@ -93,7 +93,12 @@ export const fetchTree = memoizeObservable(
 )
 
 const fetchTreeCommits = memoizeObservable(
-    (args: { repo: GQL.ID; revspec: string; first?: number; filePath?: string }): Observable<GQL.IGitCommitConnection> =>
+    (args: {
+        repo: GQL.ID
+        revspec: string
+        first?: number
+        filePath?: string
+    }): Observable<GQL.IGitCommitConnection> =>
         queryGraphQL(
             gql`
                 query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String) {

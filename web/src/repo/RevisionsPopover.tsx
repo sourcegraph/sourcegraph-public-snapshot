@@ -14,7 +14,12 @@ import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 
 const fetchGitRefs = memoizeObservable(
-    (args: { repo: GQL.ID; first?: number; query?: string; type?: GQL.GitRefType }): Observable<GQL.IGitRefConnection> =>
+    (args: {
+        repo: GQL.ID
+        first?: number
+        query?: string
+        type?: GQL.GitRefType
+    }): Observable<GQL.IGitRefConnection> =>
         queryGraphQL(
             gql`
                 query RepositoryGitRefs($repo: ID!, $first: Int, $query: String, $type: GitRefType) {
