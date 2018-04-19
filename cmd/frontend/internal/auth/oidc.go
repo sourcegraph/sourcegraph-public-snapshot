@@ -22,7 +22,6 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/gorilla/csrf"
-	"github.com/gorilla/mux"
 )
 
 const oidcStateCookieName = "sg-oidc-state"
@@ -145,7 +144,7 @@ func newOIDCLoginHandler(createCtx context.Context, handler http.Handler, appURL
 	}
 	verifier := provider.Verifier(&oidc.Config{ClientID: oidcProvider.ClientID})
 
-	r := mux.NewRouter()
+	r := http.NewServeMux()
 
 	// Endpoint that starts the Authentication Request Code Flow.
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
