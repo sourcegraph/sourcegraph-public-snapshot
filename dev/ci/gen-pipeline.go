@@ -5,6 +5,7 @@ import (
 	"go/build"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -257,8 +258,8 @@ func main() {
 			panic(err)
 		}
 		for _, cmd := range cmds {
-			if cmd.Name() == "xlang-java" || cmd.Name() == "server" {
-				continue // xlang-java currently does not build successfully on CI
+			if cmd.Name() == "xlang-java" || cmd.Name() == "xlang-java-skinny" || cmd.Name() == "server" {
+				continue // xlang-java currently does not build successfully on CI because the CI image doesn't have mvn installed
 			}
 			addDockerImageStep(cmd.Name(), false)
 		}
@@ -273,6 +274,7 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 
 	case strings.HasPrefix(branch, "docker-images/"):
+		log.Printf("# HERE 2")
 		addDockerImageStep(branch[14:], true)
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
