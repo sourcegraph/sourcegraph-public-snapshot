@@ -212,6 +212,7 @@ func main() {
 	pipeline.AddStep(":webpack:",
 		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
+		Cmd("npm ci"),
 		Cmd("cd web"),
 		Cmd("npm ci"),
 		Cmd("NODE_ENV=production npm run build"))
