@@ -69,9 +69,9 @@ func (w *Worker) Work() {
 		}
 
 		start := time.Now()
-		log15.Info("Index started", "repo", repoRev.repo, "rev", repoRev.rev, "isPrimary", isPrimary)
+		log15.Debug("Index started", "repo", repoRev.repo, "rev", repoRev.rev, "isPrimary", isPrimary)
 		if err := w.index(repoRev.repo, repoRev.rev, isPrimary); err == nil {
-			log15.Info("Index finished", "repo", repoRev.repo, "rev", repoRev.rev, "isPrimary", isPrimary, "duration", time.Since(start))
+			log15.Debug("Index finished", "repo", repoRev.repo, "rev", repoRev.rev, "isPrimary", isPrimary, "duration", time.Since(start))
 		} else if vcs.IsCloneInProgress(err) {
 			if isPrimary {
 				log15.Info("Index postponed (clone in progress)", "repo", repoRev.repo, "rev", repoRev.rev)
