@@ -54,7 +54,6 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 func newInternalHTTPHandler() http.Handler {
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(httpapi.NewInternalHandler(router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()))))
-	internalMux.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
 	return gcontext.ClearHandler(internalMux)
 }
 

@@ -161,7 +161,7 @@ func gqlURL(queryName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	u.Path = "/.api/graphql"
+	u.Path = "/.internal/graphql"
 	u.RawQuery = queryName
 	return u.String(), nil
 }

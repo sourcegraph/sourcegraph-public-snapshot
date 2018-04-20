@@ -51,10 +51,9 @@ func New(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 
-	base.Path("/graphql").Methods("GET", "POST").Name(GraphQL)
 	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
-
-	base.Path("/telemetry/{TelemetryPath:.*}").Methods("POST").Name(Telemetry)
+	addGraphQLRoute(base)
+	addTelemetryRoute(base)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -102,6 +101,16 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/unindexed-dependencies").Methods("POST").Name(ReposUnindexedDependencies)
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/{RepoURI:.*}").Methods("POST").Name(ReposGetByURI)
+	addGraphQLRoute(base)
+	addTelemetryRoute(base)
 
 	return base
+}
+
+func addTelemetryRoute(m *mux.Router) {
+	m.Path("/telemetry/{TelemetryPath:.*}").Methods("POST").Name(Telemetry)
+}
+
+func addGraphQLRoute(m *mux.Router) {
+	m.Path("/graphql").Methods("GET", "POST").Name(GraphQL)
 }
