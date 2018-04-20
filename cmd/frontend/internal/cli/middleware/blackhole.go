@@ -7,7 +7,10 @@ import (
 )
 
 // BlackHole is a middleware which returns StatusGone on removed URLs that
-// external systems still regularly hit
+// external systems still regularly hit.
+//
+// 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
+// not authenticated. It must not reveal any sensitive information.
 func BlackHole(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isBlackhole(r) {

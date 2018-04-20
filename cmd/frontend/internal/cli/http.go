@@ -30,17 +30,21 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	assets.Mount(sm)
 
 	var h http.Handler = sm
-	h = middleware.SourcegraphComGoGetHandler(h)
-	h = middleware.BlackHole(h)
-	h = tracepkg.Middleware(h)
-	h = secureHeadersMiddleware(h)
+
 	// 🚨 SECURITY: Verify user identity if required
 	var err error
 	h, err = auth.NewAuthHandler(ctx, h, appURL)
 	if err != nil {
 		return nil, err
 	}
-	// Don't leak memory through gorilla/session items stored in context
+
+	// Wrap in middleware.
+	//
+	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
+	h = tracepkg.Middleware(h)
+	h = middleware.SourcegraphComGoGetHandler(h)
+	h = middleware.BlackHole(h)
+	h = secureHeadersMiddleware(h)
 	h = gcontext.ClearHandler(h)
 	return h, nil
 }
@@ -54,6 +58,10 @@ func newInternalHTTPHandler() http.Handler {
 	return gcontext.ClearHandler(internalMux)
 }
 
+// secureHeadersMiddleware adds and checks for HTTP security-related headers.
+//
+// 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
+// not authenticated. It must not reveal any sensitive information.
 func secureHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// headers for security

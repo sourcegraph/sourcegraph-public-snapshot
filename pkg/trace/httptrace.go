@@ -46,6 +46,9 @@ func init() {
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
+//
+// 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
+// not authenticated. It must not reveal any sensitive information.
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

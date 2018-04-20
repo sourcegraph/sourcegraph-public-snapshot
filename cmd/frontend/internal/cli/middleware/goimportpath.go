@@ -39,6 +39,9 @@ var goImportMetaTagTemplate = template.Must(template.New("").Parse(`<html><head>
 // 1. If the username (first path element) is "sourcegraph", consider it to be a vanity
 //    import path pointing to github.com/sourcegraph/<repo> as the clone URL.
 // 2. All other requests are served with 404 Not Found.
+//
+// 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
+// not authenticated. It must not reveal any sensitive information.
 func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Query().Get("go-get") != "1" {
