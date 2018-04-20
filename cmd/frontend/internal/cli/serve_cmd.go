@@ -187,7 +187,7 @@ func Main() error {
 	// The internal HTTP handler does not include the auth handlers.
 	internalHandler := newInternalHTTPHandler()
 
-	// serve will serve h on l. It additionally handles graceful restarts.
+	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}
 
 	// Start HTTPS server.
