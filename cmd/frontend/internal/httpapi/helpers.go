@@ -35,7 +35,7 @@ func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf schema.Gito
 	}
 	metadata, err := gitserver.DefaultClient.GetGitolitePhabricatorMetadata(ctx, gconf.Host, repoName)
 	if err != nil {
-		log15.Warn("Could not fetch metadata for Gitolite repository", "repo", repoName, "error", err)
+		log15.Warn("Could not fetch valid Phabricator metadata for Gitolite repository", "repo", repoName, "error", err)
 		return
 	}
 	if metadata.Callsign == "" {

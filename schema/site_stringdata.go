@@ -732,7 +732,7 @@ const SiteSchemaJSON = `{
         },
         "phabricatorMetadataCommand": {
           "description":
-            "Bash command to run to fetch Phabricator metadata for a Gitolite repository. This will be run with an environment variable $REPO set to the URI of the repository. It should print out the Phabricator callsign.",
+            "Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the URI of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
           "type": "string"
         }
       }

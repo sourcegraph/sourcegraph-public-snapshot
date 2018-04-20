@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 
@@ -26,6 +28,7 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 	case query("gitolite"):
 		gitoliteHost := q.Get("gitolite")
 		repoName := q.Get("repo")
+		// Iterate through Gitolite hosts, searching for one that will return the Phabricator mapping
 		for _, gconf := range conf.Get().Gitolite {
 			if gconf.Host != gitoliteHost {
 				continue
@@ -35,9 +38,11 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 			}
 			callsign, err := getGitolitePhabCallsign(r.Context(), gconf, repoName, gconf.PhabricatorMetadataCommand)
 			if err != nil {
+				log15.Warn("failed to get Phabricator callsign", "host", gconf.Host, "repo", repoName, "err", err)
 				continue
 			}
 
+			// Return the first valid mapping we find
 			err = json.NewEncoder(w).Encode(protocol.GitolitePhabricatorMetadataResponse{
 				Callsign: callsign,
 			})
@@ -58,17 +63,21 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 	}
 }
 
+var callSignPattern = regexp.MustCompile("^[A-Z]+$")
+
 func getGitolitePhabCallsign(ctx context.Context, gconf schema.GitoliteConnection, repo string, command string) (string, error) {
-	cmd := exec.CommandContext(ctx, "sh", "-c", command)
+	cmd := exec.CommandContext(ctx, "bash", "-c", command)
 	cmd.Env = append(os.Environ(), "REPO="+repo)
 	stdout, err := cmd.Output()
 	if err != nil {
-		log15.Warn("Command to get Gitolite Phabricator callsign failed", "repo", repo, "error", err, "stderr")
-		return "", err
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return "", fmt.Errorf("Command failed: %s, stderr: %s", exitErr, string(exitErr.Stderr))
+		}
+		return "", fmt.Errorf("Command failed: %s", err)
 	}
 	callsign := strings.TrimSpace(string(stdout))
-	if callsign == "" {
-		return "", fmt.Errorf("callsign command returned empty")
+	if !callSignPattern.MatchString(callsign) {
+		return "", fmt.Errorf("Callsign %q is invalid (must match `[A-Z]+`)", callsign)
 	}
 	return callsign, nil
 }
