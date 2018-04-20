@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+* Increased git ssh connection timeout to 30s from 7s.
+
 ### Fixed
 
 * Fixed an issue where langservers that were not enabled would display the "Restart" button in the Code Intelligence management panel.

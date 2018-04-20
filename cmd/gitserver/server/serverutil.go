@@ -25,7 +25,7 @@ func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd) ([]byte, 
 	// the command is non-interactive).
 	//
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
-	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=yes -o ConnectTimeout=7")
+	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=yes -o ConnectTimeout=30")
 
 	// Unset credential helper because the command is non-interactive.
 	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
