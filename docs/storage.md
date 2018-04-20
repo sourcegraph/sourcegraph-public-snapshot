@@ -32,14 +32,14 @@ Finally, restart your database server (mac: `brew services restart postgresql`)
 The Sourcegraph server reads PostgreSQL connection configuration from
 the
 [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html);
-for example:
+for example, in your `~/.bashrc`:
 
 ```
-PGPORT=5432
-PGUSER=sourcegraph
-PGPASSWORD=sourcegraph
-PGDATABASE=sourcegraph
-PGSSLMODE=disable
+export PGPORT=5432
+export PGUSER=sourcegraph
+export PGPASSWORD=sourcegraph
+export PGDATABASE=sourcegraph
+export PGSSLMODE=disable
 ```
 
 To test the environment's credentials, run `psql` (the PostgreSQL CLI

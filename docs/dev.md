@@ -42,10 +42,6 @@ This is a streamlined setup for Mac machines.
     brew services start redis
     ```
 
-### Sourcegraph Editor
-
-Download and install [Sourcegraph Editor](https://about.sourcegraph.com/beta/201708/)
-
 ## SSH keys
 
 If you don't already have an SSH key on your machine (e.g. `~/.ssh/id_rsa`), [you should create one](https://help.github.com/articles/connecting-to-github-with-ssh/). This allows you to pull code from GitHub without typing in your password.
@@ -83,7 +79,7 @@ Running the preceding commands will build and install the `src` binary in `$GOPA
 
 ## Redis
 
-You can follow the [instructions to install Redis natively](http://redis.io/topics/quickstart). If you have Docker installed and are running Linux, however, the easiest way to get Redis up and running is probably:
+If you didn't install Redis through Homebrew in the [Homebrew setup for macOS](#homebrew-setup-for-macos), you can follow the [instructions to install Redis natively](http://redis.io/topics/quickstart). If you have Docker installed and are running Linux, however, the easiest way to get Redis up and running is probably:
 
 ```
 sudo dockerd # if docker isn't already running
@@ -124,6 +120,16 @@ This will continuously compile your code and live reload your locally running
 instance of Sourcegraph. Navigate your browser to http://localhost:3080 to
 see if everything worked.
 
+If you see this error when opening the app:
+
+```
+500 Internal Server Error
+template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/style.bundle.css: no such file or directory
+```
+
+that means Webpack hasn't finished compiling the styles yet (it takes about 3 minutes).
+Simply wait a little while for a message from webpack like `web | 1841 modules` to appear in the terminal.
+
 `./dev/start.sh` may ask you to run ulimit to increase the maximum number
 of available file descriptors for a process. You can make this setting
 permanent for every shell session by adding the following line to your
@@ -159,7 +165,7 @@ go test ./util/textutil
 
 ## Debugger
 
-How to debug our code with Sourcegraph Editor or Visual Studio Code.
+How to debug our code with Visual Studio Code.
 
 ### TypeScript
 
@@ -182,7 +188,7 @@ Requires "Debugger for Chrome" extension.
   * e.g. `DELVE_FRONTEND=1 ./dev/start.sh`
   * Check `./dev/start.sh` for supported configurations (it is easy to add more).
   * Any binary that delve is attached to will not begin executing until you attach a debugger.
-* Run the appropriate attach task from Sourcegraph Editor.
+* Run the appropriate attach task from your editor.
   * e.g. "Attach to frontend"
 
 Known issues:
