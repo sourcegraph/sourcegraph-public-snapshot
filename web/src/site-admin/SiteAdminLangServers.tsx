@@ -195,7 +195,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <ul className="site-admin-lang-servers">
+            <div className="site-admin-lang-servers">
                 <div className="site-admin-lang-servers__header">
                     <div className="site-admin-lang-servers__header-icon">
                         <GlobeIcon className="icon-inline" />
@@ -232,7 +232,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                         {this.renderActions(langServer)}
                     </div>
                 ))}
-            </ul>
+            </div>
         )
     }
 

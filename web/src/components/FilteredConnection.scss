@@ -1,6 +1,7 @@
 .filtered-connection {
     &__nodes {
         list-style-type: none;
+        padding: 0;
     }
 
     &--noncompact &__form {
