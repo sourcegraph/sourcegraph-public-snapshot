@@ -40,7 +40,7 @@ func spawnProc(proc string) bool {
 	return procs[proc].quit
 }
 
-func terminateProc(proc string) error {
+func terminateProc(proc string, signal os.Signal) error {
 	dll, err := syscall.LoadDLL("kernel32.dll")
 	if err != nil {
 		return err

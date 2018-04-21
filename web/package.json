@@ -14,7 +14,7 @@
     "cover": "nyc --require ts-node/register mocha --timeout 10000 'src/**/*.test.ts?(x)'",
     "test-e2e": "mocha --require ts-node/register --require src/util/long-stack-traces.ts --timeout 60000 --slow 5000 --exit 'src/**/*.test.e2e.ts?(x)'",
     "build": "npm run schema && npm run graphql && npm run webpack",
-    "watch": "concurrently --raw \"npm run watch-schema\" \"npm run graphql\" \"npm run watch-webpack\"",
+    "watch": "concurrently --raw \"npm run watch-schema\" \"npm run graphql -- --watch\" \"npm run watch-webpack\"",
     "watch-webpack": "[ -n \"$USE_WEBPACK_DEV_SERVER\" ] && npm run webpack-dev-server || npm run webpack -- --watch",
     "webpack": "webpack-cli --config webpack.config.ts --colors",
     "webpack-dev-server": "webpack-dev-server --config webpack.config.ts --colors",

@@ -32,7 +32,7 @@ func (r *Goreman) Stop(args []string, ret *string) (err error) {
 		}
 	}()
 	for _, arg := range args {
-		if err = stopProc(arg, false); err != nil {
+		if err = stopProc(arg, false, nil); err != nil {
 			break
 		}
 	}
@@ -47,7 +47,7 @@ func (r *Goreman) StopAll(args []string, ret *string) (err error) {
 		}
 	}()
 	for proc := range procs {
-		if err = stopProc(proc, false); err != nil {
+		if err = stopProc(proc, false, nil); err != nil {
 			break
 		}
 	}

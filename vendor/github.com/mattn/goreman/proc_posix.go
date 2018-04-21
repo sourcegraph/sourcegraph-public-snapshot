@@ -13,7 +13,7 @@ import (
 func spawnProc(proc string) bool {
 	logger := createLogger(proc)
 
-	cs := []string{"/bin/sh", "-c", "exec " + procs[proc].cmdline}
+	cs := []string{"/bin/sh", "-c", procs[proc].cmdline}
 	cmd := exec.Command(cs[0], cs[1:]...)
 	cmd.Stdin = nil
 	cmd.Stdout = logger
@@ -40,7 +40,7 @@ func spawnProc(proc string) bool {
 	return procs[proc].quit
 }
 
-func terminateProc(proc string) error {
+func terminateProc(proc string, signal os.Signal) error {
 	p := procs[proc].cmd.Process
 	if p == nil {
 		return nil
@@ -61,5 +61,5 @@ func terminateProc(proc string) error {
 	if err != nil {
 		return err
 	}
-	return target.Signal(syscall.SIGHUP)
+	return target.Signal(signal)
 }
