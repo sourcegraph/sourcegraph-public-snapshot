@@ -53,7 +53,7 @@ class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<T
                     .filter(({ hidden }) => !hidden)
                     .map((tab, i) => (
                         <this.props.tabComponent
-                            key={i}
+                            key={tab.id}
                             tab={tab}
                             className={`btn btn-link btn-sm tab-bar__tab ${!this.props.endFragment &&
                                 'tab-bar__tab--flex-grow'} tab-bar__tab--${

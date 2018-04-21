@@ -193,11 +193,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 		if a.title == "" {
 			if suggestEnablingRepos {
-				a.title = "Enable more repositories or change your repo: filter to see results"
-				a.description = "Your repo: filter matched only disabled repositories. Go to site admin to enable more repositories, or broaden your repo: scope."
+				a.title = "Your repo: filter matched only disabled repositories"
+				a.description = "Go to site admin to enable more repositories, or broaden your repo: scope."
 			} else {
-				a.title = "Change your repo: filter to see results"
-				a.description = "No repositories satisfied your repo: filter."
+				a.title = "No repositories satisfied your repo: filter"
+				a.description = "Change your repo: filter to see results"
 			}
 			if proposeQueries && strings.TrimSpace(withoutRepoFields.Query()) != "" {
 				a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{

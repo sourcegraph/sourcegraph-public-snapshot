@@ -1,16 +1,15 @@
 import * as React from 'react'
 import { eventLogger } from '../tracking/eventLogger'
-import { Banner } from './Banner'
 
 const onClickInstall = (): void => {
     eventLogger.log('InstallSourcegraphServerCTAClicked', { location_on_page: 'banner' })
 }
 
 export const ServerBanner = () => (
-    <Banner
-        title="Search your private and internal code."
-        ctaLink="https://about.sourcegraph.com"
-        ctaText="Install Sourcegraph Server"
-        onClick={onClickInstall}
-    />
+    <div className="alert alert-secondary">
+        Search your private and internal code.{' '}
+        <a href="https://about.sourcegraph.com" onClick={onClickInstall}>
+            Install Sourcegraph Server
+        </a>.
+    </div>
 )

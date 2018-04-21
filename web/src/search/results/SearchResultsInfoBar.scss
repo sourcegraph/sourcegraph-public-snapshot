@@ -10,11 +10,6 @@
         flex-wrap: wrap;
         justify-content: space-between;
 
-        &-left,
-        &-right {
-            margin-top: 0.5rem;
-        }
-
         &-left {
             display: flex;
             flex-wrap: wrap;

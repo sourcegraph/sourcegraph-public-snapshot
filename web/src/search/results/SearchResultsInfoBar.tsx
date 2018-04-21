@@ -96,18 +96,19 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                 </div>
                 <div className="search-results-info-bar__row-right">
                     {/* Expand all feature */}
-                    <button onClick={props.onExpandAllResultsToggle} className="btn btn-link">
-                        {props.allExpanded ? (
-                            <>
-                                <ArrowCollapseVerticalIcon className="icon-inline" data-tooltip="Collapse" /> Collapse
-                                all
-                            </>
-                        ) : (
-                            <>
-                                <ArrowExpandVerticalIcon className="icon-inline" data-tooltip="Expand" /> Expand all
-                            </>
-                        )}
-                    </button>
+                    {props.results.results.length > 0 && (
+                        <button onClick={props.onExpandAllResultsToggle} className="btn btn-link">
+                            {props.allExpanded ? (
+                                <>
+                                    <ArrowCollapseVerticalIcon className="icon-inline" /> Collapse all
+                                </>
+                            ) : (
+                                <>
+                                    <ArrowExpandVerticalIcon className="icon-inline" /> Expand all
+                                </>
+                            )}
+                        </button>
+                    )}
                     {/* Saved Queries */}
                     {props.user && (
                         <button onClick={props.onSaveQueryClick} className="btn btn-link" disabled={props.didSave}>

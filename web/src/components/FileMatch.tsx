@@ -59,128 +59,130 @@ const subsetMatches = 2
 // Dev flag for disabling syntax highlighting on search results pages.
 const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
 
-export const FileMatch: React.StatelessComponent<Props> = (props: Props) => {
-    const parsed = new URL(props.result.resource)
-    const repoPath = parsed.hostname + decodeURIComponent(parsed.pathname)
-    const rev = parsed.search.substr('?'.length)
-    const filePath = parsed.hash.substr('#'.length)
-    const items = props.result.lineMatches.map(match => ({
-        highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
-            start: offsetAndLength[0],
-            highlightLength: offsetAndLength[1],
-        })),
-        preview: match.preview,
-        line: match.lineNumber,
-        uri: props.result.resource,
-        repoURI: repoPath,
-    }))
+export class FileMatch extends React.PureComponent<Props, {}> {
+    public render(): React.ReactNode {
+        const parsed = new URL(this.props.result.resource)
+        const repoPath = parsed.hostname + decodeURIComponent(parsed.pathname)
+        const rev = parsed.search.substr('?'.length)
+        const filePath = parsed.hash.substr('#'.length)
+        const items = this.props.result.lineMatches.map(match => ({
+            highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
+                start: offsetAndLength[0],
+                highlightLength: offsetAndLength[1],
+            })),
+            preview: match.preview,
+            line: match.lineNumber,
+            uri: this.props.result.resource,
+            repoURI: repoPath,
+        }))
 
-    const title = <RepoFileLink repoPath={repoPath} rev={rev} filePath={filePath} />
+        const title = <RepoFileLink repoPath={repoPath} rev={rev} filePath={filePath} />
 
-    const getChildren = (allMatches: boolean) => {
-        const showItems = items
-            .sort((a, b) => {
-                if (a.line < b.line) {
-                    return -1
-                }
-                if (a.line === b.line) {
-                    if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+        const getChildren = (allMatches: boolean) => {
+            const showItems = items
+                .sort((a, b) => {
+                    if (a.line < b.line) {
                         return -1
                     }
-                    if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
-                        return 0
+                    if (a.line === b.line) {
+                        if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+                            return -1
+                        }
+                        if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+                            return 0
+                        }
+                        return 1
                     }
                     return 1
-                }
-                return 1
-            })
-            .filter((item, i) => allMatches || i < subsetMatches)
+                })
+                .filter((item, i) => allMatches || i < subsetMatches)
 
-        if (NO_SEARCH_HIGHLIGHTING) {
+            if (NO_SEARCH_HIGHLIGHTING) {
+                return (
+                    <CodeExcerpt2
+                        urlWithoutPosition={toPrettyBlobURL({ repoPath, rev, filePath })}
+                        items={showItems}
+                        onSelect={this.props.onSelect}
+                    />
+                )
+            }
+
             return (
-                <CodeExcerpt2
-                    urlWithoutPosition={toPrettyBlobURL({ repoPath, rev, filePath })}
-                    items={showItems}
-                    onSelect={props.onSelect}
+                <div className="file-match__list">
+                    {/* Symbols */}
+                    {(this.props.result.symbols || []).map(symbol => (
+                        <Link
+                            to={symbol.url}
+                            className="file-match__item"
+                            key={`symbol:${symbol.name}${symbol.containerName}${symbol.url}`}
+                        >
+                            <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
+                            <code>
+                                {symbol.name}{' '}
+                                {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
+                            </code>
+                        </Link>
+                    ))}
+                    {showItems.map((item, i) => {
+                        const uri = new URL(item.uri)
+                        const position = { line: item.line + 1, character: item.highlightRanges[0].start + 1 }
+                        return (
+                            <Link
+                                to={toPrettyBlobURL({
+                                    repoPath: uri.hostname + uri.pathname,
+                                    rev,
+                                    filePath: uri.hash.substr('#'.length),
+                                    position,
+                                })}
+                                key={`linematch:${repoPath}:${rev}:${filePath}${position.line}:${position.character}`}
+                                className="file-match__item file-match__item-clickable"
+                                onClick={this.props.onSelect}
+                            >
+                                <CodeExcerpt
+                                    repoPath={repoPath}
+                                    commitID={rev}
+                                    filePath={filePath}
+                                    previewWindowExtraLines={1}
+                                    highlightRanges={item.highlightRanges}
+                                    line={item.line}
+                                    className="file-match__item-code-excerpt"
+                                    isLightTheme={this.props.isLightTheme}
+                                />
+                            </Link>
+                        )
+                    })}
+                </div>
+            )
+        }
+        if (this.props.showAllMatches) {
+            return (
+                <ResultContainer
+                    collapsible={true}
+                    defaultExpanded={this.props.expanded}
+                    icon={this.props.icon}
+                    title={title}
+                    expandedChildren={getChildren(true)}
+                    allExpanded={this.props.allExpanded}
+                />
+            )
+        } else {
+            return (
+                <ResultContainer
+                    collapsible={items.length > subsetMatches}
+                    defaultExpanded={this.props.expanded}
+                    icon={this.props.icon}
+                    title={title}
+                    collapsedChildren={getChildren(false)}
+                    expandedChildren={getChildren(true)}
+                    collapseLabel={`Hide ${items.length - subsetMatches} matches`}
+                    expandLabel={`Show ${items.length - subsetMatches} more ${pluralize(
+                        'match',
+                        items.length - subsetMatches,
+                        'matches'
+                    )}`}
+                    allExpanded={this.props.allExpanded}
                 />
             )
         }
-
-        return (
-            <div className="file-match__list">
-                {/* Symbols */}
-                {(props.result.symbols || []).map(symbol => (
-                    <Link
-                        to={symbol.url}
-                        className="file-match__item"
-                        key={`symbol:${symbol.name}${symbol.containerName}${symbol.url}`}
-                    >
-                        <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
-                        <code>
-                            {symbol.name}{' '}
-                            {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                        </code>
-                    </Link>
-                ))}
-                {showItems.map((item, i) => {
-                    const uri = new URL(item.uri)
-                    const position = { line: item.line + 1, character: item.highlightRanges[0].start + 1 }
-                    return (
-                        <Link
-                            to={toPrettyBlobURL({
-                                repoPath: uri.hostname + uri.pathname,
-                                rev,
-                                filePath: uri.hash.substr('#'.length),
-                                position,
-                            })}
-                            key={i}
-                            className="file-match__item file-match__item-clickable"
-                            onClick={props.onSelect}
-                        >
-                            <CodeExcerpt
-                                repoPath={repoPath}
-                                commitID={rev}
-                                filePath={filePath}
-                                previewWindowExtraLines={1}
-                                highlightRanges={item.highlightRanges}
-                                line={item.line}
-                                className="file-match__item-code-excerpt"
-                                isLightTheme={props.isLightTheme}
-                            />
-                        </Link>
-                    )
-                })}
-            </div>
-        )
-    }
-    if (props.showAllMatches) {
-        return (
-            <ResultContainer
-                collapsible={true}
-                defaultExpanded={props.expanded}
-                icon={props.icon}
-                title={title}
-                expandedChildren={getChildren(true)}
-                allExpanded={props.allExpanded}
-            />
-        )
-    } else {
-        return (
-            <ResultContainer
-                collapsible={items.length > subsetMatches}
-                defaultExpanded={props.expanded}
-                icon={props.icon}
-                title={title}
-                collapsedChildren={getChildren(false)}
-                expandedChildren={getChildren(true)}
-                collapseLabel={`Hide ${items.length - subsetMatches} matches`}
-                expandLabel={`Show ${items.length - subsetMatches} more ${pluralize(
-                    'match',
-                    items.length - subsetMatches,
-                    'matches'
-                )}`}
-                allExpanded={props.allExpanded}
-            />
-        )
     }
 }

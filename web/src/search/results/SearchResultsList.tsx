@@ -1,25 +1,24 @@
 import DocumentIcon from '@sourcegraph/icons/lib/Document'
+import ErrorIcon from '@sourcegraph/icons/lib/Error'
+import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
+import ReportIcon from '@sourcegraph/icons/lib/Report'
+import SearchIcon from '@sourcegraph/icons/lib/Search'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
 import { FileMatch } from '../../components/FileMatch'
 import { ModalContainer } from '../../components/ModalContainer'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorLike, isErrorLike } from '../../util/errors'
-import { isSearchResults } from '../helpers'
-import { parseSearchURLQuery } from '../index'
+import { buildSearchURLQuery, parseSearchURLQuery } from '../index'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
-import { SearchAlert } from './SearchAlert'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
-
-const DATA_CENTER_UPGRADE_STRING =
-    'Upgrade to Sourcegraph Data Center for distributed on-the-fly search and near-instant indexed search.'
-const SEARCH_TIMED_OUT_DEFAULT_TITLE = 'Search timed out'
 
 interface SearchResultsListProps {
     isLightTheme: boolean
@@ -45,72 +44,7 @@ interface SearchResultsListProps {
 
 export class SearchResultsList extends React.PureComponent<SearchResultsListProps, {}> {
     public render(): React.ReactNode {
-        let alert: {
-            title: string
-            description?: string | null
-            proposedQueries?: GQL.ISearchQueryDescription[]
-            errorBody?: React.ReactFragment
-        } | null = null
         const searchTimeoutParameterEnabled = window.context.searchTimeoutParameterEnabled
-        if (this.props.resultsOrError) {
-            if (isErrorLike(this.props.resultsOrError)) {
-                const error = this.props.resultsOrError
-                if (error.message.includes('no query terms or regexp specified')) {
-                    alert = { title: '', description: 'Enter terms to search...' }
-                } else {
-                    alert = { title: 'Something went wrong', description: upperFirst(error.message) }
-                }
-            } else {
-                const results = this.props.resultsOrError
-                if (results.alert) {
-                    alert = results.alert
-                } else if (
-                    results.results.length === 0 &&
-                    results.missing.length === 0 &&
-                    results.cloning.length === 0
-                ) {
-                    const defaultTimeoutAlert = {
-                        title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
-                        description: searchTimeoutParameterEnabled
-                            ? "Try narrowing your query, or specifying a longer 'timeout:' in your query."
-                            : 'Try narrowing your query.',
-                    }
-                    const longerTimeoutString = searchTimeoutParameterEnabled
-                        ? "Specify a longer 'timeout:' in your query."
-                        : ''
-                    if (results.timedout.length > 0) {
-                        if (window.context.sourcegraphDotComMode) {
-                            alert = defaultTimeoutAlert
-                        } else {
-                            if (window.context.likelyDockerOnMac) {
-                                alert = {
-                                    title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
-                                    errorBody: this.renderSearchAlertTimeoutDetails([
-                                        longerTimeoutString,
-                                        DATA_CENTER_UPGRADE_STRING,
-                                        'Use Docker Machine instead of Docker for Mac for better performance on macOS.',
-                                    ]),
-                                }
-                            } else if (!window.context.likelyDockerOnMac && !window.context.isRunningDataCenter) {
-                                alert = {
-                                    title: SEARCH_TIMED_OUT_DEFAULT_TITLE,
-                                    errorBody: this.renderSearchAlertTimeoutDetails([
-                                        longerTimeoutString,
-                                        DATA_CENTER_UPGRADE_STRING,
-                                        'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
-                                    ]),
-                                }
-                            } else {
-                                alert = defaultTimeoutAlert
-                            }
-                        }
-                    } else {
-                        alert = { title: 'No results' }
-                    }
-                }
-            }
-        }
-
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
         return (
@@ -130,10 +64,17 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     />
                 )}
 
-                {/* Loader */}
-                {this.props.resultsOrError === undefined && <Loader className="icon-inline" />}
-
-                {isSearchResults(this.props.resultsOrError) &&
+                {this.props.resultsOrError === undefined ? (
+                    <div className="text-center">
+                        <Loader className="icon-inline" /> Loading
+                    </div>
+                ) : isErrorLike(this.props.resultsOrError) ? (
+                    /* GraphQL, network, query syntax error */
+                    <div className="alert alert-warning">
+                        <ErrorIcon className="icon-inline" />
+                        {upperFirst(this.props.resultsOrError.message)}
+                    </div>
+                ) : (
                     (() => {
                         const results = this.props.resultsOrError
                         return (
@@ -152,60 +93,116 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                 {/* Results */}
                                 {results.results
                                     .slice(0, this.props.uiLimit)
-                                    .map((result, i) => this.renderResult(i, result, i <= 15))}
+                                    .map((result, i) => this.renderResult(result, i <= 15))}
 
                                 {/* Show more button */}
                                 {(results.limitHit || results.results.length > this.props.uiLimit) && (
                                     <button
-                                        className="btn btn-link search-results-list__more"
+                                        className="btn btn-secondary btn-block"
                                         onClick={this.props.onShowMoreResultsClick}
                                     >
                                         Show more
                                     </button>
                                 )}
+
+                                {/* Server-provided help message */}
+                                {results.alert ? (
+                                    <div className="alert alert-info">
+                                        <h3>
+                                            <ReportIcon className="icon-inline" /> {results.alert.title}
+                                        </h3>
+                                        <p>{results.alert.description}</p>
+                                        {results.alert.proposedQueries && (
+                                            <>
+                                                <h4>Did you mean:</h4>
+                                                <ul className="list-unstyled">
+                                                    {results.alert.proposedQueries.map(proposedQuery => (
+                                                        <li key={proposedQuery.query.query}>
+                                                            <Link
+                                                                className="btn btn-secondary btn-sm"
+                                                                to={
+                                                                    '/search?' +
+                                                                    buildSearchURLQuery(proposedQuery.query)
+                                                                }
+                                                            >
+                                                                {proposedQuery.query.query}
+                                                            </Link>
+                                                            {proposedQuery.description &&
+                                                                ` — ${proposedQuery.description}`}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </>
+                                        )}{' '}
+                                    </div>
+                                ) : (
+                                    results.results.length === 0 &&
+                                    (results.timedout.length > 0 ? (
+                                        /* No results, but timeout hit */
+                                        <div className="alert alert-warning">
+                                            <h3>
+                                                <HourglassIcon className="icon-inline" /> Search timed out
+                                            </h3>
+                                            {this.renderRecommendations([
+                                                <>
+                                                    Try narrowing your query{searchTimeoutParameterEnabled &&
+                                                        ', or specifying a longer "timeout:" in your query.'}
+                                                </>,
+                                                /* If running Sourcegraph Server, give some smart advice */
+                                                ...(!window.context.sourcegraphDotComMode &&
+                                                !window.context.isRunningDataCenter
+                                                    ? [
+                                                          <>
+                                                              Upgrade to Sourcegraph Data Center for distributed
+                                                              on-the-fly search and near-instant indexed search
+                                                          </>,
+                                                          window.context.likelyDockerOnMac
+                                                              ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS'
+                                                              : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO',
+                                                      ]
+                                                    : []),
+                                            ])}
+                                        </div>
+                                    ) : (
+                                        <div className="alert alert-info">
+                                            <h3 className="m-0">
+                                                <SearchIcon className="icon-inline" /> No results
+                                            </h3>
+                                        </div>
+                                    ))
+                                )}
                             </>
                         )
-                    })()}
-                {alert && (
-                    <SearchAlert
-                        className="search-results-list__alert"
-                        title={alert.title}
-                        description={alert.description || undefined}
-                        proposedQueries={alert.proposedQueries}
-                        location={this.props.location}
-                        errorBody={alert.errorBody}
-                    />
+                    })()
                 )}
+                <div className="pb-4" />
             </div>
         )
     }
 
-    private renderSearchAlertTimeoutDetails(items: string[]): React.ReactFragment {
+    /**
+     * Renders the given recommendations in a list if multiple, otherwise returns the first one or undefined
+     */
+    private renderRecommendations(recommendations: React.ReactNode[]): React.ReactNode {
+        if (recommendations.length <= 1) {
+            return recommendations[0]
+        }
         return (
-            <div className="search-alert__list">
-                <p className="search-alert__list-header">Recommendations:</p>
-                <ul className="search-alert__list-items">
-                    {items.map(
-                        (item, i) =>
-                            item && (
-                                <li key={i} className="search-alert__list-item">
-                                    {item}
-                                </li>
-                            )
-                    )}
-                </ul>
-            </div>
+            <>
+                <h4>Recommendations:</h4>
+                <ul>{recommendations.map((recommendation, i) => <li key={i}>{recommendation}</li>)}</ul>
+            </>
         )
     }
 
-    private renderResult(key: number, result: GQL.SearchResult, expanded: boolean): React.ReactNode {
+    private renderResult(result: GQL.SearchResult, expanded: boolean): React.ReactNode {
         switch (result.__typename) {
             case 'Repository':
-                return <RepositorySearchResult key={key} result={result} onSelect={this.logEvent} />
+                return <RepositorySearchResult key={'repo:' + result.id} result={result} onSelect={this.logEvent} />
             case 'FileMatch':
                 return (
                     <FileMatch
-                        key={key}
+                        key={'file:' + result.resource}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? RepoIcon : DocumentIcon}
                         result={result}
                         onSelect={this.logEvent}
@@ -218,7 +215,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             case 'CommitSearchResult':
                 return (
                     <CommitSearchResult
-                        key={key}
+                        key={'commit:' + result.commit.id}
                         location={this.props.location}
                         result={result}
                         onSelect={this.logEvent}

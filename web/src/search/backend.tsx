@@ -30,6 +30,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                         results {
                             ... on Repository {
                                 __typename
+                                id
                                 uri
                             }
                             ... on FileMatch {
@@ -83,6 +84,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                     }
                                 }
                                 commit {
+                                    id
                                     repository {
                                         uri
                                     }

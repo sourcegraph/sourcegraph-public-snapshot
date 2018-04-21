@@ -14,7 +14,7 @@ interface Props {
 
 interface State {}
 
-export class VirtualList extends React.Component<Props, State> {
+export class VirtualList extends React.PureComponent<Props, State> {
     public onChangeVisibility = (isVisible: boolean, i: number): void => {
         if (isVisible && i >= this.props.itemsToShow - 2) {
             this.props.onShowMoreItems()
@@ -26,7 +26,7 @@ export class VirtualList extends React.Component<Props, State> {
             <div>
                 {this.props.items.slice(0, this.props.itemsToShow).map((item, i) => (
                     <VisibilitySensor
-                        key={i}
+                        key={item.key}
                         // tslint:disable-next-line:jsx-no-lambda
                         onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, i)}
                         partialVisibility={true}
