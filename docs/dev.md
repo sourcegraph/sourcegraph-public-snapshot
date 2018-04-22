@@ -13,7 +13,7 @@ development environment.
 For Linux users or if you don't want to use Homebrew on macOS.
 
 * [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-* [Go](https://golang.org/doc/install) (v1.9.0 or higher)
+* [Go](https://golang.org/doc/install) (v1.10.0 or higher)
 * [Node JS](https://nodejs.org/en/download/) (v7.0.0 or higher)
 * [make](https://www.gnu.org/software/make/)
 * [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
