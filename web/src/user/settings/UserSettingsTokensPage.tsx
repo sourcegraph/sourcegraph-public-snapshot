@@ -1,182 +1,22 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
-import CircleCheckmarkIcon from '@sourcegraph/icons/lib/CircleCheckmark'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
-import { catchError } from 'rxjs/operators/catchError'
-import { filter } from 'rxjs/operators/filter'
 import { map } from 'rxjs/operators/map'
-import { mapTo } from 'rxjs/operators/mapTo'
-import { startWith } from 'rxjs/operators/startWith'
-import { switchMap } from 'rxjs/operators/switchMap'
-import { tap } from 'rxjs/operators/tap'
 import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
-import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
+import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
-import { CopyableText } from '../../components/CopyableText'
-import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
+import {
+    accessTokenFragment,
+    AccessTokenNode,
+    AccessTokenNodeProps,
+    FilteredAccessTokenConnection,
+} from '../../settings/tokens/AccessTokenNode'
 import { eventLogger } from '../../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { createAggregateError } from '../../util/errors'
 import { UserAreaPageProps } from '../area/UserArea'
-
-interface AccessTokenCreatedAlertProps {
-    className: string
-    token: string
-}
-
-class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCreatedAlertProps> {
-    public render(): JSX.Element | null {
-        return (
-            <div className={`access-token-created-alert ${this.props.className}`}>
-                <p>
-                    <CircleCheckmarkIcon className="icon-inline" /> Copy your new personal access token now. You won't
-                    be able to see it again.
-                </p>
-                <CopyableText text={this.props.token} size={48} />
-                <h5 className="mt-4">
-                    <strong>Example usage</strong>
-                </h5>
-                <pre className="mt-1">
-                    <code>{curlExampleCommand(this.props.token)}</code>
-                </pre>
-            </div>
-        )
-    }
-}
-
-function curlExampleCommand(token: string): string {
-    return `curl \\
-  -H 'Authorization: token ${token}' \\
-  -d '{"query":"query { currentUser { username } }"}' \\
-  ${window.context.appURL}/.api/graphql`
-}
-
-function deleteAccessToken(tokenID: GQL.ID): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation DeleteAccessToken($tokenID: ID!) {
-                deleteAccessToken(byID: $tokenID) {
-                    alwaysNil
-                }
-            }
-        `,
-        { tokenID }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.deleteAccessToken || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-        })
-    )
-}
-
-interface AccessTokenNodeProps {
-    node: GQL.IAccessToken
-
-    /**
-     * The newly created token, if any. This contains the secret for this node's token iff node.id
-     * === newToken.id.
-     */
-    newToken?: GQL.ICreateAccessTokenResult
-
-    onDidUpdate: () => void
-}
-
-interface AccessTokenNodeState {
-    /** Undefined means in progress, null means done or not started. */
-    deletionOrError?: null | ErrorLike
-}
-
-class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, AccessTokenNodeState> {
-    public state: AccessTokenNodeState = { deletionOrError: null }
-
-    private deletes = new Subject<void>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.deletes
-                .pipe(
-                    filter(() =>
-                        window.confirm(
-                            'Really delete and revoke this token? Any clients using it will no longer be able to access the Sourcegraph API.'
-                        )
-                    ),
-                    switchMap(() =>
-                        deleteAccessToken(this.props.node.id).pipe(
-                            mapTo(null),
-                            catchError(error => [asError(error)]),
-                            map(c => ({ deletionOrError: c })),
-                            tap(() => {
-                                if (this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
-                                }
-                            }),
-                            startWith<Pick<AccessTokenNodeState, 'deletionOrError'>>({ deletionOrError: null })
-                        )
-                    )
-                )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
-        )
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        const loading = this.state.deletionOrError === undefined
-        return (
-            <li className="list-group-item p-3 d-block">
-                <div className="d-flex w-100 justify-content-between">
-                    <div className="mr-2">
-                        <strong>{this.props.node.note || '(no description)'}</strong>{' '}
-                        <small className="text-muted">
-                            {' '}
-                            &mdash;{' '}
-                            {this.props.node.lastUsedAt ? (
-                                <>
-                                    last used <Timestamp date={this.props.node.lastUsedAt} />
-                                </>
-                            ) : (
-                                'never used'
-                            )}, created <Timestamp date={this.props.node.createdAt} />
-                        </small>
-                    </div>
-                    <div>
-                        <button className="btn btn-danger" onClick={this.deleteAccessToken} disabled={loading}>
-                            Delete
-                        </button>
-                        {isErrorLike(this.state.deletionOrError) && (
-                            <div className="alert alert-danger mt-2">
-                                Error: {upperFirst(this.state.deletionOrError.message)}
-                            </div>
-                        )}
-                    </div>
-                </div>
-                {this.props.newToken &&
-                    this.props.node.id === this.props.newToken.id && (
-                        <AccessTokenCreatedAlert
-                            className="alert alert-success mt-4"
-                            token={this.props.newToken.token}
-                        />
-                    )}
-            </li>
-        )
-    }
-
-    private deleteAccessToken = () => this.deletes.next()
-}
-
-class FilteredAccessTokenConnection extends FilteredConnection<
-    GQL.IAccessToken,
-    Pick<AccessTokenNodeProps, 'onDidUpdate'>
-> {}
 
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     /**
@@ -259,10 +99,7 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
                         ... on User {
                             accessTokens(first: $first) {
                                 nodes {
-                                    id
-                                    note
-                                    createdAt
-                                    lastUsedAt
+                                    ...AccessTokenFields
                                 }
                                 totalCount
                                 pageInfo {
@@ -272,6 +109,7 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
                         }
                     }
                 }
+                ${accessTokenFragment}
             `,
             { ...args, user: this.props.user.id }
         ).pipe(
