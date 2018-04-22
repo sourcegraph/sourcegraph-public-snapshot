@@ -77,7 +77,6 @@ function deleteAccessToken(tokenID: GQL.ID): Observable<void> {
 
 interface AccessTokenNodeProps {
     node: GQL.IAccessToken
-    user: GQL.IUser
 
     /**
      * The newly created token, if any. This contains the secret for this node's token iff node.id
@@ -176,7 +175,7 @@ class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, AccessTo
 
 class FilteredAccessTokenConnection extends FilteredConnection<
     GQL.IAccessToken,
-    Pick<AccessTokenNodeProps, 'user' | 'onDidUpdate'>
+    Pick<AccessTokenNodeProps, 'onDidUpdate'>
 > {}
 
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
@@ -220,8 +219,7 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<AccessTokenNodeProps, 'user' | 'onDidUpdate' | 'newToken'> = {
-            user: this.props.user,
+        const nodeProps: Pick<AccessTokenNodeProps, 'onDidUpdate' | 'newToken'> = {
             onDidUpdate: this.onDidUpdateAccessToken,
             newToken: this.props.newToken,
         }
