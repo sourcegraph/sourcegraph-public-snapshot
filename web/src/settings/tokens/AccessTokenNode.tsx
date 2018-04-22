@@ -1,5 +1,6 @@
 import { upperFirst } from 'lodash'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs/Observable'
 import { catchError } from 'rxjs/operators/catchError'
 import { filter } from 'rxjs/operators/filter'
@@ -14,6 +15,7 @@ import { gql, mutateGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { Timestamp } from '../../components/time/Timestamp'
+import { userURL } from '../../user'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { AccessTokenCreatedAlert } from './AccessTokenCreatedAlert'
 
@@ -23,6 +25,9 @@ export const accessTokenFragment = gql`
         note
         createdAt
         lastUsedAt
+        user {
+            username
+        }
     }
 `
 
@@ -47,6 +52,9 @@ function deleteAccessToken(tokenID: GQL.ID): Observable<void> {
 
 export interface AccessTokenNodeProps {
     node: GQL.IAccessToken
+
+    /** Whether the user who owns the token should be displayed. */
+    showUser?: boolean
 
     /**
      * The newly created token, if any. This contains the secret for this node's token iff node.id
@@ -100,12 +108,24 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
     }
 
     public render(): JSX.Element | null {
+        const note = this.props.node.note || '(no description)'
         const loading = this.state.deletionOrError === undefined
         return (
             <li className="list-group-item p-3 d-block">
                 <div className="d-flex w-100 justify-content-between">
                     <div className="mr-2">
-                        <strong>{this.props.node.note || '(no description)'}</strong>{' '}
+                        {this.props.showUser ? (
+                            <>
+                                <strong>
+                                    <Link to={userURL(this.props.node.user.username)}>
+                                        {this.props.node.user.username}
+                                    </Link>
+                                </strong>{' '}
+                                &mdash; {note}
+                            </>
+                        ) : (
+                            <strong>{note}</strong>
+                        )}{' '}
                         <small className="text-muted">
                             {' '}
                             &mdash;{' '}

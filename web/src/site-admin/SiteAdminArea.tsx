@@ -17,6 +17,7 @@ import { SiteAdminSidebar } from './SiteAdminSidebar'
 import { SiteAdminSurveyResponsesPage } from './SiteAdminSurveyResponsesPage'
 import { SiteAdminTelemetryPage } from './SiteAdminTelemetryPage'
 import { SiteAdminThreadsPage } from './SiteAdminThreadsPage'
+import { SiteAdminTokensPage } from './SiteAdminTokensPage'
 import { SiteAdminUpdatesPage } from './SiteAdminUpdatesPage'
 
 const NotFoundPage = () => (
@@ -113,6 +114,15 @@ export class SiteAdminArea extends React.Component<Props> {
                             path={`${this.props.match.url}/invite-user`}
                             component={SiteAdminInviteUserPage}
                             exact={true}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/tokens`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <SiteAdminTokensPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
                         <Route path={`${this.props.match.url}/threads`} component={SiteAdminThreadsPage} exact={true} />
                         <Route

@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased Changes
 
+### Added
+
+* Site admins may now view all access tokens site-wide (for all users) and revoke tokens from the new access tokens page in the site admin area.
+
 ### Changed
 
 * In Sourcegraph Data Center, RBAC is now used by default. Most Kubernetes clusters require it. See the Data Center installation instructions for more information (including disabling if needed).
