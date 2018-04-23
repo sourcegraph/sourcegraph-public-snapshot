@@ -6,6 +6,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+* In Sourcegraph Data Center, RBAC is now used by default. Most Kubernetes clusters require it. See the Data Center installation instructions for more information (including disabling if needed).
 * Increased git ssh connection timeout to 30s from 7s.
 
 ### Fixed
