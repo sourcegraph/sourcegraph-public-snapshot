@@ -30,7 +30,7 @@ func main() {
 		if !ok {
 			return n, true
 		}
-		if strings.HasPrefix(x.Path.Value, "\"sourcegraph.com/sourcegraph/sourcegraph/") {
+		if strings.HasPrefix(x.Path.Value, "\"sourcegraph.com/sourcegraph/") && !strings.Contains(x.Path.Value, "go-diff") {
 			x.Path.Value = "\"github.com" + x.Path.Value[len("\"sourcegraph.com"):]
 		}
 		return x, true
