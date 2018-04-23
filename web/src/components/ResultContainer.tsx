@@ -4,7 +4,7 @@ import ChevronUpIcon from '@sourcegraph/icons/lib/ChevronUp'
 import * as React from 'react'
 import { eventLogger } from '../tracking/eventLogger'
 
-interface Props {
+export interface Props {
     /**
      * Whether the result container's children are visible by default.
      * The header is always visible even when the component is not expanded.
