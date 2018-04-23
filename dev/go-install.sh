@@ -5,7 +5,7 @@ export GOBIN=$PWD/.bin
 
 go install github.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
 
-TAGS='all=dev'
+TAGS='dev'
 if [ -n "$DELVE" ]; then
 	echo 'Building with optimizations disabled (for debugging). Make sure you have at least go1.10 installed.'
 	GCFLAGS='all=-N -l'
