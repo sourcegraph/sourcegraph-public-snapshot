@@ -94,7 +94,6 @@ var graphiqlPage = []byte(`
 			}
 
 			function graphQLFetcher(graphQLParams) {
-				graphQLParams.variables = graphQLParams.variables ? JSON.parse(graphQLParams.variables) : null;
 				return fetch("/.api/graphql", {
 					method: "post",
 					body: JSON.stringify(graphQLParams),
