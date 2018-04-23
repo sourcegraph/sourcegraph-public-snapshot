@@ -326,7 +326,7 @@ func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri RepoURI,
 }
 
 func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody interface{}) error {
-	return c.post(ctx, "telemetry/log/v1/"+env, reqBody, nil)
+	return c.post(ctx, "/telemetry/log/v1/"+env, reqBody, nil)
 }
 
 // postInternal sends an HTTP post request to the internal route.
