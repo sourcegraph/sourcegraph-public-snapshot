@@ -64,6 +64,11 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	return
 }
 
+func (r *repositoryResolver) Name() string {
+	return string(r.repo.URI)
+}
+
+// TODO(chris): Remove URI in favor of Name.
 func (r *repositoryResolver) URI() string {
 	return string(r.repo.URI)
 }
@@ -229,10 +234,16 @@ func (t *totalRefListResolver) Total() int32 {
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
-	URI      string
-	URL      string
+	Name     *string
+	// TODO(chris): Remove URI in favor of Name.
+	URI *string
+	URL string
 }) (*EmptyResponse, error) {
-	_, err := db.Phabricator.CreateIfNotExists(ctx, args.Callsign, api.RepoURI(args.URI), args.URL)
+	if args.Name != nil {
+		args.URI = args.Name
+	}
+
+	_, err := db.Phabricator.CreateIfNotExists(ctx, args.Callsign, api.RepoURI(*args.URI), args.URL)
 	if err != nil {
 		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI, "url", args.URL)
 	}

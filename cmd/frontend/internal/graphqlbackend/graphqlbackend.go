@@ -175,12 +175,20 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	}
 }
 
-func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI string }) (*repositoryResolver, error) {
-	if args.URI == "" {
+func (r *schemaResolver) Repository(ctx context.Context, args *struct {
+	Name *string
+	// TODO(chris): Remove URI in favor of Name.
+	URI *string
+}) (*repositoryResolver, error) {
+	if args.Name != nil {
+		args.URI = args.Name
+	}
+
+	if args.URI == nil {
 		return nil, nil
 	}
 
-	repo, err := backend.Repos.GetByURI(ctx, api.RepoURI(args.URI))
+	repo, err := backend.Repos.GetByURI(ctx, api.RepoURI(*args.URI))
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
 			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
@@ -198,8 +206,16 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct{ URI strin
 	return &repositoryResolver{repo: repo}, nil
 }
 
-func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct{ URI string }) (*phabricatorRepoResolver, error) {
-	repo, err := db.Phabricator.GetByURI(ctx, api.RepoURI(args.URI))
+func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
+	Name *string
+	// TODO(chris): Remove URI in favor of Name.
+	URI *string
+}) (*phabricatorRepoResolver, error) {
+	if args.Name != nil {
+		args.URI = args.Name
+	}
+
+	repo, err := db.Phabricator.GetByURI(ctx, api.RepoURI(*args.URI))
 	if err != nil {
 		return nil, err
 	}

@@ -233,9 +233,15 @@ type Mutation {
     addUserToOrganization(organization: ID!, usernameOrEmail: String!): EmptyResponse!
     removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
     # adds a phabricator repository to the Sourcegraph server.
-    # example callsign: "MUX"
-    # example uri: "github.com/gorilla/mux"
-    addPhabricatorRepo(callsign: String!, uri: String!, url: String!): EmptyResponse
+    addPhabricatorRepo(
+        # The callsign, for example "MUX".
+        callsign: String!
+        # The name, for example "github.com/gorilla/mux".
+        name: String
+        # An alias for name. DEPRECATED: provide name instead.
+        uri: String
+        url: String!
+    ): EmptyResponse
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
@@ -385,8 +391,18 @@ type RandomizeUserPasswordBySiteAdminResult {
 type Query {
     root: Query! @deprecated
     node(id: ID!): Node
-    repository(uri: String!): Repository
-    phabricatorRepo(uri: String!): PhabricatorRepo
+    repository(
+        # The name, for example "github.com/gorilla/mux".
+        name: String
+        # An alias for name. DEPRECATED: provide name instead.
+        uri: String
+    ): Repository
+    phabricatorRepo(
+        # The name, for example "github.com/gorilla/mux".
+        name: String
+        # An alias for name. DEPRECATED: provide name instead.
+        uri: String
+    ): PhabricatorRepo
     currentUser: User
     # Look up a user by username.
     user(username: String!): User
@@ -709,7 +725,9 @@ type Repository implements Node {
     # - github.com/foo/bar
     # - my-code-host.example.com/myrepo
     # - myrepo
-    uri: String!
+    name: String!
+    # An alias for name.
+    uri: String! @deprecated(reason: "use name instead")
     # The repository's description.
     description: String!
     # The primary programming language in the repository.
@@ -1208,7 +1226,9 @@ type GitRevisionRange {
 
 type PhabricatorRepo {
     # the canonical repo path, like 'github.com/gorilla/mux'
-    uri: String!
+    name: String!
+    # An alias for name.
+    uri: String! @deprecated(reason: "use name instead")
     # the unique Phabricator identifier for the repo, like 'MUX'
     callsign: String!
     # the URL to the phabricator instance, e.g. http://phabricator.sgdev.org
