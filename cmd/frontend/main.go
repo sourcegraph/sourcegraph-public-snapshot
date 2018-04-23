@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 func main() {

@@ -19,13 +19,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/honey"
+	"github.com/sourcegraph/sourcegraph/xlang"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // We need to multiplex an entire xlang connection pool on an HTTP

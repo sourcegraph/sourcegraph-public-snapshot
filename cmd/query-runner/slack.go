@@ -6,8 +6,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/slack"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/slack"
 )
 
 func (n *notifier) slackNotify(ctx context.Context) {

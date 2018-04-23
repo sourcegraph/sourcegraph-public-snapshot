@@ -9,11 +9,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slackinternal"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slackinternal"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
+	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
 // TrackUser handles user data logging during auth flows

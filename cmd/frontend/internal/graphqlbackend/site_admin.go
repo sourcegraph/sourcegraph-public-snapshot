@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	graphql "github.com/graph-gophers/graphql-go"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 )
 
 type createUserResult struct {

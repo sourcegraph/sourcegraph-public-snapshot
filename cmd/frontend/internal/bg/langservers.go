@@ -5,8 +5,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/langservers"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/langservers"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // StartLangServers should be invoked on startup, after DB initialization, in

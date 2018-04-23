@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 func TestStartDeleteSession(t *testing.T) {

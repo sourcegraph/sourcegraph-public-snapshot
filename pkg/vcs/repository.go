@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 )
 
 // RepoNotExistError is an error that reports a repository doesn't exist.

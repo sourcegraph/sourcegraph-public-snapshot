@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type errorList struct {

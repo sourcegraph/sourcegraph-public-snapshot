@@ -8,8 +8,8 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"golang.org/x/net/context/ctxhttp"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type graphQLQuery struct {

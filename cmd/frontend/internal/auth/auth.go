@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // authURLPrefix is the URL path prefix under which to attach authentication handlers

@@ -13,7 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (

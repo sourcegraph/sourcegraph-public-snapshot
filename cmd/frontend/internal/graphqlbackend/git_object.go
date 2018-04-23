@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 )
 
 type gitObjectID string

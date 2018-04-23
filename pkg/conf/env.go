@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // legacyEnvToFieldName maps from the legacy env var name to the

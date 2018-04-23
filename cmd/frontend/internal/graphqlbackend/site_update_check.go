@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 )
 
 func (r *siteResolver) UpdateCheck(ctx context.Context) (*updateCheckResolver, error) {

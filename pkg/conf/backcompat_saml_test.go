@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAuthSAML(t *testing.T) {

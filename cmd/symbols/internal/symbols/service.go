@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/diskcache"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/diskcache"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 // Service is the symbols service.

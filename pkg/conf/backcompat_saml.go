@@ -1,6 +1,6 @@
 package conf
 
-import "sourcegraph.com/sourcegraph/sourcegraph/schema"
+import "github.com/sourcegraph/sourcegraph/schema"
 
 // AuthSAML returns the SAMLAuthProvider, regardless of whether
 // the old saml* or new auth.saml properties were used.

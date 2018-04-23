@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 
 	"golang.org/x/net/context/ctxhttp"
 

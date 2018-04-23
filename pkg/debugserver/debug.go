@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 
 	"golang.org/x/net/trace"
 

@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/ctxvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type fileSystem struct {

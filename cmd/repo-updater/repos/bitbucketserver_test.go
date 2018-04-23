@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/bitbucketserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update golden files")

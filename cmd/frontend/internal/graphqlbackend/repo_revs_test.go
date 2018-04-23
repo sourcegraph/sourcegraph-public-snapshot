@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestParseRepositoryRevisions(t *testing.T) {

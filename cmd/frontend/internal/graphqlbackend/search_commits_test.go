@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	vcstesting "github.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 )
 
 func TestSearchCommitsInRepo(t *testing.T) {

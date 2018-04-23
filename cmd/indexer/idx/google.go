@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	customsearch "google.golang.org/api/customsearch/v1"
 	"google.golang.org/api/googleapi/transport"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // Google is the default Google client

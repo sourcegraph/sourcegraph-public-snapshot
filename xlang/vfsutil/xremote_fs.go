@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lspext2 "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // XRemoteFS is an implementation of ctxvfs.FileSystem that is backed by an

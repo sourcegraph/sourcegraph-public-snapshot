@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 )
 
 func TestServer_handleRepoInfo(t *testing.T) {

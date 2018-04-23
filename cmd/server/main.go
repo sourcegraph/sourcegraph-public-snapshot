@@ -11,7 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
+	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 )
 
 //docker:install curl

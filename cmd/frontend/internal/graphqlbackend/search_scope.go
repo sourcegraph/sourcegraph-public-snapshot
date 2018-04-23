@@ -1,7 +1,7 @@
 package graphqlbackend
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type searchScope struct {

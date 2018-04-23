@@ -3,7 +3,7 @@ package vcs
 import (
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type ResolveRevisionOptions struct {

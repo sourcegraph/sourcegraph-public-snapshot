@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sqs/httpgzip"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 // Mount mounts the static asset handler.

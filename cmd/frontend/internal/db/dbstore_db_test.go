@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 func init() {

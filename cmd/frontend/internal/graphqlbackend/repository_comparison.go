@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 	"github.com/keegancsmith/sqlf"
 

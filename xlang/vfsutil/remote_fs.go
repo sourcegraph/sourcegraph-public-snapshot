@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // RemoteFS selects the currently active remote FS protocol (based on

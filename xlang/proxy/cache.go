@@ -6,7 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
 var cache = rcache.New("xlang")

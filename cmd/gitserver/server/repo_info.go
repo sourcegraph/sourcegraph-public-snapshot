@@ -6,8 +6,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 )
 
 func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {

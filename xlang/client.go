@@ -18,9 +18,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // UnsafeNewDefaultClient returns a new one-shot connection to the LSP proxy server at

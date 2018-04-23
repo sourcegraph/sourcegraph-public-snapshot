@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"path"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 )
 
 func (s *Server) handleUploadPack(w http.ResponseWriter, r *http.Request) {

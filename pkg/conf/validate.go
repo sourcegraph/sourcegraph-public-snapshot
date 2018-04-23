@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
 )
 
 // Validate validates the site configuration against its JSON schema.

@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // readOrGenerateConfig supports the following cases:

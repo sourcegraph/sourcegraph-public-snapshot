@@ -7,8 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
 	"github.com/pkg/errors"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/pkg/metrics"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/pkg/metrics"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
 var (

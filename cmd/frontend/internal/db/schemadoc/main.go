@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 
 	_ "github.com/lib/pq"
 )

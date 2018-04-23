@@ -67,8 +67,8 @@ Run [`npm login`](https://docs.npmjs.com/cli/adduser) inside the Sourcegraph dir
 ## Get the code
 
 ```
-git clone git@github.com:sourcegraph/sourcegraph.git $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
-cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
+git clone git@github.com:sourcegraph/sourcegraph.git $GOPATH/src/github.com/sourcegraph/sourcegraph
+cd $GOPATH/src/github.com/sourcegraph/sourcegraph
 ```
 
 Running the preceding commands will build and install the `src` binary in `$GOPATH/bin`, which you will use in subsequent steps such as PostgreSQL setup.
@@ -99,7 +99,7 @@ echo $PATH # should include $GOPATH/bin
 
 Then in your terminal run:
 
-`cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph`
+`cd $GOPATH/src/github.com/sourcegraph/sourcegraph`
 
 The Docker daemon should be running in the background, which you can test by
 running `docker ps`. If you're on OS X and using `docker-machine` instead of Docker for Mac,

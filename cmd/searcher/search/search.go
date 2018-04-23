@@ -22,7 +22,7 @@ import (
 
 	"golang.org/x/net/trace"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 
 	"github.com/pkg/errors"
 

@@ -3,7 +3,7 @@
 mkdir -p .bin
 export GOBIN=$PWD/.bin
 
-go install sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
+go install github.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
 
 TAGS='all=dev'
 if [ -n "$DELVE" ]; then
@@ -22,7 +22,7 @@ if [ -n "$GORACED" ]; then
 	IFS=', '
 	for CMD in $GORACED; do
 		echo "Go race detector enabled for: $CMD"
-		RACED_CMD="sourcegraph.com/sourcegraph/sourcegraph/cmd/$CMD"
+		RACED_CMD="github.com/sourcegraph/sourcegraph/cmd/$CMD"
 		if [ -z "$RACED_CMDS" ]; then
 			RACED_CMDS=$RACED_CMD
 		else
@@ -36,7 +36,7 @@ fi
 NOT_RACED_CMDS=''
 for CMD in $ALL_CMDS; do
 	if [[ ! $RACED_CMDS =~ $CMD ]]; then
-		RACED_CMD="sourcegraph.com/sourcegraph/sourcegraph/cmd/$CMD"
+		RACED_CMD="github.com/sourcegraph/sourcegraph/cmd/$CMD"
 		if [ -z "$NOT_RACED_CMDS" ]; then
 			NOT_RACED_CMDS=$RACED_CMD
 		else

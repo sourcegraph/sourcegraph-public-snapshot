@@ -11,11 +11,11 @@ import (
 	"reflect"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	symbolsclient "sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 )
 
 func TestService(t *testing.T) {

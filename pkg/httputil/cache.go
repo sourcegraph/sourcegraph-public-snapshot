@@ -3,7 +3,7 @@ package httputil
 import (
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 
 	"github.com/sourcegraph/httpcache"
 )

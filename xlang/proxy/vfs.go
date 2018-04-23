@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/ctxvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // NewRemoteRepoVFS returns a virtual file system interface for

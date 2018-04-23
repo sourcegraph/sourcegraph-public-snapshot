@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 
 	libhoney "github.com/honeycombio/libhoney-go"
 )

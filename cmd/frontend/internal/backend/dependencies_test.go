@@ -7,10 +7,10 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/inventory"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 func TestDependencies_List(t *testing.T) {

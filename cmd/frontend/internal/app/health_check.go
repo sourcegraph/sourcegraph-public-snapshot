@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
 
 func handleHealthCheck(w http.ResponseWriter, r *http.Request) {

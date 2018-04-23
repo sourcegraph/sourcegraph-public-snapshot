@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/ctxvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type testTransport map[string]string

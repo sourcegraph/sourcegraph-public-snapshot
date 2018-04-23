@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.

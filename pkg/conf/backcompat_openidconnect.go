@@ -1,6 +1,6 @@
 package conf
 
-import "sourcegraph.com/sourcegraph/sourcegraph/schema"
+import "github.com/sourcegraph/sourcegraph/schema"
 
 // AuthOpenIDConnect returns the OpenIDConnectAuthProvider, regardless of whether
 // the old oidc* or new auth.openidconnect properties were used.

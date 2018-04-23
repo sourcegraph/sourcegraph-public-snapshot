@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // ValidateCustom validates the site config using custom validation steps that are not

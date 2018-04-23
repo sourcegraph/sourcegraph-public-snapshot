@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // relWorkspaceURI maps absolute URIs like

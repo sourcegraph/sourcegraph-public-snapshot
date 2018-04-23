@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestRepoShortName(t *testing.T) {

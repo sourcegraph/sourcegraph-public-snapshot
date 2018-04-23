@@ -5,10 +5,10 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	symbolsclient "sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/xlang"
 )
 
 // Symbols backend.

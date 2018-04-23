@@ -6,7 +6,7 @@ package graphqlbackend
 
 // Schema is the raw graqhql schema
 var Schema = `# Run this before committing changes to this file
-# go generate sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend
+# go generate github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend
 
 schema {
     query: Query

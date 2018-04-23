@@ -11,8 +11,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 var allSavedQueries = &allSavedQueriesCached{}

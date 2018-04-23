@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 )
 
 type gitRevSpecExpr struct {

@@ -3,7 +3,7 @@ package repos
 import (
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 func getUpdateInterval() time.Duration {

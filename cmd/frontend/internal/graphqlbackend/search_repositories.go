@@ -4,7 +4,7 @@ import (
 	"context"
 	"regexp"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 )
 
 var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error)

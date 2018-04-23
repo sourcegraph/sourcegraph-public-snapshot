@@ -3,9 +3,9 @@
 package searchquery
 
 import (
-	config "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/types"
+	config "github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
+	"github.com/sourcegraph/sourcegraph/pkg/searchquery/types"
 )
 
 // All field names.

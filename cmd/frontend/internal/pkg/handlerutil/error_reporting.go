@@ -12,9 +12,9 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 var ravenClient *raven.Client
@@ -52,7 +52,7 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 
 	var stacktrace *raven.Stacktrace
 	if panicked {
-		stacktrace = raven.NewStacktrace(4, 2, []string{"sourcegraph.com/sourcegraph/"})
+		stacktrace = raven.NewStacktrace(4, 2, []string{"github.com/sourcegraph/"})
 	}
 	exception := raven.NewException(err, stacktrace)
 

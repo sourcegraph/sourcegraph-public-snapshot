@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
+	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
 )
 
 func TestAddQueryRegexpField(t *testing.T) {

@@ -3,8 +3,8 @@ package protocol
 import (
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // ExecRequest is a request to execute a command inside a git repository.

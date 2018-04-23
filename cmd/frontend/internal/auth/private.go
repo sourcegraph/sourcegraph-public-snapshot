@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 // newUserRequiredAuthzHandler wraps the handler and requires an authenticated client for all HTTP requests, except those

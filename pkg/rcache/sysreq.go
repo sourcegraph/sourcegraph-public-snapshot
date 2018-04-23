@@ -6,7 +6,7 @@ import (
 
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
+	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
 )
 
 func init() {

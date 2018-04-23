@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // Adapted from github.com/golang/gddo/gosrc.

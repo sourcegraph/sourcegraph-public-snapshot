@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+import "github.com/sourcegraph/sourcegraph/pkg/vcs"
 
 type hunkResolver struct {
 	hunk *vcs.Hunk

@@ -2,7 +2,7 @@
 //docker:user sourcegraph /data/repos
 
 // gitserver is the gitserver server.
-package main // import "sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver"
+package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
 	"log"
@@ -17,11 +17,11 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
 const repoCleanupInterval = 24 * time.Hour

@@ -4,7 +4,7 @@ import (
 	"go/ast"
 
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	xlangext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	xlangext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // SymbolPackageDescriptor extracts the package descriptor from the

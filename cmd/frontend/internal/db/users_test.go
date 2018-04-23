@@ -3,7 +3,7 @@ package db
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func TestUsers_MatchUsernameRegex(t *testing.T) {

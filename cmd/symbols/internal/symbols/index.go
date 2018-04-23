@@ -11,9 +11,9 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"golang.org/x/net/trace"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 )
 
 func (s *Service) indexedSymbols(ctx context.Context, repo api.RepoURI, commitID api.CommitID) (symbols []protocol.Symbol, err error) {

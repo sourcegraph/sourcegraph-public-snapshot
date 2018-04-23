@@ -27,14 +27,14 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/honey"
+	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // runCommand runs the command and returns the exit status. All clients of this function should set the context

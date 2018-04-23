@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"unicode/utf8"
 
+	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/pathmatch"
 )
 
 // FilterAndHighlightDiff returns the raw diff with query matches highlighted

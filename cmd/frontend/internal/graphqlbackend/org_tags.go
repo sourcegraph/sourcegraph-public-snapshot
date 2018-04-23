@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 type orgTagResolver struct {
 	orgTag *types.OrgTag

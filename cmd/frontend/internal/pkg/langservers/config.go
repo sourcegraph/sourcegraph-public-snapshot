@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/jsonx"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // ConfigState represents the current state of a language server in the

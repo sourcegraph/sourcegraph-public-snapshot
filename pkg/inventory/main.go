@@ -12,9 +12,9 @@ import (
 
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/pkg/inventory"
+	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	"golang.org/x/tools/godoc/vfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 )
 
 var (

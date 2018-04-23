@@ -4,7 +4,7 @@ package types
 import (
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // Repo represents a source code repository.

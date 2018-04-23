@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func TestThreads_Count(t *testing.T) {

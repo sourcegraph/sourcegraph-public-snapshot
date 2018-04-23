@@ -6,9 +6,9 @@ import (
 	"path"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/testutil"
 )
 
 func BenchmarkSearch(b *testing.B) {

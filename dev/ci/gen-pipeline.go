@@ -75,7 +75,7 @@ func (p *Pipeline) AddWait() {
 
 var golangPlugin = map[string]interface{}{
 	"golang#v0.3": map[string]string{
-		"import": "sourcegraph.com/sourcegraph/sourcegraph",
+		"import": "github.com/sourcegraph/sourcegraph",
 	},
 }
 
@@ -100,7 +100,7 @@ func pkgs() []string {
 			return nil // already first entry
 		}
 
-		pkg, err := build.Import("sourcegraph.com/sourcegraph/sourcegraph/"+path, "", 0)
+		pkg, err := build.Import("github.com/sourcegraph/sourcegraph/"+path, "", 0)
 		if err != nil {
 			if _, ok := err.(*build.NoGoError); ok {
 				return nil
@@ -156,8 +156,8 @@ func main() {
 			)
 		} else {
 			cmds = append(cmds,
-				Cmd("go build sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/godockerize"),
-				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s sourcegraph.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
+				Cmd("go build github.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/godockerize"),
+				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s github.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
 			)
 		}
 		cmds = append(cmds,
@@ -231,7 +231,7 @@ func main() {
 		coverageFile := path + "/coverage.txt"
 		pipeline.AddStep(":go:",
 			Cmd("go test ./"+path+" -v -race -i"),
-			Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic -coverpkg=sourcegraph.com/sourcegraph/sourcegraph/..."),
+			Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/..."),
 			ArtifactPaths(coverageFile))
 	}
 

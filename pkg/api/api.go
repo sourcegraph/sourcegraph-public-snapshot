@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	xlang_lspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	xlang_lspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // RepoID is the unique identifier for a repository.

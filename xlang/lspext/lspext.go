@@ -6,10 +6,10 @@
 // 	github.com/sourcegraph/go-langserver/pkg/lsp
 //
 // 	// proxy (http gateway) server LSP extensions
-// 	sourcegraph.com/sourcegraph/sourcegraph/xlang
+// 	github.com/sourcegraph/sourcegraph/xlang
 //
 // 	// (this package) build/lang server LSP extensions
-// 	sourcegraph.com/sourcegraph/sourcegraph/xlang/lspx
+// 	github.com/sourcegraph/sourcegraph/xlang/lspx
 //
 package lspext
 

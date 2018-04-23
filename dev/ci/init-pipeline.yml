@@ -3,4 +3,4 @@ steps:
     label: ":pipeline:"
     plugins:
       golang#v0.3:
-        import: sourcegraph.com/sourcegraph/sourcegraph
+        import: github.com/sourcegraph/sourcegraph

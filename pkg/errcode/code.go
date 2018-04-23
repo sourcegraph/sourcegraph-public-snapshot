@@ -11,7 +11,7 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/gorilla/schema"
 )

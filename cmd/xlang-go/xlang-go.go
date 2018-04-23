@@ -12,11 +12,11 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
+	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/xlang/gobuildserver"
+	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 func init() {

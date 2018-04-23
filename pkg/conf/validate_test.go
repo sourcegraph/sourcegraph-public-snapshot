@@ -3,7 +3,7 @@ package conf
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestValidate(t *testing.T) {

@@ -13,11 +13,11 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
+	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/xlang/proxy"
+	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 func init() {

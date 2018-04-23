@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func TestUserEmails_Get_GetPrimary(t *testing.T) {

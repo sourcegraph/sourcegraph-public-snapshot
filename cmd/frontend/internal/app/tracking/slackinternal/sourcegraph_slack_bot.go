@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/slack"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
+	"github.com/sourcegraph/sourcegraph/pkg/slack"
 )
 
 var signupsWebhookURL = env.Get("SLACK_SIGNUPS_BOT_HOOK", "", "Webhook for posting signup notifications to the Slack #bot-signups channel.")

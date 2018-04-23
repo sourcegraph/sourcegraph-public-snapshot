@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // NewHandler returns a new app handler that uses the app router.

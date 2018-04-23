@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+import "github.com/sourcegraph/sourcegraph/pkg/api"
 
 type dependencyReferencesResolver struct {
 	dependencyReferenceData *dependencyReferencesDataResolver

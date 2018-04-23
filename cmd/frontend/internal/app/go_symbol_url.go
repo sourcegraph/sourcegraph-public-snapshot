@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/httputil"
+	"github.com/sourcegraph/sourcegraph/xlang/gobuildserver"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // serveGoSymbolURL handles Go symbol URLs (e.g.,

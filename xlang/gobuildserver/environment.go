@@ -19,8 +19,8 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // ShowMissingReposEnabled returns true if ShowMissingRepos experiment is enabled.

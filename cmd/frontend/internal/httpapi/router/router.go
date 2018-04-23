@@ -3,7 +3,7 @@ package router
 
 import (
 	"github.com/gorilla/mux"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 const (

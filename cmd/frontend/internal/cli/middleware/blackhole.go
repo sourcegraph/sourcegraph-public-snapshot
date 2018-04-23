@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // BlackHole is a middleware which returns StatusGone on removed URLs that

@@ -5,8 +5,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 var Mocks MockServices

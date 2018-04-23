@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 const (

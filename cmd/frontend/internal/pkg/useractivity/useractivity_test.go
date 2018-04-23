@@ -8,7 +8,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func TestUserActivity_None(t *testing.T) {

@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // SearchArgs are the arguments to perform a search on the symbols service.

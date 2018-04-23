@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/ctxvfs"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // simulateFSLatency simulates latency to test likely performance when

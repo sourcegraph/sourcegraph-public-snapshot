@@ -164,6 +164,12 @@
   revision = "fd3d7953fd52354a74b9f6b3d70d0c9650c4ec2a"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/fatih/astrewrite"
+  packages = ["."]
+  revision = "9b34aed93587c369be3810b844a2f3eb6c25d2a9"
+
+[[projects]]
   name = "github.com/fatih/color"
   packages = ["."]
   revision = "507f6050b8568533fb3f5504de8e5205fa62a114"
@@ -1076,6 +1082,8 @@
     "go/types/typeutil",
     "godoc/vfs",
     "godoc/vfs/zipfs",
+    "imports",
+    "internal/fastwalk",
     "refactor/importgraph"
   ]
   revision = "94b14834a20132093826ea5e2da5502a13908ad3"
@@ -1366,6 +1374,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "801b1d14780d6712f6e2687819a491df1187dd96d960b10dbe8f2e489a597f37"
+  inputs-digest = "7d29aa0db327a5bce6d825df094015b2936571ad262a57144f28a7bdb52df6b1"
   solver-name = "gps-cdcl"
   solver-version = 1

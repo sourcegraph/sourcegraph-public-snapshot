@@ -18,6 +18,6 @@ set -ex
 type ulimit > /dev/null && ulimit -n 10000 || true
 
 go install -tags dist \
-   sourcegraph.com/sourcegraph/sourcegraph/cmd/server
+   github.com/sourcegraph/sourcegraph/cmd/server
 
 server

@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 type siteActivityResolver struct {

@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type repoGroup struct {

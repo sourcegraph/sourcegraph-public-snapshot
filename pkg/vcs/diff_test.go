@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestRepository_Diff(t *testing.T) {

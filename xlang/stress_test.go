@@ -15,10 +15,10 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/xlang/proxy"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // BenchmarkStress benchmarks performing "textDocument/definition",

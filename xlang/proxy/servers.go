@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

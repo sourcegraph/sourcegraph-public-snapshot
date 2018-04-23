@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/gosyntect"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 var (

@@ -18,9 +18,9 @@ import (
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 type keyMutex struct {

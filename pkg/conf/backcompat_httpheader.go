@@ -1,6 +1,6 @@
 package conf
 
-import "sourcegraph.com/sourcegraph/sourcegraph/schema"
+import "github.com/sourcegraph/sourcegraph/schema"
 
 // AuthHTTPHeader returns the HTTP header name (if any) containing the username for the
 // HTTP request, regardless of whether the old ssoUserHeader or new auth.userIdentityHTTPHeader

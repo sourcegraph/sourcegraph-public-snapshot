@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func createOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser) (userID int32, err error) {

@@ -8,10 +8,10 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/xlang/lspext"
+	"github.com/sourcegraph/sourcegraph/xlang/proxy"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // Notable benchmark results:
@@ -36,10 +36,10 @@ import (
 //
 //   # Run this before making the changes that you want to benchmark:
 //   go get -u golang.org/x/tools/cmd/benchcmp
-//   go test sourcegraph.com/sourcegraph/sourcegraph/xlang -bench=Integration -benchmem -run='^$' > /tmp/BenchmarkIntegration.old.txt
+//   go test github.com/sourcegraph/sourcegraph/xlang -bench=Integration -benchmem -run='^$' > /tmp/BenchmarkIntegration.old.txt
 //
 //   # Run this after you've made the changes that you want to benchmark:
-//   go test sourcegraph.com/sourcegraph/sourcegraph/xlang -bench=Integration -benchmem -run='^$' | tee /tmp/BenchmarkIntegration.new.txt && benchcmp /tmp/BenchmarkIntegration.{old,new}.txt
+//   go test github.com/sourcegraph/sourcegraph/xlang -bench=Integration -benchmem -run='^$' | tee /tmp/BenchmarkIntegration.new.txt && benchcmp /tmp/BenchmarkIntegration.{old,new}.txt
 func BenchmarkIntegration(b *testing.B) {
 	if testing.Short() {
 		b.Skip("skip long integration test")

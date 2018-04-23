@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestRepository_BlameFile(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestDiff(t *testing.T) {

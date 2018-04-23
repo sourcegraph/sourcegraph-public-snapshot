@@ -8,10 +8,10 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/jsonx"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
+	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
 type savedQueryResolver struct {

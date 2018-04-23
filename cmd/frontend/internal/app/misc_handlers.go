@@ -8,8 +8,8 @@ import (
 
 	"strconv"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 var allowRobotsVar = env.Get("ROBOTS_TXT_ALLOW", "false", "allow search engines to index the site")

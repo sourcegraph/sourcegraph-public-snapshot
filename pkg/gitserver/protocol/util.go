@@ -3,7 +3,7 @@ package protocol
 import (
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func NormalizeRepo(input api.RepoURI) api.RepoURI {

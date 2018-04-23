@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 type symbolsArgs struct {

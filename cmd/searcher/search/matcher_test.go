@@ -14,8 +14,8 @@ import (
 	"testing/iotest"
 	"testing/quick"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil"
+	"github.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/testutil"
 )
 
 func benchBytesToLower(b *testing.B, src []byte) {

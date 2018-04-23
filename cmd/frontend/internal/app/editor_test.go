@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestGuessRepoURIFromRemoteURL(t *testing.T) {

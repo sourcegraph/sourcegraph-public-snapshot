@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
 // Server is a repoupdater server.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // recipientSpec identifies a recipient of a saved search notification. Exactly one of its fields is

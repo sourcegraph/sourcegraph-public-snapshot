@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 
 // connectionArgs is the common set of args to fields that return connections (lists).
 type connectionArgs struct {

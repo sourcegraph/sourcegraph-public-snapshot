@@ -8,13 +8,13 @@ set -ex
 GOBIN=$PWD/vendor/.bin go install ./vendor/github.com/sourcegraph/godockerize
 
 ./vendor/.bin/godockerize build --base alpine:3.6 -t ${IMAGE} --env VERSION=${VERSION} \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/server \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/github-proxy \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/indexer \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/query-runner \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/symbols \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/repo-updater \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher \
-			  sourcegraph.com/sourcegraph/sourcegraph/cmd/lsp-proxy
+			  github.com/sourcegraph/sourcegraph/cmd/server \
+			  github.com/sourcegraph/sourcegraph/cmd/frontend \
+			  github.com/sourcegraph/sourcegraph/cmd/github-proxy \
+			  github.com/sourcegraph/sourcegraph/cmd/gitserver \
+			  github.com/sourcegraph/sourcegraph/cmd/indexer \
+			  github.com/sourcegraph/sourcegraph/cmd/query-runner \
+			  github.com/sourcegraph/sourcegraph/cmd/symbols \
+			  github.com/sourcegraph/sourcegraph/cmd/repo-updater \
+			  github.com/sourcegraph/sourcegraph/cmd/searcher \
+			  github.com/sourcegraph/sourcegraph/cmd/lsp-proxy

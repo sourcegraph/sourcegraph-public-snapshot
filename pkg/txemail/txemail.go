@@ -10,8 +10,8 @@ import (
 	"net/smtp"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	gophermail "gopkg.in/jpoehls/gophermail.v0"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // Message describes an email message to be sent.

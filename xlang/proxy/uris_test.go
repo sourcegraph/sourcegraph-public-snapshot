@@ -3,7 +3,7 @@ package proxy
 import (
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 func TestAbsRelWorkspaceURI(t *testing.T) {

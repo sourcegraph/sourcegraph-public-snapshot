@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
