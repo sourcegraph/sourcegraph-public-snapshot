@@ -55,7 +55,7 @@ const config: webpack.Configuration = {
         extensions: ['.ts', '.tsx', '.js'],
     },
     stats: 'minimal',
-    module: ((): webpack.Module => ({
+    module: {
         rules: [
             ((): webpack.NewUseRule => ({
                 test: /\.tsx?$/,
@@ -76,6 +76,9 @@ const config: webpack.Configuration = {
             ((): webpack.NewLoaderRule => ({
                 test: /\.jsx?$/,
                 loader: 'babel-loader',
+                options: {
+                    cacheDirectory: true,
+                },
             }))(),
             ((): webpack.NewUseRule => ({
                 // sass / scss loader for webpack
@@ -101,7 +104,7 @@ const config: webpack.Configuration = {
                 ]),
             }))(),
         ],
-    }))(),
+    },
 }
 
 export default config
