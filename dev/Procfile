@@ -8,7 +8,8 @@ github-proxy: .bin/github-proxy
 lsp-proxy: .bin/lsp-proxy
 xlang-go: .bin/xlang-go -mode=tcp -addr=:4389
 frontend: $EXEC_FRONTEND .bin/frontend
-watch-go: node_modules/.bin/chokidar --silent "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" --ignore node_modules --ignore web -c "./dev/restart.sh"
+watch-go: node_modules/.bin/chokidar --silent "**/*.go" --ignore node_modules --ignore web -c "./dev/restart.sh"
+watch-graphql: node_modules/.bin/chokidar --silent "cmd/frontend/internal/graphqlbackend/schema.graphql" -c "go generate github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 web: sh -c "npm --prefix ./web install && npm --prefix ./web run watch"
 syntect_server: ./dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m
