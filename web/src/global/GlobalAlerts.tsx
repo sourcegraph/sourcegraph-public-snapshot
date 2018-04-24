@@ -37,9 +37,11 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                 {this.state.siteFlags && (
                     <>
                         {this.state.siteFlags.needsRepositoryConfiguration ? (
-                            <NeedsRepositoryConfigurationAlert />
+                            <NeedsRepositoryConfigurationAlert className="global-alerts__alert" />
                         ) : (
-                            this.state.siteFlags.noRepositoriesEnabled && <NoRepositoriesEnabledAlert />
+                            this.state.siteFlags.noRepositoriesEnabled && (
+                                <NoRepositoriesEnabledAlert className="global-alerts__alert" />
+                            )
                         )}
 
                         {this.props.isSiteAdmin &&
@@ -47,13 +49,16 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             !this.state.siteFlags.updateCheck.errorMessage &&
                             this.state.siteFlags.updateCheck.updateVersionAvailable && (
                                 <UpdateAvailableAlert
+                                    className="global-alerts__alert"
                                     updateVersionAvailable={this.state.siteFlags.updateCheck.updateVersionAvailable}
                                 />
                             )}
 
                         {/* Only show if the user has already enabled repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                         {window.context.likelyDockerOnMac &&
-                            !this.state.siteFlags.noRepositoriesEnabled && <DockerForMacAlert />}
+                            !this.state.siteFlags.noRepositoriesEnabled && (
+                                <DockerForMacAlert className="global-alerts__alert" />
+                            )}
                     </>
                 )}
             </div>

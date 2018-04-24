@@ -11,8 +11,8 @@ const onClickCTA = () => {
  * A global alert telling the site admin that they need to configure repositories
  * on this site.
  */
-export const NeedsRepositoryConfigurationAlert: React.SFC = () => (
-    <div className="alert alert-success site-alert needs-repository-configuration-alert">
+export const NeedsRepositoryConfigurationAlert: React.SFC<{ className?: string }> = ({ className = '' }) => (
+    <div className={`alert alert-success alert-animated-bg d-flex align-items-center ${className}`}>
         <Link className="site-alert__link" to="/site-admin/configuration" onClick={onClickCTA}>
             <Icon className="icon-inline site-alert__link-icon" />{' '}
             <span className="underline">Configure repositories and code hosts</span>
