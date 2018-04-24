@@ -6,13 +6,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 )
 
 func main() {
-	raw, err := ioutil.ReadFile("schema.graphql")
+	out, err := ioutil.ReadFile("schema.graphql")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	out, err = graphqlbackend.StripInternalComments(out)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	pre := `// +build !dev
 
 package graphqlbackend
@@ -21,8 +29,9 @@ package graphqlbackend
 
 // Schema is the raw graqhql schema
 `
-	out := fmt.Sprintf("%svar Schema = `%s`\n", pre, string(raw))
-	err = ioutil.WriteFile("schema.go", []byte(out), 0666)
+
+	out = []byte(fmt.Sprintf("%svar Schema = `%s`\n", pre, string(out)))
+	err = ioutil.WriteFile("schema.go", out, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}

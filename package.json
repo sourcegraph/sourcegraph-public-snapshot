@@ -2,11 +2,13 @@
   "name": "sourcegraph",
   "private": true,
   "scripts": {
-    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js"
+    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
+    "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/internal/graphqlbackend/schema.graphql"
   },
   "devDependencies": {
     "@sourcegraph/prettierrc": "^2.1.1",
     "chokidar-cli": "^1.2.0",
+    "graphql-schema-linter": "^0.1.5",
     "prettier": "^1.12.1"
   },
   "dependencies": {}

@@ -17,9 +17,13 @@ func readSchemaFromDisk() string {
 		log.Fatal("No caller information")
 	}
 	path := filepath.Join(filepath.Dir(filename), "schema.graphql")
-	raw, err := ioutil.ReadFile(path)
+	out, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return string(raw)
+	out, err = StripInternalComments([]byte(out))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(out)
 }

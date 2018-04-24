@@ -1,20 +1,28 @@
-# Run this before committing changes to this file
-# go generate github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend
-# This will happen automatically if you are running ./dev/start.sh
-
+#! Run this before committing changes to this file
+#! go generate github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend
+#! This will happen automatically if you are running ./dev/start.sh
+#!
+#! Lines that begin with #! are treated as internal comments. They are stripped
+#! from the schema before the documentation for each field is generated.
+#!
 schema {
     query: Query
     mutation: Mutation
 }
 
+# Represents a null return value.
 type EmptyResponse {
+    # A dummy null value.
     alwaysNil: String
 }
 
+# An object with an ID.
 interface Node {
+    # The ID of the node.
     id: ID!
 }
 
+# Thread lines.
 type ThreadLines {
     # HTML context lines before 'html'.
     #
@@ -28,24 +36,19 @@ type ThreadLines {
     #
     # It is sanitized already by the server, and thus is safe for rendering.
     htmlAfter(isLightTheme: Boolean!): String!
-    # text context lines before 'text'.
+    # Text context lines before 'text'.
     textBefore: String!
-    # text lines that the user's selection was made on.
+    # Text lines that the user's selection was made on.
     text: String!
-    # text context lines after 'text'.
+    # Text context lines after 'text'.
     textAfter: String!
-    # byte offset into textLines where user selection began
-    #
-    # In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+    # Byte offset into textLines where user selection began.
     textSelectionRangeStart: Int!
-    # length in bytes of the user selection
-    #
-    # In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+    # Length in bytes of the user selection.
     textSelectionRangeLength: Int!
 }
 
-# Literally the exact same thing as above, except it's an input type because
-# GraphQL doesn't allow mixing input and output types.
+# The Input Object for ThreadLines.
 input ThreadLinesInput {
     # HTML context lines before 'html'.
     htmlBefore: String!
@@ -53,46 +56,61 @@ input ThreadLinesInput {
     html: String!
     # HTML context lines after 'html'.
     htmlAfter: String!
-    # text context lines before 'text'.
+    # Text context lines before 'text'.
     textBefore: String!
-    # text lines that the user's selection was made on.
+    # Text lines that the user's selection was made on.
     text: String!
-    # text context lines after 'text'.
+    # Text context lines after 'text'.
     textAfter: String!
-    # byte offset into textLines where user selection began
-    #
-    # In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+    # Byte offset into textLines where user selection began.
     textSelectionRangeStart: Int!
-    # length in bytes of the user selection
-    #
-    # In Go syntax, userSelection := text[rangeStart:rangeStart+rangeLength]
+    # Length in bytes of the user selection.
     textSelectionRangeLength: Int!
 }
 
+# Input Object for creating threads.
 input CreateThreadInput {
+    # The ID of the organization on which to create the thread.
     orgID: ID!
+    # The ID of the canonical remote.
     canonicalRemoteID: String!
+    # The clone URL.
     cloneURL: String!
+    # The repo revision path.
     repoRevisionPath: String!
+    # The lines revision path.
     linesRevisionPath: String!
+    # The repo revision.
     repoRevision: String!
+    # The lines revision.
     linesRevision: String!
+    # The branch.
     branch: String
+    # The start line.
     startLine: Int!
+    # The end line.
     endLine: Int!
+    # The start character.
     startCharacter: Int!
+    # The end character.
     endCharacter: Int!
+    # The range length.
     rangeLength: Int!
+    # The contents.
     contents: String!
+    # The lines.
     lines: ThreadLinesInput
 }
 
 # A valid JSON value.
 scalar JSONValue
 
+# A mutation.
 type Mutation {
+    # Creates a thread.
     createThread(input: CreateThreadInput!): Thread!
-    createThread2(input: CreateThreadInput!): Thread! @deprecated(reason: "use createThread")
+    # Creates a thread.
+    createThread2(input: CreateThreadInput!): Thread! @deprecated(reason: "use createThread instead")
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -103,25 +121,34 @@ type Mutation {
     updateUserSettings(user: ID!, lastKnownSettingsID: Int, contents: String!): Settings!
     # Update the global settings for all users.
     updateSiteSettings(lastKnownSettingsID: Int, contents: String!): Settings!
+    # Updates a thread.
     updateThread(threadID: ID!, archived: Boolean): Thread!
+    # Adds a comment to a thread.
     addCommentToThread(threadID: ID!, contents: String!): Thread!
     # This method is the same as addCommentToThread, the only difference is
     # that authentication is based on the secret ULID instead of the current
     # user.
-    #
-    # 🚨 SECURITY: Every field of the return type here is accessible publicly
-    # given a shared item URL.
+    #!
+    #! 🚨 SECURITY: Every field of the return type here is accessible publicly
+    #! given a shared item URL.
     addCommentToThreadShared(ulid: String!, threadID: ID!, contents: String!): SharedItemThread!
+    # Shares a thread.
     shareThread(threadID: ID!): String!
+    # Shares a comment.
     shareComment(commentID: ID!): String!
+    # Creates an org.
     createOrg(name: String!, displayName: String!): Org!
+    # Updates an org.
     updateOrg(id: ID!, displayName: String): Org!
+    # Updates an org's settings.
     updateOrgSettings(
         # The ID of the org whose settings should be updated.
         id: ID
-        # TODO(sqs): orgID is deprecated. Use id instead.
+        # DEPRECATED: use id instead.
         orgID: ID
+        # The last known settings ID.
         lastKnownSettingsID: Int
+        # The contents of the settings.
         contents: String!
     ): Settings!
     # Deletes an organization. Only site admins may perform this mutation.
@@ -225,6 +252,7 @@ type Mutation {
     #
     # Only site admins or the user who owns the token may perform this mutation.
     deleteAccessToken(byID: ID, byToken: String): EmptyResponse!
+    # Accepts a user invite.
     acceptUserInvite(inviteToken: String!): EmptyResponse
     # Immediately add a user to the organization, either by username or email address, without sending an
     # invitation email.
@@ -232,17 +260,20 @@ type Mutation {
     # Only site admins may perform this mutation. Organization members may use the inviteUser mutation to invite
     # users.
     addUserToOrganization(organization: ID!, usernameOrEmail: String!): EmptyResponse!
+    # Removes a user from an organization.
     removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
-    # adds a phabricator repository to the Sourcegraph server.
+    # Adds a Phabricator repository to the Sourcegraph server.
     addPhabricatorRepo(
         # The callsign, for example "MUX".
         callsign: String!
         # The name, for example "github.com/gorilla/mux".
         name: String
-        # An alias for name. DEPRECATED: provide name instead.
+        # An alias for name. DEPRECATED: use name instead.
         uri: String
+        # The URL to the phabricator instance (e.g. http://phabricator.sgdev.org).
         url: String!
     ): EmptyResponse
+    # Logs a user event.
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
@@ -255,16 +286,16 @@ type Mutation {
     # All mutations that update configuration settings are under this field.
     configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
     # Updates the site configuration. Returns whether or not a restart is
-    # needed for the update to be applied
+    # needed for the update to be applied.
     updateSiteConfiguration(input: String!): Boolean!
     # Manages language servers.
     langServers: LangServersMutation
     # Sets whether the user with the specified user ID is a site admin.
-    #
-    # 🚨 SECURITY: Only trusted users should be given site admin permissions.
-    # Site admins have full access to the server's site configuration and other
-    # sensitive data, and they can perform destructive actions such as
-    # restarting the site.
+    #!
+    #! 🚨 SECURITY: Only trusted users should be given site admin permissions.
+    #! Site admins have full access to the server's site configuration and other
+    #! sensitive data, and they can perform destructive actions such as
+    #! restarting the site.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     # Reloads the site by restarting the server. This is not supported for all deployment
     # types. This may cause downtime.
@@ -360,6 +391,7 @@ input UpdateConfigurationInput {
 
 # The payload for ConfigurationMutation.updateConfiguration.
 type UpdateConfigurationPayload {
+    # An empty response.
     empty: EmptyResponse
 }
 
@@ -404,49 +436,65 @@ input SurveySubmissionInput {
     better: String
 }
 
+# A query.
 type Query {
-    root: Query! @deprecated
+    # The root of the query.
+    root: Query! @deprecated(reason: "this will be removed.")
+    # Looks up a node by ID.
     node(id: ID!): Node
+    # Looks up a repository by name.
     repository(
         # The name, for example "github.com/gorilla/mux".
         name: String
-        # An alias for name. DEPRECATED: provide name instead.
+        # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
+    # Looks up a Phabricator repository by name.
     phabricatorRepo(
         # The name, for example "github.com/gorilla/mux".
         name: String
-        # An alias for name. DEPRECATED: provide name instead.
+        # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): PhabricatorRepo
+    # The current user.
     currentUser: User
-    # Look up a user by username.
+    # Looks up a user by username.
     user(username: String!): User
-    # Look up an organization by name.
+    # Looks up an organization by name.
     organization(name: String!): Org
+    # The current site settings.
     currentSiteSettings: Settings
+    # The configuration.
     configuration: ConfigurationCascade!
+    # Runs a search.
     search(
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
+    # The search scopes.
     searchScopes: [SearchScope!]!
     # All saved queries configured for the current user, merged from all configurations.
     savedQueries: [SavedQuery!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
+    # Looks up an organization by ID.
     org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
+    # Looks up a shared item by ULID.
     sharedItem(ulid: String!): SharedItem
     # The current site.
     site: Site!
+    # Retrieve responses to surveys.
     surveyResponses(
         # Returns the first n survey responses from the list.
         first: Int
     ): SurveyResponseConnection!
 }
 
+# A search.
 type Search {
+    # The results.
     results: SearchResults!
+    # The suggestions.
     suggestions(first: Int): [SearchSuggestion!]!
 
     # A subset of results (excluding actual search results) which are heavily
@@ -455,12 +503,18 @@ type Search {
     stats: SearchResultsStats!
 }
 
+# A search result.
 union SearchResult = FileMatch | CommitSearchResult | Repository
 
+# Search results.
 type SearchResults {
+    # The results.
     results: [SearchResult!]!
+    # The number of results returned.
     resultCount: Int!
+    # The approximate number of results returned.
     approximateResultCount: String!
+    # Whether or not the results limit was hit.
     limitHit: Boolean!
     # Integers representing the sparkline for the search results.
     sparkline: [Int!]!
@@ -489,22 +543,31 @@ type SearchResults {
     dynamicFilters: [SearchFilter!]!
 }
 
+# Statistics about search results.
 type SearchResultsStats {
+    # The approximate number of results returned.
     approximateResultCount: String!
+    # The sparkline.
     sparkline: [Int!]!
 }
 
+# A search filter.
 type SearchFilter {
+    # The value.
     value: String!
 }
 
+# A search suggestion.
 union SearchSuggestion = Repository | File | Symbol
 
+# A search scope.
 type SearchScope {
     # A unique identifier for the search scope.
     # If set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value.
     id: String
+    # The name.
     name: String!
+    # The value.
     value: String!
     # A description for this search scope, which will appear on the scoped search page.
     description: String
@@ -512,7 +575,9 @@ type SearchScope {
 
 # A search-related alert message.
 type SearchAlert {
+    # The title.
     title: String!
+    # The description.
     description: String
     # "Did you mean: ____" query proposals
     proposedQueries: [SearchQueryDescription!]
@@ -529,25 +594,37 @@ type SavedQuery {
     key: String
     # The 0-indexed index of this saved query in the subject's configuration.
     index: Int!
+    # The description.
     description: String!
+    # The query.
     query: SearchQuery!
+    # Whether or not to show on the homepage.
     showOnHomepage: Boolean!
+    # Whether or not to notify.
     notify: Boolean!
+    # Whether or not to notify on Slack.
     notifySlack: Boolean!
 }
 
+# A search query description.
 type SearchQueryDescription {
+    # The description.
     description: String
+    # The query.
     query: SearchQuery!
 }
 
+# A search query.
 type SearchQuery {
+    # The query.
     query: String!
 }
 
 # A group of repositories.
 type RepoGroup {
+    # The name.
     name: String!
+    # The repositories.
     repositories: [String!]!
 }
 
@@ -600,66 +677,91 @@ type Highlight {
 }
 
 # Represents a shared item (either a shared code comment OR code snippet).
-#
-# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
-# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
-# type.
+#!
+#! 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+#! Do NOT use any non-primitive GraphQL type here unless it is also a SharedItem
+#! type.
 type SharedItem {
-    # who shared the item.
+    # Who shared the item.
     author: SharedItemUser!
+    # Whether or not this shared item is public.
     public: Boolean!
+    # The thread.
     thread: SharedItemThread!
-    # present only if the shared item was a specific comment.
+    # Present only if the shared item was a specific comment.
     comment: SharedItemComment
 }
 
 # Like the User type, except with fields that should not be accessible with a
 # secret URL removed.
-#
-# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
-# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
-# type.
+#!
+#! 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+#! Do NOT use any non-primitive GraphQL type here unless it is also a SharedItem
+#! type.
 type SharedItemUser {
+    # The display name.
     displayName: String
+    # The username.
     username: String!
+    # The avatar URL.
     avatarURL: String
 }
 
 # Like the Thread type, except with fields that should not be accessible with a
 # secret URL removed.
-#
-# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
-# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
-# type.
+#!
+#! 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+#! Do NOT use any non-primitive GraphQL type here unless it is also a SharedItem
+#! type.
 type SharedItemThread {
+    # The id.
     id: ID!
+    # The database ID.
     databaseID: Int!
+    # The repository.
     repo: SharedItemOrgRepo!
+    # The file.
     file: String!
+    # The branch.
     branch: String
+    # The repository evision.
     repoRevision: String!
+    # The lines revision.
     linesRevision: String!
+    # The title.
     title: String!
+    # The start line.
     startLine: Int!
+    # The end line.
     endLine: Int!
+    # The start character.
     startCharacter: Int!
+    # The end character.
     endCharacter: Int!
+    # The range length.
     rangeLength: Int!
+    # The time when this was created.
     createdAt: String!
+    # The time when this was archived.
     archivedAt: String
+    # The author.
     author: SharedItemUser!
+    # The lines.
     lines: SharedItemThreadLines
+    # The comments.
     comments: [SharedItemComment!]!
 }
 
 # Like the OrgRepo type, except with fields that should not be accessible with
 # a secret URL removed.
-#
-# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
-# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
-# type.
+#!
+#! 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+#! Do NOT use any non-primitive GraphQL type here unless it is also a SharedItem
+#! type.
 type SharedItemOrgRepo {
+    # The ID.
     id: Int!
+    # The remote URI.
     remoteUri: String!
     # See OrgRepo.repository.
     repository: Repository
@@ -667,55 +769,85 @@ type SharedItemOrgRepo {
 
 # Like the Comment type, except with fields that should not be accessible with a
 # secret URL removed.
-#
-# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
-# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
-# type.
+#!
+#! 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+#! Do NOT use any non-primitive GraphQL type here unless it is also a SharedItem
+#! type.
 type SharedItemComment {
+    # The ID.
     id: ID!
+    # The database ID.
     databaseID: Int!
+    # The title.
     title: String!
+    # The contents.
     contents: String!
+    # The rich HTML.
     richHTML: String!
+    # The time when this was created.
     createdAt: String!
+    # The time when this was updated.
     updatedAt: String!
+    # The author.
     author: SharedItemUser!
 }
 
 # Exactly the same as the ThreadLines type, except it cannot have sensitive
-# fields accidently added.
-#
-# 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
-# Do NOT use any non-primitive graphql type here unless it is also a SharedItem
-# type.
+# fields accidentally added.
+#!
+#! 🚨 SECURITY: Every field here is accessible publicly given a shared item URL.
+#! Do NOT use any non-primitive GraphQL type here unless it is also a SharedItem
+#! type.
 type SharedItemThreadLines {
+    # Returns the HTML before.
     htmlBefore(isLightTheme: Boolean!): String!
+    # Returns the HTML.
     html(isLightTheme: Boolean!): String!
+    # Returns the HTML after.
     htmlAfter(isLightTheme: Boolean!): String!
+    # The text before.
     textBefore: String!
+    # The text.
     text: String!
+    # The text after.
     textAfter: String!
+    # The start of the text selection range.
     textSelectionRangeStart: Int!
+    # The length of the text selection range.
     textSelectionRangeLength: Int!
 }
 
+# Ref fields.
 type RefFields {
+    # The ref location.
     refLocation: RefLocation
+    # The URI.
     uri: URI
 }
 
+# A URI.
 type URI {
+    # The host.
     host: String!
+    # The fragment.
     fragment: String!
+    # The path.
     path: String!
+    # The query.
     query: String!
+    # The scheme.
     scheme: String!
 }
 
+# A ref location.
 type RefLocation {
+    # The starting line number.
     startLineNumber: Int!
+    # The starting column.
     startColumn: Int!
+    # The ending line number.
     endLineNumber: Int!
+    # The ending column.
     endColumn: Int!
 }
 
@@ -771,7 +903,7 @@ type Repository implements Node {
     # Phabricator, etc.).
     externalRepository: ExternalRepository
     # Whether the repository is currently being cloned.
-    cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress")
+    cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
     # The commit that was last indexed for cross-references, if any.
     lastIndexedRevOrLatest: GitCommit
     # Information about the text search index for this repository, or null if text search indexing
@@ -864,6 +996,7 @@ type Repository implements Node {
         # Return dependencies matching the query.
         query: String
     ): DependencyConnection!
+    # The total ref list.
     listTotalRefs: TotalRefList!
     # Link to another Sourcegraph instance location where this repository is located.
     redirectURL: String
@@ -1244,19 +1377,23 @@ type GitRevisionRange {
     mergeBase: GitObject
 }
 
+# A Phabricator repository.
 type PhabricatorRepo {
-    # the canonical repo path, like 'github.com/gorilla/mux'
+    # The canonical repo path (e.g. "github.com/gorilla/mux").
     name: String!
     # An alias for name.
     uri: String! @deprecated(reason: "use name instead")
-    # the unique Phabricator identifier for the repo, like 'MUX'
+    # The unique Phabricator identifier for the repo, like "MUX"
     callsign: String!
-    # the URL to the phabricator instance, e.g. http://phabricator.sgdev.org
+    # The URL to the phabricator instance (e.g. http://phabricator.sgdev.org)
     url: String!
 }
 
+# A total ref list.
 type TotalRefList {
+    # The repositories.
     repositories: [Repository!]!
+    # The total.
     total: Int!
 }
 
@@ -1350,24 +1487,34 @@ type BehindAheadCounts {
     ahead: Int!
 }
 
+# A signature.
 type Signature {
+    # The person.
     person: Person!
+    # The date.
     date: String!
 }
 
+# A person.
 type Person {
+    # The name.
     name: String!
+    # The email.
     email: String!
     # The name if set; otherwise the email username.
     displayName: String!
+    # The avatar URL.
     avatarURL: String!
 
     # The corresponding user account for this person, if one exists.
     user: User
 }
 
+# A tree.
 type Tree {
+    # The directories.
     directories: [Directory]!
+    # The files
     files: [File]!
     # Consists of directories plus files.
     entries: [TreeEntry!]!
@@ -1402,6 +1549,7 @@ interface TreeEntry {
     ): SymbolConnection!
 }
 
+# A directory.
 type Directory implements TreeEntry {
     # The full path (relative to the repository root) of this directory.
     path: String!
@@ -1416,6 +1564,7 @@ type Directory implements TreeEntry {
     commits: [GitCommit!]!
     # The URL to this directory.
     url: String!
+    # The tree.
     tree: Tree!
     # Symbols defined in this directory.
     symbols(
@@ -1426,11 +1575,15 @@ type Directory implements TreeEntry {
     ): SymbolConnection!
 }
 
+# A highlighted file.
 type HighlightedFile {
+    # Whether or not it was aborted.
     aborted: Boolean!
+    # The HTML.
     html: String!
 }
 
+# A file.
 type File implements TreeEntry {
     # The full path (relative to the repository root) of this file.
     path: String!
@@ -1457,10 +1610,15 @@ type File implements TreeEntry {
     # The URLs to this file on its repository's external services.
     externalURLs: [ExternalLink!]!
 
+    # Whether or not it is binary.
     binary: Boolean!
+    # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    # Blame the file.
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
+    # Returns dependency references for the file.
     dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
+    # Blame the file and return output in a raw string format.
     blameRaw(startLine: Int!, endLine: Int!): String!
 
     # Symbols defined in this file.
@@ -1472,55 +1630,87 @@ type File implements TreeEntry {
     ): SymbolConnection!
 }
 
+# A file match.
 type FileMatch {
+    # The resource.
     resource: String!
-    # The symbols found in this file that match the query
+    # The symbols found in this file that match the query.
     symbols: [Symbol!]!
+    # The line matches.
     lineMatches: [LineMatch!]!
+    # Whether or not the limit was hit.
     limitHit: Boolean!
 }
 
+# A line match.
 type LineMatch {
+    # The preview.
     preview: String!
+    # The line number.
     lineNumber: Int!
-    # Tuples of [offset, length] measured in characters (not bytes)
+    # Tuples of [offset, length] measured in characters (not bytes).
     offsetAndLengths: [[Int!]!]!
+    # Whether or not the limit was hit.
     limitHit: Boolean!
 }
 
+# Dependency references.
 type DependencyReferences {
+    # The dependency reference data.
     dependencyReferenceData: DependencyReferencesData!
+    # The repository data.
     repoData: RepoDataMap!
 }
 
+# A repository data map.
 type RepoDataMap {
+    # The repositories.
     repos: [Repository!]!
+    # The repository IDs.
     repoIds: [Int!]!
 }
 
+# Dependency references data.
 type DependencyReferencesData {
+    # The references.
     references: [DependencyReference!]!
+    # The location.
     location: DepLocation!
 }
 
+# A dependency reference.
 type DependencyReference {
+    # The dependency data.
     dependencyData: String!
+    # The repository ID.
     repoId: Int!
+    # The hints.
     hints: String!
 }
 
+# A dependency location.
 type DepLocation {
+    # The location.
     location: String!
+    # The symbol.
     symbol: String!
 }
 
+# A hunk.
 type Hunk {
+    # The startLine.
     startLine: Int!
+    # The endLine.
     endLine: Int!
+    # The startByte.
     startByte: Int!
+    # The endByte.
     endByte: Int!
+    # The rev.
     rev: String!
+    # The author.
     author: Signature
+    # The message.
     message: String!
 }
 
@@ -1533,12 +1723,15 @@ type UserConnection {
     totalCount: Int!
 }
 
+# A user.
 type User implements Node, ConfigurationSubject {
     # The unique ID for the user.
     id: ID!
     # The user's username.
     username: String!
-    authID: String! @deprecated(reason: "renamed to externalID - use that instead")
+    # The auth ID.
+    authID: String! @deprecated(reason: "use externalID instead")
+    # The auth0 ID.
     auth0ID: String! @deprecated(reason: "use externalID instead")
     # The external authentication system's ID for this user, if applicable. For example, if this user is
     # authenticated via an SSO provider (using OpenID, SAML, etc.), then this is the ID from that provider.
@@ -1622,11 +1815,17 @@ type AccessTokenConnection {
     pageInfo: PageInfo!
 }
 
+# An organization membership.
 type OrgMembership {
+    # The ID.
     id: Int!
+    # The organization.
     org: Org!
+    # The user.
     user: User!
+    # The time when this was created.
     createdAt: String!
+    # The time when this was updated.
     updatedAt: String!
 }
 
@@ -1684,7 +1883,7 @@ type Org implements Node, ConfigurationSubject {
     #
     # Only organization members and site admins can access this field.
     threads(
-        # TODO(nick): remove repoCanonicalRemoteID
+        # DEPRECATED: use canonicalRemoteIDs instead.
         repoCanonicalRemoteID: String
         canonicalRemoteIDs: [String!]
         branch: String
@@ -1702,17 +1901,25 @@ type Org implements Node, ConfigurationSubject {
     viewerIsMember: Boolean!
 }
 
+# A invite user result.
 type InviteUserResult {
     # The URL that the invited user can visit to accept the invitation.
     acceptInviteURL: String!
 }
 
+# An organization repository.
 type OrgRepo {
+    # The ID.
     id: Int!
+    # The organization.
     org: Org!
+    # The canonical remote ID.
     canonicalRemoteID: String!
+    # The time when this was created.
     createdAt: String!
+    # The time when this was updated.
     updatedAt: String!
+    # Gets the threads.
     threads(file: String, branch: String, limit: Int): ThreadConnection!
     # The repository that this refers to, if the repository is available on the server. This is null
     # for repositories that only exist for users locally (that they use with the editor) but that
@@ -1863,9 +2070,9 @@ type Site implements ConfigurationSubject {
         ciIndexed: Boolean = false
         # Filter for repositories that have not been indexed for cross-repository code intelligence.
         notCIIndexed: Boolean = false
-        # Sort field
+        # Sort field.
         orderBy: RepoOrderBy = REPO_URI
-        # Sort direction
+        # Sort direction.
         descending: Boolean = false
     ): RepositoryConnection!
     # List all users.
@@ -1897,7 +2104,7 @@ type Site implements ConfigurationSubject {
     # The build version of the Sourcegraph Server software that is running on this site (of the form
     # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
     buildVersion: String!
-    # The product version of the Sourcegraph Server software that is running on this site (in semver
+    # The product version of the Sourcegraph Server software that is running on this site (in SemVer
     # form, like 1.2.3).
     productVersion: String!
     # Information about software updates for version of Sourcegraph Server that
@@ -1913,13 +2120,14 @@ type Site implements ConfigurationSubject {
     # more about the code intelligence available (languages supported, etc.). It is subject to
     # change without notice.
     hasCodeIntelligence: Boolean!
-    # Whether the site is using an external authentication service such as oidc or saml.
+    # Whether the site is using an external authentication service such as OIDC or SAML.
     externalAuthEnabled: Boolean!
     # Whether we want to show built-in searches on the saved searches page
     disableBuiltInSearches: Boolean!
     # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
     # verify users' email addresses.
     sendsEmailVerificationEmails: Boolean!
+    # The activity.
     activity: SiteActivity!
 }
 
@@ -1961,7 +2169,9 @@ type UpdateCheck {
 
 # ConfigurationSubject is something that can have configuration.
 interface ConfigurationSubject {
+    # The ID.
     id: ID!
+    # The latest settings.
     latestSettings: Settings
 }
 
@@ -1981,12 +2191,17 @@ type ConfigurationCascade {
 
 # Settings is a version of a configuration settings file.
 type Settings {
+    # The ID.
     id: Int!
+    # The configuration.
     configuration: Configuration!
     # The subject that these settings are for.
     subject: ConfigurationSubject!
+    # The author.
     author: User!
+    # The time when this was created.
     createdAt: String!
+    # The contents.
     contents: String! @deprecated(reason: "use configuration.contents instead")
 }
 
@@ -2004,8 +2219,10 @@ type Thread implements Node {
     id: ID!
     # The primary key from the database.
     databaseID: Int!
+    # The repository.
     repo: OrgRepo!
-    file: String! @deprecated(reason: "use repoRevisionPath (or linesRevisionPath)")
+    # The file.
+    file: String! @deprecated(reason: "use repoRevisionPath (or linesRevisionPath) instead")
 
     # The relative path of the resource in the repository at repoRevision.
     repoRevisionPath: String!
@@ -2013,6 +2230,7 @@ type Thread implements Node {
     # The relative path of the resource in the repository at linesRevision.
     linesRevisionPath: String!
 
+    # The branch.
     branch: String
     # The commit ID of the repository at the time the thread was created.
     repoRevision: String!
@@ -2033,16 +2251,27 @@ type Thread implements Node {
     # Or in lay terms: "What is the oldest revision that I could checkout and
     # still see the exact lines of code that I selected?".
     linesRevision: String!
+    # The title.
     title: String!
+    # The start line.
     startLine: Int!
+    # The end line.
     endLine: Int!
+    # The start character.
     startCharacter: Int!
+    # The end character.
     endCharacter: Int!
+    # The range length.
     rangeLength: Int!
+    # The time when this was created.
     createdAt: String!
+    # The time when this was archived.
     archivedAt: String
+    # The author.
     author: User!
+    # The lines.
     lines: ThreadLines
+    # The comments.
     comments: [Comment!]!
 }
 
@@ -2052,7 +2281,9 @@ type Comment {
     id: ID!
     # The primary key from the database.
     databaseID: Int!
+    # The title.
     title: String!
+    # The contents.
     contents: String!
 
     # The file rendered as rich HTML, or an empty string if it is not a supported
@@ -2061,8 +2292,11 @@ type Comment {
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
 
+    # The time when his was created.
     createdAt: String!
+    # The time when this was updated.
     updatedAt: String!
+    # The author.
     author: User!
 }
 
@@ -2216,13 +2450,19 @@ type ApproximateCount {
     label: String!
 }
 
+# A user tag.
 type UserTag {
+    # The ID.
     id: Int!
+    # The name.
     name: String!
 }
 
+# An organization tag.
 type OrgTag {
+    # The ID.
     id: Int!
+    # The name.
     name: String!
 }
 
@@ -2240,6 +2480,7 @@ type UserActivity {
     lastActiveCodeHostIntegrationTime: String
 }
 
+# A user event.
 enum UserEvent {
     PAGEVIEW
     SEARCHQUERY
@@ -2259,14 +2500,21 @@ type SiteActivity {
 
 # SiteActivityPeriod describes a site's activity level for a given timespan.
 type SiteActivityPeriod {
+    # The time when this started.
     startTime: String!
+    # The user count.
     userCount: Int!
+    # The registered user count.
     registeredUserCount: Int!
+    # The anonymous user count.
     anonymousUserCount: Int!
 }
 
+# A deployment configuration.
 type DeploymentConfiguration {
+    # The email.
     email: String
+    # The site ID.
     siteID: String
 }
 
@@ -2293,5 +2541,6 @@ type SurveyResponse {
     reason: String
     # The answer to "What can Sourcegraph do to provide a better product"
     better: String
+    # The time when this response was created.
     createdAt: String!
 }

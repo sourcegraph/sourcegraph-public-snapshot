@@ -210,6 +210,10 @@ func main() {
 		Cmd("npm ci"),
 		Cmd("npm run stylelint -- --quiet"))
 
+	pipeline.AddStep(":graphql:",
+		Cmd("npm ci"),
+		Cmd("npm run graphql-lint"))
+
 	pipeline.AddStep(":webpack:",
 		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
