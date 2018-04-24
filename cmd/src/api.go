@@ -74,7 +74,7 @@ Examples:
 		for _, arg := range flagSet.Args() {
 			idx := strings.Index(arg, "=")
 			if idx == -1 {
-				return &usageError{fmt.Errorf("parsing argument %q expected 'variable=value' syntax (missing equals)")}
+				return &usageError{fmt.Errorf("parsing argument %q expected 'variable=value' syntax (missing equals)", arg)}
 			}
 			key := arg[:idx]
 			value := arg[idx+1:]
