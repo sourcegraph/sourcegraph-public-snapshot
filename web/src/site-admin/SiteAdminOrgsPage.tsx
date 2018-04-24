@@ -150,6 +150,13 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                         <AddIcon className="icon-inline" /> Create organization
                     </Link>
                 </div>
+                <p className="mt-2">
+                    An organization is a set of users with associated configuration. See{' '}
+                    <a href="https://about.sourcegraph.com/docs/server/config/organizations">
+                        Sourcegraph documentation
+                    </a>{' '}
+                    for information about configuring organizations.
+                </p>
                 <FilteredOrgConnection
                     className="list-group list-group-flush mt-3"
                     noun="organization"
