@@ -9,7 +9,7 @@ There are two types of authentication:
 * **Builtin authentication** goes through the builtin login page.
 * **SSO authentication** integrates with external SSO providers such as Okta and OneLogin.
 
-Once a user completes either authentication flow, a session is created that identifies that user to the app. On the server side, the session is validated and then an Actor is stored in the request context. The Actor in the context indicates to the request handlers the identity associated with the current request. SSO and builtin auth are mutually exclusive, because SSO auth requries sign-in before accessing any part of the app (including the builtin auth pages), and once a user is signed in, the builtin login button no longer appears in the UI.
+Once a user completes either authentication flow, a session is created that identifies that user to the app. On the server side, the session is validated and then an Actor is stored in the request context. The Actor in the context indicates to the request handlers the identity associated with the current request. SSO and builtin auth are mutually exclusive, because SSO auth requires sign-in before accessing any part of the app (including the builtin auth pages), and once a user is signed in, the builtin login button no longer appears in the UI.
 
 In addition to authentication flow, there are a few differences between SSO and builtin auth.
 

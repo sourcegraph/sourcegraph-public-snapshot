@@ -143,7 +143,7 @@ func doFetch(ctx context.Context, path string, fetcher Fetcher) (file *File, err
 	}
 
 	// We write to a temporary path to prevent another Open finding a
-	// partialy written file.
+	// partially written file.
 	tmpPath := path + ".part"
 	f, err = os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {

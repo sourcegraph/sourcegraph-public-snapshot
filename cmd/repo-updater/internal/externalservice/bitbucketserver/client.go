@@ -25,7 +25,7 @@ type Client struct {
 
 	// The username and password credentials for accessing the server. Typically these are only
 	// used when the server doesn't support personal access tokens (such as Bitbucket Server
-	// version 5.4 and older). If both Token and Username/Password are specifed, Token is used.
+	// version 5.4 and older). If both Token and Username/Password are specified, Token is used.
 	Username, Password string
 
 	// HTTPClient is the client used to access Bitbucket Server. To enabled

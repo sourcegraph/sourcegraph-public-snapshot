@@ -61,7 +61,7 @@ func NewHandler(m *mux.Router) http.Handler {
 // the provided API router, which must have been created by httpapi/router.NewInternal.
 //
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
-// This handler is not guarenteed to provide the same authorization checks as
+// This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
 func NewInternalHandler(m *mux.Router) http.Handler {
 	if m == nil {

@@ -499,7 +499,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	}
 
 	// isCloneable causes a network request, so we limit the number that can
-	// run at one time. We use a seperate semaphore to cloning since these
+	// run at one time. We use a separate semaphore to cloning since these
 	// checks being blocked by a few slow clones will lead to poor feedback to
 	// users. We can defer since the rest of the function does not block this
 	// goroutine.

@@ -45,7 +45,7 @@ type UserClaims struct {
 // that involves 3 parties: the Relying Party (e.g., Sourcegraph Server), the OpenID Provider (e.g., Okta, OneLogin,
 // or another SSO provider), and the End User (e.g., a user's web browser).
 //
-// The handler this method returns implements two things: (1) the OIDC Authorizaton Code Flow
+// The handler this method returns implements two things: (1) the OIDC Authorization Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) and (2) Sourcegraph-specific session management
 // (outside the scope of the OIDC spec). Upon successful completion of the OIDC login flow, the handler will create
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.

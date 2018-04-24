@@ -83,7 +83,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")
 
 		// CORS
-		// If the headerOrigin is the development or production Chrome Extension explictly set the Allow-Control-Allow-Origin
+		// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
 		// to the incoming header URL. Otherwise use the configured CORS origin.
 		headerOrigin := r.Header.Get("Origin")
 		isExtensionRequest := (headerOrigin == devExtension || headerOrigin == prodExtension) && !disableBrowserExtension

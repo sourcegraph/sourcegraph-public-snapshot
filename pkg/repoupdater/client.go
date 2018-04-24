@@ -30,7 +30,7 @@ var (
 var DefaultClient = &Client{
 	URL: repoupdaterURL,
 	HTTPClient: &http.Client{
-		// nethttp.Transport will propogate opentracing spans
+		// nethttp.Transport will propagate opentracing spans
 		Transport: &nethttp.Transport{
 			RoundTripper: &http.Transport{
 				// Default is 2, but we can send many concurrent requests

@@ -146,7 +146,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 	commit := api.CommitID(bytes.TrimSpace(stdout))
 	if len(commit) != 40 {
 		if commit == "HEAD" {
-			// We don't verify the existance of HEAD (see above comments), but
+			// We don't verify the existence of HEAD (see above comments), but
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.

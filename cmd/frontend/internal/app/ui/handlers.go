@@ -120,7 +120,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				return nil, nil
 			}
 			if e, ok := err.(backend.ErrRepoSeeOther); ok {
-				// Repo does not exist here, redirect to the reccomended location.
+				// Repo does not exist here, redirect to the recommended location.
 				u, err := url.Parse(e.RedirectURL)
 				if err != nil {
 					return nil, err
@@ -497,7 +497,7 @@ func serveOpen(w http.ResponseWriter, r *http.Request) error {
 }
 
 // ellipsisPath returns the given path with at max 2 path components from the
-// end, and an ellipsis (…) at the front when neccessary.
+// end, and an ellipsis (…) at the front when necessary.
 func ellipsisPath(pathStr string, n int) string {
 	split := strings.Split(pathStr, "/")
 	if len(split) < n {

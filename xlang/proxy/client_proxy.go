@@ -44,12 +44,12 @@ var (
 )
 
 func init() {
-	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Seperated by whitespace"))
+	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Separated by whitespace"))
 	for _, r := range repos {
 		repoBlacklist[api.RepoURI(r)] = true
 	}
 
-	repos = strings.Fields(env.Get("REPO_BLACKLIST_XREFERENCES", "", "repos which we should not serve workspace/xreferences requests for. Seperated by whitespace"))
+	repos = strings.Fields(env.Get("REPO_BLACKLIST_XREFERENCES", "", "repos which we should not serve workspace/xreferences requests for. Separated by whitespace"))
 	for _, r := range repos {
 		repoBlacklistXReferences[api.RepoURI(r)] = true
 	}

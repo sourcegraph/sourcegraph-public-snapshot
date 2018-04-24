@@ -35,7 +35,7 @@ var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the 
 var DefaultClient = &Client{
 	Addrs: strings.Fields(gitservers),
 	HTTPClient: &http.Client{
-		// nethttp.Transport will propogate opentracing spans
+		// nethttp.Transport will propagate opentracing spans
 		Transport: &nethttp.Transport{
 			RoundTripper: &http.Transport{
 				// Default is 2, but we can send many concurrent requests

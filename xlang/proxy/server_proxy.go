@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
-var repoLargeSubstr = strings.Fields(env.Get("REPO_LARGE_SUBSTR", "", "repo substrings which should be sent to LS with the mode suffix _large. Seperated by whitespace"))
+var repoLargeSubstr = strings.Fields(env.Get("REPO_LARGE_SUBSTR", "", "repo substrings which should be sent to LS with the mode suffix _large. Separated by whitespace"))
 
 // serverID identifies a lang/build server by the minimal state
 // necessary to reinitialize it. At most one lang/build server per
