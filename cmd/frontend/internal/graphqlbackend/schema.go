@@ -107,9 +107,9 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
-    # Creates a thread.
+    # Creates a thread. This is an experimental feature.
     createThread(input: CreateThreadInput!): Thread!
-    # Creates a thread.
+    # Creates a thread. This is an experimental feature.
     createThread2(input: CreateThreadInput!): Thread! @deprecated(reason: "use createThread instead")
     # Updates the user profile information for the user with the given ID.
     #
@@ -121,17 +121,17 @@ type Mutation {
     updateUserSettings(user: ID!, lastKnownSettingsID: Int, contents: String!): Settings!
     # Update the global settings for all users.
     updateSiteSettings(lastKnownSettingsID: Int, contents: String!): Settings!
-    # Updates a thread.
+    # Updates a thread. This is an experimental feature.
     updateThread(threadID: ID!, archived: Boolean): Thread!
-    # Adds a comment to a thread.
+    # Adds a comment to a thread. This is an experimental feature.
     addCommentToThread(threadID: ID!, contents: String!): Thread!
     # This method is the same as addCommentToThread, the only difference is
     # that authentication is based on the secret ULID instead of the current
-    # user.
+    # user. This is an experimental feature.
     addCommentToThreadShared(ulid: String!, threadID: ID!, contents: String!): SharedItemThread!
-    # Shares a thread.
+    # Shares a thread. This is an experimental feature.
     shareThread(threadID: ID!): String!
-    # Shares a comment.
+    # Shares a comment. This is an experimental feature.
     shareComment(commentID: ID!): String!
     # Creates an org.
     createOrg(name: String!, displayName: String!): Org!
@@ -471,7 +471,7 @@ type Query {
     repoGroups: [RepoGroup!]!
     # Looks up an organization by ID.
     org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
-    # Looks up a shared item by ULID.
+    # Looks up a shared item by ULID. This is an experimental feature.
     sharedItem(ulid: String!): SharedItem
     # The current site.
     site: Site!
@@ -1894,7 +1894,7 @@ type OrgRepo {
     createdAt: String!
     # The time when this was updated.
     updatedAt: String!
-    # Gets the threads.
+    # Gets the threads. This is an experimental feature.
     threads(file: String, branch: String, limit: Int): ThreadConnection!
     # The repository that this refers to, if the repository is available on the server. This is null
     # for repositories that only exist for users locally (that they use with the editor) but that
@@ -2064,7 +2064,7 @@ type Site implements ConfigurationSubject {
         # Return organizations whose names or display names match the query.
         query: String
     ): OrgConnection!
-    # List all threads.
+    # List all threads. This is an experimental feature.
     threads(
         # Returns the first n threads from the list.
         first: Int
