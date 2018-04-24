@@ -16,7 +16,27 @@ Currently, the `src` CLI only provides access to Sourcegraph's GraphQL API. It l
 
 ## Installation
 
-WIP
+### Mac OS:
+
+```bash
+curl https://github.com/sourcegraph/src-cli/releases/download/latest/src_darwin_amd64 -o /usr/local/bin/src
+chmod +x /usr/local/bin/src
+```
+
+### Linux:
+
+```bash
+curl https://github.com/sourcegraph/src-cli/releases/download/latest/src_linux_amd64 -o /usr/local/bin/src
+chmod +x /usr/local/bin/src
+```
+
+### Windows:
+
+- [Download the latest src_windows_amd64.exe](https://github.com/sourcegraph/src-cli/releases/download/latest/src_windows_amd64.exe) and rename to `src.exe`.
+- To run from any command prompt, create the folder `C:\Program Files\Sourcegraph` and copy the binary into it. Add that directory to your system path:
+  - Click the start menu, search for `environment` and select `Edit the system environment variables`.
+  - (Windows 10) Click the `Add` button, paste `C:\Program Files\Sourcegraph` and click `Ok`.
+  - (Windows 7) Click `Environment variables...`, select `Path`, click `Edit`, add `;C:\Program Files\Sourcegraph` to the end of the input.
 
 ## Usage
 
