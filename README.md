@@ -40,7 +40,7 @@ chmod +x /usr/local/bin/src
 
 ## Usage
 
-WIP
+Consult `src -h` and `src api -h` for usage information.
 
 ## Development
 
