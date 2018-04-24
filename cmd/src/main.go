@@ -93,7 +93,7 @@ func main() {
 		var err error
 		cfg, err = readConfig()
 		if err != nil {
-			log.Fatal("reading config:", err)
+			log.Fatal("reading config: ", err)
 		}
 
 		// Parse subcommand flags.
