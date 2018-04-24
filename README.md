@@ -52,8 +52,7 @@ go get -u github.com/sourcegraph/src-cli/cmd/src
 
 ## Releasing
 
-1. Find the latest version (either via the releases tab on GitHub or via git tags).
-2. `git tag 1.0.0 -a -m 'release v1.0.0'` (replace `1.0.0` with the version you are releasing)
-3. `git push --tags`
+1. Find the latest version (either via the releases tab on GitHub or via git tags) to determine which version you are releasing.
+2. `VERSION=9.9.9 ./release.sh` (replace `9.9.9` with the version you are releasing)
 
 Travis will automatically perform the release.
