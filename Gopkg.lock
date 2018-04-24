@@ -456,12 +456,6 @@
   version = "v0.3.4"
 
 [[projects]]
-  name = "github.com/inconshreveable/mousetrap"
-  packages = ["."]
-  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
-  version = "v1.0"
-
-[[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "0b12d6b5"
@@ -909,12 +903,6 @@
   name = "github.com/sourcegraph/syntaxhighlight"
   packages = ["."]
   revision = "bd320f5d308e1a3c4314c678d8227a0d72574ae7"
-
-[[projects]]
-  name = "github.com/spf13/cobra"
-  packages = ["."]
-  revision = "a1f051bc3eba734da4772d60e2d677f47cf93ef4"
-  version = "v0.0.2"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -1380,6 +1368,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "594ed161d241262decd922555a79aaf9cab79c76b8335a681c386d687b9ae867"
+  inputs-digest = "603f011dc917739563f70be7cf001ae2d40722785ffd889e2e23688ba34f0ade"
   solver-name = "gps-cdcl"
   solver-version = 1
