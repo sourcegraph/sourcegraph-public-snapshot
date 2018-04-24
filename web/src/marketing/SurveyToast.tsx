@@ -1,5 +1,6 @@
 import EmojiIcon from '@sourcegraph/icons/lib/Emoji'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs/Subscription'
 import { currentUser } from '../auth'
 import * as GQL from '../backend/graphqlschema'
@@ -9,6 +10,62 @@ import { daysActiveCount } from './util'
 
 const HUBSPOT_SURVEY_URL = 'https://sourcegraph-2762526.hs-sites.com/user-survey'
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
+
+export interface SurveyCTAProps {
+    className?: string
+    score?: number
+    onClick?: (score: number) => void
+    openSurveyInNewTab?: boolean
+}
+
+export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
+    public render(): JSX.Element | null {
+        return (
+            <div className={this.props.className}>
+                {Array(11)
+                    .fill(1)
+                    .map((_, i) => {
+                        const pressed = i === this.props.score
+                        if (window.context.hostSurveysLocallyEnabled) {
+                            return (
+                                <Link
+                                    type="button"
+                                    key={i}
+                                    className={`btn btn-primary toast__rating-btn ${pressed ? 'active' : ''}`}
+                                    aria-pressed={pressed || undefined}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.onClick(i)}
+                                    to={`/survey/${i}`}
+                                    target={this.props.openSurveyInNewTab ? '_blank' : undefined}
+                                >
+                                    {i}
+                                </Link>
+                            )
+                        } else {
+                            return (
+                                <button
+                                    type="button"
+                                    key={i}
+                                    className="btn btn-primary toast__rating-btn"
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    onClick={() => this.onClick(i)}
+                                >
+                                    {i}
+                                </button>
+                            )
+                        }
+                    })}
+            </div>
+        )
+    }
+
+    private onClick = (score: number) => {
+        eventLogger.log('SurveyButtonClicked', { marketing: { nps_score: score } })
+        if (this.props.onClick) {
+            this.props.onClick(score)
+        }
+    }
+}
 
 interface State {
     user: GQL.IUser | null
@@ -48,29 +105,21 @@ export class SurveyToast extends React.Component<{}, State> {
                 title="Tell us what you think"
                 subtitle="How likely is it that you would recommend Sourcegraph to a friend?"
                 cta={
-                    <div>
-                        {Array(11)
-                            .fill(1)
-                            .map((_, i) => (
-                                <button
-                                    type="button"
-                                    key={i}
-                                    className="btn btn-primary toast__rating-btn"
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    onClick={() => this.onClickSurvey(i)}
-                                >
-                                    {i}
-                                </button>
-                            ))}
-                    </div>
+                    <SurveyCTA
+                        onClick={
+                            window.context.hostSurveysLocallyEnabled ? this.onClickLocalScore : this.onClickRemoteScore
+                        }
+                        openSurveyInNewTab={true}
+                    />
                 }
                 onDismiss={this.onDismiss}
             />
         )
     }
 
-    private onClickSurvey = (score: number): void => {
-        eventLogger.log('SurveyReminderButtonClicked', { marketing: { nps_score: score } })
+    private onClickLocalScore = (score: number): void => this.onDismiss()
+
+    private onClickRemoteScore = (score: number) => {
         const url = new URL(HUBSPOT_SURVEY_URL)
         url.searchParams.set('nps_score', score.toString())
         url.searchParams.set('user_is_authenticated', (this.state.user !== null).toString())
@@ -78,9 +127,8 @@ export class SurveyToast extends React.Component<{}, State> {
         if (this.state.user) {
             url.searchParams.set('email', this.state.user.email)
         }
-        window.open(url.href)
-
         this.onDismiss()
+        window.open(url.href)
     }
 
     private onDismiss = (): void => {

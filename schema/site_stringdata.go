@@ -73,6 +73,13 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "hostSurveysLocally": {
+          "description":
+            "Enables or disables hosting user satisfaction surveys locally. Once stable, this feature will be default.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       }
     },

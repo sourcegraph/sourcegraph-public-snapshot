@@ -8,6 +8,7 @@ import { CommentsPage } from './comments/CommentsPage'
 import { ThreadPage } from './comments/ThreadPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { ExplorePage } from './explore/ExplorePage'
+import { SurveyPage } from './marketing/SurveyPage'
 import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
 import { RepoContainer } from './repo/RepoContainer'
@@ -136,6 +137,10 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/users/:username',
         component: UserArea,
+    },
+    {
+        path: '/survey/:score?',
+        component: SurveyPage,
     },
     repoRevRoute,
 ]

@@ -21,4 +21,6 @@ var (
 	UserTags     = &userTags{}
 	SiteConfig   = &siteConfig{}
 	CertCache    = &certCache{}
+
+	SurveyResponses = &surveyResponses{}
 )

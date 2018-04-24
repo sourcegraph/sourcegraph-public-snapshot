@@ -113,6 +113,11 @@ interface SourcegraphContext {
      * Whether the showMissingRepos feature flag is enabled.
      */
     showMissingReposEnabled: bool
+
+    /**
+     * Whether the hostSurveysLocally feature flag is enabled.
+     */
+    hostSurveysLocallyEnabled: bool
 }
 
 declare module '*.json' {

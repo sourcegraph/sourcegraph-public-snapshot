@@ -195,3 +195,13 @@ type SiteActivityPeriod struct {
 	RegisteredUserCount int32
 	AnonymousUserCount  int32
 }
+
+type SurveyResponse struct {
+	ID        int32
+	UserID    *int32
+	Email     *string
+	Score     int32
+	Reason    *string
+	Better    *string
+	CreatedAt time.Time
+}

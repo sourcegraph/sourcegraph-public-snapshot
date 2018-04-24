@@ -348,6 +348,24 @@ Indexes:
 
 ```
 
+# Table "public.survey_responses"
+```
+   Column   |           Type           |                           Modifiers                           
+------------+--------------------------+---------------------------------------------------------------
+ id         | bigint                   | not null default nextval('survey_responses_id_seq'::regclass)
+ user_id    | integer                  | 
+ email      | text                     | 
+ score      | integer                  | not null
+ reason     | text                     | 
+ better     | text                     | 
+ created_at | timestamp with time zone | not null default now()
+Indexes:
+    "survey_responses_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+
+```
+
 # Table "public.threads"
 ```
               Column               |           Type           |                      Modifiers                       
@@ -489,6 +507,7 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "shared_items" CONSTRAINT "shared_items_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "threads" CONSTRAINT "threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

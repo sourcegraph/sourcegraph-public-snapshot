@@ -64,11 +64,7 @@ func trackHubSpotContact(email string, eventLabel string, params *hubspot.Contac
 		return nil, errors.New("User must have a valid email address.")
 	}
 
-	c, err := hubspotutil.Client()
-	if err != nil {
-		log15.Warn(err.Error())
-		return nil, nil
-	}
+	c := hubspotutil.Client()
 
 	if eventLabel == "SignupCompleted" {
 		today := time.Now().Truncate(24 * time.Hour)

@@ -20,6 +20,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
+* Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
+
 ## 2.7.0
 
 ### Changed

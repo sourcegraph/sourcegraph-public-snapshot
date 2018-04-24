@@ -1,6 +1,7 @@
 package hubspot
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -14,6 +15,9 @@ import (
 //
 // http://developers.hubspot.com/docs/methods/contacts/create_or_update
 func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) (*ContactResponse, error) {
+	if c.hapiKey == "" {
+		return nil, errors.New("HubSpot API key must be provided.")
+	}
 	var resp ContactResponse
 	err := c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), newAPIValues(params), &resp)
 	return &resp, err

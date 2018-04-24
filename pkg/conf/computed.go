@@ -31,6 +31,13 @@ func JumpToDefOSSIndexEnabled() bool {
 	return p == "enabled"
 }
 
+// HostSurveysLocally returns true if HostSurveysLocally experiment is enabled.
+func HostSurveysLocallyEnabled() bool {
+	p := Get().ExperimentalFeatures.HostSurveysLocally
+	// default is disabled
+	return p == "enabled"
+}
+
 // AccessTokensEnabled returns whether access tokens are enabled.
 //
 // NOTE: It currently also returns false if the auth provider does not support access tokens.  SAML

@@ -275,6 +275,8 @@ type Mutation {
     # Reloads the site by restarting the server. This is not supported for all deployment
     # types. This may cause downtime.
     reloadSite: EmptyResponse
+    # Submits a user satisfaction (NPS) survey.
+    submitSurvey(input: SurveySubmissionInput!): EmptyResponse
 }
 
 # Mutations for language servers.
@@ -395,6 +397,19 @@ type RandomizeUserPasswordBySiteAdminResult {
     resetPasswordURL: String!
 }
 
+# Input for a user satisfaction (NPS) survey submission.
+input SurveySubmissionInput {
+    # User-provided email address, if there is no currently authenticated user. If there is, this value
+    # will not be used.
+    email: String
+    # User's likelihood of recommending Sourcegraph to a friend, from 0-10.
+    score: Int!
+    # The answer to "What is the most important reason for the score you gave".
+    reason: String
+    # The answer to "What can Sourcegraph do to provide a better product"
+    better: String
+}
+
 type Query {
     root: Query! @deprecated
     node(id: ID!): Node
@@ -430,6 +445,10 @@ type Query {
     sharedItem(ulid: String!): SharedItem
     # The current site.
     site: Site!
+    surveyResponses(
+        # Returns the first n survey responses from the list.
+        first: Int
+    ): SurveyResponseConnection!
 }
 
 type Search {
@@ -2234,17 +2253,17 @@ enum UserEvent {
     CODEINTELINTEGRATION
 }
 
-# SiteActivity describes a site's aggregate activity level
+# SiteActivity describes a site's aggregate activity level.
 type SiteActivity {
-    # Recent daily active users
+    # Recent daily active users.
     daus: [SiteActivityPeriod!]!
-    # Recent weekly active users
+    # Recent weekly active users.
     waus: [SiteActivityPeriod!]!
-    # Recent monthly active users
+    # Recent monthly active users.
     maus: [SiteActivityPeriod!]!
 }
 
-# SiteActivityPeriod describes a site's activity level for a given timespan
+# SiteActivityPeriod describes a site's activity level for a given timespan.
 type SiteActivityPeriod {
     startTime: String!
     userCount: Int!
@@ -2255,5 +2274,31 @@ type SiteActivityPeriod {
 type DeploymentConfiguration {
     email: String
     siteID: String
+}
+
+# A list of survey responses
+type SurveyResponseConnection {
+    # A list of survey responses.
+    nodes: [SurveyResponse!]!
+    # The total count of survey responses in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+}
+
+# An individual response to a user satisfaction (NPS) survey.
+type SurveyResponse {
+    # The unique ID of the survey response
+    id: ID!
+    # The user who submitted the survey (if they were authenticated at the time).
+    user: User
+    # The email that the user manually entered (if they were NOT authenticated at the time).
+    email: String
+    # User's likelihood of recommending Sourcegraph to a friend, from 0-10.
+    score: Int!
+    # The answer to "What is the most important reason for the score you gave".
+    reason: String
+    # The answer to "What can Sourcegraph do to provide a better product"
+    better: String
+    createdAt: String!
 }
 `

@@ -25,6 +25,7 @@ type BitbucketServerConnection struct {
 
 // ExperimentalFeatures Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
+	HostSurveysLocally     string `json:"hostSurveysLocally,omitempty"`
 	JumpToDefOSSIndex      string `json:"jumpToDefOSSIndex,omitempty"`
 	SearchTimeoutParameter string `json:"searchTimeoutParameter,omitempty"`
 	ShowMissingRepos       string `json:"showMissingRepos,omitempty"`

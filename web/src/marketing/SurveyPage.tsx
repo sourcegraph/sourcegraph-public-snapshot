@@ -1,0 +1,204 @@
+import EmojiIcon from '@sourcegraph/icons/lib/Emoji'
+import Loader from '@sourcegraph/icons/lib/Loader'
+import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
+import * as H from 'history'
+import * as React from 'react'
+import { RouteComponentProps } from 'react-router'
+import { catchError } from 'rxjs/operators/catchError'
+import * as GQL from '../backend/graphqlschema'
+import { Form } from '../components/Form'
+import { HeroPage } from '../components/HeroPage'
+import { PageTitle } from '../components/PageTitle'
+import { eventLogger } from '../tracking/eventLogger'
+import { submitSurvey } from './backend'
+import { SurveyCTA } from './SurveyToast'
+
+interface SurveyFormProps {
+    location: H.Location
+    history: H.History
+    user: GQL.IUser | null
+    score?: number
+    onScoreChange?: (score: number) => void
+    onSubmit: () => void
+}
+
+interface SurveyFormState {
+    error?: Error
+    reason: string
+    betterProduct: string
+    email: string
+    loading: boolean
+}
+
+export interface SurveyResponse {
+    score: number
+    email?: string
+    reason?: string
+    better?: string
+}
+
+class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
+    constructor(props: SurveyFormProps) {
+        super(props)
+        this.state = {
+            reason: '',
+            betterProduct: '',
+            email: '',
+            loading: false,
+        }
+    }
+
+    public render(): JSX.Element | null {
+        return (
+            <Form className="survey-form" onSubmit={this.handleSubmit}>
+                {this.state.error && <p className="survey-form__error">{this.state.error.message}</p>}
+                <label className="survey-form__label">
+                    How likely is it that you would recommend Sourcegraph to a friend?
+                </label>
+                <SurveyCTA className="survey-form__scores" onClick={this.onScoreChange} score={this.props.score} />
+                {!this.props.user && (
+                    <div className="form-group">
+                        <input
+                            className={`form-control survey-form__input`}
+                            type="text"
+                            placeholder="Email"
+                            onChange={this.onEmailFieldChange}
+                            value={this.state.email}
+                            disabled={this.state.loading}
+                        />
+                    </div>
+                )}
+                <div className="form-group">
+                    <label className="survey-form__label">
+                        What is the most important reason for the score you gave Sourcegraph?
+                    </label>
+                    <textarea
+                        className={`form-control survey-form__input`}
+                        onChange={this.onReasonFieldChange}
+                        value={this.state.reason}
+                        disabled={this.state.loading}
+                        autoFocus={true}
+                    />
+                </div>
+                <div className="form-group">
+                    <label className="survey-form__label">What could Sourcegraph do to provide a better product?</label>
+                    <textarea
+                        className={`form-control survey-form__input`}
+                        onChange={this.onBetterProductFieldChange}
+                        value={this.state.betterProduct}
+                        disabled={this.state.loading}
+                    />
+                </div>
+                <div className="form-group">
+                    <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
+                        Submit
+                    </button>
+                </div>
+                {this.state.loading && (
+                    <div className="survey-form__loader">
+                        <Loader className="icon-inline" />
+                    </div>
+                )}
+            </Form>
+        )
+    }
+
+    private onScoreChange = (score: number) => {
+        if (this.props.onScoreChange) {
+            this.props.onScoreChange(score)
+        }
+        this.setState({ error: undefined })
+    }
+
+    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ email: e.target.value })
+    }
+
+    private onReasonFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        this.setState({ reason: e.target.value })
+    }
+
+    private onBetterProductFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        this.setState({ betterProduct: e.target.value })
+    }
+
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (this.state.loading) {
+            return
+        }
+
+        if (!this.props.score) {
+            this.setState({ error: new Error('Please select a score') })
+            return
+        }
+
+        eventLogger.log('SurveySubmitted')
+        this.setState({ loading: true })
+
+        submitSurvey({
+            score: this.props.score,
+            email: this.state.email,
+            reason: this.state.reason,
+            better: this.state.betterProduct,
+        })
+            .pipe(
+                catchError(error => {
+                    this.setState({ error })
+                    return []
+                })
+            )
+            .subscribe(() => {
+                this.props.onSubmit()
+                this.props.history.push('/survey/thanks')
+            })
+    }
+}
+
+interface SurveyPageProps extends RouteComponentProps<{ score?: string }> {
+    isLightTheme: boolean
+    user: GQL.IUser | null
+}
+
+export class SurveyPage extends React.Component<SurveyPageProps> {
+    constructor(props: SurveyPageProps) {
+        super(props)
+    }
+
+    public componentDidMount(): void {
+        eventLogger.logViewEvent('Survey')
+    }
+
+    public render(): JSX.Element | null {
+        if (!window.context.hostSurveysLocallyEnabled) {
+            return <HeroPage icon={NoEntryIcon} title="Surveys are not enabled" />
+        }
+        if (this.props.match.params.score === 'thanks') {
+            return (
+                <div className="survey-page">
+                    <PageTitle title="Thanks" />
+                    <HeroPage icon={EmojiIcon} title="Thank you for submitting!" />
+                </div>
+            )
+        }
+        return (
+            <div className="survey-page">
+                <PageTitle title="Almost there..." />
+                <HeroPage
+                    icon={EmojiIcon}
+                    title="Almost there..."
+                    cta={
+                        <SurveyForm
+                            score={this.intScore(this.props.match.params.score)}
+                            onSubmit={this.onSubmit}
+                            {...this.props}
+                        />
+                    }
+                />
+            </div>
+        )
+    }
+
+    private intScore = (score?: string) => (!!score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined)
+    private onSubmit = () => this.setState({ complete: true })
+}

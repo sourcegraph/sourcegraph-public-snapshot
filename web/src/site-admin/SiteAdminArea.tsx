@@ -14,6 +14,7 @@ import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
 import { SiteAdminSettingsPage } from './SiteAdminSettingsPage'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
+import { SiteAdminSurveyResponsesPage } from './SiteAdminSurveyResponsesPage'
 import { SiteAdminTelemetryPage } from './SiteAdminTelemetryPage'
 import { SiteAdminThreadsPage } from './SiteAdminThreadsPage'
 import { SiteAdminUpdatesPage } from './SiteAdminUpdatesPage'
@@ -123,6 +124,11 @@ export class SiteAdminArea extends React.Component<Props> {
                         <Route
                             path={`${this.props.match.url}/telemetry`}
                             component={SiteAdminTelemetryPage}
+                            exact={true}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/surveys`}
+                            component={SiteAdminSurveyResponsesPage}
                             exact={true}
                         />
                         <Route component={NotFoundPage} />

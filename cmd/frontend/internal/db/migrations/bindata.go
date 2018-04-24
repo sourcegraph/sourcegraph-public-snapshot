@@ -148,6 +148,10 @@
 // ../../../../../migrations/1520708880_users_display_name_nullable.up.sql
 // ../../../../../migrations/1522555179_create_access_tokens_table.down.sql
 // ../../../../../migrations/1522555179_create_access_tokens_table.up.sql
+// ../../../../../migrations/1522961518_create_survey_responses_table.down.sql
+// ../../../../../migrations/1522961518_create_survey_responses_table.up.sql
+// ../../../../../migrations/1524535307_remove_survey_responses_updated_at.down.sql
+// ../../../../../migrations/1524535307_remove_survey_responses_updated_at.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3175,6 +3179,86 @@ func _1522555179_create_access_tokens_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1522961518_create_survey_responses_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\x28\x2e\x2d\x2a\x4b\xad\x8c\x2f\x4a\x2d\x2e\xc8\xcf\x2b\x4e\x2d\xb6\xe6\x02\x04\x00\x00\xff\xff\x44\x0c\x58\xb5\x1d\x00\x00\x00")
+
+func _1522961518_create_survey_responses_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1522961518_create_survey_responses_tableDownSql,
+		"1522961518_create_survey_responses_table.down.sql",
+	)
+}
+
+func _1522961518_create_survey_responses_tableDownSql() (*asset, error) {
+	bytes, err := _1522961518_create_survey_responses_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1522961518_create_survey_responses_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1522961518_create_survey_responses_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x8f\xcd\x4e\xc3\x40\x0c\x84\xef\x7d\x0a\x1f\x53\x89\x37\xe0\x14\x8a\x2b\x21\x42\x40\x4b\x7a\xe8\x29\xda\x76\x47\xc5\x52\xb3\x1b\xd9\x0e\x05\x9e\x1e\xa9\xa8\xa9\x7a\xc2\x37\xcf\xcc\xe7\x9f\x55\xe0\xba\x63\xea\xea\x87\x86\xc9\x26\xfd\xc4\x77\xaf\xb0\xb1\x64\x83\x51\xb5\xa0\xbf\x92\x44\x3b\x39\x18\x54\xe2\x91\xda\xd7\x8e\xda\x4d\xd3\xd0\x5b\x78\x7a\xa9\xc3\x96\x9e\x79\x7b\x77\x49\x4e\x06\xed\x25\x91\x64\xc7\x01\x4a\x81\xd7\x1c\xb8\x5d\xf1\xfb\xd9\x32\xaa\x24\x2d\xe7\x34\x86\x28\x47\x72\x7c\xf9\x2c\xd9\xbe\x28\x66\xfc\xb2\x6b\xb6\x15\xd1\x4a\xbe\x45\x76\x70\x87\xde\x6a\x7b\x45\x74\xa4\x3e\x3a\xb9\x0c\x30\x8f\xc3\x48\x27\xf1\x8f\x73\x4b\x3f\x25\xe3\xfa\xc8\x23\xaf\xeb\x4d\xd3\x51\x2e\xa7\xea\x7a\xdc\x34\xa6\xff\x46\x2c\x96\xf7\x8b\xdf\x00\x00\x00\xff\xff\xb1\x66\xc9\x83\x43\x01\x00\x00")
+
+func _1522961518_create_survey_responses_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1522961518_create_survey_responses_tableUpSql,
+		"1522961518_create_survey_responses_table.up.sql",
+	)
+}
+
+func _1522961518_create_survey_responses_tableUpSql() (*asset, error) {
+	bytes, err := _1522961518_create_survey_responses_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1522961518_create_survey_responses_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1524535307_remove_survey_responses_updated_atDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2e\x2d\x2a\x4b\xad\x8c\x2f\x4a\x2d\x2e\xc8\xcf\x2b\x4e\x2d\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x2d\x48\x49\x2c\x49\x4d\x89\x4f\x2c\x51\x28\xc9\xcc\x4d\x2d\x2e\x49\xcc\x2d\x50\x28\xcf\x2c\xc9\x00\x73\x15\xaa\xf2\xf3\x52\xad\x01\x01\x00\x00\xff\xff\xe8\x3e\x82\x35\x4c\x00\x00\x00")
+
+func _1524535307_remove_survey_responses_updated_atDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1524535307_remove_survey_responses_updated_atDownSql,
+		"1524535307_remove_survey_responses_updated_at.down.sql",
+	)
+}
+
+func _1524535307_remove_survey_responses_updated_atDownSql() (*asset, error) {
+	bytes, err := _1524535307_remove_survey_responses_updated_atDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1524535307_remove_survey_responses_updated_at.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1524535307_remove_survey_responses_updated_atUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2e\x2d\x2a\x4b\xad\x8c\x2f\x4a\x2d\x2e\xc8\xcf\x2b\x4e\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x2d\x48\x49\x2c\x49\x4d\x89\x4f\x2c\xb1\x06\x04\x00\x00\xff\xff\x49\xe5\xa7\x87\x34\x00\x00\x00")
+
+func _1524535307_remove_survey_responses_updated_atUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1524535307_remove_survey_responses_updated_atUpSql,
+		"1524535307_remove_survey_responses_updated_at.up.sql",
+	)
+}
+
+func _1524535307_remove_survey_responses_updated_atUpSql() (*asset, error) {
+	bytes, err := _1524535307_remove_survey_responses_updated_atUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1524535307_remove_survey_responses_updated_at.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3375,6 +3459,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1520708880_users_display_name_nullable.up.sql":               _1520708880_users_display_name_nullableUpSql,
 	"1522555179_create_access_tokens_table.down.sql":              _1522555179_create_access_tokens_tableDownSql,
 	"1522555179_create_access_tokens_table.up.sql":                _1522555179_create_access_tokens_tableUpSql,
+	"1522961518_create_survey_responses_table.down.sql":           _1522961518_create_survey_responses_tableDownSql,
+	"1522961518_create_survey_responses_table.up.sql":             _1522961518_create_survey_responses_tableUpSql,
+	"1524535307_remove_survey_responses_updated_at.down.sql":      _1524535307_remove_survey_responses_updated_atDownSql,
+	"1524535307_remove_survey_responses_updated_at.up.sql":        _1524535307_remove_survey_responses_updated_atUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3566,6 +3654,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1520708880_users_display_name_nullable.up.sql":               &bintree{_1520708880_users_display_name_nullableUpSql, map[string]*bintree{}},
 	"1522555179_create_access_tokens_table.down.sql":              &bintree{_1522555179_create_access_tokens_tableDownSql, map[string]*bintree{}},
 	"1522555179_create_access_tokens_table.up.sql":                &bintree{_1522555179_create_access_tokens_tableUpSql, map[string]*bintree{}},
+	"1522961518_create_survey_responses_table.down.sql":           &bintree{_1522961518_create_survey_responses_tableDownSql, map[string]*bintree{}},
+	"1522961518_create_survey_responses_table.up.sql":             &bintree{_1522961518_create_survey_responses_tableUpSql, map[string]*bintree{}},
+	"1524535307_remove_survey_responses_updated_at.down.sql":      &bintree{_1524535307_remove_survey_responses_updated_atDownSql, map[string]*bintree{}},
+	"1524535307_remove_survey_responses_updated_at.up.sql":        &bintree{_1524535307_remove_survey_responses_updated_atUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
