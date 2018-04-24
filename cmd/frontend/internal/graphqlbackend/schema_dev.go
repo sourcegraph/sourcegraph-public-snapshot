@@ -23,7 +23,7 @@ func readSchemaFromDisk() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err = graphqlfile.StripInternalComments([]byte(out))
+	out, err = graphqlfile.StripInternalComments(out)
 	if err != nil {
 		log.Fatal(err)
 	}
