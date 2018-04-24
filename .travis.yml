@@ -1,14 +1,24 @@
 language: go
-
+sudo: false
 go:
-  - 1.10.x
-
+- 1.10.x
 go_import_path: github.com/sourcegraph/src-cli
-
 install:
-  - go get -d -t ./...
-  - go test -i ./...
-
+- go get -d -t ./...
+- go test -i ./...
 script:
-  - cd $TRAVIS_BUILD_DIR
-  - go test -race -v ./...
+- cd $TRAVIS_BUILD_DIR
+- go test -race -v ./...
+before_release:
+  - go get -u github.com/mitchellh/gox
+  - mkdir release
+  - cd release && gox -arch 'amd64' -os 'linux windows darwin' ../cmd/...
+deploy:
+  provider: releases
+  api_key:
+    secure: nafkBK7hKrrDgRagm6y4UraACLwT+XVZ3b7kcmyq32BIhZ7xQXlliAJN9JmmLz+CRYSo3Wip1EAXwnk9xpcsjeH34lzTO8NkodtFL32C7KXfhObZfudC5SStZTUhADvfv3EziQNCtkASZorohMaldnvavVxtlqC+kyK7fuk48bh/6Aye0gFIsAw/KEb1EmMTNBw2ax+EA0aURh+kaAR60A4APvDn9ltcr28YY00EPwzs5oGBW9jZeWsVnNID0t1hGL4TT/KH7eaEjaFIurCL2aSW1O8Mf93DXunvOg4okgopO1RhL8q9g58GhYqXaiha0+qXgT4R46/J4tG6Fxgw8Laqhnw2+4z2upuZ+ERvrbddSch3TwCZqYsskfkLCaWjTE59DDhPIAV66NLWK9PThq9/SivfhwObOn2aG4SCExxLW1L7HUhsuDL6C+RtHI3/a2Bnf8y7rx9Xjwa31L+xrx/lewUFS+4CUGzJlptyo+RtT1pPTzXMMXHV6TgDCIuGpeAdDmqKfJxnLfR15JJm1xgymlt8U/cR+L7GfKDUVxZxVr6hMulj2g25AM2CO3YPHmkt2whbbQuTvT0XYGd1adRpZ0EJaeXTAZ4jfj2+b6KPhVae7VVxuiPnLRDhKosXzclO17S4h4Gca5Dt4d9n1KUDuswEUcqfwQ2OuzH+YPc=
+  file_glob: true
+  file: release/*
+  skip_cleanup: true
+  on:
+    tags: true
