@@ -51,8 +51,7 @@ export class OpenPage extends React.Component<Props, State> {
                 <PageTitle title={'Open in Sourcegraph - Sourcegraph'} />
                 <h1>Opening in {validSchemes[this.state.scheme]}</h1>
                 <p>
-                    Your should be redirected in a few seconds. Don't have the editor yet?{' '}
-                    <a href="https://about.sourcegraph.com/beta/201708/#beta">Download Sourcegraph Editor</a>.
+                    Your should be redirected in a few seconds.
                     <br />
                     Using a different build?{' '}
                     {Object.entries(validSchemes)

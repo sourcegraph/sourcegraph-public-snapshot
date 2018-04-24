@@ -98,8 +98,6 @@ export const CommentsInput = reactive<Props>(props => {
                             >
                                 Open in Sourcegraph Editor
                             </a>
-                            {' | '}
-                            <a href="https://about.sourcegraph.com/beta/201708/#beta">Download Sourcegraph Editor</a>
                         </span>
                     )}
                 </small>

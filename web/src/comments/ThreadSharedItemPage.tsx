@@ -212,10 +212,7 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                                 !item.thread.lines && (
                                     <div className="comments-page__no-shared-code-container">
                                         <div className="comments-page__no-shared-code">
-                                            The author of this discussion did not{' '}
-                                            <a href="https://about.sourcegraph.com/docs/editor/share-code">
-                                                share the code
-                                            </a>.&nbsp;
+                                            The author of this discussion did not share the code.{' '}
                                             <a href={editorURL} target="sourcegraphapp" onClick={openEditor}>
                                                 Open in Sourcegraph Editor
                                             </a>{' '}
