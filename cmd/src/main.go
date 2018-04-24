@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
+	"path/filepath"
 )
 
 const usageText = `src is a tool that provides access to Sourcegraph instances.
@@ -135,7 +137,11 @@ func readConfig() (*config, error) {
 	cfgPath := *configPath
 	userSpecified := *configPath != ""
 	if !userSpecified {
-		cfgPath = "$HOME/src-config.json"
+		user, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		cfgPath = filepath.Join(user.HomeDir, "src-config.json")
 	}
 	data, err := ioutil.ReadFile(os.ExpandEnv(cfgPath))
 	if err != nil && (!os.IsNotExist(err) || userSpecified) {
