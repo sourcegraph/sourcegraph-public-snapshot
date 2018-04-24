@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -161,7 +160,7 @@ func readConfig() (*config, error) {
 	}
 
 	if cfg.AccessToken == "" {
-		return nil, errors.New(fmt.Sprintf(`error: you must specify an access token to use for %s
+		return nil, fmt.Errorf(`error: you must specify an access token to use for %s
 
 You can do so via the environment:
 
@@ -171,7 +170,7 @@ or via the configuration file (%s):
 
 	{"accessToken": "secret"}
 
-`, cfg.Endpoint, cfgPath))
+`, cfg.Endpoint, cfgPath)
 	}
 	return &cfg, nil
 }
