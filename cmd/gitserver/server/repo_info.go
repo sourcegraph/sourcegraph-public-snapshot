@@ -33,10 +33,11 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	{
 		s.cloningMu.Lock()
-		_, resp.CloneInProgress = s.cloning[dir]
+		resp.CloneProgress, resp.CloneInProgress = s.cloning[dir]
 		s.cloningMu.Unlock()
 		if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 			resp.CloneInProgress = true
+			resp.CloneProgress = "This will never finish cloning"
 		}
 	}
 	if resp.Cloned {

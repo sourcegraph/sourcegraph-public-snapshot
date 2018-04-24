@@ -19,6 +19,7 @@ export function fetchRepository(uri: string): Observable<GQL.IRepository> {
                     mirrorInfo {
                         remoteURL
                         cloneInProgress
+                        cloneProgress
                         cloned
                         updatedAt
                     }

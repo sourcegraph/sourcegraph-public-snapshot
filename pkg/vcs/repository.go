@@ -17,6 +17,9 @@ type RepoNotExistError struct {
 
 	// CloneInProgress reports whether the repository is in process of being cloned.
 	CloneInProgress bool
+
+	// CloneProgress is a progress message from the running clone command.
+	CloneProgress string
 }
 
 func (e *RepoNotExistError) Error() string {

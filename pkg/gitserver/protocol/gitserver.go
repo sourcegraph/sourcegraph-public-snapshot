@@ -31,6 +31,9 @@ type RepoUpdateRequest struct {
 
 type NotFoundPayload struct {
 	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
+
+	// CloneProgress is a progress message from the running clone command.
+	CloneProgress string `json:"cloneProgress,omitempty"`
 }
 
 // IsRepoCloneableRequest is a request to determine if a repo is cloneable.
@@ -64,6 +67,7 @@ type RepoInfoRequest struct {
 type RepoInfoResponse struct {
 	URL             string     // this repository's Git remote URL
 	CloneInProgress bool       // whether the repository is currently being cloned
+	CloneProgress   string     // a progress message from the running clone command.
 	Cloned          bool       // whether the repository has been cloned successfully
 	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
 }

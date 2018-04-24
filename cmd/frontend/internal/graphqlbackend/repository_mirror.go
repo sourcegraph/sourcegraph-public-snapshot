@@ -83,6 +83,14 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 	return info.CloneInProgress, nil
 }
 
+func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
+	info, err := r.gitserverRepoInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return nullString(info.CloneProgress), nil
+}
+
 func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*string, error) {
 	info, err := r.gitserverRepoInfo(ctx)
 	if err != nil {

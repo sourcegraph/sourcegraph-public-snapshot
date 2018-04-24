@@ -1021,6 +1021,13 @@ type MirrorRepositoryInfo {
     remoteURL: String!
     # Whether the clone of the repository has begun but not yet completed.
     cloneInProgress: Boolean!
+    # A single line of text that contains progress information for the running clone command.
+    # The format of the progress text is not specified.
+    # It is intended to be displayed directly to a user.
+    # e.g.
+    # "Receiving objects:  95% (2041/2148), 292.01 KiB | 515.00 KiB/s"
+    # "Resolving deltas:   9% (117/1263)"
+    cloneProgress: String
     # Whether the repository has ever been successfully cloned.
     cloned: Boolean!
     # When the repository was last successfully updated from the remote source repository..

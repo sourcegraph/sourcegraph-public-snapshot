@@ -41,13 +41,17 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => props.repo.mirrorInfo.cloneInProgress),
-                    distinctUntilChanged(),
-                    filter(cloneInProgress => cloneInProgress),
+                    map(props => props.repo.mirrorInfo),
+                    distinctUntilChanged((a, b) => a.cloneInProgress === b.cloneInProgress && a.cloned === b.cloned),
+                    filter(mirrorInfo => mirrorInfo.cloneInProgress || !mirrorInfo.cloned),
                     switchMap(() =>
                         interval(3000).pipe(
                             takeUntil(
-                                this.componentUpdates.pipe(filter(props => !props.repo.mirrorInfo.cloneInProgress))
+                                this.componentUpdates.pipe(
+                                    filter(
+                                        props => !props.repo.mirrorInfo.cloneInProgress && props.repo.mirrorInfo.cloned
+                                    )
+                                )
                             )
                         )
                     )
@@ -71,7 +75,9 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         let buttonDisabled = false
         if (this.props.repo.mirrorInfo.cloneInProgress) {
             title = 'Cloning in progress...'
-            description = 'This repository is currently being cloned from its remote repository.'
+            description =
+                this.props.repo.mirrorInfo.cloneProgress ||
+                'This repository is currently being cloned from its remote repository.'
             buttonLabel = (
                 <span>
                     <LoaderIcon className="icon-inline" /> Cloning...

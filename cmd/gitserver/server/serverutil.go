@@ -18,7 +18,8 @@ import (
 )
 
 // runWithRemoteOpts runs the command after applying the remote options.
-func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd) ([]byte, error) {
+// If progress is not nil, all output is written to it in a separate goroutine.
+func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
 
 	// Suppress asking to add SSH host key to known_hosts (which will hang because
@@ -30,9 +31,30 @@ func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd) ([]byte, 
 	// Unset credential helper because the command is non-interactive.
 	cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
 
-	var b bytes.Buffer
-	cmd.Stdout = &b
-	cmd.Stderr = &b
+	var b interface {
+		Bytes() []byte
+	}
+
+	if progress != nil {
+		var pw progressWriter
+		r, w := io.Pipe()
+		defer w.Close()
+		mr := io.MultiWriter(&pw, w)
+		cmd.Stdout = mr
+		cmd.Stderr = mr
+		go func() {
+			if _, err := io.Copy(progress, r); err != nil {
+				log15.Error("error while copying progress", "error", err)
+			}
+		}()
+		b = &pw
+	} else {
+		var buf bytes.Buffer
+		cmd.Stdout = &buf
+		cmd.Stderr = &buf
+		b = &buf
+	}
+
 	err, _ := runCommand(ctx, cmd)
 	return b.Bytes(), err
 }
@@ -230,4 +252,61 @@ func (f *flushingResponseWriter) Close() {
 	f.mu.Lock()
 	f.closed = true
 	f.mu.Unlock()
+}
+
+// progressWriter is an io.Writer that writes to a buffer.
+// '\r' resets the write offset to the index after last '\n' in the buffer,
+// or the beginning of the buffer if a '\n' has not been written yet.
+type progressWriter struct {
+	// writeOffset is the offset in buf where the next write should begin.
+	writeOffset int
+
+	// afterLastNewline is the index after the last '\n' in buf
+	// or 0 if there is no '\n' in buf.
+	afterLastNewline int
+
+	buf []byte
+}
+
+func (w *progressWriter) Write(p []byte) (n int, err error) {
+	l := len(p)
+	for {
+		if len(p) == 0 {
+			// If p ends in a '\r' we still want to include that in the buffer until it is overwritten.
+			break
+		}
+		idx := bytes.IndexAny(p, "\r\n")
+		if idx == -1 {
+			w.buf = append(w.buf[:w.writeOffset], p...)
+			w.writeOffset = len(w.buf)
+			break
+		}
+		switch p[idx] {
+		case '\n':
+			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
+			w.writeOffset = len(w.buf)
+			w.afterLastNewline = len(w.buf)
+			p = p[idx+1:]
+		case '\r':
+			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
+			// Record that our next write should overwrite the data after the most recent newline.
+			// Don't slice it off immediately here, because we want to be able to return that output
+			// until it is overwritten.
+			w.writeOffset = w.afterLastNewline
+			p = p[idx+1:]
+		default:
+			panic(fmt.Sprintf("unexpected char %q", p[idx]))
+		}
+	}
+	return l, nil
+}
+
+// String returns the contents of the buffer as a string.
+func (w *progressWriter) String() string {
+	return string(w.buf)
+}
+
+// Bytes returns the contents of the buffer.
+func (w *progressWriter) Bytes() []byte {
+	return w.buf
 }

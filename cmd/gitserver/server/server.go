@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -76,10 +77,12 @@ type Server struct {
 	canceled bool
 	wg       sync.WaitGroup // tracks running background jobs
 
+	// cloningMu protects cloning
+	cloningMu sync.Mutex
 	// cloning tracks repositories that are in the process of being cloned
 	// by the parent directory of the .git directory they are cloned to.
-	cloningMu sync.Mutex
-	cloning   map[string]struct{}
+	// The value is the last line of output from the running clone command.
+	cloning map[string]string
 
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
@@ -135,7 +138,7 @@ var longGitCommandTimeout = time.Hour
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-	s.cloning = make(map[string]struct{})
+	s.cloning = make(map[string]string)
 	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[api.RepoURI]*locks)
 
@@ -219,13 +222,18 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 	return s.cloneableLimiter.Acquire(ctx)
 }
 
-func cloneCmd(ctx context.Context, origin, dir string) *exec.Cmd {
-	return exec.CommandContext(ctx, "git", "clone", "--mirror", origin, dir)
+func cloneCmd(ctx context.Context, origin, dir string, progress bool) *exec.Cmd {
+	args := []string{"clone", "--mirror"}
+	if progress {
+		args = append(args, "--progress")
+	}
+	args = append(args, origin, dir)
+	return exec.CommandContext(ctx, "git", args...)
 }
 
 func (s *Server) setCloneLock(dir string) {
 	s.cloningMu.Lock()
-	s.cloning[dir] = struct{}{}
+	s.cloning[dir] = ""
 	s.cloningMu.Unlock()
 }
 
@@ -305,7 +313,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 			defer cancel1()
 			ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 			defer cancel2()
-			err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
+			_, err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
 			if err != nil {
 				log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			}
@@ -406,16 +414,23 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	s.cloningMu.Lock()
-	_, cloneInProgress := s.cloning[dir]
+	cloneProgress, cloneInProgress := s.cloning[dir]
 	s.cloningMu.Unlock()
-	if cloneInProgress || strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+		cloneInProgress = true
+		cloneProgress = "This will never finish cloning"
+	}
+	if cloneInProgress {
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
+		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+			CloneInProgress: true,
+			CloneProgress:   cloneProgress,
+		})
 		return
 	}
 	if !repoCloned(dir) {
-		err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
+		cloneProgress, err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
 		if err != nil {
 			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
 			status = "repo-not-found"
@@ -425,7 +440,10 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		}
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: true})
+		json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+			CloneInProgress: true,
+			CloneProgress:   cloneProgress,
+		})
 		return
 	}
 
@@ -480,21 +498,21 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 
 // cloneRepo issues a non-blocking git clone command for the given repo to the given directory.
 // The repository will be cloned to ${dir}/.git.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir string) error {
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir string) (string, error) {
 	// PERF: Before doing the network request to check if isCloneable, lets
 	// ensure we are not already cloning.
 	s.cloningMu.Lock()
-	_, cloneInProgress := s.cloning[dir]
+	progress, cloneInProgress := s.cloning[dir]
 	s.cloningMu.Unlock()
 	if cloneInProgress {
-		return nil
+		return progress, nil
 	}
 
 	if url == "" {
 		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
 		url = OriginMap(repo)
 		if url == "" {
-			return fmt.Errorf("error cloning repo: no URL provided and origin map entry found for %s", repo)
+			return "", fmt.Errorf("error cloning repo: no URL provided and origin map entry found for %s", repo)
 		}
 	}
 
@@ -505,28 +523,28 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	// goroutine.
 	ctx, cancel, err := s.acquireCloneableLimiter(ctx)
 	if err != nil {
-		return err // err will be a context error
+		return "", err // err will be a context error
 	}
 	defer cancel()
 	if err := s.isCloneable(ctx, url); err != nil {
-		return fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
+		return "", fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
 	}
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
 	// cloning since we released the lock. We released the lock since isCloneable is a potentially
 	// slow operation.
 	s.cloningMu.Lock()
-	_, cloneInProgress = s.cloning[dir]
+	progress, cloneInProgress = s.cloning[dir]
 	if cloneInProgress {
 		s.cloningMu.Unlock()
-		return nil
+		return progress, nil
 	}
-	s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
+	s.cloning[dir] = "" // Mark this repo as currently being cloned.
 	s.cloningMu.Unlock()
 
 	if skipCloneForTests {
 		s.releaseCloneLock(dir)
-		return nil
+		return "", nil
 	}
 
 	go func() {
@@ -545,9 +563,14 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 		defer cancel3()
 
 		path := filepath.Join(dir, ".git")
-		cmd := cloneCmd(ctx, url, path)
+		cmd := cloneCmd(ctx, url, path, true)
 		log15.Debug("cloning repo", "repo", repo, "url", url, "dir", dir)
-		if output, err := s.runWithRemoteOpts(ctx, cmd); err != nil {
+
+		pr, pw := io.Pipe()
+		defer pw.Close()
+		go s.readCloneProgress(repo, dir, pr)
+
+		if output, err := s.runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))
 			if err := s.removeAll(path); err != nil {
 				log15.Error("failed to clean up after clone", "path", path, "error", err)
@@ -557,7 +580,51 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 		log15.Debug("repo cloned", "repo", repo)
 	}()
 
-	return nil
+	return "", nil
+}
+
+// readCloneProgress scans the reader and saves the most recent line of output as progress.
+func (s *Server) readCloneProgress(repo api.RepoURI, dir string, pr io.Reader) {
+	scan := bufio.NewScanner(pr)
+	scan.Split(scanCRLF)
+	for scan.Scan() {
+		progress := scan.Text()
+		log15.Debug("clone progress", "repo", repo, "progress", progress)
+		s.cloningMu.Lock()
+		if _, ok := s.cloning[dir]; ok {
+			s.cloning[dir] = progress
+		}
+		s.cloningMu.Unlock()
+	}
+	if err := scan.Err(); err != nil {
+		log15.Error("error reporting progress", "error", err)
+	}
+}
+
+// scanCRLF is similar to bufio.ScanLines except it splits on both '\r' and '\n'
+// and it does not return tokens that contain only whitespace.
+func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	trim := func(data []byte) []byte {
+		data = bytes.TrimSpace(data)
+		if len(data) == 0 {
+			// Don't pass back a token that is all whitespace.
+			return nil
+		}
+		return data
+	}
+	if i := bytes.IndexAny(data, "\r\n"); i >= 0 {
+		// We have a full newline-terminated line.
+		return i + 1, trim(data[:i]), nil
+	}
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), trim(data), nil
+	}
+	// Request more data.
+	return 0, nil, nil
 }
 
 // testRepoExists is a test fixture that overrides the return value
@@ -577,7 +644,7 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "ls-remote", url, "HEAD")
-	out, err := s.runWithRemoteOpts(ctx, cmd)
+	out, err := s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		if len(out) > 0 {
 			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
@@ -732,7 +799,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 
 	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/*:refs/*")
 	cmd.Dir = dir
-	if output, err := s.runWithRemoteOpts(ctx, cmd); err != nil {
+	if output, err := s.runWithRemoteOpts(ctx, cmd, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return
 	}
@@ -742,7 +809,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 	// try to fetch HEAD from origin
 	cmd = exec.CommandContext(ctx, "git", "remote", "show", url)
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
-	output, err := s.runWithRemoteOpts(ctx, cmd)
+	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "url", url, "error", err, "output", string(output))
 		return
