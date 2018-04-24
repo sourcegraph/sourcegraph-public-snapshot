@@ -7,6 +7,8 @@ import (
 	"log"
 	"path/filepath"
 	"runtime"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlfile"
 )
 
 var Schema = readSchemaFromDisk()
@@ -21,7 +23,7 @@ func readSchemaFromDisk() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err = StripInternalComments([]byte(out))
+	out, err = graphqlfile.StripInternalComments([]byte(out))
 	if err != nil {
 		log.Fatal(err)
 	}

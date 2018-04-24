@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlfile"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	out, err = graphqlbackend.StripInternalComments(out)
+	out, err = graphqlfile.StripInternalComments(out)
 	if err != nil {
 		log.Fatal(err)
 	}
