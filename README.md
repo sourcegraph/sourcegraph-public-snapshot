@@ -32,6 +32,8 @@ chmod +x /usr/local/bin/src
 
 ### Windows:
 
+Note: Windows support is still rough around the edges, but is available. If you encounter issues, please let us know by filing an issue :)
+
 - [Download the latest src_windows_amd64.exe](https://github.com/sourcegraph/src-cli/releases/download/latest/src_windows_amd64.exe) and rename to `src.exe`.
 - To run from any command prompt, create the folder `C:\Program Files\Sourcegraph` and copy the binary into it. Add that directory to your system path:
   - Click the start menu, search for `environment` and select `Edit the system environment variables`.
