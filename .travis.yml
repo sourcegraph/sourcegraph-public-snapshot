@@ -1,0 +1,14 @@
+language: go
+
+go:
+  - 1.10.x
+
+go_import_path: github.com/sourcegraph/src-cli
+
+install:
+  - go get -d -t ./...
+  - go test -i ./...
+
+script:
+  - cd $TRAVIS_BUILD_DIR
+  - go test -race -v ./...
