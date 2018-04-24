@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
 )
 
@@ -155,10 +156,10 @@ func formatJSON(data []byte) ([]byte, error) {
 	return json.MarshalIndent(v, "", "  ")
 }
 
-// curlCmd returns the curl command to perform the given GraphQL query.
+// curlCmd returns the curl command to perform the given GraphQL query. Bash-only.
 func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (string, error) {
 	data, err := json.Marshal(map[string]interface{}{
-		"query":     cleanWhitespace(query),
+		"query":     query,
 		"variables": vars,
 	})
 	if err != nil {
@@ -166,28 +167,8 @@ func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (
 	}
 
 	s := fmt.Sprintf("curl \\\n")
-	s += fmt.Sprintf("   -H 'Authorization: token %s' \\\n", cfg.AccessToken)
-	s += fmt.Sprintf("   -d '%s' \\\n", string(data))
-	s += fmt.Sprintf("   %s", gqlURL(cfg.Endpoint))
+	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+accessToken))
+	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-d", string(data)))
+	s += fmt.Sprintf("   %s", shellquote.Join(gqlURL(endpoint)))
 	return s, nil
-}
-
-// cleanWhitespace returns the given string with newlines and tabs replaced by
-// a space, and all successive spaces removed. Essentially, it condenses
-// multi-line GraphQL queries into concise single-line ones while preserving
-// nice spacing.
-func cleanWhitespace(s string) string {
-	// Replace any newlines or tabs with a single space.
-	s = strings.Replace(s, "\n", " ", -1)
-	s = strings.Replace(s, "\t", " ", -1)
-
-	// Remove successive spaces until there are no more.
-	for {
-		new := strings.Replace(s, "  ", " ", -1)
-		if s == new {
-			break
-		}
-		s = new
-	}
-	return strings.TrimSpace(s)
 }

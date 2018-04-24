@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/kballard/go-shellquote"
+  packages = ["."]
+  revision = "cd60e84ee657ff3dc51de0b4f55dd299a3e136f2"
+
+[[projects]]
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
@@ -16,6 +22,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1c598f69654abaf45e0d179f97399a1e221510197f4a8dee30f783d3fa15ba05"
+  inputs-digest = "875b38813ee41d3f0c2df54e1981e49bc6beee2f3fd3efe0d2236a1f257ac1ae"
   solver-name = "gps-cdcl"
   solver-version = 1
