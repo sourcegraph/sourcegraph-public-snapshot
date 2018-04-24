@@ -6,13 +6,12 @@ go_import_path: github.com/sourcegraph/src-cli
 install:
 - go get -d -t ./...
 - go test -i ./...
+- go get -u github.com/mitchellh/gox
+- mkdir release
+- cd release && gox -arch 'amd64' -os 'linux windows darwin' ../cmd/...
 script:
 - cd $TRAVIS_BUILD_DIR
 - go test -race -v ./...
-before_release:
-  - go get -u github.com/mitchellh/gox
-  - mkdir release
-  - cd release && gox -arch 'amd64' -os 'linux windows darwin' ../cmd/...
 deploy:
   provider: releases
   api_key:
