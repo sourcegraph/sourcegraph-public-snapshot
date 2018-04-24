@@ -10,3 +10,4 @@ go env
 ./go-lint.sh
 ./todo-security.sh
 ./no-localhost-guard.sh
+./broken-urls.bash
