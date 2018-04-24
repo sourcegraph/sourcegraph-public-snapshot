@@ -10,7 +10,7 @@ export const SearchHelp: React.SFC<{ className?: string }> = ({ className = '' }
     <a
         onClick={onDidClickSearchHelp}
         className={`search-help ${className}`}
-        href="https://about.sourcegraph.com/docs/search"
+        href="https://about.sourcegraph.com/docs/search/query-syntax"
         target="_blank"
         data-tooltip="View search documentation"
     >
