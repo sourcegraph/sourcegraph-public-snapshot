@@ -32,34 +32,31 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (this.state.siteFlags) {
-            if (this.state.siteFlags.needsRepositoryConfiguration) {
-                return <NeedsRepositoryConfigurationAlert />
-            }
-            if (this.state.siteFlags.noRepositoriesEnabled) {
-                return <NoRepositoriesEnabledAlert />
-            }
-            if (
-                this.props.isSiteAdmin &&
-                this.state.siteFlags.updateCheck &&
-                !this.state.siteFlags.updateCheck.errorMessage &&
-                this.state.siteFlags.updateCheck.updateVersionAvailable
-            ) {
-                return (
-                    <UpdateAvailableAlert
-                        updateVersionAvailable={this.state.siteFlags.updateCheck.updateVersionAvailable}
-                    />
-                )
-            }
-        }
+        return (
+            <div className="global-alerts">
+                {this.state.siteFlags && (
+                    <>
+                        {this.state.siteFlags.needsRepositoryConfiguration ? (
+                            <NeedsRepositoryConfigurationAlert />
+                        ) : (
+                            this.state.siteFlags.noRepositoriesEnabled && <NoRepositoriesEnabledAlert />
+                        )}
 
-        // Last priority, we would show NeedsRepositoryConfigurationAlert or
-        // NoRepositoriesEnabledAlert first above before the user would see
-        // this. That's OK because they would need to do both of those before
-        // they could see performance issues caused by Docker for Mac.
-        if (window.context.likelyDockerOnMac) {
-            return <DockerForMacAlert />
-        }
-        return null
+                        {this.props.isSiteAdmin &&
+                            this.state.siteFlags.updateCheck &&
+                            !this.state.siteFlags.updateCheck.errorMessage &&
+                            this.state.siteFlags.updateCheck.updateVersionAvailable && (
+                                <UpdateAvailableAlert
+                                    updateVersionAvailable={this.state.siteFlags.updateCheck.updateVersionAvailable}
+                                />
+                            )}
+
+                        {/* Only show if the user has already enabled repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
+                        {window.context.likelyDockerOnMac &&
+                            !this.state.siteFlags.noRepositoriesEnabled && <DockerForMacAlert />}
+                    </>
+                )}
+            </div>
+        )
     }
 }
