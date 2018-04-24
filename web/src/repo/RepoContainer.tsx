@@ -52,7 +52,7 @@ interface State {
     repoHeaderRightChildren?: React.ReactFragment | null
 
     /**
-     * The fetched repository or an error if occured.
+     * The fetched repository or an error if occurred.
      * `undefined` while loading.
      */
     repoOrError?: GQL.IRepository | ErrorLike

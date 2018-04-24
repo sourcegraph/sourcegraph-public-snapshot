@@ -113,7 +113,7 @@ describe('util/url', () => {
             )
         })
 
-        // other cases are gratuitious given tests for other URL functions
+        // other cases are gratuitous given tests for other URL functions
     })
 
     describe('toTreeURL', () => {
@@ -124,6 +124,6 @@ describe('util/url', () => {
             )
         })
 
-        // other cases are gratuitious given tests for other URL functions
+        // other cases are gratuitous given tests for other URL functions
     })
 })

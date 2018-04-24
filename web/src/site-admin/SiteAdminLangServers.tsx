@@ -31,7 +31,7 @@ interface State {
     error?: Error
 
     /**
-     * Maps languages to an error occuring about that language. e.g. if
+     * Maps languages to an error occurring about that language. e.g. if
      * updating a specific language fails, an error will be present here for
      * that language.
      */

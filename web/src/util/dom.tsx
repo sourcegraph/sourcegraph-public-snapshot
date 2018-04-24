@@ -18,7 +18,7 @@ export function isMouseEventWithModifierKey(e: MouseEvent): boolean {
  *
  * @param node the node to highlight
  * @param start the current character position (starts at 0).
- * @param lenght the number of characters to highlight.
+ * @param length the number of characters to highlight.
  */
 export function highlightNode(node: HTMLElement, start: number, length: number): void {
     if (start < 0 || length <= 0 || start >= node.textContent!.length) {
@@ -88,7 +88,7 @@ function highlightNodeHelper(
                     }
 
                     if (rest.length >= length) {
-                        // The highligted range is fully contained within the node.
+                        // The highlighted range is fully contained within the node.
                         if (currNode.classList.contains('selection-highlight')) {
                             // Nothing to do; it's already highlighted.
                             currNode.appendChild(child)

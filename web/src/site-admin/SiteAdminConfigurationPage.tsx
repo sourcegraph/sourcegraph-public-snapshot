@@ -394,7 +394,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
 
     private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        // This funciton can only be called if the editor was loaded so it is okay to cast here
+        // This function can only be called if the editor was loaded so it is okay to cast here
         const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof _monacoSettingsEditorModule
         if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(

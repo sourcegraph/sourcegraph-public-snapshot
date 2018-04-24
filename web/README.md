@@ -22,7 +22,7 @@
 * Don't couple the styles to the DOM structure. It should be possible to change the structure without changing the styles and vice versa.
 * Prefer flexbox over absolute positioning
 * Avoid styling the children of your components. This couples your component to the implementation of the child
-* Order your rules so that layout rules (that describe how the component is layed out to its parents) come first, then rules that describe the layout of its children, and finally visual details.
+* Order your rules so that layout rules (that describe how the component is laid out to its parents) come first, then rules that describe the layout of its children, and finally visual details.
 
 ### Theming
 

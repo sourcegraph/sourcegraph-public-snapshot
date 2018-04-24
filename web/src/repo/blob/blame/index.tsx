@@ -85,7 +85,7 @@ function maybeOpenCommit(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): v
      * the blame text onto the line itself as a non-child element of the blob view.
      *
      * However, the pseudo-element makes detecting clicks on the blame information (to view
-     * the commit) hard because psuedo-elements have no DOM representation. We use a hack
+     * the commit) hard because pseudo-elements have no DOM representation. We use a hack
      * here: We know the user clicked on the line with blame information, so we measure the
      * width of the blame text and if the mouse click was in its range then they clicked on
      * the blame text.
