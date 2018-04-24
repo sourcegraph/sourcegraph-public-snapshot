@@ -261,6 +261,7 @@ var deeplyMergedConfigFields = map[string]struct{}{
 	"search.scopes":           {},
 	"search.savedQueries":     {},
 	"search.repositoryGroups": {},
+	"motd": {},
 }
 
 // mergeConfigs merges the specified JSON configs together to produce a single JSON config. The merge

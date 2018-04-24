@@ -29,6 +29,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Admins can now see charts illustrating daily, weekly, and monthly unique user counts by visiting the site-admin Analytics page.
 * Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
 * Access tokens are now supported for all authentication providers (including OpenID and SAML, which were previously not supported).
+* The new `motd` setting (in global, organization, and user settings) displays specified messages at the top of all pages.
 
 ## 2.7.0
 

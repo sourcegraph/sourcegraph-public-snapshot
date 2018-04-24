@@ -58,6 +58,12 @@
     },
     "notifications.slack": {
       "$ref": "#/definitions/SlackNotificationsConfig"
+    },
+    "motd": {
+      "description":
+        "An array of messages (often with just one element) to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
+      "type": "array",
+      "items": { "type": "string" }
     }
   },
   "definitions": {
