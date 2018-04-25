@@ -48,8 +48,11 @@ const config: webpack.Configuration = {
         }),
         new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
         new ExtractTextPlugin({ filename: 'styles/[name].bundle.css', allChunks: true }),
-        // Don't build the TypeScript services as we only want to edit JSON
-        new webpack.IgnorePlugin(/\/typescriptServices.js$/),
+        // Don't build the files referenced by dynamic imports for all the basic languages monaco supports.
+        // They won't ever be loaded at runtime because we only edit JSON
+        new webpack.IgnorePlugin(/^\.\/[^.]+.js$/, /\/node_modules\/monaco-editor\/esm\/vs\/basic-languages\/\w+$/),
+        // Same for "advanced" languages
+        new webpack.IgnorePlugin(/^\.\/.+$/, /\/node_modules\/monaco-editor\/esm\/vs\/language\/(?!json)/),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
