@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	regexpsyntax "regexp/syntax"
+	"sort"
 	"strings"
 	"time"
 
@@ -263,6 +264,8 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		if err == nil {
 			result.SourceRefs, err = r.filterAndResolveRefs(ctx, result.SourceRefs)
 		}
+		sort.Strings(result.Refs)
+		sort.Strings(result.SourceRefs)
 		if err != nil {
 			if ctx.Err() != nil {
 				// Return partial data.
@@ -333,6 +336,8 @@ func (r *Repository) filterAndResolveRefs(ctx context.Context, refs []string) ([
 				headRefTarget = string(bytes.TrimSpace(stdout))
 			}
 			ref = headRefTarget
+		} else if strings.HasPrefix(ref, "tag: ") {
+			ref = strings.TrimPrefix(ref, "tag: ")
 		}
 		filtered = append(filtered, ref)
 	}
