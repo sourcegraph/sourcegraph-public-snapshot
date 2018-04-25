@@ -3,6 +3,7 @@ import EmoticonIcon from '@sourcegraph/icons/lib/Emoticon'
 import EmoticonSadIcon from '@sourcegraph/icons/lib/EmoticonSad'
 import TwitterIcon from '@sourcegraph/icons/lib/Twitter'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { fromEvent } from 'rxjs/observable/fromEvent'
 import { filter } from 'rxjs/operators/filter'
 import { Subscription } from 'rxjs/Subscription'
@@ -24,8 +25,10 @@ interface State {
 
 const DESCRIPTION_LOCAL_STORAGE_KEY = 'twitter-feedback-description'
 const EXPERIENCE_LOCAL_STORAGE_KEY = 'twitter-feedback-experience'
+const ISSUES_URL = 'https://github.com/sourcegraph/issues'
 const TWITTER_URL = 'https://twitter.com/intent/tweet?'
-const TWEET_ADDON = ' #UseTheSource via @srcgraph'
+const TWEET_HASHTAG = ' #UseTheSource'
+const TWEET_MENTION = ' via @srcgraph'
 
 export class TwitterFeedbackForm extends React.Component<Props, State> {
     private subscriptions = new Subscription()
@@ -123,6 +126,12 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                             Cancel
                         </button>
                     </div>
+                    <div className="twitter-feedback-form__report-issue">
+                        Or{' '}
+                        <Link to={ISSUES_URL} onClick={this.reportIssue} target="_bank">
+                            report an issue
+                        </Link>.
+                    </div>
                 </div>
             </Form>
         )
@@ -131,6 +140,10 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
     /**
      * Tells if the query is unsupported for sending notifications.
      */
+
+    private reportIssue = () => {
+        eventLogger.log('ReportIssueButtonClicked')
+    }
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
@@ -146,7 +159,14 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
             experienceEmoji = ' 😞'
         }
 
-        url.searchParams.set('text', this.state.description + experienceEmoji + TWEET_ADDON)
+        url.searchParams.set(
+            'text',
+            this.state.description +
+                experienceEmoji +
+                (this.state.experience === 'good' ? TWEET_HASHTAG : '') +
+                TWEET_MENTION
+        )
+
         window.open(url.href)
 
         eventLogger.log('TwitterFeedbackSubmitted', {
@@ -163,21 +183,24 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
      * Calculates max characters for the description field
      */
     private calculateMaxCharacters(): number {
-        if (this.state.experience === undefined) {
-            return 280 - TWEET_ADDON.length
-        } else {
-            return 280 - (' 😄' + TWEET_ADDON).length
+        let maxCharacters = 280 - TWEET_MENTION.length
+
+        if (this.state.experience === 'good') {
+            maxCharacters -= (' 😄' + TWEET_HASHTAG).length
+        } else if (this.state.experience === 'bad') {
+            maxCharacters -= ' 😞'.length
         }
+        return maxCharacters
     }
 
     private saveGoodExperience = (): void => {
         this.setState({ experience: 'good' })
-        eventLogger.log('TwitterFeedbackExperienceClicked')
+        eventLogger.log('TwitterFeedbackGoodExperienceClicked')
     }
 
     private saveBadExperience = (): void => {
         this.setState({ experience: 'bad' })
-        eventLogger.log('TwitterFeedbackExperienceClicked')
+        eventLogger.log('TwitterFeedbackBadExperienceClicked')
     }
     /**
      * Handles description change by updating the component's state
