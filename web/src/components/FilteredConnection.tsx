@@ -468,7 +468,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         lastQuery = query
                         lastFilter = filter
                         return showLoading
-                            ? merge(result, of({ loading: true }).pipe(delay(250), takeUntil(result)))
+                            ? merge(
+                                  result,
+                                  of({ connectionOrError: undefined, loading: true }).pipe(
+                                      delay(250),
+                                      takeUntil(result)
+                                  )
+                              )
                             : result
                     })
                 )
