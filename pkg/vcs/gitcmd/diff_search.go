@@ -138,6 +138,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		"--no-color",
 		"--source",
 		"--no-patch",
+		"--no-merges",
 	)
 	appendCommonQueryArgs(&onelineArgs)
 	appendCommonDashDashArgs(&onelineArgs)
