@@ -10,6 +10,9 @@ import {
     distinctUntilChanged,
     filter,
     map,
+    publishReplay,
+    refCount,
+    skip,
     startWith,
     switchMap,
     takeUntil,
@@ -425,7 +428,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         let lastQuery: string | undefined
         let lastFilter: FilteredConnectionFilter | undefined
         this.subscriptions.add(
-            combineLatest(queryChanges, activeFilterChanges, refreshRequests)
+            combineLatest(queryChanges, activeFilterChanges, refreshRequests.pipe(startWith<void>(undefined)))
                 .pipe(
                     tap(([query, filter]) => {
                         if (this.props.shouldUpdateURLQuery) {
@@ -456,7 +459,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                             connectionQuery: query,
                                             loading: false,
                                         } as PartialStateUpdate)
-                                )
+                                ),
+                                publishReplay<PartialStateUpdate>(),
+                                refCount()
                             )
 
                         const showLoading = query !== lastQuery || filter !== lastFilter
@@ -501,6 +506,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 .pipe(
                     map(({ queryConnection }) => queryConnection),
                     distinctUntilChanged(),
+                    skip(1), // prevent from triggering on initial mount
                     tap(() => this.focusFilter())
                 )
                 .subscribe(() =>
