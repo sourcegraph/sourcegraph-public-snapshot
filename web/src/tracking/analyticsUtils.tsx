@@ -52,12 +52,14 @@ export const browserExtensionServerConfigurationMessageReceived = fromEvent<Cust
  */
 export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
     timeout(500),
-    catchError(err => {
-        if (err.name === 'TimeoutError') {
-            return [false]
-        }
-        throw err
-    }),
+    // Replace with code below when https://github.com/ReactiveX/rxjs/issues/3602 is fixed
+    // catchError(err => {
+    //     if (err.name === 'TimeoutError') {
+    //         return [false]
+    //     }
+    //     throw err
+    // }),
+    catchError(err => [false]),
     // Replay the same latest value for every subscriber
     publishReplay(1),
     refCount()
