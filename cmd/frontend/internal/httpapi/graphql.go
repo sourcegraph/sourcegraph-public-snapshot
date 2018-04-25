@@ -40,15 +40,8 @@ var graphiqlPage = []byte(`
 			// URL handling taken from https://github.com/graphql/graphiql/blob/master/example/index.html.
 
 			// Parse the search string to get url parameters.
-			var search = window.location.search;
-			var parameters = {};
-			search.substr(1).split('&').forEach(function (entry) {
-			  var eq = entry.indexOf('=');
-			  if (eq >= 0) {
-				parameters[decodeURIComponent(entry.slice(0, eq))] =
-				  decodeURIComponent(entry.slice(eq + 1));
-			  }
-			});
+			// window.location.hash starts with a '#' character.
+			var parameters = JSON.parse(decodeURIComponent(window.location.hash.slice(1)) || '{}');
 			// if variables was provided, try to format it.
 			if (parameters.variables) {
 			  try {
@@ -67,26 +60,15 @@ var graphiqlPage = []byte(`
 			// that it can be easily shared
 			function onEditQuery(newQuery) {
 			  parameters.query = newQuery;
-			  updateURL();
+			  sendParametersToParent();
 			}
 			function onEditVariables(newVariables) {
 			  parameters.variables = newVariables;
-			  updateURL();
+			  sendParametersToParent();
 			}
 			function onEditOperationName(newOperationName) {
 			  parameters.operationName = newOperationName;
-			  updateURL();
-			}
-
-			function updateURL() {
-			  var newSearch = '?' + Object.keys(parameters).filter(function (key) {
-				return Boolean(parameters[key]);
-			  }).map(function (key) {
-				return encodeURIComponent(key) + '=' +
-				  encodeURIComponent(parameters[key]);
-			  }).join('&');
-			  history.replaceState(null, null, newSearch);
-			  sendParametersToParent()
+			  sendParametersToParent();
 			}
 
 			function sendParametersToParent() {

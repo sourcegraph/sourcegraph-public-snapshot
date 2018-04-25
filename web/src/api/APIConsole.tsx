@@ -6,11 +6,11 @@ import { debounceTime } from 'rxjs/operators'
 interface Props extends RouteComponentProps<any> {}
 
 interface State {
-    initialIframeSrc: string
+    hash: string
 }
 
 export class APIConsole extends React.PureComponent<Props, State> {
-    private updates = new Subject<Props>()
+    private updates = new Subject<any>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -20,7 +20,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
         // HTTP referer headers.
         //
         // Also, set this initially to avoid rerendering (and destroying iframe) each time it changes.
-        this.state = { initialIframeSrc: decodeURIComponent(props.location.hash) }
+        this.state = { hash: props.location.hash }
     }
 
     public componentDidMount(): void {
@@ -29,10 +29,6 @@ export class APIConsole extends React.PureComponent<Props, State> {
                 .pipe(debounceTime(500))
                 .subscribe(data => this.props.history.replace({ hash: encodeURIComponent(JSON.stringify(data)) }))
         )
-    }
-
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.updates.next(nextProps)
     }
 
     public componentWillUnmount(): void {
@@ -49,7 +45,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
                 <iframe
                     ref={this.setIframeRef}
                     className="api-console__iframe"
-                    src={`/.api/graphql?${encodeURIComponent(this.state.initialIframeSrc)}`}
+                    src={`/.api/graphql${this.state.hash}`}
                 />
             </div>
         )
