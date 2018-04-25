@@ -10,8 +10,15 @@ import { makeRepoURI } from './index'
 // Use the internal factory functions and check for the error code on callsites.
 
 export const ECLONEINPROGESS = 'ECLONEINPROGESS'
-const createCloneInProgressError = (repoPath: string): Error =>
-    Object.assign(new Error(`Repository ${repoPath} is clone in progress`), { code: ECLONEINPROGESS })
+export interface CloneInProgressError extends Error {
+    code: typeof ECLONEINPROGESS
+    progress?: string
+}
+const createCloneInProgressError = (repoPath: string, progress: string | undefined): CloneInProgressError =>
+    Object.assign(new Error(`Repository ${repoPath} is clone in progress`), {
+        code: ECLONEINPROGESS as typeof ECLONEINPROGESS,
+        progress,
+    })
 
 export const EREPONOTFOUND = 'EREPONOTFOUND'
 const createRepoNotFoundError = (repoPath: string): Error =>
@@ -90,6 +97,7 @@ export const resolveRev = memoizeObservable(
                     repository(uri: $repoPath) {
                         mirrorInfo {
                             cloneInProgress
+                            cloneProgress
                         }
                         commit(rev: $rev) {
                             oid
@@ -114,7 +122,10 @@ export const resolveRev = memoizeObservable(
                     throw createRepoNotFoundError(ctx.repoPath)
                 }
                 if (data.repository.mirrorInfo.cloneInProgress) {
-                    throw createCloneInProgressError(ctx.repoPath)
+                    throw createCloneInProgressError(
+                        ctx.repoPath,
+                        data.repository.mirrorInfo.cloneProgress || undefined
+                    )
                 }
                 if (!data.repository.commit) {
                     throw createRevNotFoundError(ctx.rev)

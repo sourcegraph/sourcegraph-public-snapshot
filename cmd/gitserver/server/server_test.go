@@ -261,3 +261,42 @@ func BenchmarkQuickRevParseHead_unpacked_refs(b *testing.B) {
 	// Exclude cleanup (defers)
 	b.StopTimer()
 }
+
+func TestUrlRedactor(t *testing.T) {
+	testCases := []struct {
+		url      string
+		message  string
+		redacted string
+	}{
+		{
+			url:      "http://token@github.com/foo/bar/",
+			message:  "fatal: repository 'http://token@github.com/foo/bar/' not found",
+			redacted: "fatal: repository 'http://<redacted>@github.com/foo/bar/' not found",
+		},
+		{
+			url:      "http://user:password@github.com/foo/bar/",
+			message:  "fatal: repository 'http://user:password@github.com/foo/bar/' not found",
+			redacted: "fatal: repository 'http://<redacted>:<redacted>@github.com/foo/bar/' not found",
+		},
+		{
+			url:      "http://token@github.com///repo//nick/",
+			message:  "fatal: repository 'http://token@github.com/foo/bar/' not found",
+			redacted: "fatal: repository 'http://<redacted>@github.com/foo/bar/' not found",
+		},
+		{
+			url:      "token",
+			message:  "fatal: repository 'http://token' not found",
+			redacted: "fatal: repository 'http://<redacted>' not found",
+		},
+		{
+			url:      "git@github.com:foo/bar",
+			message:  "fatal: repository 'git@github.com:foo/bar' not found",
+			redacted: "fatal: repository '<redacted>' not found",
+		},
+	}
+	for _, testCase := range testCases {
+		if actual := newURLRedactor(testCase.url).redact(testCase.message); actual != testCase.redacted {
+			t.Errorf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
+		}
+	}
+}

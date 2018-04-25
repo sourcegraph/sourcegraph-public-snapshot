@@ -16,14 +16,18 @@ import { Subscription } from 'rxjs/Subscription'
 import { HeroPage } from '../components/HeroPage'
 import { displayRepoPath } from '../components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../util/errors'
-import { ECLONEINPROGESS, EREVNOTFOUND, resolveRev } from './backend'
+import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND, resolveRev } from './backend'
 
-export const RepositoryCloningInProgressPage: React.SFC<{ repoName: string }> = ({ repoName }) => (
+export const RepositoryCloningInProgressPage: React.SFC<{ repoName: string; progress?: string }> = ({
+    repoName,
+    progress,
+}) => (
     <HeroPage
         icon={RepoIcon}
         title={displayRepoPath(repoName)}
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"
+        detail={progress}
     />
 )
 
@@ -114,7 +118,12 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
             // Show error page
             switch (this.state.gitDataPresentOrError.code) {
                 case ECLONEINPROGESS:
-                    return <RepositoryCloningInProgressPage repoName={this.props.repoPath} />
+                    return (
+                        <RepositoryCloningInProgressPage
+                            repoName={this.props.repoPath}
+                            progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
+                        />
+                    )
                 case EREVNOTFOUND:
                     return <EmptyRepositoryPage />
                 default:

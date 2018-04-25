@@ -35,9 +35,13 @@
         line-height: 2.5rem;
     }
 
-    &__subtitle {
+    &__subtitle,
+    &__detail {
         font-size: 0.875em;
         line-height: 1rem;
+    }
+
+    &__subtitle {
         margin-top: 1rem;
     }
 

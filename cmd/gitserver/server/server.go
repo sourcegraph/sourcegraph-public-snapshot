@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -568,7 +569,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
-		go s.readCloneProgress(repo, dir, pr)
+		go s.readCloneProgress(repo, url, dir, pr)
 
 		if output, err := s.runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))
@@ -584,21 +585,65 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 }
 
 // readCloneProgress scans the reader and saves the most recent line of output as progress.
-func (s *Server) readCloneProgress(repo api.RepoURI, dir string, pr io.Reader) {
+func (s *Server) readCloneProgress(repo api.RepoURI, url, dir string, pr io.Reader) {
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
+	redactor := newURLRedactor(url)
 	for scan.Scan() {
 		progress := scan.Text()
-		log15.Debug("clone progress", "repo", repo, "progress", progress)
+		log15.Debug("clone progress", "repo", repo, "url", url, "progress", progress)
+
+		// 🚨 SECURITY: The output could include the clone url with may contain a sensitive token.
+		// Redact the full url and any found HTTP credentials to be safe.
+		//
+		// e.g.
+		// $ git clone http://token@github.com/foo/bar
+		// Cloning into 'nick'...
+		// fatal: repository 'http://token@github.com/foo/bar/' not found
+		redactedProgress := redactor.redact(progress)
+
 		s.cloningMu.Lock()
 		if _, ok := s.cloning[dir]; ok {
-			s.cloning[dir] = progress
+			s.cloning[dir] = redactedProgress
 		}
 		s.cloningMu.Unlock()
 	}
 	if err := scan.Err(); err != nil {
 		log15.Error("error reporting progress", "error", err)
 	}
+}
+
+// urlRedactor redacts all sensitive strings from a message.
+type urlRedactor struct {
+	// sensitive are sensitive strings to be redacted.
+	// The strings should not be empty.
+	sensitive []string
+}
+
+// newURLRedactor returns a new urlRedactor that redacts
+// credentials found in rawurl, and the rawurl itself.
+func newURLRedactor(rawurl string) *urlRedactor {
+	var sensitive []string
+	parsedURL, _ := url.Parse(rawurl)
+	if parsedURL != nil {
+		if pw, _ := parsedURL.User.Password(); pw != "" {
+			sensitive = append(sensitive, pw)
+		}
+		if u := parsedURL.User.Username(); u != "" {
+			sensitive = append(sensitive, u)
+		}
+	}
+	sensitive = append(sensitive, rawurl)
+	return &urlRedactor{sensitive: sensitive}
+}
+
+// redact returns a redacted version of message.
+// Sensitive strings are replaced with "<redacted>".
+func (r *urlRedactor) redact(message string) string {
+	for _, s := range r.sensitive {
+		message = strings.Replace(message, s, "<redacted>", -1)
+	}
+	return message
 }
 
 // scanCRLF is similar to bufio.ScanLines except it splits on both '\r' and '\n'

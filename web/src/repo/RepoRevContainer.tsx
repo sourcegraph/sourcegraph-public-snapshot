@@ -24,7 +24,7 @@ import { ErrorLike, isErrorLike } from '../util/errors'
 import { lprToRange, parseHash } from '../util/url'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import { ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
+import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
 import { BlobPage } from './blob/BlobPage'
 import { BlobReferencesPanel } from './blob/references/BlobReferencesPanel'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
@@ -139,7 +139,12 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             // Show error page
             switch (this.state.resolvedRevOrError.code) {
                 case ECLONEINPROGESS:
-                    return <RepositoryCloningInProgressPage repoName={this.props.repo.uri} />
+                    return (
+                        <RepositoryCloningInProgressPage
+                            repoName={this.props.repo.uri}
+                            progress={(this.state.resolvedRevOrError as CloneInProgressError).progress}
+                        />
+                    )
                 case EREPONOTFOUND:
                     return (
                         <HeroPage

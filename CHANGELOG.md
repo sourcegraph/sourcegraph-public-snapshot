@@ -24,7 +24,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
-* The "Mirror and cloning" page for repos now displays progress for clones.
+* More detailed progress information is displayed on pages that are waiting for repos to clone.
 * Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
 
 ## 2.7.0
