@@ -1,32 +1,15 @@
 {
-  "plugins": ["add-module-exports", "transform-new-target", "syntax-dynamic-import", "lodash"],
+  "plugins": ["transform-new-target", "syntax-dynamic-import", "lodash"],
   "presets": [
     [
       "env",
       {
         "targets": {
           "browsers": ["last 2 versions"],
-          "useBuiltIns": true,
-          "modules": false
-        }
+          "useBuiltIns": true
+        },
+        "modules": false
       }
     ]
-  ],
-  "env": {
-    "production": {
-      "presets": [
-        [
-          "env",
-          {
-            "targets": {
-              "browsers": ["last 2 versions"],
-              "uglify": true,
-              "useBuiltIns": true,
-              "modules": false
-            }
-          }
-        ]
-      ]
-    }
-  }
+  ]
 }
