@@ -27,13 +27,20 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 
 	ssoUserHeader = "x-sso-user-header"
 	defer func() { ssoUserHeader = "" }()
-	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	t.Run("not sent", func(t *testing.T) {
 		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		handler.ServeHTTP(rr, req)
+		if got, want := rr.Body.String(), "must access via HTTP authentication proxy\n"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	})
+
+	t.Run("not sent, actor present", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "must access via HTTP authentication proxy\n"; got != want {
 			t.Errorf("got %q, want %q", got, want)
@@ -42,6 +49,7 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 
 	t.Run("sent, new user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(ssoUserHeader, "alice")
 		var calledGetByUsername, calledCreate bool
 		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
@@ -68,8 +76,20 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 		}
 	})
 
+	t.Run("sent, actor already set", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set(ssoUserHeader, "alice")
+		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
+		handler.ServeHTTP(rr, req)
+		if got, want := rr.Body.String(), "user 123"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	})
+
 	t.Run("sent, new user with un-normalized username", func(t *testing.T) {
 		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(ssoUserHeader, "alice.zhao")
 		const wantNormalizedUsername = "alice-zhao"
 		var calledGetByUsername, calledCreate bool
@@ -102,6 +122,7 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 
 	t.Run("sent, existing user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(ssoUserHeader, "bob")
 		var calledGetByUsername bool
 		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
