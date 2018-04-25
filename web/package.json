@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "npm": "^6.0.0"
+    "npm": "^5.3.0"
   },
   "scripts": {
     "test": "mocha --require ts-node/register --require src/util/long-stack-traces.ts --timeout 10000 'src/**/*.test.ts?(x)'",
