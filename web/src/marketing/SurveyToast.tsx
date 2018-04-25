@@ -1,7 +1,7 @@
 import EmojiIcon from '@sourcegraph/icons/lib/Emoji'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Subscription } from 'rxjs/Subscription'
+import { Subscription } from 'rxjs'
 import { currentUser } from '../auth'
 import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'

@@ -1,7 +1,6 @@
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import * as React from 'react'
-import { fromEvent } from 'rxjs/observable/fromEvent'
-import { Subscription } from 'rxjs/Subscription'
+import { fromEvent, Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { VirtualList } from '../../components/VirtualList'
 import { ExampleSearch, IExampleSearch } from './ExampleSearch'

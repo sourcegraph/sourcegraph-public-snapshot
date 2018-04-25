@@ -8,11 +8,8 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { catchError } from 'rxjs/operators/catchError'
-import { mergeMap } from 'rxjs/operators/mergeMap'
-import { switchMap } from 'rxjs/operators/switchMap'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { Subject, Subscription } from 'rxjs'
+import { catchError, mergeMap, switchMap } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import {
     FilteredConnection,

@@ -3,19 +3,18 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Observable } from 'rxjs/Observable'
-import { combineLatest } from 'rxjs/observable/combineLatest'
-import { catchError } from 'rxjs/operators/catchError'
-import { concat } from 'rxjs/operators/concat'
-import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
-import { filter } from 'rxjs/operators/filter'
-import { map } from 'rxjs/operators/map'
-import { mergeMap } from 'rxjs/operators/mergeMap'
-import { startWith } from 'rxjs/operators/startWith'
-import { switchMap } from 'rxjs/operators/switchMap'
-import { tap } from 'rxjs/operators/tap'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
+import {
+    catchError,
+    concat,
+    distinctUntilChanged,
+    filter,
+    map,
+    mergeMap,
+    startWith,
+    switchMap,
+    tap,
+} from 'rxjs/operators'
 import { refreshCurrentUser } from '../../auth'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'

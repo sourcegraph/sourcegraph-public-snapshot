@@ -1,6 +1,8 @@
 import ExtractTextPlugin from 'extract-text-webpack-plugin'
 import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
+// @ts-ignore
+import rxPaths from 'rxjs/_esm5/path-mapping'
 import { Tapable } from 'tapable'
 import * as webpack from 'webpack'
 
@@ -56,6 +58,8 @@ const config: webpack.Configuration = {
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
+        mainFields: ['es2015', 'module', 'browser', 'main'],
+        alias: rxPaths(),
     },
     stats: 'minimal',
     module: {

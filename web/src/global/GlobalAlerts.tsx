@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Subscription } from 'rxjs/Subscription'
+import { Subscription } from 'rxjs'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'

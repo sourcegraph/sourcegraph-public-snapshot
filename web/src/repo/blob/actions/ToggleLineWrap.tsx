@@ -1,10 +1,8 @@
 import UnwrapIcon from '@sourcegraph/icons/lib/Unwrap'
 import WrapIcon from '@sourcegraph/icons/lib/Wrap'
 import * as React from 'react'
-import { fromEvent } from 'rxjs/observable/fromEvent'
-import { filter } from 'rxjs/operators/filter'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { fromEvent, Subject, Subscription } from 'rxjs'
+import { filter } from 'rxjs/operators'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 

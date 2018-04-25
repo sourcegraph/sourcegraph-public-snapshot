@@ -2,21 +2,18 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
-import { Observable } from 'rxjs/Observable'
-import { combineLatest } from 'rxjs/observable/combineLatest'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
-import { catchError } from 'rxjs/operators/catchError'
-import { debounceTime } from 'rxjs/operators/debounceTime'
-import { delay } from 'rxjs/operators/delay'
-import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
-import { map } from 'rxjs/operators/map'
-import { startWith } from 'rxjs/operators/startWith'
-import { switchMap } from 'rxjs/operators/switchMap'
-import { takeUntil } from 'rxjs/operators/takeUntil'
-import { tap } from 'rxjs/operators/tap'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import {
+    catchError,
+    debounceTime,
+    delay,
+    distinctUntilChanged,
+    map,
+    startWith,
+    switchMap,
+    takeUntil,
+    tap,
+} from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { pluralize } from '../util/strings'

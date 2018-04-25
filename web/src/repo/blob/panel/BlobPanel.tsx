@@ -4,22 +4,20 @@ import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
 import marked from 'marked'
 import * as React from 'react'
-import { Observable } from 'rxjs/Observable'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
-import { bufferTime } from 'rxjs/operators/bufferTime'
-import { catchError } from 'rxjs/operators/catchError'
-import { concat } from 'rxjs/operators/concat'
-import { delay } from 'rxjs/operators/delay'
-import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
-import { map } from 'rxjs/operators/map'
-import { scan } from 'rxjs/operators/scan'
-import { skip } from 'rxjs/operators/skip'
-import { startWith } from 'rxjs/operators/startWith'
-import { switchMap } from 'rxjs/operators/switchMap'
-import { takeUntil } from 'rxjs/operators/takeUntil'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { merge, Observable, of, Subject, Subscription } from 'rxjs'
+import {
+    bufferTime,
+    catchError,
+    concat,
+    delay,
+    distinctUntilChanged,
+    map,
+    scan,
+    skip,
+    startWith,
+    switchMap,
+    takeUntil,
+} from 'rxjs/operators'
 import { Hover, Location, MarkedString, Position } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
 import * as GQL from '../../../backend/graphqlschema'

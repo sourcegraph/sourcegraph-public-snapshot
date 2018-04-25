@@ -3,7 +3,7 @@ import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Subscription } from 'rxjs/Subscription'
+import { Subscription } from 'rxjs'
 
 interface Props {
     history: H.History

@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Observable } from 'rxjs/Observable'
+import { Observable } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { fetchSymbols } from '../symbols/backend'

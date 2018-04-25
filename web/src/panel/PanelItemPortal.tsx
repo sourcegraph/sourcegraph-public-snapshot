@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { AnonymousSubscription } from 'rxjs/Subscription'
+import { Unsubscribable } from 'rxjs'
 import { Panel, PanelItem } from './Panel'
 
 interface Props extends PanelItem {}
@@ -25,7 +25,7 @@ interface Props extends PanelItem {}
  * The MyItem component will be rendered in the panel (Panel), not inside MyComponent.
  */
 export class PanelItemPortal extends React.PureComponent<Props> {
-    private subscription: AnonymousSubscription | undefined
+    private subscription: Unsubscribable | undefined
 
     public componentDidMount(): void {
         this.subscription = Panel.addItem(this.props)

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { AnonymousSubscription } from 'rxjs/Subscription'
+import { Unsubscribable } from 'rxjs'
 import { RepoHeader } from './RepoHeader'
 
 interface Props<C extends React.ReactElement<any>> {
@@ -37,7 +37,7 @@ interface Props<C extends React.ReactElement<any>> {
  * See design note in the RepoHeader docstring.
  */
 export class RepoHeaderActionPortal<C extends React.ReactElement<any>> extends React.PureComponent<Props<C>> {
-    private subscription: AnonymousSubscription | undefined
+    private subscription: Unsubscribable | undefined
 
     public componentDidMount(): void {
         if (!this.props.element.key) {

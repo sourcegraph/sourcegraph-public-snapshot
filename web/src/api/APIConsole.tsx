@@ -1,8 +1,7 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { debounceTime } from 'rxjs/operators/debounceTime'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { Subject, Subscription } from 'rxjs'
+import { debounceTime } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps<any> {}
 

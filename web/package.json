@@ -158,8 +158,8 @@
     "react-router": "^4.2.0",
     "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.11.0",
-    "rx-component": "^0.0.8",
-    "rxjs": "^5.5.2",
+    "rx-component": "^0.1.0",
+    "rxjs": "^6.0.0",
     "string-score": "^1.0.1",
     "vscode-languageserver-types": "^3.4.0",
     "whatwg-url": "^6.4.0"

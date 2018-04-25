@@ -1,8 +1,6 @@
-import { Observable } from 'rxjs/Observable'
-import { ajax } from 'rxjs/observable/dom/ajax'
-import { AjaxResponse } from 'rxjs/observable/dom/AjaxObservable'
-import { catchError } from 'rxjs/operators/catchError'
-import { map } from 'rxjs/operators/map'
+import { Observable } from 'rxjs'
+import { ajax, AjaxResponse } from 'rxjs/ajax'
+import { catchError, map } from 'rxjs/operators'
 import { normalizeAjaxError } from '../util/errors'
 import * as GQL from './graphqlschema'
 

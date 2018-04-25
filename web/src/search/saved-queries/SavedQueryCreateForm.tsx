@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Observable } from 'rxjs/Observable'
-import { map } from 'rxjs/operators/map'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { createSavedQuery } from '../backend'
 import { SavedQueryFields, SavedQueryForm } from './SavedQueryForm'

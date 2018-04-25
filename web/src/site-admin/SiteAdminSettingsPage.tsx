@@ -1,7 +1,7 @@
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Subscription } from 'rxjs/Subscription'
+import { Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
 import { SettingsFile } from '../settings/SettingsFile'

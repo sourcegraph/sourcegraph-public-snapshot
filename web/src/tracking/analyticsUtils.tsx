@@ -1,11 +1,5 @@
-import { fromEvent } from 'rxjs/observable/fromEvent'
-import { of } from 'rxjs/observable/of'
-import { catchError } from 'rxjs/operators/catchError'
-import { mapTo } from 'rxjs/operators/mapTo'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
-import { take } from 'rxjs/operators/take'
-import { timeout } from 'rxjs/operators/timeout'
+import { fromEvent, of } from 'rxjs'
+import { catchError, mapTo, publishReplay, refCount, take, timeout } from 'rxjs/operators'
 import { eventLogger } from './eventLogger'
 
 export interface EventQueryParameters {

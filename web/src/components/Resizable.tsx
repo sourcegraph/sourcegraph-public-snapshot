@@ -1,8 +1,6 @@
 import * as React from 'react'
-import { debounceTime } from 'rxjs/operators/debounceTime'
-import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { Subject, Subscription } from 'rxjs'
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
 interface Props<C extends React.ReactElement<any>> {
     className?: string

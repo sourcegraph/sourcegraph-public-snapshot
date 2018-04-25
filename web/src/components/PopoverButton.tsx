@@ -1,8 +1,7 @@
 import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { Subject, Subscription } from 'rxjs'
 
 interface Props {
     /**

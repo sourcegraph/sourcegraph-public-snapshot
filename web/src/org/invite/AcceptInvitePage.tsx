@@ -3,20 +3,19 @@ import { Base64 } from 'js-base64'
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import reactive from 'rx-component'
-import { Observable } from 'rxjs/Observable'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
-import { bufferTime } from 'rxjs/operators/bufferTime'
-import { catchError } from 'rxjs/operators/catchError'
-import { concat } from 'rxjs/operators/concat'
-import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
-import { filter } from 'rxjs/operators/filter'
-import { map } from 'rxjs/operators/map'
-import { mergeMap } from 'rxjs/operators/mergeMap'
-import { scan } from 'rxjs/operators/scan'
-import { tap } from 'rxjs/operators/tap'
-import { withLatestFrom } from 'rxjs/operators/withLatestFrom'
-import { Subject } from 'rxjs/Subject'
+import { merge, Observable, of, Subject } from 'rxjs'
+import {
+    bufferTime,
+    catchError,
+    concat,
+    distinctUntilChanged,
+    filter,
+    map,
+    mergeMap,
+    scan,
+    tap,
+    withLatestFrom,
+} from 'rxjs/operators'
 import { refreshCurrentUser } from '../../auth'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'

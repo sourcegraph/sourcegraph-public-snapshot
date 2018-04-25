@@ -1,26 +1,23 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
-import { Observable } from 'rxjs/Observable'
-import { fromEvent } from 'rxjs/observable/fromEvent'
-import { merge } from 'rxjs/observable/merge'
-import { of } from 'rxjs/observable/of'
-import { catchError } from 'rxjs/operators/catchError'
-import { debounceTime } from 'rxjs/operators/debounceTime'
-import { delay } from 'rxjs/operators/delay'
-import { distinctUntilChanged } from 'rxjs/operators/distinctUntilChanged'
-import { filter } from 'rxjs/operators/filter'
-import { map } from 'rxjs/operators/map'
-import { publishReplay } from 'rxjs/operators/publishReplay'
-import { refCount } from 'rxjs/operators/refCount'
-import { repeat } from 'rxjs/operators/repeat'
-import { startWith } from 'rxjs/operators/startWith'
-import { switchMap } from 'rxjs/operators/switchMap'
-import { takeUntil } from 'rxjs/operators/takeUntil'
-import { tap } from 'rxjs/operators/tap'
-import { toArray } from 'rxjs/operators/toArray'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import {
+    catchError,
+    debounceTime,
+    delay,
+    distinctUntilChanged,
+    filter,
+    map,
+    publishReplay,
+    refCount,
+    repeat,
+    startWith,
+    switchMap,
+    takeUntil,
+    tap,
+    toArray,
+} from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'

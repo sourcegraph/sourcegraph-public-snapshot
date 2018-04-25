@@ -2,8 +2,7 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import NoIcon from '@sourcegraph/icons/lib/No'
 import * as H from 'history'
 import * as React from 'react'
-import { Subject } from 'rxjs/Subject'
-import { AnonymousSubscription, Subscription } from 'rxjs/Subscription'
+import { Subject, Subscription, Unsubscribable } from 'rxjs'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
@@ -58,7 +57,7 @@ export class Panel extends React.PureComponent<Props, State> {
      * Set the panel title. Do not call directly; use PanelTitlePortal instead.
      * @param fragment to set as the panel title
      */
-    public static setTitle(fragment: React.ReactFragment | undefined): AnonymousSubscription {
+    public static setTitle(fragment: React.ReactFragment | undefined): Unsubscribable {
         Panel.singletonState.title = fragment
         Panel.singletonStateUpdates.next()
         return {
@@ -75,7 +74,7 @@ export class Panel extends React.PureComponent<Props, State> {
      * Add an item to the panel. Do not call directly; use PanelItemPortal instead.
      * @param item to add to the header
      */
-    public static addItem(item: PanelItem): AnonymousSubscription {
+    public static addItem(item: PanelItem): Unsubscribable {
         Panel.singletonState.items = (Panel.singletonState.items || []).concat(item).sort(byPriority)
         Panel.singletonStateUpdates.next()
         return {

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Subscription } from 'rxjs/Subscription'
+import { Subscription } from 'rxjs'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'

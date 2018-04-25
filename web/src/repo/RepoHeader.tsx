@@ -3,8 +3,7 @@ import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Subject } from 'rxjs/Subject'
-import { AnonymousSubscription, Subscription } from 'rxjs/Subscription'
+import { Subject, Subscription, Unsubscribable } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
@@ -102,7 +101,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
      * instead.
      * @param action to add to the header
      */
-    public static addAction(action: RepoHeaderAction): AnonymousSubscription {
+    public static addAction(action: RepoHeaderAction): Unsubscribable {
         if (action.element.key === undefined || action.element.key === null) {
             throw new Error('RepoHeader addAction: action must have key property')
         }

@@ -3,12 +3,9 @@ import {
     SymbolLocationInformation,
     WorkspaceReferenceParams,
 } from 'javascript-typescript-langserver/lib/request-type'
-import { Observable } from 'rxjs/Observable'
-import { ajax } from 'rxjs/observable/dom/ajax'
-import { AjaxResponse } from 'rxjs/observable/dom/AjaxObservable'
-import { _throw as error } from 'rxjs/observable/throw'
-import { catchError } from 'rxjs/operators/catchError'
-import { map } from 'rxjs/operators/map'
+import { Observable, throwError as error } from 'rxjs'
+import { ajax, AjaxResponse } from 'rxjs/ajax'
+import { catchError, map } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'

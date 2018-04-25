@@ -1,7 +1,7 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Subscription } from 'rxjs/Subscription'
+import { Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
