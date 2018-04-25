@@ -8,6 +8,7 @@ import {
     debounceTime,
     delay,
     distinctUntilChanged,
+    filter,
     map,
     startWith,
     switchMap,
@@ -485,7 +486,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         this.subscriptions.add(
             this.componentUpdates
-                .pipe(distinctUntilChanged((a, b) => a.updateOnChange === b.updateOnChange))
+                .pipe(
+                    distinctUntilChanged((a, b) => a.updateOnChange === b.updateOnChange),
+                    filter(({ updateOnChange }) => updateOnChange !== undefined)
+                )
                 .subscribe(() => {
                     this.setState({ loading: true, connectionOrError: undefined }, () => refreshRequests.next())
                 })
