@@ -36,7 +36,7 @@
       "type": "chrome",
       "request": "attach",
       "port": 9222,
-      "webRoot": "${workspaceRoot}/ui",
+      "webRoot": "${workspaceRoot}/web",
       "url": "http://localhost:3080/*",
       "sourceMaps": true
     },
