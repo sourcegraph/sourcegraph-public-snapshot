@@ -81,7 +81,6 @@
   "repoListUpdateInterval": 1,
   "auth.allowSignup": true,
   "auth.provider": "builtin",
-  "auth.public": true,
   "email.address": "noreply@sourcegraph.com",
   "email.smtp": {
     "host": "smtp.mandrillapp.com",
