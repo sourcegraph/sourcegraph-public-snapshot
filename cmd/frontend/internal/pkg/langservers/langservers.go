@@ -636,9 +636,8 @@ func setupNetworking() {
 // setContainerID changes the name of our container to "sourcegraph" so that it is
 // reachable on that name via the lsp network. This is needed so that
 // e.g. the Go language server can reach the gitserver in our container.
-//
-// We do not do this in dev mode, since we are not running in a container.
 func setContainerID() {
+	// We do not do this in dev mode, since we are not running in a container.
 	if envvar.DebugMode() {
 		return
 	}
@@ -674,7 +673,13 @@ func createLSPBridge() {
 		}
 		return
 	}
+
 	// Connect this container to the LSP bridge network we just created.
+	//
+	// We do not do this in dev mode, since we are not running in a container.
+	if envvar.DebugMode() {
+		return
+	}
 	_, err = dockerCmd("network", "connect", "lsp", "sourcegraph")
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists in network") {
