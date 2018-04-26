@@ -377,7 +377,26 @@ export function fetchUserAndSiteAnalytics(): Observable<{ users: GQL.IUser[]; si
                         }
                     }
                 }
-                # TODO(Dan): fetch site activity data here, and expose on SiteAdminAnalyticsPage
+                activity {
+                    daus {
+                        userCount
+                        registeredUserCount
+                        anonymousUserCount
+                        startTime
+                    }
+                    waus {
+                        userCount
+                        registeredUserCount
+                        anonymousUserCount
+                        startTime
+                    }
+                    maus {
+                        userCount
+                        registeredUserCount
+                        anonymousUserCount
+                        startTime
+                    }
+                }
             }
         }
     `).pipe(

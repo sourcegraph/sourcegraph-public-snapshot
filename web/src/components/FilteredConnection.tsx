@@ -15,6 +15,7 @@ import {
     tap,
 } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
+import { RadioButtonNode, RadioButtons } from '../components/RadioButtons'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { pluralize } from '../util/strings'
 import { Form } from './Form'
@@ -37,23 +38,7 @@ interface FilterState {}
 
 class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, FilterState> {
     public render(): React.ReactFragment {
-        return (
-            <div className="filtered-connection-filter-control">
-                {this.props.filters.map((filter, i) => (
-                    <label key={i} className="filtered-connection-filter-control__item" title={filter.tooltip}>
-                        <input
-                            className="filtered-connection-filter-control__input"
-                            name="filter"
-                            type="radio"
-                            onChange={this.onChange}
-                            value={filter.id}
-                            checked={this.props.value === filter.id}
-                        />{' '}
-                        <div className="filtered-connection-filter-control__label">{filter.label}</div>
-                    </label>
-                ))}
-            </div>
-        )
+        return <RadioButtons nodes={this.props.filters} checked={this.checked} onChange={this.onChange} />
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
@@ -61,6 +46,8 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
         const filter = this.props.filters.find(f => f.id === id)!
         this.props.onDidSelectFilter(filter)
     }
+
+    private checked = (n: RadioButtonNode) => this.props.value === n.id
 }
 
 /**

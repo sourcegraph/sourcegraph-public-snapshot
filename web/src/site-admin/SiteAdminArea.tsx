@@ -127,8 +127,11 @@ export class SiteAdminArea extends React.Component<Props> {
                         <Route path={`${this.props.match.url}/threads`} component={SiteAdminThreadsPage} exact={true} />
                         <Route
                             path={`${this.props.match.url}/analytics`}
-                            component={SiteAdminAnalyticsPage}
                             exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <SiteAdminAnalyticsPage {...routeComponentProps} {...transferProps} />
+                            )}
                         />
                         <Route path={`${this.props.match.url}/updates`} component={SiteAdminUpdatesPage} exact={true} />
                         <Route
@@ -138,8 +141,8 @@ export class SiteAdminArea extends React.Component<Props> {
                         />
                         <Route
                             path={`${this.props.match.url}/surveys`}
-                            component={SiteAdminSurveyResponsesPage}
                             exact={true}
+                            component={SiteAdminSurveyResponsesPage}
                         />
                         <Route component={NotFoundPage} />
                     </Switch>

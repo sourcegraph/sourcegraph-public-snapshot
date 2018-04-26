@@ -1,3 +1,5 @@
+@import '../components/d3/BarChart';
+
 .site-admin-analytics-page {
     &__date-column {
         width: 40%;
@@ -5,5 +7,10 @@
 
     &__error {
         color: $danger;
+    }
+
+    &__tz-note {
+        display: block;
+        text-align: center;
     }
 }
