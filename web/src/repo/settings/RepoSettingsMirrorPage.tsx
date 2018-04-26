@@ -12,6 +12,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { checkMirrorRepositoryConnection, updateMirrorRepository } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 import { fetchRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 
@@ -64,6 +65,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         let description: React.ReactFragment
         let buttonLabel: React.ReactFragment
         let buttonDisabled = false
+        let info: React.ReactNode
         if (this.props.repo.mirrorInfo.cloneInProgress) {
             title = 'Cloning in progress...'
             description =
@@ -75,6 +77,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                 </span>
             )
             buttonDisabled = true
+            info = <DirectImportRepoAlert className="action-container__alert" />
         } else if (this.props.repo.mirrorInfo.cloned) {
             title = (
                 <>
@@ -103,6 +106,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                 buttonDisabled={buttonDisabled || this.props.disabled}
                 buttonSubtitle={this.props.disabledReason}
                 flashText="Added to queue"
+                info={info}
                 run={this.updateMirrorRepository}
             />
         )

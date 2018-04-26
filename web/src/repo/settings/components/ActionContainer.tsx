@@ -26,6 +26,7 @@ interface Props {
     buttonLabel: React.ReactFragment
     buttonSubtitle?: string
     buttonDisabled?: boolean
+    info?: React.ReactNode
 
     /** The message to briefly display below the button when the action is successful. */
     flashText?: string
@@ -90,9 +91,12 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                     </>
                 }
                 details={
-                    this.state.error && (
-                        <div className="alert alert-danger mb-0 mt-3">Error: {upperFirst(this.state.error)}</div>
-                    )
+                    <>
+                        {this.state.error && (
+                            <div className="alert alert-danger mb-0 mt-3">Error: {upperFirst(this.state.error)}</div>
+                        )}
+                        {!this.state.error && this.props.info}
+                    </>
                 }
             />
         )

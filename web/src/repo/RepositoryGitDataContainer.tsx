@@ -9,6 +9,7 @@ import { HeroPage } from '../components/HeroPage'
 import { displayRepoPath } from '../components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND, resolveRev } from './backend'
+import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 
 export const RepositoryCloningInProgressPage: React.SFC<{ repoName: string; progress?: string }> = ({
     repoName,
@@ -20,6 +21,7 @@ export const RepositoryCloningInProgressPage: React.SFC<{ repoName: string; prog
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"
         detail={progress}
+        body={<DirectImportRepoAlert className="mt-3" />}
     />
 )
 
