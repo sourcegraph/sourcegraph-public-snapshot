@@ -71,8 +71,16 @@ You are done! Sourcegraph Server version `VERSION` has been released!
 ## Publishing new code intelligence images
 
 1.  Ensure that the latest version of the language server is uploaded
-    to `us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION`. For most
-    languages, this can be accomplished by pushing to the branch
-    `xlang-$LANG`. Pull the latest version locally.
+    to `us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION`.
+
+    * Java: `sourcegraph/sourcegraph/cmd/xlang-java/build-and-upload.sh`
+    * Java (skinny): `sourcegraph/sourcegraph/cmd/xlang-java-skinny/build-and-upload.sh`
+    * JS/TS: Automatically build and uploaded in CI when you commit to master in `sourcegraph/javascript-typescript-buildserver`
+    * PHP: Automatically build and uploaded in CI when you commit to master in `sourcegraph/php-buildserver`
+    * Python: `git push origin master:docker-images/xlang-python`
+
+1.  `docker pull us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION`
+1.  `docker tag us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION sourcegraph/codeintel-$LANG:$VERSION`
 1.  `docker tag us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION sourcegraph/codeintel-$LANG:latest`
+1.  `docker push sourcegraph/codeintel-$LANG:$VERSION`
 1.  `docker push sourcegraph/codeintel-$LANG:latest`
