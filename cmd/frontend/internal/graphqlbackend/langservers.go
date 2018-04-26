@@ -52,6 +52,19 @@ func (c *langServerResolver) CanRestart(ctx context.Context) bool { return c.can
 func (c *langServerResolver) CanUpdate(ctx context.Context) bool  { return c.canUpdate }
 func (c *langServerResolver) Healthy(ctx context.Context) bool    { return c.healthy }
 
+func (s *siteResolver) LangServer(ctx context.Context, args struct{ Language string }) (*langServerResolver, error) {
+	langServers, err := s.LangServers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, langServer := range langServers {
+		if langServer.language == args.Language {
+			return langServer, nil
+		}
+	}
+	return nil, nil
+}
+
 func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, error) {
 	// Note: This only affects whether or not the client displays
 	// enable/disable/restart/update buttons. It does not affect security.
@@ -64,7 +77,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			return nil, errors.Wrap(err, "langservers.State")
 		}
 
-		if conf.IsDataCenter(conf.DeployType()) {
+		if conf.IsDataCenter(conf.DeployType()) || conf.IsDev(conf.DeployType()) {
 			// Running in Data Center. We cannot execute Docker commands, so we
 			// have less information.
 			results = append(results, &langServerResolver{
@@ -73,7 +86,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 				homepageURL: langservers.StaticInfo[language].HomepageURL,
 				issuesURL:   langservers.StaticInfo[language].IssuesURL,
 				docsURL:     langservers.StaticInfo[language].DocsURL,
-				dataCenter:  true,
+				dataCenter:  conf.IsDataCenter(conf.DeployType()),
 				custom:      false,
 				state:       state,
 				pending:     false,

@@ -1,0 +1,23 @@
+.code-intel-status-indicator {
+    position: relative;
+
+    &__popover {
+        display: none;
+        position: absolute;
+        top: 1rem;
+        right: -5rem;
+        z-index: 50;
+        padding: 1rem;
+        width: 13rem;
+        max-width: 90vw;
+        margin: 0 1rem;
+        border: 1px solid $color-light-border;
+        background: $color-light-bg-1;
+        white-space: normal;
+    }
+
+    &:hover &__popover,
+    &__popover:hover {
+        display: block;
+    }
+}

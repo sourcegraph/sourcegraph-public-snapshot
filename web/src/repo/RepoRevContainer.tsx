@@ -14,6 +14,7 @@ import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
 import { ResizablePanel } from '../panel/Panel'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { lprToRange, parseHash } from '../util/url'
+import { CodeIntelStatusIndicator } from './actions/CodeIntelStatusIndicator'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
@@ -50,6 +51,8 @@ export const useNewBlobPanel = localStorage.getItem('oldBlobPanel') === null || 
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
+
+const codeIntelStatusIndicatorEnabled = localStorage.getItem('codeIntelStatusIndicator') === 'true'
 
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
@@ -168,6 +171,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             }
         }
 
+        const resolvedRev = this.state.resolvedRevOrError
         return (
             <div className="repo-rev-container">
                 {IS_CHROME && <ChromeExtensionToast />}
@@ -219,18 +223,35 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 return (
                                     <>
                                         {routeComponentProps.match.params.filePath && (
-                                            <RepoHeaderActionPortal
-                                                position="nav"
-                                                element={
-                                                    <FilePathBreadcrumb
-                                                        key="path"
-                                                        repoPath={this.props.repo.uri}
-                                                        rev={this.props.rev}
-                                                        filePath={routeComponentProps.match.params.filePath}
-                                                        isDir={objectType === 'tree'}
+                                            <>
+                                                <RepoHeaderActionPortal
+                                                    position="nav"
+                                                    element={
+                                                        <FilePathBreadcrumb
+                                                            key="path"
+                                                            repoPath={this.props.repo.uri}
+                                                            rev={this.props.rev}
+                                                            filePath={routeComponentProps.match.params.filePath}
+                                                            isDir={objectType === 'tree'}
+                                                        />
+                                                    }
+                                                />
+                                                {codeIntelStatusIndicatorEnabled && (
+                                                    <RepoHeaderActionPortal
+                                                        position="right"
+                                                        priority={-10}
+                                                        element={
+                                                            <CodeIntelStatusIndicator
+                                                                key="code-intel-status"
+                                                                user={this.props.user}
+                                                                repoPath={this.props.repo.uri}
+                                                                commitID={resolvedRev.commitID}
+                                                                filePath={routeComponentProps.match.params.filePath}
+                                                            />
+                                                        }
                                                     />
-                                                }
-                                            />
+                                                )}
+                                            </>
                                         )}
                                         <RepoRevSidebar
                                             className="repo-rev-container__sidebar"

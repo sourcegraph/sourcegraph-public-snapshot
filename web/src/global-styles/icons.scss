@@ -19,18 +19,19 @@
     vertical-align: bottom;
     display: inline-flex;
     align-items: center;
+}
 
-    svg,
-    .avatar-icon {
-        // TODO find a better way to scale icons that is not proportional to the font size
-        // 14px font size -> 20px icon size
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: (20em / 14);
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: (20em / 14);
-        // Match color of the text
-        fill: currentColor;
-    }
+svg.icon-inline,
+.icon-inline svg,
+.icon-inline .avatar-icon {
+    // TODO find a better way to scale icons that is not proportional to the font size
+    // 14px font size -> 20px icon size
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    width: (20em / 14);
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    height: (20em / 14);
+    // Match color of the text
+    fill: currentColor;
 }
 
 // Special case for the loader

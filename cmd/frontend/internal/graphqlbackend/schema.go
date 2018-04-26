@@ -2077,6 +2077,8 @@ type Site implements ConfigurationSubject {
     ): ThreadConnection!
     # Lists all language servers.
     langServers: [LangServer!]!
+    # The language server for a given language (if exists, otherwise null)
+    langServer(language: String!): LangServer
     # A list of all access tokens on this site.
     accessTokens(
         # Returns the first n access tokens from the list.
