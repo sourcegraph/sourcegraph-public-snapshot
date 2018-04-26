@@ -8,6 +8,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 type createAccessTokenInput struct {
@@ -24,7 +25,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return nil, err
 	}
-	id, token, err := db.AccessTokens.Create(ctx, userID, args.Note)
+	id, token, err := db.AccessTokens.Create(ctx, userID, args.Note, actor.FromContext(ctx).UID)
 	return &createAccessTokenResult{id: marshalAccessTokenID(id), token: token}, err
 }
 
@@ -63,10 +64,10 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		}
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, token.UserID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, token.SubjectUserID); err != nil {
 			return nil, err
 		}
-		if err := db.AccessTokens.DeleteByID(ctx, token.ID, token.UserID); err != nil {
+		if err := db.AccessTokens.DeleteByID(ctx, token.ID, token.SubjectUserID); err != nil {
 			return nil, err
 		}
 
@@ -105,7 +106,7 @@ func (r *userResolver) AccessTokens(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	opt := db.AccessTokensListOptions{UserID: r.user.ID}
+	opt := db.AccessTokensListOptions{SubjectUserID: r.user.ID}
 	args.connectionArgs.set(&opt.LimitOffset)
 	return &accessTokenConnectionResolver{opt: opt}, nil
 }

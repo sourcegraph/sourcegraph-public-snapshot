@@ -25,7 +25,7 @@ func accessTokenByID(ctx context.Context, id graphql.ID) (*accessTokenResolver, 
 		return nil, err
 	}
 	// 🚨 SECURITY: Only the user (token owner) and site admins may retrieve the token.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, accessToken.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, accessToken.SubjectUserID); err != nil {
 		return nil, err
 	}
 	return &accessTokenResolver{accessToken: *accessToken}, nil
@@ -40,11 +40,15 @@ func unmarshalAccessTokenID(id graphql.ID) (accessTokenID int64, err error) {
 
 func (r *accessTokenResolver) ID() graphql.ID { return marshalAccessTokenID(r.accessToken.ID) }
 
-func (r *accessTokenResolver) User(ctx context.Context) (*userResolver, error) {
-	return userByIDInt32(ctx, r.accessToken.UserID)
+func (r *accessTokenResolver) Subject(ctx context.Context) (*userResolver, error) {
+	return userByIDInt32(ctx, r.accessToken.SubjectUserID)
 }
 
 func (r *accessTokenResolver) Note() string { return r.accessToken.Note }
+
+func (r *accessTokenResolver) Creator(ctx context.Context) (*userResolver, error) {
+	return userByIDInt32(ctx, r.accessToken.CreatorUserID)
+}
 
 func (r *accessTokenResolver) CreatedAt() string {
 	return r.accessToken.CreatedAt.Format(time.RFC3339)

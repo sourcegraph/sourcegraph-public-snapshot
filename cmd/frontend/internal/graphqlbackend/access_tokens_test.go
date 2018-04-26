@@ -14,13 +14,16 @@ import (
 
 // 🚨 SECURITY: This tests that users can't create tokens for users they aren't allowed to do so for.
 func TestMutation_CreateAccessToken(t *testing.T) {
-	mockAccessTokensCreate := func(t *testing.T) {
-		db.Mocks.AccessTokens.Create = func(userID int32, note string) (int64, string, error) {
-			if want := int32(1); userID != want {
-				t.Errorf("got %v, want %v", userID, want)
+	mockAccessTokensCreate := func(t *testing.T, wantCreatorUserID int32) {
+		db.Mocks.AccessTokens.Create = func(subjectUserID int32, note string, creatorUserID int32) (int64, string, error) {
+			if want := int32(1); subjectUserID != want {
+				t.Errorf("got %v, want %v", subjectUserID, want)
 			}
 			if want := "n"; note != want {
 				t.Errorf("got %q, want %q", note, want)
+			}
+			if creatorUserID != wantCreatorUserID {
+				t.Errorf("got %v, want %v", creatorUserID, wantCreatorUserID)
 			}
 			return 1, "t", nil
 		}
@@ -30,7 +33,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 	t.Run("authenticated as user", func(t *testing.T) {
 		resetMocks()
-		mockAccessTokensCreate(t)
+		mockAccessTokensCreate(t, 1)
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
@@ -58,7 +61,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	t.Run("authenticated as different user who is a site-admin", func(t *testing.T) {
 		resetMocks()
 		const differentSiteAdminUID = 234
-		mockAccessTokensCreate(t)
+		mockAccessTokensCreate(t, differentSiteAdminUID)
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 			return &types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil
 		}
@@ -123,12 +126,12 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 // 🚨 SECURITY: This tests that users can't delete tokens they shouldn't be allowed to delete.
 func TestMutation_DeleteAccessToken(t *testing.T) {
 	mockAccessTokens := func(t *testing.T) {
-		db.Mocks.AccessTokens.DeleteByID = func(id int64, userID int32) error {
+		db.Mocks.AccessTokens.DeleteByID = func(id int64, subjectUserID int32) error {
 			if want := int64(1); id != want {
 				t.Errorf("got %q, want %q", id, want)
 			}
-			if want := int32(2); userID != want {
-				t.Errorf("got %v, want %v", userID, want)
+			if want := int32(2); subjectUserID != want {
+				t.Errorf("got %v, want %v", subjectUserID, want)
 			}
 			return nil
 		}
@@ -136,7 +139,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 			if want := int64(1); id != want {
 				t.Errorf("got %d, want %d", id, want)
 			}
-			return &db.AccessToken{ID: 1, UserID: 2}, nil
+			return &db.AccessToken{ID: 1, SubjectUserID: 2}, nil
 		}
 	}
 

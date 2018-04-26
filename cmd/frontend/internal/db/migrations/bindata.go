@@ -152,6 +152,8 @@
 // ../../../../../migrations/1522961518_create_survey_responses_table.up.sql
 // ../../../../../migrations/1524535307_remove_survey_responses_updated_at.down.sql
 // ../../../../../migrations/1524535307_remove_survey_responses_updated_at.up.sql
+// ../../../../../migrations/1524724144_add_access_tokens_fields.down.sql
+// ../../../../../migrations/1524724144_add_access_tokens_fields.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3259,6 +3261,46 @@ func _1524535307_remove_survey_responses_updated_atUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1524724144_add_access_tokens_fieldsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4c\x4e\x4e\x2d\x2e\x8e\x2f\xc9\xcf\x4e\xcd\x2b\x56\x08\x72\xf5\x73\xf4\x75\x55\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x2e\x4d\xca\x4a\x4d\x2e\x89\x2f\x2d\x4e\x2d\x8a\xcf\x4c\x51\x08\xf1\x57\x80\x32\xad\xb9\x88\x30\xc3\x2f\x38\x24\xc8\xd1\xd3\x2f\x04\x55\x3e\x1e\xcd\xd4\xf8\xb4\xec\xd4\x4a\x90\xd1\xa8\xaa\x90\x65\xad\xb9\xf0\x58\xe7\x12\xe4\x1f\x00\x73\x70\x72\x51\x6a\x62\x49\x7e\x51\x3c\xdc\x95\x80\x00\x00\x00\xff\xff\xf4\xc9\x58\x72\xea\x00\x00\x00")
+
+func _1524724144_add_access_tokens_fieldsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1524724144_add_access_tokens_fieldsDownSql,
+		"1524724144_add_access_tokens_fields.down.sql",
+	)
+}
+
+func _1524724144_add_access_tokens_fieldsDownSql() (*asset, error) {
+	bytes, err := _1524724144_add_access_tokens_fieldsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1524724144_add_access_tokens_fields.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1524724144_add_access_tokens_fieldsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x51\xcd\x8e\x94\x40\x10\xbe\xf3\x14\xdf\x51\x13\xe1\x05\x88\x07\xdc\x69\xa3\x09\xcb\x18\xa6\xe7\x4c\x0a\xa8\x91\x76\xa1\x7b\xd3\x55\x48\xe6\xed\x0d\xec\x90\x38\x93\x68\xf4\xd8\xf5\x75\x7d\x7f\x95\xa6\xa8\xd9\xd3\xc4\xe8\xc2\x38\x4f\x1e\x2d\x77\x34\x0b\x63\x61\x2c\xe4\x15\x1a\x20\x1a\x22\xa3\x0d\x3a\x40\x07\x86\xcc\xed\x0f\xee\x14\xe4\xfb\xed\xdd\x45\x26\x0d\x11\xc2\xaf\x14\x49\x79\xbc\x66\x49\x51\x5a\x53\xc3\x16\x9f\x4a\x03\xea\x3a\x16\x69\x34\xbc\xb0\x17\xd4\xa6\x2a\x9e\x0d\x9e\x8e\xe5\xf9\xb9\xc2\x2c\x1c\x1b\xd7\xc3\x1e\x77\xda\xe6\x36\xca\xff\x85\xa3\x3a\xd9\xba\xf8\x5a\xd9\x7b\x7c\xa7\x68\x2e\x2f\x7c\x5d\xa9\xef\xd1\x07\xa1\xed\x57\x9e\xfc\x45\xae\x38\x1c\x76\xbf\xb7\xac\xfb\x2e\x9c\x57\xfe\xce\x11\xb5\xf9\x6c\x6a\x53\x3d\x99\xd3\x16\x49\xde\xb9\xfe\x7d\x9e\xa4\x29\x0a\x91\x79\x62\xe8\x40\x7a\x57\x9e\x93\xdf\xbb\xcb\x60\x07\x27\xeb\xd0\x07\x05\x8d\x0b\x5d\x05\x1a\x67\xce\x21\x4e\x19\xd4\x4f\xce\x0b\x3a\xf2\x6f\x1b\x0c\xf2\x37\x93\xab\xc8\xe6\x13\x97\x10\x41\x9b\x7c\x86\x2f\x61\xe1\x9f\x1c\x3f\xc0\x6d\x52\x84\x9e\x2f\xec\xc5\xb5\x23\x83\x56\x4b\xaf\xea\x82\xcf\x92\xf3\xb7\x43\x61\x1f\xf3\x9e\x8c\x7d\x0c\xfa\xf1\x3f\xae\xf3\x86\xfc\xa1\xb0\x95\xbb\x3a\x5a\x54\xe7\xb2\xcc\x93\x5f\x01\x00\x00\xff\xff\xd1\x5a\x4d\xfe\x7e\x02\x00\x00")
+
+func _1524724144_add_access_tokens_fieldsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1524724144_add_access_tokens_fieldsUpSql,
+		"1524724144_add_access_tokens_fields.up.sql",
+	)
+}
+
+func _1524724144_add_access_tokens_fieldsUpSql() (*asset, error) {
+	bytes, err := _1524724144_add_access_tokens_fieldsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1524724144_add_access_tokens_fields.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3463,6 +3505,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1522961518_create_survey_responses_table.up.sql":             _1522961518_create_survey_responses_tableUpSql,
 	"1524535307_remove_survey_responses_updated_at.down.sql":      _1524535307_remove_survey_responses_updated_atDownSql,
 	"1524535307_remove_survey_responses_updated_at.up.sql":        _1524535307_remove_survey_responses_updated_atUpSql,
+	"1524724144_add_access_tokens_fields.down.sql":                _1524724144_add_access_tokens_fieldsDownSql,
+	"1524724144_add_access_tokens_fields.up.sql":                  _1524724144_add_access_tokens_fieldsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3658,6 +3702,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1522961518_create_survey_responses_table.up.sql":             &bintree{_1522961518_create_survey_responses_tableUpSql, map[string]*bintree{}},
 	"1524535307_remove_survey_responses_updated_at.down.sql":      &bintree{_1524535307_remove_survey_responses_updated_atDownSql, map[string]*bintree{}},
 	"1524535307_remove_survey_responses_updated_at.up.sql":        &bintree{_1524535307_remove_survey_responses_updated_atUpSql, map[string]*bintree{}},
+	"1524724144_add_access_tokens_fields.down.sql":                &bintree{_1524724144_add_access_tokens_fieldsDownSql, map[string]*bintree{}},
+	"1524724144_add_access_tokens_fields.up.sql":                  &bintree{_1524724144_add_access_tokens_fieldsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

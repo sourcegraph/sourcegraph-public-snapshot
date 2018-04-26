@@ -36,8 +36,8 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<AccessTokenNodeProps, 'showUser' | 'onDidUpdate'> = {
-            showUser: true,
+        const nodeProps: Pick<AccessTokenNodeProps, 'showSubject' | 'onDidUpdate'> = {
+            showSubject: true,
             onDidUpdate: this.onDidUpdateAccessToken,
         }
 

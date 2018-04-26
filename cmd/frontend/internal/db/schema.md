@@ -1,20 +1,22 @@
 # Table "public.access_tokens"
 ```
-    Column    |           Type           |                         Modifiers                          
---------------+--------------------------+------------------------------------------------------------
- id           | bigint                   | not null default nextval('access_tokens_id_seq'::regclass)
- user_id      | integer                  | not null
- value_sha256 | bytea                    | not null
- note         | text                     | not null
- created_at   | timestamp with time zone | not null default now()
- last_used_at | timestamp with time zone | 
- deleted_at   | timestamp with time zone | 
+     Column      |           Type           |                         Modifiers                          
+-----------------+--------------------------+------------------------------------------------------------
+ id              | bigint                   | not null default nextval('access_tokens_id_seq'::regclass)
+ subject_user_id | integer                  | not null
+ value_sha256    | bytea                    | not null
+ note            | text                     | not null
+ created_at      | timestamp with time zone | not null default now()
+ last_used_at    | timestamp with time zone | 
+ deleted_at      | timestamp with time zone | 
+ creator_user_id | integer                  | not null
 Indexes:
     "access_tokens_pkey" PRIMARY KEY, btree (id)
     "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
     "access_tokens_lookup" hash (value_sha256) WHERE deleted_at IS NULL
 Foreign-key constraints:
-    "access_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
+    "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
 
 ```
 
@@ -501,7 +503,8 @@ Check constraints:
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:
-    TABLE "access_tokens" CONSTRAINT "access_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
+    TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "comments" CONSTRAINT "comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT

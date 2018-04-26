@@ -15,11 +15,12 @@ import (
 // AccessToken describes an access token. The actual token (that a caller must supply to
 // authenticate) is not stored and is not present in this struct.
 type AccessToken struct {
-	ID         int64
-	UserID     int32
-	Note       string
-	CreatedAt  time.Time
-	LastUsedAt *time.Time
+	ID            int64
+	SubjectUserID int32 // the user whose privileges the access token grants
+	Note          string
+	CreatorUserID int32
+	CreatedAt     time.Time
+	LastUsedAt    *time.Time
 }
 
 // ErrAccessTokenNotFound occurs when a database operation expects a specific access token to exist
@@ -44,9 +45,9 @@ type accessTokens struct{}
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
 // specified user (i.e., that the actor is either the user or a site admin).
-func (s *accessTokens) Create(ctx context.Context, userID int32, note string) (id int64, token string, err error) {
+func (s *accessTokens) Create(ctx context.Context, subjectUserID int32, note string, creatorUserID int32) (id int64, token string, err error) {
 	if Mocks.AccessTokens.Create != nil {
-		return Mocks.AccessTokens.Create(userID, note)
+		return Mocks.AccessTokens.Create(subjectUserID, note, creatorUserID)
 	}
 
 	var b [20]byte
@@ -56,22 +57,22 @@ func (s *accessTokens) Create(ctx context.Context, userID int32, note string) (i
 	token = hex.EncodeToString(b[:])
 
 	if err := globalDB.QueryRowContext(ctx,
-		"INSERT INTO access_tokens(user_id, value_sha256, note) VALUES($1, $2, $3) RETURNING id",
-		userID, toSHA256Bytes(b[:]), note,
+		"INSERT INTO access_tokens(subject_user_id, value_sha256, note, creator_user_id) VALUES($1, $2, $3, $4) RETURNING id",
+		subjectUserID, toSHA256Bytes(b[:]), note, creatorUserID,
 	).Scan(&id); err != nil {
 		return 0, "", err
 	}
 	return id, token, nil
 }
 
-// Lookup looks up the access token. If it's valid, it returns the owner's user ID. Otherwise
+// Lookup looks up the access token. If it's valid, it returns the subject's user ID. Otherwise
 // ErrAccessTokenNotFound is returned.
 //
 // Calling Lookup also updates the access token's last-used-at date.
 //
 // 🚨 SECURITY: This returns a user ID if and only if the tokenHexEncoded corresponds to a valid,
 // non-deleted access token.
-func (s *accessTokens) Lookup(ctx context.Context, tokenHexEncoded string) (userID int32, err error) {
+func (s *accessTokens) Lookup(ctx context.Context, tokenHexEncoded string) (subjectUserID int32, err error) {
 	if Mocks.AccessTokens.Lookup != nil {
 		return Mocks.AccessTokens.Lookup(tokenHexEncoded)
 	}
@@ -82,15 +83,15 @@ func (s *accessTokens) Lookup(ctx context.Context, tokenHexEncoded string) (user
 	}
 
 	if err := globalDB.QueryRowContext(ctx,
-		"UPDATE access_tokens SET last_used_at=now() WHERE value_sha256=$1 AND deleted_at IS NULL RETURNING user_id",
+		"UPDATE access_tokens SET last_used_at=now() WHERE value_sha256=$1 AND deleted_at IS NULL RETURNING subject_user_id",
 		toSHA256Bytes(token),
-	).Scan(&userID); err != nil {
+	).Scan(&subjectUserID); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, ErrAccessTokenNotFound
 		}
 		return 0, err
 	}
-	return userID, nil
+	return subjectUserID, nil
 }
 
 // GetByID retrieves the access token (if any) given its ID.
@@ -113,14 +114,14 @@ func (s *accessTokens) GetByID(ctx context.Context, id int64) (*AccessToken, err
 
 // AccessTokensListOptions contains options for listing access tokens.
 type AccessTokensListOptions struct {
-	UserID int32 // only list access tokens for the user
+	SubjectUserID int32 // only list access tokens with this user as the subject
 	*LimitOffset
 }
 
 func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
-	if o.UserID != 0 {
-		conds = append(conds, sqlf.Sprintf("user_id=%d", o.UserID))
+	if o.SubjectUserID != 0 {
+		conds = append(conds, sqlf.Sprintf("subject_user_id=%d", o.SubjectUserID))
 	}
 	return conds
 }
@@ -135,7 +136,7 @@ func (s *accessTokens) List(ctx context.Context, opt AccessTokensListOptions) ([
 
 func (s *accessTokens) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*AccessToken, error) {
 	q := sqlf.Sprintf(`
-SELECT id, user_id, note, created_at, last_used_at FROM access_tokens
+SELECT id, subject_user_id, note, creator_user_id, created_at, last_used_at FROM access_tokens
 WHERE (%s)
 ORDER BY now() - created_at < interval '5 minutes' DESC, -- show recently created tokens first
 last_used_at DESC NULLS FIRST, -- ensure newly created tokens show first
@@ -154,7 +155,7 @@ created_at DESC
 	var results []*AccessToken
 	for rows.Next() {
 		var t AccessToken
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Note, &t.CreatedAt, &t.LastUsedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.SubjectUserID, &t.Note, &t.CreatorUserID, &t.CreatedAt, &t.LastUsedAt); err != nil {
 			return nil, err
 		}
 		results = append(results, &t)
@@ -174,14 +175,14 @@ func (s *accessTokens) Count(ctx context.Context, opt AccessTokensListOptions) (
 	return count, nil
 }
 
-// DeleteByID deletes an access token given its ID and associated user.
+// DeleteByID deletes an access token given its ID and associated subject user.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
-func (s *accessTokens) DeleteByID(ctx context.Context, id int64, userID int32) error {
+func (s *accessTokens) DeleteByID(ctx context.Context, id int64, subjectUserID int32) error {
 	if Mocks.AccessTokens.DeleteByID != nil {
-		return Mocks.AccessTokens.DeleteByID(id, userID)
+		return Mocks.AccessTokens.DeleteByID(id, subjectUserID)
 	}
-	return s.delete(ctx, sqlf.Sprintf("id=%d AND user_id=%d", id, userID))
+	return s.delete(ctx, sqlf.Sprintf("id=%d AND subject_user_id=%d", id, subjectUserID))
 }
 
 // DeleteByToken deletes an access token given the secret token value itself (i.e., the same value
@@ -218,8 +219,8 @@ func toSHA256Bytes(input []byte) []byte {
 }
 
 type MockAccessTokens struct {
-	Create     func(userID int32, note string) (id int64, token string, err error)
-	DeleteByID func(id int64, userID int32) error
-	Lookup     func(tokenHexEncoded string) (userID int32, err error)
+	Create     func(subjectUserID int32, note string, creatorUserID int32) (id int64, token string, err error)
+	DeleteByID func(id int64, subjectUserID int32) error
+	Lookup     func(tokenHexEncoded string) (subjectUserID int32, err error)
 	GetByID    func(id int64) (*AccessToken, error)
 }

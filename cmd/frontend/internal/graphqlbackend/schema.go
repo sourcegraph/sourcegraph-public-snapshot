@@ -239,8 +239,10 @@ type Mutation {
     inviteUserToOrganization(organization: ID!, usernameOrEmail: String!): InviteUserResult
     # Updates the current user's password. The oldPassword arg must match the user's current password.
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
-    # Creates an access token that grants the privileges of the specified user. The result is the access token
-    # value, which the caller is responsible for storing (it is not accessible by Sourcegraph after creation).
+    # Creates an access token that grants the privileges of the specified user (referred to as the
+    # access token's "subject" user after token creation). The result is the access token value,
+    # which the caller is responsible for storing (it is not accessible by Sourcegraph after
+    # creation).
     #
     # Only the user or site admins may perform this mutation.
     createAccessToken(user: ID!, note: String!): CreateAccessTokenResult!
@@ -1753,7 +1755,8 @@ type User implements Node, ConfigurationSubject {
     #
     # Only the user and site admins can access this field.
     emails: [UserEmail!]!
-    # The users' access tokens (which grant to the holder the privileges of the user).
+    # The users' access tokens (which grant to the holder the privileges of the user). This consists
+    # of all access tokens whose subject is this user.
     #
     # Only the user and site admins can access this field.
     accessTokens(
@@ -1770,9 +1773,12 @@ type AccessToken implements Node {
     # The unique ID for the access token.
     id: ID!
     # The user whose privileges the access token grants.
-    user: User!
+    subject: User!
     # A user-supplied descriptive note for the access token.
     note: String!
+    # The user who created the access token. This is either the subject user (if the access token
+    # was created by the same user) or a site admin (who can create access tokens for any user).
+    creator: User!
     # The date when the access token was created.
     createdAt: String!
     # The date when the access token was last used to authenticate a request.

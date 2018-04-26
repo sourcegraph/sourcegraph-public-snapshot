@@ -17,7 +17,10 @@ export const accessTokenFragment = gql`
         note
         createdAt
         lastUsedAt
-        user {
+        subject {
+            username
+        }
+        creator {
             username
         }
     }
@@ -45,8 +48,8 @@ function deleteAccessToken(tokenID: GQL.ID): Observable<void> {
 export interface AccessTokenNodeProps {
     node: GQL.IAccessToken
 
-    /** Whether the user who owns the token should be displayed. */
-    showUser?: boolean
+    /** Whether the token's subject user should be displayed. */
+    showSubject?: boolean
 
     /**
      * The newly created token, if any. This contains the secret for this node's token iff node.id
@@ -106,11 +109,11 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
             <li className="list-group-item p-3 d-block">
                 <div className="d-flex w-100 justify-content-between">
                     <div className="mr-2">
-                        {this.props.showUser ? (
+                        {this.props.showSubject ? (
                             <>
                                 <strong>
-                                    <Link to={userURL(this.props.node.user.username)}>
-                                        {this.props.node.user.username}
+                                    <Link to={userURL(this.props.node.subject.username)}>
+                                        {this.props.node.subject.username}
                                     </Link>
                                 </strong>{' '}
                                 &mdash; {note}
@@ -128,6 +131,15 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                             ) : (
                                 'never used'
                             )}, created <Timestamp date={this.props.node.createdAt} />
+                            {this.props.node.subject.username !== this.props.node.creator.username && (
+                                <>
+                                    {' '}
+                                    by{' '}
+                                    <Link to={userURL(this.props.node.creator.username)}>
+                                        {this.props.node.creator.username}
+                                    </Link>
+                                </>
+                            )}
                         </small>
                     </div>
                     <div>

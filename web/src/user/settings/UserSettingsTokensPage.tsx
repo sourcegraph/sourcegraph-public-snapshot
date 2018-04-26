@@ -34,7 +34,7 @@ interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
 interface State {}
 
 /**
- * Displays a user's session token.
+ * Displays access tokens whose subject is a specific user.
  */
 export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
     private static clearNewTokenTimer: number | undefined = undefined
