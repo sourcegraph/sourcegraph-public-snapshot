@@ -36,8 +36,8 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	apiHandler = authMiddleware.API(apiHandler) // auth provider
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
-	apiHandler = session.CookieMiddlewareIfHeader(apiHandler, corsAllowHeader) // API accepts cookies with special header
-	apiHandler = httpapi.AccessTokenAuthMiddleware(apiHandler)                 // API accepts access tokens
+	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader) // API accepts cookies with special header
+	apiHandler = httpapi.AccessTokenAuthMiddleware(apiHandler)                       // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// App handler (HTML pages).

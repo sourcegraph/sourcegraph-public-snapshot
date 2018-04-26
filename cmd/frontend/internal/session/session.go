@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -154,18 +155,46 @@ func CookieMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// CookieMiddlewareIfHeader is an http.Handler middleware that
-// authenticates future HTTP requests via cookie, *only if* a specific
-// header is present. Typically X-Requested-By is used as the header
-// name. This protects against CSRF (see
-// https://security.stackexchange.com/questions/23371/csrf-protection-with-custom-headers-and-without-validating-token).
-func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler {
-	headerName = textproto.CanonicalMIMEHeaderKey(headerName)
+// CookieMiddlewareWithCSRFSafety is a middleware that authenticates HTTP requests using the
+// provided cookie (if any), *only if* the request is a non-simple CORS request (see
+// https://www.w3.org/TR/cors/#cross-origin-request-with-preflight-0). This relies on the client's
+// CORS checks to guarantee that one of the following is true, thereby protecting against CSRF
+// attacks:
+//
+// - The request originates from the same origin. -OR-
+//
+// - The request is cross-origin but passed the CORS preflight check (because otherwise the
+//   preflight OPTIONS reponse from secureHeadersMiddleware would have caused the browser to refuse
+//   to send this HTTP request).
+//
+// To determine if it's a non-simple CORS request, it checks for the presence of either
+// "Content-Type: application/json; charset=utf-8" or a non-empty HTTP request header whose name is
+// given in corsAllowHeader.
+//
+// NOTE: As a special temporary case, if the request path begins with /.api/telemetry/log/, it uses
+// cookies for authentication. See https://github.com/sourcegraph/sourcegraph/issues/10901 for why.
+//
+// If the request is a simple CORS request, or if neither of these is true, then the cookie is not
+// used to authenticate the request. The request is still allowed to proceed (but will be
+// unauthenticated unless some other authentication is provided, such as an access token).
+func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string) http.Handler {
+	corsAllowHeader = textproto.CanonicalMIMEHeaderKey(corsAllowHeader)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Vary", "Cookie, Authorization, "+headerName)
-		if _, ok := r.Header[headerName]; ok {
+		w.Header().Add("Vary", "Cookie, Authorization, "+corsAllowHeader)
+
+		_, isTrusted := r.Header[corsAllowHeader]
+		if !isTrusted {
+			contentType := r.Header.Get("Content-Type")
+			isTrusted = contentType == "application/json" || contentType == "application/json; charset=utf-8"
+		}
+		if !isTrusted {
+			// See NOTE in docstring for why this is special-case allowed.
+			isTrusted = strings.HasPrefix(r.URL.Path, "/.api/telemetry/log/")
+		}
+		if isTrusted {
 			r = r.WithContext(authenticateByCookie(r, w))
 		}
+
 		next.ServeHTTP(w, r)
 	})
 }
