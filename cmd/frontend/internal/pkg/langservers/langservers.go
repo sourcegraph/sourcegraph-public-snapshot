@@ -235,7 +235,7 @@ func Stop(language string) error {
 }
 
 func start(language string) error {
-	cmd := []string{"run", "--detach", "--rm", "--network=lsp", "--name=" + language}
+	cmd := []string{"run", "--detach", "--restart=always", "--network=lsp", "--name=" + language}
 	if envvar.DebugMode() {
 		cmd = append(cmd, startDebugArgs(language)...)
 	} else {
@@ -273,8 +273,20 @@ func stop(language string) error {
 		cmdName = "kill"
 	}
 	_, err := dockerCmd(cmdName, language)
+	if err != nil {
+		if strings.Contains(err.Error(), "No such container") {
+			// already stopped
+			return nil
+		}
+		return err
+	}
+
+	// Remove the container. This is effectively the same as `docker run --rm`
+	// and we need it or else the container name would not be released and subsequent
+	// start(...) calls would fail.
+	_, err = dockerCmd("rm", language)
 	if err != nil && strings.Contains(err.Error(), "No such container") {
-		// already stopped
+		// already removed; this shouldn't happen generally / is just defensive
 		return nil
 	}
 	return err
