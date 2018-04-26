@@ -1,5 +1,4 @@
 FROM mlaccetti/docker-oracle-java8-ubuntu-16.04
-MAINTAINER Aaron Leung <the.other.aaron@sourcegraph.com>
 EXPOSE 2088
 
 RUN apt-get -qy update
@@ -35,5 +34,10 @@ COPY ./java-language-server.jar /usr/bin
 
 ## Leave maven in the image so that we can test in the prod env
 # RUN apt-get -qy remove git maven
+
+ENV TINI_VERSION v0.18.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+ENTRYPOINT ["/tini", "--"]
 
 CMD java $JVM_OPT -jar /usr/bin/java-language-server.jar $LS_OPT
