@@ -37,9 +37,9 @@ interface Props {
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
 
     /**
-     * Used to determine if an individual radio button should initially be checked.
+     * id of the currently selected RadioButtonNode.
      */
-    checked?: (n: RadioButtonNode) => boolean
+    selected?: string
 }
 
 /**
@@ -57,7 +57,7 @@ export class RadioButtons extends React.PureComponent<Props> {
                             type="radio"
                             onChange={this.props.onChange}
                             value={n.id}
-                            checked={this.props.checked ? this.props.checked(n) : false}
+                            checked={n.id === this.props.selected}
                         />{' '}
                         <div className="radio-buttons__label">{n.label}</div>
                     </label>

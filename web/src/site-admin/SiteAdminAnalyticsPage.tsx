@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { BarChart } from '../components/d3/BarChart'
 import { PageTitle } from '../components/PageTitle'
-import { RadioButtonNode, RadioButtons } from '../components/RadioButtons'
+import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchUserAndSiteAnalytics } from './backend'
@@ -92,7 +92,7 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                                 id: key,
                             }))}
                             onChange={this.onChartIndexChange}
-                            checked={this.radioChecked}
+                            selected={this.state.chartID}
                         />
                         {
                             <>
@@ -211,5 +211,4 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
         }
         this.setState({ chartID: e.target.value as keyof ChartOptions })
     }
-    private radioChecked = (n: RadioButtonNode) => this.state.chartID === n.id
 }
