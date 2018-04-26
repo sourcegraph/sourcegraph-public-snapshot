@@ -4,8 +4,6 @@ import { select, Selection } from 'd3-selection'
 import { stack } from 'd3-shape'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged } from 'rxjs/operators'
 
 interface BarChartSeries {
     [key: string]: null
@@ -42,111 +40,52 @@ interface Props<T extends BarChartSeries> {
     isLightTheme: boolean
 }
 
-interface State<T extends BarChartSeries> {
-    /**
-     * Bar chart data.
-     * One datum for each column, with each datum containing values for each series in the given column.
-     */
-    data: BarChartDatum<T>[]
-    /**
-     * Bar colors for each series.
-     */
-    barColors: string[]
-    /**
-     * Series names.
-     */
-    series: string[]
-    /**
-     * x-axis labels for each column.
-     */
-    xLabels: string[]
-    /**
-     * Values for each series in each column.
-     */
-    yValues: { [key in keyof T]: number }[]
-    /**
-     * Total heights of each column.
-     */
-    yHeights: number[]
-}
-
-export class BarChart<T extends BarChartSeries> extends React.PureComponent<Props<T>, State<T>> {
-    private propsChanges = new Subject<Props<T>>()
-    private subscriptions = new Subscription()
-
+export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>> {
     private svgRef: SVGSVGElement | null = null
 
-    public constructor(props: Props<T>) {
-        super(props)
-        this.state = {
-            data: [],
-            barColors: [],
-            series: [],
-            xLabels: [],
-            yValues: [],
-            yHeights: [],
-        }
-        this.subscriptions.add(
-            this.propsChanges
-                .pipe(distinctUntilChanged((a, b) => isEqual(a, b)))
-                .subscribe(props => this.refreshChartDataAndRedraw(props))
-        )
-    }
-
     public componentDidMount(): void {
-        this.propsChanges.next(this.props)
+        this.drawChart()
     }
 
     public componentDidUpdate(): void {
-        this.propsChanges.next(this.props)
+        this.drawChart()
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+    public shouldComponentUpdate(nextProps: Props<T>): boolean {
+        return !isEqual(this.props, nextProps)
     }
 
-    private refreshChartDataAndRedraw(props: Props<T>): void {
-        const data = props.data.reverse()
-        this.setState(
-            {
-                data,
-                barColors: props.isLightTheme ? ['#a2b0cd', '#cad2e2'] : ['#566e9f', '#a2b0cd'],
-                series: Object.keys(data[0].yValues),
-                xLabels: data.map(({ xLabel }) => xLabel),
-                yValues: data.map(({ yValues }) => yValues),
-                yHeights: data.map(({ yValues }) => Object.keys(yValues).reduce((acc, k) => acc + yValues[k], 0)),
-            },
-            () => {
-                if (this.svgRef) {
-                    this.drawChart(this.svgRef)
-                }
-            }
-        )
-    }
-
-    private drawChart = (ref: SVGElement | null): void => {
-        if (!ref) {
+    private drawChart = (): void => {
+        if (!this.svgRef) {
             return
         }
         const { width, height } = this.props
-        if (!this.state.data.length) {
+
+        const data = this.props.data.reverse()
+        const barColors = this.props.isLightTheme ? ['#a2b0cd', '#cad2e2'] : ['#566e9f', '#a2b0cd']
+        const series = Object.keys(data[0].yValues)
+        const xLabels = data.map(({ xLabel }) => xLabel)
+        const yValues = data.map(({ yValues }) => yValues)
+        const yHeights = data.map(({ yValues }) => Object.keys(yValues).reduce((acc, k) => acc + yValues[k], 0))
+
+        if (!data.length) {
             return
         }
 
-        const columns = this.state.xLabels.length
+        const columns = xLabels.length
 
         const x = scaleBand()
-            .domain(this.state.xLabels)
+            .domain(xLabels)
             .rangeRound([0, width])
         const y = scaleLinear()
-            .domain([0, Math.max(...this.state.yHeights)])
+            .domain([0, Math.max(...yHeights)])
             .range([height, 0])
         const z = scaleOrdinal<string, string>()
-            .domain(this.state.series)
-            .range(this.state.barColors)
+            .domain(series)
+            .range(barColors)
         const xAxis = axisBottom(x)
 
-        const svg = select(ref!)
+        const svg = select(this.svgRef!)
         svg.selectAll('*').remove()
 
         const barWidth = width / columns - 2
@@ -158,8 +97,8 @@ export class BarChart<T extends BarChartSeries> extends React.PureComponent<Prop
             .classed('bar-holder', true)
 
         const stackData = stack()
-            .keys(this.state.series)
-            .value((d, key) => d[key])(this.state.yValues, this.state.series)
+            .keys(series)
+            .value((d, key) => d[key])(yValues, series)
 
         // Generate bars.
         barHolder
@@ -174,7 +113,7 @@ export class BarChart<T extends BarChartSeries> extends React.PureComponent<Prop
             .enter()
             .append('rect')
             .classed('bar', true)
-            .attr('x', (d, i) => x(this.state.xLabels[i]) || 0 + 1)
+            .attr('x', (d, i) => x(xLabels[i]) || 0 + 1)
             .attr('y', d => y(d[1]))
             .attr('width', barWidth)
             .attr('height', d => y(d[0]) - y(d[1]))
@@ -185,15 +124,15 @@ export class BarChart<T extends BarChartSeries> extends React.PureComponent<Prop
             barHolder
                 .append('g')
                 .selectAll('text')
-                .data(this.state.data)
+                .data(data)
                 .enter()
                 .append('text')
                 .attr('text-anchor', 'middle')
                 .attr('x', d => x(d.xLabel) || 0)
                 .attr('dx', barWidth / 2)
-                .attr('y', (d, i) => y(this.state.yHeights[i]))
+                .attr('y', (d, i) => y(yHeights[i]))
                 .attr('dy', '-0.5em')
-                .text((d, i) => this.state.yHeights[i])
+                .text((d, i) => yHeights[i])
         }
 
         // Generate x-axis and labels.
@@ -213,7 +152,7 @@ export class BarChart<T extends BarChartSeries> extends React.PureComponent<Prop
                 .append('g')
                 .attr('text-anchor', 'end')
                 .selectAll('g')
-                .data(this.state.series.slice().reverse())
+                .data(series.slice().reverse())
                 .enter()
                 .append('g')
                 .attr('transform', (d, i) => 'translate(0,' + i * 20 + ')')

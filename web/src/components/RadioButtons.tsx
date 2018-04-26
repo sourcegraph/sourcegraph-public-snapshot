@@ -59,7 +59,9 @@ export class RadioButtons extends React.PureComponent<Props> {
                             value={n.id}
                             checked={n.id === this.props.selected}
                         />{' '}
-                        <div className="radio-buttons__label">{n.label}</div>
+                        <small>
+                            <div className="radio-buttons__label">{n.label}</div>
+                        </small>
                     </label>
                 ))}
             </div>
