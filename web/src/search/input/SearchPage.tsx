@@ -25,9 +25,6 @@ interface Props {
 interface State {
     /** The query value entered by the user in the query input */
     userQuery: string
-
-    /** The query value derived from the search fields */
-    fieldsQuery: string
 }
 
 /**
@@ -42,7 +39,6 @@ export class SearchPage extends React.Component<Props, State> {
         const searchOptions = parseSearchURLQuery(props.location.search)
         this.state = {
             userQuery: (searchOptions && searchOptions.query) || '',
-            fieldsQuery: '',
         }
     }
 
@@ -75,7 +71,6 @@ export class SearchPage extends React.Component<Props, State> {
                             {...this.props}
                             value={this.state.userQuery}
                             onChange={this.onUserQueryChange}
-                            prependQueryForSuggestions={this.state.fieldsQuery}
                             autoFocus={'cursor-at-end'}
                             hasGlobalQueryBehavior={true}
                         />
@@ -141,8 +136,7 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        const query = [this.state.fieldsQuery, this.state.userQuery].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, { query }, 'home')
+        submitSearch(this.props.history, { query: this.state.userQuery }, 'home')
     }
 
     private getPageTitle(): string | undefined {
