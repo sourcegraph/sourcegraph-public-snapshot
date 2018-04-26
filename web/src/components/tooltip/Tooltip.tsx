@@ -130,6 +130,10 @@ export class Tooltip extends React.PureComponent<Props, State> {
                 break
             }
             if (e.hasAttribute(Tooltip.SUBJECT_ATTRIBUTE)) {
+                // If e is not actually attached to the DOM, then abort.
+                if (!document.body.contains(e)) {
+                    return undefined
+                }
                 return e
             }
             e = e.parentElement
@@ -138,7 +142,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
     }
 
     public getStateForSubject = (subject: HTMLElement): { content: string; top: number; left: number } | undefined => {
-        if (!this.containerRef || !this.tooltipRef) {
+        if (!this.containerRef || !this.tooltipRef || !document.body.contains(subject)) {
             return undefined
         }
 
