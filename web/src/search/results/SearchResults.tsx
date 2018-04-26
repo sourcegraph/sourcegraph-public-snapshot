@@ -7,7 +7,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from './../backend'
 import { FilterChip } from './../FilterChip'
-import { isSearchResults } from './../helpers'
+import { isSearchResults, submitSearch, toggleSearchFilter } from './../helpers'
 import { parseSearchURLQuery, SearchOptions } from './../index'
 import { queryTelemetryData } from './../queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
@@ -21,7 +21,6 @@ interface SearchResultsProps {
     history: H.History
     isLightTheme: boolean
     navbarSearchQuery: string
-    onFilterChosen: (value: string) => void
 }
 
 interface SearchResultsState {
@@ -208,6 +207,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         eventLogger.log('DynamicFilterClicked', {
             search_filter: { value },
         })
-        this.props.onFilterChosen(value)
+        submitSearch(this.props.history, { query: toggleSearchFilter(this.props.navbarSearchQuery, value) }, 'filter')
     }
 }

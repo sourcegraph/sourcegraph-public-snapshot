@@ -46,9 +46,10 @@ export class SearchPage extends React.Component<Props, State> {
         eventLogger.logViewEvent('Home')
         if (
             window.context.sourcegraphDotComMode &&
-            !localStorage.getItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
+            !localStorage.getItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY) &&
+            !this.state.userQuery
         ) {
-            this.addScopeToQuery('repogroup:sample')
+            this.setState({ userQuery: 'repogroup:sample' })
         }
     }
 
@@ -80,7 +81,7 @@ export class SearchPage extends React.Component<Props, State> {
                     <div className="search-page__input-sub-container">
                         <SearchFilterChips
                             location={this.props.location}
-                            onFilterChosen={this.onFilterChosen}
+                            history={this.props.history}
                             query={this.state.userQuery}
                         />
                     </div>
@@ -90,36 +91,6 @@ export class SearchPage extends React.Component<Props, State> {
                 </div>
             </div>
         )
-    }
-
-    private onFilterChosen = (scope: string) => {
-        const idx = queryIndexOfScope(this.state.userQuery, scope)
-        if (idx === -1) {
-            this.addScopeToQuery(scope)
-        } else {
-            this.removeScopeFromQuery(scope, idx)
-        }
-    }
-
-    private addScopeToQuery(scope: string): void {
-        this.setState(state => ({ userQuery: [state.userQuery.trim(), scope].filter(s => s).join(' ') + ' ' }))
-        if (window.context.sourcegraphDotComMode && scope === 'repogroup:sample') {
-            localStorage.removeItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
-        }
-    }
-
-    private removeScopeFromQuery(scope: string, idx: number): void {
-        this.setState(state => ({
-            userQuery: (
-                state.userQuery.substring(0, idx).trim() +
-                ' ' +
-                state.userQuery.substring(idx + scope.length).trim()
-            ).trim(),
-        }))
-
-        if (window.context.sourcegraphDotComMode && scope === 'repogroup:sample') {
-            localStorage.setItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY, 'true')
-        }
     }
 
     private onUserQueryChange = (userQuery: string) => {

@@ -31,7 +31,6 @@ import { updateUserSessionStores } from './marketing/util'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
-import { toggleSearchFilter } from './search/helpers'
 import { eventLogger } from './tracking/eventLogger'
 
 interface LayoutProps extends RouteComponentProps<any> {
@@ -40,7 +39,6 @@ interface LayoutProps extends RouteComponentProps<any> {
     onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
-    onFilterChosen: (value: string) => void
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -189,7 +187,6 @@ class App extends React.Component<{}, AppState> {
             onThemeChange={this.onThemeChange}
             navbarSearchQuery={this.state.navbarSearchQuery}
             onNavbarQueryChange={this.onNavbarQueryChange}
-            onFilterChosen={this.onFilterChosen}
         />
     )
 
@@ -204,11 +201,6 @@ class App extends React.Component<{}, AppState> {
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {
         this.setState({ navbarSearchQuery })
-    }
-
-    // Used for search scopes and dynamic filters
-    private onFilterChosen = (searchFilter: string): void => {
-        this.setState(state => ({ navbarSearchQuery: toggleSearchFilter(state.navbarSearchQuery, searchFilter) }))
     }
 }
 

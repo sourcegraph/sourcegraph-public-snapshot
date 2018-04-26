@@ -6,7 +6,7 @@ import { buildSearchURLQuery, SearchOptions } from './index'
 export function submitSearch(
     history: H.History,
     options: SearchOptions,
-    source: 'home' | 'nav' | 'repo' | 'tree'
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter'
 ): void {
     // Go to search results page
     const path = '/search?' + buildSearchURLQuery(options)

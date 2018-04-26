@@ -16,7 +16,6 @@ interface Props {
     onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
-    onFilterChosen: (value: string) => void
 }
 
 interface State {
@@ -82,7 +81,7 @@ export class GlobalNavbar extends React.Component<Props, State> {
                 >
                     <SearchFilterChips
                         location={this.props.location}
-                        onFilterChosen={this.props.onFilterChosen}
+                        history={this.props.history}
                         query={this.props.navbarSearchQuery}
                     />
                 </div>

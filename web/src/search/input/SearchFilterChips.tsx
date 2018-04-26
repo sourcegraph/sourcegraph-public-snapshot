@@ -12,21 +12,18 @@ import { Tooltip } from '../../components/tooltip/Tooltip'
 import { routes } from '../../routes'
 import { currentConfiguration } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
+import { submitSearch, toggleSearchFilter } from '../helpers'
 import { fetchSearchScopes } from './../backend'
 import { FilterChip } from './../FilterChip'
 
 interface Props {
     location: H.Location
+    history: H.History
 
     /**
      * The current query.
      */
     query: string
-
-    /**
-     * Called when there is a filter to be added to the search query.
-     */
-    onFilterChosen: (value: string) => void
 }
 
 interface ISearchScope {
@@ -200,7 +197,7 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
                 value,
             },
         })
-        this.props.onFilterChosen(value)
+        submitSearch(this.props.history, { query: toggleSearchFilter(this.props.query, value) }, 'filter')
     }
 }
 
