@@ -35,9 +35,9 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))
 	apiHandler = authMiddleware.API(apiHandler) // auth provider
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
-	// X-Requested-By header). Doing so would open it up to CSRF attacks.
-	apiHandler = session.CookieMiddlewareIfHeader(apiHandler, "X-Requested-By") // API accepts cookies with X-Requested-By header
-	apiHandler = httpapi.AccessTokenAuthMiddleware(apiHandler)                  // API accepts access tokens
+	// X-Requested-With header). Doing so would open it up to CSRF attacks.
+	apiHandler = session.CookieMiddlewareIfHeader(apiHandler, corsAllowHeader) // API accepts cookies with special header
+	apiHandler = httpapi.AccessTokenAuthMiddleware(apiHandler)                 // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// App handler (HTML pages).
@@ -73,6 +73,13 @@ func newInternalHTTPHandler() http.Handler {
 	return gcontext.ClearHandler(internalMux)
 }
 
+// corsAllowHeader is the HTTP header that, if present (and assuming secureHeadersMiddleware is
+// used), indicates that the incoming HTTP request is either same-origin or is from an allowed
+// origin. See
+// https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Cheat_Sheet#Protecting_REST_Services:_Use_of_Custom_Request_Headers
+// for more information on this technique.
+const corsAllowHeader = "X-Requested-With"
+
 // secureHeadersMiddleware adds and checks for HTTP security-related headers.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
@@ -105,7 +112,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
 			if r.Method == "OPTIONS" {
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "X-Requested-With, X-Sourcegraph-Client, Content-Type")
+				w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type")
 				w.WriteHeader(http.StatusOK)
 				return // do not invoke next handler
 			}
