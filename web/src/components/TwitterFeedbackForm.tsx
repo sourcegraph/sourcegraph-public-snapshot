@@ -64,72 +64,77 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
         const submitLabel = 'Tweet us'
 
         return (
-            <Form className="twitter-feedback-form theme-light" onSubmit={this.handleSubmit}>
-                <button
-                    type="reset"
-                    className="btn btn-icon twitter-feedback-form__close"
-                    onClick={this.props.onDismiss}
-                >
-                    <CloseIcon />
-                </button>
-                <div className="twitter-feedback-form__contents">
-                    <h2 className="twitter-feedback-form__title">{title}</h2>
-                    <div>
-                        <label>How was your experience?</label>
-                        <div className="twitter-feedback-form__experience">
-                            <button
-                                type="button"
-                                className={
-                                    'btn btn-icon twitter-feedback-form__emoticon' +
-                                    (this.state.experience === 'good' ? ' twitter-feedback-form__emoticon--happy' : '')
-                                }
-                                onClick={this.saveGoodExperience}
-                            >
-                                <EmoticonIcon />
-                            </button>
-                            <button
-                                type="button"
-                                className={
-                                    'btn btn-icon twitter-feedback-form__emoticon' +
-                                    (this.state.experience === 'bad' ? ' twitter-feedback-form__emoticon--sad' : '')
-                                }
-                                onClick={this.saveBadExperience}
-                            >
-                                <EmoticonSadIcon />
+            <Form className="twitter-feedback-form card" onSubmit={this.handleSubmit}>
+                <div className="card-body">
+                    <button
+                        type="reset"
+                        className="btn btn-icon twitter-feedback-form__close"
+                        onClick={this.props.onDismiss}
+                    >
+                        <CloseIcon />
+                    </button>
+                    <div className="twitter-feedback-form__contents">
+                        <h2 className="twitter-feedback-form__title">{title}</h2>
+                        <div>
+                            <label>How was your experience?</label>
+                            <div className="twitter-feedback-form__experience">
+                                <button
+                                    type="button"
+                                    className={
+                                        'btn btn-icon twitter-feedback-form__emoticon' +
+                                        (this.state.experience === 'good'
+                                            ? ' twitter-feedback-form__emoticon--happy'
+                                            : '')
+                                    }
+                                    onClick={this.saveGoodExperience}
+                                >
+                                    <EmoticonIcon />
+                                </button>
+                                <button
+                                    type="button"
+                                    className={
+                                        'btn btn-icon twitter-feedback-form__emoticon' +
+                                        (this.state.experience === 'bad' ? ' twitter-feedback-form__emoticon--sad' : '')
+                                    }
+                                    onClick={this.saveBadExperience}
+                                >
+                                    <EmoticonSadIcon />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="form-group">
+                            <label>Tell us why:</label>{' '}
+                            <small className="text-muted">
+                                {this.calculateMaxCharacters() - this.state.description.length}{' '}
+                                {pluralize('character', this.calculateMaxCharacters() - this.state.description.length)}{' '}
+                                left
+                            </small>
+                            <textarea
+                                name="description"
+                                id="description"
+                                className="form-control "
+                                onChange={this.handleDescriptionChange}
+                                value={this.state.description}
+                                required={true}
+                                maxLength={this.calculateMaxCharacters()}
+                                autoFocus={true}
+                            />
+                        </div>
+                        <div>
+                            <button type="submit" className="btn btn-primary btn-md">
+                                <TwitterIcon className="icon icon-inline twitter-feedback-form__twitter-icon" />{' '}
+                                {submitLabel}
+                            </button>{' '}
+                            <button type="reset" className="btn btn-secondary" onClick={this.props.onDismiss}>
+                                Cancel
                             </button>
                         </div>
-                    </div>
-                    <div className="form-group">
-                        <label>Tell us why:</label>{' '}
-                        <small className="text-muted">
-                            {this.calculateMaxCharacters() - this.state.description.length}{' '}
-                            {pluralize('character', this.calculateMaxCharacters() - this.state.description.length)} left
-                        </small>
-                        <textarea
-                            name="description"
-                            id="description"
-                            className="form-control "
-                            onChange={this.handleDescriptionChange}
-                            value={this.state.description}
-                            required={true}
-                            maxLength={this.calculateMaxCharacters()}
-                            autoFocus={true}
-                        />
-                    </div>
-                    <div>
-                        <button type="submit" className="btn btn-primary btn-md">
-                            <TwitterIcon className="icon icon-inline twitter-feedback-form__twitter-icon" />{' '}
-                            {submitLabel}
-                        </button>{' '}
-                        <button type="reset" className="btn btn-secondary" onClick={this.props.onDismiss}>
-                            Cancel
-                        </button>
-                    </div>
-                    <div className="twitter-feedback-form__report-issue">
-                        Or{' '}
-                        <Link to={ISSUES_URL} onClick={this.reportIssue} target="_bank">
-                            report an issue
-                        </Link>.
+                        <div className="twitter-feedback-form__report-issue">
+                            Or{' '}
+                            <Link to={ISSUES_URL} onClick={this.reportIssue} target="_bank">
+                                report an issue
+                            </Link>.
+                        </div>
                     </div>
                 </div>
             </Form>

@@ -50,7 +50,7 @@ const Layout: React.SFC<LayoutProps> = props => {
     const hideNavbar = isSearchHomepage || isSiteInit
 
     return (
-        <div className={`layout theme ${props.isLightTheme ? 'theme-light' : 'theme-dark'}`}>
+        <div className="layout">
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
             {!needsSiteInit && !isSiteInit && !!props.user && <IntegrationsToast history={props.history} />}
             {!hideNavbar && <GlobalNavbar {...props} />}
@@ -118,6 +118,7 @@ class App extends React.Component<{}, AppState> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        document.body.classList.add('theme')
         this.subscriptions.add(
             currentUser.subscribe(user => this.setState({ user }), error => this.setState({ user: null }))
         )
@@ -125,10 +126,15 @@ class App extends React.Component<{}, AppState> {
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
+        document.body.classList.remove('theme')
+        document.body.classList.remove('theme-light')
+        document.body.classList.remove('theme-dark')
     }
 
     public componentDidUpdate(): void {
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.isLightTheme + '')
+        document.body.classList.toggle('theme-light', this.state.isLightTheme)
+        document.body.classList.toggle('theme-dark', !this.state.isLightTheme)
     }
 
     public render(): React.ReactFragment | null {

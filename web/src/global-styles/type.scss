@@ -3,14 +3,16 @@
 // Defined in https://www.figma.com/file/YVJp5yV7Bz8sueXekODPDEjd/styleguide-atoms?node-id=962%3A0
 
 .theme-light {
-    color: $body-color-light;
-
+    --body-color: #2b3750;
+    --body-bg: white;
     --text-muted: $color-light-text-2;
     --link-color: #566e9f;
     --link-hover-color: #1d2535;
 }
 
 .theme-dark {
+    --body-color: #f2f4f8;
+    --body-bg: #151c28;
     --text-muted: $color-text-1;
     --link-color: #a2b0cd;
     --link-hover-color: white;

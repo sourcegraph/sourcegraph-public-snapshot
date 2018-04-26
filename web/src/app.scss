@@ -44,8 +44,8 @@ $secondary-light: #f2f4f8;
 
 $theme-colors-light: ('secondary': $secondary-light);
 
-$body-color: #f2f4f8;
-$body-color-light: #2b3750;
+$body-color: var(--body-color);
+$body-bg: var(--body-bg);
 
 $text-muted: var(--text-muted);
 
@@ -128,19 +128,6 @@ body {
 #root {
     display: flex;
     width: 100%;
-}
-
-// Dark-themed elements
-
-.theme-dark {
-    border-color: $color-border;
-    background-color: $color-bg-1;
-}
-// Light-themed elements
-
-.theme-light {
-    border-color: $color-light-border;
-    background-color: $color-light-bg-1;
 }
 
 // Selection highlight is the background color for matched/highlighted tokens,

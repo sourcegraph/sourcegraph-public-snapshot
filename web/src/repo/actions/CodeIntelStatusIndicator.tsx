@@ -110,63 +110,66 @@ export class CodeIntelStatusIndicator extends React.Component<
                 >
                     <PowerPlugIcon className="icon-inline" />
                 </button>
-                <div className="code-intel-status-indicator__popover">
-                    {this.state.langServerOrError === undefined ? (
-                        <div className="text-center">
-                            <Loader className="icon-inline" />
-                        </div>
-                    ) : isErrorLike(this.state.langServerOrError) ? (
-                        <span className="text-danger">{upperFirst(this.state.langServerOrError.message)}</span>
-                    ) : this.state.langServerOrError === null ? (
-                        <>
-                            <h3>No language server connected</h3>
-                            Check{' '}
-                            <a href="http://langserver.org/" target="_blank">
-                                langserver.org
-                            </a>{' '}
-                            for {upperFirst(language)} language servers
-                        </>
-                    ) : (
-                        <>
-                            <h3>
-                                Connected to the <wbr />
-                                <a href={this.state.langServerOrError.homepageURL} target="_blank">
-                                    {this.state.langServerOrError.displayName || upperFirst(language)} language server
-                                </a>
-                            </h3>
-                            <ul className="list-unstyled">
-                                <CapabilityStatus
-                                    label="Hover tooltips"
-                                    provided={!!this.state.langServerOrError.capabilities.hoverProvider}
-                                />
-                                <CapabilityStatus
-                                    label="Go to definition"
-                                    provided={!!this.state.langServerOrError.capabilities.definitionProvider}
-                                />
-                                <CapabilityStatus
-                                    label="Find all references"
-                                    provided={!!this.state.langServerOrError.capabilities.referencesProvider}
-                                />
-                                <CapabilityStatus
-                                    label="Find implementations"
-                                    provided={!!this.state.langServerOrError.capabilities.implementationProvider}
-                                />
-                            </ul>
-                            {this.props.user &&
-                                this.props.user.siteAdmin && (
+                <div className="code-intel-status-indicator__popover card">
+                    <div className="card-body">
+                        {this.state.langServerOrError === undefined ? (
+                            <div className="text-center">
+                                <Loader className="icon-inline" />
+                            </div>
+                        ) : isErrorLike(this.state.langServerOrError) ? (
+                            <span className="text-danger">{upperFirst(this.state.langServerOrError.message)}</span>
+                        ) : this.state.langServerOrError === null ? (
+                            <>
+                                <h3>No language server connected</h3>
+                                Check{' '}
+                                <a href="http://langserver.org/" target="_blank">
+                                    langserver.org
+                                </a>{' '}
+                                for {upperFirst(language)} language servers
+                            </>
+                        ) : (
+                            <>
+                                <h3>
+                                    Connected to the <wbr />
+                                    <a href={this.state.langServerOrError.homepageURL} target="_blank">
+                                        {this.state.langServerOrError.displayName || upperFirst(language)} language
+                                        server
+                                    </a>
+                                </h3>
+                                <ul className="list-unstyled">
+                                    <CapabilityStatus
+                                        label="Hover tooltips"
+                                        provided={!!this.state.langServerOrError.capabilities.hoverProvider}
+                                    />
+                                    <CapabilityStatus
+                                        label="Go to definition"
+                                        provided={!!this.state.langServerOrError.capabilities.definitionProvider}
+                                    />
+                                    <CapabilityStatus
+                                        label="Find all references"
+                                        provided={!!this.state.langServerOrError.capabilities.referencesProvider}
+                                    />
+                                    <CapabilityStatus
+                                        label="Find implementations"
+                                        provided={!!this.state.langServerOrError.capabilities.implementationProvider}
+                                    />
+                                </ul>
+                                {this.props.user &&
+                                    this.props.user.siteAdmin && (
+                                        <p className="mt-2 mb-0">
+                                            <Link to="/site-admin/code-intelligence">Manage</Link>
+                                        </p>
+                                    )}
+                                {this.state.langServerOrError.issuesURL && (
                                     <p className="mt-2 mb-0">
-                                        <Link to="/site-admin/code-intelligence">Manage</Link>
+                                        <a href={this.state.langServerOrError.issuesURL} target="_blank">
+                                            Report issue
+                                        </a>
                                     </p>
                                 )}
-                            {this.state.langServerOrError.issuesURL && (
-                                <p className="mt-2 mb-0">
-                                    <a href={this.state.langServerOrError.issuesURL} target="_blank">
-                                        Report issue
-                                    </a>
-                                </p>
-                            )}
-                        </>
-                    )}
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         )
