@@ -62,7 +62,6 @@ func TestAccessTokens_List(t *testing.T) {
 	}
 	ctx := testContext()
 
-	// Creating a non-site-admin now that the site has already been initialized.
 	u1, err := Users.Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u1",
@@ -140,7 +139,6 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	}
 	ctx := testContext()
 
-	// Creating a non-site-admin now that the site has already been initialized.
 	u1, err := Users.Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u1",
