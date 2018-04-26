@@ -21,6 +21,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where in the webui where modes that can only be determined by the full filename (not just the file extension) of a path weren't supported (Dockerfiles are the first example of this).
 * Fixed an issue where the graphiql console failed when variables are specified.
 * In Sourcegraph Data Center, Indexed Search no longer maintains its own git clones. This significantly reduces disk size requirements for the indexed-search pod.
+* (Sourcegraph Server) Fixed an issue where language server Docker containers would not be automatically restarted if they crashed.
 
 ### Added
 
