@@ -27,7 +27,7 @@ export function fetchLangServer(
         { language }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.langServer) {
+            if (!data || !data.site) {
                 throw createAggregateError(errors)
             }
             return data.site.langServer
