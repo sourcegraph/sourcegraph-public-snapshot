@@ -177,12 +177,15 @@ func CookieMiddleware(next http.Handler) http.Handler {
 // If the request is a simple CORS request, or if neither of these is true, then the cookie is not
 // used to authenticate the request. The request is still allowed to proceed (but will be
 // unauthenticated unless some other authentication is provided, such as an access token).
-func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string) http.Handler {
+func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, isTrustedOrigin func(*http.Request) bool) http.Handler {
 	corsAllowHeader = textproto.CanonicalMIMEHeaderKey(corsAllowHeader)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie, Authorization, "+corsAllowHeader)
 
 		_, isTrusted := r.Header[corsAllowHeader]
+		if !isTrusted {
+			isTrusted = isTrustedOrigin(r)
+		}
 		if !isTrusted {
 			contentType := r.Header.Get("Content-Type")
 			isTrusted = contentType == "application/json" || contentType == "application/json; charset=utf-8"

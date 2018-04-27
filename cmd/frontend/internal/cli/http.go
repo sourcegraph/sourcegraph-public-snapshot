@@ -36,8 +36,8 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	apiHandler = authMiddleware.API(apiHandler) // auth provider
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
-	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader) // API accepts cookies with special header
-	apiHandler = httpapi.AccessTokenAuthMiddleware(apiHandler)                       // API accepts access tokens
+	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
+	apiHandler = httpapi.AccessTokenAuthMiddleware(apiHandler)                                        // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// App handler (HTML pages).
@@ -120,4 +120,22 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// isTrustedOrigin returns whether the HTTP request's Origin is trusted to initiate authenticated
+// cross-origin requests.
+func isTrustedOrigin(r *http.Request) bool {
+	requestOrigin := r.Header.Get("Origin")
+
+	var isExtensionRequest bool
+	if !disableBrowserExtension {
+		isExtensionRequest = requestOrigin == devExtension || requestOrigin == prodExtension
+	}
+
+	var isCORSAllowedRequest bool
+	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {
+		isCORSAllowedRequest = isAllowedOrigin(requestOrigin, strings.Fields(corsOrigin))
+	}
+
+	return isExtensionRequest || isCORSAllowedRequest
 }
