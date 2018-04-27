@@ -27,10 +27,6 @@
         margin-bottom: 0.5rem;
     }
 
-    &__report-issue {
-        margin: 0.5rem 0 0.5rem 0;
-    }
-
     &__emoticon {
         font-size: 24px;
         padding: 0.5rem;
@@ -50,11 +46,5 @@
                 color: $danger !important;
             }
         }
-    }
-
-    // TODO: increase btn standard height 2.215rem so that it is not distorted by an icon
-    &__twitter-icon {
-        font-size: 12px;
-        vertical-align: sub;
     }
 }

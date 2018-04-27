@@ -120,16 +120,15 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                                 autoFocus={true}
                             />
                         </div>
-                        <div>
-                            <button type="submit" className="btn btn-primary btn-md">
-                                <TwitterIcon className="icon icon-inline twitter-feedback-form__twitter-icon" />{' '}
-                                {submitLabel}
+                        <div className="form-group">
+                            <button type="submit" className="btn btn-primary">
+                                <TwitterIcon className="icon icon-inline" /> {submitLabel}
                             </button>{' '}
                             <button type="reset" className="btn btn-secondary" onClick={this.props.onDismiss}>
                                 Cancel
                             </button>
                         </div>
-                        <div className="twitter-feedback-form__report-issue">
+                        <div>
                             Or{' '}
                             <Link to={ISSUES_URL} onClick={this.reportIssue} target="_bank">
                                 report an issue
