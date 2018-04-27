@@ -12,6 +12,7 @@ import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/Browse
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
 import { ResizablePanel } from '../panel/Panel'
+import { getModeFromPath } from '../util'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { lprToRange, parseHash } from '../util/url'
 import { CodeIntelStatusIndicator } from './actions/CodeIntelStatusIndicator'
@@ -220,9 +221,10 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             ) => {
                                 const objectType: 'blob' | 'tree' =
                                     routeComponentProps.match.params.objectType || 'tree'
+                                const filePath = routeComponentProps.match.params.filePath
                                 return (
                                     <>
-                                        {routeComponentProps.match.params.filePath && (
+                                        {filePath && (
                                             <>
                                                 <RepoHeaderActionPortal
                                                     position="nav"
@@ -231,7 +233,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                             key="path"
                                                             repoPath={this.props.repo.uri}
                                                             rev={this.props.rev}
-                                                            filePath={routeComponentProps.match.params.filePath}
+                                                            filePath={filePath}
                                                             isDir={objectType === 'tree'}
                                                         />
                                                     }
@@ -243,10 +245,13 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         element={
                                                             <CodeIntelStatusIndicator
                                                                 key="code-intel-status"
-                                                                user={this.props.user}
+                                                                userIsSiteAdmin={
+                                                                    !!this.props.user && this.props.user.siteAdmin
+                                                                }
                                                                 repoPath={this.props.repo.uri}
                                                                 commitID={resolvedRev.commitID}
-                                                                filePath={routeComponentProps.match.params.filePath}
+                                                                filePath={filePath}
+                                                                language={getModeFromPath(filePath)}
                                                             />
                                                         }
                                                     />

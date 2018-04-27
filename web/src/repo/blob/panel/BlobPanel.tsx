@@ -33,6 +33,7 @@ import {
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { getModeFromPath } from '../../../util'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition } from '../../index'
@@ -122,11 +123,21 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         (a, b) => a.repoPath === b.repoPath && a.commitID === b.commitID && a.filePath === b.filePath
                     ),
                     switchMap(subject => {
-                        type PartialStateUpdate = Pick<State, 'serverCapabilitiesOrError'>
-                        return fetchServerCapabilities(subject).pipe(
+                        const language = getModeFromPath(subject.filePath)
+                        if (!language) {
+                            return [{ serverCapabilitiesOrError: undefined }]
+                        }
+                        return fetchServerCapabilities({
+                            filePath: subject.filePath,
+                            repoPath: subject.repoPath,
+                            commitID: subject.commitID,
+                            language,
+                        }).pipe(
                             catchError(error => [asError(error)]),
-                            map(c => ({ serverCapabilitiesOrError: c } as PartialStateUpdate)),
-                            startWith<PartialStateUpdate>({ serverCapabilitiesOrError: undefined })
+                            map(c => ({ serverCapabilitiesOrError: c })),
+                            startWith<Pick<State, 'serverCapabilitiesOrError'>>({
+                                serverCapabilitiesOrError: undefined,
+                            })
                         )
                     })
                 )
@@ -301,9 +312,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         hidden={
                             !this.state.serverCapabilitiesOrError ||
                             isErrorLike(this.state.serverCapabilitiesOrError) ||
-                            // TODO(sqs): implementationProvider is in vscode-languageserver-node repo tag v4.0.0 but is
-                            // not published to npm yet.
-                            !(this.state.serverCapabilitiesOrError as any).implementationProvider
+                            !this.state.serverCapabilitiesOrError.implementationProvider
                         }
                         element={
                             <FileLocations

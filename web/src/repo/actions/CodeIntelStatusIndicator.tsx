@@ -9,7 +9,6 @@ import { forkJoin, Observable, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ServerCapabilities } from 'vscode-languageserver-protocol'
 import { AbsoluteRepoFile } from '..'
-import * as GQL from '../../backend/graphqlschema'
 import { EMODENOTFOUND, fetchServerCapabilities } from '../../backend/lsp'
 import { getModeFromPath } from '../../util'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -35,13 +34,15 @@ const CapabilityStatus: React.StatelessComponent<{ label: string; provided: bool
 
 const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
     obs.pipe(
-        distinctUntilChanged((a, b) => isEqual(a, b)),
-        switchMap(props => {
-            const mode = getModeFromPath(props.filePath)
-            if (!mode) {
+        distinctUntilChanged((a, b) => a.language === b.language),
+        switchMap(({ repoPath, commitID, filePath, language }) => {
+            if (!language) {
                 return [null]
             }
-            return forkJoin(fetchLangServer(mode), fetchServerCapabilities(props)).pipe(
+            return forkJoin(
+                fetchLangServer(language),
+                fetchServerCapabilities({ repoPath, commitID, filePath, language })
+            ).pipe(
                 map(([langServer, capabilities]): LangServer => ({
                     displayName: (langServer && langServer.displayName) || undefined,
                     homepageURL: (langServer && langServer.homepageURL) || undefined,
@@ -55,7 +56,8 @@ const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
     )
 
 interface CodeIntelStatusIndicatorProps extends AbsoluteRepoFile {
-    user: GQL.IUser | null
+    userIsSiteAdmin: boolean
+    language?: string
 }
 interface CodeIntelStatusIndicatorState {
     /** The language server, error, undefined while loading or null if no langserver registered */
@@ -71,6 +73,17 @@ export class CodeIntelStatusIndicator extends React.Component<
     private subscription = this.componentUpdates
         .pipe(propsToStateUpdate)
         .subscribe(stateUpdate => this.setState(stateUpdate))
+
+    public shouldComponentUpdate(
+        nextProps: CodeIntelStatusIndicatorProps,
+        nextState: CodeIntelStatusIndicatorState
+    ): boolean {
+        return (
+            !isEqual(this.state, nextState) ||
+            this.props.userIsSiteAdmin !== nextProps.userIsSiteAdmin ||
+            this.props.language !== nextProps.language
+        )
+    }
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
@@ -154,12 +167,11 @@ export class CodeIntelStatusIndicator extends React.Component<
                                         provided={!!this.state.langServerOrError.capabilities.implementationProvider}
                                     />
                                 </ul>
-                                {this.props.user &&
-                                    this.props.user.siteAdmin && (
-                                        <p className="mt-2 mb-0">
-                                            <Link to="/site-admin/code-intelligence">Manage</Link>
-                                        </p>
-                                    )}
+                                {this.props.userIsSiteAdmin && (
+                                    <p className="mt-2 mb-0">
+                                        <Link to="/site-admin/code-intelligence">Manage</Link>
+                                    </p>
+                                )}
                                 {this.state.langServerOrError.issuesURL && (
                                     <p className="mt-2 mb-0">
                                         <a href={this.state.langServerOrError.issuesURL} target="_blank">

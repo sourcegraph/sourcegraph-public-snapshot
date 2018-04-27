@@ -8,7 +8,14 @@ import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
-import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
+import {
+    AbsoluteRepo,
+    AbsoluteRepoFile,
+    AbsoluteRepoFilePosition,
+    AbsoluteRepoLanguageFile,
+    makeRepoURI,
+    parseRepoURI,
+} from '../repo'
 import { siteFlags } from '../site/backend'
 import { getModeFromPath } from '../util'
 import { normalizeAjaxError } from '../util/errors'
@@ -133,7 +140,7 @@ const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Obser
     sendLSPRequests(ctx, path, req).pipe(map(results => results[1]))
 
 export const fetchServerCapabilities = memoizeObservable(
-    (pos: AbsoluteRepoFile): Observable<ServerCapabilities> =>
+    (pos: AbsoluteRepoLanguageFile): Observable<ServerCapabilities> =>
         sendLSPRequests(pos, pos.filePath, {
             method: 'textDocument/didOpen',
             params: {
@@ -142,7 +149,7 @@ export const fetchServerCapabilities = memoizeObservable(
                 },
             } as DidOpenTextDocumentParams,
         }).pipe(map(results => (results[0] as InitializeResult).capabilities)),
-    makeRepoURI
+    ({ language }) => language
 )
 
 export const fetchHover = memoizeObservable(
