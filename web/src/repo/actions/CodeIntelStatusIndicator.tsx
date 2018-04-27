@@ -138,15 +138,14 @@ export class CodeIntelStatusIndicator extends React.Component<
                                 <a href="http://langserver.org/" target="_blank">
                                     langserver.org
                                 </a>{' '}
-                                for {upperFirst(language)} language servers
+                                for {language} language servers
                             </>
                         ) : (
                             <>
                                 <h3>
                                     Connected to the <wbr />
                                     <a href={this.state.langServerOrError.homepageURL} target="_blank">
-                                        {this.state.langServerOrError.displayName || upperFirst(language)} language
-                                        server
+                                        {this.state.langServerOrError.displayName || language} language server
                                     </a>
                                 </h3>
                                 <ul className="list-unstyled">
