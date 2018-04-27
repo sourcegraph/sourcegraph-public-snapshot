@@ -61,7 +61,15 @@ const config: webpack.Configuration = {
         mainFields: ['es2015', 'module', 'browser', 'main'],
         alias: rxPaths(),
     },
-    stats: 'minimal',
+    stats: {
+        all: false,
+        modules: true,
+        maxModules: 0,
+        errors: true,
+        warnings: true,
+        warningsFilter: warning =>
+            /.\/node_modules\/monaco-editor\/.*\/editorSimpleWorker.js\n.*dependency is an expression/.test(warning),
+    } as webpack.Options.Stats,
     module: {
         rules: [
             ((): webpack.NewUseRule => ({
