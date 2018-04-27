@@ -77,9 +77,8 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			return nil, errors.Wrap(err, "langservers.State")
 		}
 
-		if conf.IsDataCenter(conf.DeployType()) || conf.IsDev(conf.DeployType()) {
-			// Running in Data Center. We cannot execute Docker commands, so we
-			// have less information.
+		if conf.IsDataCenter(conf.DeployType()) || (conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker()) {
+			// We cannot execute Docker commands, so we have less information.
 			results = append(results, &langServerResolver{
 				language:    language,
 				displayName: langservers.StaticInfo[language].DisplayName,
