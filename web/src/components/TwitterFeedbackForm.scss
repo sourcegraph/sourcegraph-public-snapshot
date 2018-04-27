@@ -8,26 +8,14 @@
     max-width: 90vw;
     margin: 0 1rem;
 
-    display: flex;
-
     &__close {
         position: absolute;
         top: 0.25rem;
         right: 0.25rem;
     }
 
-    &__contents {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-    }
-
-    &__experience {
-        display: flex;
-        margin-bottom: 0.5rem;
-    }
-
     &__emoticon {
+        display: inline-flex;
         font-size: 24px;
         padding: 0.5rem;
 
