@@ -42,11 +42,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
                 <div className="alert alert-warning api-console__alert">
                     The API console uses your <strong>real production data</strong>.
                 </div>
-                <iframe
-                    ref={this.setIframeRef}
-                    className="api-console__iframe"
-                    src={`/.api/graphql${this.state.hash}`}
-                />
+                <iframe ref={this.setIframeRef} className="api-console__iframe" src={`/.graphiql${this.state.hash}`} />
             </div>
         )
     }
