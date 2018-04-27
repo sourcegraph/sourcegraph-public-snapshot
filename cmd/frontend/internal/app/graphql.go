@@ -91,7 +91,7 @@ var graphiqlPage = []byte(`
 					onEditVariables: onEditVariables,
 					onEditOperationName: onEditOperationName,
 					fetcher: graphQLFetcher,
-					defaultQuery: "# Type queries here, with completion, validation, and hovers.\n#\n# Here's an example query to get you started:\n\nquery {\n  currentUser {\n    username\n  }\n  site {\n    repositories(first: 1) {\n      nodes {\n        uri\n      }\n    }\n  }\n}\n",
+					defaultQuery: "# Type queries here, with completion, validation, and hovers.\n#\n# Here's an example query to get you started:\n\nquery {\n  currentUser {\n    username\n  }\n  site {\n    repositories(first: 1) {\n      nodes {\n        name\n      }\n    }\n  }\n}\n",
 				}),
 				node
 			);
