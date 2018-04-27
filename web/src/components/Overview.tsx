@@ -15,7 +15,7 @@ export const OverviewItem: React.SFC<{
     link?: string
     children: React.ReactNode | React.ReactNode[]
     actions?: React.ReactFragment
-    icon?: React.ComponentType<{ className?: string }>
+    icon?: React.ComponentType<{ className: string }>
 }> = ({ link, children, actions, icon: Icon }) => {
     let e: React.ReactFragment = (
         <>

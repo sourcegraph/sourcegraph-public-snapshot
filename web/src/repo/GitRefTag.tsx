@@ -22,7 +22,7 @@ export const GitRefTag: React.SFC<Props> = ({ gitRef, onMouseDown }: Props) => {
     const abbrevName = gitRef.name.slice(gitRef.prefix.length)
     let kind = ''
     let url = githubRepoURL || ''
-    let Icon: React.ComponentType<{ className?: string }> | undefined
+    let Icon: React.ComponentType<{ className: string }> | undefined
     switch (gitRef.prefix) {
         case 'refs/heads/':
             kind = 'branch'

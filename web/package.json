@@ -138,7 +138,7 @@
     "write-file-webpack-plugin": "^4.2.0"
   },
   "dependencies": {
-    "@sourcegraph/icons": "^1.15.0",
+    "@sourcegraph/icons": "^1.14.0",
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "^4.0.0",
     "copy-to-clipboard": "^3.0.7",

@@ -71,7 +71,7 @@ interface Props {
     /**
      * The icon to show left to the title.
      */
-    icon: React.ComponentType<{ className?: string }>
+    icon: React.ComponentType<{ className: string }>
 
     /**
      * Called when the file's search result is selected.

@@ -62,7 +62,7 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
     repo,
     indexedRef,
 }) => {
-    let Icon: React.ComponentType<{ className?: string }>
+    let Icon: React.ComponentType<{ className: string }>
     let iconClassName: string
     if (indexedRef.indexed && indexedRef.current) {
         Icon = CircleCheckmarkIcon
