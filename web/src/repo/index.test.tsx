@@ -10,7 +10,7 @@ describe('repo/index', () => {
     let repo: typeof _repo
 
     before(async function(): Promise<void> {
-        this.timeout(10000)
+        this.timeout(20000)
         repo = (await createTestBundle(__dirname + '/index.tsx')).load().module
     })
 
