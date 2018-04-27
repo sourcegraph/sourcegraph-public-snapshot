@@ -1792,7 +1792,7 @@ type User implements Node, ConfigurationSubject {
         # Returns the first n access tokens from the list.
         first: Int
     ): AccessTokenConnection!
-    # Whether the viewer has admin privileges on this user. The user had admin privileges on their own user, and
+    # Whether the viewer has admin privileges on this user. The user has admin privileges on their own user, and
     # site admins have admin privileges on all users.
     viewerCanAdminister: Boolean!
 }
