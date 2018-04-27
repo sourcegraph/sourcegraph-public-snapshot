@@ -16,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -167,9 +168,21 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
 	var hasSeenGrepLikeFields, hasSeenInvertedGrepLikeFields bool
-	addGrepLikeFlags := func(args *[]string, gitLogFlag string, field string, extraValues []string) error {
+	addGrepLikeFlags := func(args *[]string, gitLogFlag string, field string, extraValues []string, expandUsernames bool) error {
 		values, minusValues := op.query.RegexpPatterns(field)
 		values = append(values, extraValues...)
+
+		if expandUsernames {
+			var err error
+			values, err = expandUsernamesToEmails(ctx, values)
+			if err != nil {
+				return errors.WithMessage(err, fmt.Sprintf("expanding usernames in field %s", field))
+			}
+			minusValues, err = expandUsernamesToEmails(ctx, minusValues)
+			if err != nil {
+				return errors.WithMessage(err, fmt.Sprintf("expanding usernames in field -%s", field))
+			}
+		}
 
 		hasSeenGrepLikeFields = hasSeenGrepLikeFields || len(values) > 0
 		hasSeenInvertedGrepLikeFields = hasSeenInvertedGrepLikeFields || len(minusValues) > 0
@@ -198,13 +211,13 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 		return nil
 	}
-	if err := addGrepLikeFlags(&args, "--grep", searchquery.FieldMessage, op.extraMessageValues); err != nil {
+	if err := addGrepLikeFlags(&args, "--grep", searchquery.FieldMessage, op.extraMessageValues, false); err != nil {
 		return nil, false, false, err
 	}
-	if err := addGrepLikeFlags(&args, "--author", searchquery.FieldAuthor, nil); err != nil {
+	if err := addGrepLikeFlags(&args, "--author", searchquery.FieldAuthor, nil, true); err != nil {
 		return nil, false, false, err
 	}
-	if err := addGrepLikeFlags(&args, "--committer", searchquery.FieldCommitter, nil); err != nil {
+	if err := addGrepLikeFlags(&args, "--committer", searchquery.FieldCommitter, nil, true); err != nil {
 		return nil, false, false, err
 	}
 
@@ -444,4 +457,50 @@ func commitSearchResultsToSearchResults(results []*commitSearchResultResolver) [
 		results2[i] = &searchResultResolver{diff: result}
 	}
 	return results2
+}
+
+// expandUsernamesToEmails expands references to usernames to mention all possible (known and
+// verified) email addresses for the user.
+//
+// For example, given a list ["foo", "@alice"] where the user "alice" has 2 email addresses
+// "alice@example.com" and "alice@example.org", it would return ["foo", "alice@example\\.com",
+// "alice@example\\.org"].
+func expandUsernamesToEmails(ctx context.Context, values []string) (expandedValues []string, err error) {
+	expandOne := func(ctx context.Context, value string) ([]string, error) {
+		if isPossibleUsernameReference := strings.HasPrefix(value, "@"); !isPossibleUsernameReference {
+			return nil, nil
+		}
+
+		user, err := db.Users.GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		} else if err != nil {
+			return nil, err
+		}
+		emails, err := db.UserEmails.ListByUser(ctx, user.ID)
+		if err != nil {
+			return nil, err
+		}
+		values := make([]string, 0, len(emails))
+		for _, email := range emails {
+			if email.VerifiedAt != nil {
+				values = append(values, regexp.QuoteMeta(email.Email))
+			}
+		}
+		return values, nil
+	}
+
+	expandedValues = make([]string, 0, len(values))
+	for _, v := range values {
+		x, err := expandOne(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		if x == nil {
+			expandedValues = append(expandedValues, v) // not a username or couldn't expand
+		} else {
+			expandedValues = append(expandedValues, x...)
+		}
+	}
+	return expandedValues, nil
 }

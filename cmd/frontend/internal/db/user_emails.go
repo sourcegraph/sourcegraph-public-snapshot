@@ -156,5 +156,9 @@ func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface
 }
 
 func (*userEmails) ListByUser(ctx context.Context, userID int32) ([]*UserEmail, error) {
+	if Mocks.UserEmails.ListByUser != nil {
+		return Mocks.UserEmails.ListByUser(userID)
+	}
+
 	return (&userEmails{}).getBySQL(ctx, "WHERE user_id=$1 ORDER BY created_at ASC, email ASC", userID)
 }

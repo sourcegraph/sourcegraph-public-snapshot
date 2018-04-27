@@ -6,8 +6,10 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
@@ -91,4 +93,32 @@ func TestSearchCommitsInRepo(t *testing.T) {
 
 func (c *commitSearchResultResolver) String() string {
 	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", c.commit, c.diffPreview, c.messagePreview)
+}
+
+func TestExpandUsernamesToEmails(t *testing.T) {
+	resetMocks()
+	db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+		if want := "alice"; username != want {
+			t.Errorf("got %q, want %q", username, want)
+		}
+		return &types.User{ID: 123}, nil
+	}
+	db.Mocks.UserEmails.ListByUser = func(id int32) ([]*db.UserEmail, error) {
+		if want := int32(123); id != want {
+			t.Errorf("got %v, want %v", id, want)
+		}
+		t := time.Now()
+		return []*db.UserEmail{
+			{Email: "alice@example.com", VerifiedAt: &t},
+			{Email: "alice@example.org", VerifiedAt: &t},
+		}, nil
+	}
+
+	x, err := expandUsernamesToEmails(context.Background(), []string{"foo", "@alice"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"foo", `alice@example\.com`, `alice@example\.org`}; !reflect.DeepEqual(x, want) {
+		t.Errorf("got %q, want %q", x, want)
+	}
 }
