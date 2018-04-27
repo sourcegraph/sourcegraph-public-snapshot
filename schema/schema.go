@@ -197,7 +197,6 @@ type SiteConfiguration struct {
 	HtmlHeadTop                       string                      `json:"htmlHeadTop,omitempty"`
 	HttpToHttpsRedirect               bool                        `json:"httpToHttpsRedirect,omitempty"`
 	Langservers                       []Langservers               `json:"langservers,omitempty"`
-	LicenseKey                        string                      `json:"licenseKey,omitempty"`
 	LightstepAccessToken              string                      `json:"lightstepAccessToken,omitempty"`
 	LightstepProject                  string                      `json:"lightstepProject,omitempty"`
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`

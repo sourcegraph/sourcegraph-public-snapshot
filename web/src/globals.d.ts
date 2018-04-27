@@ -22,11 +22,6 @@ interface ImmutableUser {
     readonly externalID: string
 }
 
-interface License {
-    SiteID: string
-    Expiry: DateTime
-}
-
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */

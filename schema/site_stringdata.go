@@ -341,10 +341,6 @@ const SiteSchemaJSON = `{
       "description": "HTML to inject at the bottom of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
       "type": "string"
     },
-    "licenseKey": {
-      "description": "License key. You must purchase a license to obtain this.",
-      "type": "string"
-    },
     "maxReposToSearch": {
       "description":
         "The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
