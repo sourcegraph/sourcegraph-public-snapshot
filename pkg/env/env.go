@@ -38,10 +38,11 @@ var (
 func init() {
 	lvl, _ := log15.LvlFromString(LogLevel)
 	lvlFilterStderr := func(maxLvl log15.Lvl) io.Writer {
-		if lvl <= maxLvl {
-			return os.Stderr
+		// Note that log15 values look like e.g. LvlCrit == 0, LvlDebug == 4
+		if lvl > maxLvl {
+			return ioutil.Discard
 		}
-		return ioutil.Discard
+		return os.Stderr
 	}
 	DebugOut = lvlFilterStderr(log15.LvlDebug)
 	InfoOut = lvlFilterStderr(log15.LvlInfo)
