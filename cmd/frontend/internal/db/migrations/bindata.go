@@ -156,6 +156,8 @@
 // ../../../../../migrations/1524724144_add_access_tokens_fields.up.sql
 // ../../../../../migrations/1524942857_trim_site_config.down.sql
 // ../../../../../migrations/1524942857_trim_site_config.up.sql
+// ../../../../../migrations/1524949295_simplify_initialization.down.sql
+// ../../../../../migrations/1524949295_simplify_initialization.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3343,6 +3345,46 @@ func _1524942857_trim_site_configUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1524949295_simplify_initializationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x14\xcc\xc1\x0d\x82\x31\x08\x05\xe0\xbb\x53\xbc\xa3\x1e\xea\x1e\x8e\xc1\xaf\xb4\x12\xe9\xc3\x50\x1a\xe3\xf6\xc6\x05\xbe\xd6\x70\x63\x29\xcb\x82\xe2\xfe\x85\x6b\x2f\x1c\x2e\x7c\xe1\xd0\xbb\xec\xa5\xa8\xa7\xa6\xc2\x16\x18\x98\x2a\x34\x8e\xbe\x1d\xe7\x48\xd8\x7c\x47\x96\xb0\x2e\x78\xc4\x87\x6d\xda\x48\xf9\x5b\xd7\xd3\x2f\x00\x00\xff\xff\x97\x2d\x6a\x67\x5a\x00\x00\x00")
+
+func _1524949295_simplify_initializationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1524949295_simplify_initializationDownSql,
+		"1524949295_simplify_initialization.down.sql",
+	)
+}
+
+func _1524949295_simplify_initializationDownSql() (*asset, error) {
+	bytes, err := _1524949295_simplify_initializationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1524949295_simplify_initialization.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1524949295_simplify_initializationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\x51\x4d\xaf\xd3\x30\x10\xbc\xf7\x57\xcc\xb1\x45\x2f\xf9\x03\x88\x03\x82\x20\x2a\x3d\xf4\xe0\x25\x08\x6e\x68\x6b\x6f\x9a\x15\x89\x0d\xf6\x9a\x34\xfc\x7a\xb4\x49\x40\x95\xb8\x79\x3f\x66\x76\x66\x5c\x55\x38\xf7\xa0\xb0\x20\x8b\x72\xc6\xcc\x89\x21\x01\x84\xac\xa4\x8c\x79\xb0\x46\xc9\x9c\xf6\x99\x4b\x4c\xca\x1e\x47\xae\xaf\xf5\x03\xfa\x14\x27\xb4\xed\xd3\x09\x97\xa2\xd0\x81\x57\x1e\xcc\x94\x11\xa2\x1e\xaa\x0a\x12\x44\x85\x46\xf9\xcd\xfe\xc1\x16\x8c\xdf\x86\x98\x69\x41\x1f\xd3\x06\x20\x3f\x49\xc8\xd0\x88\xc4\x2e\xfe\xe2\x84\x59\x74\x88\x45\x91\x38\xc7\xa4\x12\xae\x36\xe4\x1b\xbb\xb2\x16\xed\xa7\x47\x63\xff\x59\x38\x09\x67\x4c\x14\x0a\x8d\xe3\x52\x1f\xaa\xca\xfa\xdd\x20\x79\xb3\x30\x71\x50\xf0\x4d\x93\x38\x32\x87\x3a\xc4\xcc\xbb\xdb\x55\xbd\x0e\xa4\xb8\x90\xdf\xd6\x6b\x9c\xd5\x04\x66\xea\x19\x17\x76\x54\x32\xdf\x7b\x78\xa5\xa9\xb0\x5d\xf0\x91\x57\x8f\xe0\xdb\x0f\x63\xb4\x0c\xc9\x7b\x51\x89\x81\x46\x78\x52\x02\x05\x0f\x51\x4c\xf4\x9d\xf3\x1a\x22\xc8\xb9\x58\x82\x6e\x31\x4a\x0c\xc8\x26\x4c\xc7\x65\x7f\x70\xc2\x51\xc2\xaa\xc9\x8e\x50\xf8\x87\x90\xed\xda\x44\x9e\xef\x22\x83\xf4\x7b\xa8\x94\xd8\x52\x8d\x56\xfd\x05\xe5\x53\x7d\xf8\xfc\xf1\xed\xeb\xae\x59\x21\xdf\x5c\x0c\xbd\x5c\xd1\x36\xdd\x7f\x96\xf0\xe5\x7d\xf3\xdc\xa0\xf9\x7a\x6e\xbb\xf6\xd8\x36\x8f\xcd\x9b\x0e\x2f\xf0\xee\xf9\xe9\xc3\xf6\xfd\xa7\x97\x87\x3f\x01\x00\x00\xff\xff\x11\x9c\x8c\xc5\x2d\x02\x00\x00")
+
+func _1524949295_simplify_initializationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1524949295_simplify_initializationUpSql,
+		"1524949295_simplify_initialization.up.sql",
+	)
+}
+
+func _1524949295_simplify_initializationUpSql() (*asset, error) {
+	bytes, err := _1524949295_simplify_initializationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1524949295_simplify_initialization.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3551,6 +3593,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1524724144_add_access_tokens_fields.up.sql":                  _1524724144_add_access_tokens_fieldsUpSql,
 	"1524942857_trim_site_config.down.sql":                        _1524942857_trim_site_configDownSql,
 	"1524942857_trim_site_config.up.sql":                          _1524942857_trim_site_configUpSql,
+	"1524949295_simplify_initialization.down.sql":                 _1524949295_simplify_initializationDownSql,
+	"1524949295_simplify_initialization.up.sql":                   _1524949295_simplify_initializationUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3750,6 +3794,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1524724144_add_access_tokens_fields.up.sql":                  &bintree{_1524724144_add_access_tokens_fieldsUpSql, map[string]*bintree{}},
 	"1524942857_trim_site_config.down.sql":                        &bintree{_1524942857_trim_site_configDownSql, map[string]*bintree{}},
 	"1524942857_trim_site_config.up.sql":                          &bintree{_1524942857_trim_site_configUpSql, map[string]*bintree{}},
+	"1524949295_simplify_initialization.down.sql":                 &bintree{_1524949295_simplify_initializationDownSql, map[string]*bintree{}},
+	"1524949295_simplify_initialization.up.sql":                   &bintree{_1524949295_simplify_initializationUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
