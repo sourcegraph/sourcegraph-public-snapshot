@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -20,11 +21,42 @@ func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 	if err == nil {
 		return configuration, nil
 	}
-	err = o.tryInsertNew(ctx)
+	err = o.tryInsertNew(ctx, globalDB)
 	if err != nil {
 		return nil, err
 	}
 	return o.getConfiguration(ctx)
+}
+
+// ensureInitialized ensures the site is marked as having been initialized. If the site was already
+// initialized, it does nothing. It returns whether the site was already initialized prior to the
+// call.
+//
+// 🚨 SECURITY: Initialization is an important security measure. If a new account is created on a
+// site that is not initialized, and no other accounts exist, it is granted site admin
+// privileges. If the site *has* been initialized, then a new account is not granted site admin
+// privileges (even if all other users are deleted). This reduces the risk of (1) a site admin
+// accidentally deleting all user accounts and opening up their site to any attacker becoming a site
+// admin and (2) a bug in user account creation code letting attackers create site admin accounts.
+func (o *siteConfig) ensureInitialized(ctx context.Context, dbh interface {
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}) (alreadyInitialized bool, err error) {
+	if err := o.tryInsertNew(ctx, dbh); err != nil {
+		return false, err
+	}
+
+	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
+	// would see this initialized value as false and then set it to true below.
+	if err := dbh.QueryRowContext(ctx, `SELECT initialized FROM site_config FOR UPDATE LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+		return false, err
+	}
+
+	if !alreadyInitialized {
+		_, err = dbh.ExecContext(ctx, "UPDATE site_config SET initialized=true")
+	}
+
+	return alreadyInitialized, err
 }
 
 func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, error) {
@@ -36,12 +68,14 @@ func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, e
 	return configuration, err
 }
 
-func (o *siteConfig) tryInsertNew(ctx context.Context) error {
+func (o *siteConfig) tryInsertNew(ctx context.Context, dbh interface {
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}) error {
 	siteID, err := uuid.NewUUID()
 	if err != nil {
 		return err
 	}
-	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(site_id) values($1)", siteID)
+	_, err = dbh.ExecContext(ctx, "INSERT INTO site_config(site_id, initialized) values($1, false)", siteID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "site_config_pkey" {

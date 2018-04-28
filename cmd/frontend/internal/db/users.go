@@ -191,30 +191,24 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		err = tx.Commit()
 	}()
 
-	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
-	// would see this initialized value as false.
-	var siteInitialized bool
-	if err := tx.QueryRowContext(ctx, `SELECT initialized FROM site_config FOR UPDATE LIMIT 1`).Scan(&siteInitialized); err != nil && err != sql.ErrNoRows {
+	// Creating the initial site admin user is equivalent to initializing the
+	// site. ensureInitialized runs in the transaction, so we are guaranteed that the user account
+	// creation and site initialization operations occur atomically (to guarantee to the legitimate
+	// site admin that if they successfully initialize the server, then no attacker's account could
+	// have been created as a site admin).
+	alreadyInitialized, err := (&siteConfig{}).ensureInitialized(ctx, tx)
+	if err != nil {
 		return nil, err
 	}
-	if siteInitialized && info.FailIfNotInitialUser {
+	if alreadyInitialized && info.FailIfNotInitialUser {
 		return nil, errCannotCreateUser{"site_already_initialized"}
-	}
-
-	if !siteInitialized {
-		// Creating the initial site admin user is equivalent to initializing the site. This prevents other initial
-		// site admin users from being created (to prevent a race condition where an attacker could create a site
-		// admin account simultaneously with the real site admin).
-		if _, err := tx.ExecContext(ctx, `UPDATE site_config SET initialized=true`); err != nil {
-			return nil, err
-		}
 	}
 
 	var siteAdmin bool
 	err = tx.QueryRowContext(
 		ctx,
 		"INSERT INTO users(external_id, username, display_name, avatar_url, external_provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
-		dbExternalID, info.Username, info.DisplayName, avatarURL, dbExternalProvider, createdAt, updatedAt, passwd, !siteInitialized).Scan(&id, &siteAdmin)
+		dbExternalID, info.Username, info.DisplayName, avatarURL, dbExternalProvider, createdAt, updatedAt, passwd, !alreadyInitialized).Scan(&id, &siteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
