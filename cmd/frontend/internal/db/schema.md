@@ -339,12 +339,10 @@ Foreign-key constraints:
 
 # Table "public.site_config"
 ```
-   Column    |           Type           |       Modifiers        
--------------+--------------------------+------------------------
- site_id     | uuid                     | not null
- email       | text                     | 
- updated_at  | timestamp with time zone | 
- initialized | boolean                  | not null default false
+   Column    |  Type   |       Modifiers        
+-------------+---------+------------------------
+ site_id     | uuid    | not null
+ initialized | boolean | not null default false
 Indexes:
     "site_config_pkey" PRIMARY KEY, btree (site_id)
 

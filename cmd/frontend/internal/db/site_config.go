@@ -29,21 +29,11 @@ func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 
 func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, error) {
 	configuration := &types.SiteConfig{}
-	err := globalDB.QueryRowContext(ctx, "SELECT site_id, updated_at, initialized FROM site_config LIMIT 1").Scan(
+	err := globalDB.QueryRowContext(ctx, "SELECT site_id, initialized FROM site_config LIMIT 1").Scan(
 		&configuration.SiteID,
-		&configuration.UpdatedAt,
 		&configuration.Initialized,
 	)
 	return configuration, err
-}
-
-func (o *siteConfig) UpdateConfiguration(ctx context.Context, email string) error {
-	_, err := o.Get(ctx)
-	if err != nil {
-		return err
-	}
-	_, err = globalDB.ExecContext(ctx, "UPDATE site_config SET email=$1, updated_at=now()", email)
-	return err
 }
 
 func (o *siteConfig) tryInsertNew(ctx context.Context) error {
@@ -51,7 +41,7 @@ func (o *siteConfig) tryInsertNew(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(site_id, updated_at) values($1, now())", siteID)
+	_, err = globalDB.ExecContext(ctx, "INSERT INTO site_config(site_id) values($1)", siteID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "site_config_pkey" {

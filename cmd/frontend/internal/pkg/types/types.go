@@ -55,8 +55,6 @@ type DependencyReferencesOptions struct {
 
 type SiteConfig struct {
 	SiteID      string
-	Email       string
-	UpdatedAt   string
 	Initialized bool // whether the initial site admin account has been created
 }
 

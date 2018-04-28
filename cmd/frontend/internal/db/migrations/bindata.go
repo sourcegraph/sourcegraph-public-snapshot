@@ -154,6 +154,8 @@
 // ../../../../../migrations/1524535307_remove_survey_responses_updated_at.up.sql
 // ../../../../../migrations/1524724144_add_access_tokens_fields.down.sql
 // ../../../../../migrations/1524724144_add_access_tokens_fields.up.sql
+// ../../../../../migrations/1524942857_trim_site_config.down.sql
+// ../../../../../migrations/1524942857_trim_site_config.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3301,6 +3303,46 @@ func _1524724144_add_access_tokens_fieldsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1524942857_trim_site_configDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\xce\x2c\x49\x8d\x4f\xce\xcf\x4b\xcb\x4c\x57\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xcd\x4d\xcc\xcc\x51\x28\x49\xad\x28\xb1\xe6\x22\x42\x79\x69\x41\x4a\x62\x49\x6a\x4a\x7c\x62\x89\x42\x49\x66\x6e\x6a\x71\x49\x62\x6e\x81\x42\x79\x66\x49\x06\x98\xab\x50\x95\x9f\x97\x6a\xcd\x05\x08\x00\x00\xff\xff\xca\x70\x09\x14\x77\x00\x00\x00")
+
+func _1524942857_trim_site_configDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1524942857_trim_site_configDownSql,
+		"1524942857_trim_site_config.down.sql",
+	)
+}
+
+func _1524942857_trim_site_configDownSql() (*asset, error) {
+	bytes, err := _1524942857_trim_site_configDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1524942857_trim_site_config.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1524942857_trim_site_configUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\xce\x2c\x49\x8d\x4f\xce\xcf\x4b\xcb\x4c\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xcd\x4d\xcc\xcc\xb1\xe6\x22\x46\x69\x69\x41\x4a\x62\x49\x6a\x4a\x7c\x62\x89\x35\x17\x20\x00\x00\xff\xff\x4f\x97\xce\x41\x5b\x00\x00\x00")
+
+func _1524942857_trim_site_configUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1524942857_trim_site_configUpSql,
+		"1524942857_trim_site_config.up.sql",
+	)
+}
+
+func _1524942857_trim_site_configUpSql() (*asset, error) {
+	bytes, err := _1524942857_trim_site_configUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1524942857_trim_site_config.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3507,6 +3549,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1524535307_remove_survey_responses_updated_at.up.sql":        _1524535307_remove_survey_responses_updated_atUpSql,
 	"1524724144_add_access_tokens_fields.down.sql":                _1524724144_add_access_tokens_fieldsDownSql,
 	"1524724144_add_access_tokens_fields.up.sql":                  _1524724144_add_access_tokens_fieldsUpSql,
+	"1524942857_trim_site_config.down.sql":                        _1524942857_trim_site_configDownSql,
+	"1524942857_trim_site_config.up.sql":                          _1524942857_trim_site_configUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3704,6 +3748,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1524535307_remove_survey_responses_updated_at.up.sql":        &bintree{_1524535307_remove_survey_responses_updated_atUpSql, map[string]*bintree{}},
 	"1524724144_add_access_tokens_fields.down.sql":                &bintree{_1524724144_add_access_tokens_fieldsDownSql, map[string]*bintree{}},
 	"1524724144_add_access_tokens_fields.up.sql":                  &bintree{_1524724144_add_access_tokens_fieldsUpSql, map[string]*bintree{}},
+	"1524942857_trim_site_config.down.sql":                        &bintree{_1524942857_trim_site_configDownSql, map[string]*bintree{}},
+	"1524942857_trim_site_config.up.sql":                          &bintree{_1524942857_trim_site_configUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

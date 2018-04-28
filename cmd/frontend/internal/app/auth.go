@@ -110,15 +110,6 @@ func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotIni
 		}
 	}
 
-	if usr.SiteAdmin {
-		// Record initial site admin email.
-		if err := db.SiteConfig.UpdateConfiguration(r.Context(), creds.Email); err != nil {
-			log15.Warn("Failed to save initial site admin email.", "error", err)
-			http.Error(w, "Failed to save initial site admin email.", http.StatusInternalServerError)
-			return
-		}
-	}
-
 	// Write the session cookie
 	if session.StartNewSession(w, r, actor, 0); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
