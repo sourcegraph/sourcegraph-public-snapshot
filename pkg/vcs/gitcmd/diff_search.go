@@ -156,7 +156,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 	// Run `git log` oneline command and read list of matching commits.
 	onelineCmd := r.command("git", onelineArgs...)
-	logTimeout := deadline.Sub(time.Now()) / 2
+	logTimeout := time.Until(deadline) / 2
 	tr.LazyPrintf("git log %v with timeout %s", onelineCmd.Args, logTimeout)
 	ctxLog, cancel := withTimeout(ctx, logTimeout)
 	data, complete, err := readUntilTimeout(ctxLog, onelineCmd)
@@ -230,7 +230,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 	showCmd := r.command("git", showArgs...)
 	var complete2 bool
-	showTimeout := time.Duration(float64(deadline.Sub(time.Now())) * 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
+	showTimeout := time.Duration(float64(time.Until(deadline)) * 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
 	tr.LazyPrintf("git show %v with timeout %s", showCmd.Args, showTimeout)
 	ctxShow, cancel := withTimeout(ctx, showTimeout)
 	data, complete2, err = readUntilTimeout(ctxShow, showCmd)
