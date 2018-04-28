@@ -59,6 +59,7 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
                         value={this.state.email}
                         disabled={this.state.loading}
                         autoFocus={true}
+                        autoComplete="username email"
                     />
                 </div>
                 <div className="form-group">
@@ -68,6 +69,7 @@ class SignInForm extends React.Component<SignInFormProps, SignInFormState> {
                         value={this.state.password}
                         required={true}
                         disabled={this.state.loading}
+                        autoComplete="current-password"
                     />
                     {userForgotPassword && (
                         <small className="form-text">

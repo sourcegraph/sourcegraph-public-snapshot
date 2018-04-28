@@ -25,6 +25,7 @@ export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> 
         type="email"
         placeholder="Email"
         spellCheck={false}
+        autoComplete="email"
     />
 )
 
@@ -36,6 +37,7 @@ export const UsernameInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement
         placeholder="Username"
         spellCheck={false}
         pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
+        autoComplete="username"
     />
 )
 

@@ -90,6 +90,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
                             disabled={this.state.loading}
                             name="oldPassword"
                             placeholder=" "
+                            autoComplete="current-password"
                         />
                     </div>
                     <div className="form-group">
@@ -100,6 +101,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
                             disabled={this.state.loading}
                             name="newPassword"
                             placeholder=" "
+                            autoComplete="new-password"
                         />
                     </div>
                     <div className="form-group">
@@ -111,6 +113,7 @@ export class UserSettingsAccountPage extends React.Component<Props, State> {
                             name="newPasswordConfirmation"
                             placeholder=" "
                             inputRef={this.setNewPasswordConfirmationField}
+                            autoComplete="new-password"
                         />
                     </div>
                     <button

@@ -39,9 +39,11 @@ class PasswordResetForm extends React.Component<{}, State> {
                     <p>Enter your new password.</p>
                     <div className="form-group">
                         <PasswordInput
+                            name="password"
                             onChange={this.onPasswordFieldChange}
                             value={this.state.password}
                             required={true}
+                            autoComplete="new-password"
                         />
                     </div>
                     <button className="btn btn-primary btn-block" type="submit">
@@ -68,9 +70,11 @@ class PasswordResetForm extends React.Component<{}, State> {
                         onChange={this.onEmailFieldChange}
                         value={this.state.email}
                         type="email"
+                        name="email"
                         spellCheck={false}
                         placeholder="Email"
                         required={true}
+                        autoComplete="email"
                     />
                 </div>
                 <button className="btn btn-primary btn-block" type="submit">

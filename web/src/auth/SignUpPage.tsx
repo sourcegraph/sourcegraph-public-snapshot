@@ -87,6 +87,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         value={this.state.password}
                         required={true}
                         disabled={this.state.loading}
+                        autoComplete="new-password"
                     />
                 </div>
                 <div className="form-group">
