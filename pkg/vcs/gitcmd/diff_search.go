@@ -36,7 +36,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	deadline, ok := ctx.Deadline()
 	var timeoutLabel string
 	if ok {
-		timeoutLabel = deadline.Sub(time.Now()).String()
+		timeoutLabel = time.Until(deadline).String()
 	} else {
 		timeoutLabel = "unlimited"
 	}
