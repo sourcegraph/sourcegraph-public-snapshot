@@ -37,7 +37,7 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 
 // serveSiteInit handles submission of the site initialization form, where the initial site admin user is created.
 func serveSiteInit(w http.ResponseWriter, r *http.Request) {
-	// This only succeeds if the site is not yet initialized nad there are no users yet. It doesn't
+	// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
 	// allow signups after those conditions become true, so we don't need to check auth.allowSignup
 	// in site config.
 	doServeSignUp(w, r, true)
