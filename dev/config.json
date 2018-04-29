@@ -125,7 +125,7 @@
     ]
   },
   "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK",
-  "corsOrigin": "https://github.com http://phabricator.sgdev.org"
+  "corsOrigin": "https://github.com https://phabricator.sgdev.org"
 
   // To test SAML, set "auth.provider" to "saml" above and uncomment this section. When you access Sourcegraph,
   // log into Okta as ghopper@bankofmanhattan.com with password "Password1".
