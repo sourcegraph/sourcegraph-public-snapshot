@@ -5,11 +5,11 @@ export const DirectImportRepoAlert: React.StatelessComponent<{ className?: strin
     <>
         {!window.context.isRunningDataCenter && (
             <div className={`alert alert-info ${className}`}>
-                <InfoIcon className="icon-inline" /> Admins can directly import large repos that are already on the host
-                machine by following{' '}
+                <InfoIcon className="icon-inline" /> Very large repository? See{' '}
                 <a href="https://about.sourcegraph.com/docs/config/repositories#add-repositories-already-cloned-to-disk">
-                    these instructions
-                </a>.
+                    how to reuse an existing local clone
+                </a>{' '}
+                to speed this up.
             </div>
         )}
     </>
