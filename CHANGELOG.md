@@ -25,7 +25,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
-* More detailed progress information is displayed on pages that are waiting for repos to clone.
+* More detailed progress information is displayed on pages that are waiting for repositories to clone.
 * Admins can now see charts illustrating daily, weekly, and monthly unique user counts by visiting the site-admin Analytics page.
 * Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
 * Access tokens are now supported for all authentication providers (including OpenID and SAML, which were previously not supported).
@@ -35,7 +35,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
-* Missing repos no longer appear as search results. Instead, a count of repos that were not found is displayed above the search results. Hovering over the count will reveal the names of the missing repos.
+* Missing repositories no longer appear as search results. Instead, a count of repositories that were not found is displayed above the search results. Hovering over the count will reveal the names of the missing repositories.
 * "Show more" on the search results page will now reveal results that have already been fetched (if such results exist) without needing to do a new query.
 * The bottom panel (on a file) now shows more tabs, including docstrings, multiple definitions, references (as before), external references grouped by repository, implementations (if supported by the language server), and file history.
 * The repository sidebar file tree is much faster on massive repositories (200,000+ files)
@@ -43,7 +43,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Fixed
 
 * In Sourcegraph Data Center, searches no longer block if the index is unavailable (e.g. after the index pod restarts). Instead, it respects the normal search timeout and reports the situation to the user if the index is not yet available.
-* Repo results are no longer returned for filters that are not supported (e.g. if `file:` is part of the search query)
+* Repository results are no longer returned for filters that are not supported (e.g. if `file:` is part of the search query)
 * Fixed an issue where file tree elements may be scrolled out of view on page load.
 * Fixed an issue that caused "Could not ensure repository updated" log messages when trying to update a large number of repositories from gitolite.
 * When using an HTTP authentication proxy (`"auth.provider": "http-header"`), usernames are now properly normalized (special characters including `.` replaced with `-`). This fixes an issue preventing users from signing in if their username contained these special characters.
@@ -105,7 +105,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Behavior changes
 
-* Read-only forks on GitHub are no longer synced by default. If you want to add a readonly fork, navigate directly to the repository page on Sourcegraph to add it (e.g. https://sourcegraph.mycompany.internal/github.com/owner/repo). This prevents your repo list from being cluttered with a large number of private forks of a private repository that you have access to. One notable example is https://github.com/EpicGames/UnrealEngine.
+* Read-only forks on GitHub are no longer synced by default. If you want to add a readonly fork, navigate directly to the repository page on Sourcegraph to add it (e.g. https://sourcegraph.mycompany.internal/github.com/owner/repo). This prevents your repositories list from being cluttered with a large number of private forks of a private repository that you have access to. One notable example is https://github.com/EpicGames/UnrealEngine.
 * SAML cookies now expire after 90 days. The previous behavior was every 1 hour, which was unintentionally low.
 
 ## 2.6.4
@@ -174,7 +174,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where search would return results with empty file contents for matches in submodules with indexing enabled. Searching over submodules is not supported yet, so these (empty) results have been removed.
 * Fixed an issue where match highlighting would be incorrect on lines that contained multibyte characters.
 * Fixed an issue where search suggestions would always link to master (and 404) even if the file only existed on a branch. Now suggestions always link to the revision that is being searched over.
-* Fixed an issue where all file and repo links on the search results page (for all search results types) would always link to master branch, even if the results only existed in another branch. Now search results links always link to the revision that is being searched over.
+* Fixed an issue where all file and repository links on the search results page (for all search results types) would always link to master branch, even if the results only existed in another branch. Now search results links always link to the revision that is being searched over.
 * The first user to sign up for a (not-yet-initialized) server is made the site admin, even if they signed up using SSO. Previously if the first user signed up using SSO, they would not be a site admin and no site admin could be created.
 * Fixed an issue where our code intelligence archive cache (in `lsp-proxy`) would not evict items from the disk. This would lead to disks running out of free space.
 
@@ -187,8 +187,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Bug fixes
 
 * Fixed issue where Sourcegraph Data Center would incorrectly show "An update is available".
-* Fixed Phabricator links to repos
-* Searches over a single repo are now less likely to immediately time out the first time they are searched.
+* Fixed Phabricator links to repositories
+* Searches over a single repository are now less likely to immediately time out the first time they are searched.
 * Fixed a bug where `auth.provider == "http-header"` would incorrectly require builtin authentication / block site access when `auth.public == "false"`.
 
 ### Phabricator Integration Changes
@@ -286,7 +286,7 @@ When using `auth.provider == "builtin"`, two new important changes mean that a S
 ### Changed
 
 * We optionally read `SOURCEGRAPH_CONFIG` from `$DATA_DIR/config.json`.
-* SSH key required to clone repos from GitHub Enterprise when using a self-signed certificate.
+* SSH key required to clone repositories from GitHub Enterprise when using a self-signed certificate.
 
 ## 0.3 - 13 December 2017
 

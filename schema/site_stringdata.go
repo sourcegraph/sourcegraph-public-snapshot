@@ -62,7 +62,7 @@ const SiteSchemaJSON = `{
           "default": "disabled"
         },
         "showMissingRepos": {
-          "description": "Enables or disables showing repos that were not searched",
+          "description": "Enables or disables showing repositories that were not searched",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -138,7 +138,7 @@ const SiteSchemaJSON = `{
             "type": "string"
           },
           "repos": {
-            "description": "The list of repos available on Phabricator.",
+            "description": "The list of repositories available on Phabricator.",
             "type": "array",
             "items": {
               "type": "object",
@@ -150,7 +150,7 @@ const SiteSchemaJSON = `{
                   "type": "string"
                 },
                 "callsign": {
-                  "description": "The unique Phabricator identifier for the repo, like 'MUX'.",
+                  "description": "The unique Phabricator identifier for the repository, like 'MUX'.",
                   "type": "string"
                 }
               }
@@ -343,7 +343,7 @@ const SiteSchemaJSON = `{
     },
     "maxReposToSearch": {
       "description":
-        "The maximum number of repos to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
+        "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
       "type": "integer",
       "default": 500
     },
@@ -730,7 +730,7 @@ const SiteSchemaJSON = `{
         },
         "blacklist": {
           "description":
-            "Regular expression to filter repos from auto-discovery, so they will not get cloned automatically.",
+            "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
           "type": "string"
         },
         "phabricatorMetadataCommand": {
