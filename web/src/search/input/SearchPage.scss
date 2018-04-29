@@ -1,3 +1,4 @@
+@import '../../nav/GlobalNavbar';
 @import './SearchFilterChips';
 @import './QueryInput';
 @import '../saved-queries/SavedQueries';
@@ -48,8 +49,8 @@
 
     .nav-links {
         flex: 0 0 auto;
-        margin-top: 1rem;
         width: 100%;
+        height: $navbar-top-row-height;
     }
 
     &__help {
