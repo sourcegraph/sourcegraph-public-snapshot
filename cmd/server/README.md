@@ -46,7 +46,7 @@ gcloud docker -- run \
  --publish 7080:7080 --rm \
  --volume $HOME/.sourcegraph/config:/etc/sourcegraph \
  --volume $HOME/.sourcegraph/data:/var/opt/sourcegraph \
- -v /var/run/docker.sock:/var/run/docker.sock
+ -v /var/run/docker.sock:/var/run/docker.sock \
  us.gcr.io/sourcegraph-dev/server:08248_2017-12-14_8dad5ab
 ```
 
