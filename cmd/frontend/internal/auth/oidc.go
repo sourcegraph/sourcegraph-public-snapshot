@@ -42,7 +42,7 @@ type UserClaims struct {
 // under the auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
 //
 // The OIDC spec (http://openid.net/specs/openid-connect-core-1_0.html) describes an authentication protocol
-// that involves 3 parties: the Relying Party (e.g., Sourcegraph Server), the OpenID Provider (e.g., Okta, OneLogin,
+// that involves 3 parties: the Relying Party (e.g., Sourcegraph), the OpenID Provider (e.g., Okta, OneLogin,
 // or another SSO provider), and the End User (e.g., a user's web browser).
 //
 // The middlewares this method returns implement two things: (1) the OIDC Authorization Code Flow

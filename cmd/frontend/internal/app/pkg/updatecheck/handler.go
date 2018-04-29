@@ -46,7 +46,7 @@ func getLatestRelease(deployType string) build {
 }
 
 // Handler is an HTTP handler that responds with information about software updates
-// for Sourcegraph Server.
+// for Sourcegraph.
 func Handler(w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 

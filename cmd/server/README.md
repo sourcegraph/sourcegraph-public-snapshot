@@ -1,6 +1,6 @@
-# Sourcegraph Server - Docker images
+# Sourcegraph release process
 
-The user facing documentation lives in
+The user-facing documentation lives in
 [sourcegraph/website](https://github.com/sourcegraph/website). Quick links:
 
 * https://github.com/sourcegraph/website/blob/master/data/docs/server/docs.md

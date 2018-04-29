@@ -32,7 +32,7 @@ In addition to authentication flow, there are a few differences between SSO and 
 </tr>
 </table>
 
-Builtin authentication and the different forms of SSO authentication are all mutually exclusive. Only one should be enabled for any given Sourcegraph Server instance.
+Builtin authentication and the different forms of SSO authentication are all mutually exclusive. Only one should be enabled for any given Sourcegraph instance.
 
 ### Session implementation
 

@@ -1,5 +1,5 @@
 // Package useractivity provides an interface to update and access information about
-// individual and aggregate Sourcegraph Server users' activity levels.
+// individual and aggregate Sourcegraph users' activity levels.
 //
 // Note that this package should not be used on sourcegraph.com, only on self-hosted
 // deployments.

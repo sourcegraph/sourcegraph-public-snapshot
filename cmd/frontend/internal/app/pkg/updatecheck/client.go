@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-// Status of the check for software updates for Sourcegraph Server.
+// Status of the check for software updates for Sourcegraph.
 type Status struct {
 	Date          time.Time // the time that the last check completed
 	Err           error     // the error that occurred, if any

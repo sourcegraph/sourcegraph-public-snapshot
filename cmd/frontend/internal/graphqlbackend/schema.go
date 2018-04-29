@@ -261,7 +261,7 @@ type Mutation {
     addUserToOrganization(organization: ID!, usernameOrEmail: String!): EmptyResponse!
     # Removes a user from an organization.
     removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
-    # Adds a Phabricator repository to the Sourcegraph server.
+    # Adds a Phabricator repository to Sourcegraph.
     addPhabricatorRepo(
         # The callsign, for example "MUX".
         callsign: String!
@@ -2084,14 +2084,12 @@ type Site implements ConfigurationSubject {
         # Returns the first n access tokens from the list.
         first: Int
     ): AccessTokenConnection!
-    # The build version of the Sourcegraph Server software that is running on this site (of the form
+    # The build version of the Sourcegraph software that is running on this site (of the form
     # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
     buildVersion: String!
-    # The product version of the Sourcegraph Server software that is running on this site (in SemVer
-    # form, like 1.2.3).
+    # The product version of the Sourcegraph software that is running on this site.
     productVersion: String!
-    # Information about software updates for version of Sourcegraph Server that
-    # this site is running.
+    # Information about software updates for the version of Sourcegraph that this site is running.
     updateCheck: UpdateCheck!
     # Samples of recent telemetry payloads, visible to the site administrator only.
     telemetrySamples: [String!]!
@@ -2136,7 +2134,7 @@ type SiteConfiguration {
     source: String!
 }
 
-# Information about software updates for Sourcegraph Server.
+# Information about software updates for Sourcegraph.
 type UpdateCheck {
     # Whether an update check is currently in progress.
     pending: Boolean!

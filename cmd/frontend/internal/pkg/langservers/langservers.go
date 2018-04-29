@@ -581,7 +581,7 @@ func init() {
 }
 
 // setupNetworking handles setting up the networking required for our
-// Sourcegraph Server container and language server containers.
+// sourcegraph/server container and language server containers.
 //
 // This function MUST be invoked inside at init.
 func setupNetworking() {
@@ -675,7 +675,7 @@ func deleteLSPBridge() {
 	}
 }
 
-// createLSPBridge creates a bridge network for the language servers to communicate with Sourcegraph Server.
+// createLSPBridge creates a bridge network for the language servers to communicate with sourcegraph/server.
 func createLSPBridge() {
 	// Create the necessary LSP bridge network.
 	_, err := dockerCmd("network", "create", "--driver", "bridge", "lsp")
