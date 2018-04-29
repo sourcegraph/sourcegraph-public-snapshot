@@ -145,7 +145,7 @@ type SearchScope struct {
 	Value       string `json:"value"`
 }
 
-// Settings Configuration settings for users and organizations on Sourcegraph Server.
+// Settings Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
 	Motd                   []string                  `json:"motd,omitempty"`
 	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
