@@ -19,7 +19,7 @@ export class SiteInitPage extends React.Component<Props> {
         }
 
         return (
-            <div className="site-init-page theme-light">
+            <div className="site-init-page">
                 <div className="site-init-page__content">
                     <img
                         className="site-init-page__logo"
