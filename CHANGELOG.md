@@ -4,9 +4,13 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased Changes
 
+### Changed
+
+### Fixed
+
 ### Added
 
-* Site admins may now view all access tokens site-wide (for all users) and revoke tokens from the new access tokens page in the site admin area.
+## 2.7.5
 
 ### Changed
 
@@ -30,6 +34,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
 * Access tokens are now supported for all authentication providers (including OpenID and SAML, which were previously not supported).
 * The new `motd` setting (in global, organization, and user settings) displays specified messages at the top of all pages.
+* Site admins may now view all access tokens site-wide (for all users) and revoke tokens from the new access tokens page in the site admin area.
 
 ## 2.7.0
 
