@@ -98,8 +98,11 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 
 	appendCommonDashDashArgs := func(args *[]string) {
 		// If we have exclude paths, we need to effectively unset the --max-count because we can't
-		// filter out changes that match the exclude path (because there's no way to pass "exclude"
-		// file path globs).
+		// filter out changes that match the exclude path (because there's no way to use full
+		// regexps in git pathspecs).
+		//
+		// TODO(sqs): use git pathspec %(...) extensions to reduce the number of cases where this is
+		// necessary; see https://git-scm.com/docs/gitglossary.html#def_pathspec.
 		var addMaxCount500 bool
 		if opt.Paths.ExcludePattern != "" {
 			addMaxCount500 = true
@@ -220,7 +223,8 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	// Need --patch (TODO(sqs): or just --raw, which is smaller) if we are filtering by file paths,
 	// because we post-filter by path since we need to support regexps. Just the commit message
 	// alone would be insufficient for our post-filtering.
-	if opt.Paths.ExcludePattern != "" || len(opt.Paths.IncludePatterns) > 0 {
+	hasPathFilters := opt.Paths.ExcludePattern != "" || len(opt.Paths.IncludePatterns) > 0
+	if hasPathFilters {
 		showArgs = append(showArgs, "--patch")
 	}
 	appendCommonQueryArgs(&showArgs)
@@ -275,9 +279,14 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			return nil, false, err
 		}
 
-		if len(data) >= 1 && data[0] == '\x00' {
-			// No diff patch (probably no --patch arg).
-			data = data[1:]
+		if len(data) == 0 || (len(data) >= 1 && data[0] == '\x00') {
+			// No diff patch.
+			if hasPathFilters {
+				continue // patch was empty for the filtered paths
+			}
+			if len(data) >= 1 {
+				data = data[1:]
+			}
 		} else if len(data) >= 1 && data[0] == '\n' {
 			data = data[1:]
 
