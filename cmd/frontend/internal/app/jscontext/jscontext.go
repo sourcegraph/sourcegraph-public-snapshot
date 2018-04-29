@@ -133,7 +133,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Site:                publicSiteConfiguration,
 		LikelyDockerOnMac:   likelyDockerOnMac(),
 		NeedServerRestart:   conf.NeedServerRestart(),
-		IsRunningDataCenter: os.Getenv("GOREMAN_RPC_ADDR") != "",
+		IsRunningDataCenter: os.Getenv("GOREMAN_RPC_ADDR") == "",
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
