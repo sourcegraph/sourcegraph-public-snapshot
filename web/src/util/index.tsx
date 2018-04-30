@@ -129,9 +129,13 @@ function getModeFromExtension(ext: string): string | undefined {
             return 'cs'
 
         // C++
+        case 'c':
+        case 'cc':
+        case 'cpp':
         case 'c++':
         case 'h++':
         case 'hh':
+        case 'h':
             return 'cpp'
 
         // Dart
