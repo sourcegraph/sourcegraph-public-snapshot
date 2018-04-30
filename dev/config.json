@@ -130,7 +130,20 @@
   // AUTHENTICATION
   //
   // To test OpenID and SAML, create Okta applications on our Okta testing account at
-  // https://dev-433675.oktapreview.com (beyang@sourcegraph.com / I3muNS06Ide6DjeZrIjC14Ua).
+  // https://dev-433675-admin.oktapreview.com (beyang@sourcegraph.com / I3muNS06Ide6DjeZrIjC14Ua).
+  //
+  // OPENID
+  //
+  // To test OpenID, set "auth.provider" to "openidconnect" and uncomment this section. When you access Sourcegraph,
+  // log into Okta as ghopper@bankofmanhattan.com with password "Password1".
+  //
+  // "appURL": "http://localhost:3080",
+  // "auth.openidconnect": {
+  //   // Assumes app URL is http://localhost:3080.
+  //   "issuer": "https://dev-433675.oktapreview.com",
+  //   "clientID": "0oaevek08cpSUP6iX0h7",
+  //   "clientSecret": "m7qQ-b0HePaXcj4hFYhTwKspNnyFRNBzTaYMFI7i"
+  // }
   //
   // SAML
   //
