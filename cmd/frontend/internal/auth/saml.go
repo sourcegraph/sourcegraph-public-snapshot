@@ -136,8 +136,8 @@ func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actr, err := getActorFromSAML(r, idpID)
 		if err != nil {
-			log15.Error("could not map SAML assertion to user", "error", err)
-			http.Error(w, "could not map SAML assertion to user", http.StatusInternalServerError)
+			log15.Error("Error looking up SAML-authenticated user.", "error", err)
+			http.Error(w, "Error looking up SAML-authenticated user. "+couldNotGetUserDescription, http.StatusInternalServerError)
 			return
 		}
 		h.ServeHTTP(w, r.WithContext(actor.WithActor(r.Context(), actr)))

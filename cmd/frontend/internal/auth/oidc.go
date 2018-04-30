@@ -281,8 +281,8 @@ func newOIDCLoginHandler(createCtx context.Context, appURL string) (http.Handler
 		}
 		actr, err := getActor(ctx, idToken, userInfo, &claims)
 		if err != nil {
-			log15.Error("Could not get user for OIDC authentication", "error", err)
-			http.Error(w, "Could not get user (a user with your email or username may already exist).", http.StatusInternalServerError)
+			log15.Error("Error looking up OpenID-authenticated user.", "error", err)
+			http.Error(w, "Error looking up OpenID-authenticated user. "+couldNotGetUserDescription, http.StatusInternalServerError)
 			return
 		}
 		if err := session.StartNewSession(w, r, actr, 0); err != nil {

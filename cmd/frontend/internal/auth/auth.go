@@ -98,3 +98,5 @@ func NormalizeUsername(name string) (string, error) {
 }
 
 var disallowedCharacter = regexp.MustCompile(`[^a-zA-Z0-9\-]`)
+
+const couldNotGetUserDescription = "This occurs most frequently when there is an existing user account with the same username or email that was created from a different authentication provider."
