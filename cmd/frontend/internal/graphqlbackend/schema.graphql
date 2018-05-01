@@ -5,6 +5,8 @@
 #! Lines that begin with #! are treated as internal comments. They are stripped
 #! from the schema before the documentation for each field is generated.
 #!
+#! See docs/api.md for guidance on schema evolution.
+#!
 schema {
     query: Query
     mutation: Mutation
