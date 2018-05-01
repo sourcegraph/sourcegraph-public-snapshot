@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -226,6 +228,18 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		if info.LastActive.Add(info.ExpiryPeriod).Before(time.Now()) {
 			DeleteSession(w, r)
 			return actor.WithActor(r.Context(), &actor.Actor{})
+		}
+
+		// Check that user still exists.
+		if _, err := db.Users.GetByID(r.Context(), info.Actor.UID); err != nil {
+			if errcode.IsNotFound(err) {
+				DeleteSession(w, r)
+			} else {
+				// Don't delete session, since the error might be an ephemeral DB error, and we don't
+				// want that to cause all active users to be signed out.
+				log15.Error("Error looking up user for session.", "uid", info.Actor.UID, "error", err)
+			}
+			return r.Context() // not authenticated
 		}
 
 		// Renew session

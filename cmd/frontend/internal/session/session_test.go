@@ -1,18 +1,29 @@
 package session
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func TestStartDeleteSession(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
+
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
 
 	// Start new session
 	w := httptest.NewRecorder()
@@ -103,6 +114,11 @@ func TestSessionExpiry(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123}
@@ -138,7 +154,18 @@ func TestCookieMiddleware(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
-	actors := []*actor.Actor{{UID: 123}, {UID: 456}}
+	actors := []*actor.Actor{{UID: 123}, {UID: 456}, {UID: 789}}
+
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		if id == actors[0].UID {
+			return &types.User{ID: id}, nil
+		}
+		if id == actors[1].UID {
+			return nil, &errcode.Mock{IsNotFound: true}
+		}
+		return nil, errors.New("x") // other error
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
 
 	// Start new sessions for all actors
 	authedReqs := make([]*http.Request, len(actors))
@@ -160,6 +187,7 @@ func TestCookieMiddleware(t *testing.T) {
 	testcases := []struct {
 		req      *http.Request
 		expActor *actor.Actor
+		deleted  bool // whether the session was deleted
 	}{{
 		req:      httptest.NewRequest("GET", "/", nil),
 		expActor: &actor.Actor{},
@@ -168,15 +196,25 @@ func TestCookieMiddleware(t *testing.T) {
 		expActor: actors[0],
 	}, {
 		req:      authedReqs[1],
-		expActor: actors[1],
-	}}
+		expActor: &actor.Actor{},
+		deleted:  true,
+	},
+		{
+			req:      authedReqs[2],
+			expActor: &actor.Actor{},
+		},
+	}
 	for _, testcase := range testcases {
+		rr := httptest.NewRecorder()
 		CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			gotActor := actor.FromContext(r.Context())
 			if !reflect.DeepEqual(testcase.expActor, gotActor) {
 				t.Errorf("on authenticated request, got actor %+v, expected %+v", gotActor, testcase.expActor)
 			}
-		})).ServeHTTP(httptest.NewRecorder(), testcase.req)
+		})).ServeHTTP(rr, testcase.req)
+		if deleted := strings.Contains(rr.Header().Get("Set-Cookie"), "sg-session=;"); deleted != testcase.deleted {
+			t.Errorf("got deleted %v, want %v", deleted, testcase.deleted)
+		}
 	}
 }
 

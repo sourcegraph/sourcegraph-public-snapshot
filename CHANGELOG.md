@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+* If a user's account is deleted, session cookies for that user are no longer considered valid.
+
 ### Added
 
 ## 2.7.5
