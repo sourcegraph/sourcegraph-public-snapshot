@@ -198,9 +198,5 @@ required = [
   version = "2.0.0-preview.2"
 
 [[constraint]]
-  name = "github.com/spf13/cobra"
-  version = "0.0.1"
-
-[[constraint]]
   branch = "master"
   name = "github.com/golang/groupcache"
