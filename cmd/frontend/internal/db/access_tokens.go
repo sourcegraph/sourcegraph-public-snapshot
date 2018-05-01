@@ -57,7 +57,21 @@ func (s *accessTokens) Create(ctx context.Context, subjectUserID int32, note str
 	token = hex.EncodeToString(b[:])
 
 	if err := globalDB.QueryRowContext(ctx,
-		"INSERT INTO access_tokens(subject_user_id, value_sha256, note, creator_user_id) VALUES($1, $2, $3, $4) RETURNING id",
+		// Include users table query (with "FOR UPDATE") to ensure that subject/creator users have
+		// not been deleted. If they were deleted, the query will return an error.
+		`
+WITH subject_user AS (
+  SELECT id FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE
+),
+creator_user AS (
+  SELECT id FROM users WHERE id=$4 AND deleted_at IS NULL FOR UPDATE
+),
+insert_values AS (
+  SELECT subject_user.id AS subject_user_id, $2::bytea AS value_sha256, $3::text AS note, creator_user.id AS creator_user_id
+  FROM subject_user, creator_user
+)
+INSERT INTO access_tokens(subject_user_id, value_sha256, note, creator_user_id) SELECT * FROM insert_values RETURNING id
+`,
 		subjectUserID, toSHA256Bytes(b[:]), note, creatorUserID,
 	).Scan(&id); err != nil {
 		return 0, "", err
@@ -83,7 +97,16 @@ func (s *accessTokens) Lookup(ctx context.Context, tokenHexEncoded string) (subj
 	}
 
 	if err := globalDB.QueryRowContext(ctx,
-		"UPDATE access_tokens SET last_used_at=now() WHERE value_sha256=$1 AND deleted_at IS NULL RETURNING subject_user_id",
+		// Ensure that subject and creator users still exist.
+		`
+UPDATE access_tokens t SET last_used_at=now()
+FROM access_tokens t2
+JOIN users subject_user ON t2.subject_user_id=subject_user.id
+JOIN users creator_user ON t2.creator_user_id=creator_user.id
+WHERE t.value_sha256=$1 AND t.deleted_at IS NULL AND
+  subject_user.deleted_at IS NULL AND creator_user.deleted_at IS NULL
+RETURNING t.subject_user_id
+`,
 		toSHA256Bytes(token),
 	).Scan(&subjectUserID); err != nil {
 		if err == sql.ErrNoRows {

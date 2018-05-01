@@ -342,7 +342,23 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 }
 
 func (u *users) Delete(ctx context.Context, id int32) error {
-	res, err := globalDB.ExecContext(ctx, "UPDATE users SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	// Wrap in transaction because we delete from multiple tables.
+	tx, err := globalDB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	res, err := tx.ExecContext(ctx, "UPDATE users SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -353,6 +369,11 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 	if rows == 0 {
 		return userNotFoundErr{args: []interface{}{id}}
 	}
+
+	if _, err := tx.ExecContext(ctx, "UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id=$1 OR creator_user_id=$1", id); err != nil {
+		return err
+	}
+
 	return nil
 }
 

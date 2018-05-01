@@ -205,3 +205,84 @@ func TestAccessTokens_Lookup(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates
+// the token, and that no new access tokens may be created for deleted users.
+func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	t.Run("subject", func(t *testing.T) {
+		subject, err := Users.Create(ctx, NewUser{
+			Email:                 "u1@example.com",
+			Username:              "u1",
+			Password:              "p1",
+			EmailVerificationCode: "c1",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		creator, err := Users.Create(ctx, NewUser{
+			Email:                 "u2@example.com",
+			Username:              "u2",
+			Password:              "p2",
+			EmailVerificationCode: "c2",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, tv0, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := Users.Delete(ctx, subject.ID); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := AccessTokens.Lookup(ctx, tv0); err == nil {
+			t.Fatal("Lookup: want error looking up token for deleted subject user")
+		}
+
+		if _, _, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID); err == nil {
+			t.Fatal("Create: want error creating token for deleted subject user")
+		}
+	})
+
+	t.Run("creator", func(t *testing.T) {
+		subject, err := Users.Create(ctx, NewUser{
+			Email:                 "u3@example.com",
+			Username:              "u3",
+			Password:              "p3",
+			EmailVerificationCode: "c3",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		creator, err := Users.Create(ctx, NewUser{
+			Email:                 "u4@example.com",
+			Username:              "u4",
+			Password:              "p4",
+			EmailVerificationCode: "c4",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, tv0, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := Users.Delete(ctx, creator.ID); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := AccessTokens.Lookup(ctx, tv0); err == nil {
+			t.Fatal("Lookup: want error looking up token for deleted creator user")
+		}
+
+		if _, _, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID); err == nil {
+			t.Fatal("Create: want error creating token for deleted creator user")
+		}
+	})
+}
