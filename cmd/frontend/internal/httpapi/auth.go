@@ -2,8 +2,8 @@ package httpapi
 
 import (
 	"net/http"
-	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -16,23 +16,28 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
 
-		parts := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-		if len(parts) != 2 {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		switch strings.ToLower(parts[0]) {
-		case "token":
-			if conf.AccessTokensEnabled() {
-				userID, err := db.AccessTokens.Lookup(r.Context(), parts[1])
-				if err != nil {
-					log15.Error("Invalid access token.", "token", parts[1], "err", err)
-					http.Error(w, "invalid access token", http.StatusUnauthorized)
-					return
-				}
-				r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
+		if headerValue := r.Header.Get("Authorization"); headerValue != "" {
+			if !conf.AccessTokensEnabled() {
+				http.Error(w, "Access token authorization is disabled.", http.StatusUnauthorized)
+				return
 			}
+
+			token, err := authz.ParseAuthorizationHeader(headerValue)
+			if err != nil {
+				log15.Error("Invalid Authorization header.", "err", err)
+				http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
+				return
+			}
+
+			// Validate access token.
+			subjectUserID, err := db.AccessTokens.Lookup(r.Context(), token)
+			if err != nil {
+				log15.Error("Invalid access token.", "token", token, "err", err)
+				http.Error(w, "Invalid access token.", http.StatusUnauthorized)
+				return
+			}
+
+			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: subjectUserID}))
 		}
 
 		next.ServeHTTP(w, r)
