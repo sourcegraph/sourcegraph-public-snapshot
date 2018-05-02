@@ -157,7 +157,7 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                     this.props.node.id === this.props.newToken.id && (
                         <AccessTokenCreatedAlert
                             className="alert alert-success mt-4"
-                            token={this.props.newToken.token}
+                            tokenSecret={this.props.newToken.token}
                         />
                     )}
             </li>

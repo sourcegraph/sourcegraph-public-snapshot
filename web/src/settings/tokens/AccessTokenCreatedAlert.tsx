@@ -4,7 +4,7 @@ import { CopyableText } from '../../components/CopyableText'
 
 interface AccessTokenCreatedAlertProps {
     className: string
-    token: string
+    tokenSecret: string
 }
 
 /**
@@ -18,21 +18,21 @@ export class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCrea
                     <CircleCheckmarkIcon className="icon-inline" /> Copy your new personal access token now. You won't
                     be able to see it again.
                 </p>
-                <CopyableText text={this.props.token} size={48} />
+                <CopyableText text={this.props.tokenSecret} size={48} />
                 <h5 className="mt-4">
                     <strong>Example usage</strong>
                 </h5>
                 <pre className="mt-1">
-                    <code>{curlExampleCommand(this.props.token)}</code>
+                    <code>{curlExampleCommand(this.props.tokenSecret)}</code>
                 </pre>
             </div>
         )
     }
 }
 
-function curlExampleCommand(token: string): string {
+function curlExampleCommand(tokenSecret: string): string {
     return `curl \\
-  -H 'Authorization: token ${token}' \\
+  -H 'Authorization: token ${tokenSecret}' \\
   -d '{"query":"query { currentUser { username } }"}' \\
   ${window.context.appURL}/.api/graphql`
 }
