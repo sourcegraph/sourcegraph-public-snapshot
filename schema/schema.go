@@ -69,6 +69,7 @@ type Langservers struct {
 	Disabled              bool                   `json:"disabled,omitempty"`
 	InitializationOptions map[string]interface{} `json:"initializationOptions,omitempty"`
 	Language              string                 `json:"language"`
+	Metadata              *Metadata              `json:"metadata,omitempty"`
 }
 
 // Links
@@ -77,6 +78,14 @@ type Links struct {
 	Commit     string `json:"commit,omitempty"`
 	Repository string `json:"repository,omitempty"`
 	Tree       string `json:"tree,omitempty"`
+}
+
+// Metadata Language server metadata. Used to populate various UI elements.
+type Metadata struct {
+	DocsURL      string `json:"docsURL,omitempty"`
+	Experimental bool   `json:"experimental,omitempty"`
+	HomepageURL  string `json:"homepageURL,omitempty"`
+	IssuesURL    string `json:"issuesURL,omitempty"`
 }
 
 // OpenIDConnectAuthProvider Configures the OpenID Connect authentication provider for SSO.

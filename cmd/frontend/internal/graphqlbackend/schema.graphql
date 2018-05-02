@@ -1966,6 +1966,11 @@ type LangServer {
     # "Go", "Java", "TypeScript", "PHP", etc.
     displayName: String!
 
+    # Whether or not this language server should be considered experimental.
+    #
+    # Has no effect on behavior, only effects how the language server is presented e.g. in the UI.
+    experimental: Boolean!
+
     # URL to the language server's homepage, if available.
     homepageURL: String
 

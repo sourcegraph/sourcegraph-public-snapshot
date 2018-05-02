@@ -480,6 +480,29 @@
             "description": "Whether or not this language server is disabled.",
             "type": "boolean",
             "default": false
+          },
+          "metadata": {
+            "description": "Language server metadata. Used to populate various UI elements.",
+            "type": "object",
+            "properties": {
+              "experimental": {
+                "description":
+                  "Whether or not this language server should be considered experimental. Has no effect on behavior, only effects how the language server is presented e.g. in the UI.",
+                "type": "boolean"
+              },
+              "homepageURL": {
+                "description": "URL to the language server's homepage, if available.",
+                "type": "string"
+              },
+              "issuesURL": {
+                "description": "URL to the language server's open/known issues, if available.",
+                "type": "string"
+              },
+              "docsURL": {
+                "description": "URL to the language server's documentation, if available.",
+                "type": "string"
+              }
+            }
           }
         },
         "required": ["language", "address"]

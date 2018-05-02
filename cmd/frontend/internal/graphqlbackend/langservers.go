@@ -16,6 +16,7 @@ type langServerResolver struct {
 	homepageURL, issuesURL, docsURL              string
 	dataCenter                                   bool
 	custom                                       bool
+	experimental                                 bool
 	state                                        langservers.ConfigState
 	pending                                      bool
 	canEnable, canDisable, canRestart, canUpdate bool
@@ -30,9 +31,10 @@ func (c *langServerResolver) HomepageURL(ctx context.Context) *string {
 func (c *langServerResolver) IssuesURL(ctx context.Context) *string {
 	return nullString(c.issuesURL)
 }
-func (c *langServerResolver) DocsURL(ctx context.Context) *string { return nullString(c.docsURL) }
-func (c *langServerResolver) DataCenter(ctx context.Context) bool { return c.dataCenter }
-func (c *langServerResolver) Custom(ctx context.Context) bool     { return c.custom }
+func (c *langServerResolver) DocsURL(ctx context.Context) *string   { return nullString(c.docsURL) }
+func (c *langServerResolver) DataCenter(ctx context.Context) bool   { return c.dataCenter }
+func (c *langServerResolver) Custom(ctx context.Context) bool       { return c.custom }
+func (c *langServerResolver) Experimental(ctx context.Context) bool { return c.experimental }
 func (c *langServerResolver) State(ctx context.Context) string {
 	switch c.state {
 	case langservers.StateNone:
@@ -80,20 +82,21 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 		if conf.IsDataCenter(conf.DeployType()) || (conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker()) {
 			// We cannot execute Docker commands, so we have less information.
 			results = append(results, &langServerResolver{
-				language:    language,
-				displayName: langservers.StaticInfo[language].DisplayName,
-				homepageURL: langservers.StaticInfo[language].HomepageURL,
-				issuesURL:   langservers.StaticInfo[language].IssuesURL,
-				docsURL:     langservers.StaticInfo[language].DocsURL,
-				dataCenter:  conf.IsDataCenter(conf.DeployType()),
-				custom:      false,
-				state:       state,
-				pending:     false,
-				canEnable:   false,
-				canDisable:  false,
-				canRestart:  false,
-				canUpdate:   false,
-				healthy:     false,
+				language:     language,
+				displayName:  langservers.StaticInfo[language].DisplayName,
+				homepageURL:  langservers.StaticInfo[language].HomepageURL,
+				issuesURL:    langservers.StaticInfo[language].IssuesURL,
+				docsURL:      langservers.StaticInfo[language].DocsURL,
+				dataCenter:   conf.IsDataCenter(conf.DeployType()),
+				custom:       false,
+				experimental: false,
+				state:        state,
+				pending:      false,
+				canEnable:    false,
+				canDisable:   false,
+				canRestart:   false,
+				canUpdate:    false,
+				healthy:      false,
 			})
 			continue
 		}
@@ -104,20 +107,21 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 		}
 
 		results = append(results, &langServerResolver{
-			language:    language,
-			displayName: langservers.StaticInfo[language].DisplayName,
-			homepageURL: langservers.StaticInfo[language].HomepageURL,
-			issuesURL:   langservers.StaticInfo[language].IssuesURL,
-			docsURL:     langservers.StaticInfo[language].DocsURL,
-			dataCenter:  false,
-			custom:      false,
-			state:       state,
-			pending:     info.Pulling || info.Status == langservers.StatusStarting,
-			canEnable:   isSiteAdmin || state == langservers.StateNone,
-			canDisable:  isSiteAdmin,
-			canRestart:  isSiteAdmin && state == langservers.StateEnabled,
-			canUpdate:   isSiteAdmin,
-			healthy:     info.Pulling || info.Status != langservers.StatusUnhealthy,
+			language:     language,
+			displayName:  langservers.StaticInfo[language].DisplayName,
+			homepageURL:  langservers.StaticInfo[language].HomepageURL,
+			issuesURL:    langservers.StaticInfo[language].IssuesURL,
+			docsURL:      langservers.StaticInfo[language].DocsURL,
+			dataCenter:   false,
+			custom:       false,
+			experimental: false,
+			state:        state,
+			pending:      info.Pulling || info.Status == langservers.StatusStarting,
+			canEnable:    isSiteAdmin || state == langservers.StateNone,
+			canDisable:   isSiteAdmin,
+			canRestart:   isSiteAdmin && state == langservers.StateEnabled,
+			canUpdate:    isSiteAdmin,
+			healthy:      info.Pulling || info.Status != langservers.StatusUnhealthy,
 		})
 	}
 
@@ -133,12 +137,10 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 		if ls.Disabled {
 			state = langservers.StateDisabled
 		}
-		results = append(results, &langServerResolver{
+
+		result := &langServerResolver{
 			language:    strings.ToLower(ls.Language),
 			displayName: strings.Title(ls.Language),
-			homepageURL: "",
-			issuesURL:   "",
-			docsURL:     "",
 			dataCenter:  conf.IsDataCenter(conf.DeployType()),
 			custom:      true,
 			state:       state,
@@ -147,7 +149,17 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			canRestart:  false,
 			canUpdate:   false,
 			healthy:     false,
-		})
+		}
+
+		if ls.Metadata != nil {
+			result.homepageURL = ls.Metadata.HomepageURL
+			result.issuesURL = ls.Metadata.IssuesURL
+			result.docsURL = ls.Metadata.DocsURL
+			// Experimental language servers can only be added through the site configuration
+			result.experimental = ls.Metadata.Experimental
+		}
+
+		results = append(results, result)
 	}
 
 	return results, nil

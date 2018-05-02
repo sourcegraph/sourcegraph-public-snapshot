@@ -13,6 +13,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * The new repository contributors page (linked from the repository homepage) displays the top Git commit authors in a repository, with filtering options.
+* Custom langservers in the site config may now specify a `metadata` property containing things like homepage/docs/issues URLs for the language server project, as well as whether or not the language server should be considered experimental (not ready for prime-time). This `metadata` will be displayed in the UI to better communicate the status of a language server project.
 
 ## 2.7.6
 
