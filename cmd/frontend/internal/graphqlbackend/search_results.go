@@ -933,11 +933,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "commits in the last 6 months",
-						query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"6 months ago\""},
+						query:       syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"6 months ago\"",
 					},
 					{
 						description: "commits in the last 2 years",
-						query:       searchQuery{syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"2 years ago\""},
+						query:       syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"2 years ago\"",
 					},
 				},
 			}

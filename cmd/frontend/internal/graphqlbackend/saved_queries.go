@@ -19,7 +19,7 @@ type savedQueryResolver struct {
 	subject                             *configurationSubject
 	index                               int
 	description                         string
-	query                               searchQuery
+	query                               string
 	showOnHomepage, notify, notifySlack bool
 }
 
@@ -98,7 +98,7 @@ func (r savedQueryResolver) Index() int32 { return int32(r.index) }
 
 func (r savedQueryResolver) Description() string { return r.description }
 
-func (r savedQueryResolver) Query() *searchQuery { return &r.query }
+func (r savedQueryResolver) Query() string { return r.query }
 
 func toSavedQueryResolver(index int, subject *configurationSubject, entry api.ConfigSavedQuery) *savedQueryResolver {
 	return &savedQueryResolver{
@@ -106,7 +106,7 @@ func toSavedQueryResolver(index int, subject *configurationSubject, entry api.Co
 		key:            entry.Key,
 		index:          index,
 		description:    entry.Description,
-		query:          searchQuery{query: entry.Query},
+		query:          entry.Query,
 		showOnHomepage: entry.ShowOnHomepage,
 		notify:         entry.Notify,
 		notifySlack:    entry.NotifySlack,
@@ -177,7 +177,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 		key:            key,
 		index:          index,
 		description:    args.Description,
-		query:          searchQuery{query: args.Query},
+		query:          args.Query,
 		showOnHomepage: args.ShowOnHomepage,
 		notify:         args.Notify,
 		notifySlack:    args.NotifySlack,

@@ -117,15 +117,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                 <h4>Did you mean:</h4>
                                                 <ul className="list-unstyled">
                                                     {results.alert.proposedQueries.map(proposedQuery => (
-                                                        <li key={proposedQuery.query.query}>
+                                                        <li key={proposedQuery.query}>
                                                             <Link
                                                                 className="btn btn-secondary btn-sm"
-                                                                to={
-                                                                    '/search?' +
-                                                                    buildSearchURLQuery(proposedQuery.query)
-                                                                }
+                                                                to={'/search?' + buildSearchURLQuery(proposedQuery)}
                                                             >
-                                                                {proposedQuery.query.query}
+                                                                {proposedQuery.query}
                                                             </Link>
                                                             {proposedQuery.description &&
                                                                 ` — ${proposedQuery.description}`}

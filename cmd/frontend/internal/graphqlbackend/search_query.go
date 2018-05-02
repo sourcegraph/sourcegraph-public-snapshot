@@ -8,10 +8,10 @@ func (q searchQuery) Query() string { return q.query }
 
 type searchQueryDescription struct {
 	description string
-	query       searchQuery
+	query       string
 }
 
-func (q searchQueryDescription) Query() *searchQuery { return &q.query }
+func (q searchQueryDescription) Query() string { return q.query }
 func (q searchQueryDescription) Description() *string {
 	if q.description == "" {
 		return nil

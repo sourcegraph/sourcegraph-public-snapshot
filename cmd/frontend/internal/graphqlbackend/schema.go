@@ -591,7 +591,7 @@ type SavedQuery {
     # The description.
     description: String!
     # The query.
-    query: SearchQuery!
+    query: String!
     # Whether or not to show on the homepage.
     showOnHomepage: Boolean!
     # Whether or not to notify.
@@ -604,12 +604,6 @@ type SavedQuery {
 type SearchQueryDescription {
     # The description.
     description: String
-    # The query.
-    query: SearchQuery!
-}
-
-# A search query.
-type SearchQuery {
     # The query.
     query: String!
 }

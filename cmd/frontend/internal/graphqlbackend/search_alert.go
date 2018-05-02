@@ -96,7 +96,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		}
 		if len(repos2) > 0 {
 			query := withoutRepoFields
-			query.query += fmt.Sprintf(" repo:%s", unionRepoFilter)
+			query += fmt.Sprintf(" repo:%s", unionRepoFilter)
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
@@ -140,7 +140,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		}
 		if len(repos2) > 0 {
 			query := withoutRepoFields
-			query.query += fmt.Sprintf(" repo:%s", unionRepoFilter)
+			query += fmt.Sprintf(" repo:%s", unionRepoFilter)
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
 				query:       query,
@@ -199,7 +199,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 				a.title = "No repositories satisfied your repo: filter"
 				a.description = "Change your repo: filter to see results"
 			}
-			if proposeQueries && strings.TrimSpace(withoutRepoFields.Query()) != "" {
+			if proposeQueries && strings.TrimSpace(withoutRepoFields) != "" {
 				a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 					description: "remove repo: filter",
 					query:       withoutRepoFields,
@@ -230,7 +230,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 				continue
 			}
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
-				query:       searchQuery{query: scope.Value + " " + r.rawQuery()},
+				query:       scope.Value + " " + r.rawQuery(),
 				description: scope.Name,
 			})
 		}
@@ -300,9 +300,7 @@ outer:
 		newExpr := addQueryRegexpField(&r.query, searchquery.FieldRepo, repoParentPattern)
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
-			query: searchQuery{
-				query: syntax.ExprString(newExpr),
-			},
+			query:       syntax.ExprString(newExpr),
 		})
 	}
 	if len(alert.proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
@@ -320,9 +318,7 @@ outer:
 			newExpr := addQueryRegexpField(&r.query, searchquery.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
-				query: searchQuery{
-					query: syntax.ExprString(newExpr),
-				},
+				query:       syntax.ExprString(newExpr),
 			})
 		}
 	}
@@ -347,10 +343,8 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*repositoryRe
 	}
 }
 
-func omitQueryFields(r *searchResolver, field string) searchQuery {
-	return searchQuery{
-		query: syntax.ExprString(omitQueryExprWithField(&r.query, field)),
-	}
+func omitQueryFields(r *searchResolver, field string) string {
+	return syntax.ExprString(omitQueryExprWithField(&r.query, field))
 }
 
 func omitQueryExprWithField(query *searchquery.Query, field string) []*syntax.Expr {

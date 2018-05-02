@@ -182,7 +182,7 @@ export class SavedQueries extends React.Component<Props, State> {
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
                             user={this.props.user}
-                            key={`${savedQuery.query.query}-${i}`}
+                            key={`${savedQuery.query}-${i}`}
                             savedQuery={savedQuery}
                             onDidDuplicate={this.onDidDuplicateSavedQuery}
                             isLightTheme={this.props.isLightTheme}

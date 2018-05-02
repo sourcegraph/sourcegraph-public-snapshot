@@ -18,7 +18,7 @@ export const SavedQueryUpdateForm: React.StatelessComponent<Props> = props => (
         user={props.user}
         defaultValues={{
             description: props.savedQuery.description,
-            query: props.savedQuery.query.query,
+            query: props.savedQuery.query,
             subject: props.savedQuery.subject.id,
             showOnHomepage: props.savedQuery.showOnHomepage,
             notify: props.savedQuery.notify,

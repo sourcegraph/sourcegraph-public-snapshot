@@ -105,9 +105,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                             description
                             proposedQueries {
                                 description
-                                query {
-                                    query
-                                }
+                                query
                             }
                         }
                         elapsedMilliseconds
@@ -256,9 +254,7 @@ const savedQueryFragment = gql`
         showOnHomepage
         notify
         notifySlack
-        query {
-            query
-        }
+        query
     }
 `
 

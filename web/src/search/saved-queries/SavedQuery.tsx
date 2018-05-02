@@ -50,7 +50,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                         createSavedQuery(
                             props.savedQuery.subject,
                             duplicate(props.savedQuery.description),
-                            props.savedQuery.query.query,
+                            props.savedQuery.query,
                             props.savedQuery.showOnHomepage,
                             props.savedQuery.notify,
                             props.savedQuery.notifySlack
@@ -99,7 +99,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
     public render(): JSX.Element {
         return (
             <SavedQueryRow
-                query={this.props.savedQuery.query.query}
+                query={this.props.savedQuery.query}
                 description={this.props.savedQuery.description}
                 className={this.state.isEditing ? 'editing' : ''}
                 eventName="SavedQueryClick"

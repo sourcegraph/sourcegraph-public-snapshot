@@ -39,7 +39,7 @@ func TestSavedQueries(t *testing.T) {
 			subject:        &configurationSubject{user: &userResolver{user: &types.User{ID: uid}}},
 			index:          0,
 			description:    "d",
-			query:          searchQuery{query: "q"},
+			query:          "q",
 			showOnHomepage: false,
 		},
 	}
@@ -100,7 +100,7 @@ func TestCreateSavedQuery(t *testing.T) {
 		subject:     subject,
 		index:       1,
 		description: "d2",
-		query:       searchQuery{query: "q2"},
+		query:       "q2",
 	}
 	if !reflect.DeepEqual(created, want) {
 		t.Errorf("got %+v, want %+v", created, want)
@@ -166,7 +166,7 @@ func TestUpdateSavedQuery(t *testing.T) {
 		subject:        subject,
 		index:          0,
 		description:    "d2",
-		query:          searchQuery{query: "q"},
+		query:          "q",
 		showOnHomepage: false,
 	}
 	if !reflect.DeepEqual(updated, want) {
