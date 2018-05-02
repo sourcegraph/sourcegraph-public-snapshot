@@ -43,7 +43,7 @@ export const RepositoryContributorNode: React.SFC<RepositoryContributorNodeProps
         searchQueryForRepoRev(repoPath),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
-        `after:${quoteIfNeeded(after || '5 years ago')}`,
+        after ? `after:${quoteIfNeeded(after)}` : '',
         path ? `file:${quoteIfNeeded(escapeRegexp(path))}` : '',
     ]
         .join(' ')
