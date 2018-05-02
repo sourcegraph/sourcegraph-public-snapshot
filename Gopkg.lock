@@ -188,6 +188,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/fsnotify/fsnotify"
+  packages = ["."]
+  revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
+  version = "v1.4.7"
+
+[[projects]]
   name = "github.com/garyburd/redigo"
   packages = [
     "internal",
@@ -320,9 +326,16 @@
   name = "github.com/google/zoekt"
   packages = [
     ".",
+    "build",
+    "cmd/zoekt-archive-index",
+    "cmd/zoekt-sourcegraph-indexserver",
+    "cmd/zoekt-webserver",
+    "ctags",
     "query",
     "rpc",
-    "rpc/internal/srv"
+    "rpc/internal/srv",
+    "shards",
+    "web"
   ]
   revision = "c2eb52797299742c8f0231a0707cd214689a64c0"
   source = "github.com/sourcegraph/zoekt"
@@ -733,10 +746,10 @@
   revision = "a348271703b2f18f06407858abd235ccbfebf33f"
 
 [[projects]]
+  branch = "master"
   name = "github.com/russross/blackfriday"
   packages = ["."]
-  revision = "55d61fa8aa702f59229e6cff85793c22e580eaf5"
-  version = "v1.5.1"
+  revision = "11635eb403ff09dbc3a6b5a007ab5ab09151c229"
 
 [[projects]]
   name = "github.com/sergi/go-diff"
@@ -1033,6 +1046,12 @@
     "internal"
   ]
   revision = "6881fee410a5daf86371371f9ad451b95e168b71"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sync"
+  packages = ["semaphore"]
+  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
 
 [[projects]]
   branch = "master"
@@ -1368,6 +1387,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "603f011dc917739563f70be7cf001ae2d40722785ffd889e2e23688ba34f0ade"
+  inputs-digest = "dd83547855bc45d80e560a463cde102582fd5c709d798e0024bfec1ce2d0bbda"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -23,7 +23,10 @@ go install -tags dist \
    github.com/sourcegraph/sourcegraph/cmd/symbols \
    github.com/sourcegraph/sourcegraph/cmd/repo-updater \
    github.com/sourcegraph/sourcegraph/cmd/searcher \
-   github.com/sourcegraph/sourcegraph/cmd/lsp-proxy
+   github.com/sourcegraph/sourcegraph/cmd/lsp-proxy \
+   github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-archive-index \
+   github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
+   github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-webserver
 
 cat > $GOBIN/syntect_server <<EOF
 #!/bin/sh

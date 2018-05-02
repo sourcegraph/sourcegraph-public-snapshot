@@ -19,6 +19,11 @@ import (
 
 //docker:install docker
 
+const (
+	frontendInternalHost = "127.0.0.1:3090"
+	zoektHost            = "127.0.0.1:3070"
+)
+
 // defaultEnv is environment variables that will be set if not already set.
 var defaultEnv = map[string]string{
 	// Sourcegraph services running in this container
@@ -32,9 +37,10 @@ var defaultEnv = map[string]string{
 	"SYMBOLS_URL":             "http://127.0.0.1:3184",
 	"SRC_HTTP_ADDR":           ":7080",
 	"SRC_HTTPS_ADDR":          ":7443",
-	"SRC_FRONTEND_INTERNAL":   "127.0.0.1:3090",
+	"SRC_FRONTEND_INTERNAL":   frontendInternalHost,
 	"GITHUB_BASE_URL":         "http://127.0.0.1:3180", // points to github-proxy
 	"LSP_PROXY":               "127.0.0.1:4388",
+	"ZOEKT_HOST":              zoektHost,
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -94,8 +100,8 @@ func main() {
 	}
 
 	// Next persistence
+	dataDir := setDefaultEnv("DATA_DIR", "/var/opt/sourcegraph")
 	{
-		dataDir := setDefaultEnv("DATA_DIR", "/var/opt/sourcegraph")
 		setDefaultEnv("SRC_REPOS_DIR", filepath.Join(dataDir, "repos"))
 		setDefaultEnv("CACHE_DIR", filepath.Join(dataDir, "cache"))
 	}
@@ -145,6 +151,11 @@ func main() {
 		log.Fatal(err)
 	} else if line != "" {
 		procfile = append(procfile, line)
+	}
+	if lines, err := maybeZoektProcfile(dataDir); err != nil {
+		log.Fatal(err)
+	} else if lines != nil {
+		procfile = append(procfile, lines...)
 	}
 
 	const goremanAddr = "127.0.0.1:5005"

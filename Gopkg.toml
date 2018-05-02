@@ -27,6 +27,9 @@
 # Dev tools not directly imported
 required = [
   "honnef.co/go/tools/cmd/staticcheck",
+  "github.com/google/zoekt/cmd/zoekt-archive-index",
+  "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver",
+  "github.com/google/zoekt/cmd/zoekt-webserver",
   "github.com/jteeuwen/go-bindata/go-bindata",
   "github.com/mattn/goreman",
   "github.com/sourcegraph/godockerize",
