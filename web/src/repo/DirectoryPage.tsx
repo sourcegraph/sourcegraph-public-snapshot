@@ -152,9 +152,6 @@ interface State {
     query: string
 }
 
-/** Feature flag for showing the contributors link. */
-const showContributors = localStorage.getItem('contributors') !== null
-
 export class DirectoryPage extends React.PureComponent<Props, State> {
     public state: State = { query: '' }
 
@@ -250,14 +247,9 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             >
                                 <HistoryIcon className="icon-inline" /> Compare
                             </Link>
-                            {showContributors && (
-                                <Link
-                                    className={`btn btn-secondary`}
-                                    to={`/${this.props.repoPath}/-/stats/contributors`}
-                                >
-                                    <UserIcon className="icon-inline" /> Contributors
-                                </Link>
-                            )}
+                            <Link className={`btn btn-secondary`} to={`/${this.props.repoPath}/-/stats/contributors`}>
+                                <UserIcon className="icon-inline" /> Contributors
+                            </Link>
                         </div>
                     </header>
                 )}

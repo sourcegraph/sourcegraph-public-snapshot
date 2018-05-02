@@ -12,6 +12,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
+* The new repository contributors page (linked from the repository homepage) displays the top Git commit authors in a repository, with filtering options.
+
 ## 2.7.6
 
 ### Fixed
