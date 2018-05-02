@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+* Fixed an issue where Index Search status page failed to render.
+
 ### Added
 
 ## 2.7.6
