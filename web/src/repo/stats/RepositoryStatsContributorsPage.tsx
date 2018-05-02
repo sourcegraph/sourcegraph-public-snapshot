@@ -37,7 +37,7 @@ export const RepositoryContributorNode: React.SFC<RepositoryContributorNodeProps
     after,
     path,
 }) => {
-    const commit = node.commits.nodes[0]
+    const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
 
     const query: string = [
         searchQueryForRepoRev(repoPath),
@@ -57,14 +57,18 @@ export const RepositoryContributorNode: React.SFC<RepositoryContributorNodeProps
             </div>
             <div className="repository-contributor-node__commits">
                 <div className="repository-contributor-node__commit">
-                    <Timestamp date={commit.author.date} />:{' '}
-                    <Link
-                        to={commit.url}
-                        className="repository-contributor-node__commit-subject"
-                        data-tooltip="Most recent commit by contributor"
-                    >
-                        {commit.subject}
-                    </Link>
+                    {commit && (
+                        <>
+                            <Timestamp date={commit.author.date} />:{' '}
+                            <Link
+                                to={commit.url}
+                                className="repository-contributor-node__commit-subject"
+                                data-tooltip="Most recent commit by contributor"
+                            >
+                                {commit.subject}
+                            </Link>
+                        </>
+                    )}
                 </div>
                 <div className="repository-contributor-node__count">
                     <Link
