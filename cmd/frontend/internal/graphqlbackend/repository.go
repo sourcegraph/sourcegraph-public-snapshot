@@ -128,13 +128,19 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 	vcsrepo := backend.Repos.CachedVCS(r.repo)
 	ref, err := vcsrepo.GitCmdRaw(ctx, []string{"symbolic-ref", "HEAD"})
 
-	// If we fail to get the default branch due to cloning, we return nothing.
+	if err == nil {
+		// Check that our repo is not empty
+		_, err = vcsrepo.ResolveRevision(ctx, "HEAD", &vcs.ResolveRevisionOptions{NoEnsureRevision: true})
+	}
+
+	// If we fail to get the default branch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if vcs.IsCloneInProgress(err) {
+		if vcs.IsCloneInProgress(err) || vcs.IsRevisionNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
+
 	return &gitRefResolver{repo: r, name: strings.TrimSpace(ref)}, nil
 }
 
