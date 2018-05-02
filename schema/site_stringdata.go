@@ -91,12 +91,16 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "tlsCert": {
-      "description": "TLS certificate for the web app.",
-      "type": "string"
+      "description":
+        "The contents of the PEM-encoded TLS certificate for the external HTTP server (for the web app and API).\n\nSee https://about.sourcegraph.com/docs/config/tlsssl/ for more information.",
+      "type": "string",
+      "pattern": "^-----BEGIN CERTIFICATE-----\n"
     },
     "tlsKey": {
-      "description": "TLS key for the web app.",
-      "type": "string"
+      "description":
+        "The contents of the PEM-encoded TLS key for the external HTTP server (for the web app and API).\n\nSee https://about.sourcegraph.com/docs/config/tlsssl/ for more information.",
+      "type": "string",
+      "pattern": "^-----BEGIN "
     },
     "httpToHttpsRedirect": {
       "description": "Redirect users from HTTP to HTTPS.",
