@@ -50,7 +50,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
                         className="btn btn-primary ml-2"
                         to={`${userURL(this.props.user.username)}/settings/tokens/new`}
                     >
-                        <AddIcon className="icon-inline" /> Generate new personal access token
+                        <AddIcon className="icon-inline" /> Generate access token
                     </Link>
                 </div>
                 <p>Tokens may be used to access the Sourcegraph API with the full privileges of the token's creator.</p>

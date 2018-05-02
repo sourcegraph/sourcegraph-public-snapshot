@@ -15,8 +15,8 @@ export class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCrea
         return (
             <div className={`access-token-created-alert ${this.props.className}`}>
                 <p>
-                    <CircleCheckmarkIcon className="icon-inline" /> Copy your new personal access token now. You won't
-                    be able to see it again.
+                    <CircleCheckmarkIcon className="icon-inline" /> Copy the new access token now. You won't be able to
+                    see it again.
                 </p>
                 <CopyableText text={this.props.tokenSecret} size={48} />
                 <h5 className="mt-4">

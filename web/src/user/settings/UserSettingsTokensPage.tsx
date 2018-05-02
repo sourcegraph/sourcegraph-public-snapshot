@@ -67,12 +67,12 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
             <div className="user-settings-tokens-page">
                 <PageTitle title="Access tokens" />
                 <div className="d-flex justify-content-between align-items-center">
-                    <h2>Personal access tokens</h2>
+                    <h2>Access tokens</h2>
                     <Link className="btn btn-primary ml-2" to={`${this.props.match.url}/tokens/new`}>
                         <AddIcon className="icon-inline" /> Generate new token
                     </Link>
                 </div>
-                <p>Tokens may be used to access the Sourcegraph API.</p>
+                <p>Access tokens may be used to access the Sourcegraph API.</p>
                 <FilteredAccessTokenConnection
                     listClassName="list-group list-group-flush"
                     noun="access token"
