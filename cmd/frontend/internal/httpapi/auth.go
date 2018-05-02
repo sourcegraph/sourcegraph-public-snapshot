@@ -30,7 +30,7 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 			}
 
 			// Validate access token.
-			subjectUserID, err := db.AccessTokens.Lookup(r.Context(), token)
+			subjectUserID, err := db.AccessTokens.Lookup(r.Context(), token, authz.ScopeUserAll)
 			if err != nil {
 				log15.Error("Invalid access token.", "token", token, "err", err)
 				http.Error(w, "Invalid access token.", http.StatusUnauthorized)

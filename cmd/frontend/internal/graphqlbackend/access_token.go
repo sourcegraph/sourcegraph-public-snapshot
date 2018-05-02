@@ -44,6 +44,8 @@ func (r *accessTokenResolver) Subject(ctx context.Context) (*userResolver, error
 	return userByIDInt32(ctx, r.accessToken.SubjectUserID)
 }
 
+func (r *accessTokenResolver) Scopes() []string { return r.accessToken.Scopes }
+
 func (r *accessTokenResolver) Note() string { return r.accessToken.Note }
 
 func (r *accessTokenResolver) Creator(ctx context.Context) (*userResolver, error) {

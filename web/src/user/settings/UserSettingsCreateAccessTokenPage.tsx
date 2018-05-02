@@ -6,6 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
+import { AccessTokenScopes } from '../../auth/accessToken'
 import { gql, mutateGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
@@ -15,17 +16,17 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { UserAreaPageProps } from '../area/UserArea'
 
-function createAccessToken(user: GQL.ID, note: string): Observable<GQL.ICreateAccessTokenResult> {
+function createAccessToken(user: GQL.ID, scopes: string[], note: string): Observable<GQL.ICreateAccessTokenResult> {
     return mutateGraphQL(
         gql`
-            mutation CreateAccessToken($user: ID!, $note: String!) {
-                createAccessToken(user: $user, note: $note) {
+            mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
+                createAccessToken(user: $user, scopes: $scopes, note: $note) {
                     id
                     token
                 }
             }
         `,
-        { user, note }
+        { user, scopes, note }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.createAccessToken || (errors && errors.length > 0)) {
@@ -47,6 +48,9 @@ interface State {
     /** The contents of the note input field. */
     note: string
 
+    /** The selected scopes checkboxes. */
+    scopes: string[]
+
     creationOrError?: 'loading' | GQL.ICreateAccessTokenResult | ErrorLike
 }
 
@@ -54,7 +58,10 @@ interface State {
  * A page with a form to create an access token for a user.
  */
 export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props, State> {
-    public state: State = { note: '' }
+    public state: State = {
+        note: '',
+        scopes: [AccessTokenScopes.UserAll],
+    }
 
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private componentUpdates = new Subject<Props>()
@@ -68,7 +75,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                     concatMap(() =>
                         concat(
                             [{ creationOrError: 'loading' }],
-                            createAccessToken(this.props.user.id, this.state.note).pipe(
+                            createAccessToken(this.props.user.id, this.state.scopes, this.state.note).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
                                     this.props.onDidCreateAccessToken(result)
@@ -122,22 +129,32 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                         <small className="form-help text-muted">What's this token for?</small>
                     </div>
                     <div className="form-group">
-                        <label htmlFor="user-settings-create-access-token-page__note">Token scope</label>
+                        <label className="mb-1" htmlFor="user-settings-create-access-token-page__note">
+                            Token scope
+                        </label>
+                        <div>
+                            <small className="form-help text-muted">
+                                Tokens with limited user scopes are not yet supported.
+                            </small>
+                        </div>
                         <div className="form-check">
                             <input
                                 className="form-check-input"
                                 type="checkbox"
-                                id="user-settings-create-access-token-page__scope"
+                                id="user-settings-create-access-token-page__scope-user:all"
                                 checked={true}
+                                value={AccessTokenScopes.UserAll}
+                                onChange={this.onScopesChange}
                                 disabled={true}
                             />
-                            <label className="form-check-label" htmlFor="user-settings-create-access-token-page__scope">
-                                <strong>all</strong> — Full control of all resources accessible to the user account
+                            <label
+                                className="form-check-label"
+                                htmlFor="user-settings-create-access-token-page__scope-user:all"
+                            >
+                                <strong>{AccessTokenScopes.UserAll}</strong> — Full control of all resources accessible
+                                to the user account
                             </label>
                         </div>
-                        <small className="form-help text-muted">
-                            Tokens with limited scopes are not yet supported.
-                        </small>
                     </div>
                     <button
                         type="submit"
@@ -166,6 +183,14 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
 
     private onNoteChange: React.ChangeEventHandler<HTMLInputElement> = e =>
         this.setState({ note: e.currentTarget.value })
+
+    private onScopesChange: React.ChangeEventHandler<HTMLInputElement> = e => {
+        const checked = e.currentTarget.checked
+        const value = e.currentTarget.value
+        this.setState(prevState => ({
+            scopes: checked ? [...prevState.scopes, value] : prevState.scopes.filter(s => s !== value),
+        }))
+    }
 
     private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
 }

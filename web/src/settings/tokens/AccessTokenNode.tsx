@@ -14,6 +14,7 @@ import { AccessTokenCreatedAlert } from './AccessTokenCreatedAlert'
 export const accessTokenFragment = gql`
     fragment AccessTokenFields on AccessToken {
         id
+        scopes
         note
         createdAt
         lastUsedAt
@@ -123,13 +124,14 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         )}{' '}
                         <small className="text-muted">
                             {' '}
-                            &mdash;{' '}
+                            &mdash; <em>{this.props.node.scopes && this.props.node.scopes.join(', ')}</em>
+                            <br />
                             {this.props.node.lastUsedAt ? (
                                 <>
-                                    last used <Timestamp date={this.props.node.lastUsedAt} />
+                                    Last used <Timestamp date={this.props.node.lastUsedAt} />
                                 </>
                             ) : (
-                                'never used'
+                                'Never used'
                             )}, created <Timestamp date={this.props.node.createdAt} />
                             {this.props.node.subject.username !== this.props.node.creator.username && (
                                 <>

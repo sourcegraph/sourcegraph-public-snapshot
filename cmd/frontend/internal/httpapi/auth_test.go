@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
@@ -57,7 +58,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", "token badbad")
 		var calledAccessTokensLookup bool
-		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded string) (subjectUserID int32, err error) {
+		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 			calledAccessTokensLookup = true
 			return 0, errors.New("x")
 		}
@@ -73,9 +74,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			req, _ := http.NewRequest("GET", "/", nil)
 			req.Header.Set("Authorization", headerValue)
 			var calledAccessTokensLookup bool
-			db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded string) (subjectUserID int32, err error) {
+			db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 				if want := "abcdef"; tokenHexEncoded != want {
 					t.Errorf("got %q, want %q", tokenHexEncoded, want)
+				}
+				if want := authz.ScopeUserAll; requiredScope != want {
+					t.Errorf("got %q, want %q", requiredScope, want)
 				}
 				calledAccessTokensLookup = true
 				return 123, nil
@@ -94,9 +98,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req.Header.Set("Authorization", "token abcdef")
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 456}))
 		var calledAccessTokensLookup bool
-		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded string) (subjectUserID int32, err error) {
+		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
+			}
+			if want := authz.ScopeUserAll; requiredScope != want {
+				t.Errorf("got %q, want %q", requiredScope, want)
 			}
 			calledAccessTokensLookup = true
 			return 123, nil

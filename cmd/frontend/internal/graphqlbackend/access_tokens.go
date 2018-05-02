@@ -3,17 +3,20 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 type createAccessTokenInput struct {
-	User graphql.ID
-	Note string
+	User   graphql.ID
+	Scopes []string
+	Note   string
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
@@ -25,7 +28,14 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return nil, err
 	}
-	id, token, err := db.AccessTokens.Create(ctx, userID, args.Note, actor.FromContext(ctx).UID)
+
+	// Only one scope is supported, and it must be present on all access tokens (because
+	// less-privileged access tokens are not supported).
+	if len(args.Scopes) != 1 || args.Scopes[0] != authz.ScopeUserAll {
+		return nil, fmt.Errorf(`access token must have a single scope %q`, authz.ScopeUserAll)
+	}
+
+	id, token, err := db.AccessTokens.Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
 	return &createAccessTokenResult{id: marshalAccessTokenID(id), token: token}, err
 }
 

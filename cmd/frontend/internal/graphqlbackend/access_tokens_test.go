@@ -2,10 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
@@ -15,9 +17,12 @@ import (
 // 🚨 SECURITY: This tests that users can't create tokens for users they aren't allowed to do so for.
 func TestMutation_CreateAccessToken(t *testing.T) {
 	mockAccessTokensCreate := func(t *testing.T, wantCreatorUserID int32) {
-		db.Mocks.AccessTokens.Create = func(subjectUserID int32, note string, creatorUserID int32) (int64, string, error) {
+		db.Mocks.AccessTokens.Create = func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (int64, string, error) {
 			if want := int32(1); subjectUserID != want {
 				t.Errorf("got %v, want %v", subjectUserID, want)
+			}
+			if want := []string{authz.ScopeUserAll}; !reflect.DeepEqual(scopes, want) {
+				t.Errorf("got %q, want %q", scopes, want)
 			}
 			if want := "n"; note != want {
 				t.Errorf("got %q, want %q", note, want)
@@ -40,7 +45,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 				Schema:  GraphQLSchema,
 				Query: `
 				mutation {
-					createAccessToken(user: "` + uid1GQLID + `", note: "n") {
+					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
 						id
 						token
 					}
@@ -58,6 +63,19 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		})
 	})
 
+	t.Run("authenticated as user, using invalid scopes", func(t *testing.T) {
+		resetMocks()
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&schemaResolver{}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
+		if err == nil {
+			t.Error("err == nil")
+		}
+		if result != nil {
+			t.Errorf("got result %v, want nil", result)
+		}
+	})
+
 	t.Run("authenticated as different user who is a site-admin", func(t *testing.T) {
 		resetMocks()
 		const differentSiteAdminUID = 234
@@ -73,7 +91,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 				Schema:  GraphQLSchema,
 				Query: `
 				mutation {
-					createAccessToken(user: "` + uid1GQLID + `", note: "n") {
+					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
 						id
 						token
 					}

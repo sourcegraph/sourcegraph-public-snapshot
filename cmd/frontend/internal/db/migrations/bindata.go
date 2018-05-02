@@ -158,6 +158,8 @@
 // ../../../../../migrations/1524942857_trim_site_config.up.sql
 // ../../../../../migrations/1524949295_simplify_initialization.down.sql
 // ../../../../../migrations/1524949295_simplify_initialization.up.sql
+// ../../../../../migrations/1525150355_add_access_tokens_scopes.down.sql
+// ../../../../../migrations/1525150355_add_access_tokens_scopes.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3385,6 +3387,46 @@ func _1524949295_simplify_initializationUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1525150355_add_access_tokens_scopesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4c\x4e\x4e\x2d\x2e\x8e\x2f\xc9\xcf\x4e\xcd\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x4e\xce\x2f\x48\x2d\xb6\xe6\x02\x04\x00\x00\xff\xff\x34\x3e\xbc\x38\x2e\x00\x00\x00")
+
+func _1525150355_add_access_tokens_scopesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1525150355_add_access_tokens_scopesDownSql,
+		"1525150355_add_access_tokens_scopes.down.sql",
+	)
+}
+
+func _1525150355_add_access_tokens_scopesDownSql() (*asset, error) {
+	bytes, err := _1525150355_add_access_tokens_scopesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1525150355_add_access_tokens_scopes.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1525150355_add_access_tokens_scopesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4c\x4e\x4e\x2d\x2e\x8e\x2f\xc9\xcf\x4e\xcd\x2b\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x4e\xce\x2f\x48\x2d\x56\x28\x49\xad\x28\x89\x8e\xb5\xe6\x0a\x0d\x70\x71\x0c\x41\x57\x1e\xec\x1a\x02\x55\x67\xab\x5e\xad\x54\x5a\x9c\x5a\x64\x95\x98\x93\xa3\x54\xab\x6e\xcd\x85\xc7\x0e\xb0\x0c\xaa\x2d\x20\x83\xfc\xfc\x43\x14\xfc\x42\x7d\x7c\xac\xb9\x00\x01\x00\x00\xff\xff\x2f\x95\xc9\x4f\xa0\x00\x00\x00")
+
+func _1525150355_add_access_tokens_scopesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1525150355_add_access_tokens_scopesUpSql,
+		"1525150355_add_access_tokens_scopes.up.sql",
+	)
+}
+
+func _1525150355_add_access_tokens_scopesUpSql() (*asset, error) {
+	bytes, err := _1525150355_add_access_tokens_scopesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1525150355_add_access_tokens_scopes.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3595,6 +3637,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1524942857_trim_site_config.up.sql":                          _1524942857_trim_site_configUpSql,
 	"1524949295_simplify_initialization.down.sql":                 _1524949295_simplify_initializationDownSql,
 	"1524949295_simplify_initialization.up.sql":                   _1524949295_simplify_initializationUpSql,
+	"1525150355_add_access_tokens_scopes.down.sql":                _1525150355_add_access_tokens_scopesDownSql,
+	"1525150355_add_access_tokens_scopes.up.sql":                  _1525150355_add_access_tokens_scopesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3796,6 +3840,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1524942857_trim_site_config.up.sql":                          &bintree{_1524942857_trim_site_configUpSql, map[string]*bintree{}},
 	"1524949295_simplify_initialization.down.sql":                 &bintree{_1524949295_simplify_initializationDownSql, map[string]*bintree{}},
 	"1524949295_simplify_initialization.up.sql":                   &bintree{_1524949295_simplify_initializationUpSql, map[string]*bintree{}},
+	"1525150355_add_access_tokens_scopes.down.sql":                &bintree{_1525150355_add_access_tokens_scopesDownSql, map[string]*bintree{}},
+	"1525150355_add_access_tokens_scopes.up.sql":                  &bintree{_1525150355_add_access_tokens_scopesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

@@ -1,6 +1,9 @@
 package db
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
 // to the user.
@@ -30,7 +33,7 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tid0, tv0, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID)
+	tid0, tv0, err := AccessTokens.Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +52,7 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Errorf("got %q, want %q", got.Note, want)
 	}
 
-	gotSubjectUserID, err := AccessTokens.Lookup(ctx, tv0)
+	gotSubjectUserID, err := AccessTokens.Lookup(ctx, tv0, "a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,6 +66,9 @@ func TestAccessTokens_Create(t *testing.T) {
 	}
 	if want := 1; len(ts) != want {
 		t.Errorf("got %d access tokens, want %d", len(ts), want)
+	}
+	if want := []string{"a", "b"}; !reflect.DeepEqual(ts[0].Scopes, want) {
+		t.Errorf("got token scopes %q, want %q", ts[0].Scopes, want)
 	}
 
 	// Accidentally passing the creator's UID in SubjectUserID should not return anything.
@@ -101,11 +107,11 @@ func TestAccessTokens_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = AccessTokens.Create(ctx, subject1.ID, "n0", subject1.ID)
+	_, _, err = AccessTokens.Create(ctx, subject1.ID, []string{"a", "b"}, "n0", subject1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, err = AccessTokens.Create(ctx, subject1.ID, "n1", subject1.ID)
+	_, _, err = AccessTokens.Create(ctx, subject1.ID, []string{"a", "b"}, "n1", subject1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,29 +185,41 @@ func TestAccessTokens_Lookup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tid0, tv0, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID)
+	tid0, tv0, err := AccessTokens.Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gotSubjectUserID, err := AccessTokens.Lookup(ctx, tv0)
-	if err != nil {
+	for _, scope := range []string{"a", "b"} {
+		gotSubjectUserID, err := AccessTokens.Lookup(ctx, tv0, scope)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := subject.ID; gotSubjectUserID != want {
+			t.Errorf("got %v, want %v", gotSubjectUserID, want)
+		}
+	}
+
+	// Lookup with a nonexistent scope and ensure it fails.
+	if _, err := AccessTokens.Lookup(ctx, tv0, "x"); err == nil {
 		t.Fatal(err)
 	}
-	if want := subject.ID; gotSubjectUserID != want {
-		t.Errorf("got %v, want %v", gotSubjectUserID, want)
+
+	// Lookup with an empty scope and ensure it fails.
+	if _, err := AccessTokens.Lookup(ctx, tv0, ""); err == nil {
+		t.Fatal(err)
 	}
 
 	// Delete a token and ensure Lookup fails on it.
 	if err := AccessTokens.DeleteByID(ctx, tid0, subject.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := AccessTokens.Lookup(ctx, tv0); err == nil {
+	if _, err := AccessTokens.Lookup(ctx, tv0, "a"); err == nil {
 		t.Fatal(err)
 	}
 
 	// Try to Lookup a token that was never created.
-	if _, err := AccessTokens.Lookup(ctx, "abcdefg" /* this token value was never created */); err == nil {
+	if _, err := AccessTokens.Lookup(ctx, "abcdefg" /* this token value was never created */, "a"); err == nil {
 		t.Fatal(err)
 	}
 }
@@ -234,18 +252,18 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, tv0, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID)
+		_, tv0, err := AccessTokens.Create(ctx, subject.ID, []string{"a"}, "n0", creator.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if err := Users.Delete(ctx, subject.ID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := AccessTokens.Lookup(ctx, tv0); err == nil {
+		if _, err := AccessTokens.Lookup(ctx, tv0, "a"); err == nil {
 			t.Fatal("Lookup: want error looking up token for deleted subject user")
 		}
 
-		if _, _, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID); err == nil {
+		if _, _, err := AccessTokens.Create(ctx, subject.ID, nil, "n0", creator.ID); err == nil {
 			t.Fatal("Create: want error creating token for deleted subject user")
 		}
 	})
@@ -270,18 +288,18 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, tv0, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID)
+		_, tv0, err := AccessTokens.Create(ctx, subject.ID, []string{"a"}, "n0", creator.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if err := Users.Delete(ctx, creator.ID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := AccessTokens.Lookup(ctx, tv0); err == nil {
+		if _, err := AccessTokens.Lookup(ctx, tv0, "a"); err == nil {
 			t.Fatal("Lookup: want error looking up token for deleted creator user")
 		}
 
-		if _, _, err := AccessTokens.Create(ctx, subject.ID, "n0", creator.ID); err == nil {
+		if _, _, err := AccessTokens.Create(ctx, subject.ID, nil, "n0", creator.ID); err == nil {
 			t.Fatal("Create: want error creating token for deleted creator user")
 		}
 	})

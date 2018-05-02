@@ -10,6 +10,7 @@
  last_used_at    | timestamp with time zone | 
  deleted_at      | timestamp with time zone | 
  creator_user_id | integer                  | not null
+ scopes          | text[]                   | not null
 Indexes:
     "access_tokens_pkey" PRIMARY KEY, btree (id)
     "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
