@@ -502,6 +502,8 @@ func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, use
 type UsersListOptions struct {
 	// Query specifies a search query for users.
 	Query string
+	// UserIDs specifies a list of user IDs to include.
+	UserIDs []int32
 
 	*LimitOffset
 }
@@ -516,6 +518,14 @@ func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*types.User,
 	}
 	conds := u.listSQL(*opt)
 
+	if len(opt.UserIDs) > 0 {
+		items := []*sqlf.Query{}
+		for _, id := range opt.UserIDs {
+			items = append(items, sqlf.Sprintf("%d", id))
+		}
+		conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
+	}
+
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
@@ -525,7 +535,7 @@ func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("username ILIKE %s OR display_name ILIKE %s", query, query))
+		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
 	}
 	return conds
 }

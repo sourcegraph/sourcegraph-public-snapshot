@@ -18,7 +18,7 @@ func (r *userResolver) Activity(ctx context.Context) (*userActivityResolver, err
 		return nil, err
 	}
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("Site analytics is not available on sourcegraph.com")
+		return nil, errors.New("site analytics is not available on sourcegraph.com")
 	}
 
 	activity, err := useractivity.GetByUserID(r.user.ID)

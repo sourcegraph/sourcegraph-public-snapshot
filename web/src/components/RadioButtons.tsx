@@ -18,6 +18,11 @@ export interface RadioButtonNode {
      * `key` property for radio button wrapper element. If not provided, id.toString() is used instead.
      */
     key?: string | number
+
+    /**
+     * Radio button tooltip.
+     */
+    tooltip?: string
 }
 
 interface Props {
@@ -50,7 +55,7 @@ export class RadioButtons extends React.PureComponent<Props> {
         return (
             <div className="radio-buttons">
                 {this.props.nodes.map(n => (
-                    <label key={n.key ? n.key : n.id.toString()} className="radio-buttons__item" title={n.label}>
+                    <label key={n.key ? n.key : n.id.toString()} className="radio-buttons__item" title={n.tooltip}>
                         <input
                             className={`radio-buttons__input ${this.props.className || ''}`}
                             name="filter"

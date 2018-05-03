@@ -1,19 +1,15 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
 import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { BarChart } from '../components/d3/BarChart'
+import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchUserAndSiteAnalytics } from './backend'
-
-interface Props extends RouteComponentProps<any> {
-    isLightTheme: boolean
-}
+import { fetchSiteAnalytics, fetchUserAnalytics } from './backend'
 
 interface ChartData {
     label: string
@@ -32,21 +28,137 @@ const chartGeneratorOptions: ChartOptions = {
     maus: { label: 'Monthly unique users', dateFormat: 'MMMM YYYY' },
 }
 
+const CHART_ID_KEY = 'latest-analytics-chart-id'
+
+const showExpandedAnalytics = localStorage.getItem('showExpandedAnalytics') !== null
+
+interface UserActivityHeaderFooterProps {
+    nodes: GQL.IUser[]
+}
+
+class UserActivityHeader extends React.PureComponent<UserActivityHeaderFooterProps> {
+    public render(): JSX.Element | null {
+        return (
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Page views</th>
+                    <th>Search queries</th>
+                    <th>Code intelligence actions</th>
+                    <th className="site-admin-analytics-page__date-column">Last active</th>
+                    {showExpandedAnalytics && (
+                        <th className="site-admin-analytics-page__date-column">
+                            Last active in code host or code review
+                        </th>
+                    )}
+                </tr>
+            </thead>
+        )
+    }
+}
+
+class UserActivityFooter extends React.PureComponent<UserActivityHeaderFooterProps> {
+    public render(): JSX.Element | null {
+        return (
+            <tfoot>
+                <tr>
+                    <th>Total</th>
+                    <td>{this.props.nodes.reduce((c, v) => c + (v.activity ? v.activity.pageViews : 0), 0)}</td>
+                    <td>{this.props.nodes.reduce((c, v) => c + (v.activity ? v.activity.searchQueries : 0), 0)}</td>
+                    <td>
+                        {this.props.nodes.reduce(
+                            (c, v) => c + (v.activity ? v.activity.codeIntelligenceActions : 0),
+                            0
+                        )}
+                    </td>
+                    <td className="site-admin-analytics-page__date-column" />
+                    {showExpandedAnalytics && <td className="site-admin-analytics-page__date-column" />}
+                </tr>
+            </tfoot>
+        )
+    }
+}
+
+interface UserActivityNodeProps {
+    /**
+     * The user to display in this list item.
+     */
+    node: GQL.IUser
+}
+
+class UserActivityNode extends React.PureComponent<UserActivityNodeProps> {
+    public render(): JSX.Element | null {
+        return (
+            <tr>
+                <td>{this.props.node.username}</td>
+                <td>{this.props.node.activity ? this.props.node.activity.pageViews : '?'}</td>
+                <td>{this.props.node.activity ? this.props.node.activity.searchQueries : '?'}</td>
+                <td>{this.props.node.activity ? this.props.node.activity.codeIntelligenceActions : '?'}</td>
+                <td className="site-admin-analytics-page__date-column">
+                    {this.props.node.activity && this.props.node.activity.lastActiveTime ? (
+                        <Timestamp date={this.props.node.activity.lastActiveTime} />
+                    ) : (
+                        '?'
+                    )}
+                </td>
+                {showExpandedAnalytics && (
+                    <td className="site-admin-analytics-page__date-column">
+                        {this.props.node.activity && this.props.node.activity.lastActiveCodeHostIntegrationTime ? (
+                            <Timestamp date={this.props.node.activity.lastActiveCodeHostIntegrationTime} />
+                        ) : (
+                            '?'
+                        )}
+                    </td>
+                )}
+            </tr>
+        )
+    }
+}
+
+class FilteredUsersByActivityConnection extends FilteredConnection<GQL.IUser, {}> {}
+
+interface Props extends RouteComponentProps<any> {
+    isLightTheme: boolean
+}
+
 export interface State {
-    users?: GQL.IUser[]
+    users?: GQL.IUserConnection
     siteActivity?: GQL.ISiteActivity
     error?: Error
     chartID: keyof ChartOptions
 }
 
-const CHART_ID_KEY = 'latest-analytics-chart-id'
-
-const showExpandedAnalytics = localStorage.getItem('showExpandedAnalytics') !== null
-
 /**
  * A page displaying usage analytics for the site.
  */
 export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
+    private static FILTERS: FilteredConnectionFilter[] = [
+        {
+            label: 'Active today',
+            id: 'today',
+            tooltip: 'Show users active since this morning at 00:00 UTC',
+            args: { activePeriod: GQL.UserActivePeriod.TODAY },
+        },
+        {
+            label: 'Active this week',
+            id: 'week',
+            tooltip: 'Show users active since Monday at 00:00 UTC',
+            args: { activePeriod: GQL.UserActivePeriod.THIS_WEEK },
+        },
+        {
+            label: 'Active this month',
+            id: 'month',
+            tooltip: 'Show users active since the first day of the month at 00:00 UTC',
+            args: { activePeriod: GQL.UserActivePeriod.THIS_MONTH },
+        },
+        {
+            label: 'All',
+            id: 'all',
+            tooltip: 'Show all users',
+            args: { activePeriod: GQL.UserActivePeriod.ALL_TIME },
+        },
+    ]
+
     public state: State = {
         chartID: this.loadLatestChartFromStorage(),
     }
@@ -62,8 +174,8 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
         eventLogger.logViewEvent('SiteAdminAnalytics')
 
         this.subscriptions.add(
-            fetchUserAndSiteAnalytics().subscribe(
-                ({ users, siteActivity }) => this.setState({ users: users || undefined, siteActivity }),
+            fetchSiteAnalytics().subscribe(
+                siteActivity => this.setState({ siteActivity }),
                 error => this.setState({ error })
             )
         )
@@ -119,80 +231,22 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                     </>
                 )}
                 <h3 className="mt-4">All registered users</h3>
-                <table className="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Page views</th>
-                            <th>Search queries</th>
-                            <th>Code intelligence actions</th>
-                            <th className="site-admin-analytics-page__date-column">Last active</th>
-                            {showExpandedAnalytics && (
-                                <th className="site-admin-analytics-page__date-column">
-                                    Last active in code host or code review
-                                </th>
-                            )}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {!this.state.users && (
-                            <tr>
-                                <td colSpan={5}>
-                                    <Loader className="icon-inline" />
-                                </td>
-                            </tr>
-                        )}
-                        {this.state.users &&
-                            this.state.users.map(user => (
-                                <tr key={user.id}>
-                                    <td>{user.username}</td>
-                                    <td>{user.activity ? user.activity.pageViews : '?'}</td>
-                                    <td>{user.activity ? user.activity.searchQueries : '?'}</td>
-                                    <td>{user.activity ? user.activity.codeIntelligenceActions : '?'}</td>
-                                    <td className="site-admin-analytics-page__date-column">
-                                        {user.activity && user.activity.lastActiveTime ? (
-                                            <Timestamp date={user.activity.lastActiveTime} />
-                                        ) : (
-                                            '?'
-                                        )}
-                                    </td>
-                                    {showExpandedAnalytics && (
-                                        <td className="site-admin-analytics-page__date-column">
-                                            {user.activity && user.activity.lastActiveCodeHostIntegrationTime ? (
-                                                <Timestamp date={user.activity.lastActiveCodeHostIntegrationTime} />
-                                            ) : (
-                                                '?'
-                                            )}
-                                        </td>
-                                    )}
-                                </tr>
-                            ))}
-                    </tbody>
-                    {this.state.users && (
-                        <tfoot>
-                            <tr>
-                                <th>Total</th>
-                                <td>
-                                    {this.state.users.reduce((c, v) => c + (v.activity ? v.activity.pageViews : 0), 0)}
-                                </td>
-                                <td>
-                                    {this.state.users.reduce(
-                                        (c, v) => c + (v.activity ? v.activity.searchQueries : 0),
-                                        0
-                                    )}
-                                </td>
-                                <td>
-                                    {this.state.users.reduce(
-                                        (c, v) => c + (v.activity ? v.activity.codeIntelligenceActions : 0),
-                                        0
-                                    )}
-                                </td>
-                                <td className="site-admin-analytics-page__date-column" />
-                                {showExpandedAnalytics && <td className="site-admin-analytics-page__date-column" />}
-                            </tr>
-                        </tfoot>
-                    )}
-                </table>
+                <FilteredUsersByActivityConnection
+                    listComponent="table"
+                    className="table table-hover"
+                    hideFilter={false}
+                    filters={SiteAdminAnalyticsPage.FILTERS}
+                    noShowMore={false}
+                    noun="user"
+                    pluralNoun="users"
+                    queryConnection={fetchUserAnalytics}
+                    nodeComponent={UserActivityNode}
+                    nodeComponentProps={{}}
+                    headComponent={UserActivityHeader}
+                    footComponent={UserActivityFooter}
+                    history={this.props.history}
+                    location={this.props.location}
+                />
             </div>
         )
     }

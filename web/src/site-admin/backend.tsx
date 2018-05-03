@@ -360,23 +360,52 @@ export function deleteRepository(repository: GQL.ID): Observable<void> {
  *
  * @return Observable that emits the list of users and their usage data
  */
-export function fetchUserAndSiteAnalytics(): Observable<{ users: GQL.IUser[]; siteActivity: GQL.ISiteActivity }> {
-    return queryGraphQL(gql`
-        query Users {
-            site {
-                users {
-                    nodes {
-                        id
-                        username
-                        activity {
-                            searchQueries
-                            pageViews
-                            codeIntelligenceActions
-                            lastActiveTime
-                            lastActiveCodeHostIntegrationTime
+export function fetchUserAnalytics(args: {
+    activePeriod?: GQL.UserActivePeriod
+    query?: string
+    first?: number
+}): Observable<GQL.IUserConnection> {
+    return queryGraphQL(
+        gql`
+            query UserAnalytics($activePeriod: UserActivePeriod, $query: String, $first: Int) {
+                site {
+                    users(activePeriod: $activePeriod, query: $query, first: $first) {
+                        nodes {
+                            id
+                            username
+                            activity {
+                                searchQueries
+                                pageViews
+                                codeIntelligenceActions
+                                lastActiveTime
+                                lastActiveCodeHostIntegrationTime
+                            }
                         }
+                        totalCount
                     }
                 }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.site || !data.site.users) {
+                throw createAggregateError(errors)
+            }
+            return data.site.users
+        })
+    )
+}
+
+/**
+ * Fetches site-wide usage analytics.
+ *
+ * @return Observable that emits the list of users and their usage data
+ */
+export function fetchSiteAnalytics(): Observable<GQL.ISiteActivity> {
+    return queryGraphQL(gql`
+        query SiteAnalytics {
+            site {
                 activity {
                     daus {
                         userCount
@@ -401,10 +430,10 @@ export function fetchUserAndSiteAnalytics(): Observable<{ users: GQL.IUser[]; si
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.users) {
+            if (!data || !data.site || !data.site.activity) {
                 throw createAggregateError(errors)
             }
-            return { users: data.site.users.nodes, siteActivity: data.site.activity }
+            return data.site.activity
         })
     )
 }

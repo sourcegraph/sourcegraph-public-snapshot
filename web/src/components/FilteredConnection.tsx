@@ -60,8 +60,17 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
  */
 interface ConnectionPropsCommon<N, NP = {}> {
-    /** CSS class name for the <ul> element. */
+    /** list HTML element type. Default is <ul>. */
+    listComponent?: 'ul' | 'table'
+
+    /** CSS class name for the list element (<ul> or <table>). */
     listClassName?: string
+
+    /** Header row to appear above all nodes. */
+    headComponent?: React.ComponentType<{ nodes: N[] }>
+
+    /** Footer row to appear below all nodes. */
+    footComponent?: React.ComponentType<{ nodes: N[] }>
 
     /** CSS class name for the "Show more" button. */
     showMoreClassName?: string
@@ -126,6 +135,9 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
 
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
+        const ListComponent = this.props.listComponent || 'ul'
+        const HeadComponent = this.props.headComponent
+        const FootComponent = this.props.footComponent
 
         const hasNextPage =
             this.props.connection &&
@@ -196,20 +208,20 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
             }
         }
 
+        const nodes = this.props.connection.nodes.map((node, i) => (
+            <NodeComponent key={hasID(node) ? node.id : i} node={node} {...this.props.nodeComponentProps} />
+        ))
+
         return (
             <>
                 {this.props.connectionQuery && summary}
                 {this.props.connection &&
                     this.props.connection.nodes.length > 0 && (
-                        <ul className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
-                            {this.props.connection.nodes.map((node, i) => (
-                                <NodeComponent
-                                    key={hasID(node) ? node.id : i}
-                                    node={node}
-                                    {...this.props.nodeComponentProps}
-                                />
-                            ))}
-                        </ul>
+                        <ListComponent className={`filtered-connection__nodes ${this.props.listClassName || ''}`}>
+                            {HeadComponent && <HeadComponent nodes={this.props.connection.nodes} />}
+                            {ListComponent === 'table' ? <tbody>{nodes}</tbody> : nodes}
+                            {FootComponent && <FootComponent nodes={this.props.connection.nodes} />}
+                        </ListComponent>
                     )}
                 {!this.props.connectionQuery && summary}
                 {!this.props.loading &&
@@ -597,7 +609,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             query={this.state.query}
                             noun={this.props.noun}
                             pluralNoun={this.props.pluralNoun}
+                            listComponent={this.props.listComponent}
                             listClassName={this.props.listClassName}
+                            headComponent={this.props.headComponent}
+                            footComponent={this.props.footComponent}
                             showMoreClassName={this.props.showMoreClassName}
                             nodeComponent={this.props.nodeComponent}
                             nodeComponentProps={this.props.nodeComponentProps}

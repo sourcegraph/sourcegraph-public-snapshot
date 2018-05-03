@@ -113,7 +113,7 @@ func (r *siteResolver) Activity(ctx context.Context) (*siteActivityResolver, err
 	// TODO(Dan, Beyang): this endpoint should eventually only be accessible by site admins.
 	// It is temporarily exposed to all users on an instance.
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("Site analytics is not available on sourcegraph.com")
+		return nil, errors.New("site analytics is not available on sourcegraph.com")
 	}
 	activity, err := useractivity.GetSiteActivity(nil)
 	if err != nil {

@@ -11,6 +11,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Fixed
 
 * Fixed an issue where Index Search status page failed to render.
+* User data on the site admin Analytics page is now paginated, filterable by a user's recent activity, and searchable.
 
 ### Added
 

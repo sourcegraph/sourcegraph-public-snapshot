@@ -2100,6 +2100,8 @@ type Site implements ConfigurationSubject {
         first: Int
         # Return users whose usernames or display names match the query.
         query: String
+        # Returns users who have been active in a given period of time.
+        activePeriod: UserActivePeriod
     ): UserConnection!
     # List all organizations.
     orgs(
@@ -2505,6 +2507,18 @@ enum UserEvent {
     SEARCHQUERY
     CODEINTEL
     CODEINTELINTEGRATION
+}
+
+# A period of time in which a set of users have been active.
+enum UserActivePeriod {
+    # Since today at 00:00 UTC.
+    TODAY
+    # Since the latest Monday at 00:00 UTC.
+    THIS_WEEK
+    # Since the first day of the current month at 00:00 UTC.
+    THIS_MONTH
+    # All time.
+    ALL_TIME
 }
 
 # SiteActivity describes a site's aggregate activity level.
