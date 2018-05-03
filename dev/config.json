@@ -148,8 +148,6 @@
   //
   // To test SAML, set "auth.provider" to "saml" and uncomment this section.
   //
-  // TODO(sqs): Keycloak's SAML support is currently broken (https://issues.jboss.org/browse/KEYCLOAK-7032)
-  //
   // "auth.saml": {
   //   "identityProviderMetadataURL": "http://localhost:3220/auth/realms/master/protocol/saml/descriptor",
   //   "serviceProviderCertificate":
