@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+* `gitMaxConcurrentClones` now also limits the concurrency of updates to repos in addition to the initial clone.
+
 ### Fixed
 
 * Fixed an issue where Index Search status page failed to render.

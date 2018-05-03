@@ -802,6 +802,13 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 }
 
 func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string) {
+	ctx, cancel, err := s.acquireCloneLimiter(ctx)
+	if err != nil {
+		log15.Error("error acquiring clone lock for update", "err", err, "repo", repo)
+		return
+	}
+	defer cancel()
+
 	dir := path.Join(s.ReposDir, string(repo))
 
 	var urlIsGitRemote bool
