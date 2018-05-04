@@ -2,6 +2,7 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
+import { castArray } from 'lodash'
 import marked from 'marked'
 import * as React from 'react'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -353,7 +354,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
 
     private queryDefinition = (): Observable<{ loading: boolean; locations: Location[] }> =>
         fetchDefinition(this.props as AbsoluteRepoFilePosition).pipe(
-            map(c => ({ loading: false, locations: Array.isArray(c) ? c : [c] }))
+            map(locations => ({ loading: false, locations: locations ? castArray(locations) : [] }))
         )
 
     private queryReferencesLocal = (): Observable<{ loading: boolean; locations: Location[] }> =>

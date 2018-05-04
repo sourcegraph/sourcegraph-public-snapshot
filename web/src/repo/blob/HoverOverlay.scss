@@ -1,0 +1,57 @@
+.hover-overlay {
+    position: absolute;
+    width: 30rem;
+    max-height: 15rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    transition: opacity 200ms ease-in-out;
+
+    &__contents {
+        flex: 1 1 auto;
+        overflow-y: auto;
+    }
+
+    &__content {
+        display: block;
+        width: 100%;
+        padding: 0.5rem;
+        overflow-x: auto;
+        &:not(:first-child) {
+            border-top: 1px solid $color-border;
+            .theme-light & {
+                border-top-color: $color-light-border;
+            }
+        }
+        p:last-child {
+            margin-bottom: 0;
+        }
+        &--error {
+            color: $danger;
+            background: rgba($danger, 0.2);
+        }
+    }
+
+    &__actions {
+        flex: 0 0 auto;
+        width: 100%;
+        display: flex;
+        border-top: 1px solid $color-border;
+        .theme-light & {
+            border-top-color: $color-light-border;
+        }
+    }
+
+    &__action:not(:first-child) {
+        border-left: 1px solid $color-border;
+        .theme-light & {
+            border-left-color: $color-light-border;
+        }
+    }
+
+    &__action,
+    &__actions-placeholder {
+        flex: 1 1 auto;
+        border-radius: 0;
+    }
+}

@@ -1,0 +1,46 @@
+@import './HoverOverlay';
+
+.blob2 {
+    position: relative;
+    overflow: auto;
+    padding: 0.5rem 0 1rem;
+    tab-size: 4;
+
+    &__code {
+        table {
+            border-collapse: collapse;
+        }
+
+        td.line {
+            &::before {
+                // draw line number with css so it cannot be copied to clipboard
+                content: attr(data-line);
+                color: #31445e;
+            }
+
+            color: #31445e;
+            text-align: right;
+            padding-left: 0.5rem;
+            min-width: 2.25em;
+            user-select: none;
+            vertical-align: top;
+        }
+
+        td.line,
+        td.code {
+            padding: 0;
+        }
+
+        td.code {
+            width: 100%;
+            padding-left: 1rem;
+            white-space: pre;
+        }
+
+        &--wrapped {
+            td.code {
+                white-space: pre-wrap;
+            }
+        }
+    }
+}

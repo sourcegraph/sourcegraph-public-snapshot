@@ -18,6 +18,7 @@ import { useNewBlobPanel } from '../RepoRevContainer'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
+import { Blob2 } from './Blob2'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
@@ -93,6 +94,8 @@ interface State {
      */
     blobOrError?: GQL.IFile | ErrorLike
 }
+
+const useNewBlob = localStorage.getItem('newBlob') === 'true'
 
 export class BlobPage extends React.PureComponent<Props, State> {
     private propsUpdates = new Subject<Props>()
@@ -210,19 +213,34 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {renderAs === 'code' &&
                     !this.state.blobOrError.highlight.aborted && (
                         <>
-                            <Blob
-                                className="blob-page__blob"
-                                repoPath={this.props.repoPath}
-                                commitID={this.props.commitID}
-                                filePath={this.props.filePath}
-                                html={this.state.blobOrError.highlight.html}
-                                rev={this.props.rev}
-                                wrapCode={this.state.wrapCode}
-                                renderMode={renderMode}
-                                isLightTheme={this.props.isLightTheme}
-                                location={this.props.location}
-                                history={this.props.history}
-                            />
+                            {useNewBlob ? (
+                                <Blob2
+                                    className="blob-page__blob"
+                                    repoPath={this.props.repoPath}
+                                    commitID={this.props.commitID}
+                                    filePath={this.props.filePath}
+                                    html={this.state.blobOrError.highlight.html}
+                                    rev={this.props.rev}
+                                    wrapCode={this.state.wrapCode}
+                                    renderMode={renderMode}
+                                    location={this.props.location}
+                                    history={this.props.history}
+                                />
+                            ) : (
+                                <Blob
+                                    className="blob-page__blob"
+                                    repoPath={this.props.repoPath}
+                                    commitID={this.props.commitID}
+                                    filePath={this.props.filePath}
+                                    html={this.state.blobOrError.highlight.html}
+                                    rev={this.props.rev}
+                                    wrapCode={this.state.wrapCode}
+                                    renderMode={renderMode}
+                                    isLightTheme={this.props.isLightTheme}
+                                    location={this.props.location}
+                                    history={this.props.history}
+                                />
+                            )}
                             {useNewBlobPanel && (
                                 <BlobPanel
                                     {...this.props}

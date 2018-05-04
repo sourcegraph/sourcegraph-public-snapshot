@@ -153,7 +153,7 @@ export const fetchServerCapabilities = memoizeObservable(
 )
 
 export const fetchHover = memoizeObservable(
-    (pos: AbsoluteRepoFilePosition): Observable<Hover> =>
+    (pos: AbsoluteRepoFilePosition): Observable<Hover | null> =>
         sendLSPRequest(
             {
                 method: 'textDocument/hover',

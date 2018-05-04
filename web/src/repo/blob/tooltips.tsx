@@ -200,7 +200,10 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         if (!data.contents) {
             return
         }
-        const contentsArray: MarkedString[] = Array.isArray(data.contents) ? data.contents : [data.contents]
+        // The cast is technically wrong here, but this code doesn't support the new MarkupContent
+        const contentsArray: MarkedString[] = (Array.isArray(data.contents)
+            ? data.contents
+            : [data.contents]) as MarkedString[]
         if (contentsArray.length === 0) {
             return
         }
