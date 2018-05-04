@@ -31,3 +31,5 @@ export function scrollIntoView(el: Element, scrollRoot: Element): void {
         el.scrollIntoView(false)
     }
 }
+
+export const getDomElement = (path: string): Element | null => document.querySelector(`[data-tree-path='${path}']`)

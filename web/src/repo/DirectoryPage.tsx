@@ -12,7 +12,6 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { makeRepoURI } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { Form } from '../components/Form'
@@ -27,6 +26,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toPrettyBlobURL, toRepoURL, toTreeURL } from '../util/url'
+import { fetchTree } from './backend'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { FilteredGitCommitConnection, gitCommitFragment } from './commits/RepositoryCommitsPage'
 
@@ -53,37 +53,6 @@ const DirectoryEntry: React.SFC<{
         </Link>
     )
 }
-
-export const fetchTree = memoizeObservable(
-    (ctx: { repoPath: string; commitID: string; filePath: string }): Observable<GQL.ITree> =>
-        queryGraphQL(
-            gql`
-                query Tree($repoPath: String!, $commitID: String!, $filePath: String!) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            tree(path: $filePath) {
-                                directories {
-                                    name
-                                }
-                                files {
-                                    name
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || errors || !data.repository || !data.repository.commit || !data.repository.commit.tree) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit.tree
-            })
-        ),
-    makeRepoURI
-)
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -179,7 +148,11 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                     ),
                     tap(props => this.logViewEvent(props)),
                     switchMap(props =>
-                        fetchTree(props).pipe(
+                        fetchTree({
+                            repoPath: props.repoPath,
+                            rev: props.commitID,
+                            filePath: props.filePath,
+                        }).pipe(
                             catchError(err => [asError(err)]),
                             map(c => ({ treeOrError: c })),
                             startWith<Pick<State, 'treeOrError'>>({ treeOrError: undefined })

@@ -298,3 +298,38 @@ export const fetchFileExternalLinks = memoizeObservable(
         ),
     makeRepoURI
 )
+
+export const fetchTree = memoizeObservable(
+    (ctx: FetchFileMetadataCtx): Observable<GQL.ITree> =>
+        queryGraphQL(
+            gql`
+                query Tree($repoPath: String!, $rev: String!, $filePath: String!) {
+                    repository(uri: $repoPath) {
+                        commit(rev: $rev) {
+                            tree(path: $filePath) {
+                                directories {
+                                    name
+                                    path
+                                    isDirectory
+                                }
+                                files {
+                                    name
+                                    path
+                                    isDirectory
+                                }
+                            }
+                        }
+                    }
+                }
+            `,
+            ctx
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || errors || !data.repository || !data.repository.commit || !data.repository.commit.tree) {
+                    throw createAggregateError(errors)
+                }
+                return data.repository.commit.tree
+            })
+        ),
+    makeRepoURI
+)

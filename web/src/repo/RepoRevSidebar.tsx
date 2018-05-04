@@ -12,6 +12,7 @@ import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersisten
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { Tree2 } from '../tree/Tree2'
+import { Tree3 } from '../tree/Tree3'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
@@ -68,15 +69,14 @@ interface State {
     error?: string
 
     showSidebar: boolean
-
     /**
      * All file paths in the repository.
      */
     files?: string[]
 }
-
-// Run `localStorage.oldTree=true;location.reload()` to enable the old file tree in case of issues.
-const TreeOrTree2 = localStorage.getItem('oldTree') !== null ? Tree : Tree2
+// Run localStorage.treeVersion=3;location.reload() to get the newest file tree,
+// or run `localStorage.treeVersion=1;location.reload()` to get the oldest file tree in case of issues.
+const treeVersion = localStorage.getItem('treeVersion')
 
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
@@ -97,12 +97,14 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         // Fetch repository revision.
-        this.subscriptions.add(
-            this.specChanges
-                .pipe(switchMap(({ repoPath, commitID }) => fetchTree({ repoPath, commitID })))
-                .subscribe(files => this.setState({ files }), err => this.setState({ error: err.message }))
-        )
-        this.specChanges.next({ repoPath: this.props.repoPath, commitID: this.props.commitID })
+        if (treeVersion !== '3') {
+            this.subscriptions.add(
+                this.specChanges
+                    .pipe(switchMap(({ repoPath, commitID }) => fetchTree({ repoPath, commitID })))
+                    .subscribe(files => this.setState({ files }), err => this.setState({ error: err.message }))
+            )
+            this.specChanges.next({ repoPath: this.props.repoPath, commitID: this.props.commitID })
+        }
 
         // Toggle sidebar visibility when the user presses 'alt+s'.
         this.subscriptions.add(
@@ -168,28 +170,49 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         tabClassName="tab-bar__tab--h5like"
                         onSelectTab={this.onSelectTab}
                     >
-                        {this.state.files && (
-                            <TreeOrTree2
+                        {treeVersion === '3' ? (
+                            <Tree3
                                 key="files"
                                 repoPath={this.props.repoPath}
                                 rev={this.props.rev}
                                 history={this.props.history}
                                 scrollRootSelector="#explorer"
                                 activePath={this.props.filePath}
-                                selectedPath={this.props.filePath}
                                 activePathIsDir={this.props.isDir}
-                                paths={this.state.files}
                             />
+                        ) : (
+                            undefined
                         )}
-                        {
-                            <RepoRevSidebarSymbols
-                                key="symbols"
-                                repoID={this.props.repoID}
-                                rev={this.props.rev}
-                                history={this.props.history}
-                                location={this.props.location}
-                            />
-                        }
+                        {this.state.files &&
+                            (treeVersion === '1' ? (
+                                <Tree
+                                    key="files"
+                                    repoPath={this.props.repoPath}
+                                    rev={this.props.rev}
+                                    history={this.props.history}
+                                    scrollRootSelector="#explorer"
+                                    selectedPath={this.props.filePath}
+                                    paths={this.state.files}
+                                />
+                            ) : (
+                                <Tree2
+                                    key="files"
+                                    repoPath={this.props.repoPath}
+                                    rev={this.props.rev}
+                                    history={this.props.history}
+                                    activePath={this.props.filePath}
+                                    activePathIsDir={this.props.isDir}
+                                    scrollRootSelector="#explorer"
+                                    paths={this.state.files}
+                                />
+                            ))}
+                        <RepoRevSidebarSymbols
+                            key="symbols"
+                            repoID={this.props.repoID}
+                            rev={this.props.rev}
+                            history={this.props.history}
+                            location={this.props.location}
+                        />
                     </TabsWithLocalStorageViewStatePersistence>
                 }
             />
