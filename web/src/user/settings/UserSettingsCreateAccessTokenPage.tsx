@@ -155,6 +155,25 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                                 to the user account
                             </label>
                         </div>
+                        {this.props.user.siteAdmin && (
+                            <div className="form-check">
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id="user-settings-create-access-token-page__scope-site-admin:sudo"
+                                    checked={this.state.scopes.includes(AccessTokenScopes.SiteAdminSudo)}
+                                    value={AccessTokenScopes.SiteAdminSudo}
+                                    onChange={this.onScopesChange}
+                                />
+                                <label
+                                    className="form-check-label"
+                                    htmlFor="user-settings-create-access-token-page__scope-site-admin:sudo"
+                                >
+                                    <strong>{AccessTokenScopes.SiteAdminSudo}</strong> — Ability to perform any action
+                                    as any other user
+                                </label>
+                            </div>
+                        )}
                     </div>
                     <button
                         type="submit"

@@ -1,5 +1,13 @@
 package authz
 
-// ScopeUserAll is an access token scope that grants full control of all resources accessible to the
-// user account (the token's subject user).
-const ScopeUserAll = "user:all"
+const (
+	// Access token scopes.
+	ScopeUserAll       = "user:all"        // Full control of all resources accessible to the user account.
+	ScopeSiteAdminSudo = "site-admin:sudo" // Ability to perform any action as any other user.
+)
+
+// AllScopes is a list of all known access token scopes.
+var AllScopes = []string{
+	ScopeUserAll,
+	ScopeSiteAdminSudo,
+}

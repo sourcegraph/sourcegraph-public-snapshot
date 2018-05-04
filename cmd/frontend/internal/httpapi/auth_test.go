@@ -10,7 +10,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func TestAccessTokenAuthMiddleware(t *testing.T) {
@@ -46,7 +48,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		checkHTTPResponse(t, req, http.StatusOK, "user 123")
 	})
 
-	for _, invalidHeaderValue := range []string{"x", "x y", "token "} {
+	for _, invalidHeaderValue := range []string{"x", "x y", "token-sudo abc", `token-sudo token=""`, "token "} {
 		t.Run("invalid header "+invalidHeaderValue, func(t *testing.T) {
 			req, _ := http.NewRequest("GET", "/", nil)
 			req.Header.Set("Authorization", invalidHeaderValue)
@@ -70,18 +72,18 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 	})
 
 	for _, headerValue := range []string{"token abcdef", `token token="abcdef"`} {
-		t.Run("valid token: "+headerValue, func(t *testing.T) {
+		t.Run("valid non-sudo token: "+headerValue, func(t *testing.T) {
 			req, _ := http.NewRequest("GET", "/", nil)
 			req.Header.Set("Authorization", headerValue)
 			var calledAccessTokensLookup bool
 			db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+				calledAccessTokensLookup = true
 				if want := "abcdef"; tokenHexEncoded != want {
 					t.Errorf("got %q, want %q", tokenHexEncoded, want)
 				}
 				if want := authz.ScopeUserAll; requiredScope != want {
 					t.Errorf("got %q, want %q", requiredScope, want)
 				}
-				calledAccessTokensLookup = true
 				return 123, nil
 			}
 			defer func() { db.Mocks = db.MockStores{} }()
@@ -93,25 +95,145 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 	}
 
 	// Test that an access token overwrites the actor set by a prior auth middleware.
-	t.Run("actor present, valid token", func(t *testing.T) {
+	t.Run("actor present, valid non-sudo token", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", "token abcdef")
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 456}))
 		var calledAccessTokensLookup bool
 		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			calledAccessTokensLookup = true
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
 			}
 			if want := authz.ScopeUserAll; requiredScope != want {
 				t.Errorf("got %q, want %q", requiredScope, want)
 			}
-			calledAccessTokensLookup = true
 			return 123, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		checkHTTPResponse(t, req, http.StatusOK, "user 123")
 		if !calledAccessTokensLookup {
 			t.Error("!calledAccessTokensLookup")
+		}
+	})
+
+	t.Run("valid sudo token", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set("Authorization", `token-sudo token="abcdef",user="alice"`)
+		var calledAccessTokensLookup bool
+		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			calledAccessTokensLookup = true
+			if want := "abcdef"; tokenHexEncoded != want {
+				t.Errorf("got %q, want %q", tokenHexEncoded, want)
+			}
+			if want := authz.ScopeSiteAdminSudo; requiredScope != want {
+				t.Errorf("got %q, want %q", requiredScope, want)
+			}
+			return 123, nil
+		}
+		var calledUsersGetByID bool
+		db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+			calledUsersGetByID = true
+			if want := int32(123); userID != want {
+				t.Errorf("got %d, want %d", userID, want)
+			}
+			return &types.User{ID: userID, SiteAdmin: true}, nil
+		}
+		var calledUsersGetByUsername bool
+		db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+			calledUsersGetByUsername = true
+			if want := "alice"; username != want {
+				t.Errorf("got %q, want %q", username, want)
+			}
+			return &types.User{ID: 456, SiteAdmin: true}, nil
+		}
+		defer func() { db.Mocks = db.MockStores{} }()
+		checkHTTPResponse(t, req, http.StatusOK, "user 456")
+		if !calledAccessTokensLookup {
+			t.Error("!calledAccessTokensLookup")
+		}
+		if !calledUsersGetByID {
+			t.Error("!calledUsersGetByID")
+		}
+		if !calledUsersGetByUsername {
+			t.Error("!calledUsersGetByUsername")
+		}
+	})
+
+	// Test that if a sudo token's subject user is not a site admin (which means they were demoted
+	// from site admin AFTER the token was created), then the sudo token is invalid.
+	t.Run("valid sudo token, subject is not site admin", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set("Authorization", `token-sudo token="abcdef",user="alice"`)
+		var calledAccessTokensLookup bool
+		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			calledAccessTokensLookup = true
+			if want := "abcdef"; tokenHexEncoded != want {
+				t.Errorf("got %q, want %q", tokenHexEncoded, want)
+			}
+			if want := authz.ScopeSiteAdminSudo; requiredScope != want {
+				t.Errorf("got %q, want %q", requiredScope, want)
+			}
+			return 123, nil
+		}
+		var calledUsersGetByID bool
+		db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+			calledUsersGetByID = true
+			if want := int32(123); userID != want {
+				t.Errorf("got %d, want %d", userID, want)
+			}
+			return &types.User{ID: userID, SiteAdmin: false}, nil
+		}
+		defer func() { db.Mocks = db.MockStores{} }()
+		checkHTTPResponse(t, req, http.StatusForbidden, "The subject user of a sudo access token must be a site admin.\n")
+		if !calledAccessTokensLookup {
+			t.Error("!calledAccessTokensLookup")
+		}
+		if !calledUsersGetByID {
+			t.Error("!calledUsersGetByID")
+		}
+	})
+
+	t.Run("valid sudo token, invalid sudo user", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set("Authorization", `token-sudo token="abcdef",user="doesntexist"`)
+		var calledAccessTokensLookup bool
+		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			calledAccessTokensLookup = true
+			if want := "abcdef"; tokenHexEncoded != want {
+				t.Errorf("got %q, want %q", tokenHexEncoded, want)
+			}
+			if want := authz.ScopeSiteAdminSudo; requiredScope != want {
+				t.Errorf("got %q, want %q", requiredScope, want)
+			}
+			return 123, nil
+		}
+		var calledUsersGetByID bool
+		db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+			calledUsersGetByID = true
+			if want := int32(123); userID != want {
+				t.Errorf("got %d, want %d", userID, want)
+			}
+			return &types.User{ID: userID, SiteAdmin: true}, nil
+		}
+		var calledUsersGetByUsername bool
+		db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+			calledUsersGetByUsername = true
+			if want := "doesntexist"; username != want {
+				t.Errorf("got %q, want %q", username, want)
+			}
+			return nil, &errcode.Mock{IsNotFound: true}
+		}
+		defer func() { db.Mocks = db.MockStores{} }()
+		checkHTTPResponse(t, req, http.StatusForbidden, "Unable to sudo to nonexistent user.\n")
+		if !calledAccessTokensLookup {
+			t.Error("!calledAccessTokensLookup")
+		}
+		if !calledUsersGetByID {
+			t.Error("!calledUsersGetByID")
+		}
+		if !calledUsersGetByUsername {
+			t.Error("!calledUsersGetByUsername")
 		}
 	})
 }

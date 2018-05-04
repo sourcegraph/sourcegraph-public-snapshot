@@ -1,10 +1,13 @@
 import CircleCheckmarkIcon from '@sourcegraph/icons/lib/CircleCheckmark'
 import * as React from 'react'
+import { AccessTokenScopes } from '../../auth/accessToken'
+import * as GQL from '../../backend/graphqlschema'
 import { CopyableText } from '../../components/CopyableText'
 
 interface AccessTokenCreatedAlertProps {
     className: string
     tokenSecret: string
+    token: GQL.IAccessToken
 }
 
 /**
@@ -12,6 +15,7 @@ interface AccessTokenCreatedAlertProps {
  */
 export class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCreatedAlertProps> {
     public render(): JSX.Element | null {
+        const isSudoToken = this.props.token.scopes.includes(AccessTokenScopes.SiteAdminSudo)
         return (
             <div className={`access-token-created-alert ${this.props.className}`}>
                 <p>
@@ -22,17 +26,21 @@ export class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCrea
                 <h5 className="mt-4">
                     <strong>Example usage</strong>
                 </h5>
-                <pre className="mt-1">
-                    <code>{curlExampleCommand(this.props.tokenSecret)}</code>
+                <pre className="my-1">
+                    <code>{curlExampleCommand(this.props.tokenSecret, isSudoToken)}</code>
                 </pre>
             </div>
         )
     }
 }
 
-function curlExampleCommand(tokenSecret: string): string {
+function curlExampleCommand(tokenSecret: string, isSudoToken: boolean): string {
+    const credentials = isSudoToken
+        ? `token-sudo user="SUDO-TO-USERNAME",token="${tokenSecret}"`
+        : `token ${tokenSecret}`
+
     return `curl \\
-  -H 'Authorization: token ${tokenSecret}' \\
+  -H 'Authorization: ${credentials}' \\
   -d '{"query":"query { currentUser { username } }"}' \\
   ${window.context.appURL}/.api/graphql`
 }

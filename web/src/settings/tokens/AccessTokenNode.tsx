@@ -160,6 +160,7 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         <AccessTokenCreatedAlert
                             className="alert alert-success mt-4"
                             tokenSecret={this.props.newToken.token}
+                            token={this.props.node}
                         />
                     )}
             </li>

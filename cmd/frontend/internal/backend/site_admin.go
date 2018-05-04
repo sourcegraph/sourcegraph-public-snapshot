@@ -27,6 +27,21 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
 	return nil
 }
 
+// CheckUserIsSiteAdmin returns an error if the user is NOT a site admin.
+func CheckUserIsSiteAdmin(ctx context.Context, userID int32) error {
+	user, err := db.Users.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return ErrNotAuthenticated
+	}
+	if !user.SiteAdmin {
+		return ErrMustBeSiteAdmin
+	}
+	return nil
+}
+
 // CheckSiteAdminOrSameUser returns an error if the user is NEITHER (1) a
 // site admin NOR (2) the user specified by subjectUserID.
 //

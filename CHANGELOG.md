@@ -18,6 +18,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * The new repository contributors page (linked from the repository homepage) displays the top Git commit authors in a repository, with filtering options.
 * Custom langservers in the site config may now specify a `metadata` property containing things like homepage/docs/issues URLs for the language server project, as well as whether or not the language server should be considered experimental (not ready for prime-time). This `metadata` will be displayed in the UI to better communicate the status of a language server project.
 * Access tokens now have scopes (which define the set of operations they permit). All access tokens still provide full control of all resources associated with the user account (the `user:all` scope, which is now explicitly displayed).
+* The new access token scope `site-admin:sudo` allows the holder to perform any action as any other user. Only site admins may create this token.
 
 ## 2.7.6
 

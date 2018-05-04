@@ -28,6 +28,7 @@ const fetchUser = memoizeObservable(
                         displayName
                         avatarURL
                         viewerCanAdminister
+                        siteAdmin
                         createdAt
                         emails {
                             email

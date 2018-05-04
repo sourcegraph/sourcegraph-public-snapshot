@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -29,10 +30,30 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, err
 	}
 
-	// Only one scope is supported, and it must be present on all access tokens (because
-	// less-privileged access tokens are not supported).
-	if len(args.Scopes) != 1 || args.Scopes[0] != authz.ScopeUserAll {
-		return nil, fmt.Errorf(`access token must have a single scope %q`, authz.ScopeUserAll)
+	// Validate scopes.
+	var hasUserAllScope bool
+	seenScope := map[string]struct{}{}
+	sort.Strings(args.Scopes)
+	for _, scope := range args.Scopes {
+		switch scope {
+		case authz.ScopeUserAll:
+			hasUserAllScope = true
+		case authz.ScopeSiteAdminSudo:
+			// 🚨 SECURITY: Only site admins may create a token with the "site-admin:sudo" scope.
+			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)
+		}
+
+		if _, seen := seenScope[scope]; seen {
+			return nil, fmt.Errorf("access token scope %q may not be specified multiple times", scope)
+		}
+		seenScope[scope] = struct{}{}
+	}
+	if !hasUserAllScope {
+		return nil, fmt.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
 	id, token, err := db.AccessTokens.Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)

@@ -7,19 +7,25 @@ import (
 
 func TestParseAuthorizationHeader(t *testing.T) {
 	tests := map[string]struct {
-		token string
-		err   bool
+		token    string
+		sudoUser string
+		err      bool
 	}{
-		"token tok":           {token: "tok"},
-		"token tok==":         {token: "tok=="},
-		`token token=tok`:     {token: "tok"},
-		`token token="tok=="`: {token: "tok=="},
-		"xyz tok":             {err: true},
-		`token k=v, k=v`:      {err: true},
+		"token tok":                              {token: "tok"},
+		"token tok==":                            {token: "tok=="},
+		`token token=tok`:                        {token: "tok"},
+		`token token="tok=="`:                    {token: "tok=="},
+		`token-sudo token="tok==", user="alice"`: {token: "tok==", sudoUser: "alice"},
+		`token-sudo token=tok, user="alice"`:     {token: "tok", sudoUser: "alice"},
+		`token-sudo token="tok==", user=alice`:   {token: "tok==", sudoUser: "alice"},
+		"xyz tok":                          {err: true},
+		`token-sudo user="alice"`:          {err: true},
+		`token-sudo token="",user="alice"`: {err: true},
+		`token k=v, k=v`:                   {err: true},
 	}
 	for input, test := range tests {
 		t.Run(input, func(t *testing.T) {
-			token, err := ParseAuthorizationHeader(input)
+			token, sudoUser, err := ParseAuthorizationHeader(input)
 			if (err != nil) != test.err {
 				t.Errorf("got error %v, want error? %v", err, test.err)
 			}
@@ -28,6 +34,9 @@ func TestParseAuthorizationHeader(t *testing.T) {
 			}
 			if token != test.token {
 				t.Errorf("got token %q, want %q", token, test.token)
+			}
+			if sudoUser != test.sudoUser {
+				t.Errorf("got sudoUser %+v, want %+v", sudoUser, test.sudoUser)
 			}
 		})
 	}

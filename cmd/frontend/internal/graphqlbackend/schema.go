@@ -246,6 +246,8 @@ type Mutation {
     # The supported scopes are:
     #
     # - "user:all": Full control of all resources accessible to the user account.
+    # - "site-admin:sudo": Ability to perform any action as any other user. (Only site admins may create tokens
+    #   with this scope.)
     #
     # Only the user or site admins may perform this mutation.
     createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!

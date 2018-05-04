@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	SchemeToken = "token" // Scheme for Authorization header with only an access token
+	SchemeToken     = "token"      // Scheme for Authorization header with only an access token
+	SchemeTokenSudo = "token-sudo" // Scheme for Authorization header with access token and sudo user
 )
 
 // ParseAuthorizationHeader parses the HTTP Authorization request header for supported credentials
@@ -19,29 +20,35 @@ const (
 //
 // - With only an access token: "token" 1*SP token68
 // - With a token as params:
-//   "token" 1*SP "token" BWS "=" BWS quoted-strang
+//   "token" 1*SP "token" BWS "=" BWS quoted-string
 //
 // The returned values are derived directly from user input and have not been validated or
 // authenticated.
-func ParseAuthorizationHeader(headerValue string) (token string, err error) {
+func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err error) {
 	scheme, token68, params, err := parseHTTPCredentials(headerValue)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	if scheme != SchemeToken {
-		return "", errors.New("unrecognized HTTP Authorization request header scheme (supported values: token)")
+	if scheme != SchemeToken && scheme != SchemeTokenSudo {
+		return "", "", errors.New("unrecognized HTTP Authorization request header scheme (supported values: token, token-sudo)")
 	}
 
 	if token68 != "" {
-		return token68, nil
+		switch scheme {
+		case SchemeToken:
+			return token68, "", nil
+		case SchemeTokenSudo:
+			return "", "", errors.New(`HTTP Authorization request header value must be of the following form: token="TOKEN",user="USERNAME"`)
+		}
 	}
 
 	token = params["token"]
 	if token == "" {
-		return "", errors.New("no token value in the HTTP Authorization request header")
+		return "", "", errors.New("no token value in the HTTP Authorization request header")
 	}
-	return token, nil
+	sudoUser = params["user"]
+	return token, sudoUser, nil
 }
 
 // parseHTTPCredentials parses the "credentials" token as defined in [RFC 7235 Appendix

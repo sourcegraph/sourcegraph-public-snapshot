@@ -3,4 +3,5 @@
  */
 export enum AccessTokenScopes {
     UserAll = 'user:all',
+    SiteAdminSudo = 'site-admin:sudo',
 }
