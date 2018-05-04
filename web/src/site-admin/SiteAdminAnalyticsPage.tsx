@@ -115,13 +115,13 @@ class UserActivityNode extends React.PureComponent<UserActivityNodeProps> {
     }
 }
 
-class FilteredUsersByActivityConnection extends FilteredConnection<GQL.IUser, {}> {}
+class FilteredUserConnection extends FilteredConnection<GQL.IUser, {}> {}
 
-interface Props extends RouteComponentProps<any> {
+interface SiteAdminAnalyticsPageProps extends RouteComponentProps<any> {
     isLightTheme: boolean
 }
 
-export interface State {
+export interface SiteAdminAnalyticsPageState {
     users?: GQL.IUserConnection
     siteActivity?: GQL.ISiteActivity
     error?: Error
@@ -131,7 +131,7 @@ export interface State {
 /**
  * A page displaying usage analytics for the site.
  */
-export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
+export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPageProps, SiteAdminAnalyticsPageState> {
     private static FILTERS: FilteredConnectionFilter[] = [
         {
             label: 'Active today',
@@ -159,7 +159,7 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
         },
     ]
 
-    public state: State = {
+    public state: SiteAdminAnalyticsPageState = {
         chartID: this.loadLatestChartFromStorage(),
     }
 
@@ -231,7 +231,7 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                     </>
                 )}
                 <h3 className="mt-4">All registered users</h3>
-                <FilteredUsersByActivityConnection
+                <FilteredUserConnection
                     listComponent="table"
                     className="table table-hover"
                     hideFilter={false}
@@ -241,7 +241,6 @@ export class SiteAdminAnalyticsPage extends React.Component<Props, State> {
                     pluralNoun="users"
                     queryConnection={fetchUserAnalytics}
                     nodeComponent={UserActivityNode}
-                    nodeComponentProps={{}}
                     headComponent={UserActivityHeader}
                     footComponent={UserActivityFooter}
                     history={this.props.history}
