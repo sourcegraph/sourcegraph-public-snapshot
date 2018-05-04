@@ -1,4 +1,5 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
+import { ServerCapabilities } from 'javascript-typescript-langserver/lib/request-type'
 import { isEqual, upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -7,7 +8,6 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { forkJoin, Observable, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { ServerCapabilities } from 'vscode-languageserver-protocol'
 import { AbsoluteRepoFile } from '..'
 import { EMODENOTFOUND, fetchServerCapabilities } from '../../backend/lsp'
 import { getModeFromPath } from '../../util'
@@ -19,6 +19,10 @@ interface LangServer {
     homepageURL?: string
     issuesURL?: string
     capabilities: ServerCapabilities
+}
+
+function hasCrossRepositoryCodeIntelligence(capabilities: ServerCapabilities): boolean {
+    return !!capabilities.xdefinitionProvider && !!capabilities.xworkspaceReferencesProvider
 }
 
 const CapabilityStatus: React.StatelessComponent<{ label: string; provided: boolean }> = ({ label, provided }) => (
@@ -107,7 +111,8 @@ export class CodeIntelStatusIndicator extends React.Component<
         if (
             !this.state.langServerOrError.capabilities.hoverProvider ||
             !this.state.langServerOrError.capabilities.referencesProvider ||
-            !this.state.langServerOrError.capabilities.definitionProvider
+            !this.state.langServerOrError.capabilities.definitionProvider ||
+            !hasCrossRepositoryCodeIntelligence(this.state.langServerOrError.capabilities)
         ) {
             return 'text-warning'
         }
@@ -148,22 +153,33 @@ export class CodeIntelStatusIndicator extends React.Component<
                                         {this.state.langServerOrError.displayName || language} language server
                                     </a>
                                 </h3>
+                                <h4 className="mt-2 mb-0">Provides:</h4>
                                 <ul className="list-unstyled">
                                     <CapabilityStatus
-                                        label="Hover tooltips"
+                                        label="Hovers"
                                         provided={!!this.state.langServerOrError.capabilities.hoverProvider}
                                     />
                                     <CapabilityStatus
-                                        label="Go to definition"
+                                        label="Definitions"
                                         provided={!!this.state.langServerOrError.capabilities.definitionProvider}
                                     />
                                     <CapabilityStatus
-                                        label="Find all references"
+                                        label="References"
                                         provided={!!this.state.langServerOrError.capabilities.referencesProvider}
                                     />
                                     <CapabilityStatus
-                                        label="Find implementations"
+                                        label="Implementations"
                                         provided={!!this.state.langServerOrError.capabilities.implementationProvider}
+                                    />
+                                </ul>
+                                <h4 className="mt-2 mb-0">Scope:</h4>
+                                <ul className="list-unstyled">
+                                    <CapabilityStatus label="Local" provided={true} />
+                                    <CapabilityStatus
+                                        label="Cross-repository"
+                                        provided={hasCrossRepositoryCodeIntelligence(
+                                            this.state.langServerOrError.capabilities
+                                        )}
                                     />
                                 </ul>
                                 {this.props.userIsSiteAdmin && (
