@@ -277,6 +277,28 @@ type Mutation {
         # The URL to the phabricator instance (e.g. http://phabricator.sgdev.org).
         url: String!
     ): EmptyResponse
+
+    # Resolves a revision for a given diff from Phabricator.
+    resolvePhabricatorDiff(
+        # The name of the repository that the diff is based on.
+        repoName: String!
+        # The ID of the diff on Phabricator.
+        diffID: ID!
+        # The base revision this diff is based on.
+        baseRev: String!
+        # The raw contents of the diff from Phabricator.
+        # Required if Sourcegraph doesn't have a Conduit API token.
+        patch: String
+        # The description of the diff. This will be used as the commit message.
+        description: String
+        # The name of author of the diff.
+        authorName: String
+        # The author's email.
+        authorEmail: String
+        # When the diff was created.
+        date: String
+    ): GitCommit
+
     # Logs a user event.
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other

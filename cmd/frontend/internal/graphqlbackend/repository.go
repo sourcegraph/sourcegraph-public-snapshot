@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -19,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -96,7 +100,18 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
-	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
+	commit, err := getCommit(ctx, r.repo, args.Rev)
+	if err != nil {
+		return nil, err
+	}
+
+	resolver := toGitCommitResolver(r, commit)
+	resolver.inputRev = &args.Rev
+	return resolver, nil
+}
+
+func getCommit(ctx context.Context, repo *types.Repo, rev string) (*vcs.Commit, error) {
+	commitID, err := backend.Repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
 		if vcs.IsRevisionNotFound(err) {
 			return nil, nil
@@ -106,13 +121,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
-	if err != nil {
-		return nil, err
-	}
-	resolver := toGitCommitResolver(r, commit)
-	resolver.inputRev = &args.Rev
-	return resolver, nil
+	return backend.Repos.GetCommit(ctx, repo, commitID)
 }
 
 func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCommitResolver, error) {
@@ -254,4 +263,118 @@ func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 		log15.Error("adding phabricator repo", "callsign", args.Callsign, "uri", args.URI, "url", args.URL)
 	}
 	return nil, err
+}
+
+func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct {
+	RepoName    string
+	DiffID      int32
+	BaseRev     string
+	Patch       *string
+	AuthorName  *string
+	AuthorEmail *string
+	Description *string
+	Date        *string
+}) (*gitCommitResolver, error) {
+	repo, err := db.Repos.GetByURI(ctx, api.RepoURI(args.RepoName))
+	if err != nil {
+		return nil, err
+	}
+
+	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
+
+	repoResolver := &repositoryResolver{repo: repo}
+	// If we already created the commit
+	if commit, err := getCommit(ctx, repo, targetRef); commit != nil && err == nil {
+		return toGitCommitResolver(repoResolver, commit), nil
+	}
+
+	vcsrepo := backend.Repos.CachedVCS(repo)
+
+	origin := ""
+	if phabRepo, err := db.Phabricator.GetByURI(ctx, api.RepoURI(args.RepoName)); err == nil {
+		origin = phabRepo.URL
+	}
+
+	if origin == "" {
+		return nil, errors.New("unable to resolve the origin of the phabricator instance")
+	}
+
+	client, clientErr := makePhabClientForOrigin(origin)
+
+	patch := ""
+	if args.Patch != nil {
+		patch = *args.Patch
+	} else if client == nil {
+		return nil, clientErr
+	} else {
+		diff, err := client.GetRawDiff(int(args.DiffID))
+		// No diff contents were given and we couldn't fetch them
+		if err != nil {
+			return nil, err
+		}
+
+		patch = diff
+	}
+
+	description := ""
+	if args.Description != nil {
+		description = *args.Description
+	}
+
+	var info *phabricator.DiffInfo
+	if client != nil && args.AuthorEmail == nil || args.AuthorName == nil || args.Date == nil {
+		info, err = client.GetDiffInfo(int(args.DiffID))
+		// Not all the information was given and we couldn't fetch it
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		date, err := phabricator.ParseDate(*args.Date)
+		if err != nil {
+			return nil, err
+		}
+
+		info = &phabricator.DiffInfo{
+			AuthorName:  *args.AuthorName,
+			AuthorEmail: *args.AuthorEmail,
+			Message:     description,
+			Date:        *date,
+		}
+	}
+
+	rev, err := vcsrepo.CreateCommitFromPatch(ctx, vcs.PatchOptions{
+		BaseCommit: api.CommitID(args.BaseRev),
+		TargetRef:  targetRef,
+		Patch:      patch,
+		Info: vcs.PatchCommitInfo{
+			AuthorName:  info.AuthorName,
+			AuthorEmail: info.AuthorEmail,
+			Message:     info.Message,
+			Date:        info.Date,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := getCommit(ctx, repo, rev)
+
+	return toGitCommitResolver(repoResolver, commit), err
+}
+
+func makePhabClientForOrigin(origin string) (*phabricator.Client, error) {
+	phabs := conf.Get().Phabricator
+	for _, phab := range phabs {
+		if phab.Url != origin {
+			continue
+		}
+
+		if phab.Token == "" {
+			return nil, errors.Errorf("no phabricator token was given for: %s", origin)
+		}
+
+		return phabricator.NewClient(phab.Url, phab.Token), nil
+	}
+
+	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
 }

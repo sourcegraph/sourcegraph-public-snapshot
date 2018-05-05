@@ -19,6 +19,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -54,6 +55,8 @@ var (
 		"--find-renames",
 		"--inter-hunk-context",
 	}
+
+	reposDir = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
 )
 
 type Repository struct {
@@ -1152,4 +1155,11 @@ func (r *Repository) ensureAbsCommit(commitID api.CommitID) {
 	if len(commitID) != 40 {
 		panic(fmt.Errorf("non-absolute commit ID: %q on %s", commitID, r.String()))
 	}
+}
+
+func (r *Repository) CreateCommitFromPatch(ctx context.Context, opt vcs.PatchOptions) (string, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CreatePhabricatorStagingObject")
+	defer span.Finish()
+
+	return gitserver.DefaultClient.CreateCommitFromPatch(ctx, r.repoURI, opt)
 }

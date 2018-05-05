@@ -41,6 +41,8 @@ type MockRepository struct {
 	RawLogDiffSearch_ func(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error)
 
 	BehindAhead_ func(ctx context.Context, left, right string) (*vcs.BehindAhead, error)
+
+	CreateCommitFromPatch_ func(ctx context.Context, opt vcs.PatchOptions) (string, error)
 }
 
 var _ vcs.Repository = MockRepository{}
@@ -127,4 +129,8 @@ func (r MockRepository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiff
 
 func (r MockRepository) BehindAhead(ctx context.Context, left, right string) (*vcs.BehindAhead, error) {
 	return r.BehindAhead_(ctx, left, right)
+}
+
+func (r MockRepository) CreateCommitFromPatch(ctx context.Context, opt vcs.PatchOptions) (string, error) {
+	return r.CreateCommitFromPatch_(ctx, opt)
 }

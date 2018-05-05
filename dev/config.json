@@ -25,7 +25,7 @@
           "callsign": "STRIPEGO"
         }
       ]
-      // "token": "api-agswx2nwodkweitoo3t5l4dcc5xu"
+      // "token": "api-5ngcoazuyugsoiuumxxuhd4g26ac"
     }
   ],
   // To test with Gitolite, set up SSH authentication for gitolite.sgdev.org using
@@ -35,7 +35,7 @@
   //   {
   //     "host": "git@gitolite.sgdev.org",
   //     "prefix": "gitolite.sgdev.org/",
-  //     "blacklist": "blacklist",
+  //     "blacklist": "blacklist"
   //   }
   // ],
   "github": [

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
@@ -141,6 +142,8 @@ type Repository interface {
 	// BehindAhead returns the behind/ahead commit counts information
 	// for right vs. left (both Git revspecs).
 	BehindAhead(ctx context.Context, left, right string) (*BehindAhead, error)
+
+	CreateCommitFromPatch(ctx context.Context, opt PatchOptions) (string, error)
 }
 
 // BlameOptions configures a blame.
@@ -312,4 +315,21 @@ type Highlight struct {
 	Line      int // the 1-indexed line number
 	Character int // the 1-indexed character on the line
 	Length    int // the length of the highlight, in characters (on the same line)
+}
+
+// PatchOptions are the arguments for (Repository).CreateCommitFromPatch
+type PatchOptions struct {
+	BaseCommit api.CommitID
+	TargetRef  string
+	Patch      string
+
+	Info PatchCommitInfo
+}
+
+// PatchCommitInfo will be used for commit information when creating a commit from a patch
+type PatchCommitInfo struct {
+	Message     string
+	AuthorName  string
+	AuthorEmail string
+	Date        time.Time
 }

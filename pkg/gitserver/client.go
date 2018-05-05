@@ -133,6 +133,7 @@ type Cmd struct {
 	client *Client
 
 	Args           []string
+	Env            []string
 	Repo           // the repository to execute the command in
 	EnsureRevision string
 	ExitStatus     int
@@ -158,6 +159,7 @@ func (c *Client) Command(name string, arg ...string) *Cmd {
 	return &Cmd{
 		client: c,
 		Args:   append([]string{"git"}, arg...),
+		Env:    make([]string, 0),
 	}
 }
 
@@ -456,3 +458,30 @@ func (c *Client) UploadPack(repoURI api.RepoURI, w http.ResponseWriter, r *http.
 }
 
 var uploadPackErrorLog = log.New(env.DebugOut, "git upload-pack proxy: ", log.LstdFlags)
+
+func (c *Client) CreateCommitFromPatch(ctx context.Context, repo api.RepoURI, opt vcs.PatchOptions) (string, error) {
+	req := protocol.CreatePatchFromPatchRequest{
+		Repo:       repo,
+		BaseCommit: opt.BaseCommit,
+		Patch:      opt.Patch,
+		TargetRef:  opt.TargetRef,
+		CommitInfo: opt.Info,
+	}
+
+	resp, err := c.httpPost(ctx, repo, "create-commit-from-patch", req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println("gitserver err res:", string(b))
+
+		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d", resp.StatusCode)}
+	}
+
+	var res protocol.CreatePatchFromPatchResponse
+
+	return res.Rev, json.NewDecoder(resp.Body).Decode(&res)
+}
