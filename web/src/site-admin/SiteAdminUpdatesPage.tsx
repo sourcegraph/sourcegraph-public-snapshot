@@ -119,6 +119,11 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                         {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
                     </small>
                 </p>
+                <p>
+                    <a href="https://about.sourcegraph.com/changelog" target="_blank">
+                        Changelog
+                    </a>
+                </p>
             </div>
         )
     }
