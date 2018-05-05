@@ -65,7 +65,7 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 
 var callSignPattern = regexp.MustCompile("^[A-Z]+$")
 
-func getGitolitePhabCallsign(ctx context.Context, gconf schema.GitoliteConnection, repo string, command string) (string, error) {
+func getGitolitePhabCallsign(ctx context.Context, gconf *schema.GitoliteConnection, repo string, command string) (string, error) {
 	cmd := exec.CommandContext(ctx, "bash", "-c", command)
 	cmd.Env = append(os.Environ(), "REPO="+repo)
 	stdout, err := cmd.Output()

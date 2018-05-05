@@ -28,20 +28,20 @@ func TestDiff(t *testing.T) {
 		},
 		{
 			name:   "slice_diff",
-			before: &schema.SiteConfiguration{AppURL: "a", Langservers: []schema.Langservers{schema.Langservers{Address: "a"}}},
-			after:  &schema.SiteConfiguration{AppURL: "a", Langservers: []schema.Langservers{schema.Langservers{Address: "b"}}},
+			before: &schema.SiteConfiguration{AppURL: "a", Langservers: []*schema.Langservers{{Address: "a"}}},
+			after:  &schema.SiteConfiguration{AppURL: "a", Langservers: []*schema.Langservers{{Address: "b"}}},
 			want:   []string{"langservers"},
 		},
 		{
 			name:   "slice_nodiff",
-			before: &schema.SiteConfiguration{AppURL: "a", Langservers: []schema.Langservers{schema.Langservers{Address: "a"}}},
-			after:  &schema.SiteConfiguration{AppURL: "a", Langservers: []schema.Langservers{schema.Langservers{Address: "a"}}},
+			before: &schema.SiteConfiguration{AppURL: "a", Langservers: []*schema.Langservers{{Address: "a"}}},
+			after:  &schema.SiteConfiguration{AppURL: "a", Langservers: []*schema.Langservers{{Address: "a"}}},
 			want:   nil,
 		},
 		{
 			name:   "multi_diff",
-			before: &schema.SiteConfiguration{AppURL: "a", Langservers: []schema.Langservers{schema.Langservers{Address: "b"}}},
-			after:  &schema.SiteConfiguration{AppURL: "b", Langservers: []schema.Langservers{schema.Langservers{Address: "a"}}},
+			before: &schema.SiteConfiguration{AppURL: "a", Langservers: []*schema.Langservers{{Address: "b"}}},
+			after:  &schema.SiteConfiguration{AppURL: "b", Langservers: []*schema.Langservers{{Address: "a"}}},
 			want:   []string{"appURL", "langservers"},
 		},
 	}

@@ -6,7 +6,7 @@ export GOBIN="$PWD/vendor/.bin"
 export PATH=$GOBIN:$PATH
 
 go install github.com/sourcegraph/sourcegraph/vendor/golang.org/x/tools/cmd/stringer
-go install github.com/sourcegraph/sourcegraph/vendor/github.com/sqs/generate/cmd/schema-generate
+go install github.com/sourcegraph/sourcegraph/vendor/github.com/a-h/generate/cmd/schema-generate
 
 # Runs generate.sh and ensures no files changed. This relies on the go
 # generation that ran are idempotent.

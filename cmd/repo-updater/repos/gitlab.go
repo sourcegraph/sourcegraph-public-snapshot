@@ -49,7 +49,7 @@ func init() {
 			if !hasGitLabDotComConnection {
 				// Add a GitLab.com entry by default, to support navigating to URL paths like
 				// /gitlab.com/foo/bar to auto-add that project.
-				gitlabConf = append(gitlabConf, schema.GitLabConnection{
+				gitlabConf = append(gitlabConf, &schema.GitLabConnection{
 					ProjectQuery: []string{"none"}, // don't try to list all repositories during syncs
 					Url:          "https://gitlab.com",
 					InitialRepositoryEnablement: true,
@@ -228,7 +228,7 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 	close(repoChan)
 }
 
-func newGitLabConnection(config schema.GitLabConnection) (*gitlabConnection, error) {
+func newGitLabConnection(config *schema.GitLabConnection) (*gitlabConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
@@ -248,7 +248,7 @@ func newGitLabConnection(config schema.GitLabConnection) (*gitlabConnection, err
 }
 
 type gitlabConnection struct {
-	config  schema.GitLabConnection
+	config  *schema.GitLabConnection
 	baseURL *url.URL // URL with path /api/v4 (no trailing slash)
 	client  *gitlab.Client
 }

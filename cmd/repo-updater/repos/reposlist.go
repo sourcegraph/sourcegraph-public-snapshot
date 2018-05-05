@@ -59,7 +59,7 @@ func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {
 	}
 }
 
-func updateRepo(ctx context.Context, repoConf schema.Repository) error {
+func updateRepo(ctx context.Context, repoConf *schema.Repository) error {
 	uri := api.RepoURI(repoConf.Path)
 	repo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoURI: uri, Enabled: true})
 	if err != nil {

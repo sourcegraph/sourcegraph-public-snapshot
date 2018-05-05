@@ -204,7 +204,7 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 	close(repoChan)
 }
 
-func newAWSCodeCommitConnection(config schema.AWSCodeCommitConnection) (*awsCodeCommitConnection, error) {
+func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection) (*awsCodeCommitConnection, error) {
 	awsConfig := defaults.Config()
 	awsConfig.Region = config.Region
 	awsConfig.Credentials = aws.StaticCredentialsProvider{
@@ -233,7 +233,7 @@ func newAWSCodeCommitConnection(config schema.AWSCodeCommitConnection) (*awsCode
 }
 
 type awsCodeCommitConnection struct {
-	config       schema.AWSCodeCommitConnection
+	config       *schema.AWSCodeCommitConnection
 	awsConfig    aws.Config
 	awsPartition endpoints.Partition // "aws", "aws-cn", "aws-us-gov"
 	awsRegion    endpoints.Region

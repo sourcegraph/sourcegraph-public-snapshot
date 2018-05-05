@@ -75,7 +75,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 					log15.Error("Error fetching Phabricator repos", "err", err)
 					break
 				}
-				err = updatePhabRepos(ctx, &c, res.Data)
+				err = updatePhabRepos(ctx, c, res.Data)
 				if err != nil {
 					log15.Error("Error updating Phabricator repos", "err", err)
 				}
@@ -92,7 +92,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
 	}
 }
 
-func fetchPhabRepos(ctx context.Context, cfg schema.Phabricator, after string) (*phabRepoLookupResponse, error) {
+func fetchPhabRepos(ctx context.Context, cfg *schema.Phabricator, after string) (*phabRepoLookupResponse, error) {
 	form := url.Values{}
 	form.Add("output", "json")
 	form.Add("params[__conduit__]", `{"token": "`+cfg.Token+`"}`)

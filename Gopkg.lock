@@ -26,6 +26,16 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/a-h/generate"
+  packages = [
+    ".",
+    "cmd/schema-generate",
+    "jsonschema"
+  ]
+  revision = "cc7c51fc9a44cba03cff94475efa10162011c620"
+
+[[projects]]
   name = "github.com/apache/thrift"
   packages = ["lib/go/thrift"]
   revision = "b2a4d4ae21c789b689dd162deb819665567f481c"
@@ -925,16 +935,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/sqs/generate"
-  packages = [
-    ".",
-    "cmd/schema-generate",
-    "jsonschema"
-  ]
-  revision = "2a35d6f9d0d5e30ea18a8d3a6cb9f008448ebc88"
-
-[[projects]]
-  branch = "master"
   name = "github.com/sqs/httpgzip"
   packages = ["."]
   revision = "3df7b3563cfe5626e5b109992a6c0b07edadfaa4"
@@ -1387,6 +1387,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dd83547855bc45d80e560a463cde102582fd5c709d798e0024bfec1ce2d0bbda"
+  inputs-digest = "1613a00a939d96b5b9de715bfc15182a33f47a842a3cf25799390a17524fdf97"
   solver-name = "gps-cdcl"
   solver-version = 1

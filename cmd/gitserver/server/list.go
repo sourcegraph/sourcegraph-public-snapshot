@@ -75,7 +75,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func listGitoliteRepos(ctx context.Context, gconf schema.GitoliteConnection) ([]string, error) {
+func listGitoliteRepos(ctx context.Context, gconf *schema.GitoliteConnection) ([]string, error) {
 	if gitoliteBlacklistErr != nil {
 		return nil, gitoliteBlacklistErr
 	}

@@ -57,7 +57,7 @@ func SetDisabled(language string, disabled bool) error {
 
 	return conf.Edit(func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error) {
 		// Copy the langservers slice, since we intend to edit it.
-		newLangservers := make([]schema.Langservers, 0, len(current.Langservers))
+		newLangservers := make([]*schema.Langservers, 0, len(current.Langservers))
 
 		foundExisting := false
 		for _, existing := range current.Langservers {
@@ -70,12 +70,12 @@ func SetDisabled(language string, disabled bool) error {
 		}
 		if !foundExisting {
 			// Doesn't already exist, so add a new entry.
-			var newLangserver schema.Langservers
+			var newLangserver *schema.Langservers
 			if !customLangserver {
-				newLangserver = StaticInfo[language].siteConfig
+				newLangserver = &StaticInfo[language].siteConfig
 			} else {
 				// best effort
-				newLangserver = schema.Langservers{Language: language}
+				newLangserver = &schema.Langservers{Language: language}
 			}
 			newLangserver.Disabled = disabled
 			newLangservers = append(newLangservers, newLangserver)

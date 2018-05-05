@@ -92,9 +92,9 @@ func HasGitLabDotComToken() bool {
 }
 
 // EnabledLangservers returns the langservers that are not disabled.
-func EnabledLangservers() []schema.Langservers {
+func EnabledLangservers() []*schema.Langservers {
 	all := Get().Langservers
-	results := make([]schema.Langservers, 0, len(all))
+	results := make([]*schema.Langservers, 0, len(all))
 	for _, langserver := range all {
 		if langserver.Disabled {
 			continue

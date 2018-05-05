@@ -11,7 +11,7 @@ import (
 
 func TestServer_handleGet(t *testing.T) {
 	conf.MockGetData = &schema.SiteConfiguration{
-		Gitolite: []schema.GitoliteConnection{{
+		Gitolite: []*schema.GitoliteConnection{{
 			Blacklist: "isblaclist.*",
 			Prefix:    "mygitolite.host/",
 			Host:      "git@mygitolite.host",
@@ -47,7 +47,7 @@ func TestServer_handleGet(t *testing.T) {
 
 func TestServer_handleGet_invalid(t *testing.T) {
 	conf.MockGetData = &schema.SiteConfiguration{
-		Gitolite: []schema.GitoliteConnection{{
+		Gitolite: []*schema.GitoliteConnection{{
 			Blacklist: "isblaclist.*",
 			Prefix:    "mygitolite.host/",
 			Host:      "git@mygitolite.host",

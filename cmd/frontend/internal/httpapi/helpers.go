@@ -29,7 +29,7 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 
 // tryUpdateGitolitePhabricatorMetadata attempts to update Phabricator metadata for a Gitolite-sourced repository, if it
 // is appropriate to do so.
-func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf schema.GitoliteConnection, repoURI api.RepoURI, repoName string) {
+func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.GitoliteConnection, repoURI api.RepoURI, repoName string) {
 	if gconf.PhabricatorMetadataCommand == "" {
 		return
 	}
