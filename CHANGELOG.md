@@ -7,6 +7,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Changed
 
 * `gitMaxConcurrentClones` now also limits the concurrency of updates to repos in addition to the initial clone.
+* In the GraphQL API, `site.users` has been renamed to `users`, `site.orgs` has been renamed to `organizations`, and `site.repositories` has been renamed to `repositories`.
 
 ### Fixed
 

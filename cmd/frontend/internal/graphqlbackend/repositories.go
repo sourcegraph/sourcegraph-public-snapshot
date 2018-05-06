@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
-func (r *siteResolver) Repositories(args *struct {
+func (r *schemaResolver) Repositories(args *struct {
 	connectionArgs
 	Query           *string
 	Enabled         bool

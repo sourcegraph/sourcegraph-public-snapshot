@@ -15,16 +15,14 @@ function fetchRepositories(args: { first?: number; query?: string }): Observable
     return queryGraphQL(
         gql`
             query Repositories($first: Int, $query: String) {
-                site {
-                    repositories(first: $first, query: $query) {
-                        nodes {
-                            id
-                            uri
-                        }
-                        totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
+                repositories(first: $first, query: $query) {
+                    nodes {
+                        id
+                        uri
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
                     }
                 }
             }
@@ -32,10 +30,10 @@ function fetchRepositories(args: { first?: number; query?: string }): Observable
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.repositories) {
+            if (!data || !data.repositories) {
                 throw createAggregateError(errors)
             }
-            return data.site.repositories
+            return data.repositories
         })
     )
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )
 
-func (r *siteResolver) Orgs(args *struct {
+func (r *schemaResolver) Organizations(args *struct {
 	connectionArgs
 	Query *string
 }) *orgConnectionResolver {

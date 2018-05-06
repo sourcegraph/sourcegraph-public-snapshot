@@ -136,28 +136,28 @@ interface OverviewInfo {
 function fetchOverview(): Observable<OverviewInfo> {
     return queryGraphQL(gql`
         query Overview {
+            repositories {
+                totalCount(precise: true)
+            }
+            users {
+                totalCount
+            }
+            organizations {
+                totalCount
+            }
             site {
-                repositories {
-                    totalCount(precise: true)
-                }
-                users {
-                    totalCount
-                }
-                orgs {
-                    totalCount
-                }
                 hasCodeIntelligence
             }
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.repositories || !data.site.users || !data.site.orgs) {
+            if (!data || !data.repositories || !data.users || !data.organizations) {
                 throw createAggregateError(errors)
             }
             return {
-                repositories: data.site.repositories.totalCount,
-                users: data.site.users.totalCount,
-                orgs: data.site.orgs.totalCount,
+                repositories: data.repositories.totalCount,
+                users: data.users.totalCount,
+                orgs: data.organizations.totalCount,
                 hasCodeIntelligence: data.site.hasCodeIntelligence,
             }
         })

@@ -480,6 +480,35 @@ type Query {
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
+    # List all repositories.
+    repositories(
+        # Returns the first n repositories from the list.
+        first: Int
+        # Return repositories whose names match the query.
+        query: String
+        # Include enabled repositories.
+        enabled: Boolean = true
+        # Include disabled repositories.
+        disabled: Boolean = false
+        # Include cloned repositories.
+        cloned: Boolean = true
+        # Include repositories that are currently being cloned.
+        cloneInProgress: Boolean = true
+        # Include repositories that are not yet cloned and for which cloning is not in progress.
+        notCloned: Boolean = true
+        # Include repositories that have a text search index.
+        indexed: Boolean = true
+        # Include repositories that do not have a text search index.
+        notIndexed: Boolean = true
+        # Filter for repositories that have been indexed for cross-repository code intelligence.
+        ciIndexed: Boolean = false
+        # Filter for repositories that have not been indexed for cross-repository code intelligence.
+        notCIIndexed: Boolean = false
+        # Sort field.
+        orderBy: RepoOrderBy = REPO_URI
+        # Sort direction.
+        descending: Boolean = false
+    ): RepositoryConnection!
     # Looks up a Phabricator repository by name.
     phabricatorRepo(
         # The name, for example "github.com/gorilla/mux".
@@ -491,8 +520,24 @@ type Query {
     currentUser: User
     # Looks up a user by username.
     user(username: String!): User
+    # List all users.
+    users(
+        # Returns the first n users from the list.
+        first: Int
+        # Return users whose usernames or display names match the query.
+        query: String
+        # Returns users who have been active in a given period of time.
+        activePeriod: UserActivePeriod
+    ): UserConnection!
     # Looks up an organization by name.
     organization(name: String!): Org
+    # List all organizations.
+    organizations(
+        # Returns the first n organizations from the list.
+        first: Int
+        # Return organizations whose names or display names match the query.
+        query: String
+    ): OrgConnection!
     # The current site settings.
     currentSiteSettings: Settings
     # The configuration.
@@ -2089,51 +2134,6 @@ type Site implements ConfigurationSubject {
     latestSettings: Settings
     # Whether the viewer can reload the site (with the reloadSite mutation).
     canReloadSite: Boolean!
-    # List all repositories.
-    repositories(
-        # Returns the first n repositories from the list.
-        first: Int
-        # Return repositories whose names match the query.
-        query: String
-        # Include enabled repositories.
-        enabled: Boolean = true
-        # Include disabled repositories.
-        disabled: Boolean = false
-        # Include cloned repositories.
-        cloned: Boolean = true
-        # Include repositories that are currently being cloned.
-        cloneInProgress: Boolean = true
-        # Include repositories that are not yet cloned and for which cloning is not in progress.
-        notCloned: Boolean = true
-        # Include repositories that have a text search index.
-        indexed: Boolean = true
-        # Include repositories that do not have a text search index.
-        notIndexed: Boolean = true
-        # Filter for repositories that have been indexed for cross-repository code intelligence.
-        ciIndexed: Boolean = false
-        # Filter for repositories that have not been indexed for cross-repository code intelligence.
-        notCIIndexed: Boolean = false
-        # Sort field.
-        orderBy: RepoOrderBy = REPO_URI
-        # Sort direction.
-        descending: Boolean = false
-    ): RepositoryConnection!
-    # List all users.
-    users(
-        # Returns the first n users from the list.
-        first: Int
-        # Return users whose usernames or display names match the query.
-        query: String
-        # Returns users who have been active in a given period of time.
-        activePeriod: UserActivePeriod
-    ): UserConnection!
-    # List all organizations.
-    orgs(
-        # Returns the first n organizations from the list.
-        first: Int
-        # Return organizations whose names or display names match the query.
-        query: String
-    ): OrgConnection!
     # List all threads. This is an experimental feature.
     threads(
         # Returns the first n threads from the list.

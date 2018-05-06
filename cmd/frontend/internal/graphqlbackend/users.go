@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 )
 
-func (r *siteResolver) Users(args *struct {
+func (r *schemaResolver) Users(args *struct {
 	connectionArgs
 	Query        *string
 	ActivePeriod *string

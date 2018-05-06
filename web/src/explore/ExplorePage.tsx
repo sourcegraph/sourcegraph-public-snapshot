@@ -110,13 +110,13 @@ export class ExplorePage extends React.PureComponent<Props, State> {
 function fetchDisabledRepositoriesCount(): Observable<number | null> {
     return queryGraphQL(gql`
         query Overview {
-            site {
-                repositories(enabled: false, disabled: true, first: 100) {
-                    totalCount(precise: true)
-                    pageInfo {
-                        hasNextPage
-                    }
+            repositories(enabled: false, disabled: true, first: 100) {
+                totalCount(precise: true)
+                pageInfo {
+                    hasNextPage
                 }
+            }
+            site {
                 users {
                     totalCount
                 }
@@ -128,10 +128,10 @@ function fetchDisabledRepositoriesCount(): Observable<number | null> {
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.repositories) {
+            if (!data || !data.repositories) {
                 throw createAggregateError(errors)
             }
-            return data.site.repositories.totalCount
+            return data.repositories.totalCount
         })
     )
 }

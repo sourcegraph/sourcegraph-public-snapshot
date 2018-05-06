@@ -12,46 +12,44 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
     return queryGraphQL(
         gql`
             query Users($first: Int, $query: String) {
-                site {
-                    users(first: $first, query: $query) {
-                        nodes {
-                            id
-                            externalID
-                            username
-                            displayName
-                            emails {
-                                email
-                                verified
-                                verificationPending
-                                viewerCanManuallyVerify
-                            }
+                users(first: $first, query: $query) {
+                    nodes {
+                        id
+                        externalID
+                        username
+                        displayName
+                        emails {
+                            email
+                            verified
+                            verificationPending
+                            viewerCanManuallyVerify
+                        }
+                        createdAt
+                        siteAdmin
+                        latestSettings {
                             createdAt
-                            siteAdmin
-                            latestSettings {
-                                createdAt
-                                configuration {
-                                    contents
-                                }
-                            }
-                            orgs {
-                                name
-                            }
-                            tags {
-                                name
+                            configuration {
+                                contents
                             }
                         }
-                        totalCount
+                        orgs {
+                            name
+                        }
+                        tags {
+                            name
+                        }
                     }
+                    totalCount
                 }
             }
         `,
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.users) {
+            if (!data || !data.users) {
                 throw createAggregateError(errors)
             }
-            return data.site.users
+            return data.users
         })
     )
 }
@@ -63,38 +61,36 @@ export function fetchAllOrgs(args: { first?: number; query?: string }): Observab
     return queryGraphQL(
         gql`
             query Orgs($first: Int, $query: String) {
-                site {
-                    orgs(first: $first, query: $query) {
-                        nodes {
-                            id
-                            name
-                            displayName
+                orgs(first: $first, query: $query) {
+                    nodes {
+                        id
+                        name
+                        displayName
+                        createdAt
+                        latestSettings {
                             createdAt
-                            latestSettings {
-                                createdAt
-                                configuration {
-                                    contents
-                                }
-                            }
-                            members {
-                                totalCount
-                            }
-                            tags {
-                                name
+                            configuration {
+                                contents
                             }
                         }
-                        totalCount
+                        members {
+                            totalCount
+                        }
+                        tags {
+                            name
+                        }
                     }
+                    totalCount
                 }
             }
         `,
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.orgs) {
+            if (!data || !data.organizations) {
                 throw createAggregateError(errors)
             }
-            return data.site.orgs
+            return data.organizations
         })
     )
 }
@@ -140,34 +136,32 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
                 $indexed: Boolean
                 $notIndexed: Boolean
             ) {
-                site {
-                    repositories(
-                        first: $first
-                        query: $query
-                        enabled: $enabled
-                        disabled: $disabled
-                        cloned: $cloned
-                        cloneInProgress: $cloneInProgress
-                        notCloned: $notCloned
-                        indexed: $indexed
-                        notIndexed: $notIndexed
-                    ) {
-                        nodes {
-                            id
-                            uri
-                            enabled
-                            createdAt
-                            viewerCanAdminister
-                            mirrorInfo {
-                                cloned
-                                cloneInProgress
-                                updatedAt
-                            }
+                repositories(
+                    first: $first
+                    query: $query
+                    enabled: $enabled
+                    disabled: $disabled
+                    cloned: $cloned
+                    cloneInProgress: $cloneInProgress
+                    notCloned: $notCloned
+                    indexed: $indexed
+                    notIndexed: $notIndexed
+                ) {
+                    nodes {
+                        id
+                        uri
+                        enabled
+                        createdAt
+                        viewerCanAdminister
+                        mirrorInfo {
+                            cloned
+                            cloneInProgress
+                            updatedAt
                         }
-                        totalCount(precise: true)
-                        pageInfo {
-                            hasNextPage
-                        }
+                    }
+                    totalCount(precise: true)
+                    pageInfo {
+                        hasNextPage
                     }
                 }
             }
@@ -175,10 +169,10 @@ export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepo
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.repositories || !data.site.repositories.nodes) {
+            if (!data || !data.repositories || !data.repositories.nodes) {
                 throw createAggregateError(errors)
             }
-            return data.site.repositories
+            return data.repositories
         })
     )
 }
@@ -368,31 +362,29 @@ export function fetchUserAnalytics(args: {
     return queryGraphQL(
         gql`
             query UserAnalytics($activePeriod: UserActivePeriod, $query: String, $first: Int) {
-                site {
-                    users(activePeriod: $activePeriod, query: $query, first: $first) {
-                        nodes {
-                            id
-                            username
-                            activity {
-                                searchQueries
-                                pageViews
-                                codeIntelligenceActions
-                                lastActiveTime
-                                lastActiveCodeHostIntegrationTime
-                            }
+                users(activePeriod: $activePeriod, query: $query, first: $first) {
+                    nodes {
+                        id
+                        username
+                        activity {
+                            searchQueries
+                            pageViews
+                            codeIntelligenceActions
+                            lastActiveTime
+                            lastActiveCodeHostIntegrationTime
                         }
-                        totalCount
                     }
+                    totalCount
                 }
             }
         `,
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.users) {
+            if (!data || !data.users) {
                 throw createAggregateError(errors)
             }
-            return data.site.users
+            return data.users
         })
     )
 }
