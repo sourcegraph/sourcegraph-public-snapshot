@@ -7,6 +7,7 @@ import { Settings } from '../schema/settings.schema'
 import { currentConfiguration } from '../settings/configuration'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
+import { ConfigurationNoticeAlert } from '../site/ConfigurationNoticeAlert'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
@@ -66,6 +67,10 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             !this.state.siteFlags.noRepositoriesEnabled && (
                                 <DockerForMacAlert className="global-alerts__alert" />
                             )}
+
+                        {this.state.siteFlags.configurationNotice && (
+                            <ConfigurationNoticeAlert className="global-alerts__alert" />
+                        )}
                     </>
                 )}
                 {this.state.mergedSettings &&

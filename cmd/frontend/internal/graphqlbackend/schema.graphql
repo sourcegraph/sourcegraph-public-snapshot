@@ -2178,6 +2178,8 @@ type Site implements ConfigurationSubject {
     needsRepositoryConfiguration: Boolean!
     # Whether the site has zero access-enabled repositories.
     noRepositoriesEnabled: Boolean!
+    # Whether the site configuration has validation problems or deprecation notices.
+    configurationNotice: Boolean!
     # Whether the site has code intelligence. This field will be expanded in the future to describe
     # more about the code intelligence available (languages supported, etc.). It is subject to
     # change without notice.
