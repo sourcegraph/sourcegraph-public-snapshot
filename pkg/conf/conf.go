@@ -25,6 +25,8 @@ var (
 
 // Raw returns the raw site configuration JSON.
 func Raw() string {
+	rawMu.RLock()
+	defer rawMu.RUnlock()
 	return raw
 }
 
