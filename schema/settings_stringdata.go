@@ -4,8 +4,8 @@ package schema
 
 // SettingsSchemaJSON is the content of the file "settings.schema.json".
 const SettingsSchemaJSON = `{
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://sourcegraph.com/v1/settings.schema.json#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sourcegraph.com/v1/settings.schema.json#",
   "title": "Settings",
   "description": "Configuration settings for users and organizations on Sourcegraph.",
   "type": "object",

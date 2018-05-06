@@ -1,8 +1,7 @@
 package schema
 
-//go:generate go build -o .bin/schema-generate github.com/sourcegraph/sourcegraph/vendor/github.com/a-h/generate/cmd/schema-generate
-//go:generate .bin/schema-generate -o schema.go -p schema site.schema.json settings.schema.json
-//go:generate gofmt -w schema.go
+//go:generate go build -o .bin/go-jsonschema-compiler github.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler
+//go:generate .bin/go-jsonschema-compiler -o schema.go -pkg schema site.schema.json settings.schema.json
 
 //go:generate go run stringdata.go -i site.schema.json -name SiteSchemaJSON -pkg schema -o site_stringdata.go
 //go:generate gofmt -w site_stringdata.go

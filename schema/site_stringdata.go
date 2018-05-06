@@ -4,8 +4,8 @@ package schema
 
 // SiteSchemaJSON is the content of the file "site.schema.json".
 const SiteSchemaJSON = `{
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://sourcegraph.com/v1/site.schema.json#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sourcegraph.com/v1/site.schema.json#",
   "title": "Site configuration",
   "description": "Configuration for a Sourcegraph site.",
   "type": "object",
@@ -326,7 +326,7 @@ const SiteSchemaJSON = `{
         "JSON array of custom search scopes (e.g., [{\"name\":\"Text Files\",\"value\":\"file:\\.txt$\"}]).\n\nDEPRECATED: Values should be moved to the \"settings\" field's \"search.scopes\" property.",
       "type": "array",
       "items": {
-        "$ref": "settings.schema.json#/definitions/SearchScope"
+        "$ref": "./settings.schema.json#/definitions/SearchScope"
       }
     },
     "htmlHeadTop": {
@@ -515,7 +515,7 @@ const SiteSchemaJSON = `{
     },
     "settings": {
       "description": "Site settings. Organization and user settings override site settings.",
-      "$ref": "settings.schema.json#"
+      "$ref": "./settings.schema.json#"
     }
   },
   "definitions": {
