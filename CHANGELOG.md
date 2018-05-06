@@ -14,6 +14,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where Index Search status page failed to render.
 * User data on the site admin Analytics page is now paginated, filterable by a user's recent activity, and searchable.
 
+### Removed
+
+* The `ssoUserHeader` site config property (deprecated since January 2018) has been removed. The functionality was moved to the `http-header` authentication provider.
+
 ### Added
 
 * The new repository contributors page (linked from the repository homepage) displays the top Git commit authors in a repository, with filtering options.

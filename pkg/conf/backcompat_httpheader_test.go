@@ -20,21 +20,9 @@ func TestAuthHTTPHeader(t *testing.T) {
 			input: &schema.SiteConfiguration{AuthProvider: "http-header"},
 			want:  "",
 		},
-		"old": {
-			input: &schema.SiteConfiguration{AuthProvider: "http-header", SsoUserHeader: "a"},
-			want:  "a",
-		},
-		"new": {
+		"auth.provider": {
 			input: &schema.SiteConfiguration{AuthProvider: "http-header", AuthUserIdentityHTTPHeader: "a"},
 			want:  "a",
-		},
-		"both": {
-			input: &schema.SiteConfiguration{
-				AuthProvider:               "http-header",
-				SsoUserHeader:              "a",
-				AuthUserIdentityHTTPHeader: "a2",
-			},
-			want: "a2",
 		},
 	}
 	for label, test := range tests {

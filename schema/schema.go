@@ -231,7 +231,6 @@ type SiteConfiguration struct {
 	SecretKey                         string                       `json:"secretKey,omitempty"`
 	Settings                          *Settings                    `json:"settings,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
-	SsoUserHeader                     string                       `json:"ssoUserHeader,omitempty"`
 	TlsLetsencrypt                    string                       `json:"tls.letsencrypt,omitempty"`
 	TlsCert                           string                       `json:"tlsCert,omitempty"`
 	TlsKey                            string                       `json:"tlsKey,omitempty"`

@@ -276,11 +276,6 @@ const SiteSchemaJSON = `{
       "type": "integer",
       "default": 1
     },
-    "ssoUserHeader": {
-      "description":
-        "Header injected by an SSO proxy to indicate the logged in user.\n\nDEPRECATED: Use auth.provider==\"http-header\" and auth.userIdentityHTTPHeader instead.",
-      "type": "string"
-    },
     "oidcProvider": {
       "description":
         "The URL of the OpenID Connect Provider\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"issuer\" property instead.",

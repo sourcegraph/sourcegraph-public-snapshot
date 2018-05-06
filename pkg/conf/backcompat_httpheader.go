@@ -3,8 +3,7 @@ package conf
 import "github.com/sourcegraph/sourcegraph/schema"
 
 // AuthHTTPHeader returns the HTTP header name (if any) containing the username for the
-// HTTP request, regardless of whether the old ssoUserHeader or new auth.userIdentityHTTPHeader
-// property is used.
+// HTTP request (i.e., the auth.userIdentityHTTPHeader site config property).
 func AuthHTTPHeader() string { return authHTTPHeader(cfg) }
 
 func authHTTPHeader(input *schema.SiteConfiguration) string {
@@ -17,6 +16,5 @@ func authHTTPHeader(input *schema.SiteConfiguration) string {
 		return input.AuthUserIdentityHTTPHeader
 	}
 
-	// ssoUserHeader property: lower precedence
-	return input.SsoUserHeader
+	return ""
 }

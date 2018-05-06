@@ -56,9 +56,8 @@ var legacyEnvToFieldName = map[string]string{
 	"SearchScopes":                   "SEARCH_SCOPES",
 	"SecretKey":                      "SRC_APP_SECRET_KEY",
 	// Settings has no env var
-	"SsoUserHeader": "SSO_USER_HEADER",
-	"TlsCert":       "TLS_CERT",
-	"TlsKey":        "TLS_KEY",
+	"TlsCert": "TLS_CERT",
+	"TlsKey":  "TLS_KEY",
 }
 
 // configFromLegacyEnvVars constructs site config JSON from env vars. This is merged into the
