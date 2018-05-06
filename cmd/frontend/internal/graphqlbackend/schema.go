@@ -1829,6 +1829,9 @@ type User implements Node, ConfigurationSubject {
         # Returns the first n access tokens from the list.
         first: Int
     ): AccessTokenConnection!
+    # Information about the user's accounts on external services that are associated with their Sourcegraph user
+    # account.
+    externalAccounts: [ExternalAccount!]!
     # Whether the viewer has admin privileges on this user. The user has admin privileges on their own user, and
     # site admins have admin privileges on all users.
     viewerCanAdminister: Boolean!
@@ -1862,6 +1865,20 @@ type AccessTokenConnection {
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
+}
+
+# Information about a user's account on a service that is associated with their Sourcegraph user account.
+type ExternalAccount {
+    # The Sourcegraph user.
+    user: User!
+    # The human-readable name of the service.
+    serviceName: String!
+    # The ID of the service.
+    serviceID: String!
+    # The ID of the user's account on the service.
+    serviceUserID: String!
+    # Whether the user can authenticate to Sourcegraph using this external account.
+    canAuthenticate: Boolean!
 }
 
 # An organization membership.

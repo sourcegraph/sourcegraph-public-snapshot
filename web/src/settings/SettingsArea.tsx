@@ -13,6 +13,7 @@ import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPag
 import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
 import { UserSettingsCreateAccessTokenPage } from '../user/settings/UserSettingsCreateAccessTokenPage'
 import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
+import { UserSettingsExternalAccountsPage } from '../user/settings/UserSettingsExternalAccountsPage'
 import { UserSettingsIntegrationsPage } from '../user/settings/UserSettingsIntegrationsPage'
 import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
 import { UserSettingsTokensPage } from '../user/settings/UserSettingsTokensPage'
@@ -125,6 +126,15 @@ export class SettingsArea extends React.Component<Props, State> {
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
                                 <UserSettingsEmailsPage {...routeComponentProps} {...this.props} />
+                            )}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/accounts`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <UserSettingsExternalAccountsPage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         <Route

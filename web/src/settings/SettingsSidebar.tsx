@@ -13,6 +13,8 @@ import { SiteAdminAlert } from '../site-admin/SiteAdminAlert'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAreaPageProps } from '../user/area/UserArea'
 
+const enableExternalAccountsPage = localStorage.getItem('externalAccounts') !== null
+
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     className: string
     isLightTheme: boolean
@@ -102,6 +104,18 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                         Emails
                     </NavLink>
                 </li>
+                {enableExternalAccountsPage && (
+                    <li className="sidebar__item">
+                        <NavLink
+                            to={`${props.match.path}/accounts`}
+                            exact={true}
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                        >
+                            Connected accounts
+                        </NavLink>
+                    </li>
+                )}
                 {window.context.accessTokensEnabled && (
                     <li className="sidebar__item">
                         <NavLink
