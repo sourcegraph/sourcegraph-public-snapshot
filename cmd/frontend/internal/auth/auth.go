@@ -51,28 +51,25 @@ func NewAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, e
 	}
 	initialized = true
 
-	if oidcProvider != nil {
+	switch conf.AuthProvider() {
+	case "openidconnect":
 		log15.Info("SSO enabled", "protocol", "OpenID Connect")
 		return newOIDCAuthMiddleware(createCtx, appURL)
-	}
-	if samlProvider != nil {
+	case "saml":
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")
 		return newSAMLAuthMiddleware(createCtx, appURL)
-	}
-	if ssoUserHeader != "" {
-		log15.Info("SSO enabled", "protocol", "HTTP proxy header", "header", ssoUserHeader)
+	case "http-header":
+		log15.Info("SSO enabled", "protocol", "HTTP proxy header")
 		// Same behavior for API and app.
 		return &Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware}, nil
-	}
-
-	// auth.public should only have an effect when auth.provider == "builtin".
-	if conf.GetTODO().AuthProvider == "builtin" && !conf.GetTODO().AuthPublic {
+	default:
+		if conf.GetTODO().AuthPublic {
+			// No auth is required.
+			passThrough := func(h http.Handler) http.Handler { return h }
+			return &Middleware{API: passThrough, App: passThrough}, nil
+		}
 		return newUserRequiredAuthzMiddleware(), nil
 	}
-
-	// No auth.
-	passThrough := func(h http.Handler) http.Handler { return h }
-	return &Middleware{API: passThrough, App: passThrough}, nil
 }
 
 // NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's

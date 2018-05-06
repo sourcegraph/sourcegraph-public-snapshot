@@ -4,7 +4,7 @@ import "github.com/sourcegraph/sourcegraph/schema"
 
 // AuthOpenIDConnect returns the OpenIDConnectAuthProvider, regardless of whether
 // the old oidc* or new auth.openidconnect properties were used.
-func AuthOpenIDConnect() *schema.OpenIDConnectAuthProvider { return authOpenIDConnect(cfg) }
+func AuthOpenIDConnect() *schema.OpenIDConnectAuthProvider { return authOpenIDConnect(Get()) }
 
 func authOpenIDConnect(input *schema.SiteConfiguration) (p *schema.OpenIDConnectAuthProvider) {
 	// oidc* properties first (lower precedence)

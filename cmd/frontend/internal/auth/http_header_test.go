@@ -10,7 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // SEE ALSO FOR MANUAL TESTING: See the httpHeaderAuthMiddleware docstring for information about the
@@ -25,8 +27,9 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 		}
 	}))
 
-	ssoUserHeader = "x-sso-user-header"
-	defer func() { ssoUserHeader = "" }()
+	const headerName = "x-sso-user-header"
+	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "http-header", AuthUserIdentityHTTPHeader: headerName}
+	defer func() { conf.MockGetData = nil }()
 
 	t.Run("not sent", func(t *testing.T) {
 		rr := httptest.NewRecorder()
@@ -50,7 +53,7 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 	t.Run("sent, new user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(ssoUserHeader, "alice")
+		req.Header.Set(headerName, "alice")
 		var calledGetByUsername, calledCreate bool
 		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
 			if want := "http-header:alice"; id != want {
@@ -79,7 +82,7 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 	t.Run("sent, actor already set", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(ssoUserHeader, "alice")
+		req.Header.Set(headerName, "alice")
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 123"; got != want {
@@ -90,7 +93,7 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 	t.Run("sent, new user with un-normalized username", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(ssoUserHeader, "alice.zhao")
+		req.Header.Set(headerName, "alice.zhao")
 		const wantNormalizedUsername = "alice-zhao"
 		var calledGetByUsername, calledCreate bool
 		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
@@ -123,7 +126,7 @@ func Test_httpHeaderAuthMiddleware(t *testing.T) {
 	t.Run("sent, existing user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(ssoUserHeader, "bob")
+		req.Header.Set(headerName, "bob")
 		var calledGetByUsername bool
 		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
 			if want := "http-header:bob"; id != want {

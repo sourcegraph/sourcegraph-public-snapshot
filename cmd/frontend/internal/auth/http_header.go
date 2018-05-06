@@ -14,8 +14,6 @@ const (
 	UserProviderHTTPHeader = "http-header"
 )
 
-var ssoUserHeader = conf.AuthHTTPHeader()
-
 // httpHeaderAuthMiddleware is middleware that checks for an HTTP header from an auth proxy that
 // specifies the client's authenticated username. It's for use with auth proxies like
 // https://github.com/bitly/oauth2_proxy and is configured with the auth.provider=="http-header"
@@ -28,7 +26,13 @@ var ssoUserHeader = conf.AuthHTTPHeader()
 // 🚨 SECURITY
 func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		headerValue := r.Header.Get(ssoUserHeader)
+		usernameHeader := conf.AuthHTTPHeader()
+		if usernameHeader == "" {
+			http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
+			return
+		}
+
+		headerValue := r.Header.Get(usernameHeader)
 
 		if headerValue == "" {
 			// The auth proxy is expected to proxy *all* requests, so don't let any non-proxied requests
@@ -61,7 +65,7 @@ func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
 			Username:   username,
 		})
 		if err != nil {
-			log15.Error("unable to get/create user from SSO header", "header", ssoUserHeader, "headerValue", headerValue, "err", err)
+			log15.Error("unable to get/create user from SSO header", "header", usernameHeader, "headerValue", headerValue, "err", err)
 			http.Error(w, "unable to get/create user", http.StatusInternalServerError)
 			return
 		}

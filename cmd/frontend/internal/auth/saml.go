@@ -14,14 +14,12 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// SAML App creation vars
-var samlProvider = conf.AuthSAML()
-
 // newSAMLAuthMiddleware returns middlewares for SAML authentication, adding endpoints under the auth
 // path prefix to enable the login flow an requiring login for all other endpoints.
 //
 // 🚨 SECURITY
 func newSAMLAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
+	samlProvider := conf.AuthSAML()
 	if samlProvider == nil {
 		return nil, errors.New("No SAML ID Provider specified")
 	}

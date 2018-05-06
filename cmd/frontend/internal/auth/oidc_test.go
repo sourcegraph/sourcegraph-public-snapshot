@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	oidc "github.com/coreos/go-oidc"
@@ -36,7 +37,7 @@ var testOIDCUser = "bob-test-user"
 
 // new OIDCIDServer returns a new running mock OIDC ID Provider service. It is the caller's
 // responsibility to call Close().
-func newOIDCIDServer(t *testing.T, code string) *httptest.Server {
+func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConnectAuthProvider) *httptest.Server {
 	idBearerToken := "test_id_token_f4bdefbd77f"
 	s := http.NewServeMux()
 
@@ -123,14 +124,16 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 	}
 	defer os.RemoveAll(tempdir)
 
-	oidcIDServer := newOIDCIDServer(t, "THECODE")
-	defer oidcIDServer.Close()
-
-	oidcProvider = &schema.OpenIDConnectAuthProvider{
-		Issuer:       oidcIDServer.URL,
+	oidcProvider := &schema.OpenIDConnectAuthProvider{
 		ClientID:     "aaaaaaaaaaaaaa",
 		ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
+	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
+	defer func() { conf.MockGetData = nil }()
+
+	oidcIDServer := newOIDCIDServer(t, "THECODE", oidcProvider)
+	defer oidcIDServer.Close()
+	oidcProvider.Issuer = oidcIDServer.URL
 
 	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect"}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
@@ -280,14 +283,16 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 	}
 	defer os.RemoveAll(tempdir)
 
-	oidcIDServer := newOIDCIDServer(t, "THECODE")
-	defer oidcIDServer.Close()
-
-	oidcProvider = &schema.OpenIDConnectAuthProvider{
-		Issuer:       oidcIDServer.URL,
+	oidcProvider := &schema.OpenIDConnectAuthProvider{
 		ClientID:     "aaaaaaaaaaaaaa",
 		ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
+	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
+	defer func() { conf.MockGetData = nil }()
+
+	oidcIDServer := newOIDCIDServer(t, "THECODE", oidcProvider)
+	defer oidcIDServer.Close()
+	oidcProvider.Issuer = oidcIDServer.URL
 
 	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com"}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {

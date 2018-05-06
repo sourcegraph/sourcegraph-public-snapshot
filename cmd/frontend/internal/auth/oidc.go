@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -23,10 +24,6 @@ import (
 )
 
 const oidcStateCookieName = "sg-oidc-state"
-
-var (
-	oidcProvider = conf.AuthOpenIDConnect()
-)
 
 type UserClaims struct {
 	Name              string `json:"name"`
@@ -50,6 +47,7 @@ type UserClaims struct {
 //
 // 🚨 SECURITY
 func newOIDCAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
+	oidcProvider := conf.AuthOpenIDConnect()
 	// Return an error if the OIDC parameters are unset or missing
 	if oidcProvider == nil {
 		return nil, errors.New("No OpenID Connect Provider specified")
@@ -72,7 +70,7 @@ func newOIDCAuthMiddleware(createCtx context.Context, appURL string) (*Middlewar
 	}
 
 	// Create handler for OIDC Authentication Code Flow endpoints
-	oidcHandler, err := newOIDCLoginHandler(createCtx, appURL)
+	oidcHandler, err := newOIDCLoginHandler(createCtx, appURL, oidcProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func newOIDCAuthMiddleware(createCtx context.Context, appURL string) (*Middlewar
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func newOIDCLoginHandler(createCtx context.Context, appURL string) (http.Handler, error) {
+func newOIDCLoginHandler(createCtx context.Context, appURL string, oidcProvider *schema.OpenIDConnectAuthProvider) (http.Handler, error) {
 	// Log when fetching the OIDC config from the provider is slow. (It blocks frontend startup.)
 	// This can happen on very high latency connections, or when the provider is unreachable.
 	timer := time.AfterFunc(5*time.Second, func() {
