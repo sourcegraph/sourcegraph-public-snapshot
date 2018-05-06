@@ -171,12 +171,12 @@ func (r *siteConfigurationResolver) pendingOrEffectiveContents(ctx context.Conte
 	return r.EffectiveContents(ctx)
 }
 
-func (r *siteConfigurationResolver) ExtraValidationErrors(ctx context.Context) ([]string, error) {
+func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
 	contents, err := r.pendingOrEffectiveContents(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return conf.ValidateCustom(conf.NormalizeJSON(contents))
+	return conf.Validate(contents)
 }
 
 func (r *siteConfigurationResolver) CanUpdate() bool {

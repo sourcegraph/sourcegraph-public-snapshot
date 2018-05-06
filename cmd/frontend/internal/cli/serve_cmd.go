@@ -123,7 +123,7 @@ func Main() error {
 		}
 	}
 
-	conf.Validate()
+	printConfigValidation()
 
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()

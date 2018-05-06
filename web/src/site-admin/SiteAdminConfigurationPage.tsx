@@ -238,14 +238,14 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         if (
             this.state.site &&
             this.state.site.configuration &&
-            this.state.site.configuration.extraValidationErrors &&
-            this.state.site.configuration.extraValidationErrors.length > 0
+            this.state.site.configuration.validationMessages &&
+            this.state.site.configuration.validationMessages.length > 0
         ) {
             alerts.push(
-                <div key="extra-validation-errors" className="alert alert-danger site-admin-configuration-page__alert">
-                    <p>The server reported validation errors in the last-saved config:</p>
+                <div key="validation-messages" className="alert alert-danger site-admin-configuration-page__alert">
+                    <p>The server reported issues in the last-saved config:</p>
                     <ul>
-                        {this.state.site.configuration.extraValidationErrors.map((e, i) => (
+                        {this.state.site.configuration.validationMessages.map((e, i) => (
                             <li key={i} className="site-admin-configuration-page__alert-item">
                                 {e}
                             </li>

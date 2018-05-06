@@ -1,59 +1,59 @@
 package conf
 
 import (
-	"fmt"
-	"log"
-	"os"
+	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
 )
 
-// Validate validates the site configuration against its JSON schema.
-//
-// TODO(sqs): it only validates the SOURCEGRAPH_CONFIG value, not the merged
-// config from all env vars. This env var is only used in cmd/server, but it
-// is passed onto frontend, so frontend can print useful validation messages
-// about it.
-func Validate() {
-	input := os.Getenv("SOURCEGRAPH_CONFIG")
-	if input == "" {
-		return
-	}
+// Validate validates the site configuration the JSON Schema and other custom validation
+// checks.
+func Validate(input string) (messages []string, err error) {
 	normalizedInput := NormalizeJSON(input)
 
 	res, err := validate([]byte(schema.SiteSchemaJSON), normalizedInput)
 	if err != nil {
-		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
-		return
+		return nil, err
 	}
-	validationErrors := make([]string, len(res.Errors()))
+	messages = make([]string, len(res.Errors()))
 	for i, e := range res.Errors() {
-		validationErrors[i] = e.String()
+		messages[i] = e.String()
 	}
 
-	customValidationErrors, err := ValidateCustom(normalizedInput)
+	customMessages, err := validateCustom(normalizedInput)
 	if err != nil {
-		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
-		return
+		return nil, err
 	}
-	validationErrors = append(validationErrors, customValidationErrors...)
+	messages = append(messages, customMessages...)
 
-	if len(validationErrors) > 0 {
-		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		fmt.Fprintln(os.Stderr, "⚠️ Warning: Invalid Sourcegraph site configuration:")
-		for _, verr := range validationErrors {
-			fmt.Fprintf(os.Stderr, " - %s\n", verr)
-		}
-		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	}
+	return messages, nil
 }
 
 func validate(schema, input []byte) (*gojsonschema.Result, error) {
-	return gojsonschema.Validate(
-		jsonLoader{gojsonschema.NewBytesLoader(schema)},
-		gojsonschema.NewBytesLoader(input),
-	)
+	if len(input) > 0 {
+		// HACK: Remove the "settings" field from site config because
+		// github.com/xeipuuv/gojsonschema has a bug where $ref'd schemas do not always get
+		// loaded. When https://github.com/xeipuuv/gojsonschema/pull/196 is merged, it will probably
+		// be fixed. This means that the backend config validation will not validate settings, but
+		// that is OK because specifying settings here is discouraged anyway.
+		var v map[string]interface{}
+		if err := json.Unmarshal(input, &v); err != nil {
+			return nil, err
+		}
+		delete(v, "settings")
+		var err error
+		input, err = json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	s, err := gojsonschema.NewSchema(jsonLoader{gojsonschema.NewBytesLoader(schema)})
+	if err != nil {
+		return nil, err
+	}
+	return s.Validate(gojsonschema.NewBytesLoader(input))
 }
 
 type jsonLoader struct {

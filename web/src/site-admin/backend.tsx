@@ -443,7 +443,7 @@ export function fetchSite(opt: { telemetrySamples?: boolean }): Observable<GQL.I
                 configuration {
                     effectiveContents
                     pendingContents
-                    extraValidationErrors
+                    validationMessages
                     canUpdate
                     source
                 }

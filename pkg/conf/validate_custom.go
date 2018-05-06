@@ -8,9 +8,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ValidateCustom validates the site config using custom validation steps that are not
+// validateCustom validates the site config using custom validation steps that are not
 // able to be expressed in the JSON Schema.
-func ValidateCustom(normalizedInput []byte) (validationErrors []string, err error) {
+func validateCustom(normalizedInput []byte) (validationErrors []string, err error) {
 	var cfg schema.SiteConfiguration
 	if err := json.Unmarshal(normalizedInput, &cfg); err != nil {
 		return nil, err

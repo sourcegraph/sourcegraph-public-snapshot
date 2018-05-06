@@ -2202,10 +2202,11 @@ type SiteConfiguration {
     # server restart. This is set if the site configuration has been updated since
     # the server started.
     pendingContents: String
-    # Validation errors on the configuration JSON (pendingContents if it exists, otherwise
-    # effectiveContents). These are different from the JSON Schema validation errors;
-    # they are errors from validations that can't be expressed in the JSON Schema.
-    extraValidationErrors: [String!]!
+    # Messages describing validation errors or usage of deprecated configuration in the configuration JSON
+    # (pendingContents if it exists, otherwise effectiveContents). This includes both JSON Schema validation errors
+    # and other messages that perform more advanced checks on the configuration (that can't be expressed in the
+    # JSON Schema).
+    validationMessages: [String!]!
     # Whether the viewer can update the site configuration (using the
     # updateSiteConfiguration mutation).
     canUpdate: Boolean!
