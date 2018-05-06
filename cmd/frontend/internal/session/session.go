@@ -141,7 +141,7 @@ func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor,
 // TODO(sqs): Make it so that our SAML cookies use a different name (and do this without logging
 // all SAML users out).
 func ignoreSessionCookieError() bool {
-	return conf.AuthSAML() != nil
+	return conf.AuthProvider().Saml != nil
 }
 
 // DeleteSession deletes the current session.

@@ -51,14 +51,15 @@ func NewAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, e
 	}
 	initialized = true
 
-	switch conf.AuthProvider() {
-	case "openidconnect":
+	authProvider := conf.AuthProvider()
+	switch {
+	case authProvider.Openidconnect != nil:
 		log15.Info("SSO enabled", "protocol", "OpenID Connect")
-		return newOIDCAuthMiddleware(createCtx, appURL)
-	case "saml":
+		return newOIDCAuthMiddleware(createCtx, appURL, authProvider.Openidconnect)
+	case authProvider.Saml != nil:
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")
-		return newSAMLAuthMiddleware(createCtx, appURL)
-	case "http-header":
+		return newSAMLAuthMiddleware(createCtx, appURL, authProvider.Saml)
+	case authProvider.HttpHeader != nil:
 		log15.Info("SSO enabled", "protocol", "HTTP proxy header")
 		// Same behavior for API and app.
 		return &Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware}, nil

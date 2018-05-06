@@ -805,12 +805,34 @@ const SiteSchemaJSON = `{
         }
       }
     },
+    "BuiltinAuthProvider": {
+      "description": "Configures the builtin username-password authentication provider.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["builtin"]
+        },
+        "allowSignup": {
+          "description":
+            "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nSECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
     "OpenIDConnectAuthProvider": {
       "description": "Configures the OpenID Connect authentication provider for SSO.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["issuer", "clientID", "clientSecret"],
+      "required": ["type", "issuer", "clientID", "clientSecret"],
       "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["openidconnect"]
+        },
         "issuer": {
           "description": "The URL of the OpenID Connect issuer.\n\nFor Google Apps: https://accounts.google.com",
           "type": "string",
@@ -846,8 +868,12 @@ const SiteSchemaJSON = `{
       "description": "Configures the SAML authentication provider for SSO.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["serviceProviderCertificate", "serviceProviderPrivateKey"],
+      "required": ["type", "serviceProviderCertificate", "serviceProviderPrivateKey"],
       "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["saml"]
+        },
         "identityProviderMetadataURL": {
           "description":
             "SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",
@@ -871,6 +897,24 @@ const SiteSchemaJSON = `{
             "SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\").",
           "type": "string",
           "pattern": "^-----BEGIN PRIVATE KEY-----\n"
+        }
+      }
+    },
+    "HTTPHeaderAuthProvider": {
+      "description":
+        "Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "usernameHeader"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["http-header"]
+        },
+        "usernameHeader": {
+          "description":
+            "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".",
+          "type": "string"
         }
       }
     },

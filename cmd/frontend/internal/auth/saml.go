@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -18,8 +18,7 @@ import (
 // path prefix to enable the login flow an requiring login for all other endpoints.
 //
 // 🚨 SECURITY
-func newSAMLAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
-	samlProvider := conf.AuthSAML()
+func newSAMLAuthMiddleware(createCtx context.Context, appURL string, samlProvider *schema.SAMLAuthProvider) (*Middleware, error) {
 	if samlProvider == nil {
 		return nil, errors.New("No SAML ID Provider specified")
 	}

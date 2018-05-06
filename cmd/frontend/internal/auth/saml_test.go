@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/beevik/etree"
@@ -175,11 +174,9 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		ServiceProviderCertificate:  testSAMLSPCert,
 		ServiceProviderPrivateKey:   testSAMLSPKey,
 	}
-	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "saml", AuthSaml: samlProvider}
-	defer func() { conf.MockGetData = nil }()
 
 	// Set up the test handler.
-	middleware, err := newSAMLAuthMiddleware(context.Background(), "http://example.com")
+	middleware, err := newSAMLAuthMiddleware(context.Background(), "http://example.com", samlProvider)
 	if err != nil {
 		t.Fatal(err)
 	}

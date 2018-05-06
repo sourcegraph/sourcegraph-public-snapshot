@@ -25,16 +25,17 @@ func (r *userResolver) ExternalAccounts(ctx context.Context) ([]*externalAccount
 			serviceID: r.user.ExternalProvider,
 		}
 
-		if conf.AuthProvider() != "builtin" {
+		authProvider := conf.AuthProvider()
+		if authProvider.Builtin == nil {
 			account.canAuthenticate = true
 		}
 		var providerType string
-		switch conf.AuthProvider() {
-		case "openidconnect":
+		switch {
+		case authProvider.Openidconnect != nil:
 			providerType = "OpenID"
-		case "saml":
+		case authProvider.Saml != nil:
 			providerType = "SAML"
-		case "http-header":
+		case authProvider.HttpHeader != nil:
 			providerType = "Web authentication proxy"
 		default:
 			providerType = "Unknown authentication provider"

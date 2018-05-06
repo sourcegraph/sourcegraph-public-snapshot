@@ -84,6 +84,7 @@ const addOtherRepository: ConfigInsertionFunction = config => {
 
 const addSSOViaGSuite: ConfigInsertionFunction = config => {
     const value: OpenIdConnectAuthProvider = {
+        type: 'openidconnect',
         issuer: 'https://accounts.google.com',
         clientID: '<see documentation: https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials>',
         clientSecret: '<see same documentation as clientID>',
@@ -101,6 +102,7 @@ const addSSOViaGSuite: ConfigInsertionFunction = config => {
 
 const addSSOViaSAML: ConfigInsertionFunction = config => {
     const value: SamlAuthProvider = {
+        type: 'saml',
         identityProviderMetadataURL: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
         serviceProviderCertificate: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
         serviceProviderPrivateKey: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',

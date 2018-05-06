@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -46,8 +45,7 @@ type UserClaims struct {
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func newOIDCAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
-	oidcProvider := conf.AuthOpenIDConnect()
+func newOIDCAuthMiddleware(createCtx context.Context, appURL string, oidcProvider *schema.OpenIDConnectAuthProvider) (*Middleware, error) {
 	// Return an error if the OIDC parameters are unset or missing
 	if oidcProvider == nil {
 		return nil, errors.New("No OpenID Connect Provider specified")

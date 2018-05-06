@@ -2,19 +2,13 @@ package conf
 
 import "github.com/sourcegraph/sourcegraph/schema"
 
-// AuthHTTPHeader returns the HTTP header name (if any) containing the username for the
-// HTTP request (i.e., the auth.userIdentityHTTPHeader site config property).
-func AuthHTTPHeader() string { return authHTTPHeader(Get()) }
-
-func authHTTPHeader(input *schema.SiteConfiguration) string {
+// authHTTPHeader returns the HTTP header auth provider config (if enabled).
+func authHTTPHeader(input *schema.SiteConfiguration) *schema.HTTPHeaderAuthProvider {
 	if input.AuthProvider != "http-header" {
-		return ""
+		return nil
 	}
-
-	// auth.userIdentityHTTPHeader property: higher precedence
-	if input.AuthUserIdentityHTTPHeader != "" {
-		return input.AuthUserIdentityHTTPHeader
+	return &schema.HTTPHeaderAuthProvider{
+		Type:           "http-header",
+		UsernameHeader: input.AuthUserIdentityHTTPHeader,
 	}
-
-	return ""
 }

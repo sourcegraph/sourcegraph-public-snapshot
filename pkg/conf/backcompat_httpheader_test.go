@@ -10,19 +10,28 @@ import (
 func TestAuthHTTPHeader(t *testing.T) {
 	tests := map[string]struct {
 		input *schema.SiteConfiguration
-		want  string
+		want  *schema.HTTPHeaderAuthProvider
 	}{
 		"provider not set": {
 			input: &schema.SiteConfiguration{AuthUserIdentityHTTPHeader: "a"},
-			want:  "",
+			want:  nil,
 		},
 		"none": {
+			// This config would produce a runtime error in the auth middleware.
 			input: &schema.SiteConfiguration{AuthProvider: "http-header"},
-			want:  "",
+			want:  &schema.HTTPHeaderAuthProvider{Type: "http-header", UsernameHeader: ""},
 		},
 		"auth.provider": {
 			input: &schema.SiteConfiguration{AuthProvider: "http-header", AuthUserIdentityHTTPHeader: "a"},
-			want:  "a",
+			want:  &schema.HTTPHeaderAuthProvider{Type: "http-header", UsernameHeader: "a"},
+		},
+		"auth.provider only, no header": {
+			input: &schema.SiteConfiguration{AuthProvider: "http-header", AuthUserIdentityHTTPHeader: ""},
+			want:  &schema.HTTPHeaderAuthProvider{Type: "http-header", UsernameHeader: ""},
+		},
+		"auth.userIdentityHTTPHeader only": {
+			input: &schema.SiteConfiguration{AuthUserIdentityHTTPHeader: "a"},
+			want:  nil,
 		},
 	}
 	for label, test := range tests {

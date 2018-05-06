@@ -33,6 +33,7 @@ func TestAuthSAML(t *testing.T) {
 				SamlSPKey:                 "c",
 			},
 			want: &schema.SAMLAuthProvider{
+				Type: "saml",
 				IdentityProviderMetadataURL: "a",
 				ServiceProviderCertificate:  "b",
 				ServiceProviderPrivateKey:   "c",
@@ -48,6 +49,7 @@ func TestAuthSAML(t *testing.T) {
 				},
 			},
 			want: &schema.SAMLAuthProvider{
+				Type: "saml",
 				IdentityProviderMetadataURL: "a",
 				ServiceProviderCertificate:  "b",
 				ServiceProviderPrivateKey:   "c",
@@ -66,6 +68,7 @@ func TestAuthSAML(t *testing.T) {
 				},
 			},
 			want: &schema.SAMLAuthProvider{
+				Type: "saml",
 				IdentityProviderMetadataURL: "a2",
 				ServiceProviderCertificate:  "b2",
 				ServiceProviderPrivateKey:   "c2",

@@ -36,6 +36,7 @@ func TestAuthOpenIDConnect(t *testing.T) {
 				OidcEmailDomain:  "d",
 			},
 			want: &schema.OpenIDConnectAuthProvider{
+				Type:               "openidconnect",
 				Issuer:             "a",
 				ClientID:           "b",
 				ClientSecret:       "c",
@@ -54,6 +55,7 @@ func TestAuthOpenIDConnect(t *testing.T) {
 				},
 			},
 			want: &schema.OpenIDConnectAuthProvider{
+				Type:               "openidconnect",
 				Issuer:             "a",
 				ClientID:           "b",
 				ClientSecret:       "c",
@@ -77,6 +79,7 @@ func TestAuthOpenIDConnect(t *testing.T) {
 				},
 			},
 			want: &schema.OpenIDConnectAuthProvider{
+				Type:               "openidconnect",
 				Issuer:             "a2",
 				ClientID:           "b2",
 				ClientSecret:       "c2",

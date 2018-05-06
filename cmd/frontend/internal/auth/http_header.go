@@ -26,13 +26,13 @@ const (
 // 🚨 SECURITY
 func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		usernameHeader := conf.AuthHTTPHeader()
-		if usernameHeader == "" {
+		authProvider := conf.AuthProvider().HttpHeader
+		if authProvider == nil || authProvider.UsernameHeader == "" {
 			http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
 			return
 		}
 
-		headerValue := r.Header.Get(usernameHeader)
+		headerValue := r.Header.Get(authProvider.UsernameHeader)
 
 		if headerValue == "" {
 			// The auth proxy is expected to proxy *all* requests, so don't let any non-proxied requests
@@ -65,7 +65,7 @@ func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
 			Username:   username,
 		})
 		if err != nil {
-			log15.Error("unable to get/create user from SSO header", "header", usernameHeader, "headerValue", headerValue, "err", err)
+			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err)
 			http.Error(w, "unable to get/create user", http.StatusInternalServerError)
 			return
 		}

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	oidc "github.com/coreos/go-oidc"
@@ -128,8 +127,6 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 		ClientID:     "aaaaaaaaaaaaaa",
 		ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
-	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
-	defer func() { conf.MockGetData = nil }()
 
 	oidcIDServer := newOIDCIDServer(t, "THECODE", oidcProvider)
 	defer oidcIDServer.Close()
@@ -164,7 +161,7 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
-	middleware, err := newOIDCAuthMiddleware(context.Background(), "http://example.com")
+	middleware, err := newOIDCAuthMiddleware(context.Background(), "http://example.com", oidcProvider)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,8 +284,6 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 		ClientID:     "aaaaaaaaaaaaaa",
 		ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
-	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
-	defer func() { conf.MockGetData = nil }()
 
 	oidcIDServer := newOIDCIDServer(t, "THECODE", oidcProvider)
 	defer oidcIDServer.Close()
@@ -307,7 +302,7 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	middleware, err := newOIDCAuthMiddleware(context.Background(), "http://example.com")
+	middleware, err := newOIDCAuthMiddleware(context.Background(), "http://example.com", oidcProvider)
 	if err != nil {
 		t.Fatal(err)
 	}

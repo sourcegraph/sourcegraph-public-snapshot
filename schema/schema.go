@@ -23,6 +23,12 @@ type BitbucketServerConnection struct {
 	Username                    string `json:"username,omitempty"`
 }
 
+// BuiltinAuthProvider Configures the builtin username-password authentication provider.
+type BuiltinAuthProvider struct {
+	AllowSignup bool   `json:"allowSignup,omitempty"`
+	Type        string `json:"type"`
+}
+
 // ExperimentalFeatures Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
 	HostSurveysLocally     string `json:"hostSurveysLocally,omitempty"`
@@ -63,6 +69,12 @@ type GitoliteConnection struct {
 	Prefix                     string `json:"prefix"`
 }
 
+// HTTPHeaderAuthProvider Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
+type HTTPHeaderAuthProvider struct {
+	Type           string `json:"type"`
+	UsernameHeader string `json:"usernameHeader"`
+}
+
 // Langservers
 type Langservers struct {
 	Address               string                 `json:"address"`
@@ -95,6 +107,7 @@ type OpenIDConnectAuthProvider struct {
 	Issuer             string `json:"issuer"`
 	OverrideToken      string `json:"overrideToken,omitempty"`
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
+	Type               string `json:"type"`
 }
 
 // Phabricator
@@ -124,6 +137,7 @@ type SAMLAuthProvider struct {
 	IdentityProviderMetadataURL string `json:"identityProviderMetadataURL,omitempty"`
 	ServiceProviderCertificate  string `json:"serviceProviderCertificate"`
 	ServiceProviderPrivateKey   string `json:"serviceProviderPrivateKey"`
+	Type                        string `json:"type"`
 }
 
 // SMTPServerConfig The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
