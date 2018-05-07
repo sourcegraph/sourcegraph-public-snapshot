@@ -30,18 +30,16 @@ func TestAuthOpenIDConnect(t *testing.T) {
 		},
 		"old": {
 			input: &schema.SiteConfiguration{
-				OidcProvider:      "a",
-				OidcClientID:      "b",
-				OidcClientSecret:  "c",
-				OidcEmailDomain:   "d",
-				OidcOverrideToken: "e",
+				OidcProvider:     "a",
+				OidcClientID:     "b",
+				OidcClientSecret: "c",
+				OidcEmailDomain:  "d",
 			},
 			want: &schema.OpenIDConnectAuthProvider{
 				Issuer:             "a",
 				ClientID:           "b",
 				ClientSecret:       "c",
 				RequireEmailDomain: "d",
-				OverrideToken:      "e",
 			},
 		},
 		"new": {
@@ -65,12 +63,11 @@ func TestAuthOpenIDConnect(t *testing.T) {
 		},
 		"both": {
 			input: &schema.SiteConfiguration{
-				AuthProvider:      "openidconnect",
-				OidcProvider:      "a",
-				OidcClientID:      "b",
-				OidcClientSecret:  "c",
-				OidcEmailDomain:   "d",
-				OidcOverrideToken: "e",
+				AuthProvider:     "openidconnect",
+				OidcProvider:     "a",
+				OidcClientID:     "b",
+				OidcClientSecret: "c",
+				OidcEmailDomain:  "d",
 				AuthOpenIDConnect: &schema.OpenIDConnectAuthProvider{
 					Issuer:             "a2",
 					ClientID:           "b2",

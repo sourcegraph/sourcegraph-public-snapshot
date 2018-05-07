@@ -214,7 +214,6 @@ type SiteConfiguration struct {
 	OidcClientID                      string                       `json:"oidcClientID,omitempty"`
 	OidcClientSecret                  string                       `json:"oidcClientSecret,omitempty"`
 	OidcEmailDomain                   string                       `json:"oidcEmailDomain,omitempty"`
-	OidcOverrideToken                 string                       `json:"oidcOverrideToken,omitempty"`
 	OidcProvider                      string                       `json:"oidcProvider,omitempty"`
 	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
 	PhabricatorURL                    string                       `json:"phabricatorURL,omitempty"`

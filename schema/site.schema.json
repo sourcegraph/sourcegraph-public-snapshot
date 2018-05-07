@@ -291,11 +291,6 @@
         "Whitelisted email domain for logins, e.g. 'mycompany.com'\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"requireEmailDomain\" property instead.",
       "type": "string"
     },
-    "oidcOverrideToken": {
-      "description":
-        "Token to circumvent OIDC layer (testing only)\n\nDEPRECATED: Use auth.provider==\"openidconnect\" and auth.openidconnect's \"overrideToken\" property instead.",
-      "type": "string"
-    },
     "samlIDProviderMetadataURL": {
       "description":
         "SAML Identity Provider metadata URL (for dyanmic configuration of SAML Service Provider)\n\nDEPRECATED: Use auth.provider==\"saml\" and auth.saml's \"identityProviderMetadataURL\" property instead.",

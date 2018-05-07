@@ -29,7 +29,7 @@ func validateCustom(normalizedInput []byte) (validationErrors []string, err erro
 	}
 
 	{
-		hasOldOIDC := cfg.OidcProvider != "" || cfg.OidcClientID != "" || cfg.OidcClientSecret != "" || cfg.OidcEmailDomain != "" || cfg.OidcOverrideToken != ""
+		hasOldOIDC := cfg.OidcProvider != "" || cfg.OidcClientID != "" || cfg.OidcClientSecret != "" || cfg.OidcEmailDomain != ""
 		hasNewOIDC := cfg.AuthOpenIDConnect != nil
 		if hasOldOIDC && hasNewOIDC {
 			invalid(`both oidc* properties and auth.openIDConnect are set; preferring properties from the auth.openIDConnect object (oidc* properties are deprecated)`)

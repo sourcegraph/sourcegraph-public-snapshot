@@ -41,7 +41,6 @@ var legacyEnvToFieldName = map[string]string{
 	"OidcClientID":                   "OIDC_CLIENT_ID",
 	"OidcClientSecret":               "OIDC_CLIENT_SECRET",
 	"OidcEmailDomain":                "OIDC_EMAIL_DOMAIN",
-	"OidcOverrideToken":              "OIDC_OVERRIDE_TOKEN",
 	"OidcProvider":                   "OIDC_OP",
 	"Phabricator":                    "PHABRICATOR_CONFIG",
 	"PrivateArtifactRepoID":          "PRIVATE_ARTIFACT_REPO_ID",

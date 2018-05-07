@@ -8,13 +8,12 @@ func AuthOpenIDConnect() *schema.OpenIDConnectAuthProvider { return authOpenIDCo
 
 func authOpenIDConnect(input *schema.SiteConfiguration) (p *schema.OpenIDConnectAuthProvider) {
 	// oidc* properties first (lower precedence)
-	if input.OidcClientID != "" || input.OidcClientSecret != "" || input.OidcProvider != "" || input.OidcEmailDomain != "" || input.OidcOverrideToken != "" {
+	if input.OidcClientID != "" || input.OidcClientSecret != "" || input.OidcProvider != "" || input.OidcEmailDomain != "" {
 		p = &schema.OpenIDConnectAuthProvider{
 			ClientID:           input.OidcClientID,
 			ClientSecret:       input.OidcClientSecret,
 			Issuer:             input.OidcProvider,
 			RequireEmailDomain: input.OidcEmailDomain,
-			OverrideToken:      input.OidcOverrideToken,
 		}
 	}
 
