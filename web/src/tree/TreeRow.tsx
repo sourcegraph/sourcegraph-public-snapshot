@@ -39,9 +39,10 @@ export class TreeRow extends React.Component<TreeRowProps, {}> {
     }
 
     public componentDidMount(): void {
+        // Sets the selectedNode as the activePath when navigating directly to a file.
         if (
-            this.props.activePath !== '' &&
             this.props.selectedNode &&
+            this.props.activePath !== '' &&
             this.props.selectedNode.path === '' &&
             this.props.selectedNode.path !== this.props.activePath &&
             this.props.activePath === this.node.path
@@ -49,7 +50,21 @@ export class TreeRow extends React.Component<TreeRowProps, {}> {
             this.props.onSelectedNodeChange(this.node)
         }
 
+        // Set this row as a childNode of its TreeLayer parent
         this.props.setChildNodes(this.node, this.node.index)
+    }
+
+    public componentDidUpdate(): void {
+        // Handle case where there is already selectedNode and we want to change it
+        // to be the activePath. Gets called when we jump to a file suggestion.
+        if (
+            this.props.selectedNode &&
+            this.props.activePath !== '' &&
+            this.props.selectedNode.path !== this.props.activePath &&
+            this.props.activePath === this.node.path
+        ) {
+            this.props.onSelectedNodeChange(this.node)
+        }
     }
 
     public shouldComponentUpdate(nextProps: TreeRowProps): boolean {

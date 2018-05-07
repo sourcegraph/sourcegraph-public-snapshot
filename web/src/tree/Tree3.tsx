@@ -164,7 +164,7 @@ export class Tree3 extends React.PureComponent<Props, State> {
 
         this.subscriptions.add(
             this.selectedNodeChanges.subscribe((node: TreeNode) => {
-                this.setState({ selectedNode: node })
+                this.selectNode(node)
             })
         )
 
@@ -174,7 +174,7 @@ export class Tree3 extends React.PureComponent<Props, State> {
                 .subscribe((props: Props) => {
                     // Recompute with new paths and parent path. But if the new active path is below where we are now,
                     // preserve the current parent path, so that it's easy for the user to go back up. Also resets the selectedNode
-                    // when the parent path changes.
+                    // to the top-level Tree component and resets resolveTo so no directories are expanded.
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
                     if (!pathEqualToOrAncestor(this.state.parentPath || '', newParentPath)) {
                         this.setState({
@@ -182,6 +182,17 @@ export class Tree3 extends React.PureComponent<Props, State> {
                                 props.activePathIsDir ? props.activePath : dirname(props.activePath)
                             ),
                             selectedNode: this.node,
+                            resolveTo: [],
+                        })
+                    }
+
+                    // If the parent path is not in resolveTo, then we know we've navigated there via a search suggestion.
+                    // Set the parentPath to the newParentPath
+                    if (!this.state.resolveTo.includes(newParentPath)) {
+                        this.setState({
+                            parentPath: dotPathAsUndefined(newParentPath),
+                            selectedNode: this.node,
+                            resolveTo: [...this.state.resolveTo, newParentPath],
                         })
                     }
                 })

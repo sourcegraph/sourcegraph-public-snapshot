@@ -18,6 +18,7 @@ export interface TreeLayerProps extends Repo {
     repoPath: string
     depth: number
     selectedNode: TreeNode | undefined
+    /** This must not be mutated */
     resolveTo: string[]
     parentPath?: string
     onSelect: (node: TreeNode) => void
@@ -61,7 +62,11 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
                     // contents of this tree layer, because it does not change. On the other hand, if the parent path changes,
                     // the tree that we show changes, so we would have to re-fetch the tree contents.
                     distinctUntilChanged(
-                        (x, y) => x.repoPath === y.repoPath && x.rev === y.rev && x.parentPath === y.parentPath
+                        (x, y) =>
+                            x.repoPath === y.repoPath &&
+                            x.rev === y.rev &&
+                            x.parentPath === y.parentPath &&
+                            x.resolveTo === y.resolveTo
                     ),
                     switchMap(props =>
                         fetchTree({
