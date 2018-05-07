@@ -8,7 +8,11 @@ import (
 )
 
 func maybeZoektProcfile(dataDir string) ([]string, error) {
-	enabled, err := strconv.ParseBool(os.Getenv("INDEXED_SEARCH"))
+	env := os.Getenv("INDEXED_SEARCH")
+	if env == "" {
+		return nil, nil
+	}
+	enabled, err := strconv.ParseBool(env)
 	if err != nil {
 		return nil, err
 	}
