@@ -41,12 +41,28 @@ type command struct {
 	// flagSet is the flag set for the command.
 	flagSet *flag.FlagSet
 
+	// aliases for the command.
+	aliases []string
+
 	// handler is the function that is invoked to handle this command.
 	handler func(args []string) error
 
 	// flagSet.Usage function to invoke on e.g. -h flag. If nil, a default one
 	// one is used.
 	usageFunc func()
+}
+
+// matches tells if the given name matches this command or one of its aliases.
+func (c *command) matches(name string) bool {
+	if name == c.flagSet.Name() {
+		return true
+	}
+	for _, alias := range c.aliases {
+		if name == alias {
+			return true
+		}
+	}
+	return false
 }
 
 // commands contains all registered subcommands.
@@ -86,7 +102,7 @@ func main() {
 	// Find the subcommand to execute.
 	name := flag.Arg(0)
 	for _, cmd := range commands {
-		if name != cmd.flagSet.Name() {
+		if !cmd.matches(name) {
 			continue
 		}
 
