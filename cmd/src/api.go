@@ -49,9 +49,11 @@ Examples:
 		flagSet.PrintDefaults()
 		fmt.Println(usage)
 	}
-	queryFlag := flagSet.String("query", "", "GraphQL query to execute, e.g. 'query { currentUser { username } }' (stdin otherwise)")
-	varsFlag := flagSet.String("vars", "", `GraphQL query variables to include as JSON string, e.g. '{"var": "val", "var2": "val2"}'`)
-	apiFlags := newAPIFlags(flagSet)
+	var (
+		queryFlag = flagSet.String("query", "", "GraphQL query to execute, e.g. 'query { currentUser { username } }' (stdin otherwise)")
+		varsFlag  = flagSet.String("vars", "", `GraphQL query variables to include as JSON string, e.g. '{"var": "val", "var2": "val2"}'`)
+		apiFlags  = newAPIFlags(flagSet)
+	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
