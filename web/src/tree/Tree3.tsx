@@ -114,6 +114,7 @@ export class Tree3 extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     public node: TreeNode
+    private treeElement: HTMLElement | null
 
     private handlers: { [index: string]: () => void } = {
         // tslint:disable-next-line:no-unbound-method
@@ -144,6 +145,8 @@ export class Tree3 extends React.PureComponent<Props, State> {
             resolveTo: [],
             selectedNode: this.node,
         }
+
+        this.treeElement = null
     }
 
     public componentDidMount(): void {
@@ -195,7 +198,7 @@ export class Tree3 extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
+            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
                 <TreeLayer
                     ref={ref => {
                         if (ref) {
@@ -215,6 +218,7 @@ export class Tree3 extends React.PureComponent<Props, State> {
                     selectedNode={this.state.selectedNode}
                     onChangeViewState={this.onChangeEntryViewState}
                     onSelectedNodeChange={this.onSelectedNodeChange}
+                    focusTreeOnUnmount={this.focusTree}
                 />
             </div>
         )
@@ -333,6 +337,17 @@ export class Tree3 extends React.PureComponent<Props, State> {
         if (handler) {
             event.preventDefault()
             handler.call(this, event)
+        }
+    }
+
+    private setTreeElement = (el: HTMLElement | null): void => {
+        if (el) {
+            this.treeElement = el
+        }
+    }
+    private focusTree = (): void => {
+        if (this.treeElement) {
+            this.treeElement.focus()
         }
     }
 }

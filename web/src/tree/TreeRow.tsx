@@ -168,6 +168,7 @@ export class TreeRow extends React.Component<TreeRowProps, {}> {
                                             onSelect={this.props.onSelect}
                                             onChangeViewState={this.props.onChangeViewState}
                                             onSelectedNodeChange={this.props.onSelectedNodeChange}
+                                            focusTreeOnUnmount={this.props.focusTreeOnUnmount}
                                         />
                                     </td>
                                 </tr>

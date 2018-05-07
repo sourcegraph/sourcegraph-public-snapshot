@@ -23,6 +23,11 @@ export interface TreeLayerProps extends Repo {
     onSelect: (node: TreeNode) => void
     onChangeViewState: (path: string, resolveTo: boolean, node: TreeNode) => void
     onSelectedNodeChange: (node: TreeNode) => void
+    /**
+     * The tree loses focus when an active row is unmounted when its parent directory collapses.
+     * This function sets the focus back on the tree.
+     */
+    focusTreeOnUnmount: () => void
 }
 
 export interface TreeLayerState {
@@ -88,6 +93,7 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
     }
 
     public componentWillUnmount(): void {
+        this.props.focusTreeOnUnmount()
         this.subscriptions.unsubscribe()
     }
 
@@ -126,6 +132,7 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
                                             onSelect={this.props.onSelect}
                                             onSelectedNodeChange={this.props.onSelectedNodeChange}
                                             setChildNodes={this.setChildNode}
+                                            focusTreeOnUnmount={this.props.focusTreeOnUnmount}
                                         />
                                     )
                                 )
