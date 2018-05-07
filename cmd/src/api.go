@@ -290,3 +290,17 @@ func (g *graphqlError) Error() string {
 	j, _ := json.MarshalIndent(g.Errors, "", "  ")
 	return string(j)
 }
+
+func nullInt(n int) *int {
+	if n == -1 {
+		return nil
+	}
+	return &n
+}
+
+func nullString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
