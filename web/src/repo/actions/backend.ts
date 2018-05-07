@@ -11,7 +11,7 @@ import { createAggregateError } from '../../util/errors'
  */
 export function fetchLangServer(
     language: string
-): Observable<Pick<GQL.ILangServer, 'displayName' | 'homepageURL' | 'issuesURL'> | null> {
+): Observable<Pick<GQL.ILangServer, 'displayName' | 'homepageURL' | 'issuesURL' | 'experimental'> | null> {
     return queryGraphQL(
         gql`
             query LangServer($language: String!) {
@@ -20,6 +20,7 @@ export function fetchLangServer(
                         displayName
                         homepageURL
                         issuesURL
+                        experimental
                     }
                 }
             }

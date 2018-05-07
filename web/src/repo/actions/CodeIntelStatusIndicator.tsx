@@ -18,6 +18,8 @@ interface LangServer {
     displayName?: string
     homepageURL?: string
     issuesURL?: string
+    /** defaults to `false` */
+    experimental?: boolean
     capabilities: ServerCapabilities
 }
 
@@ -51,6 +53,7 @@ const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
                     displayName: (langServer && langServer.displayName) || undefined,
                     homepageURL: (langServer && langServer.homepageURL) || undefined,
                     issuesURL: (langServer && langServer.issuesURL) || undefined,
+                    experimental: (langServer && langServer.experimental) || undefined,
                     capabilities,
                 })),
                 catchError(err => (err.code === EMODENOTFOUND ? [null] : [asError(err)]))
@@ -112,6 +115,7 @@ export class CodeIntelStatusIndicator extends React.Component<
             !this.state.langServerOrError.capabilities.hoverProvider ||
             !this.state.langServerOrError.capabilities.referencesProvider ||
             !this.state.langServerOrError.capabilities.definitionProvider ||
+            this.state.langServerOrError.experimental ||
             !hasCrossRepositoryCodeIntelligence(this.state.langServerOrError.capabilities)
         ) {
             return 'text-warning'
@@ -182,6 +186,15 @@ export class CodeIntelStatusIndicator extends React.Component<
                                         )}
                                     />
                                 </ul>
+                                {this.state.langServerOrError.experimental && (
+                                    <p className="mt-2 mb-0 text-warning font-weight-light">
+                                        <em>
+                                            This language server is experimental - some code intelligence actions might
+                                            not work correctly.
+                                        </em>
+                                    </p>
+                                    // TODO - Add docs link about experimental code intelligence when written
+                                )}
                                 {this.props.userIsSiteAdmin && (
                                     <p className="mt-2 mb-0">
                                         <Link to="/site-admin/code-intelligence">Manage</Link>

@@ -26,6 +26,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * The new access token scope `site-admin:sudo` allows the holder to perform any action as any other user. Only site admins may create this token.
 * Links to Sourcegraph's changelog have been added to the site admin Updates page and update alert.
 * If the site configuration is invalid or uses deprecated properties, a global alert will be shown to all site admins.
+* Added disclaimer to blob code intelligence status indicator when running an `experimental` language server.
 
 ## 2.7.6
 
