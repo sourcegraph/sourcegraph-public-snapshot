@@ -183,6 +183,17 @@ func (a *apiRequest) do() error {
 	}
 	defer resp.Body.Close()
 
+	// Our request may have failed before the reaching GraphQL endpoint, so
+	// confirm the status code. You can test this easily with e.g. an invalid
+	// endpoint like -endpoint=https://google.com
+	if resp.StatusCode != http.StatusOK {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("error: %s\n\n%s", resp.Status, body)
+	}
+
 	// Decode the response.
 	if err := json.NewDecoder(resp.Body).Decode(&a.result); err != nil {
 		return err
