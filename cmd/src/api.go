@@ -17,6 +17,12 @@ import (
 
 func init() {
 	usage := `
+Exit codes:
+
+  0: Success
+  1: General failures (connection issues, invalid HTTP response, etc.)
+  2: GraphQL error response
+
 Examples:
 
   Run queries (identical behavior):
@@ -35,7 +41,6 @@ Examples:
   Get the curl command for a query (just add '-get-curl' in the flags section):
 
     	$ src api -get-curl -query='query { currentUser { username } }'
-
 `
 
 	flagSet := flag.NewFlagSet("api", flag.ExitOnError)
@@ -97,7 +102,8 @@ Examples:
 				fmt.Println(string(f))
 				return nil
 			},
-			flags: apiFlags,
+			flags:            apiFlags,
+			dontUnpackErrors: true,
 		}).do()
 	}
 
@@ -142,6 +148,21 @@ type apiRequest struct {
 	result interface{}            // where to store the result
 	done   func() error           // a function to invoke for handling the response
 	flags  *apiFlags              // the API flags previously created via newAPIFlags
+
+	// If true, errors will not be unpacked.
+	//
+	// Consider a GraphQL response like:
+	//
+	// 	{"data": {...}, "errors": ["something went really wrong"]}
+	//
+	// 'error unpacking' refers to how we will check if there are any `errors`
+	// present in the response (if there are, we will report them on the command
+	// line separately AND exit with a proper error code), and if there are no
+	// errors `result` will contain only the `{...}` object.
+	//
+	// When true, the entire response object is stored in `result` -- as if you
+	// ran the curl query yourself.
+	dontUnpackErrors bool
 }
 
 // do performs the API request. If a.flags specify something like -get-curl
@@ -195,7 +216,36 @@ func (a *apiRequest) do() error {
 	}
 
 	// Decode the response.
-	if err := json.NewDecoder(resp.Body).Decode(&a.result); err != nil {
+	var result struct {
+		Data   interface{} `json:"data,omitempty"`
+		Errors interface{} `json:"errors,omitempty"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return err
+	}
+
+	// Handle the case of not unpacking errors.
+	if a.dontUnpackErrors {
+		if err := jsonCopy(a.result, result); err != nil {
+			return err
+		}
+		if err := a.done(); err != nil {
+			return err
+		}
+		if result.Errors != nil {
+			return &exitCodeError{error: nil, exitCode: graphqlErrorsExitCode}
+		}
+		return nil
+	}
+
+	// Handle the case of unpacking errors.
+	if result.Errors != nil {
+		return &exitCodeError{
+			error:    fmt.Errorf("GraphQL errors:\n%s", &graphqlError{result.Errors}),
+			exitCode: graphqlErrorsExitCode,
+		}
+	}
+	if err := jsonCopy(a.result, result.Data); err != nil {
 		return err
 	}
 	return a.done()
@@ -213,4 +263,28 @@ func newAPIFlags(flagSet *flag.FlagSet) *apiFlags {
 	return &apiFlags{
 		getCurl: flagSet.Bool("get-curl", false, "Print the curl command for executing this query and exit (WARNING: includes printing your access token!)"),
 	}
+}
+
+// jsonCopy is a cheaty method of copying an already-decoded JSON (src)
+// response into its destination (dst) that would usually be passed to e.g.
+// json.Unmarshal.
+//
+// We could do this with reflection, obviously, but it would be much more
+// complex and JSON re-marshaling should be cheap enough anyway. Can improve in
+// the future.
+func jsonCopy(dst, src interface{}) error {
+	data, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	return json.NewDecoder(bytes.NewReader(data)).Decode(dst)
+}
+
+type graphqlError struct {
+	Errors interface{}
+}
+
+func (g *graphqlError) Error() string {
+	j, _ := json.MarshalIndent(g.Errors, "", "  ")
+	return string(j)
 }

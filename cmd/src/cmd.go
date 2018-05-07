@@ -94,6 +94,12 @@ func (c commander) run(flagSet *flag.FlagSet, cmdName, usageText string, args []
 				cmd.flagSet.Usage()
 				os.Exit(2)
 			}
+			if e, ok := err.(*exitCodeError); ok {
+				if e.error != nil {
+					log.Println(e.error)
+				}
+				os.Exit(e.exitCode)
+			}
 			log.Fatal(err)
 		}
 		os.Exit(0)
@@ -107,3 +113,14 @@ func (c commander) run(flagSet *flag.FlagSet, cmdName, usageText string, args []
 type usageError struct {
 	error
 }
+
+// exitCodeError is an error type that subcommands can return in order to
+// specify the exact exit code.
+type exitCodeError struct {
+	error
+	exitCode int
+}
+
+const (
+	graphqlErrorsExitCode = 2
+)
