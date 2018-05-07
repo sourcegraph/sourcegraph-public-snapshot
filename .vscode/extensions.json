@@ -6,7 +6,7 @@
     "eg2.tslint",
     "esbenp.prettier-vscode",
     "kumar-harsh.graphql-for-vscode",
-    "lukehoban.Go",
+    "ms-vscode.Go",
     "shinnn.stylelint"
   ]
 }
