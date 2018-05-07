@@ -66,17 +66,6 @@ func newOIDCAuthMiddleware(createCtx context.Context, appURL string) (*Middlewar
 				return
 			}
 
-			// Support override token for e2e tests.
-			if oidcProvider.OverrideToken != "" && r.Header.Get("X-Oidc-Override") == oidcProvider.OverrideToken {
-				if err := startAnonUserSession(createCtx, w, r); err != nil {
-					log15.Error("Error initializing anonymous user", "error", err)
-					http.Error(w, "Error initializing anonymous user", http.StatusInternalServerError)
-					return
-				}
-				nextIfAuthed.ServeHTTP(w, r)
-				return
-			}
-
 			// Otherwise require OpenID authentication.
 			nextIfUnauthed.ServeHTTP(w, r)
 		})
@@ -115,30 +104,6 @@ func newOIDCAuthMiddleware(createCtx context.Context, appURL string) (*Middlewar
 			})
 		},
 	}, nil
-}
-
-func startAnonUserSession(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	token := &oidc.IDToken{
-		Issuer:  "oidc-override",
-		Subject: "anon-user",
-	}
-	userInfo := &oidc.UserInfo{
-		Subject:       "anon-user",
-		Profile:       "anon-user",
-		Email:         "anon-user@sourcegraph.com",
-		EmailVerified: true,
-	}
-	claims := &UserClaims{
-		Name:              "Anonymous User",
-		GivenName:         "Anonymous User",
-		FamilyName:        "User",
-		PreferredUsername: "anon-user",
-	}
-	actr, err := getActor(ctx, token, userInfo, claims)
-	if err != nil {
-		return err
-	}
-	return session.StartNewSession(w, r, actr, 0)
 }
 
 // newOIDCLoginHandler returns a handler that defines the necessary endpoints for the OIDC Authentication Code Flow

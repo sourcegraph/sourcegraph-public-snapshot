@@ -837,7 +837,7 @@ const SiteSchemaJSON = `{
         },
         "overrideToken": {
           "description":
-            "(For testing and development only) A token used to circumvent the OpenID Connect authentication layer.",
+            "(For testing and development only) A token used to circumvent the OpenID Connect authentication layer.\n\nDEPRECATED: This override-auth feature will be removed, and no replacement is planned.",
           "type": "string"
         }
       }

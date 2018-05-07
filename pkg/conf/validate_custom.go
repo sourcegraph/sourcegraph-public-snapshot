@@ -46,6 +46,10 @@ func validateCustom(normalizedInput []byte) (validationErrors []string, err erro
 		}
 	}
 
+	if cfg.AuthOpenIDConnect != nil && cfg.AuthOpenIDConnect.OverrideToken != "" {
+		invalid(`OpenID Connect auth provider "overrideToken" is deprecated (because it applies to all auth providers, not just OIDC); use OVERRIDE_AUTH_SECRET env var instead`)
+	}
+
 	{
 		hasOldSAML := cfg.SamlIDProviderMetadataURL != "" || cfg.SamlSPCert != "" || cfg.SamlSPKey != ""
 		hasNewSAML := cfg.AuthSaml != nil
