@@ -148,7 +148,7 @@ type apiRequest struct {
 	query  string                 // the GraphQL query
 	vars   map[string]interface{} // the GraphQL query variables
 	result interface{}            // where to store the result
-	done   func() error           // a function to invoke for handling the response
+	done   func() error           // a function to invoke for handling the response. If nil, flags like -get-curl are ignored.
 	flags  *apiFlags              // the API flags previously created via newAPIFlags
 
 	// If true, errors will not be unpacked.
@@ -172,14 +172,18 @@ type apiRequest struct {
 // the request is finished a.done is invoked to handle the response (which is
 // stored in a.result).
 func (a *apiRequest) do() error {
-	// Handle the get-curl flag now.
-	if *a.flags.getCurl {
-		curl, err := curlCmd(cfg.Endpoint, cfg.AccessToken, a.query, a.vars)
-		if err != nil {
-			return err
+	if a.done != nil {
+		// Handle the get-curl flag now.
+		if *a.flags.getCurl {
+			curl, err := curlCmd(cfg.Endpoint, cfg.AccessToken, a.query, a.vars)
+			if err != nil {
+				return err
+			}
+			fmt.Println(curl)
+			return nil
 		}
-		fmt.Println(curl)
-		return nil
+	} else {
+		a.done = func() error { return nil }
 	}
 
 	// Create the JSON object.
