@@ -46,7 +46,7 @@ Examples:
 	}
 	queryFlag := flagSet.String("query", "", "GraphQL query to execute, e.g. 'query { currentUser { username } }' (stdin otherwise)")
 	varsFlag := flagSet.String("vars", "", `GraphQL query variables to include as JSON string, e.g. '{"var": "val", "var2": "val2"}'`)
-	getCurlFlag := flagSet.Bool("get-curl", false, "Print the curl command for executing this query and exit (WARNING: includes printing your access token!)")
+	apiFlags := newAPIFlags(flagSet)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
@@ -82,52 +82,23 @@ Examples:
 			vars[key] = value
 		}
 
-		// Handle the get-curl flag now.
-		if *getCurlFlag {
-			curl, err := curlCmd(cfg.Endpoint, cfg.AccessToken, query, vars)
-			if err != nil {
-				return err
-			}
-			fmt.Println(curl)
-			return nil
-		}
-
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(map[string]interface{}{
-			"query":     query,
-			"variables": vars,
-		}); err != nil {
-			return err
-		}
-
-		// Create the HTTP request.
-		req, err := http.NewRequest("POST", gqlURL(cfg.Endpoint), nil)
-		if err != nil {
-			return err
-		}
-		req.Header.Set("Authorization", "token "+cfg.AccessToken)
-		req.Body = ioutil.NopCloser(&buf)
-
 		// Perform the request.
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		// Read the response.
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-
-		// Print the formatted JSON.
-		f, err := formatJSON(data)
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(f))
-		return nil
+		var result interface{}
+		return (&apiRequest{
+			query:  query,
+			vars:   vars,
+			result: &result,
+			done: func() error {
+				// Print the formatted JSON.
+				f, err := json.MarshalIndent(result, "", "  ")
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(f))
+				return nil
+			},
+			flags: apiFlags,
+		}).do()
 	}
 
 	// Register the command.
@@ -147,15 +118,6 @@ func gqlURL(endpoint string) string {
 	return endpoint + ".api/graphql"
 }
 
-// formatJSON formats the given JSON data with a two-space indent.
-func formatJSON(data []byte) ([]byte, error) {
-	var v map[string]interface{}
-	if err := json.Unmarshal(data, &v); err != nil {
-		return nil, err
-	}
-	return json.MarshalIndent(v, "", "  ")
-}
-
 // curlCmd returns the curl command to perform the given GraphQL query. Bash-only.
 func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (string, error) {
 	data, err := json.Marshal(map[string]interface{}{
@@ -171,4 +133,73 @@ func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (
 	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-d", string(data)))
 	s += fmt.Sprintf("   %s", shellquote.Join(gqlURL(endpoint)))
 	return s, nil
+}
+
+// apiRequest represents a GraphQL API request.
+type apiRequest struct {
+	query  string                 // the GraphQL query
+	vars   map[string]interface{} // the GraphQL query variables
+	result interface{}            // where to store the result
+	done   func() error           // a function to invoke for handling the response
+	flags  *apiFlags              // the API flags previously created via newAPIFlags
+}
+
+// do performs the API request. If a.flags specify something like -get-curl
+// then it is handled immediately and a.done is not invoked. Otherwise, once
+// the request is finished a.done is invoked to handle the response (which is
+// stored in a.result).
+func (a *apiRequest) do() error {
+	// Handle the get-curl flag now.
+	if *a.flags.getCurl {
+		curl, err := curlCmd(cfg.Endpoint, cfg.AccessToken, a.query, a.vars)
+		if err != nil {
+			return err
+		}
+		fmt.Println(curl)
+		return nil
+	}
+
+	// Create the JSON object.
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(map[string]interface{}{
+		"query":     a.query,
+		"variables": a.vars,
+	}); err != nil {
+		return err
+	}
+
+	// Create the HTTP request.
+	req, err := http.NewRequest("POST", gqlURL(cfg.Endpoint), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "token "+cfg.AccessToken)
+	req.Body = ioutil.NopCloser(&buf)
+
+	// Perform the request.
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Decode the response.
+	if err := json.NewDecoder(resp.Body).Decode(&a.result); err != nil {
+		return err
+	}
+	return a.done()
+}
+
+// apiFlags represents generic API flags available in all commands that perform
+// API requests. e.g. the ability to turn any CLI command into a curl command.
+type apiFlags struct {
+	getCurl *bool
+}
+
+// newAPIFlags creates the API flags. It should be invoked once at flag setup
+// time.
+func newAPIFlags(flagSet *flag.FlagSet) *apiFlags {
+	return &apiFlags{
+		getCurl: flagSet.Bool("get-curl", false, "Print the curl command for executing this query and exit (WARNING: includes printing your access token!)"),
+	}
 }
