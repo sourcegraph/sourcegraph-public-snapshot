@@ -40,8 +40,6 @@ const (
 
 	GoSymbolURL = "go-symbol-url"
 
-	GraphiQL = "graphiql"
-
 	UI = "ui"
 )
 
@@ -85,8 +83,6 @@ func newRouter() *mux.Router {
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
-
-	base.Path("/.graphiql").Methods("GET").Name(GraphiQL)
 
 	// Must come last
 	base.PathPrefix("/").Methods("GET").Name(UI)
