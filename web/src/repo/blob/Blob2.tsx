@@ -78,20 +78,24 @@ interface BlobState {
 }
 
 export class Blob2 extends React.Component<BlobProps, BlobState> {
-    /** Emits whenever the ref callback for the code element is called */
-    private codeElements = new Subject<HTMLElement | null>()
-
-    /** Emits whenever the ref callback for the hover element is called */
-    private hoverOverlayElements = new Subject<HTMLElement | null>()
-
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
     private componentUpdates = new Subject<BlobProps>()
 
+    /** Emits whenever the ref callback for the code element is called */
+    private codeElements = new Subject<HTMLElement | null>()
+    private nextCodeElement = (element: HTMLElement | null) => this.codeElements.next(element)
+
+    /** Emits whenever the ref callback for the hover element is called */
+    private hoverOverlayElements = new Subject<HTMLElement | null>()
+    private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
+
     /** Emits whenever something is hovered in the code */
     private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextBlobMouseOver = (event: React.MouseEvent<HTMLElement>) => this.codeMouseOvers.next(event)
 
     /** Emits whenever something is clicked in the code */
     private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => this.codeClicks.next(event)
 
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
@@ -199,22 +203,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         )
     }
 
-    private nextBlobElement = (codeElement: HTMLElement | null) => {
-        this.codeElements.next(codeElement)
-    }
-
-    private nextHoverOverlayElement = (hoverOverlayElement: HTMLElement | null) => {
-        this.hoverOverlayElements.next(hoverOverlayElement)
-    }
-
-    private nextCodeClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.codeClicks.next(event)
-    }
-
-    private nextBlobMouseOver: React.MouseEventHandler<HTMLElement> = event => {
-        this.codeMouseOvers.next(event)
-    }
-
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
     }
@@ -236,14 +224,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             <div className={`blob2 ${this.props.className}`}>
                 <code
                     className={`blob2__code ${this.props.wrapCode ? ' blob2__code--wrapped' : ''} `}
-                    ref={this.nextBlobElement}
+                    ref={this.nextCodeElement}
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                     onClick={this.nextCodeClick}
                     onMouseOver={this.nextBlobMouseOver}
                 />
                 {this.state.hoverOrError && (
                     <HoverOverlay
-                        hoverRef={this.nextHoverOverlayElement}
+                        hoverRef={this.nextOverlayElement}
                         hoverOrError={this.state.hoverOrError}
                         position={this.state.hoverPosition}
                         isFixed={this.state.hoverIsFixed}
