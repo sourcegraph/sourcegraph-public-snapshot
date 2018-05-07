@@ -25,15 +25,9 @@ import (
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
 func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
-	// 🚨 SECURITY: Add middleware for authentication provider.
-	authMiddleware, err := auth.NewAuthMiddleware(ctx, appURL)
-	if err != nil {
-		return nil, err
-	}
-
 	// HTTP API handler.
 	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))
-	apiHandler = authMiddleware.API(apiHandler) // auth provider
+	apiHandler = auth.Middlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
@@ -43,7 +37,7 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// App handler (HTML pages).
 	appHandler := app.NewHandler()
 	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddleware.App(appHandler)                                           // auth provider
+	appHandler = auth.Middlewares.App(appHandler)                                         // 🚨 SECURITY: auth middleware
 	appHandler = auth.OverrideAuthMiddleware(appHandler)                                  // 🚨 SECURITY: override auth using secret
 	appHandler = session.CookieMiddleware(appHandler)                                     // app accepts cookies
 
