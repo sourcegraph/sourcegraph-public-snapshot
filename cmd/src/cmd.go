@@ -57,6 +57,7 @@ func (c commander) run(flagSet *flag.FlagSet, cmdName, usageText string, args []
 
 	// Configure default usage funcs for commands.
 	for _, cmd := range c {
+		cmd := cmd
 		if cmd.usageFunc != nil {
 			cmd.flagSet.Usage = cmd.usageFunc
 			continue
