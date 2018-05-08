@@ -54,19 +54,6 @@ export class TreeRow extends React.Component<TreeRowProps, {}> {
         this.props.setChildNodes(this.node, this.node.index)
     }
 
-    public componentDidUpdate(): void {
-        // Handle case where there is already selectedNode and we want to change it
-        // to be the activePath. Gets called when we jump to a file suggestion.
-        if (
-            this.props.selectedNode &&
-            this.props.activePath !== '' &&
-            this.props.selectedNode.path !== this.props.activePath &&
-            this.props.activePath === this.node.path
-        ) {
-            this.props.onSelectedNodeChange(this.node)
-        }
-    }
-
     public shouldComponentUpdate(nextProps: TreeRowProps): boolean {
         if (nextProps.selectedNode !== this.props.selectedNode) {
             // Update if this row will be the selected node
