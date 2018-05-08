@@ -101,7 +101,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
-		// InjectedHTMLHeadTop: template.HTML(injectedHTMLHeadTop),
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assets.URL("").String(),
 		Title:    title,
