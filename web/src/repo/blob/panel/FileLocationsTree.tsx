@@ -36,7 +36,7 @@ interface Props {
     inputRevision?: string
 
     /** The icon to use for each location. */
-    icon: React.ComponentType<{ className: string }>
+    icon: React.ComponentType<{ className?: string }>
 
     /** Called when an item in the tree is selected. */
     onSelectTree?: () => void

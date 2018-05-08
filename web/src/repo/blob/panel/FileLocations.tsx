@@ -47,7 +47,7 @@ interface Props {
     inputRevision?: string
 
     /** The icon to use for each location. */
-    icon: React.ComponentType<{ className: string }>
+    icon: React.ComponentType<{ className?: string }>
 
     /** Called when a location is selected. */
     onSelect?: () => void

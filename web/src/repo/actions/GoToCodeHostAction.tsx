@@ -128,7 +128,7 @@ function onClick(): void {
 
 function serviceTypeDisplayNameAndIcon(
     serviceType: string | null
-): { displayName: string; icon?: React.ComponentType<{ className: string }> } {
+): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
     switch (serviceType) {
         case 'github':
             return { displayName: 'GitHub', icon: GitHubIcon }
