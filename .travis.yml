@@ -18,6 +18,7 @@ deploy:
     secure: UoKg6fE1QlXTrYdY+AdaQ8WogXEydYhb5MTbabLbpC7byuopM/FHPXOTJ97+bsYgaVH3sElDJR1+v3PLm5lDeM9o2l1/HnfZK5M5iiNrktxNUOo+ppX6i4ylQ+AHEgRUc5zS3hYkNbXRu4IVULevmHsCUX1MchI7t+56uVZkSE3yFxGi8jTUm/cAyFX6MNyuOGXRlew2ivgKhJ/OT0ebxWaCxz/sn5H+1Cmr7r7Pf45vx9XpbY2wd7NqwsFa+w42z2hvEurzM91ZTJzo68hEGPcQoczobyzn37sDiqak0OoTUJ1tHCL/cgWN8tXgWXDGF3isXJ/yquoBCFvIaZTayV7mKu44ABIfLR4e0gj5vWV2Vv2yhbIaH52HnC5CvSsLkDxllCpFllJ8Nh6QAD2oP30c9Af+d4fgPWJ2WSFfx16vNOqONw6y0/FQ34HHmcek2KpPWZdSIbm6IVsMw3V8ThUWz1XXO6DE03jnk88y/LrIFuu+E1RLzgfmBo3NNb5GwcgrTm3v3ti0ObRPC1Cfyr3g2FoCfs+3I8ecrKs8Md9Pf5gN/xevHzLnTPj6Yq976ElympPnPeXTekF26ymsMJUvNj+2WZogEYFp5xkeXfvnQUTOgQVQn5FTWVf0/h4Dgy6j8JT1YUmdAeqZkfLi0xWWkMOnm0ofvU6gglELDS4=
   file_glob: true
   file: release/*
+  overwrite: true
   skip_cleanup: true
   on:
     tags: true
