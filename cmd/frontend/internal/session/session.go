@@ -133,12 +133,22 @@ func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor,
 	return nil
 }
 
+// ignoreSessionCookieError reports whether session cookie errors should be ignored and not
+// logged. It is true iff the auth provider is SAML because SAML's cookies have the same name
+// (sg-session) but are actually SAML-specific JSON Web Tokens (JWTs) that are not validated using
+// our own session store. Therefore they always produce an error.
+//
+// TODO(sqs): Make it so that our SAML cookies use a different name (and do this without logging
+// all SAML users out).
+func ignoreSessionCookieError() bool {
+	return conf.AuthSAML() != nil
+}
+
 // DeleteSession deletes the current session.
 func DeleteSession(w http.ResponseWriter, r *http.Request) {
 	session, err := sessionStore.Get(r, "sg-session")
 	if err != nil {
-		// See the other "conf.AuthSAML() == nil" line below for why it's OK to skip logging when using SAML.
-		if conf.AuthSAML() == nil {
+		if !ignoreSessionCookieError() {
 			log15.Error("error getting session", "error", err)
 		}
 	}
@@ -207,10 +217,7 @@ func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, i
 func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
 	session, err := sessionStore.Get(r, "sg-session")
 	if err != nil {
-		// Ignore this error (and skip logging) when using SAML because SAML's cookies have the same
-		// name (sg-session) but are actually SAML-specific JSON Web Tokens (JWTs) that are not
-		// validated using our own session store.
-		if conf.AuthSAML() == nil {
+		if !ignoreSessionCookieError() {
 			log15.Error("error getting session", "error", err)
 		}
 		return r.Context()
