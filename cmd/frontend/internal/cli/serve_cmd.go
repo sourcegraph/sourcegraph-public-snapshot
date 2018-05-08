@@ -2,6 +2,7 @@ package cli
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -176,6 +177,12 @@ func Main() error {
 	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
 	if useTLS && globals.AppURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", globals.AppURL)
+	}
+
+	// Exit (to be safe) if there is no auth provider explicitly set, to avoid unexpected behavior
+	// (e.g., a typo in the site config's auth provider causing the site to revert to builtin auth).
+	if conf.GetTODO().AuthProvider == "" {
+		return errors.New("must set auth.provider in site config (refusing to start server without it explicitly set) - see https://about.sourcegraph.com/docs/config/authentication")
 	}
 
 	// Create the external HTTP handler.
