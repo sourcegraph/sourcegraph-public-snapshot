@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
@@ -46,7 +48,9 @@ func NewHandler() http.Handler {
 		http.Redirect(w, r, "https://about.sourcegraph.com/go", 302)
 	})))
 
-	r.Get(router.GoSymbolURL).Handler(trace.TraceRoute(errorutil.Handler(serveGoSymbolURL)))
+	if envvar.SourcegraphDotComMode() {
+		r.Get(router.GoSymbolURL).Handler(trace.TraceRoute(errorutil.Handler(serveGoSymbolURL)))
+	}
 
 	r.Get(router.UI).Handler(ui.Router())
 

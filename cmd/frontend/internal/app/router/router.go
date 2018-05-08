@@ -6,6 +6,7 @@ package router
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
@@ -78,7 +79,9 @@ func newRouter() *mux.Router {
 	addOldTreeRedirectRoute(base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 
-	base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)
+	if envvar.SourcegraphDotComMode() {
+		base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)
+	}
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

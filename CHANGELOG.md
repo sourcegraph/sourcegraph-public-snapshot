@@ -16,6 +16,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * User data on the site admin Analytics page is now paginated, filterable by a user's recent activity, and searchable.
 * The link to the root of a repo in the bread crumbs now preserves the revision you are at.
 * When using the `http-header` auth provider, signin/signup/signout links are now hidden.
+* Repository paths beginning with `go/` are no longer reservered by Sourcegraph.
 
 ### Removed
 
