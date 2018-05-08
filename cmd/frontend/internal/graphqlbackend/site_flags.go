@@ -60,21 +60,7 @@ func noRepositoriesEnabled(ctx context.Context) (bool, error) {
 	return len(repos) == 0, nil
 }
 
-var isExternalAuthEnabled = func() bool {
-	oidcProvider := conf.AuthOpenIDConnect()
-	if oidcProvider != nil && oidcProvider.ClientID != "" && oidcProvider.ClientSecret != "" {
-		return true
-	}
-
-	samlProvider := conf.AuthSAML()
-	if samlProvider != nil && samlProvider.IdentityProviderMetadataURL != "" && samlProvider.ServiceProviderCertificate == "" && samlProvider.ServiceProviderPrivateKey == "" {
-		return true
-	}
-
-	return false
-}()
-
-func (*siteResolver) ExternalAuthEnabled() bool { return isExternalAuthEnabled }
+func (*siteResolver) ExternalAuthEnabled() bool { return conf.AuthProvider() != "builtin" }
 
 func (*siteResolver) ConfigurationNotice(ctx context.Context) bool {
 	// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a security
