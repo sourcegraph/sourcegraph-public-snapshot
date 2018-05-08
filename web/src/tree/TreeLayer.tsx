@@ -71,7 +71,7 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
                     switchMap(props =>
                         fetchTree({
                             repoPath: props.repoPath,
-                            rev: props.rev ? props.rev : '',
+                            rev: props.rev || '',
                             filePath: props.parentPath || '',
                         }).pipe(
                             catchError(err => [asError(err)]),
@@ -128,6 +128,7 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
                                             activePath={this.props.activePath}
                                             activePathIsDir={this.props.activePathIsDir}
                                             repoPath={this.props.repoPath}
+                                            rev={this.props.rev}
                                             selectedNode={this.props.selectedNode}
                                             resolveTo={this.props.resolveTo}
                                             depth={this.props.depth}
