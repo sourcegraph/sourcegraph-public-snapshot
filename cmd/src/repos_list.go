@@ -25,6 +25,10 @@ Examples:
 
     	$ src repos list -query='myquery' -disabled
 
+  List only repositories that are disabled:
+
+    	$ src repos list -disabled -enabled=false -query='github.com/slimsag/'
+
 `
 
 	flagSet := flag.NewFlagSet("list", flag.ExitOnError)
