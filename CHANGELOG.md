@@ -14,6 +14,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * Fixed an issue where Index Search status page failed to render.
 * User data on the site admin Analytics page is now paginated, filterable by a user's recent activity, and searchable.
+* The link to the root of a repo in the bread crumbs now preserves the revision you are at.
 * When using the `http-header` auth provider, signin/signup/signout links are now hidden.
 
 ### Removed

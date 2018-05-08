@@ -7,6 +7,7 @@ import { Subject, Subscription, Unsubscribable } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
+import { toRepoURL } from '../util/url'
 import { RepositoriesPopover } from './RepositoriesPopover'
 
 /**
@@ -178,7 +179,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <div className="navbar-nav">
                     <PopoverButton
                         className="repo-header__section-btn repo-header__repo"
-                        link={`/${this.props.repo.uri}`}
+                        link={toRepoURL({
+                            repoPath: this.props.repo.uri,
+                            rev: this.props.rev,
+                        })}
                         popoverElement={
                             <RepositoriesPopover
                                 currentRepo={this.props.repo.id}
