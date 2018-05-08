@@ -53,5 +53,6 @@ go get -u github.com/sourcegraph/src-cli/cmd/src
 
 1. Find the latest version (either via the releases tab on GitHub or via git tags) to determine which version you are releasing.
 2. `VERSION=9.9.9 ./release.sh` (replace `9.9.9` with the version you are releasing)
+3. Travis will automatically perform the release. Once it has finished, **confirm that the curl commands fetch the latest version above**.
 
-Travis will automatically perform the release.
+
