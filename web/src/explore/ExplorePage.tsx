@@ -112,18 +112,6 @@ function fetchDisabledRepositoriesCount(): Observable<number | null> {
         query Overview {
             repositories(enabled: false, disabled: true, first: 100) {
                 totalCount(precise: true)
-                pageInfo {
-                    hasNextPage
-                }
-            }
-            site {
-                users {
-                    totalCount
-                }
-                orgs {
-                    totalCount
-                }
-                hasCodeIntelligence
             }
         }
     `).pipe(
