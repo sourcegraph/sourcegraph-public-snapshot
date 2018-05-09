@@ -2,6 +2,7 @@ package goreman
 
 import (
 	"errors"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -9,7 +10,10 @@ import (
 	"time"
 )
 
-var wg sync.WaitGroup
+var (
+	wg      sync.WaitGroup
+	signals = make(chan os.Signal, 10)
+)
 
 // stop specified proc.
 func stopProc(proc string, kill bool) error {
@@ -25,7 +29,7 @@ func stopProc(proc string, kill bool) error {
 		return nil
 	}
 
-	p.quit = true
+	p.stopped = true
 
 	if kill {
 		err := p.cmd.Process.Kill()
@@ -58,9 +62,13 @@ func startProc(proc string) error {
 
 	wg.Add(1)
 	go func() {
-		spawnProc(proc)
+		stopped := spawnProc(proc)
 		wg.Done()
 		p.mu.Unlock()
+		if !stopped {
+			log.Printf("%s died. Shutting down...", proc)
+			signals <- syscall.SIGINT
+		}
 	}()
 	return nil
 }
@@ -83,13 +91,12 @@ func startProcs() {
 
 // waitProcs waits for processes to complete.
 func waitProcs() error {
-	sc := make(chan os.Signal, 10)
 	go func() {
 		wg.Wait()
-		sc <- syscall.SIGINT
+		signals <- syscall.SIGINT
 	}()
-	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
-	<-sc
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+	<-signals
 
 	stopped := make(chan struct{})
 	go func() {

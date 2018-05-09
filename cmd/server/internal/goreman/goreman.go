@@ -13,7 +13,7 @@ import (
 type procInfo struct {
 	proc    string
 	cmdline string
-	quit    bool
+	stopped bool // true if we stopped it
 	cmd     *exec.Cmd
 	mu      sync.Mutex
 	cond    *sync.Cond

@@ -9,6 +9,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * `gitMaxConcurrentClones` now also limits the concurrency of updates to repos in addition to the initial clone.
 * In the GraphQL API, `site.users` has been renamed to `users`, `site.orgs` has been renamed to `organizations`, and `site.repositories` has been renamed to `repositories`.
 * An authentication provider must be set in site configuration (see [authentication provider documentation](https://about.sourcegraph.com/docs/config/authentication). Previously the server defaulted to builtin auth if none was set.
+* If a process dies inside the Sourcegraph container the whole container will shutdown. We suggest operators configure a [Docker Restart Policy](https://docs.docker.com/config/containers/start-containers-automatically/#restart-policy-details) or a [Kubernetes Restart Policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy). Previously the container would operate in a degraded mode if a process died.
 
 ### Fixed
 

@@ -9,7 +9,8 @@ import (
 	"syscall"
 )
 
-// spawn command that specified as proc.
+// spawn command that specified as proc. Returns true if it stopped due to
+// goreman stopping it.
 func spawnProc(proc string) bool {
 	logger := createLogger(proc)
 
@@ -23,10 +24,9 @@ func spawnProc(proc string) bool {
 	err := cmd.Start()
 	if err != nil {
 		fmt.Fprintf(logger, "Failed to start %s: %s\n", proc, err)
-		return true
+		return false
 	}
 	procs[proc].cmd = cmd
-	procs[proc].quit = true
 	procs[proc].mu.Unlock()
 	err = cmd.Wait()
 	procs[proc].mu.Lock()
@@ -35,7 +35,7 @@ func spawnProc(proc string) bool {
 	procs[proc].cmd = nil
 	fmt.Fprintf(logger, "Terminating %s\n", proc)
 
-	return procs[proc].quit
+	return procs[proc].stopped
 }
 
 func terminateProc(proc string) error {
