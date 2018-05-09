@@ -15,15 +15,20 @@
             &::before {
                 // draw line number with css so it cannot be copied to clipboard
                 content: attr(data-line);
-                color: #31445e;
             }
 
-            color: #31445e;
             text-align: right;
             padding-left: 0.5rem;
-            min-width: 2.25em;
+            min-width: 2rem;
             user-select: none;
             vertical-align: top;
+
+            .theme-dark & {
+                color: $gray-18;
+            }
+            .theme-light & {
+                color: $gray-05;
+            }
         }
 
         td.line,
