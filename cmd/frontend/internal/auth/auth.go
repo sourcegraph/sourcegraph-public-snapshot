@@ -33,6 +33,24 @@ type Middleware struct {
 	App func(http.Handler) http.Handler
 }
 
+// ComposeMiddleware returns a new Middleware that composes the middlewares together.
+func ComposeMiddleware(middlewares ...*Middleware) *Middleware {
+	return &Middleware{
+		API: func(h http.Handler) http.Handler {
+			for _, m := range middlewares {
+				h = m.API(h)
+			}
+			return h
+		},
+		App: func(h http.Handler) http.Handler {
+			for _, m := range middlewares {
+				h = m.App(h)
+			}
+			return h
+		},
+	}
+}
+
 // NewAuthMiddleware returns middlewares that perform authentication based on the currently configured
 // authentication provider (OpenID, SAML, builtin, etc.) This will expose endpoints necessary for
 // the login flow and require login for all other endpoints.
@@ -71,6 +89,11 @@ func NewAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, e
 		}
 		return newUserRequiredAuthzMiddleware(), nil
 	}
+}
+
+var passThrough = &Middleware{
+	API: func(h http.Handler) http.Handler { return h },
+	App: func(h http.Handler) http.Handler { return h },
 }
 
 // NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
