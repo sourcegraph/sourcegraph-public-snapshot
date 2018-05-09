@@ -2,6 +2,8 @@ package conf
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -56,7 +58,13 @@ func Validate(input string) (messages []string, err error) {
 		if _, ok := ignoreLegacyDataCenterFields[e.Field()]; ok {
 			continue
 		}
-		messages = append(messages, e.String())
+		var keyPath string
+		if c := e.Context(); c != nil {
+			keyPath = strings.TrimPrefix(e.Context().String("."), "(root).")
+		} else {
+			keyPath = e.Field()
+		}
+		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 
 	customMessages, err := validateCustom(normalizedInput)
