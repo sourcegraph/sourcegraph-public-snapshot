@@ -116,9 +116,6 @@ func getCommit(ctx context.Context, repo *types.Repo, rev string) (*vcs.Commit, 
 		if vcs.IsRevisionNotFound(err) {
 			return nil, nil
 		}
-		if vcs.IsCloneInProgress(err) {
-			return nil, err
-		}
 		return nil, err
 	}
 	return backend.Repos.GetCommit(ctx, repo, commitID)
@@ -358,8 +355,13 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	}
 
 	commit, err := getCommit(ctx, repo, rev)
-
-	return toGitCommitResolver(repoResolver, commit), err
+	if err != nil {
+		return nil, err
+	}
+	if commit == nil {
+		return nil, fmt.Errorf("unable to fetch commit that was just created")
+	}
+	return toGitCommitResolver(repoResolver, commit), nil
 }
 
 func makePhabClientForOrigin(origin string) (*phabricator.Client, error) {
