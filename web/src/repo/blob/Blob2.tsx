@@ -6,6 +6,7 @@ import {
     catchError,
     debounceTime,
     delay,
+    distinctUntilChanged,
     filter,
     map,
     share,
@@ -18,6 +19,7 @@ import { Hover } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { asError, ErrorLike } from '../../util/errors'
+import { parseHash } from '../../util/url'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
 import { convertNode, getTableDataCell, getTargetLineAndOffset, HoveredToken } from './tooltips'
 
@@ -79,6 +81,10 @@ const LOADING: 'loading' = 'loading'
 
 const isHover = (val: any): val is Hover => typeof val === 'object' && val !== null && Array.isArray(val.contents)
 
+function isDefined<T>(val: T): val is NonNullable<T> {
+    return val !== undefined && val !== null
+}
+
 interface BlobState {
     hoverOrError?: typeof LOADING | Hover | null | ErrorLike
     definitionURLOrError?: typeof LOADING | { jumpURL: string } | null | ErrorLike
@@ -104,6 +110,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits whenever the ref callback for the code element is called */
     private codeElements = new Subject<HTMLElement | null>()
     private nextCodeElement = (element: HTMLElement | null) => this.codeElements.next(element)
+
+    /** Emits whenever the ref callback for the blob element is called */
+    private blobElements = new Subject<HTMLElement | null>()
+    private nextBlobElement = (element: HTMLElement | null) => this.blobElements.next(element)
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
@@ -186,7 +196,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         ).pipe(
             // Find out the position that was hovered over
             map(({ target, codeElement }) => getTargetLineAndOffset(target, codeElement, false)),
-            filter((position): position is NonNullable<typeof position> => !!position),
+            filter(isDefined),
             share()
         )
 
@@ -287,6 +297,40 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 )
             })
         )
+
+        // When the location, reset and hide any existing overlay
+        this.subscriptions.add(
+            this.componentUpdates.pipe(map(props => props.location), distinctUntilChanged()).subscribe(() => {
+                this.setState({
+                    clickedGoToDefinition: false,
+                    definitionURLOrError: undefined,
+                    hoveredToken: undefined,
+                    hoverIsFixed: false,
+                    hoverOrError: undefined,
+                    overlayPosition: undefined,
+                })
+            })
+        )
+
+        // When the line in the location changes, scroll to it
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(props => parseHash(props.location.hash).line),
+                    distinctUntilChanged(),
+                    filter(isDefined),
+                    withLatestFrom(this.blobElements.pipe(filter(isDefined)), this.codeElements.pipe(filter(isDefined)))
+                )
+                .subscribe(([line, blobElement, codeElement]) => {
+                    const blobBound = blobElement.getBoundingClientRect()
+                    const codeBound = codeElement.getBoundingClientRect()
+                    const tableElement = codeElement.firstElementChild as HTMLTableElement
+                    const row = tableElement.rows[line - 1]!
+                    const rowBound = row.getBoundingClientRect()
+                    const scrollTop = rowBound.top - codeBound.top - blobBound.height / 2 + rowBound.height / 2
+                    blobElement.scrollTop = scrollTop
+                })
+        )
     }
 
     public componentDidMount(): void {
@@ -307,7 +351,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     public render(): React.ReactNode {
         return (
-            <div className={`blob2 ${this.props.className}`}>
+            <div className={`blob2 ${this.props.className}`} ref={this.nextBlobElement}>
                 <code
                     className={`blob2__code ${this.props.wrapCode ? ' blob2__code--wrapped' : ''} `}
                     ref={this.nextCodeElement}
