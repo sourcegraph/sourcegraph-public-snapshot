@@ -58,12 +58,22 @@ func Validate(input string) (messages []string, err error) {
 		if _, ok := ignoreLegacyDataCenterFields[e.Field()]; ok {
 			continue
 		}
+
 		var keyPath string
 		if c := e.Context(); c != nil {
 			keyPath = strings.TrimPrefix(e.Context().String("."), "(root).")
 		} else {
 			keyPath = e.Field()
 		}
+
+		// TEMPORARY: Ignore validation errors in the singleton auth config because we can
+		// 100% infer them for now.
+		//
+		// TODO(sqs): Remove this. https://github.com/sourcegraph/sourcegraph/issues/11148
+		if e.Field() == "type" && (keyPath == "auth.openIDConnect" || keyPath == "auth.saml") {
+			continue
+		}
+
 		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 
