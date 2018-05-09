@@ -58,7 +58,7 @@ func getSAMLServiceProvider(pc *schema.SAMLAuthProvider) (*samlsp.Middleware, er
 	if err != nil {
 		return nil, err
 	}
-	samlSP.CookieName = "sg-session"
+	samlSP.ClientToken.(*samlsp.ClientCookies).Name = "sg-session"
 
 	return samlSP, nil
 }

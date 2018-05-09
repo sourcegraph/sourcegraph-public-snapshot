@@ -100,31 +100,31 @@ func (r *AuthnRequest) Element() *etree.Element {
 }
 
 // MarshalXML implements xml.Marshaler
-func (a *AuthnRequest) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (r *AuthnRequest) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	type Alias AuthnRequest
 	aux := &struct {
 		IssueInstant RelaxedTime `xml:",attr"`
 		*Alias
 	}{
-		IssueInstant: RelaxedTime(a.IssueInstant),
-		Alias:        (*Alias)(a),
+		IssueInstant: RelaxedTime(r.IssueInstant),
+		Alias:        (*Alias)(r),
 	}
 	return e.Encode(aux)
 }
 
 // UnmarshalXML implements xml.Unmarshaler
-func (a *AuthnRequest) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+func (r *AuthnRequest) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	type Alias AuthnRequest
 	aux := &struct {
 		IssueInstant RelaxedTime `xml:",attr"`
 		*Alias
 	}{
-		Alias: (*Alias)(a),
+		Alias: (*Alias)(r),
 	}
 	if err := d.DecodeElement(&aux, &start); err != nil {
 		return err
 	}
-	a.IssueInstant = time.Time(aux.IssueInstant)
+	r.IssueInstant = time.Time(aux.IssueInstant)
 	return nil
 }
 

@@ -81,7 +81,6 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/crewjam/saml"
-  source = "github.com/beyang/saml"
 
 [[constraint]]
   name = "github.com/davecgh/go-spew"

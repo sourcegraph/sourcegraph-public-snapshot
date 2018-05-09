@@ -106,8 +106,7 @@
     "samlsp",
     "xmlenc"
   ]
-  revision = "345c5c7c18d35d903497692816e5dd7b940fd8c4"
-  source = "github.com/beyang/saml"
+  revision = "e231b7a1204a93c343c1a5fa2374ca2f6572f715"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -1387,6 +1386,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "98cb98aebbe3b17269d854a9d22071d5834faf811227f356bbcf10cf6bdab52a"
+  inputs-digest = "f33cdc0a6587123df7cc84f8a5a8e29ceb456346cd3fc34bb1db8ebab363fb6a"
   solver-name = "gps-cdcl"
   solver-version = 1

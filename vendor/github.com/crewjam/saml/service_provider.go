@@ -25,6 +25,7 @@ import (
 // NameIDFormat is the format of the id
 type NameIDFormat string
 
+// Element returns an XML element representation of n.
 func (n NameIDFormat) Element() *etree.Element {
 	el := etree.NewElement("")
 	el.SetText(string(n))
@@ -107,12 +108,13 @@ func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 
 	authnRequestsSigned := false
 	wantAssertionsSigned := true
+	validUntil := TimeNow().Add(validDuration)
 	return &EntityDescriptor{
 		EntityID:   sp.MetadataURL.String(),
-		ValidUntil: TimeNow().Add(validDuration),
+		ValidUntil: validUntil,
 
 		SPSSODescriptors: []SPSSODescriptor{
-			SPSSODescriptor{
+			{
 				SSODescriptor: SSODescriptor{
 					RoleDescriptor: RoleDescriptor{
 						ProtocolSupportEnumeration: "urn:oasis:names:tc:SAML:2.0:protocol",
@@ -136,13 +138,14 @@ func (sp *ServiceProvider) Metadata() *EntityDescriptor {
 								},
 							},
 						},
+						ValidUntil: validUntil,
 					},
 				},
 				AuthnRequestsSigned:  &authnRequestsSigned,
 				WantAssertionsSigned: &wantAssertionsSigned,
 
 				AssertionConsumerServices: []IndexedEndpoint{
-					IndexedEndpoint{
+					{
 						Binding:  HTTPPostBinding,
 						Location: sp.AcsURL.String(),
 						Index:    1,

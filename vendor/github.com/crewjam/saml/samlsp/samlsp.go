@@ -16,6 +16,8 @@ import (
 	"github.com/crewjam/saml/logger"
 )
 
+const defaultTokenMaxAge = time.Hour
+
 // Options represents the parameters for creating a new middleware
 type Options struct {
 	URL               url.URL
@@ -33,7 +35,6 @@ type Options struct {
 
 // New creates a new Middleware
 func New(opts Options) (*Middleware, error) {
-
 	metadataURL := opts.URL
 	metadataURL.Path = metadataURL.Path + "/saml/metadata"
 	acsURL := opts.URL
@@ -43,9 +44,9 @@ func New(opts Options) (*Middleware, error) {
 		logr = logger.DefaultLogger
 	}
 
-	cookieMaxAge := opts.CookieMaxAge
+	tokenMaxAge := opts.CookieMaxAge
 	if opts.CookieMaxAge == 0 {
-		cookieMaxAge = defaultCookieMaxAge
+		tokenMaxAge = defaultTokenMaxAge
 	}
 
 	m := &Middleware{
@@ -59,11 +60,17 @@ func New(opts Options) (*Middleware, error) {
 			ForceAuthn:  &opts.ForceAuthn,
 		},
 		AllowIDPInitiated: opts.AllowIDPInitiated,
-		CookieName:        defaultCookieName,
-		CookieMaxAge:      cookieMaxAge,
-		CookieDomain:      opts.URL.Host,
-		CookieSecure:      opts.CookieSecure,
+		TokenMaxAge:       tokenMaxAge,
 	}
+
+	cookieStore := ClientCookies{
+		ServiceProvider: &m.ServiceProvider,
+		Name:            defaultCookieName,
+		Domain:          opts.URL.Host,
+		Secure:          opts.CookieSecure,
+	}
+	m.ClientState = &cookieStore
+	m.ClientToken = &cookieStore
 
 	// fetch the IDP metadata if needed.
 	if opts.IDPMetadataURL == nil {

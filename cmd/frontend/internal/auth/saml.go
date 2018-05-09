@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/crewjam/saml/samlsp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -60,7 +61,7 @@ func newSAMLAuthMiddleware(createCtx context.Context, appURL string) (*Middlewar
 					next.ServeHTTP(w, r)
 					return
 				}
-				if c, _ := r.Cookie(samlSP.CookieName); c != nil {
+				if c, _ := r.Cookie(samlSP.ClientToken.(*samlsp.ClientCookies).Name); c != nil {
 					// Try to use cookie to authenticate via SAML.
 					nextWithSAMLAuth.ServeHTTP(w, r)
 					return
@@ -87,7 +88,7 @@ func newSAMLAuthMiddleware(createCtx context.Context, appURL string) (*Middlewar
 // before delegating to its child handler.
 func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		actr, err := getActorFromSAML(r, idpID)
+		actr, err := getActorFromSAML(r.Context(), idpID)
 		if err != nil {
 			log15.Error("Error looking up SAML-authenticated user.", "error", err)
 			http.Error(w, "Error looking up SAML-authenticated user. "+couldNotGetUserDescription, http.StatusInternalServerError)
@@ -97,21 +98,29 @@ func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
 	})
 }
 
-// getActorFromSAML translates the SAML session into an Actor.
-func getActorFromSAML(r *http.Request, idpID string) (*actor.Actor, error) {
-	ctx := r.Context()
-	subject := r.Header.Get("X-Saml-Subject") // this header is set by the SAML library after extracting the value from the JWT cookie
+// getActorFromSAML translates the SAML token's claims (set in request context by the SAML
+// middleware) into an Actor.
+func getActorFromSAML(ctx context.Context, idpID string) (*actor.Actor, error) {
+	token := samlsp.Token(ctx)
+	if token == nil {
+		return nil, errors.New("no SAML token in request context")
+	}
+
+	subject := token.Subject
 	externalID := samlToExternalID(idpID, subject)
 
-	email := r.Header.Get("X-Saml-Email")
+	email := token.Attributes.Get("email")
 	if email == "" && mightBeEmail(subject) {
 		email = subject
 	}
-	login := r.Header.Get("X-Saml-Login")
+	login := token.Attributes.Get("login")
 	if login == "" {
-		login = r.Header.Get("X-Saml-Uid")
+		login = token.Attributes.Get("uid")
 	}
-	displayName := r.Header.Get("X-Saml-DisplayName")
+	displayName := token.Attributes.Get("displayName")
+	if displayName == "" {
+		displayName = token.Attributes.Get("givenName")
+	}
 	if displayName == "" {
 		displayName = login
 	}
