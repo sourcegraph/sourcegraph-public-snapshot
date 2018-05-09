@@ -6,7 +6,7 @@
     "hostSurveysLocally": "enabled"
   },
   "htmlHeadTop":
-    "<script>localStorage.setItem('treeVersion', '3');localStorage.setItem('codeIntelStatusIndicator', 'true')</script>",
+    "<script>if(localStorage.getItem('disableDefaultFeatureFlags') !== 'true'){localStorage.setItem('treeVersion', '3');localStorage.setItem('codeIntelStatusIndicator', 'true');}</script>",
   "disablePublicRepoRedirects": true,
   "phabricator": [
     {
