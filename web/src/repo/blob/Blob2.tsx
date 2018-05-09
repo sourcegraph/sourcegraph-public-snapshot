@@ -22,6 +22,12 @@ import { HoverOverlay, isJumpURL } from './HoverOverlay'
 import { convertNode, getTableDataCell, getTargetLineAndOffset, HoveredToken } from './tooltips'
 
 /**
+ * `padding-top` of the blob element in px.
+ * TODO find a way to remove the need for this.
+ */
+const BLOB_PADDING_TOP = 8
+
+/**
  * Calculates the desired position of the hover overlay depending on the container,
  * the hover target and the size of the hover overlay
  *
@@ -47,13 +53,13 @@ const calculateOverlayPosition = (
     // Anchor the tooltip vertically.
     const tooltipBound = tooltip.getBoundingClientRect()
     const relTop = targetBound.top + scrollable.scrollTop - scrollableBounds.top
-    const margin = -5
-    let tooltipTop = relTop - (tooltipBound.height + margin)
+    // This is the padding-top of the blob element
+    let tooltipTop = relTop - (tooltipBound.height - BLOB_PADDING_TOP)
     if (tooltipTop - scrollable.scrollTop < 0) {
         // Tooltip wouldn't be visible from the top, so display it at the
         // bottom.
         const relBottom = targetBound.bottom + scrollable.scrollTop - scrollableBounds.top
-        tooltipTop = relBottom + margin
+        tooltipTop = relBottom + BLOB_PADDING_TOP
     }
     return { left: relLeft, top: tooltipTop }
 }
