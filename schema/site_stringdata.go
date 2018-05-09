@@ -436,7 +436,8 @@ const SiteSchemaJSON = `{
             "type": "string"
           },
           "address": {
-            "description": "TCP address of the language server.",
+            "description":
+              "TCP address of the language server. Required for Sourcegraph Server; do not set for Sourcegraph Data Center.",
             "type": "string",
             "pattern": "^tcp://",
             "format": "uri"
@@ -500,7 +501,7 @@ const SiteSchemaJSON = `{
             }
           }
         },
-        "required": ["language", "address"]
+        "required": ["language"]
       }
     },
     "settings": {

@@ -254,10 +254,39 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
             )
         }
-        // Avoid user confusion if they enter Data Center-only config here for scratch purposes.
-        const dataCenterProps = ['httpNodePort', 'storageClass', 'deploymentOverrides'].filter(
-            prop => localContents && localContents.includes(`"${prop}"`)
-        )
+
+        // Avoid user confusion on Data Center config.
+        //
+        // To get a list of all keys: jq '.properties | keys' < datacenter.schema.json
+        const dataCenterProps = [
+            'alertmanagerConfig',
+            'alertmanagerURL',
+            'authProxyIP',
+            'authProxyPassword',
+            'deploymentOverrides',
+            'experimentIndexedSearch',
+            'gitoliteIP',
+            'gitserverCount',
+            'gitserverDiskSize',
+            'gitserverSSH',
+            'httpNodePort',
+            'httpsNodePort',
+            'indexedSearchDiskSize',
+            'langGo',
+            'langJava',
+            'langJavaScript',
+            'langPHP',
+            'langPython',
+            'langSwift',
+            'langTypeScript',
+            'nodeSSDPath',
+            'phabricatorIP',
+            'prometheus',
+            'pyPIIP',
+            'rbac',
+            'storageClass',
+            'useAlertManager',
+        ].filter(prop => localContents && localContents.includes(`"${prop}"`))
         if (dataCenterProps.length > 0) {
             alerts.push(
                 <div key="datacenter-props-present" className="alert alert-info site-admin-configuration-page__alert">

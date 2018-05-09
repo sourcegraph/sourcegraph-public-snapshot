@@ -7,6 +7,41 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
+// ignoreLegacyDataCenterFields is the set of field names for which validation errors
+// should be ignored. The validation errors occur only because Data Center config merged
+// site config and Data Center-specific config. This is deprecated. Until we have
+// transitioned fully, we suppress validation errors on these fields.
+var ignoreLegacyDataCenterFields = map[string]struct{}{
+	// To get a list of all keys: jq '.properties | keys' < datacenter.schema.json
+	"alertmanagerConfig":      struct{}{},
+	"alertmanagerURL":         struct{}{},
+	"authProxyIP":             struct{}{},
+	"authProxyPassword":       struct{}{},
+	"deploymentOverrides":     struct{}{},
+	"experimentIndexedSearch": struct{}{},
+	"gitoliteIP":              struct{}{},
+	"gitserverCount":          struct{}{},
+	"gitserverDiskSize":       struct{}{},
+	"gitserverSSH":            struct{}{},
+	"httpNodePort":            struct{}{},
+	"httpsNodePort":           struct{}{},
+	"indexedSearchDiskSize":   struct{}{},
+	"langGo":                  struct{}{},
+	"langJava":                struct{}{},
+	"langJavaScript":          struct{}{},
+	"langPHP":                 struct{}{},
+	"langPython":              struct{}{},
+	"langSwift":               struct{}{},
+	"langTypeScript":          struct{}{},
+	"nodeSSDPath":             struct{}{},
+	"phabricatorIP":           struct{}{},
+	"prometheus":              struct{}{},
+	"pyPIIP":                  struct{}{},
+	"rbac":                    struct{}{},
+	"storageClass":            struct{}{},
+	"useAlertManager":         struct{}{},
+}
+
 // Validate validates the site configuration the JSON Schema and other custom validation
 // checks.
 func Validate(input string) (messages []string, err error) {
@@ -16,9 +51,12 @@ func Validate(input string) (messages []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	messages = make([]string, len(res.Errors()))
-	for i, e := range res.Errors() {
-		messages[i] = e.String()
+	messages = make([]string, 0, len(res.Errors()))
+	for _, e := range res.Errors() {
+		if _, ok := ignoreLegacyDataCenterFields[e.Field()]; ok {
+			continue
+		}
+		messages = append(messages, e.String())
 	}
 
 	customMessages, err := validateCustom(normalizedInput)
