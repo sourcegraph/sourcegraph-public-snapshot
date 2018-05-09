@@ -15,6 +15,28 @@ describe('e2e test suite', () => {
         baseURL = 'http://localhost:3080'
         // Use OVERRIDE_AUTH_SECRET env var from dev/start.sh.
         overrideAuthSecret = 'sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ'
+
+        if (!process.env.I_MADE_ANON_USER_A_SITE_ADMIN) {
+            // TODO(sqs): Make this automatic.
+            console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            console.log(
+                'When running e2e tests locally, a user "anon-user" is used. This account is created the first time you run the e2e tests.'
+            )
+            console.log()
+            console.log(
+                'You must make "anon-user" a site admin (because some tests exercise site admin features). This is not done automatically (yet).'
+            )
+            console.log()
+            console.log(
+                'So: (1) run the tests first to create "anon-user" (some will fail because "anon-user" is not a site admin), (2) make "anon-user" a site admin, then (3) run the tests again! You do not need to repeat (1) and (2) unless you delete "anon-user".'
+            )
+            console.log()
+            console.log('To suppress this warning and run tests, set the env var I_MADE_ANON_USER_A_SITE_ADMIN=1.')
+            console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            process.exit(1)
+        }
     }
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
