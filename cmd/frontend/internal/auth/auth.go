@@ -61,7 +61,21 @@ func ComposeMiddleware(middlewares ...*Middleware) *Middleware {
 //
 // Note: this should only be called at most once (there is implicit shared state on the backend via the session store
 // and the frontend via cookies). This function will return an error if called more than once.
-func NewAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
+func NewAuthMiddleware(ctx context.Context, appURL string) (*Middleware, error) {
+	mw, err := createAuthMiddleware(ctx, appURL)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prefer using middleware that is always active and enables/disables itself per-request by
+	// checking config.
+	//
+	// TODO(sqs): Migrate all auth middlewares to this design.
+	return ComposeMiddleware(mw), nil
+}
+
+func createAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
+
 	initializedMu.Lock()
 	defer initializedMu.Unlock()
 	if initialized {
