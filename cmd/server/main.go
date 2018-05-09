@@ -65,9 +65,12 @@ var defaultEnv = map[string]string{
 ]
 `,
 
+	"LOGO":          "t",
+	"SRC_LOG_LEVEL": "warn",
+
 	// TODO other bits
 	// * Guess SRC_APP_URL based on hostname
-	// * SRC_LOG_LEVEL, DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
+	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 }
 
 var verbose, _ = strconv.ParseBool(os.Getenv("DEBUG"))
@@ -161,17 +164,6 @@ func main() {
 	const goremanAddr = "127.0.0.1:5005"
 	if err := os.Setenv("GOREMAN_RPC_ADDR", goremanAddr); err != nil {
 		log.Fatal(err)
-	}
-	if _, ok := os.LookupEnv("LOGO"); !ok {
-		if err := os.Setenv("LOGO", "t"); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	if _, ok := os.LookupEnv("SRC_LOG_LEVEL"); !ok {
-		if err := os.Setenv("SRC_LOG_LEVEL", "warn"); err != nil {
-			log.Fatal(err)
-		}
 	}
 
 	err := goreman.Start(goremanAddr, []byte(strings.Join(procfile, "\n")))
