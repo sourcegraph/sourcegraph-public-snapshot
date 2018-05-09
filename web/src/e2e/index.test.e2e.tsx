@@ -5,30 +5,19 @@ import { retry } from '../util/e2e-test-utils'
 describe('e2e test suite', () => {
     let authenticate: (page: Page) => Promise<void>
     let baseURL: string
+    let overrideAuthSecret: string
     if (process.env.SOURCEGRAPH_BASE_URL) {
         baseURL = process.env.SOURCEGRAPH_BASE_URL
         // Assume that the dogfood (sourcegraph.sgdev.org) override token works.
-        authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': '2qzNBYQmUigCFdVVjDGyFfp' })
+        overrideAuthSecret = '2qzNBYQmUigCFdVVjDGyFfp'
+        authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': '' })
     } else {
         baseURL = 'http://localhost:3080'
-        const sessionAuthorization = process.env.SOURCEGRAPH_SESSION
-        if (!sessionAuthorization) {
-            console.log(`Fatal: You must set the SOURCEGRAPH_SESSION env var to a session token valid for a site admin on ${baseURL}.
-
-To obtain this value, run the following in your web browser's JavaScript console in a tab where you're logged into ${baseURL} as a site admin:
-
-  >  window.context.xhrHeaders.Authorization
-  <- "session MTUyMDgzNTEyNnx..."
-
-Then rerun this test command with that value in the SOURCEGRAPH_SESSION env var. For example:
-
-  SOURCEGRAPH_SESSION="session MTUyMDgzNTEyNnx..." npm run test-e2e
-`)
-            process.exit(1)
-            return // for sessionAuthorization type inference
-        }
-        authenticate = page => page.setExtraHTTPHeaders({ Authorization: sessionAuthorization })
+        // Use OVERRIDE_AUTH_SECRET env var from dev/start.sh.
+        overrideAuthSecret = 'sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ'
     }
+    authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
+
     const browserWSEndpoint = process.env.BROWSER_WS_ENDPOINT
 
     let browser: Browser
