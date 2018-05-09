@@ -10,7 +10,6 @@ describe('e2e test suite', () => {
         baseURL = process.env.SOURCEGRAPH_BASE_URL
         // Assume that the dogfood (sourcegraph.sgdev.org) override token works.
         overrideAuthSecret = '2qzNBYQmUigCFdVVjDGyFfp'
-        authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': '' })
     } else {
         baseURL = 'http://localhost:3080'
         // Use OVERRIDE_AUTH_SECRET env var from dev/start.sh.
