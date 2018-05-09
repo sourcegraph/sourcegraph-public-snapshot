@@ -292,6 +292,7 @@ describe('e2e test suite', () => {
                 await page.keyboard.press('ArrowRight') // arrow right (expand 'diff' directory)
                 await page.waitForSelector('.tree__row--selected [data-tree-path="diff"]')
                 await page.waitForSelector('.tree__row--expanded [data-tree-path="diff"]')
+                await page.waitForSelector('.tree__row [data-tree-path="diff/testdata"]')
                 await page.keyboard.press('ArrowRight') // arrow right (move to nested 'diff/testdata' directory)
                 await page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]')
                 await assertNumRowsExpanded(1) // only `diff` directory is expanded, though `diff/testdata` is expanded
@@ -301,6 +302,7 @@ describe('e2e test suite', () => {
                 await page.waitForSelector('.tree__row--expanded [data-tree-path="diff/testdata"]')
                 await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
+                await page.waitForSelector('.tree__row [data-tree-path="diff/testdata/empty.diff"]')
                 // select some file nested under `diff/testdata`
                 await page.keyboard.press('ArrowDown') // arrow down
                 await page.keyboard.press('ArrowDown') // arrow down
