@@ -7,7 +7,10 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Hover, MarkedString, MarkupContent, MarkupKind } from 'vscode-languageserver-types'
+import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
 import { ErrorLike, isErrorLike } from '../../util/errors'
+import { toPrettyBlobURL } from '../../util/url'
+import { HoveredToken } from './tooltips'
 
 const isMarkupContent = (markup: any): markup is MarkupContent =>
     typeof markup === 'object' && markup !== null && 'kind' in markup
@@ -35,7 +38,7 @@ const ButtonOrLink: React.StatelessComponent<{ to?: string } & React.HTMLAttribu
 
 const LOADING: 'loading' = 'loading'
 
-interface HoverOverlayProps {
+interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<ViewStateSpec>, Partial<RangeSpec> {
     /** What to show as contents */
     hoverOrError: typeof LOADING | Hover | ErrorLike
 
@@ -52,13 +55,19 @@ interface HoverOverlayProps {
     onGoToDefinitionClick: (event: React.MouseEvent<HTMLElement>) => void
 
     /** The position of the tooltip (assigned to `style`) */
-    position?: { left: number; top: number }
+    overlayPosition?: { left: number; top: number }
 
     /** Whether this tooltip is fixed or not. Determines whether actions are shown or not. */
     isFixed: boolean
 
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLElement>
+
+    /**
+     * The hovered token (position and word).
+     * Used for the Find References/Implementations buttons and for error messages
+     */
+    hoveredToken?: HoveredToken
 }
 
 /** Returns true if the input is successful jump URL result */
@@ -71,11 +80,11 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
         ref={props.hoverRef}
         // tslint:disable-next-line:jsx-ban-props needed for dynamic styling
         style={
-            props.position
+            props.overlayPosition
                 ? {
                       opacity: 1,
-                      left: props.position.left + 'px',
-                      top: props.position.top + 'px',
+                      left: props.overlayPosition.left + 'px',
+                      top: props.overlayPosition.top + 'px',
                   }
                 : {
                       opacity: 0,
@@ -132,8 +141,40 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                     >
                         Go to definition {props.definitionURLOrError === LOADING && <Loader className="icon-inline" />}
                     </ButtonOrLink>
-                    <button className="btn btn-secondary hover-overlay__action">Find references</button>
-                    <button className="btn btn-secondary hover-overlay__action">Find implementations</button>
+                    <ButtonOrLink
+                        to={
+                            props.hoveredToken &&
+                            toPrettyBlobURL({
+                                repoPath: props.repoPath,
+                                commitID: props.commitID,
+                                rev: props.rev,
+                                filePath: props.filePath,
+                                position: props.hoveredToken,
+                                range: props.range,
+                                viewState: 'references',
+                            })
+                        }
+                        className="btn btn-secondary hover-overlay__action"
+                    >
+                        Find references
+                    </ButtonOrLink>
+                    <ButtonOrLink
+                        to={
+                            props.hoveredToken &&
+                            toPrettyBlobURL({
+                                repoPath: props.repoPath,
+                                commitID: props.commitID,
+                                rev: props.rev,
+                                filePath: props.filePath,
+                                position: props.hoveredToken,
+                                range: props.range,
+                                viewState: 'impl',
+                            })
+                        }
+                        className="btn btn-secondary hover-overlay__action"
+                    >
+                        Find implementations
+                    </ButtonOrLink>
                 </>
             ) : (
                 <button className="btn btn-secondary hover-overlay__actions-placeholder" disabled={true}>
@@ -143,7 +184,12 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
         </div>
         {props.definitionURLOrError === null ? (
             <div className="alert alert-info m-0 p-2 rounded-0">
-                <InformationOutlineIcon className="icon-inline" /> No definition found
+                <InformationOutlineIcon className="icon-inline" /> No definition found{' '}
+                {props.hoveredToken && (
+                    <>
+                        for <code>{props.hoveredToken.word}</code>
+                    </>
+                )}
             </div>
         ) : (
             isErrorLike(props.definitionURLOrError) && (

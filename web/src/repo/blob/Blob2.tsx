@@ -19,7 +19,7 @@ import { AbsoluteRepoFile, RenderMode } from '..'
 import { fetchHover, fetchJumpURL } from '../../backend/lsp'
 import { asError, ErrorLike } from '../../util/errors'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
-import { convertNode, getTableDataCell, getTargetLineAndOffset } from './tooltips'
+import { convertNode, getTableDataCell, getTargetLineAndOffset, HoveredToken } from './tooltips'
 
 /**
  * Calculates the desired position of the hover overlay depending on the container,
@@ -75,13 +75,18 @@ interface BlobState {
     hoverOrError?: typeof LOADING | Hover | null | ErrorLike
     definitionURLOrError?: typeof LOADING | { jumpURL: string } | null | ErrorLike
     hoverIsFixed: boolean
-    hoverPosition?: { left: number; top: number }
+
+    /** The desired position of the hover overlay */
+    overlayPosition?: { left: number; top: number }
 
     /**
      * Whether the user has clicked the go to definition button for the current overlay yet,
      * and whether he pressed Ctrl/Cmd while doing it to open it in a new tab or not.
      */
     clickedGoToDefinition: false | 'same-tab' | 'new-tab'
+
+    /** The currently hovered token */
+    hoveredToken?: HoveredToken
 }
 
 export class Blob2 extends React.Component<BlobProps, BlobState> {
@@ -161,8 +166,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     )
                 )
                 .subscribe(({ codeElement, hoverElement, target }) => {
-                    const hoverPosition = calculateOverlayPosition(codeElement, target, hoverElement)
-                    this.setState({ hoverPosition })
+                    const overlayPosition = calculateOverlayPosition(codeElement, target, hoverElement)
+                    this.setState({ overlayPosition })
                 })
         )
 
@@ -195,7 +200,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 )
                 .subscribe(hoverOrError => {
                     // Reset the hover position, it's gonna be repositioned after the hover was rendered
-                    this.setState({ hoverOrError, hoverPosition: undefined })
+                    this.setState({ hoverOrError, overlayPosition: undefined })
                 })
         )
 
@@ -247,10 +252,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 }
             })
         )
-        // On every new target (from mouseover or click) hide the j2d loader/error/not found UI again
         this.subscriptions.add(
-            filteredTargetPositions.subscribe(() => {
-                this.setState({ clickedGoToDefinition: false })
+            filteredTargetPositions.subscribe(hoveredToken => {
+                this.setState({
+                    hoveredToken,
+                    // On every new target (from mouseover or click) hide the j2d loader/error/not found UI again
+                    clickedGoToDefinition: false,
+                })
             })
         )
 
@@ -263,7 +271,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             ? {
                                   hoverIsFixed: false,
                                   hoverOrError: undefined,
-                                  hoverPosition: undefined,
+                                  overlayPosition: undefined,
                               }
                             : {
                                   hoverIsFixed: true,
@@ -310,8 +318,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         }
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}
                         hoverOrError={this.state.hoverOrError}
-                        position={this.state.hoverPosition}
+                        hoveredToken={this.state.hoveredToken}
+                        overlayPosition={this.state.overlayPosition}
                         isFixed={this.state.hoverIsFixed}
+                        {...this.props}
                     />
                 )}
             </div>

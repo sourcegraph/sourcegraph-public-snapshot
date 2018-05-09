@@ -448,6 +448,13 @@ export function findElementWithOffset(cell: HTMLElement, offset: number): HTMLEl
     return walkNode(cell)
 }
 
+export interface HoveredToken {
+    line: number
+    character: number
+    word: string
+    part?: 'old' | 'new'
+}
+
 /**
  * getTargetLineAndOffset determines the line and character offset for some source code, identified by its HTMLElement wrapper.
  * It works by traversing the DOM until the HTMLElement's TD ancestor. Once the ancestor is found, we traverse the DOM again
@@ -460,7 +467,7 @@ export function getTargetLineAndOffset(
     target: HTMLElement,
     boundary: HTMLElement,
     ignoreFirstChar = false
-): { line: number; character: number; word: string; part?: 'old' | 'new' } | undefined {
+): HoveredToken | undefined {
     const origTarget = target
     while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && target !== boundary) {
         // Find ancestor which wraps the whole line of code, not just the target token.
