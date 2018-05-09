@@ -101,7 +101,7 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
 	commit, err := getCommit(ctx, r.repo, args.Rev)
-	if err != nil {
+	if commit == nil || err != nil {
 		return nil, err
 	}
 
