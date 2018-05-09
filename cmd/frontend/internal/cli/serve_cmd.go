@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -258,10 +259,7 @@ func Main() error {
 		}
 
 		if httpToHttpsRedirect {
-			// Use JS for the redirect because this is the most reliable solution if reverse proxies are involved.
-			externalHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte(`<script>window.location.protocol = "https:";</script>`))
-			})
+			externalHandler = handlerutil.HTTPSRedirect(externalHandler)
 		}
 
 		log15.Debug("HTTP running", "on", httpAddr)

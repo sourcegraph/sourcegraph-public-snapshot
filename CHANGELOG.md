@@ -17,6 +17,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * The link to the root of a repo in the bread crumbs now preserves the revision you are at.
 * When using the `http-header` auth provider, signin/signup/signout links are now hidden.
 * Repository paths beginning with `go/` are no longer reservered by Sourcegraph.
+* Interpret `X-Forwarded-Proto` HTTP header when `httpToHttpsRedirect` is enabled.
 
 ### Removed
 

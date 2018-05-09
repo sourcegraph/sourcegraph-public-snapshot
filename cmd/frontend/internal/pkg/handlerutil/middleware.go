@@ -17,3 +17,25 @@ func CSRFMiddleware(next http.Handler, secure bool) http.Handler {
 		csrf.Secure(secure),
 	)(next)
 }
+
+// HTTPSRedirect is an HTTP middleware that will redirect non-HTTPS requests
+// to HTTPS. It uses JS for the redirect because this is the most reliable
+// solution if reverse proxies are involved.
+func HTTPSRedirect(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if getScheme(r) != "https" {
+			w.Write([]byte(`<script>window.location.protocol = "https:";</script>`))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// getScheme returns the scheme for the request. It takes into account headers
+// a reverse-proxy may set to indicate the scheme.
+func getScheme(r *http.Request) string {
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		return proto
+	}
+	return r.URL.Scheme
+}
