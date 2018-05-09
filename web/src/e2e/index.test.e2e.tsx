@@ -7,8 +7,8 @@ describe('e2e test suite', () => {
     let baseURL: string
     if (process.env.SOURCEGRAPH_BASE_URL) {
         baseURL = process.env.SOURCEGRAPH_BASE_URL
-        // Assume that the dogfood (sourcegraph.sgdev.org) OIDC override token works.
-        authenticate = page => page.setExtraHTTPHeaders({ 'X-Oidc-Override': '2qzNBYQmUigCFdVVjDGyFfp' })
+        // Assume that the dogfood (sourcegraph.sgdev.org) override token works.
+        authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': '2qzNBYQmUigCFdVVjDGyFfp' })
     } else {
         baseURL = 'http://localhost:3080'
         const sessionAuthorization = process.env.SOURCEGRAPH_SESSION
