@@ -16,7 +16,7 @@ import {
 } from 'rxjs/operators'
 import { Hover } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { fetchHover, fetchJumpURL } from '../../backend/lsp'
+import { fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { asError, ErrorLike } from '../../util/errors'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
 import { convertNode, getTableDataCell, getTargetLineAndOffset, HoveredToken } from './tooltips'
@@ -76,6 +76,8 @@ interface BlobProps extends AbsoluteRepoFile {
 }
 
 const LOADING: 'loading' = 'loading'
+
+const isHover = (val: any): val is Hover => typeof val === 'object' && val !== null && Array.isArray(val.contents)
 
 interface BlobState {
     hoverOrError?: typeof LOADING | Hover | null | ErrorLike
@@ -313,23 +315,24 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     onClick={this.nextCodeClick}
                     onMouseOver={this.nextBlobMouseOver}
                 />
-                {this.state.hoverOrError && (
-                    <HoverOverlay
-                        hoverRef={this.nextOverlayElement}
-                        definitionURLOrError={
-                            // always modify the href, but only show error/loader/not found after the button was clicked
-                            isJumpURL(this.state.definitionURLOrError) || this.state.clickedGoToDefinition
-                                ? this.state.definitionURLOrError
-                                : undefined
-                        }
-                        onGoToDefinitionClick={this.nextGoToDefinitionClick}
-                        hoverOrError={this.state.hoverOrError}
-                        hoveredToken={this.state.hoveredToken}
-                        overlayPosition={this.state.overlayPosition}
-                        isFixed={this.state.hoverIsFixed}
-                        {...this.props}
-                    />
-                )}
+                {this.state.hoverOrError &&
+                    !(isHover(this.state.hoverOrError) && isEmptyHover(this.state.hoverOrError)) && (
+                        <HoverOverlay
+                            hoverRef={this.nextOverlayElement}
+                            definitionURLOrError={
+                                // always modify the href, but only show error/loader/not found after the button was clicked
+                                isJumpURL(this.state.definitionURLOrError) || this.state.clickedGoToDefinition
+                                    ? this.state.definitionURLOrError
+                                    : undefined
+                            }
+                            onGoToDefinitionClick={this.nextGoToDefinitionClick}
+                            hoverOrError={this.state.hoverOrError}
+                            hoveredToken={this.state.hoveredToken}
+                            overlayPosition={this.state.overlayPosition}
+                            isFixed={this.state.hoverIsFixed}
+                            {...this.props}
+                        />
+                    )}
             </div>
         )
     }
