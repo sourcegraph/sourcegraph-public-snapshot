@@ -286,13 +286,13 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             'rbac',
             'storageClass',
             'useAlertManager',
-        ].filter(prop => localContents && localContents.includes(`"${prop}"`))
+        ].filter(prop => localContents && !localContents.includes(`"${prop}"`))
         if (dataCenterProps.length > 0) {
             alerts.push(
                 <div key="datacenter-props-present" className="alert alert-info site-admin-configuration-page__alert">
                     The configuration contains properties that are valid only in Sourcegraph Data Center's{' '}
-                    <code>config.json</code> file: {dataCenterProps.map((p, i) => <code key={i}> {p}</code>)}. You can
-                    disregard the validation warnings for these properties reported by the configuration editor.
+                    <code>config.json</code> file: <code>{dataCenterProps.join(' ')}</code>. You can disregard the
+                    validation warnings for these properties reported by the configuration editor.
                 </div>
             )
         }
