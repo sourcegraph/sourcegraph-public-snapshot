@@ -1,8 +1,8 @@
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { merge, of, Subject, Subscription } from 'rxjs'
+import { catchError, delay, distinctUntilChanged, share, switchMap, takeUntil } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { fetchTree } from '../repo/backend'
 import { Repo } from '../repo/index'
@@ -31,8 +31,9 @@ export interface TreeLayerProps extends Repo {
     focusTreeOnUnmount: () => void
 }
 
+const LOADING: 'loading' = 'loading'
 export interface TreeLayerState {
-    treeOrError?: GQL.ITree | ErrorLike
+    treeOrError?: typeof LOADING | GQL.ITree | ErrorLike
 }
 
 export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerState> {
@@ -68,23 +69,16 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
                             x.parentPath === y.parentPath &&
                             x.resolveTo === y.resolveTo
                     ),
-                    switchMap(props =>
-                        fetchTree({
+                    switchMap(props => {
+                        const treeFetch = fetchTree({
                             repoPath: props.repoPath,
                             rev: props.rev || '',
                             filePath: props.parentPath || '',
-                        }).pipe(
-                            catchError(err => [asError(err)]),
-                            map(treeOrError => ({
-                                treeOrError,
-                            })),
-                            startWith<Pick<TreeLayerState, 'treeOrError'>>({
-                                treeOrError: undefined,
-                            })
-                        )
-                    )
+                        }).pipe(catchError(err => [asError(err)]), share())
+                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
+                    })
                 )
-                .subscribe(t => this.setState(t), err => console.error(err))
+                .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
         )
         this.componentUpdates.next(this.props)
     }
@@ -108,16 +102,23 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
                 <tbody>
                     <tr>
                         <td>
-                            {this.state.treeOrError === undefined ? (
-                                <div>
-                                    <Loader className="icon-inline directory-page__entries-loader" /> Loading files and
-                                    directories
-                                </div>
+                            {this.state.treeOrError === LOADING ? (
+                                this.props.depth > 0 ? (
+                                    <div className="tree__row-loader">
+                                        <Loader className="icon-inline directory-page__entries-loader" />
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <Loader className="icon-inline directory-page__entries-loader" /> Loading files
+                                        and directories
+                                    </div>
+                                )
                             ) : isErrorLike(this.state.treeOrError) ? (
                                 <div className="alert alert-danger">
                                     Error loading file tree: {this.state.treeOrError.message}
                                 </div>
                             ) : (
+                                this.state.treeOrError &&
                                 [...this.state.treeOrError.directories, ...this.state.treeOrError.files].map(
                                     (item, i) => (
                                         <TreeRow
