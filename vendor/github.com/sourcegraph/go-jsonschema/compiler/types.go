@@ -1,6 +1,10 @@
 package compiler
 
-import "github.com/sourcegraph/go-jsonschema/jsonschema"
+import (
+	"go/ast"
+
+	"github.com/sourcegraph/go-jsonschema/jsonschema"
+)
 
 func goBuiltinType(typ jsonschema.PrimitiveType) string {
 	switch typ {
@@ -21,4 +25,12 @@ func goBuiltinType(typ jsonschema.PrimitiveType) string {
 
 func isEmittedAsGoNamedType(schema *jsonschema.Schema) bool {
 	return len(schema.Type) == 1 && schema.Type[0] == jsonschema.ObjectType
+}
+
+func derefPtrType(x ast.Expr) *ast.Ident {
+	dx, ok := x.(*ast.StarExpr)
+	if ok {
+		return dx.X.(*ast.Ident)
+	}
+	return x.(*ast.Ident)
 }

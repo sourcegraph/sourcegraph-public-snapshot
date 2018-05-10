@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	"sort"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-jsonschema/jsonschema"
@@ -12,19 +13,19 @@ import (
 
 // generateDecls returns Go type declarations for the schemas, which are all in the same root JSON
 // Schema.
-func generateDecls(schemas map[*jsonschema.Schema]schemaLocation, resolutions map[*jsonschema.Schema]*jsonschema.Schema, schemaLocator schemaLocator) ([]ast.Decl, error) {
+func generateDecls(schemas map[*jsonschema.Schema]schemaLocation, resolutions map[*jsonschema.Schema]*jsonschema.Schema, schemaLocator schemaLocator) ([]ast.Decl, []*ast.ImportSpec, error) {
 	g := generator{schemas: schemas, resolutions: resolutions, schemaLocator: schemaLocator}
-	var decls []ast.Decl
+	var allDecls []ast.Decl
+	var allImports []*ast.ImportSpec
 	for schema := range schemas {
-		decl, err := g.emit(schema)
+		decls, imports, err := g.emit(schema)
 		if err != nil {
-			return nil, errors.WithMessage(err, "failed to emit decl for schema")
+			return nil, nil, errors.WithMessage(err, "failed to emit decl for schema")
 		}
-		if decl != nil {
-			decls = append(decls, decl)
-		}
+		allDecls = append(allDecls, decls...)
+		allImports = append(allImports, imports...)
 	}
-	return decls, nil
+	return allDecls, allImports, nil
 }
 
 type generator struct {
@@ -46,12 +47,20 @@ var emptyInterfaceType = &ast.InterfaceType{
 
 // emit returns the declaration for the Go type for schema, or nil if no declaration is needed (such
 // as when schema is represented by a builtin Go type).
-func (g *generator) emit(schema *jsonschema.Schema) (ast.Decl, error) {
-	needsNamedGoType := len(schema.Type) == 1 && schema.Type[0] == jsonschema.ObjectType && schema.Properties != nil
-	if !needsNamedGoType {
-		return nil, nil
+func (g *generator) emit(schema *jsonschema.Schema) ([]ast.Decl, []*ast.ImportSpec, error) {
+	if schema.Go != nil && schema.Go.TaggedUnionType {
+		return g.emitTaggedUnionType(schema)
 	}
 
+	needsNamedGoType := len(schema.Type) == 1 && schema.Type[0] == jsonschema.ObjectType && schema.Properties != nil
+	if !needsNamedGoType {
+		return nil, nil, nil
+	}
+
+	return g.emitStructType(schema)
+}
+
+func (g *generator) emitStructType(schema *jsonschema.Schema) ([]ast.Decl, []*ast.ImportSpec, error) {
 	// Sort properties deterministically (by name).
 	names := make([]string, 0, len(*schema.Properties))
 	for name := range *schema.Properties {
@@ -66,17 +75,18 @@ func (g *generator) emit(schema *jsonschema.Schema) (ast.Decl, error) {
 
 		typeExpr, err := g.expr(prop)
 		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("failed to get type expression for property %q", name))
+			return nil, nil, errors.WithMessage(err, fmt.Sprintf("failed to get type expression for property %q", name))
 		}
 
 		var jsonStructTagExtra string
 		if !schema.IsRequiredProperty(name) {
-			// In Go, a pointer-to-{array,map}-type doesn't add (necessary) expressiveness for our use
-			// case vs. just an {array,map} type.
+			// In Go, a pointer-to-{array,map,interface}-type doesn't add (necessary) expressiveness for our use
+			// case vs. just an {array,map,interface} type.
 			_, isPtrToArray := typeExpr.(*ast.ArrayType)
 			_, isPtrToMap := typeExpr.(*ast.MapType)
+			_, isPtrToInterface := typeExpr.(*ast.InterfaceType)
 			isGoBuiltinType := len(prop.Type) == 1 && goBuiltinType(prop.Type[0]) != ""
-			if !isPtrToArray && !isPtrToMap && !isGoBuiltinType {
+			if !isPtrToArray && !isPtrToMap && !isPtrToInterface && !isGoBuiltinType {
 				typeExpr = &ast.StarExpr{X: typeExpr}
 			}
 			jsonStructTagExtra = ",omitempty"
@@ -94,20 +104,19 @@ func (g *generator) emit(schema *jsonschema.Schema) (ast.Decl, error) {
 
 	goName, err := goNameForSchema(schema, g.schemas[schema])
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	typeSpec := &ast.TypeSpec{
 		Name: ast.NewIdent(goName),
 		Type: &ast.StructType{Fields: &ast.FieldList{List: fields}},
 	}
-	return &ast.GenDecl{
+	return []ast.Decl{&ast.GenDecl{
 		Doc: &ast.CommentGroup{
 			List: []*ast.Comment{{Text: "\n// " + docForSchema(schema, goName)}},
 		},
 		Tok:   token.TYPE,
 		Specs: []ast.Spec{typeSpec},
-	}, nil
-
+	}}, nil, nil
 }
 
 // expr returns the Go expression AST node that refers to the Go type (builtin or named) for schema.
@@ -129,7 +138,8 @@ func (g *generator) expr(schema *jsonschema.Schema) (ast.Expr, error) {
 			// Prefer array-of-pointer-to-struct over array-of-struct.
 			//
 			// TODO(sqs): Not all $ref values point to things that are Go named types.
-			if isEmittedAsGoNamedType(schema.Items.Schema) || schema.Items.Schema.Reference != nil {
+			useGoTaggedUnionType := schema.Items.Schema.Go != nil && schema.Items.Schema.Go.TaggedUnionType
+			if (isEmittedAsGoNamedType(schema.Items.Schema) || schema.Items.Schema.Reference != nil) && !useGoTaggedUnionType {
 				elt = &ast.StarExpr{X: elt}
 			}
 		} else {
@@ -139,7 +149,7 @@ func (g *generator) expr(schema *jsonschema.Schema) (ast.Expr, error) {
 	}
 
 	// Handle object types that are emitted as Go map types (not named struct types).
-	if len(schema.Type) == 1 && schema.Type[0] == jsonschema.ObjectType && schema.Properties == nil {
+	if len(schema.Type) == 1 && schema.Type[0] == jsonschema.ObjectType && schema.Properties == nil && schema.AdditionalProperties != nil {
 		typeExpr, err := g.expr(schema.AdditionalProperties)
 		if err != nil {
 			return nil, err
@@ -179,4 +189,14 @@ func docForSchema(schema *jsonschema.Schema, goName string) string {
 		doc += " " + *schema.Description
 	}
 	return doc
+}
+
+func importSpecs(paths ...string) []*ast.ImportSpec {
+	specs := make([]*ast.ImportSpec, len(paths))
+	for i, path := range paths {
+		specs[i] = &ast.ImportSpec{
+			Path: &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(path)},
+		}
+	}
+	return specs
 }

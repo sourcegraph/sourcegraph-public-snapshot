@@ -55,8 +55,6 @@ var (
 	tlsCert = conf.GetTODO().TlsCert
 	tlsKey  = conf.GetTODO().TlsKey
 
-	httpToHttpsRedirect = conf.GetTODO().HttpToHttpsRedirect
-
 	// dev browser browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
@@ -258,8 +256,15 @@ func Main() error {
 			return err
 		}
 
-		if httpToHttpsRedirect {
-			externalHandler = handlerutil.HTTPSRedirect(externalHandler)
+		if v := parseStringOrBool(conf.GetTODO().HttpToHttpsRedirect, "off"); v != "off" {
+			switch v {
+			case "load-balanced":
+				externalHandler = handlerutil.HTTPSRedirectLoadBalanced(externalHandler)
+			case "on":
+				externalHandler = handlerutil.HTTPSRedirect(externalHandler)
+			default:
+				log.Fatalf("unrecognized httpToHttpsRedirect value %v", v)
+			}
 		}
 
 		log15.Debug("HTTP running", "on", httpAddr)
@@ -366,4 +371,19 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 		}
 	}
 	return false
+}
+
+// parseStringOrBool will convert true to "on", false to "off", and return
+// strings as is.
+func parseStringOrBool(v interface{}, defaultValue string) string {
+	if v == nil {
+		return defaultValue
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	if v.(bool) {
+		return "on"
+	}
+	return "off"
 }

@@ -47,15 +47,16 @@ func main() {
 		}
 	}
 
-	decls, err := compiler.Compile(schemas)
+	decls, imports, err := compiler.Compile(schemas)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "go-jsonschema-compiler: compilation error: %s.\n", err)
 		os.Exit(2)
 	}
 	var buf bytes.Buffer
 	file := &ast.File{
-		Name:  ast.NewIdent(*packageName),
-		Decls: decls,
+		Name:    ast.NewIdent(*packageName),
+		Imports: imports,
+		Decls:   decls,
 	}
 	if err := format.Node(&buf, token.NewFileSet(), file); err != nil {
 		fmt.Fprintf(os.Stderr, "go-jsonschema-compiler: code formatting error: %s.\n", err)

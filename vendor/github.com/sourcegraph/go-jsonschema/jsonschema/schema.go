@@ -54,6 +54,11 @@ type Schema struct {
 
 	IsEmpty   bool `json:"-"` // the schema is "true"
 	IsNegated bool `json:"-"` // the schema is "false"
+
+	// Go contains Go-specific extensions that JSON Schema authors can specify.
+	Go *struct {
+		TaggedUnionType bool `json:"taggedUnionType,omitempty"`
+	} `json:"!go,omitempty"`
 }
 
 // IsRequiredProperty reports whether propertyName is a required property for instances of this

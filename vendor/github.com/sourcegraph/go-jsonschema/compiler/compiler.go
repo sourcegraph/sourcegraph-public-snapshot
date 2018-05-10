@@ -1,7 +1,9 @@
 package compiler
 
 import (
+	"fmt"
 	"go/ast"
+	"go/token"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -13,7 +15,7 @@ import (
 // 1. Parse (per-schema)
 // 2. Resolve references (all schemas)
 // 3. Generate code (per-schema)
-func Compile(schemas []*jsonschema.Schema) ([]ast.Decl, error) {
+func Compile(schemas []*jsonschema.Schema) ([]ast.Decl, []*ast.ImportSpec, error) {
 	//
 	// Step 1: Parse (per-schema)
 	//
@@ -22,7 +24,7 @@ func Compile(schemas []*jsonschema.Schema) ([]ast.Decl, error) {
 		var err error
 		locationsByRoot[root], err = parseSchema(root)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -31,26 +33,55 @@ func Compile(schemas []*jsonschema.Schema) ([]ast.Decl, error) {
 	//
 	resolutions, err := resolveReferences(locationsByRoot)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	//
 	// Step 3: Generate code (per-schema)
 	//
 	var allDecls []ast.Decl
+	var allImports []*ast.ImportSpec
 	for _, schemas := range locationsByRoot {
-		decls, err := generateDecls(schemas, resolutions, locationsByRoot)
+		decls, imports, err := generateDecls(schemas, resolutions, locationsByRoot)
 		if err != nil {
-			return nil, errors.WithMessage(err, "generating decls")
+			return nil, nil, errors.WithMessage(err, "generating decls")
 		}
 		allDecls = append(allDecls, decls...)
+		allImports = append(allImports, imports...)
 	}
 	// Sort decls.
-	sort.Slice(allDecls, func(i, j int) bool {
-		name := func(k int) string { return allDecls[k].(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Name.Name }
+	sort.SliceStable(allDecls, func(i, j int) bool {
+		name := func(k int) string {
+			switch d := allDecls[k].(type) {
+			case *ast.GenDecl:
+				return d.Specs[0].(*ast.TypeSpec).Name.Name
+			case *ast.FuncDecl:
+				return derefPtrType(d.Recv.List[0].Type).Name
+			default:
+				panic(fmt.Sprintf("unhandled %T", d))
+			}
+		}
 		return name(i) < name(j)
 	})
-	return allDecls, nil
+
+	// Imports must also be in the decl list, or else they won't be printed in the Go source by
+	// go/printer.
+	if len(allImports) > 0 {
+		tmp := make([]ast.Decl, len(allDecls)+1)
+		d := &ast.GenDecl{Tok: token.IMPORT}
+		for _, imp := range allImports {
+			d.Specs = append(d.Specs, imp)
+		}
+		if len(allImports) > 1 {
+			d.Lparen = 1
+			d.Rparen = 1
+		}
+		tmp[0] = d
+		copy(tmp[1:], allDecls)
+		allDecls = tmp
+	}
+
+	return allDecls, allImports, nil
 }
 
 type schemaLocator interface {

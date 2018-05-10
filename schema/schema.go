@@ -219,7 +219,7 @@ type SiteConfiguration struct {
 	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
-	HttpToHttpsRedirect               bool                         `json:"httpToHttpsRedirect,omitempty"`
+	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
 	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
 	LightstepProject                  string                       `json:"lightstepProject,omitempty"`

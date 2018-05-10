@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestHTTPSRedirect(t *testing.T) {
+func TestHTTPSRedirectLoadBalanced(t *testing.T) {
 	cases := []struct {
 		URL         string
 		HeaderKey   string
@@ -57,7 +57,7 @@ func TestHTTPSRedirect(t *testing.T) {
 		}
 
 		redirect := true
-		h := HTTPSRedirect(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := HTTPSRedirectLoadBalanced(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			redirect = false
 		}))
 		h.ServeHTTP(httptest.NewRecorder(), req)

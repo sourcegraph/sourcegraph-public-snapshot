@@ -18,10 +18,27 @@ func CSRFMiddleware(next http.Handler, secure bool) http.Handler {
 	)(next)
 }
 
+// HTTPSRedirectLoadBalanced is the same middleware as HTTPSRedirect, but will
+// take precendence of the X-Forwarded-Proto header if specified.
+func HTTPSRedirectLoadBalanced(next http.Handler) http.Handler {
+	return httpsRedirect(next, func(r *http.Request) string {
+		if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+			return proto
+		}
+		return r.URL.Scheme
+	})
+}
+
 // HTTPSRedirect is an HTTP middleware that will redirect non-HTTPS requests
 // to HTTPS. It uses JS for the redirect because this is the most reliable
 // solution if reverse proxies are involved.
 func HTTPSRedirect(next http.Handler) http.Handler {
+	return httpsRedirect(next, func(r *http.Request) string {
+		return r.URL.Scheme
+	})
+}
+
+func httpsRedirect(next http.Handler, getScheme func(*http.Request) string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if getScheme(r) != "https" {
 			w.Write([]byte(`<script>window.location.protocol = "https:";</script>`))
@@ -29,13 +46,4 @@ func HTTPSRedirect(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-// getScheme returns the scheme for the request. It takes into account headers
-// a reverse-proxy may set to indicate the scheme.
-func getScheme(r *http.Request) string {
-	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
-		return proto
-	}
-	return r.URL.Scheme
 }
