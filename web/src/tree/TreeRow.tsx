@@ -20,7 +20,6 @@ export interface TreeRowProps extends TreeLayerProps {
     isExpanded: boolean
     onChangeViewState: (path: string, resolveTo: boolean, node: TreeNode) => void
     onSelect: (node: TreeNode) => void
-    onSelectedNodeChange: (node: TreeNode) => void
     setChildNodes: (node: TreeNode, index: number) => void
 }
 
@@ -39,15 +38,9 @@ export class TreeRow extends React.Component<TreeRowProps, {}> {
     }
 
     public componentDidMount(): void {
-        // Sets the selectedNode as the activePath when navigating directly to a file.
-        if (
-            this.props.selectedNode &&
-            this.props.activePath !== '' &&
-            this.props.selectedNode.path === '' &&
-            this.props.selectedNode.path !== this.props.activePath &&
-            this.props.activePath === this.node.path
-        ) {
-            this.props.onSelectedNodeChange(this.node)
+        // Sets the selectedNode as the active path when navigating directly to a file.
+        if (this.props.activePath === this.node.path) {
+            this.props.onSelect(this.node)
         }
 
         // Set this row as a childNode of its TreeLayer parent
@@ -92,6 +85,18 @@ export class TreeRow extends React.Component<TreeRowProps, {}> {
             return false
         }
         return true
+    }
+
+    public componentDidUpdate(prevProps: TreeRowProps): void {
+        const queryParams = new URLSearchParams(this.props.history.location.search)
+        // Select the current node when navigating from a search suggestion.
+        if (
+            queryParams.has('suggestion') &&
+            this.node.path === this.props.activePath &&
+            prevProps.activePath !== this.props.activePath
+        ) {
+            this.props.onSelect(this.node)
+        }
     }
 
     public render(): JSX.Element | null {
@@ -169,7 +174,6 @@ export class TreeRow extends React.Component<TreeRowProps, {}> {
                                             resolveTo={this.props.resolveTo}
                                             onSelect={this.props.onSelect}
                                             onChangeViewState={this.props.onChangeViewState}
-                                            onSelectedNodeChange={this.props.onSelectedNodeChange}
                                             focusTreeOnUnmount={this.props.focusTreeOnUnmount}
                                         />
                                     </td>

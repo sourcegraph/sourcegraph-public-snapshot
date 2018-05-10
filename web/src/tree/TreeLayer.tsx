@@ -23,7 +23,6 @@ export interface TreeLayerProps extends Repo {
     parentPath?: string
     onSelect: (node: TreeNode) => void
     onChangeViewState: (path: string, resolveTo: boolean, node: TreeNode) => void
-    onSelectedNodeChange: (node: TreeNode) => void
     /**
      * The tree loses focus when an active row is unmounted when its parent directory collapses.
      * This function sets the focus back on the tree.
@@ -83,11 +82,13 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(nextProps: TreeLayerProps): void {
-        if (this.props.parentPath !== nextProps.parentPath) {
+    public componentDidUpdate(prevProps: TreeLayerProps): void {
+        // Reset the childNodes of TreeLayer to none if the parent path changes, so we don't have children of past visited layers in the childNodes.
+        if (prevProps.parentPath !== this.props.parentPath) {
             this.node.childNodes = []
         }
 
+        // Make a fetch for tree contents when the parent path changes.
         this.componentUpdates.next(this.props)
     }
 
@@ -137,7 +138,6 @@ export class TreeLayer extends React.PureComponent<TreeLayerProps, TreeLayerStat
                                             isExpanded={this.props.resolveTo.includes(item.path)}
                                             onChangeViewState={this.props.onChangeViewState}
                                             onSelect={this.props.onSelect}
-                                            onSelectedNodeChange={this.props.onSelectedNodeChange}
                                             setChildNodes={this.setChildNode}
                                             focusTreeOnUnmount={this.props.focusTreeOnUnmount}
                                         />
