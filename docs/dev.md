@@ -188,6 +188,7 @@ Requires "Debugger for Chrome" extension.
   * e.g. `DELVE_FRONTEND=1 ./dev/start.sh`
   * Check `./dev/start.sh` for supported configurations (it is easy to add more).
   * Any binary that delve is attached to will not begin executing until you attach a debugger.
+* Set a breakpoint (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
 * Run the appropriate attach task from your editor.
   * e.g. "Attach to frontend"
 
