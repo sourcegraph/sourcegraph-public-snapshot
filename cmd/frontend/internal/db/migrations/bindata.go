@@ -160,6 +160,8 @@
 // ../../../../../migrations/1524949295_simplify_initialization.up.sql
 // ../../../../../migrations/1525150355_add_access_tokens_scopes.down.sql
 // ../../../../../migrations/1525150355_add_access_tokens_scopes.up.sql
+// ../../../../../migrations/1525961108_user_unique_among_non-deleted.down.sql
+// ../../../../../migrations/1525961108_user_unique_among_non-deleted.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3427,6 +3429,46 @@ func _1525150355_add_access_tokens_scopesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1525961108_user_unique_among_nonDeletedDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8d\x4d\x0a\xc2\x30\x10\x46\xf7\x39\xc5\xb7\x6c\xc1\x1b\x64\x15\x9b\x01\x03\x61\xa2\xe9\x14\xdd\x15\xa1\x59\x14\x7f\x69\x55\xf4\xf6\x52\xaa\x22\x16\x37\x03\xf3\xde\x3c\xc6\xc6\xb0\x84\x63\x4b\x1b\x5c\xfb\xd4\xf5\xf5\x30\x8f\xdb\x43\xd2\xca\x78\xa1\x08\x31\x73\x4f\xa3\x83\xb1\x16\x45\xe0\x52\xa2\x71\x2c\x3f\x41\xbd\x4b\x0f\x54\xec\x56\x15\x65\x6f\x96\x6b\xa5\x26\x1f\xd2\xfd\x32\xd8\x7d\xdd\x36\x5a\x15\x91\x8c\xd0\xab\xfb\x77\x86\xc0\x23\xcc\xbe\xe0\x0c\x9f\xe5\xdc\x9d\x6e\x6d\x93\xba\x1c\xeb\x05\x45\x9a\x0a\xb8\x12\x1c\x04\x5c\x79\xaf\x9f\x01\x00\x00\xff\xff\xde\x5e\x15\xa3\xf3\x00\x00\x00")
+
+func _1525961108_user_unique_among_nonDeletedDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1525961108_user_unique_among_nonDeletedDownSql,
+		"1525961108_user_unique_among_non-deleted.down.sql",
+	)
+}
+
+func _1525961108_user_unique_among_nonDeletedDownSql() (*asset, error) {
+	bytes, err := _1525961108_user_unique_among_nonDeletedDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1525961108_user_unique_among_non-deleted.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1525961108_user_unique_among_nonDeletedUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xdf\x4a\xc3\x30\x14\xc6\xef\xf3\x14\xdf\xe5\x06\xd6\x17\xd8\x55\x5c\x03\x16\x42\xaa\x69\x8a\xde\x95\xba\x9c\x61\xb0\x26\xda\x26\x32\xdf\x5e\xea\x36\x0d\x55\x76\x13\x38\xbf\x9c\xef\x0f\xa7\x28\xd0\x84\x7d\x2c\x2c\x0d\x14\xc9\x22\x4d\x34\x4e\x58\x9d\xc6\xae\x8f\xa8\x1a\xa8\xda\x40\xb5\x52\xae\x31\x3d\x87\x34\x58\xf8\x10\xf1\x44\xe8\x77\xbb\x90\xfc\x2c\xdb\x87\x11\xce\x23\x79\xf7\x9e\x08\xce\x5b\x3a\xd0\x74\xcd\x18\x97\x46\x68\x18\x7e\x23\xc5\xc9\xba\xd4\xf5\x1d\xb6\xb5\x6a\x8c\xe6\x95\x32\x47\xda\xcd\xaf\xef\x5f\xa9\x7b\xa1\xcf\x0d\xdb\x6a\xc1\x8d\x40\xab\xaa\xfb\x56\xa0\x52\xa5\x78\x5c\xec\xa1\x56\x47\xb2\x3a\x93\x35\x1e\x6e\x85\x16\x58\x34\x6f\xa5\xdc\x30\xf6\x1d\x9a\xfb\xd0\x21\xce\xb2\xa1\x73\xf6\x52\x5c\xb6\xf6\x9b\x98\xc1\x2b\xfc\x0c\x6f\x63\xf8\x70\x96\xc6\x73\x8f\x3f\x1f\xf9\x21\xc1\x55\xf9\x5f\xd3\xaf\x00\x00\x00\xff\xff\xd5\x27\xe4\x1f\x8e\x01\x00\x00")
+
+func _1525961108_user_unique_among_nonDeletedUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1525961108_user_unique_among_nonDeletedUpSql,
+		"1525961108_user_unique_among_non-deleted.up.sql",
+	)
+}
+
+func _1525961108_user_unique_among_nonDeletedUpSql() (*asset, error) {
+	bytes, err := _1525961108_user_unique_among_nonDeletedUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1525961108_user_unique_among_non-deleted.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3639,6 +3681,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1524949295_simplify_initialization.up.sql":                   _1524949295_simplify_initializationUpSql,
 	"1525150355_add_access_tokens_scopes.down.sql":                _1525150355_add_access_tokens_scopesDownSql,
 	"1525150355_add_access_tokens_scopes.up.sql":                  _1525150355_add_access_tokens_scopesUpSql,
+	"1525961108_user_unique_among_non-deleted.down.sql":           _1525961108_user_unique_among_nonDeletedDownSql,
+	"1525961108_user_unique_among_non-deleted.up.sql":             _1525961108_user_unique_among_nonDeletedUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3842,6 +3886,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1524949295_simplify_initialization.up.sql":                   &bintree{_1524949295_simplify_initializationUpSql, map[string]*bintree{}},
 	"1525150355_add_access_tokens_scopes.down.sql":                &bintree{_1525150355_add_access_tokens_scopesDownSql, map[string]*bintree{}},
 	"1525150355_add_access_tokens_scopes.up.sql":                  &bintree{_1525150355_add_access_tokens_scopesUpSql, map[string]*bintree{}},
+	"1525961108_user_unique_among_non-deleted.down.sql":           &bintree{_1525961108_user_unique_among_nonDeletedDownSql, map[string]*bintree{}},
+	"1525961108_user_unique_among_non-deleted.up.sql":             &bintree{_1525961108_user_unique_among_nonDeletedUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

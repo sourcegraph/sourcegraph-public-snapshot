@@ -19,6 +19,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * When using the `http-header` auth provider, signin/signup/signout links are now hidden.
 * Repository paths beginning with `go/` are no longer reservered by Sourcegraph.
 * Interpret `X-Forwarded-Proto` HTTP header when `httpToHttpsRedirect` is set to `load-balanced`.
+* Deleting a user account no longer prevents the creation of a new user account with the same username and/or association with authentication provider account (SAML/OpenID/etc.)
 
 ### Removed
 

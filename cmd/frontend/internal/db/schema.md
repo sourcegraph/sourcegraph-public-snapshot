@@ -495,8 +495,8 @@ Foreign-key constraints:
  search_queries    | integer                  | not null default 0
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
-    "users_external_id" UNIQUE, btree (external_id, external_provider) WHERE external_provider IS NOT NULL
-    "users_username_key" UNIQUE CONSTRAINT, btree (username)
+    "users_external_id" UNIQUE, btree (external_id, external_provider) WHERE external_provider IS NOT NULL AND deleted_at IS NULL
+    "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
 Check constraints:
     "check_external_id" CHECK ((external_provider IS NULL) = (external_id IS NULL))
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
