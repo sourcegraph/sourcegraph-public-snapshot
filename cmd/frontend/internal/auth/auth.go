@@ -71,11 +71,12 @@ func NewAuthMiddleware(ctx context.Context, appURL string) (*Middleware, error) 
 	// checking config.
 	//
 	// TODO(sqs): Migrate all auth middlewares to this design.
-	return ComposeMiddleware(mw), nil
+	return ComposeMiddleware(mw,
+		&Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware},
+	), nil
 }
 
 func createAuthMiddleware(createCtx context.Context, appURL string) (*Middleware, error) {
-
 	initializedMu.Lock()
 	defer initializedMu.Unlock()
 	if initialized {
@@ -93,8 +94,8 @@ func createAuthMiddleware(createCtx context.Context, appURL string) (*Middleware
 		return newSAMLAuthMiddleware(createCtx, appURL, authProvider.Saml)
 	case authProvider.HttpHeader != nil:
 		log15.Info("SSO enabled", "protocol", "HTTP proxy header")
-		// Same behavior for API and app.
-		return &Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware}, nil
+		// The httpHeaderAuthMiddleware is always present, so no need to add it here.
+		return passThrough, nil
 	default:
 		if conf.GetTODO().AuthPublic {
 			// No auth is required.

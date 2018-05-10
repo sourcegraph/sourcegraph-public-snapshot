@@ -26,14 +26,18 @@ const (
 // 🚨 SECURITY
 func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authProvider := conf.AuthProvider().HttpHeader
-		if authProvider == nil || authProvider.UsernameHeader == "" {
+		authProvider := conf.AuthProvider()
+		if authProvider.HttpHeader == nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if authProvider.HttpHeader.UsernameHeader == "" {
+			log15.Error("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
 			http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
 			return
 		}
 
-		headerValue := r.Header.Get(authProvider.UsernameHeader)
-
+		headerValue := r.Header.Get(authProvider.HttpHeader.UsernameHeader)
 		if headerValue == "" {
 			// The auth proxy is expected to proxy *all* requests, so don't let any non-proxied requests
 			// proceed. Note that if an attacker can send HTTP requests directly to this server (not via
@@ -65,7 +69,7 @@ func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
 			Username:   username,
 		})
 		if err != nil {
-			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err)
+			log15.Error("unable to get/create user from SSO header", "header", authProvider.HttpHeader.UsernameHeader, "headerValue", headerValue, "err", err)
 			http.Error(w, "unable to get/create user", http.StatusInternalServerError)
 			return
 		}

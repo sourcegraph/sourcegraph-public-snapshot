@@ -245,6 +245,7 @@ var requireRestart = map[string][]string{
 //
 // TODO(slimsag): eliminate the need for this once all conf.GetTODO are removed.
 var doNotRequireRestart = []string{
+	"auth.userIdentityHTTPHeader",
 	"github",
 	"gitlab",
 	"phabricator",
