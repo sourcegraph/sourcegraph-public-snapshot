@@ -846,7 +846,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 		cmd := exec.CommandContext(ctx, "git", "remote", "set-url", "origin", "--", gitRemoteURL)
 		cmd.Dir = dir
 		if err, _ := runCommand(ctx, cmd); err != nil {
-			log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "url", url)
+			log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "url", url, "error", err)
 		}
 	}
 
