@@ -616,7 +616,8 @@
     .repo-rev-container__sidebar-toggle {
       background: white;
       position: absolute;
-      z-index: 1; }
+      z-index: 1;
+      margin-top: 2px; }
     .repo-rev-container__sidebar-resizable {
       min-width: 8rem; }
       .repo-rev-container__sidebar-resizable--open .tree {
