@@ -286,7 +286,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             'rbac',
             'storageClass',
             'useAlertManager',
-        ].filter(prop => localContents && !localContents.includes(`"${prop}"`))
+        ].filter(prop => localContents && localContents.includes(`"${prop}"`))
         if (dataCenterProps.length > 0) {
             alerts.push(
                 <div key="datacenter-props-present" className="alert alert-info site-admin-configuration-page__alert">
