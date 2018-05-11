@@ -366,7 +366,8 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "secretKey": {
-      "description": "A base64-encoded secret key for this site, used for generating links to invite users to organizations. On Unix systems, you can generate a valid key by running ` + "`" + `cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 42 | base64` + "`" + `.",
+      "description":
+        "A base64-encoded secret key for this site, used for generating links to invite users to organizations. On Unix systems, you can generate a valid key by running ` + "`" + `cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 42 | base64` + "`" + `.",
       "type": "string"
     },
     "auth.provider": {
