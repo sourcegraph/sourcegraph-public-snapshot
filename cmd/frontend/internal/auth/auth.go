@@ -73,6 +73,7 @@ func NewAuthMiddleware(ctx context.Context, appURL string) (*Middleware, error) 
 	// TODO(sqs): Migrate all auth middlewares to this design.
 	return ComposeMiddleware(mw,
 		requireAuthMiddleware,
+		openIDConnectAuthMiddleware,
 		&Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware},
 	), nil
 }
@@ -89,7 +90,8 @@ func createAuthMiddleware(createCtx context.Context, appURL string) (*Middleware
 	switch {
 	case authProvider.Openidconnect != nil:
 		log15.Info("SSO enabled", "protocol", "OpenID Connect")
-		return newOIDCAuthMiddleware(createCtx, appURL, authProvider.Openidconnect)
+		// The openIDConnectAuthMiddleware is always present, so no need to add it here.
+		return passThrough, nil
 	case authProvider.Saml != nil:
 		log15.Info("SSO enabled", "protocol", "SAML 2.0")
 		return newSAMLAuthMiddleware(createCtx, appURL, authProvider.Saml)

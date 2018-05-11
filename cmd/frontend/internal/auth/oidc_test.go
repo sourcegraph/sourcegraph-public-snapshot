@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	oidc "github.com/coreos/go-oidc"
@@ -132,6 +133,9 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 	defer oidcIDServer.Close()
 	oidcProvider.Issuer = oidcIDServer.URL
 
+	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
+	defer func() { conf.MockGetData = nil }()
+
 	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect"}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
@@ -161,13 +165,9 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
-	middleware, err := newOIDCAuthMiddleware(context.Background(), "http://example.com", oidcProvider)
-	if err != nil {
-		t.Fatal(err)
-	}
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", middleware.API(requireAuthenticatedActor(t)))
-	authedHandler.Handle("/", middleware.App(requireAuthenticatedActor(t)))
+	authedHandler.Handle("/.api/", openIDConnectAuthMiddleware.API(requireAuthenticatedActor(t)))
+	authedHandler.Handle("/", openIDConnectAuthMiddleware.App(requireAuthenticatedActor(t)))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -289,6 +289,9 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 	defer oidcIDServer.Close()
 	oidcProvider.Issuer = oidcIDServer.URL
 
+	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
+	defer func() { conf.MockGetData = nil }()
+
 	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com"}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
@@ -302,11 +305,7 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	middleware, err := newOIDCAuthMiddleware(context.Background(), "http://example.com", oidcProvider)
-	if err != nil {
-		t.Fatal(err)
-	}
-	authedHandler := middleware.App(requireAuthenticatedActor(t))
+	authedHandler := openIDConnectAuthMiddleware.App(requireAuthenticatedActor(t))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))

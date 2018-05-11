@@ -10,10 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -32,104 +33,98 @@ type UserClaims struct {
 	Picture           string `json:"picture"`
 }
 
-// newOIDCAuthMiddleware returns middlewares for OpenID Connect (OIDC) authentication, adding endpoints
+// openIDConnectAuthMiddleware is middleware for OpenID Connect (OIDC) authentication, adding endpoints
 // under the auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
 //
 // The OIDC spec (http://openid.net/specs/openid-connect-core-1_0.html) describes an authentication protocol
 // that involves 3 parties: the Relying Party (e.g., Sourcegraph), the OpenID Provider (e.g., Okta, OneLogin,
 // or another SSO provider), and the End User (e.g., a user's web browser).
 //
-// The middlewares this method returns implement two things: (1) the OIDC Authorization Code Flow
+// This middleware implements two things: (1) the OIDC Authorization Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) and (2) Sourcegraph-specific session management
 // (outside the scope of the OIDC spec). Upon successful completion of the OIDC login flow, the handler will create
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func newOIDCAuthMiddleware(createCtx context.Context, appURL string, oidcProvider *schema.OpenIDConnectAuthProvider) (*Middleware, error) {
-	// Return an error if the OIDC parameters are unset or missing
-	if oidcProvider == nil {
-		return nil, errors.New("No OpenID Connect Provider specified")
-	}
-	if oidcProvider.ClientID == "" || oidcProvider.ClientSecret == "" {
-		return nil, fmt.Errorf("OIDC Client ID or Client Secret was empty")
-	}
-
-	authIfNeededMiddleware := func(nextIfAuthed, nextIfUnauthed http.Handler) http.Handler {
+var openIDConnectAuthMiddleware = &Middleware{
+	API: func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Respect already authenticated actor (e.g., via access token).
-			if actor.FromContext(r.Context()).IsAuthenticated() {
-				nextIfAuthed.ServeHTTP(w, r)
-				return
-			}
-
-			// Otherwise require OpenID authentication.
-			nextIfUnauthed.ServeHTTP(w, r)
+			handleOpenIDConnectAuth(w, r, next, true)
 		})
-	}
-
-	// Create handler for OIDC Authentication Code Flow endpoints
-	oidcHandler, err := newOIDCLoginHandler(createCtx, appURL, oidcProvider)
-	if err != nil {
-		return nil, err
-	}
-	return &Middleware{
-		API: func(next http.Handler) http.Handler {
-			return authIfNeededMiddleware(next, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				http.Error(w, "requires authentication", http.StatusUnauthorized)
-				return
-			}))
-		},
-		App: func(next http.Handler) http.Handler {
-			next = authIfNeededMiddleware(next, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// Not authenticated: redirect to login and begin the OIDC Authn flow.
-				redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
-				query := url.Values(map[string][]string{"redirect": {redirectURL.String()}})
-				http.Redirect(w, r, authURLPrefix+"/login?"+query.Encode(), http.StatusFound)
-				return
-			}))
-
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// If the path is under the authentication path, serve the OIDC Authentication Code Flow handler
-				if strings.HasPrefix(r.URL.Path, authURLPrefix+"/") {
-					oidcHandler.ServeHTTP(w, r)
-					return
-				}
-
-				// Otherwise proceed (will check auth).
-				next.ServeHTTP(w, r)
-			})
-		},
-	}, nil
+	},
+	App: func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handleOpenIDConnectAuth(w, r, next, false)
+		})
+	},
 }
 
-// newOIDCLoginHandler returns a handler that defines the necessary endpoints for the OIDC Authentication Code Flow
+type openIDConnectHTTPHandlerFunc func(http.ResponseWriter, *http.Request, *schema.OpenIDConnectAuthProvider)
+
+// handleOpenIDConnectAuth performs OpenID Connect authentication (if configured) for HTTP requests,
+// both API requests and non-API requests.
+func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+	// Check the OpenID Connect auth provider configuration.
+	pc := conf.AuthProvider().Openidconnect
+	if pc != nil && pc.Issuer == "" {
+		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).")
+		http.Error(w, "misconfigured OpenID Connect auth provider", http.StatusInternalServerError)
+		return
+	}
+
+	// If actor is already authenticated (e.g., via access token), or no OpenID Connect auth
+	// provider is configured, skip OpenID Connect auth.
+	if actor.FromContext(r.Context()).IsAuthenticated() || pc == nil {
+		next.ServeHTTP(w, r)
+		return
+	}
+
+	// Unauthenticated API requests are rejected immediately (no redirect to auth flow because there
+	// is no interactive user to redirect).
+	if isAPIRequest {
+		http.Error(w, "requires authentication", http.StatusUnauthorized)
+		return
+	}
+
+	// Delegate to the OpenID Connect login handler to handle the OIDC Authentication Code Flow
+	// callback.
+	if strings.HasPrefix(r.URL.Path, authURLPrefix+"/") {
+		oidcLoginHandler(w, r, pc)
+		return
+	}
+
+	// Otherwise, an unauthenticated client making an app request should be redirected to the OpenID
+	// Connect login flow.
+	redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
+	query := url.Values(map[string][]string{"redirect": {redirectURL.String()}})
+	http.Redirect(w, r, authURLPrefix+"/login?"+query.Encode(), http.StatusFound)
+}
+
+// oidcLoginHandler handles the OIDC Authentication Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func newOIDCLoginHandler(createCtx context.Context, appURL string, oidcProvider *schema.OpenIDConnectAuthProvider) (http.Handler, error) {
-	// Log when fetching the OIDC config from the provider is slow. (It blocks frontend startup.)
-	// This can happen on very high latency connections, or when the provider is unreachable.
-	timer := time.AfterFunc(5*time.Second, func() {
-		log15.Warn("Retrieving OpenID Connect metadata for SSO authentication is taking longer than expected.", "url", oidcProvider.Issuer)
-	})
-	provider, err := oidc.NewProvider(createCtx, oidcProvider.Issuer)
-	timer.Stop()
+func oidcLoginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConnectAuthProvider) {
+	provider, err := oidcCache.get(pc.Issuer)
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving OpenID Connect metadata from issuer")
+		log15.Error("Error getting OpenID Connect provider metadata.", "issuer", pc.Issuer, "error", err)
+		http.Error(w, "unexpected error in OpenID Connect authentication provider", http.StatusInternalServerError)
+		return
 	}
+
 	oauth2Config := oauth2.Config{
-		ClientID:     oidcProvider.ClientID,
-		ClientSecret: oidcProvider.ClientSecret,
-		RedirectURL:  fmt.Sprintf("%s%s/%s", appURL, authURLPrefix, "callback"),
+		ClientID:     pc.ClientID,
+		ClientSecret: pc.ClientSecret,
+		RedirectURL:  fmt.Sprintf("%s%s/%s", globals.AppURL.String(), authURLPrefix, "callback"),
 		Endpoint:     provider.Endpoint(),
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
-	verifier := provider.Verifier(&oidc.Config{ClientID: oidcProvider.ClientID})
+	verifier := provider.Verifier(&oidc.Config{ClientID: pc.ClientID})
 
-	r := http.NewServeMux()
+	switch strings.TrimPrefix(r.URL.Path, authURLPrefix) {
+	case "/login":
+		// Endpoint that starts the Authentication Request Code Flow.
 
-	// Endpoint that starts the Authentication Request Code Flow.
-	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		// The state parameter is an opaque value used to maintain state between the original Authentication Request
 		// and the callback. We do not record any state beyond a CSRF token used to defend against CSRF attacks against the callback.
 		// We use the CSRF token created by gorilla/csrf that is used for other app endpoints as the OIDC state parameter.
@@ -146,10 +141,9 @@ func newOIDCLoginHandler(createCtx context.Context, appURL string, oidcProvider 
 		//
 		// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
 		http.Redirect(w, r, oauth2Config.AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
-	})
 
-	// Endpoint for the OIDC Authorization Response. See http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-	r.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+	case "/callback":
+		// Endpoint for the OIDC Authorization Response. See http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
 		ctx := r.Context()
 		if authError := r.URL.Query().Get("error"); authError != "" {
 			log15.Error("Authentication error returned by SSO provider", "error", authError, "description", r.URL.Query().Get("error_description"))
@@ -229,8 +223,8 @@ func newOIDCLoginHandler(createCtx context.Context, appURL string, oidcProvider 
 			return
 		}
 
-		if oidcProvider.RequireEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+oidcProvider.RequireEmailDomain) {
-			http.Error(w, ssoErrMsg("Invalid email domain", "Required: "+oidcProvider.RequireEmailDomain), http.StatusUnauthorized)
+		if pc.RequireEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+pc.RequireEmailDomain) {
+			http.Error(w, ssoErrMsg("Invalid email domain", "Required: "+pc.RequireEmailDomain), http.StatusUnauthorized)
 			return
 		}
 
@@ -266,8 +260,10 @@ func newOIDCLoginHandler(createCtx context.Context, appURL string, oidcProvider 
 			redirect = "/"
 		}
 		http.Redirect(w, r, redirect, http.StatusFound)
-	})
-	return http.StripPrefix(authURLPrefix, r), nil
+
+	default:
+		http.Error(w, "", http.StatusNotFound)
+	}
 }
 
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
