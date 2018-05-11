@@ -51,7 +51,7 @@ interface State {
     monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
 }
 
-const emptySettings = '{\n  // add settings here (Cmd/Ctrl+Space to see hints)\n}'
+const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
 
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
