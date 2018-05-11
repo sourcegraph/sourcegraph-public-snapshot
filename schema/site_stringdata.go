@@ -98,7 +98,7 @@ const SiteSchemaJSON = `{
     },
     "httpToHttpsRedirect": {
       "description":
-        "Redirect users from HTTP to HTTPS. If \"load-balanced\" then additionally we use \"X-Forwarded-Proto\" to determine if on HTTP.",
+        "Redirect users from HTTP to HTTPS. Accepted values are \"on\", \"off\", and \"load-balanced\" (boolean values true and false are also accepted and equivalent to \"on\" and \"off\" respectively). If \"load-balanced\" then additionally we use \"X-Forwarded-Proto\" to determine if on HTTP.",
       "anyOf": [{ "type": "string", "enum": ["on", "off", "load-balanced"] }, { "type": "boolean" }],
       "default": "off"
     },
