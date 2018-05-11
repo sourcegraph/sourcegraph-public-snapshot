@@ -850,7 +850,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "'+refs/heads/*:refs/heads/*'", "'+refs/tags/*:refs/tags/*'", "'+refs/pull/*:refs/pull/*'")
+	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*")
 	cmd.Dir = dir
 	if output, err := s.runWithRemoteOpts(ctx, cmd, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
