@@ -10,13 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ShowMissingReposEnabled returns true if ShowMissingRepos experiment is enabled.
-func ShowMissingReposEnabled() bool {
-	p := Get().ExperimentalFeatures.ShowMissingRepos
-	// default is enabled
-	return p != "disabled"
-}
-
 // SearchTimeoutParameterEnabled returns true if SearchTimeoutParameter experiment is enabled.
 func SearchTimeoutParameterEnabled() bool {
 	p := Get().ExperimentalFeatures.SearchTimeoutParameter

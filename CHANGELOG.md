@@ -25,6 +25,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Removed
 
 * The `ssoUserHeader` site config property (deprecated since January 2018) has been removed. The functionality was moved to the `http-header` authentication provider.
+* The experiment flag `showMissingReposEnabled`, which defaulted to enabled, has been removed so it is no longer possible to disable this feature.
 
 ### Added
 

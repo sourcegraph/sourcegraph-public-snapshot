@@ -34,7 +34,6 @@ type ExperimentalFeatures struct {
 	HostSurveysLocally     string `json:"hostSurveysLocally,omitempty"`
 	JumpToDefOSSIndex      string `json:"jumpToDefOSSIndex,omitempty"`
 	SearchTimeoutParameter string `json:"searchTimeoutParameter,omitempty"`
-	ShowMissingRepos       string `json:"showMissingRepos,omitempty"`
 }
 
 // GitHubConnection

@@ -12,8 +12,6 @@ import { ServerBanner } from '../../marketing/ServerBanner'
 import { showDotComMarketing } from '../../util/features'
 import { pluralize } from '../../util/strings'
 
-const showMissingReposEnabled = window.context.showMissingReposEnabled || localStorage.getItem('showMissingRepos')
-
 interface SearchResultsInfoBarProps {
     /** The logged-in user or null */
     user: GQL.IUser | null
@@ -40,7 +38,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
         {(props.results.timedout.length > 0 ||
             props.results.cloning.length > 0 ||
             props.results.results.length > 0 ||
-            (showMissingReposEnabled && props.results.missing.length > 0)) && (
+            props.results.missing.length > 0) && (
             <small className="search-results-info-bar__row">
                 <div className="search-results-info-bar__row-left">
                     {/* Time stats */}
@@ -55,18 +53,17 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                         </div>
                     }
                     {/* Missing repos */}
-                    {showMissingReposEnabled &&
-                        props.results.missing.length > 0 && (
-                            <div
-                                className="search-results-info-bar__notice"
-                                data-tooltip={props.results.missing.join('\n')}
-                            >
-                                <span>
-                                    <DirectionalSign className="icon-inline" /> {props.results.missing.length}{' '}
-                                    {pluralize('repository', props.results.missing.length, 'repositories')} not found
-                                </span>
-                            </div>
-                        )}
+                    {props.results.missing.length > 0 && (
+                        <div
+                            className="search-results-info-bar__notice"
+                            data-tooltip={props.results.missing.join('\n')}
+                        >
+                            <span>
+                                <DirectionalSign className="icon-inline" /> {props.results.missing.length}{' '}
+                                {pluralize('repository', props.results.missing.length, 'repositories')} not found
+                            </span>
+                        </div>
+                    )}
                     {/* Timed out repos */}
                     {props.results.timedout.length > 0 && (
                         <div

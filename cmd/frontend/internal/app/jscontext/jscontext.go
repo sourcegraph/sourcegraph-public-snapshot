@@ -64,7 +64,6 @@ type JSContext struct {
 
 	// Experimental features
 	SearchTimeoutParameterEnabled bool `json:"searchTimeoutParameterEnabled"`
-	ShowMissingReposEnabled       bool `json:"showMissingReposEnabled"`
 	HostSurveysLocallyEnabled     bool `json:"hostSurveysLocallyEnabled"`
 
 	AccessTokensEnabled bool `json:"accessTokensEnabled"`
@@ -140,7 +139,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		// Experiments. We pass these through explicitly so we can
 		// do the default behavior only in Go land.
 		SearchTimeoutParameterEnabled: conf.SearchTimeoutParameterEnabled(),
-		ShowMissingReposEnabled:       conf.ShowMissingReposEnabled(),
 		HostSurveysLocallyEnabled:     conf.HostSurveysLocallyEnabled(),
 
 		AccessTokensEnabled: conf.AccessTokensEnabled(),
