@@ -10,89 +10,80 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// newSAMLAuthMiddleware returns middlewares for SAML authentication, adding endpoints under the auth
+// samlAuthMiddleware is middleware for SAML authentication, adding endpoints under the auth
 // path prefix to enable the login flow an requiring login for all other endpoints.
 //
 // 🚨 SECURITY
-func newSAMLAuthMiddleware(createCtx context.Context, appURL string, samlProvider *schema.SAMLAuthProvider) (*Middleware, error) {
-	if samlProvider == nil {
-		return nil, errors.New("No SAML ID Provider specified")
-	}
-	if samlProvider.ServiceProviderCertificate == "" {
-		return nil, errors.New("No SAML Service Provider certificate")
-	}
-	if samlProvider.ServiceProviderPrivateKey == "" {
-		return nil, errors.New("No SAML Service Provider private key")
-	}
-
-	samlSP, err := getSAMLServiceProvider(samlProvider)
-	if err != nil {
-		return nil, err
-	}
-
-	idpID := samlSP.ServiceProvider.IDPMetadata.EntityID
-	samlAuthIfNeededMiddleware := func(next http.Handler) http.Handler {
-		authedHandler := samlSP.RequireAccount(samlToActorMiddleware(next, idpID))
+var samlAuthMiddleware = &Middleware{
+	API: func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Respect already authenticated actor (e.g., via access token).
-			if actor.FromContext(r.Context()).IsAuthenticated() {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			// Otherwise require SAML authentication.
-			authedHandler.ServeHTTP(w, r)
+			samlAuthHandler(w, r, next, true)
 		})
-	}
-
-	return &Middleware{
-		API: func(next http.Handler) http.Handler {
-			nextWithSAMLAuth := samlAuthIfNeededMiddleware(next)
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if actor.FromContext(r.Context()).IsAuthenticated() {
-					// Request is already authenticated (e.g., by access token).
-					next.ServeHTTP(w, r)
-					return
-				}
-				if c, _ := r.Cookie(samlSP.ClientToken.(*samlsp.ClientCookies).Name); c != nil {
-					// Try to use cookie to authenticate via SAML.
-					nextWithSAMLAuth.ServeHTTP(w, r)
-					return
-				}
-				http.Error(w, "requires authentication", http.StatusUnauthorized)
-			})
-		},
-		App: func(next http.Handler) http.Handler {
-			next = samlAuthIfNeededMiddleware(next)
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// Handle SAML ACS and metadata endpoints.
-				if strings.HasPrefix(r.URL.Path, authURLPrefix+"/saml/") {
-					samlSP.ServeHTTP(w, r)
-					return
-				}
-				// Handle all other endpoints
-				next.ServeHTTP(w, r)
-			})
-		},
-	}, nil
+	},
+	App: func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			samlAuthHandler(w, r, next, false)
+		})
+	},
 }
 
-// samlToActorMiddleware translates the SAML session into an Actor and sets it in the request context
-// before delegating to its child handler.
-func samlToActorMiddleware(h http.Handler, idpID string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		actr, err := getActorFromSAML(r.Context(), idpID)
+func samlAuthHandler(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+	// Check the SAML auth provider configuration.
+	pc := conf.AuthProvider().Saml
+	if pc != nil && (pc.ServiceProviderCertificate == "" || pc.ServiceProviderPrivateKey == "") {
+		log15.Error("No certificate and/or private key set for SAML auth provider in site configuration.")
+		http.Error(w, "misconfigured SAML auth provider", http.StatusInternalServerError)
+		return
+	}
+
+	// If SAML isn't enabled, or actor is already authenticated (e.g., via access token), skip SAML auth.
+	if pc == nil || actor.FromContext(r.Context()).IsAuthenticated() {
+		next.ServeHTTP(w, r)
+		return
+	}
+
+	// Otherwise, we need to use SAML.
+	samlSP, err := samlCache.get(*pc)
+	if err != nil {
+		log15.Error("Error getting SAML service provider.", "error", err)
+		http.Error(w, "unexpected error in SAML authentication provider", http.StatusInternalServerError)
+		return
+	}
+
+	if !isAPIRequest {
+		// Delegate to SAML ACS and metadata endpoint handlers.
+		if strings.HasPrefix(r.URL.Path, authURLPrefix+"/saml/") {
+			samlSP.ServeHTTP(w, r)
+			return
+		}
+	}
+
+	// HACK: Return HTTP 401 for API requests without a cookie (unlike for app requests, where we
+	// need to HTTP 302 redirect the user to the SAML login flow). This behavior provides no
+	// additional security but is nicer for API requests.
+	if isAPIRequest {
+		if c, _ := r.Cookie(samlSP.ClientToken.(*samlsp.ClientCookies).Name); c == nil {
+			http.Error(w, "requires authentication", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	// Require SAML auth to proceed (redirect to SAML login flow).
+	samlSP.RequireAccount(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		idpID := samlSP.ServiceProvider.IDPMetadata.EntityID
+		samlActor, err := getActorFromSAML(r.Context(), idpID)
 		if err != nil {
 			log15.Error("Error looking up SAML-authenticated user.", "error", err)
 			http.Error(w, "Error looking up SAML-authenticated user. "+couldNotGetUserDescription, http.StatusInternalServerError)
 			return
 		}
-		h.ServeHTTP(w, r.WithContext(actor.WithActor(r.Context(), actr)))
-	})
+
+		next.ServeHTTP(w, r.WithContext(actor.WithActor(r.Context(), samlActor)))
+	})).ServeHTTP(w, r)
 }
 
 // getActorFromSAML translates the SAML token's claims (set in request context by the SAML

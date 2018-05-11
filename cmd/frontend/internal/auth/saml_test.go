@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/beevik/etree"
@@ -169,24 +170,24 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	// Set SAML global parameters
-	samlProvider := &schema.SAMLAuthProvider{
-		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
-		ServiceProviderCertificate:  testSAMLSPCert,
-		ServiceProviderPrivateKey:   testSAMLSPKey,
+	conf.MockGetData = &schema.SiteConfiguration{
+		AuthProvider: "saml",
+		AuthSaml: &schema.SAMLAuthProvider{
+			IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
+			ServiceProviderCertificate:  testSAMLSPCert,
+			ServiceProviderPrivateKey:   testSAMLSPKey,
+		},
 	}
+	defer func() { conf.MockGetData = nil }()
 
 	// Set up the test handler.
-	middleware, err := newSAMLAuthMiddleware(context.Background(), "http://example.com", samlProvider)
-	if err != nil {
-		t.Fatal(err)
-	}
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", middleware.API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authedHandler.Handle("/.api/", samlAuthMiddleware.API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID {
 			t.Errorf("got actor UID %d, want %d", uid, mockedUserID)
 		}
 	})))
-	authedHandler.Handle("/", middleware.App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authedHandler.Handle("/", samlAuthMiddleware.App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
 			w.Write([]byte("This is the home"))
