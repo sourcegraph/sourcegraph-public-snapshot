@@ -9,45 +9,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-// newUserRequiredAuthzMiddleware returns middlewares that require an authenticated client for all
-// HTTP requests, except those whitelisted by allowAnonymousRequest.
+// requireAuthMiddleware is a middleware that requires authentication for all HTTP requests, except
+// those whitelisted by allowAnonymousRequest. It's used when auth.public == false.
+//
+// It is enabled for all auth providers, but an auth provider may reject or redirect the user to its
+// own auth flow before the request reaches here.
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits.
-func newUserRequiredAuthzMiddleware() *Middleware {
-	return &Middleware{
-		API: func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// If an anonymous user tries to access an API endpoint that requires authentication,
-				// prevent access.
-				if !actor.FromContext(r.Context()).IsAuthenticated() && !allowAnonymousRequest(r) {
-					// Report HTTP 401 Unauthorized for API requests.
-					http.Error(w, "Private mode requires authentication.", http.StatusUnauthorized)
-					return
-				}
+var requireAuthMiddleware = &Middleware{
+	API: func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// If an anonymous user tries to access an API endpoint that requires authentication,
+			// prevent access.
+			if !actor.FromContext(r.Context()).IsAuthenticated() && !allowAnonymousRequest(r) {
+				// Report HTTP 401 Unauthorized for API requests.
+				http.Error(w, "Private mode requires authentication.", http.StatusUnauthorized)
+				return
+			}
 
-				// The client is authenticated, or the request is accessible to anonymous clients.
-				next.ServeHTTP(w, r)
-			})
-		},
-		App: func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// If an anonymous user tries to access an app endpoint that requires authentication,
-				// prevent access and redirect them to the login page.
-				if !actor.FromContext(r.Context()).IsAuthenticated() && !allowAnonymousRequest(r) {
-					// Redirect 302 Found for web page requests.
-					q := url.Values{}
-					q.Set("returnTo", r.URL.String())
-					http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
-					return
-				}
+			// The client is authenticated, or the request is accessible to anonymous clients.
+			next.ServeHTTP(w, r)
+		})
+	},
+	App: func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// If an anonymous user tries to access an app endpoint that requires authentication,
+			// prevent access and redirect them to the login page.
+			if !actor.FromContext(r.Context()).IsAuthenticated() && !allowAnonymousRequest(r) {
+				// Redirect 302 Found for web page requests.
+				q := url.Values{}
+				q.Set("returnTo", r.URL.String())
+				http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
+				return
+			}
 
-				// The client is authenticated, or the request is accessible to anonymous clients.
-				next.ServeHTTP(w, r)
-			})
-		},
-	}
+			// The client is authenticated, or the request is accessible to anonymous clients.
+			next.ServeHTTP(w, r)
+		})
+	},
 }
 
 var (
@@ -79,11 +81,17 @@ func matchedRouteName(req *http.Request, router *mux.Router) string {
 	return m.Route.GetName()
 }
 
-// allowAnonymousRequest reports whether an anonymous user is allowed to make the given HTTP request.
+// allowAnonymousRequest reports whether handling of the HTTP request (which is from an anonymous
+// user) should proceed. The eventual handler for the request may still perform other authn/authz
+// checks.
 //
 // 🚨 SECURITY: This func MUST return false if handling req would leak any sensitive data or allow unprivileged
 // users to perform undesired actions.
 func allowAnonymousRequest(req *http.Request) bool {
+	if conf.GetTODO().AuthPublic {
+		return true
+	}
+
 	if strings.HasPrefix(req.URL.Path, "/.assets/") || strings.HasPrefix(req.URL.Path, "/.api/telemetry/log/v1/") {
 		return true
 	}

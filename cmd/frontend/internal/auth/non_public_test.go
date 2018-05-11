@@ -8,9 +8,16 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAllowAnonymousRequest(t *testing.T) {
+	// Ensure auth.public is false (be robust against some other tests having side effects that
+	// change it, or changed defaults).
+	conf.MockGetData = &schema.SiteConfiguration{AuthPublic: false}
+	defer func() { conf.MockGetData = nil }()
+
 	req := func(method, urlStr string) *http.Request {
 		r, err := http.NewRequest(method, urlStr, nil)
 		if err != nil {
@@ -44,11 +51,14 @@ func TestAllowAnonymousRequest(t *testing.T) {
 }
 
 func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
+	// Ensure auth.public is false (be robust against some other tests having side effects that
+	// change it, or changed defaults).
+	conf.MockGetData = &schema.SiteConfiguration{AuthPublic: false}
+	defer func() { conf.MockGetData = nil }()
+
 	withAuth := func(r *http.Request) *http.Request {
 		return r.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
 	}
-
-	middleware := newUserRequiredAuthzMiddleware()
 
 	testcases := []struct {
 		name       string
@@ -102,8 +112,8 @@ func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 			setAllowedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { allowed = true })
 
 			handler := http.NewServeMux()
-			handler.Handle("/.api/", middleware.API(setAllowedHandler))
-			handler.Handle("/", middleware.App(setAllowedHandler))
+			handler.Handle("/.api/", requireAuthMiddleware.API(setAllowedHandler))
+			handler.Handle("/", requireAuthMiddleware.App(setAllowedHandler))
 			handler.ServeHTTP(rec, tst.req)
 
 			if allowed != tst.allowed {

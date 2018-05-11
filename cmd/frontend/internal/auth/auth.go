@@ -72,6 +72,7 @@ func NewAuthMiddleware(ctx context.Context, appURL string) (*Middleware, error) 
 	//
 	// TODO(sqs): Migrate all auth middlewares to this design.
 	return ComposeMiddleware(mw,
+		requireAuthMiddleware,
 		&Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware},
 	), nil
 }
@@ -97,12 +98,8 @@ func createAuthMiddleware(createCtx context.Context, appURL string) (*Middleware
 		// The httpHeaderAuthMiddleware is always present, so no need to add it here.
 		return passThrough, nil
 	default:
-		if conf.GetTODO().AuthPublic {
-			// No auth is required.
-			passThrough := func(h http.Handler) http.Handler { return h }
-			return &Middleware{API: passThrough, App: passThrough}, nil
-		}
-		return newUserRequiredAuthzMiddleware(), nil
+		// The requireAuthMiddleware is always present, so no need to add it here.
+		return passThrough, nil
 	}
 }
 
