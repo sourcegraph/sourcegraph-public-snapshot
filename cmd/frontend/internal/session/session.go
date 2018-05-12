@@ -35,9 +35,6 @@ type sessionInfo struct {
 	Actor        *actor.Actor  `json:"actor"`
 	LastActive   time.Time     `json:"lastActive"`
 	ExpiryPeriod time.Duration `json:"expiryPeriod"`
-
-	// DEPRECATED. Can be removed after December 31, 2017
-	Expiry time.Time `json:"expiry"`
 }
 
 // SetSessionStore sets the backing store used for storing sessions on the server. It should be called exactly once.
