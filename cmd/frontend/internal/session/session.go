@@ -3,18 +3,17 @@ package session
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/textproto"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -115,7 +114,9 @@ func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor,
 		expiryPeriod = DefaultExpiryPeriod
 	}
 
-	DeleteSession(w, r)
+	if err := DeleteSession(w, r); err != nil {
+		log15.Error("Error deleting previous session when starting new session.", "err", err)
+	}
 
 	session, err := sessionStore.New(&http.Request{}, cookieName) // workaround: not passing the request forces a new session
 	if err != nil {
@@ -144,18 +145,28 @@ func ignoreSessionCookieError() bool {
 	return conf.AuthProvider().Saml != nil
 }
 
-// DeleteSession deletes the current session.
-func DeleteSession(w http.ResponseWriter, r *http.Request) {
+func hasSessionCookie(r *http.Request) bool {
+	c, _ := r.Cookie(cookieName)
+	return c != nil
+}
+
+// DeleteSession deletes the current session. If an error occurs, it returns the error but does not
+// write an HTTP error response.
+func DeleteSession(w http.ResponseWriter, r *http.Request) error {
+	if !hasSessionCookie(r) {
+		return nil // nothing to do
+	}
+
 	session, err := sessionStore.Get(r, cookieName)
-	if err != nil {
-		if !ignoreSessionCookieError() {
-			log15.Error("error getting session", "error", err)
-		}
+	if err == nil {
+		session.Options.MaxAge = -1 // expire immediately
+		err = session.Save(r, w)
 	}
-	session.Options.MaxAge = -1
-	if err = session.Save(r, w); err != nil {
-		log15.Error("error saving session", "error", err)
+	if err != nil && hasSessionCookie(r) {
+		// Failsafe: delete the client's cookie even if the session store is unavailable.
+		http.SetCookie(w, sessions.NewCookie(session.Name(), "", session.Options))
 	}
+	return errors.WithMessage(err, "deleting session")
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates
@@ -227,20 +238,20 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		var info sessionInfo
 		if err := json.Unmarshal(actorJSON.([]byte), &info); err != nil {
 			log15.Error("error unmarshalling actor", "error", err)
-			DeleteSession(w, r) // so that we clear the bad value
+			_ = DeleteSession(w, r) // clear the bad value
 			return r.Context()
 		}
 
 		// Check expiry
 		if info.LastActive.Add(info.ExpiryPeriod).Before(time.Now()) {
-			DeleteSession(w, r)
+			_ = DeleteSession(w, r) // clear the bad value
 			return actor.WithActor(r.Context(), &actor.Actor{})
 		}
 
 		// Check that user still exists.
 		if _, err := db.Users.GetByID(r.Context(), info.Actor.UID); err != nil {
 			if errcode.IsNotFound(err) {
-				DeleteSession(w, r)
+				_ = DeleteSession(w, r) // clear the bad value
 			} else {
 				// Don't delete session, since the error might be an ephemeral DB error, and we don't
 				// want that to cause all active users to be signed out.

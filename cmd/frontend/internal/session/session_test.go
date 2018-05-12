@@ -78,26 +78,15 @@ func TestStartDeleteSession(t *testing.T) {
 		authedReq2.AddCookie(cookie)
 	}
 	w = httptest.NewRecorder()
-	DeleteSession(w, authedReq2)
-
+	if err := DeleteSession(w, authedReq2); err != nil {
+		t.Fatal(err)
+	}
 	// Check that the session cookie was deleted
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Unexpected status code: %d", resp.StatusCode)
 	}
-	if len(resp.Cookies()) != 1 {
-		t.Fatal("expected exactly 1 Set-Cookie")
-	}
-	deleteCookie := resp.Cookies()[0]
-	if deleteCookie.Name != cookieName {
-		t.Fatal("did not delete cookie (cookie name was not \"sg-session\")")
-	}
-	if deleteCookie.MaxAge >= 0 {
-		t.Fatal("did not delete cookie (max-age was not less than 0)")
-	}
-	if deleteCookie.Expires.After(time.Now()) {
-		t.Fatal("did not delete cookie (cookie not expired)")
-	}
+	checkCookieDeleted(t, resp)
 
 	// Check that the actor no longer exists in the session, even when we have the original cookie
 	authedReq3 := httptest.NewRequest("GET", "/", nil)
@@ -107,6 +96,37 @@ func TestStartDeleteSession(t *testing.T) {
 	actor3 := actor.FromContext(authenticateByCookie(authedReq3, httptest.NewRecorder()))
 	if !reflect.DeepEqual(actor3, &actor.Actor{}) {
 		t.Fatalf("underlying session was not deleted: %+v != %+v", actor3, &actor.Actor{})
+	}
+
+	// Check that the cookie is deleted on the client when we call DeleteSession even if
+	// getting/saving the session failed.
+	authedReq4 := httptest.NewRequest("GET", "/", nil)
+	for _, cookie := range authCookies {
+		authedReq4.AddCookie(cookie)
+	}
+	w = httptest.NewRecorder()
+	if err := DeleteSession(w, authedReq2); err == nil {
+		t.Fatal("got no error from DeleteSession, want error (because we already deleted the session)")
+	}
+	checkCookieDeleted(t, w.Result())
+}
+
+func checkCookieDeleted(t *testing.T, resp *http.Response) {
+	t.Helper()
+
+	if len(resp.Cookies()) != 1 {
+		t.Fatalf("expected exactly 1 Set-Cookie, got %+v", resp.Cookies())
+	}
+
+	deleteCookie := resp.Cookies()[0]
+	if deleteCookie.Name != cookieName {
+		t.Fatal("did not delete cookie (cookie name was not \"sg-session\")")
+	}
+	if deleteCookie.MaxAge >= 0 {
+		t.Fatal("did not delete cookie (max-age was not less than 0)")
+	}
+	if deleteCookie.Expires.After(time.Now()) {
+		t.Fatal("did not delete cookie (cookie not expired)")
 	}
 }
 
