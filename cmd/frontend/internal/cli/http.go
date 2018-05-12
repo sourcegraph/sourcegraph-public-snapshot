@@ -35,7 +35,7 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 		openidconnect.Middleware,
 		saml.Middleware,
 		&auth.Middleware{API: httpheader.Middleware, App: httpheader.Middleware},
-		&auth.Middleware{API: auth.ForbidAllAuthMiddleware, App: auth.ForbidAllAuthMiddleware},
+		&auth.Middleware{API: auth.ForbidAllRequestsMiddleware, App: auth.ForbidAllRequestsMiddleware},
 	)
 
 	// HTTP API handler.
