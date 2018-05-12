@@ -29,6 +29,9 @@ var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used fo
 // DefaultExpiryPeriod is the default session expiry period (if none is specified explicitly): 90 days.
 const DefaultExpiryPeriod = 90 * 24 * time.Hour
 
+// cookieName is the name of the HTTP cookie that stores the session ID.
+const cookieName = "sg-session"
+
 // sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
 // enforce the maxAge field in its session store implementations, so we include the expiry here.
 type sessionInfo struct {
@@ -114,7 +117,7 @@ func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor,
 
 	DeleteSession(w, r)
 
-	session, err := sessionStore.New(&http.Request{}, "sg-session") // workaround: not passing the request forces a new session
+	session, err := sessionStore.New(&http.Request{}, cookieName) // workaround: not passing the request forces a new session
 	if err != nil {
 		log15.Error("error creating session", "error", err)
 	}
@@ -143,7 +146,7 @@ func ignoreSessionCookieError() bool {
 
 // DeleteSession deletes the current session.
 func DeleteSession(w http.ResponseWriter, r *http.Request) {
-	session, err := sessionStore.Get(r, "sg-session")
+	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		if !ignoreSessionCookieError() {
 			log15.Error("error getting session", "error", err)
@@ -212,7 +215,7 @@ func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, i
 }
 
 func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
-	session, err := sessionStore.Get(r, "sg-session")
+	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		if !ignoreSessionCookieError() {
 			log15.Error("error getting session", "error", err)

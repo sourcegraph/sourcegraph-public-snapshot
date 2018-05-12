@@ -48,7 +48,7 @@ func TestStartDeleteSession(t *testing.T) {
 	}
 
 	// Check that session cookie was created
-	setCookie, err := authedReq.Cookie("sg-session")
+	setCookie, err := authedReq.Cookie(cookieName)
 	if err != nil {
 		t.Fatalf("cookie was not created, error: %s", err)
 	}
@@ -60,7 +60,7 @@ func TestStartDeleteSession(t *testing.T) {
 	}
 
 	// Check that actor exists in the session
-	session, err := sessionStore.Get(authedReq, "sg-session")
+	session, err := sessionStore.Get(authedReq, cookieName)
 	if err != nil {
 		t.Fatalf("didn't find session: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestStartDeleteSession(t *testing.T) {
 		t.Fatal("expected exactly 1 Set-Cookie")
 	}
 	deleteCookie := resp.Cookies()[0]
-	if deleteCookie.Name != "sg-session" {
+	if deleteCookie.Name != cookieName {
 		t.Fatal("did not delete cookie (cookie name was not \"sg-session\")")
 	}
 	if deleteCookie.MaxAge >= 0 {
@@ -220,7 +220,7 @@ func TestCookieMiddleware(t *testing.T) {
 
 // sessionCookie returns the session cookie from the header of the given request.
 func sessionCookie(r *http.Request) string {
-	c, err := r.Cookie("sg-session")
+	c, err := r.Cookie(cookieName)
 	if err != nil {
 		return ""
 	}
