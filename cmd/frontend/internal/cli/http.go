@@ -34,7 +34,6 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 		auth.RequireAuthMiddleware,
 		openidconnect.Middleware,
 		saml.Middleware,
-		&auth.Middleware{API: httpheader.Middleware, App: httpheader.Middleware},
 	)
 
 	// HTTP API handler.
@@ -64,6 +63,7 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// Wrap in middleware.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
+	h = httpheader.Middleware(h)
 	h = auth.ForbidAllRequestsMiddleware(h)
 	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
 	h = tracepkg.Middleware(h)
