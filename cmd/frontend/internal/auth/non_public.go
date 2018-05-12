@@ -88,7 +88,7 @@ func matchedRouteName(req *http.Request, router *mux.Router) string {
 // 🚨 SECURITY: This func MUST return false if handling req would leak any sensitive data or allow unprivileged
 // users to perform undesired actions.
 func allowAnonymousRequest(req *http.Request) bool {
-	if conf.GetTODO().AuthPublic {
+	if conf.AuthPublic() {
 		return true
 	}
 

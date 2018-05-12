@@ -15,7 +15,7 @@ import (
 func TestAllowAnonymousRequest(t *testing.T) {
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
-	conf.MockGetData = &schema.SiteConfiguration{AuthPublic: false}
+	conf.MockGetData = &schema.SiteConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}
 	defer func() { conf.MockGetData = nil }()
 
 	req := func(method, urlStr string) *http.Request {
@@ -53,7 +53,7 @@ func TestAllowAnonymousRequest(t *testing.T) {
 func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
-	conf.MockGetData = &schema.SiteConfiguration{AuthPublic: false}
+	conf.MockGetData = &schema.SiteConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}
 	defer func() { conf.MockGetData = nil }()
 
 	withAuth := func(r *http.Request) *http.Request {

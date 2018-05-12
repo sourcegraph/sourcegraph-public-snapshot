@@ -85,3 +85,11 @@ func authProviderLegacy(c *schema.SiteConfiguration) schema.AuthProviders {
 	}
 	return schema.AuthProviders{}
 }
+
+// AuthPublic reports whether the site is public. Currently only the builtin auth provider allows
+// sites to be public. AuthPublic only returns true if auth.public (in site config) is true *and*
+// the active auth provider is builtin.
+func AuthPublic() bool { return authPublic(Get()) }
+func authPublic(c *schema.SiteConfiguration) bool {
+	return authProvider(c).Builtin != nil && c.AuthPublic
+}
