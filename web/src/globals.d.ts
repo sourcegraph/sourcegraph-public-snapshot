@@ -102,12 +102,12 @@ interface SourcegraphContext {
     /**
      * Whether the searchTimeoutParameter feature flag is enabled.
      */
-    searchTimeoutParameterEnabled: bool
+    searchTimeoutParameterEnabled: boolean
 
     /**
      * Whether the hostSurveysLocally feature flag is enabled.
      */
-    hostSurveysLocallyEnabled: bool
+    hostSurveysLocallyEnabled: boolean
 }
 
 declare module '*.json' {

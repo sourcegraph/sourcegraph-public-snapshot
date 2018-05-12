@@ -89,7 +89,7 @@ class TelligentWrapper {
 
     /**
      * Function to extract the Telligent user ID from the first-party cookie set by the Telligent JavaScript Tracker
-     * @return string or bool The ID string if the cookie exists or null if the cookie has not been set yet
+     * @return string or boolean The ID string if the cookie exists or null if the cookie has not been set yet
      */
     public getTelligentDuid(): string | null {
         const cookieProps = this.inspectTelligentCookie()
@@ -98,7 +98,7 @@ class TelligentWrapper {
 
     /**
      * Function to extract the Telligent session ID from the first-party cookie set by the Telligent JavaScript Tracker
-     * @return string or bool The session ID string if the cookie exists or null if the cookie has not been set yet
+     * @return string or boolean The session ID string if the cookie exists or null if the cookie has not been set yet
      */
     public getTelligentSessionId(): string | null {
         const cookieProps = this.inspectTelligentCookie()
