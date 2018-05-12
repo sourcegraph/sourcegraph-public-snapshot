@@ -24,6 +24,7 @@ import (
 func init() {
 	var (
 		first = true
+		init  = true
 
 		mu sync.Mutex
 		pc *schema.SAMLAuthProvider
@@ -38,7 +39,7 @@ func init() {
 			return
 		}
 
-		if first {
+		if first && !init {
 			log15.Info("Reloading changed SAML authentication provider configuration.")
 			first = false
 		}
@@ -51,6 +52,7 @@ func init() {
 			}(*pc)
 		}
 	})
+	init = false
 }
 
 func getServiceProvider(pc *schema.SAMLAuthProvider) (*samlsp.Middleware, error) {
