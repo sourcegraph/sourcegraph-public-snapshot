@@ -13,8 +13,8 @@ import (
 // SearchTimeoutParameterEnabled returns true if SearchTimeoutParameter experiment is enabled.
 func SearchTimeoutParameterEnabled() bool {
 	p := Get().ExperimentalFeatures.SearchTimeoutParameter
-	// default is disabled
-	return p == "enabled"
+	// default is enabled
+	return p != "disabled"
 }
 
 // JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.

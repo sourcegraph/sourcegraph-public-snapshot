@@ -12,6 +12,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * If a process dies inside the Sourcegraph container the whole container will shutdown. We suggest operators configure a [Docker Restart Policy](https://docs.docker.com/config/containers/start-containers-automatically/#restart-policy-details) or a [Kubernetes Restart Policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy). Previously the container would operate in a degraded mode if a process died.
 * Changes to the `auth.userIdentityHTTPHeader` site config are applied immediately in Sourcegraph Server (no restart needed).
 * Changes to the `auth.public` site config are applied immediately in Sourcegraph Server (no restart needed).
+* The new search timeout behavior is now enabled by default. Set `"experimentalFeatures": { "searchTimeoutParameter": "disabled"}` in site config to disable it.
 
 ### Fixed
 

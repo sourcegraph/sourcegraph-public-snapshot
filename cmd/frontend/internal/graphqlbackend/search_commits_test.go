@@ -33,7 +33,6 @@ func TestSearchCommitsInRepo(t *testing.T) {
 				"--no-prefix",
 				"--regexp-ignore-case",
 				"rev",
-				"--since=1 month ago",
 			}; !reflect.DeepEqual(opt.Args, want) {
 				t.Errorf("got %v, want %v", opt.Args, want)
 			}
