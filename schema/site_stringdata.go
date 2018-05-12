@@ -372,14 +372,32 @@ const SiteSchemaJSON = `{
     },
     "auth.provider": {
       "description":
-        "The authentication provider to use for identifying and signing in users. Defaults to built-in authentication.",
+        "The authentication provider to use for identifying and signing in users. Defaults to \"builtin\" authentication.\n\nDEPRECATED: Use \"auth.providers\" instead. During the deprecation period (before this property is removed), provider set here will be added as an entry in \"auth.providers\".",
       "default": "builtin",
       "type": "string",
       "enum": ["builtin", "openidconnect", "saml", "http-header"]
     },
+    "auth.providers": {
+      "description":
+        "The authentication providers to use for identifying and signing in users.\n\nOnly one authentication provider is supported. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "oneOf": [
+          { "$ref": "#/definitions/BuiltinAuthProvider" },
+          { "$ref": "#/definitions/SAMLAuthProvider" },
+          { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
+          { "$ref": "#/definitions/HTTPHeaderAuthProvider" }
+        ],
+        "!go": {
+          "taggedUnionType": true
+        }
+      }
+    },
     "auth.allowSignup": {
       "description":
-        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nSECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).\n\nRequires auth.provider == \"builtin\".",
+        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nSECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).\n\nRequires auth.provider == \"builtin\"\n\nDEPRECATED: Use \"auth.providers\" with an entry of the form {\"type\": \"builtin\", \"allowSignup\": true} instead.",
       "type": "boolean",
       "default": false
     },
@@ -391,7 +409,7 @@ const SiteSchemaJSON = `{
     },
     "auth.public": {
       "description":
-        "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires auth.provider == \"builtin\".",
+        "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires usage of the builtin authentication provider.",
       "type": "boolean",
       "default": false
     },
@@ -403,7 +421,7 @@ const SiteSchemaJSON = `{
     },
     "auth.userIdentityHTTPHeader": {
       "description":
-        "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".",
+        "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".\n\nDEPRECATED: Use \"auth.providers\" with an entry of the form {\"type\": \"http-header\", \"usernameHeader\": \"...\"} instead.",
       "type": "string"
     },
     "email.smtp": {

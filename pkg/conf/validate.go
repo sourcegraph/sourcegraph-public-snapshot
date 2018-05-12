@@ -77,7 +77,7 @@ func Validate(input string) (messages []string, err error) {
 		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 
-	customMessages, err := validateCustom(normalizedInput)
+	customMessages, err := validateCustomRaw(normalizedInput)
 	if err != nil {
 		return nil, err
 	}

@@ -76,6 +76,7 @@ func NewAuthMiddleware(ctx context.Context, appURL string) (*Middleware, error) 
 		openIDConnectAuthMiddleware,
 		samlAuthMiddleware,
 		&Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware},
+		&Middleware{API: forbidAllAuthMiddleware, App: forbidAllAuthMiddleware},
 	), nil
 }
 

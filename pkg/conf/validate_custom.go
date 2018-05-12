@@ -8,72 +8,87 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// validateCustom validates the site config using custom validation steps that are not
-// able to be expressed in the JSON Schema.
-func validateCustom(normalizedInput []byte) (validationErrors []string, err error) {
+func validateCustomRaw(normalizedInput []byte) (validationErrors []string, err error) {
 	var cfg schema.SiteConfiguration
 	if err := json.Unmarshal(normalizedInput, &cfg); err != nil {
 		return nil, err
 	}
+	return validateCustom(cfg)
+}
+
+// validateCustom validates the site config using custom validation steps that are not
+// able to be expressed in the JSON Schema.
+func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, err error) {
 
 	invalid := func(msg string) {
 		validationErrors = append(validationErrors, msg)
 	}
 
-	if cfg.AuthAllowSignup && cfg.AuthProvider != "builtin" {
-		invalid(fmt.Sprintf("auth.allowSignup requires auth.provider == \"builtin\" (got %q)", cfg.AuthProvider))
+	if cfg.AuthProvider != "" && len(cfg.AuthProviders) > 0 {
+		invalid(`auth.providers takes precedence over auth.provider (deprecated) when both are set (auth.provider is IGNORED in that case)`)
+	} else if cfg.AuthProvider != "" {
+		invalid(`auth.provider is deprecated; use auth.providers instead`)
+	}
+	if len(cfg.AuthProviders) >= 2 {
+		invalid(`auth.providers supports only a single entry (entries other than the first are IGNORED)`)
 	}
 
-	if cfg.AuthProvider == "openidconnect" && cfg.AppURL == "" {
-		invalid(`auth.provider == "openidconnect" requires appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+	authProvider := authProvider(&cfg)
+	if authProvider == (schema.AuthProviders{}) {
+		invalid("no auth provider set (all access will be forbidden)")
+	}
+	if cfg.AuthAllowSignup && authProvider.Builtin == nil {
+		invalid(fmt.Sprintf("auth.allowSignup requires auth provider \"builtin\" (got %q)", cfg.AuthProvider))
+	}
+
+	if (authProvider.Openidconnect != nil || authProvider.Saml != nil) && cfg.AppURL == "" {
+		invalid(`auth providers "openidconnect" and "saml" require appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
 	}
 
 	{
 		hasOldOIDC := cfg.OidcProvider != "" || cfg.OidcClientID != "" || cfg.OidcClientSecret != "" || cfg.OidcEmailDomain != ""
-		hasNewOIDC := cfg.AuthOpenIDConnect != nil
-		if hasOldOIDC && hasNewOIDC {
-			invalid(`both oidc* properties and auth.openIDConnect are set; preferring properties from the auth.openIDConnect object (oidc* properties are deprecated)`)
-		} else if hasOldOIDC {
-			invalid(`oidc* properties are deprecated; use auth.provider == "openidconnect" and the auth.openIDConnect object instead`)
-		} else if cfg.AuthProvider == "openidconnect" && !hasOldOIDC && !hasNewOIDC {
+		hasSingularOIDC := cfg.AuthOpenIDConnect != nil
+		if hasOldOIDC {
+			invalid(`oidc* properties are deprecated; use auth provider "openidconnect" instead`)
+		}
+		if cfg.AuthProvider == "openidconnect" && !hasSingularOIDC {
 			invalid(`auth.openIDConnect must be configured when auth.provider == "openidconnect"`)
 		}
 		if hasOldOIDC && cfg.AuthProvider != "openidconnect" {
 			invalid(`must set auth.provider == "openidconnect" for oidc* config to take effect (also, oidc* config is deprecated; see other message to that effect)`)
 		}
-		if hasNewOIDC && cfg.AuthProvider != "openidconnect" {
+		if hasSingularOIDC && cfg.AuthProvider != "openidconnect" {
 			invalid(`must set auth.provider == "openidconnect" for auth.openIDConnect config to take effect`)
 		}
 	}
 
-	if cfg.AuthOpenIDConnect != nil && cfg.AuthOpenIDConnect.OverrideToken != "" {
+	if authProvider.Openidconnect != nil && authProvider.Openidconnect.OverrideToken != "" {
 		invalid(`OpenID Connect auth provider "overrideToken" is deprecated (because it applies to all auth providers, not just OIDC); use OVERRIDE_AUTH_SECRET env var instead`)
 	}
 
 	{
 		hasOldSAML := cfg.SamlIDProviderMetadataURL != "" || cfg.SamlSPCert != "" || cfg.SamlSPKey != ""
-		hasNewSAML := cfg.AuthSaml != nil
-		if hasOldSAML && hasNewSAML {
-			invalid(`both saml* properties and auth.saml are set; preferring properties from the auth.saml object (saml* properties are deprecated)`)
-		} else if hasOldSAML {
-			invalid(`saml* properties are deprecated; use auth.provider == "saml" and the auth.saml object instead`)
-		} else if cfg.AuthProvider == "saml" && !hasOldSAML && !hasNewSAML {
+		hasSingularSAML := cfg.AuthSaml != nil
+		if hasOldSAML {
+			invalid(`saml* properties are deprecated; use auth provider "saml" instead`)
+		}
+		if cfg.AuthProvider == "saml" && !hasSingularSAML {
 			invalid(`auth.saml must be configured when auth.provider == "saml"`)
 		}
 		if hasOldSAML && cfg.AuthProvider != "saml" {
-			invalid(`must set auth.provider == "saml" for saml* config to take effect`)
+			invalid(`must set auth.provider == "saml" for saml* config to take effect (also, saml* config is deprecated; see other message to that effect)`)
 		}
-		if hasNewSAML && cfg.AuthProvider != "saml" {
+		if hasSingularSAML && cfg.AuthProvider != "saml" {
 			invalid(`must set auth.provider == "saml" for auth.saml config to take effect`)
 		}
 	}
 
 	{
-		hasNewAuthHTTPHeader := cfg.AuthUserIdentityHTTPHeader != ""
-		if cfg.AuthProvider == "http-header" && !hasNewAuthHTTPHeader {
+		hasSingularAuthHTTPHeader := cfg.AuthUserIdentityHTTPHeader != ""
+		if cfg.AuthProvider == "http-header" && !hasSingularAuthHTTPHeader {
 			invalid(`auth.userIdentityHTTPHeader must be configured when auth.provider == "http-header"`)
 		}
-		if hasNewAuthHTTPHeader && cfg.AuthProvider != "http-header" {
+		if hasSingularAuthHTTPHeader && cfg.AuthProvider != "http-header" {
 			invalid(`must set auth.provider == "http-header" for auth.userIdentityHTTPHeader config to take effect`)
 		}
 	}

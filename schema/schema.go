@@ -2,6 +2,12 @@
 
 package schema
 
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+)
+
 // AWSCodeCommitConnection
 type AWSCodeCommitConnection struct {
 	AccessKeyID                 string `json:"accessKeyID"`
@@ -9,6 +15,49 @@ type AWSCodeCommitConnection struct {
 	Region                      string `json:"region"`
 	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
 	SecretAccessKey             string `json:"secretAccessKey"`
+}
+
+// AuthProviders
+type AuthProviders struct {
+	Builtin       *BuiltinAuthProvider
+	Saml          *SAMLAuthProvider
+	Openidconnect *OpenIDConnectAuthProvider
+	HttpHeader    *HTTPHeaderAuthProvider
+}
+
+func (v AuthProviders) MarshalJSON() ([]byte, error) {
+	if v.Builtin != nil {
+		return json.Marshal(v.Builtin)
+	}
+	if v.Saml != nil {
+		return json.Marshal(v.Saml)
+	}
+	if v.Openidconnect != nil {
+		return json.Marshal(v.Openidconnect)
+	}
+	if v.HttpHeader != nil {
+		return json.Marshal(v.HttpHeader)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *AuthProviders) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "builtin":
+		return json.Unmarshal(data, &v.Builtin)
+	case "http-header":
+		return json.Unmarshal(data, &v.HttpHeader)
+	case "openidconnect":
+		return json.Unmarshal(data, &v.Openidconnect)
+	case "saml":
+		return json.Unmarshal(data, &v.Saml)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header"})
 }
 
 // BitbucketServerConnection
@@ -184,6 +233,7 @@ type SiteConfiguration struct {
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
 	AuthOpenIDConnect                 *OpenIDConnectAuthProvider   `json:"auth.openIDConnect,omitempty"`
 	AuthProvider                      string                       `json:"auth.provider,omitempty"`
+	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
 	AuthPublic                        bool                         `json:"auth.public,omitempty"`
 	AuthSaml                          *SAMLAuthProvider            `json:"auth.saml,omitempty"`
 	AuthUserIdentityHTTPHeader        string                       `json:"auth.userIdentityHTTPHeader,omitempty"`

@@ -1,5 +1,5 @@
 import { FormattingOptions } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { SlackNotificationsConfig } from '../schema/settings.schema'
 import {
     AwsCodeCommitConnection,
@@ -92,11 +92,9 @@ const addSSOViaGSuite: ConfigInsertionFunction = config => {
     }
     return {
         edits: [
-            ...setProperty(config, ['auth.provider'], 'openidconnect', defaultFormattingOptions),
-            ...setProperty(config, ['auth.openIDConnect'], value, defaultFormattingOptions),
-            ...setProperty(config, ['auth.allowSignup'], false, defaultFormattingOptions),
+            ...removeProperty(config, ['auth.provider'], defaultFormattingOptions),
+            ...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions),
         ],
-        selectText: '"auth.openIDConnect": {',
     }
 }
 
@@ -109,10 +107,9 @@ const addSSOViaSAML: ConfigInsertionFunction = config => {
     }
     return {
         edits: [
-            ...setProperty(config, ['auth.provider'], 'saml', defaultFormattingOptions),
-            ...setProperty(config, ['auth.saml'], value, defaultFormattingOptions),
+            ...removeProperty(config, ['auth.provider'], defaultFormattingOptions),
+            ...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions),
         ],
-        selectText: '"auth.saml": {',
     }
 }
 

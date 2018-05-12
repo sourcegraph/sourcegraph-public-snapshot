@@ -40,6 +40,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Java code intelligence can now be enabled for repositories that aren't automatically supported using a
   `javaconfig.json` file. For Gradle plugins, this file can be generated using
   the [Javaconfig Gradle plugin](https://about.sourcegraph.com/docs/code-intelligence/java#build-configuration).
+* The new `auth.providers` site config is an array of authentication provider objects. Currently only 1 auth provider is supported. The singular `auth.provider` is deprecated.
 
 ## 2.7.6
 
