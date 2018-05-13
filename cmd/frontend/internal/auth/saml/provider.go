@@ -23,8 +23,7 @@ import (
 // config changes so users don't incur the wait on the first auth flow request.
 func init() {
 	var (
-		first = true
-		init  = true
+		init = true
 
 		mu sync.Mutex
 		pc *schema.SAMLAuthProvider
@@ -39,9 +38,8 @@ func init() {
 			return
 		}
 
-		if first && !init {
+		if !init {
 			log15.Info("Reloading changed SAML authentication provider configuration.")
-			first = false
 		}
 		pc = newPC
 		if pc != nil {

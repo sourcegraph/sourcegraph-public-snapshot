@@ -14,8 +14,7 @@ import (
 // first auth flow request.
 func init() {
 	var (
-		first = true
-		init  = true
+		init = true
 
 		mu sync.Mutex
 		pc *schema.OpenIDConnectAuthProvider
@@ -30,9 +29,8 @@ func init() {
 			return
 		}
 
-		if first && !init {
+		if !init {
 			log15.Info("Reloading changed OpenID Connect authentication provider configuration.")
-			first = false
 		}
 		pc = newPC
 		if pc != nil {
