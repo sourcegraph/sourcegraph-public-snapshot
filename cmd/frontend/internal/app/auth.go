@@ -28,6 +28,10 @@ type credentials struct {
 
 // serveSignUp handles submission of the user signup form.
 func serveSignUp(w http.ResponseWriter, r *http.Request) {
+	if conf.AuthProvider().Builtin == nil {
+		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+		return
+	}
 	if !conf.Get().AuthAllowSignup {
 		http.Error(w, "Signup is not enabled (auth.allowSignup site configuration option)", http.StatusNotFound)
 		return
@@ -129,6 +133,11 @@ func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.U
 }
 
 func serveSignIn(w http.ResponseWriter, r *http.Request) {
+	if conf.AuthProvider().Builtin == nil {
+		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+		return
+	}
+
 	ctx := r.Context()
 
 	if r.Method != "POST" {
@@ -215,6 +224,10 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 
 // serveResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
 func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
+	if conf.AuthProvider().Builtin == nil {
+		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+		return
+	}
 	if !conf.CanSendEmail() {
 		httpLogAndError(w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
 		return
@@ -286,6 +299,11 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
 // serveResetPassword resets the password if the correct code is provided.
 func serveResetPassword(w http.ResponseWriter, r *http.Request) {
+	if conf.AuthProvider().Builtin == nil {
+		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+		return
+	}
+
 	ctx := r.Context()
 	var params struct {
 		Email    string `json:"email"`
