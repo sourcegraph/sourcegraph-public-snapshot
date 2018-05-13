@@ -27,7 +27,7 @@ func TestSetActorDeleteSession(t *testing.T) {
 
 	// Start new session
 	w := httptest.NewRecorder()
-	actr := &actor.Actor{UID: 123}
+	actr := &actor.Actor{UID: 123, FromSessionCookie: true}
 	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour); err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestSessionExpiry(t *testing.T) {
 
 	// Start new session
 	w := httptest.NewRecorder()
-	actr := &actor.Actor{UID: 123}
+	actr := &actor.Actor{UID: 123, FromSessionCookie: true}
 	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Second); err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestCookieMiddleware(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
-	actors := []*actor.Actor{{UID: 123}, {UID: 456}, {UID: 789}}
+	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
 
 	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		if id == actors[0].UID {

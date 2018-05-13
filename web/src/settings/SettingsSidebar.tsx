@@ -219,9 +219,9 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                     </NavLink>
                 </div>
             )}
-            {/* Hide sign out for SSO users. */}
             {!siteAdminViewingOtherUser &&
-                props.user.externalID === null && (
+                props.authenticatedUser.session &&
+                props.authenticatedUser.session.canSignOut && (
                     <div className="sidebar__item sidebar__action">
                         <a href="/-/sign-out" className="sidebar__action-button btn" onClick={logTelemetryOnSignOut}>
                             <SignOutIcon className="icon-inline sidebar__item-action-icon" />

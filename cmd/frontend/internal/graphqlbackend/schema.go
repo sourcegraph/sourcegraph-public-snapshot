@@ -1832,6 +1832,11 @@ type User implements Node, ConfigurationSubject {
     # Information about the user's accounts on external services that are associated with their Sourcegraph user
     # account.
     externalAccounts: [ExternalAccount!]!
+    # The user's currently active session.
+    #
+    # Only the currently authenticated user can access this field. Site admins are not able to access sessions for
+    # other users.
+    session: Session!
     # Whether the viewer has admin privileges on this user. The user has admin privileges on their own user, and
     # site admins have admin privileges on all users.
     viewerCanAdminister: Boolean!
@@ -1879,6 +1884,12 @@ type ExternalAccount {
     serviceUserID: String!
     # Whether the user can authenticate to Sourcegraph using this external account.
     canAuthenticate: Boolean!
+}
+
+# An active user session.
+type Session {
+    # Whether the user can sign out of this session on Sourcegraph.
+    canSignOut: Boolean!
 }
 
 # An organization membership.

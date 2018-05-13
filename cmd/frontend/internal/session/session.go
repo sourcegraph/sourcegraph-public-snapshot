@@ -301,6 +301,7 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 			}
 		}
 
+		info.Actor.FromSessionCookie = true
 		return actor.WithActor(r.Context(), info.Actor)
 	}
 

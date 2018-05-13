@@ -13,6 +13,11 @@ import (
 type Actor struct {
 	// UID is the unique ID of the authenticated user, or 0 for anonymous actors.
 	UID int32 `json:",omitempty"`
+
+	// FromSessionCookie is whether a session cookie was used to authenticate the actor. It is used
+	// to selectively display a logout link. (If the actor wasn't authenticated with a session
+	// cookie, logout would be ineffective.)
+	FromSessionCookie bool `json:"-"`
 }
 
 // FromUser returns an actor corresponding to a user
