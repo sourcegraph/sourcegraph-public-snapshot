@@ -55,6 +55,7 @@ const config: webpack.Configuration = {
         new webpack.IgnorePlugin(/^\.\/[^.]+.js$/, /\/node_modules\/monaco-editor\/esm\/vs\/basic-languages\/\w+$/),
         // Same for "advanced" languages
         new webpack.IgnorePlugin(/^\.\/.+$/, /\/node_modules\/monaco-editor\/esm\/vs\/language\/(?!json)/),
+        new webpack.IgnorePlugin(/\.flow$/, /.*/),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
