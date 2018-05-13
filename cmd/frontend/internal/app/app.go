@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
@@ -73,11 +72,4 @@ func NewHandler() http.Handler {
 	addDebugHandlers(r.Get(router.Debug).Subrouter())
 
 	return m
-}
-
-func serveSignOut(w http.ResponseWriter, r *http.Request) {
-	if err := session.DeleteSession(w, r); err != nil {
-		log15.Error("Error deleting session during signout.", "err", err)
-	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
