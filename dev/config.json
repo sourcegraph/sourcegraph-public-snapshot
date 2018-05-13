@@ -127,8 +127,10 @@
   },
   "corsOrigin": "https://github.com https://phabricator.sgdev.org",
   "auth.providers": [
-    { "type": "builtin", "allowSignup": true }
     // AUTHENTICATION
+    //
+    { "type": "builtin", "allowSignup": true }
+    //
     //
     // See dev/auth-provider/README.md for more information on how to use the Keycloak OpenID/SAML
     // auth provider for local dev.
