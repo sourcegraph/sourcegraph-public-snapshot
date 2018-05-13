@@ -1,5 +1,5 @@
 import { Observable, ReplaySubject } from 'rxjs'
-import { catchError, mergeMap, tap } from 'rxjs/operators'
+import { catchError, map, mergeMap, tap } from 'rxjs/operators'
 import { gql, queryGraphQL } from './backend/graphql'
 import * as GQL from './backend/graphqlschema'
 import { createAggregateError } from './util/errors'
@@ -62,6 +62,14 @@ export function refreshCurrentUser(): Observable<never> {
         }),
         mergeMap(() => [])
     )
+}
+
+/** Whether auth is required to perform any action. */
+export const authRequired = currentUser.pipe(map(user => user === null && !window.context.site['auth.public']))
+
+// Populate currentUser synchronously at page load time if possible.
+if (!window.context.user) {
+    currentUser.next(null)
 }
 
 refreshCurrentUser()

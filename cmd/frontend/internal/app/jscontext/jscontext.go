@@ -151,6 +151,7 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 	c := conf.Get()
 	return schema.SiteConfiguration{
 		AuthAllowSignup: c.AuthAllowSignup,
+		AuthPublic:      c.AuthPublic,
 	}
 }
 

@@ -78,6 +78,7 @@ interface SourcegraphContext {
      */
     site: {
         'auth.allowSignup': boolean
+        'auth.public': boolean
     }
 
     /** Whether access tokens are enabled. */
