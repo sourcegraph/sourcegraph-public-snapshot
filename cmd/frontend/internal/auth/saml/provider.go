@@ -12,7 +12,6 @@ import (
 	"github.com/crewjam/saml/samlsp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -54,7 +53,11 @@ func init() {
 }
 
 func getServiceProvider(pc *schema.SAMLAuthProvider) (*samlsp.Middleware, error) {
-	entityIDURL, err := url.Parse(globals.AppURL.String() + auth.AuthURLPrefix)
+	appURL, err := url.Parse(conf.Get().AppURL)
+	if err != nil {
+		return nil, errors.WithMessage(err, "parsing app URL for SAML service provider client")
+	}
+	entityIDURL, err := url.Parse(appURL.ResolveReference(&url.URL{Path: auth.AuthURLPrefix}).String())
 	if err != nil {
 		return nil, err
 	}
