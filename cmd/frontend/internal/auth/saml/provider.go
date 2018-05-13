@@ -99,5 +99,10 @@ func getServiceProvider(pc *schema.SAMLAuthProvider) (*samlsp.Middleware, error)
 	}
 	samlSP.ClientToken.(*samlsp.ClientCookies).Name = "sg-session"
 
+	// Cookie domains can't contain port numbers. Work around a bug in github.com/crewjam/saml where
+	// it uses appURL.Host (which includes the appURL's port number, if any, thereby causing warning
+	// messages like `net/http: invalid Cookie.Domain "localhost:3080"; dropping domain attribute`.
+	samlSP.ClientToken.(*samlsp.ClientCookies).Domain = appURL.Hostname()
+
 	return samlSP, nil
 }
