@@ -237,7 +237,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 			http.Error(w, "Error looking up OpenID-authenticated user. "+auth.CouldNotGetUserDescription, http.StatusInternalServerError)
 			return
 		}
-		if err := session.StartNewSession(w, r, actr, 0); err != nil {
+		if err := session.SetActor(w, r, actr, 0); err != nil {
 			log15.Error("Could not initiate session", "error", err)
 			http.Error(w, ssoErrMsg("Could not initiate session", err), http.StatusInternalServerError)
 			return

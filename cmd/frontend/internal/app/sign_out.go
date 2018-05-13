@@ -8,8 +8,8 @@ import (
 )
 
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
-	if err := session.DeleteSession(w, r); err != nil {
-		log15.Error("Error deleting session during signout.", "err", err)
+	if err := session.SetActor(w, r, nil, 0); err != nil {
+		log15.Error("Error in signout.", "err", err)
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-func TestStartDeleteSession(t *testing.T) {
+func TestSetActorDeleteSession(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -28,7 +28,7 @@ func TestStartDeleteSession(t *testing.T) {
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123}
-	if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour); err != nil {
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, 24*time.Hour); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -78,7 +78,7 @@ func TestStartDeleteSession(t *testing.T) {
 		authedReq2.AddCookie(cookie)
 	}
 	w = httptest.NewRecorder()
-	if err := DeleteSession(w, authedReq2); err != nil {
+	if err := deleteSession(w, authedReq2); err != nil {
 		t.Fatal(err)
 	}
 	// Check that the session cookie was deleted
@@ -98,15 +98,15 @@ func TestStartDeleteSession(t *testing.T) {
 		t.Fatalf("underlying session was not deleted: %+v != %+v", actor3, &actor.Actor{})
 	}
 
-	// Check that the cookie is deleted on the client when we call DeleteSession even if
+	// Check that the cookie is deleted on the client when we call deleteSession even if
 	// getting/saving the session failed.
 	authedReq4 := httptest.NewRequest("GET", "/", nil)
 	for _, cookie := range authCookies {
 		authedReq4.AddCookie(cookie)
 	}
 	w = httptest.NewRecorder()
-	if err := DeleteSession(w, authedReq2); err == nil {
-		t.Fatal("got no error from DeleteSession, want error (because we already deleted the session)")
+	if err := deleteSession(w, authedReq2); err == nil {
+		t.Fatal("got no error from deleteSession, want error (because we already deleted the session)")
 	}
 	checkCookieDeleted(t, w.Result())
 }
@@ -142,7 +142,7 @@ func TestSessionExpiry(t *testing.T) {
 	// Start new session
 	w := httptest.NewRecorder()
 	actr := &actor.Actor{UID: 123}
-	if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Second); err != nil {
+	if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Second); err != nil {
 		t.Fatal(err)
 	}
 	var authCookies []*http.Cookie
@@ -191,7 +191,7 @@ func TestCookieMiddleware(t *testing.T) {
 	authedReqs := make([]*http.Request, len(actors))
 	for i, actr := range actors {
 		w := httptest.NewRecorder()
-		if err := StartNewSession(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour); err != nil {
+		if err := SetActor(w, httptest.NewRequest("GET", "/", nil), actr, time.Hour); err != nil {
 			t.Fatal(err)
 		}
 

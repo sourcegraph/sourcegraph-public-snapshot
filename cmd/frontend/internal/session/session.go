@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -108,31 +109,56 @@ func waitForRedis(s *redistore.RediStore) {
 	}
 }
 
-// StartNewSession starts a new session with authentication for the given uid. If expiryPeriod is zero
-// the defaultExpiryPeriod value is used.
-func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiryPeriod time.Duration) error {
-	if expiryPeriod == 0 {
-		expiryPeriod = DefaultExpiryPeriod
-	}
-
-	if err := DeleteSession(w, r); err != nil {
-		log15.Error("Error deleting previous session when starting new session.", "err", err)
-	}
-
-	session, err := sessionStore.New(&http.Request{}, cookieName) // workaround: not passing the request forces a new session
+// SetData sets the session data at the key. The session data is a map of keys to values. If no
+// session exists, a new session is created.
+//
+// The value is JSON-encoded before being stored.
+func SetData(w http.ResponseWriter, r *http.Request, key string, value interface{}) error {
+	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
-		log15.Error("error creating session", "error", err)
+		return errors.WithMessage(err, "getting session")
 	}
-	actorJSON, err := json.Marshal(sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now()})
+	data, err := json.Marshal(value)
 	if err != nil {
-		return err
+		return errors.WithMessage(err, fmt.Sprintf("encoding JSON session data for %q", key))
 	}
-	session.Values["actor"] = actorJSON
-	if err = session.Save(r, w); err != nil {
-		log15.Error("error saving session", "error", err)
+	session.Values[key] = data
+	if err := session.Save(r, w); err != nil {
+		return errors.WithMessage(err, "saving session")
 	}
-
 	return nil
+}
+
+// GetData reads the session data at the key into the data structure addressed by value (which must
+// be a pointer).
+//
+// The value is JSON-decoded from the raw bytes stored by the call to SetData.
+func GetData(r *http.Request, key string, value interface{}) error {
+	session, err := sessionStore.Get(r, cookieName)
+	if err != nil {
+		return errors.WithMessage(err, "getting session")
+	}
+	if data, ok := session.Values[key]; ok {
+		if err := json.Unmarshal(data.([]byte), value); err != nil {
+			return errors.WithMessage(err, fmt.Sprintf("decoding JSON session data for %q", key))
+		}
+	}
+	return nil
+}
+
+// SetActor sets the actor in the session, or removes it if actor == nil. If no session exists, a
+// new session is created.
+//
+// If expiryPeriod is 0, the default expiry period is used.
+func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiryPeriod time.Duration) error {
+	var value *sessionInfo
+	if actor != nil {
+		if expiryPeriod == 0 {
+			expiryPeriod = DefaultExpiryPeriod
+		}
+		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now()}
+	}
+	return SetData(w, r, "actor", value)
 }
 
 func hasSessionCookie(r *http.Request) bool {
@@ -140,9 +166,12 @@ func hasSessionCookie(r *http.Request) bool {
 	return c != nil
 }
 
-// DeleteSession deletes the current session. If an error occurs, it returns the error but does not
+// deleteSession deletes the current session. If an error occurs, it returns the error but does not
 // write an HTTP error response.
-func DeleteSession(w http.ResponseWriter, r *http.Request) error {
+//
+// It should only be used when there is an unrecoverable, permanent error in the session data. To
+// sign out the current user, use SetActor(r, nil).
+func deleteSession(w http.ResponseWriter, r *http.Request) error {
 	if !hasSessionCookie(r) {
 		return nil // nothing to do
 	}
@@ -233,35 +262,28 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 			// Delete the session cookie to avoid confusion. (This occurs most often when switching
 			// the auth provider to http-header; in that case, we want to rely on the http-header
 			// auth provider for auth, not the user's old session.
-			_ = DeleteSession(w, r)
+			_ = deleteSession(w, r)
 		}
 		return r.Context() // unchanged
 	}
 
-	session, err := sessionStore.Get(r, cookieName)
-	if err != nil {
-		log15.Error("error getting session", "error", err)
+	var info *sessionInfo
+	if err := GetData(r, "actor", &info); err != nil {
+		log15.Error("Error reading session actor.", "err", err)
+		_ = deleteSession(w, r) // clear the bad value
 		return r.Context()
 	}
-
-	if actorJSON, ok := session.Values["actor"]; ok {
-		var info sessionInfo
-		if err := json.Unmarshal(actorJSON.([]byte), &info); err != nil {
-			log15.Error("error unmarshalling actor", "error", err)
-			_ = DeleteSession(w, r) // clear the bad value
-			return r.Context()
-		}
-
+	if info != nil {
 		// Check expiry
 		if info.LastActive.Add(info.ExpiryPeriod).Before(time.Now()) {
-			_ = DeleteSession(w, r) // clear the bad value
+			_ = deleteSession(w, r) // clear the bad value
 			return actor.WithActor(r.Context(), &actor.Actor{})
 		}
 
 		// Check that user still exists.
 		if _, err := db.Users.GetByID(r.Context(), info.Actor.UID); err != nil {
 			if errcode.IsNotFound(err) {
-				_ = DeleteSession(w, r) // clear the bad value
+				_ = deleteSession(w, r) // clear the bad value
 			} else {
 				// Don't delete session, since the error might be an ephemeral DB error, and we don't
 				// want that to cause all active users to be signed out.
@@ -273,14 +295,8 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		// Renew session
 		if time.Now().Sub(info.LastActive) > 5*time.Minute {
 			info.LastActive = time.Now()
-			newActorJSON, err := json.Marshal(info)
-			if err != nil {
+			if err := SetData(w, r, "actor", info); err != nil {
 				log15.Error("error renewing session", "error", err)
-				return r.Context()
-			}
-			session.Values["actor"] = newActorJSON
-			if err := session.Save(r, w); err != nil {
-				log15.Error("error saving session", "error", err)
 				return r.Context()
 			}
 		}

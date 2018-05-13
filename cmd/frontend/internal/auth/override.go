@@ -37,7 +37,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 			}
 
 			a := actor.FromUser(userID)
-			if err := session.StartNewSession(w, r, a, 0); err != nil {
+			if err := session.SetActor(w, r, a, 0); err != nil {
 				log15.Error("Error starting anonymous session.", "error", err)
 				http.Error(w, "error starting anonymous session", http.StatusInternalServerError)
 				return
