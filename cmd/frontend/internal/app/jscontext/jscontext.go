@@ -129,7 +129,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		SiteID:              siteID,
 		ShowOnboarding:      showOnboarding,
 		EmailEnabled:        conf.CanSendEmail(),
-		Site:                publicSiteConfiguration,
+		Site:                publicSiteConfiguration(),
 		LikelyDockerOnMac:   likelyDockerOnMac(),
 		NeedServerRestart:   conf.NeedServerRestart(),
 		IsRunningDataCenter: os.Getenv("GOREMAN_RPC_ADDR") == "",
@@ -147,8 +147,11 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 // publicSiteConfiguration is the subset of the site.schema.json site configuration
 // that is necessary for the web app and is not sensitive/secret.
-var publicSiteConfiguration = schema.SiteConfiguration{
-	AuthAllowSignup: conf.GetTODO().AuthAllowSignup,
+func publicSiteConfiguration() schema.SiteConfiguration {
+	c := conf.Get()
+	return schema.SiteConfiguration{
+		AuthAllowSignup: c.AuthAllowSignup,
+	}
 }
 
 var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
