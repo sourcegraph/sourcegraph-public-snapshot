@@ -135,17 +135,6 @@ func StartNewSession(w http.ResponseWriter, r *http.Request, actor *actor.Actor,
 	return nil
 }
 
-// ignoreSessionCookieError reports whether session cookie errors should be ignored and not
-// logged. It is true iff the auth provider is SAML because SAML's cookies have the same name
-// (sg-session) but are actually SAML-specific JSON Web Tokens (JWTs) that are not validated using
-// our own session store. Therefore they always produce an error.
-//
-// TODO(sqs): Make it so that our SAML cookies use a different name (and do this without logging
-// all SAML users out).
-func ignoreSessionCookieError() bool {
-	return conf.AuthProvider().Saml != nil
-}
-
 func hasSessionCookie(r *http.Request) bool {
 	c, _ := r.Cookie(cookieName)
 	return c != nil
@@ -227,6 +216,16 @@ func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, i
 }
 
 func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
+	if conf.AuthProvider().Saml != nil {
+		// Skip session cookie because when SAML is used, the "sg-session" cookie actually contains
+		// a SAML-specific JWT, which is completely different from our session cookie and is not
+		// validated by our session store.
+		//
+		// TODO(sqs): Make it so that our SAML cookies use a different name (and do this without logging
+		// all SAML users out).
+		return r.Context()
+	}
+
 	// If the request is already authenticated, then do not clobber the request's existing
 	// authenticated actor with the actor (if any) derived from the session cookie.
 	if actor.FromContext(r.Context()).IsAuthenticated() {
@@ -241,9 +240,7 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
-		if !ignoreSessionCookieError() {
-			log15.Error("error getting session", "error", err)
-		}
+		log15.Error("error getting session", "error", err)
 		return r.Context()
 	}
 
