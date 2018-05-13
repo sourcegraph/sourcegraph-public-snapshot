@@ -237,9 +237,25 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 			http.Error(w, "Error looking up OpenID-authenticated user. "+auth.CouldNotGetUserDescription, http.StatusInternalServerError)
 			return
 		}
-		if err := session.SetActor(w, r, actr, 0); err != nil {
+
+		var exp time.Duration
+		if !idToken.Expiry.IsZero() {
+			exp = time.Until(idToken.Expiry)
+		}
+		if err := session.SetActor(w, r, actr, exp); err != nil {
 			log15.Error("Could not initiate session", "error", err)
 			http.Error(w, ssoErrMsg("Could not initiate session", err), http.StatusInternalServerError)
+			return
+		}
+
+		data := sessionData{
+			Issuer:   pc.Issuer,
+			ClientID: pc.ClientID,
+			Token:    oauth2Token,
+		}
+		if err := session.SetData(w, r, sessionKey, data); err != nil {
+			log15.Error("Failed to set OpenID Connect session data.", "error", err)
+			http.Error(w, "Unexpected error initiating OpenID Connect session.", http.StatusInternalServerError)
 			return
 		}
 

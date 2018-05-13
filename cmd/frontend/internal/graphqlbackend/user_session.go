@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 func (r *userResolver) Session(ctx context.Context) (*sessionResolver, error) {
@@ -16,7 +17,7 @@ func (r *userResolver) Session(ctx context.Context) (*sessionResolver, error) {
 	}
 
 	var sr sessionResolver
-	sr.canSignOut = r.user.ExternalID == nil && actor.FromSessionCookie
+	sr.canSignOut = (r.user.ExternalID == nil || (conf.AuthProvider().Openidconnect != nil && r.user.ExternalID != nil)) && actor.FromSessionCookie
 	return &sr, nil
 }
 
