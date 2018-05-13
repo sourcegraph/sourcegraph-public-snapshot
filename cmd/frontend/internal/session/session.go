@@ -44,6 +44,7 @@ func SetSessionStore(s sessions.Store) {
 	sessionStore = s
 }
 
+// NewRedisStore creates a new session store backed by Redis.
 func NewRedisStore(secureCookie bool) sessions.Store {
 	if sessionStoreRedis == "" {
 		sessionStoreRedis = ":6379"
