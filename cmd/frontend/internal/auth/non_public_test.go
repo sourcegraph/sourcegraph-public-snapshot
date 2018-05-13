@@ -112,8 +112,8 @@ func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 			setAllowedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { allowed = true })
 
 			handler := http.NewServeMux()
-			handler.Handle("/.api/", requireAuthMiddleware.API(setAllowedHandler))
-			handler.Handle("/", requireAuthMiddleware.App(setAllowedHandler))
+			handler.Handle("/.api/", RequireAuthMiddleware.API(setAllowedHandler))
+			handler.Handle("/", RequireAuthMiddleware.App(setAllowedHandler))
 			handler.ServeHTTP(rec, tst.req)
 
 			if allowed != tst.allowed {

@@ -1,4 +1,4 @@
-package auth
+package saml
 
 import (
 	"context"
@@ -8,30 +8,31 @@ import (
 
 	"github.com/crewjam/saml/samlsp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// samlAuthMiddleware is middleware for SAML authentication, adding endpoints under the auth
-// path prefix to enable the login flow an requiring login for all other endpoints.
+// Middleware is middleware for SAML authentication, adding endpoints under the auth path prefix to
+// enable the login flow an requiring login for all other endpoints.
 //
 // 🚨 SECURITY
-var samlAuthMiddleware = &Middleware{
+var Middleware = &auth.Middleware{
 	API: func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			samlAuthHandler(w, r, next, true)
+			authHandler(w, r, next, true)
 		})
 	},
 	App: func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			samlAuthHandler(w, r, next, false)
+			authHandler(w, r, next, false)
 		})
 	},
 }
 
-func samlAuthHandler(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+func authHandler(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Check the SAML auth provider configuration.
 	pc := conf.AuthProvider().Saml
 	if pc != nil && (pc.ServiceProviderCertificate == "" || pc.ServiceProviderPrivateKey == "") {
@@ -47,7 +48,7 @@ func samlAuthHandler(w http.ResponseWriter, r *http.Request, next http.Handler, 
 	}
 
 	// Otherwise, we need to use SAML.
-	samlSP, err := samlCache.get(*pc)
+	samlSP, err := cache.get(*pc)
 	if err != nil {
 		log15.Error("Error getting SAML service provider.", "error", err)
 		http.Error(w, "unexpected error in SAML authentication provider", http.StatusInternalServerError)
@@ -56,7 +57,7 @@ func samlAuthHandler(w http.ResponseWriter, r *http.Request, next http.Handler, 
 
 	if !isAPIRequest {
 		// Delegate to SAML ACS and metadata endpoint handlers.
-		if strings.HasPrefix(r.URL.Path, authURLPrefix+"/saml/") {
+		if strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
 			samlSP.ServeHTTP(w, r)
 			return
 		}
@@ -78,7 +79,7 @@ func samlAuthHandler(w http.ResponseWriter, r *http.Request, next http.Handler, 
 		samlActor, err := getActorFromSAML(r.Context(), idpID)
 		if err != nil {
 			log15.Error("Error looking up SAML-authenticated user.", "error", err)
-			http.Error(w, "Error looking up SAML-authenticated user. "+couldNotGetUserDescription, http.StatusInternalServerError)
+			http.Error(w, "Error looking up SAML-authenticated user. "+auth.CouldNotGetUserDescription, http.StatusInternalServerError)
 			return
 		}
 
@@ -124,12 +125,12 @@ func getActorFromSAML(ctx context.Context, idpID string) (*actor.Actor, error) {
 	if login == "" {
 		return nil, fmt.Errorf("could not create user, because SAML assertion did not contain email attribute statement")
 	}
-	login, err := NormalizeUsername(login)
+	login, err := auth.NormalizeUsername(login)
 	if err != nil {
 		return nil, err
 	}
 
-	userID, err := createOrUpdateUser(ctx, db.NewUser{
+	userID, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
 		ExternalProvider: idpID,
 		ExternalID:       externalID,
 		Username:         login,

@@ -12,7 +12,7 @@ import (
 )
 
 func TestForbidAllMiddleware(t *testing.T) {
-	handler := forbidAllAuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := ForbidAllAuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "hello")
 	}))
 

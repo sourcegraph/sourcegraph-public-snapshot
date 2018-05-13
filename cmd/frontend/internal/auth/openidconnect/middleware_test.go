@@ -1,4 +1,4 @@
-package auth
+package openidconnect
 
 import (
 	"bytes"
@@ -166,8 +166,8 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", openIDConnectAuthMiddleware.API(requireAuthenticatedActor(t)))
-	authedHandler.Handle("/", openIDConnectAuthMiddleware.App(requireAuthenticatedActor(t)))
+	authedHandler.Handle("/.api/", Middleware.API(requireAuthenticatedActor(t)))
+	authedHandler.Handle("/", Middleware.App(requireAuthenticatedActor(t)))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -248,7 +248,7 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: oidcStateCookieName, Value: validState}}, false)
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: stateCookieName, Value: validState}}, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
@@ -305,7 +305,7 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	authedHandler := openIDConnectAuthMiddleware.App(requireAuthenticatedActor(t))
+	authedHandler := Middleware.App(requireAuthenticatedActor(t))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -318,12 +318,20 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 	}
 
 	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", []*http.Cookie{{Name: oidcStateCookieName, Value: state}})
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", []*http.Cookie{{Name: stateCookieName, Value: state}})
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 		if got, want := resp.Header.Get("Location"), "/"; got != want {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		} // Redirect to "/", NOT "http://evil.com"
+	})
+}
+
+func requireAuthenticatedActor(t *testing.T) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !actor.FromContext(r.Context()).IsAuthenticated() {
+			t.Errorf("unauthenticated actor requested %s", r.URL)
+		}
 	})
 }

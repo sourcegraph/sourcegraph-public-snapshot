@@ -1,4 +1,4 @@
-package auth
+package openidconnect
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -23,7 +24,7 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-const oidcStateCookieName = "sg-oidc-state"
+const stateCookieName = "sg-oidc-state"
 
 type UserClaims struct {
 	Name              string `json:"name"`
@@ -33,8 +34,8 @@ type UserClaims struct {
 	Picture           string `json:"picture"`
 }
 
-// openIDConnectAuthMiddleware is middleware for OpenID Connect (OIDC) authentication, adding endpoints
-// under the auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
+// Middleware is middleware for OpenID Connect (OIDC) authentication, adding endpoints under the
+// auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
 //
 // The OIDC spec (http://openid.net/specs/openid-connect-core-1_0.html) describes an authentication protocol
 // that involves 3 parties: the Relying Party (e.g., Sourcegraph), the OpenID Provider (e.g., Okta, OneLogin,
@@ -46,7 +47,7 @@ type UserClaims struct {
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-var openIDConnectAuthMiddleware = &Middleware{
+var Middleware = &auth.Middleware{
 	API: func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			handleOpenIDConnectAuth(w, r, next, true)
@@ -58,8 +59,6 @@ var openIDConnectAuthMiddleware = &Middleware{
 		})
 	},
 }
-
-type openIDConnectHTTPHandlerFunc func(http.ResponseWriter, *http.Request, *schema.OpenIDConnectAuthProvider)
 
 // handleOpenIDConnectAuth performs OpenID Connect authentication (if configured) for HTTP requests,
 // both API requests and non-API requests.
@@ -88,8 +87,8 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 
 	// Delegate to the OpenID Connect login handler to handle the OIDC Authentication Code Flow
 	// callback.
-	if strings.HasPrefix(r.URL.Path, authURLPrefix+"/") {
-		oidcLoginHandler(w, r, pc)
+	if strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/") {
+		loginHandler(w, r, pc)
 		return
 	}
 
@@ -97,15 +96,15 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 	// Connect login flow.
 	redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
 	query := url.Values(map[string][]string{"redirect": {redirectURL.String()}})
-	http.Redirect(w, r, authURLPrefix+"/login?"+query.Encode(), http.StatusFound)
+	http.Redirect(w, r, auth.AuthURLPrefix+"/login?"+query.Encode(), http.StatusFound)
 }
 
-// oidcLoginHandler handles the OIDC Authentication Code Flow
+// loginHandler handles the OIDC Authentication Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func oidcLoginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConnectAuthProvider) {
-	provider, err := oidcCache.get(pc.Issuer)
+func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConnectAuthProvider) {
+	provider, err := cache.get(pc.Issuer)
 	if err != nil {
 		log15.Error("Error getting OpenID Connect provider metadata.", "issuer", pc.Issuer, "error", err)
 		http.Error(w, "unexpected error in OpenID Connect authentication provider", http.StatusInternalServerError)
@@ -115,13 +114,13 @@ func oidcLoginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDC
 	oauth2Config := oauth2.Config{
 		ClientID:     pc.ClientID,
 		ClientSecret: pc.ClientSecret,
-		RedirectURL:  fmt.Sprintf("%s%s/%s", globals.AppURL.String(), authURLPrefix, "callback"),
+		RedirectURL:  fmt.Sprintf("%s%s/%s", globals.AppURL.String(), auth.AuthURLPrefix, "callback"),
 		Endpoint:     provider.Endpoint(),
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 	verifier := provider.Verifier(&oidc.Config{ClientID: pc.ClientID})
 
-	switch strings.TrimPrefix(r.URL.Path, authURLPrefix) {
+	switch strings.TrimPrefix(r.URL.Path, auth.AuthURLPrefix) {
 	case "/login":
 		// Endpoint that starts the Authentication Request Code Flow.
 
@@ -131,7 +130,7 @@ func oidcLoginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDC
 		//
 		// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
 		state := (&authnState{CSRFToken: csrf.Token(r), Redirect: r.URL.Query().Get("redirect")}).Encode()
-		http.SetCookie(w, &http.Cookie{Name: oidcStateCookieName, Value: state, Expires: time.Now().Add(time.Minute * 15)})
+		http.SetCookie(w, &http.Cookie{Name: stateCookieName, Value: state, Expires: time.Now().Add(time.Minute * 15)})
 
 		// Redirect to the OP's Authorization Endpoint for authentication. The nonce is an optional
 		// string value used to associate a Client session with an ID Token and to mitigate replay attacks.
@@ -157,7 +156,7 @@ func oidcLoginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDC
 			http.Error(w, ssoErrMsg("No OIDC state query parameter specified", ""), http.StatusBadRequest)
 			return
 		}
-		stateCookie, err := r.Cookie(oidcStateCookieName)
+		stateCookie, err := r.Cookie(stateCookieName)
 		if err == http.ErrNoCookie {
 			log15.Error("No OIDC state cookie found - possible request forgery", "error", err)
 			http.Error(w, ssoErrMsg("No OIDC state cookie found", "possible request forgery"), http.StatusBadRequest)
@@ -235,7 +234,7 @@ func oidcLoginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDC
 		actr, err := getActor(ctx, idToken, userInfo, &claims)
 		if err != nil {
 			log15.Error("Error looking up OpenID-authenticated user.", "error", err)
-			http.Error(w, "Error looking up OpenID-authenticated user. "+couldNotGetUserDescription, http.StatusInternalServerError)
+			http.Error(w, "Error looking up OpenID-authenticated user. "+auth.CouldNotGetUserDescription, http.StatusInternalServerError)
 			return
 		}
 		if err := session.StartNewSession(w, r, actr, 0); err != nil {
@@ -285,12 +284,12 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 			displayName = login
 		}
 	}
-	login, err := NormalizeUsername(login)
+	login, err := auth.NormalizeUsername(login)
 	if err != nil {
 		return nil, err
 	}
 
-	userID, err := createOrUpdateUser(ctx, db.NewUser{
+	userID, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
 		ExternalProvider: provider,
 		ExternalID:       externalID,
 		Username:         login,

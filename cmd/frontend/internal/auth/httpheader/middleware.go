@@ -1,8 +1,9 @@
-package auth
+package httpheader
 
 import (
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -14,17 +15,17 @@ const (
 	UserProviderHTTPHeader = "http-header"
 )
 
-// httpHeaderAuthMiddleware is middleware that checks for an HTTP header from an auth proxy that
-// specifies the client's authenticated username. It's for use with auth proxies like
+// Middleware is middleware that checks for an HTTP header from an auth proxy that specifies the
+// client's authenticated username. It's for use with auth proxies like
 // https://github.com/bitly/oauth2_proxy and is configured with the auth.provider=="http-header"
 // site config setting.
 //
 // TESTING: Use the testproxy test program to test HTTP auth proxy behavior. For example, run `go
-// run cmd/frontend/internal/auth/testproxy.go -username=alice` then go to
+// run cmd/frontend/internal/auth/httpheader/testproxy.go -username=alice` then go to
 // http://localhost:4080. See `-h` for flag help.
 //
 // 🚨 SECURITY
-func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
+func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authProvider := conf.AuthProvider()
 		if authProvider.HttpHeader == nil {
@@ -54,13 +55,13 @@ func httpHeaderAuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Otherwise, get or create the user and proceed with the authenticated request.
-		username, err := NormalizeUsername(headerValue)
+		username, err := auth.NormalizeUsername(headerValue)
 		if err != nil {
 			log15.Error("Error normalizing username from HTTP auth proxy.", "username", headerValue, "err", err)
 			http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 			return
 		}
-		userID, err := createOrUpdateUser(r.Context(), db.NewUser{
+		userID, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{
 			ExternalProvider: UserProviderHTTPHeader,
 			// Store headerValue, not normalized username, to prevent two users with distinct
 			// pre-normalization usernames from being merged into the same normalized username

@@ -7,7 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-func createOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser) (userID int32, err error) {
+// CreateOrUpdateUser creates or updates a user using the provided information.
+func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser) (userID int32, err error) {
 	usr, err := db.Users.GetByExternalID(ctx, newOrUpdatedUser.ExternalProvider, newOrUpdatedUser.ExternalID)
 	if errcode.IsNotFound(err) {
 		usr, err = db.Users.Create(ctx, newOrUpdatedUser)

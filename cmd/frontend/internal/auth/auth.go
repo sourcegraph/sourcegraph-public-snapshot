@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// authURLPrefix is the URL path prefix under which to attach authentication handlers
-const authURLPrefix = "/.auth"
+// AuthURLPrefix is the URL path prefix under which to attach authentication handlers
+const AuthURLPrefix = "/.auth"
 
 // Middleware groups two related middlewares (one for the API, one for the app).
 type Middleware struct {
@@ -19,19 +19,8 @@ type Middleware struct {
 	App func(http.Handler) http.Handler
 }
 
-// Middlewares are the authentication middlewares. It is the composition of middleware for each
-// authentication provider. Each middleware determines on a per-request basis whether it should be
-// enabled (if not, it immediately delegates the request to the next middleware in the chain).
-var Middlewares = composeMiddleware(
-	requireAuthMiddleware,
-	openIDConnectAuthMiddleware,
-	samlAuthMiddleware,
-	&Middleware{API: httpHeaderAuthMiddleware, App: httpHeaderAuthMiddleware},
-	&Middleware{API: forbidAllAuthMiddleware, App: forbidAllAuthMiddleware},
-)
-
-// composeMiddleware returns a new Middleware that composes the middlewares together.
-func composeMiddleware(middlewares ...*Middleware) *Middleware {
+// ComposeMiddleware returns a new Middleware that composes the middlewares together.
+func ComposeMiddleware(middlewares ...*Middleware) *Middleware {
 	return &Middleware{
 		API: func(h http.Handler) http.Handler {
 			for _, m := range middlewares {
@@ -72,4 +61,4 @@ func NormalizeUsername(name string) (string, error) {
 
 var disallowedCharacter = regexp.MustCompile(`[^a-zA-Z0-9\-]`)
 
-const couldNotGetUserDescription = "This occurs most frequently when there is an existing user account with the same username or email that was created from a different authentication provider."
+const CouldNotGetUserDescription = "This occurs most frequently when there is an existing user account with the same username or email that was created from a different authentication provider."

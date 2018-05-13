@@ -1,4 +1,4 @@
-package auth
+package saml
 
 import (
 	"bytes"
@@ -182,12 +182,12 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", samlAuthMiddleware.API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authedHandler.Handle("/.api/", Middleware.API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID {
 			t.Errorf("got actor UID %d, want %d", uid, mockedUserID)
 		}
 	})))
-	authedHandler.Handle("/", samlAuthMiddleware.App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	authedHandler.Handle("/", Middleware.App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
 			w.Write([]byte("This is the home"))
@@ -358,4 +358,14 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 			t.Errorf("wrong status code: got %v, want %v", got, want)
 		}
 	})
+}
+
+// unexpiredCookies returns the list of unexpired cookies set by the response
+func unexpiredCookies(resp *http.Response) (cookies []*http.Cookie) {
+	for _, cookie := range resp.Cookies() {
+		if cookie.RawExpires == "" || cookie.Expires.After(time.Now()) {
+			cookies = append(cookies, cookie)
+		}
+	}
+	return
 }

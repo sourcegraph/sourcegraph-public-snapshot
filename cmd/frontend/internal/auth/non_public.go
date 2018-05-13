@@ -12,14 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-// requireAuthMiddleware is a middleware that requires authentication for all HTTP requests, except
+// RequireAuthMiddleware is a middleware that requires authentication for all HTTP requests, except
 // those whitelisted by allowAnonymousRequest. It's used when auth.public == false.
 //
 // It is enabled for all auth providers, but an auth provider may reject or redirect the user to its
 // own auth flow before the request reaches here.
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits.
-var requireAuthMiddleware = &Middleware{
+var RequireAuthMiddleware = &Middleware{
 	API: func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// If an anonymous user tries to access an API endpoint that requires authentication,

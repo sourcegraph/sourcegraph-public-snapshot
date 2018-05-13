@@ -1,4 +1,4 @@
-package auth
+package httpheader
 
 import (
 	"context"
@@ -15,10 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// SEE ALSO FOR MANUAL TESTING: See the httpHeaderAuthMiddleware docstring for information about the
-// testproxy helper program, which helps with manual testing of the HTTP auth proxy behavior.
-func Test_httpHeaderAuthMiddleware(t *testing.T) {
-	handler := httpHeaderAuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// SEE ALSO FOR MANUAL TESTING: See the Middleware docstring for information about the testproxy
+// helper program, which helps with manual testing of the HTTP auth proxy behavior.
+func TestMiddleware(t *testing.T) {
+	handler := Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
 		if actor.IsAuthenticated() {
 			fmt.Fprintf(w, "user %v", actor.UID)

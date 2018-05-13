@@ -1,4 +1,4 @@
-package auth
+package saml
 
 import (
 	"crypto/rsa"
@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"reflect"
 	"sync"
-	"time"
 
 	"github.com/crewjam/saml/samlsp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -25,12 +25,12 @@ func init() {
 	var (
 		first = true
 
-		samlMu sync.Mutex
-		pc     *schema.SAMLAuthProvider
+		mu sync.Mutex
+		pc *schema.SAMLAuthProvider
 	)
 	conf.Watch(func() {
-		samlMu.Lock()
-		defer samlMu.Unlock()
+		mu.Lock()
+		defer mu.Unlock()
 
 		// Only react when the config changes.
 		newPC := conf.AuthProvider().Saml
@@ -45,7 +45,7 @@ func init() {
 		pc = newPC
 		if pc != nil {
 			go func(pc schema.SAMLAuthProvider) {
-				if _, err := samlCache.get(pc); err != nil {
+				if _, err := cache.get(pc); err != nil {
 					log15.Error("Error prefetching SAML service provider metadata.", "error", err)
 				}
 			}(*pc)
@@ -53,64 +53,8 @@ func init() {
 	})
 }
 
-// samlCache is the singleton SAML service provider metadata cache.
-var samlCache samlProviderCache
-
-// samlProviderCache caches SAML service provider metadata (which is retrieved using the site config
-// for the provider).
-type samlProviderCache struct {
-	mu   sync.Mutex
-	data map[schema.SAMLAuthProvider]*samlProviderCacheEntry // auth provider config -> entry
-}
-
-type samlProviderCacheEntry struct {
-	once    sync.Once
-	val     *samlsp.Middleware
-	err     error
-	expires time.Time
-}
-
-// get gets the SAML service provider with the specified config. If the service provider is cached,
-// it returns it from the cache; otherwise it performs a network request to look up the provider. At
-// most one network request will be in flight for a given provider config; later requests block on
-// the original request.
-func (c *samlProviderCache) get(pc schema.SAMLAuthProvider) (*samlsp.Middleware, error) {
-	c.mu.Lock()
-	if c.data == nil {
-		c.data = map[schema.SAMLAuthProvider]*samlProviderCacheEntry{}
-	}
-	e, ok := c.data[pc]
-	if !ok || time.Now().After(e.expires) {
-		e = &samlProviderCacheEntry{}
-		c.data[pc] = e
-	}
-	c.mu.Unlock()
-
-	fetched := false // whether it was fetched in *this* func call
-	e.once.Do(func() {
-		e.val, e.err = getSAMLServiceProvider(&pc)
-		e.err = errors.WithMessage(e.err, "retrieving SAML SP metadata from issuer")
-		fetched = true
-
-		var ttl time.Duration
-		if e.err == nil {
-			ttl = 5 * time.Minute
-		} else {
-			ttl = 5 * time.Second
-		}
-		e.expires = time.Now().Add(ttl)
-	})
-
-	err := e.err
-	if !fetched {
-		err = errors.WithMessage(err, "(cached error)") // make debugging easier
-	}
-
-	return e.val, err
-}
-
-func getSAMLServiceProvider(pc *schema.SAMLAuthProvider) (*samlsp.Middleware, error) {
-	entityIDURL, err := url.Parse(globals.AppURL.String() + authURLPrefix)
+func getServiceProvider(pc *schema.SAMLAuthProvider) (*samlsp.Middleware, error) {
+	entityIDURL, err := url.Parse(globals.AppURL.String() + auth.AuthURLPrefix)
 	if err != nil {
 		return nil, err
 	}

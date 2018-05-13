@@ -24,7 +24,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 		secret := getOverrideAuthSecret()
 		// Accept both old header (X-Oidc-Override, deprecated) and new overrideHeader for now.
 		if secret != "" && (r.Header.Get("X-Oidc-Override") == secret || r.Header.Get(overrideHeader) == secret) {
-			userID, err := createOrUpdateUser(r.Context(), db.NewUser{
+			userID, err := CreateOrUpdateUser(r.Context(), db.NewUser{
 				ExternalProvider: "override",
 				ExternalID:       "anon-user",
 				Username:         "anon-user",
