@@ -92,9 +92,7 @@
   },
   "langservers": [
     {
-      "address": "tcp://localhost:4389",
-      "language": "go"
-    }
+      "address": "tcp://localhost:4389"    }
   ],
   "update.channel": "release",
   "settings": {
