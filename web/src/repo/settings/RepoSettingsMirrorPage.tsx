@@ -69,7 +69,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         if (this.props.repo.mirrorInfo.cloneInProgress) {
             title = 'Cloning in progress...'
             description =
-                this.props.repo.mirrorInfo.cloneProgress ||
+                <code>{this.props.repo.mirrorInfo.cloneProgress}</code> ||
                 'This repository is currently being cloned from its remote repository.'
             buttonLabel = (
                 <span>

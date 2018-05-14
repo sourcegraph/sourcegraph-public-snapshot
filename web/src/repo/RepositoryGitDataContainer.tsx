@@ -20,7 +20,7 @@ export const RepositoryCloningInProgressPage: React.SFC<{ repoName: string; prog
         title={displayRepoPath(repoName)}
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"
-        detail={progress}
+        detail={<code>{progress}</code>}
         body={<DirectImportRepoAlert className="mt-3" />}
     />
 )
