@@ -122,9 +122,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                 className="btn btn-secondary btn-sm"
                                                                 to={'/search?' + buildSearchURLQuery(proposedQuery)}
                                                             >
-                                                                {proposedQuery.query}
+                                                                {proposedQuery.query || proposedQuery.description}
                                                             </Link>
-                                                            {proposedQuery.description &&
+                                                            {proposedQuery.query &&
+                                                                proposedQuery.description &&
                                                                 ` — ${proposedQuery.description}`}
                                                         </li>
                                                     ))}
