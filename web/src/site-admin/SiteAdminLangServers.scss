@@ -83,6 +83,10 @@
             padding-left: 0.25rem;
             color: $color-text-1;
         }
+        &-experimental {
+            padding-left: 0.25rem;
+            color: $warning;
+        }
     }
 
     &__repo {

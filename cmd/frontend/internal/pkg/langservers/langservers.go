@@ -41,6 +41,10 @@ type StaticInfoT struct {
 	// string if there is none.
 	DocsURL string
 
+	// Experimental indicates that a language server may perform arbitrary code
+	// execution, may have limited functionality, etc.
+	Experimental bool
+
 	// Whether or not the language server should be killed via
 	// `docker kill <container>` or `docker stop <container>`. This is used for
 	// some language servers that do not yet properly handle SIGTERM, as
@@ -54,56 +58,178 @@ type StaticInfoT struct {
 }
 
 // StaticInfo maps language keys to static information about the language
-// server.
+// server. For each entry, the siteConfig.Address must match the port specified
+// in the corresponding Dockerfile.
 var StaticInfo = map[string]*StaticInfoT{
 	"go": {
-		DisplayName: "Go",
-		HomepageURL: "https://github.com/sourcegraph/go-langserver",
-		IssuesURL:   "https://github.com/sourcegraph/go-langserver/issues",
-		DocsURL:     "https://github.com/sourcegraph/go-langserver/blob/master/README.md",
-		siteConfig:  schema.Langservers{Language: "go", Address: "tcp://go:4389"},
+		DisplayName:  "Go",
+		HomepageURL:  "https://github.com/sourcegraph/go-langserver",
+		IssuesURL:    "https://github.com/sourcegraph/go-langserver/issues",
+		DocsURL:      "https://github.com/sourcegraph/go-langserver/blob/master/README.md",
+		Experimental: false,
+		siteConfig:   schema.Langservers{Language: "go", Address: "tcp://go:4389"},
 	},
 	"typescript": {
-		DisplayName: "TypeScript",
-		HomepageURL: "https://github.com/sourcegraph/javascript-typescript-langserver",
-		IssuesURL:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
-		DocsURL:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
-		siteConfig:  schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
-		kill:        true,
+		DisplayName:  "TypeScript",
+		HomepageURL:  "https://github.com/sourcegraph/javascript-typescript-langserver",
+		IssuesURL:    "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
+		DocsURL:      "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
+		siteConfig:   schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
+		Experimental: false,
+		kill:         true,
 	},
 	"javascript": {
-		DisplayName: "JavaScript",
-		HomepageURL: "https://github.com/sourcegraph/javascript-typescript-langserver",
-		IssuesURL:   "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
-		DocsURL:     "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
-		siteConfig:  schema.Langservers{Language: "javascript", Address: "tcp://typescript:2088"},
-		kill:        true,
+		DisplayName:  "JavaScript",
+		HomepageURL:  "https://github.com/sourcegraph/javascript-typescript-langserver",
+		IssuesURL:    "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
+		DocsURL:      "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
+		siteConfig:   schema.Langservers{Language: "javascript", Address: "tcp://typescript:2088"},
+		Experimental: false,
+		kill:         true,
 	},
 	"python": {
-		DisplayName: "Python",
-		HomepageURL: "https://github.com/sourcegraph/python-langserver",
-		IssuesURL:   "https://github.com/sourcegraph/python-langserver/issues",
-		DocsURL:     "https://github.com/sourcegraph/python-langserver/blob/master/README.md",
-		siteConfig:  schema.Langservers{Language: "python", Address: "tcp://python:2087"},
-		kill:        true,
+		DisplayName:  "Python",
+		HomepageURL:  "https://github.com/sourcegraph/python-langserver",
+		IssuesURL:    "https://github.com/sourcegraph/python-langserver/issues",
+		DocsURL:      "https://github.com/sourcegraph/python-langserver/blob/master/README.md",
+		siteConfig:   schema.Langservers{Language: "python", Address: "tcp://python:2087"},
+		Experimental: false,
+		kill:         true,
 	},
 	"java": {
-		DisplayName: "Java",
-		HomepageURL: "https://github.com/sourcegraph/java-langserver-docs",
-		IssuesURL:   "https://github.com/sourcegraph/java-langserver-docs/issues",
-		DocsURL:     "https://github.com/sourcegraph/java-langserver-docs/blob/master/README.md",
-		siteConfig:  schema.Langservers{Language: "java", Address: "tcp://java:2088"},
-		kill:        true,
+		DisplayName:  "Java",
+		HomepageURL:  "https://github.com/sourcegraph/java-langserver-docs",
+		IssuesURL:    "https://github.com/sourcegraph/java-langserver-docs/issues",
+		DocsURL:      "https://github.com/sourcegraph/java-langserver-docs/blob/master/README.md",
+		siteConfig:   schema.Langservers{Language: "java", Address: "tcp://java:2088"},
+		Experimental: false,
+		kill:         true,
 	},
 	"php": {
-		DisplayName: "PHP",
-		HomepageURL: "https://github.com/felixfbecker/php-language-server",
-		IssuesURL:   "https://github.com/felixfbecker/php-language-server/issues",
-		DocsURL:     "https://github.com/felixfbecker/php-language-server/blob/master/README.md",
-		siteConfig:  schema.Langservers{Language: "php", Address: "tcp://php:2088"},
+		DisplayName:  "PHP",
+		HomepageURL:  "https://github.com/felixfbecker/php-language-server",
+		IssuesURL:    "https://github.com/felixfbecker/php-language-server/issues",
+		DocsURL:      "https://github.com/felixfbecker/php-language-server/blob/master/README.md",
+		Experimental: false,
+		siteConfig:   schema.Langservers{Language: "php", Address: "tcp://php:2088"},
+	},
+	"bash": {
+		DisplayName:  "Bash",
+		HomepageURL:  "https://github.com/mads-hartmann/bash-language-server",
+		IssuesURL:    "https://github.com/mads-hartmann/bash-language-server/issues",
+		DocsURL:      "https://github.com/mads-hartmann/bash-language-server/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "bash", Address: "tcp://bash:8080"},
+	},
+	"clojure": {
+		DisplayName:  "Clojure",
+		HomepageURL:  "https://github.com/snoe/clojure-lsp",
+		IssuesURL:    "https://github.com/snoe/clojure-lsp/issues",
+		DocsURL:      "https://github.com/snoe/clojure-lsp/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "clojure", Address: "tcp://clojure:8080"},
+	},
+	"cpp": {
+		DisplayName:  "C++",
+		HomepageURL:  "https://github.com/Chilledheart/vim-clangd",
+		IssuesURL:    "https://github.com/Chilledheart/vim-clangd/issues",
+		DocsURL:      "https://github.com/Chilledheart/vim-clangd/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "cpp", Address: "tcp://cpp:8080"},
+	},
+	"cs": {
+		DisplayName:  "C#",
+		HomepageURL:  "https://github.com/OmniSharp/omnisharp-node-client",
+		IssuesURL:    "https://github.com/OmniSharp/omnisharp-node-client/issues",
+		DocsURL:      "https://github.com/OmniSharp/omnisharp-node-client/blob/master/readme.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "cs", Address: "tcp://csharp:8080"},
+	},
+	"css": {
+		DisplayName:  "CSS",
+		HomepageURL:  "https://github.com/vscode-langservers/vscode-css-languageserver-bin",
+		IssuesURL:    "https://github.com/vscode-langservers/vscode-css-languageserver-bin/issues",
+		DocsURL:      "https://github.com/vscode-langservers/vscode-css-languageserver-bin/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "css", Address: "tcp://css:8080"},
+	},
+	"dockerfile": {
+		DisplayName:  "Dockerfile",
+		HomepageURL:  "https://github.com/rcjsuen/dockerfile-language-server-nodejs",
+		IssuesURL:    "https://github.com/rcjsuen/dockerfile-language-server-nodejs/issues",
+		DocsURL:      "https://github.com/rcjsuen/dockerfile-language-server-nodejs/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "dockerfile", Address: "tcp://docker:8080"},
+	},
+	"elixir": {
+		DisplayName:  "Elixir",
+		HomepageURL:  "https://github.com/JakeBecker/elixir-ls",
+		IssuesURL:    "https://github.com/JakeBecker/elixir-ls/issues",
+		DocsURL:      "https://github.com/JakeBecker/elixir-ls/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "elixir", Address: "tcp://elixir:8080"},
+	},
+	"html": {
+		DisplayName:  "HTML",
+		HomepageURL:  "https://github.com/vscode-langservers/vscode-html-languageserver-bin",
+		IssuesURL:    "https://github.com/vscode-langservers/vscode-html-languageserver-bin/issues",
+		DocsURL:      "https://github.com/vscode-langservers/vscode-html-languageserver-bin/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "html", Address: "tcp://html:8080"},
+	},
+	"lua": {
+		DisplayName:  "Lua",
+		HomepageURL:  "https://github.com/Alloyed/lua-lsp",
+		IssuesURL:    "https://github.com/Alloyed/lua-lsp/issues",
+		DocsURL:      "https://github.com/Alloyed/lua-lsp/blob/master/readme.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "lua", Address: "tcp://lua:8080"},
+	},
+	"ocaml": {
+		DisplayName:  "OCaml",
+		HomepageURL:  "https://github.com/freebroccolo/ocaml-language-server",
+		IssuesURL:    "https://github.com/freebroccolo/ocaml-language-server/issues",
+		DocsURL:      "https://github.com/freebroccolo/ocaml-language-server/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "ocaml", Address: "tcp://ocaml:8080"},
+	},
+	"r": {
+		DisplayName:  "R",
+		HomepageURL:  "https://github.com/REditorSupport/languageserver",
+		IssuesURL:    "https://github.com/REditorSupport/languageserver/issues",
+		DocsURL:      "https://github.com/REditorSupport/languageserver/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "r", Address: "tcp://r:8080"},
+	},
+	"ruby": {
+		DisplayName:  "Ruby",
+		HomepageURL:  "https://github.com/castwide/solargraph",
+		IssuesURL:    "https://github.com/castwide/solargraph/issues",
+		DocsURL:      "https://github.com/castwide/solargraph/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "ruby", Address: "tcp://ruby:8080"},
+	},
+	"rust": {
+		DisplayName:  "Rust",
+		HomepageURL:  "https://github.com/rust-lang-nursery/rls",
+		IssuesURL:    "https://github.com/rust-lang-nursery/rls/issues",
+		DocsURL:      "https://github.com/rust-lang-nursery/rls/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "rust", Address: "tcp://rust:8080"},
 	},
 }
 
+// debugContainerPorts specifies which port to expose on localhost during
+// development. The ContainerPort field is set to the corresponding port in
+// StaticInfo.<lang>.siteConfig.Address at runtime.
+//
+// For each language server in StaticInfo, there must be a corresponding entry
+// in debugContainerPorts. If an entry is missing, you'll get a "can't assign
+// requested address" error in the terminal when you enable the language server
+// because the port will default to the empty string.
+//
+// Also, these ports must be unique. If they aren't, then docker run will fail
+// due to a port conflict.
 var debugContainerPorts = map[string]struct {
 	HostPort, ContainerPort string
 }{
@@ -113,6 +239,19 @@ var debugContainerPorts = map[string]struct {
 	"python":     {"2083", ""},
 	"java":       {"2084", ""},
 	"php":        {"2085", ""},
+	"bash":       {"2086", ""},
+	"clojure":    {"2087", ""},
+	"cpp":        {"2088", ""},
+	"cs":         {"2089", ""},
+	"css":        {"2090", ""},
+	"dockerfile": {"2091", ""},
+	"elixir":     {"2092", ""},
+	"html":       {"2093", ""},
+	"lua":        {"2094", ""},
+	"ocaml":      {"2095", ""},
+	"r":          {"2096", ""},
+	"ruby":       {"2097", ""},
+	"rust":       {"2098", ""},
 }
 
 func init() {
@@ -235,7 +374,7 @@ func Stop(language string) error {
 }
 
 func start(language string) error {
-	cmd := []string{"run", "--detach", "--restart=always", "--network=lsp", "--name=" + language}
+	cmd := []string{"run", "--detach", "--restart=always", "--network=lsp", "--name=" + containerName(language)}
 	if envvar.DebugMode() {
 		cmd = append(cmd, startDebugArgs(language)...)
 	} else {
@@ -243,7 +382,7 @@ func start(language string) error {
 	}
 	cmd = append(cmd, imageName(language))
 	_, err := dockerCmd(cmd...)
-	if err != nil && strings.Contains(err.Error(), fmt.Sprintf(`The container name "/%s" is already in use by container`, language)) {
+	if err != nil && strings.Contains(err.Error(), fmt.Sprintf(`The container name "/%s" is already in use by container`, containerName(language))) {
 		// already started
 		return nil
 	}
@@ -272,7 +411,7 @@ func stop(language string) error {
 	if StaticInfo[language].kill {
 		cmdName = "kill"
 	}
-	_, err := dockerCmd(cmdName, language)
+	_, err := dockerCmd(cmdName, containerName(language))
 	if err != nil {
 		if strings.Contains(err.Error(), "No such container") {
 			// already stopped
@@ -284,7 +423,7 @@ func stop(language string) error {
 	// Remove the container. This is effectively the same as `docker run --rm`
 	// and we need it or else the container name would not be released and subsequent
 	// start(...) calls would fail.
-	_, err = dockerCmd("rm", language)
+	_, err = dockerCmd("rm", containerName(language))
 	if err != nil && strings.Contains(err.Error(), "No such container") {
 		// already removed; this shouldn't happen generally / is just defensive
 		return nil
@@ -302,7 +441,7 @@ func Restart(language string) error {
 	if err := validate(language); err != nil {
 		return err
 	}
-	_, err := dockerCmd("restart", language)
+	_, err := dockerCmd("restart", containerName(language))
 	return err
 }
 
@@ -355,7 +494,7 @@ func Info(language string) (*LangInfo, error) {
 		return nil, err
 	}
 
-	container, err := dockerInspectContainer(language)
+	container, err := dockerInspectContainer(containerName(language))
 	if err != nil {
 		return nil, err
 	}
@@ -525,7 +664,25 @@ func thisContainerID() (string, error) {
 
 // imageName returns the Docker image name for the given language.
 func imageName(language string) string {
-	return "sourcegraph/codeintel-" + language
+	switch language {
+	case "cs":
+		return "sourcegraph/codeintel-csharp"
+	case "dockerfile":
+		return "sourcegraph/codeintel-docker"
+	default:
+		return "sourcegraph/codeintel-" + language
+	}
+}
+
+// containerName returns the Docker container name for the given language.
+func containerName(language string) string {
+	switch language {
+	case "r":
+		// Single-character container names are not allowed by Docker.
+		return "rlang"
+	default:
+		return language
+	}
 }
 
 var canManage bool

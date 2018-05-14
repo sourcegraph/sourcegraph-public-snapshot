@@ -70,6 +70,39 @@ func (l *Language) primaryMatchFilename(name string) bool {
 	return false
 }
 
+// The ConfigName()s of these must match the keys of `StaticInfo` in
+// cmd/frontend/internal/pkg/langservers/langservers.go
+// TODO see about adding a test for this
+var builtInLanguages = map[string]struct{}{
+	"Shell":      struct{}{},
+	"Clojure":    struct{}{},
+	"C++":        struct{}{},
+	"C#":         struct{}{},
+	"CSS":        struct{}{},
+	"Dockerfile": struct{}{},
+	"Go":         struct{}{},
+	"Elixir":     struct{}{},
+	"HTML":       struct{}{},
+	"Java":       struct{}{},
+	"JavaScript": struct{}{},
+	"Lua":        struct{}{},
+	"OCaml":      struct{}{},
+	"PHP":        struct{}{},
+	"Python":     struct{}{},
+	"R":          struct{}{},
+	"Ruby":       struct{}{},
+	"Rust":       struct{}{},
+	"TypeScript": struct{}{},
+}
+
+// IsBuiltIn means the language is statically known to have a
+// sourcegraph/codeintel-* language server. Currently, this is only used to
+// favor languages with language servers during language detection.
+func (l *Language) IsBuiltIn() bool {
+	_, ok := builtInLanguages[l.Name]
+	return ok
+}
+
 // Languages is a dataset of languages.
 type Languages []*Language
 
@@ -165,9 +198,10 @@ func (ls Languages) ByFilename(name string) []*Language {
 	return matches
 }
 
-// sortByPrimaryMatch sorts matches first by whether the filename is a
-// primary match (of the language's filenames or the language's
-// primary extension) and then alphabetically by language name.
+// sortByPrimaryMatch sorts matches first by whether the language is built-in,
+// then by whether the filename is a primary match (of the language's filenames
+// or the language's primary extension), and then alphabetically by language
+// name.
 type sortByPrimaryMatch struct {
 	name  string
 	langs []*Language
@@ -176,6 +210,14 @@ type sortByPrimaryMatch struct {
 func (v *sortByPrimaryMatch) Len() int { return len(v.langs) }
 
 func (v *sortByPrimaryMatch) Less(i, j int) bool {
+	if _, ok := builtInLanguages[v.langs[i].Name]; ok {
+		return true
+	}
+
+	if _, ok := builtInLanguages[v.langs[j].Name]; ok {
+		return false
+	}
+
 	ipm := v.langs[i].primaryMatchFilename(v.name)
 	jpm := v.langs[j].primaryMatchFilename(v.name)
 	if ipm == jpm {

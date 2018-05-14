@@ -89,7 +89,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 				docsURL:      langservers.StaticInfo[language].DocsURL,
 				dataCenter:   conf.IsDataCenter(conf.DeployType()),
 				custom:       false,
-				experimental: false,
+				experimental: langservers.StaticInfo[language].Experimental,
 				state:        state,
 				pending:      false,
 				canEnable:    false,
@@ -114,7 +114,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			docsURL:      langservers.StaticInfo[language].DocsURL,
 			dataCenter:   false,
 			custom:       false,
-			experimental: false,
+			experimental: langservers.StaticInfo[language].Experimental,
 			state:        state,
 			pending:      info.Pulling || info.Status == langservers.StatusStarting,
 			canEnable:    isSiteAdmin || state == langservers.StateNone,
@@ -179,7 +179,7 @@ func (c *langServersResolver) Enable(ctx context.Context, args *struct{ Language
 	// For custom (non-builtin) language servers, Enable/Disable is just
 	// updating the site config. We do not do anything else. Only admins
 	// can perform this action, period.
-	_, builtin := langservers.StaticInfo[args.Language]
+	info, builtin := langservers.StaticInfo[args.Language]
 	if !builtin {
 		// 🚨 SECURITY: Only admins can enable/disable custom language servers.
 		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -190,6 +190,13 @@ func (c *langServersResolver) Enable(ctx context.Context, args *struct{ Language
 			return nil, errors.Wrap(err, "langservers.SetDisabled")
 		}
 		return &EmptyResponse{}, nil
+	}
+
+	if info.Experimental {
+		// 🚨 SECURITY: Only admins can enable/disable experimental language servers.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	state, err := langservers.State(args.Language)

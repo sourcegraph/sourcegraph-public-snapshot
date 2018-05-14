@@ -6,9 +6,10 @@ import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import RefreshIcon from '@sourcegraph/icons/lib/Refresh'
+import _ from 'lodash'
 import * as React from 'react'
 import { interval, merge, Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { catchError, concatMap, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 import { disableLangServer, enableLangServer, fetchLangServers, restartLangServer, updateLangServer } from './backend'
@@ -56,6 +57,13 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
     private disableButtonClicks = new Subject<GQL.ILangServer>()
     private enableButtonClicks = new Subject<GQL.ILangServer>()
 
+    private EXPERIMENTAL_LANGUAGE_SERVER_WARNING = 'This language server is experimental and under active development. ' +
+    'Be aware that it may run arbitrary code through the package manager ' +
+    'during dependency installation for each repository. Some extensions ' +
+    'to the language server protocol such as cross-repository code ' +
+    'intelligence might not be available. Are you sure you want to ' +
+    'enable it?'
+
     public componentDidMount(): void {
         this.subscriptions.add(
             merge(
@@ -88,6 +96,10 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                 ),
                 this.enableButtonClicks.pipe(
                     tap(langServer => this.logClick('LangServerEnableClicked', langServer)),
+                    filter(
+                        langServer =>
+                            langServer.experimental ? window.confirm(this.EXPERIMENTAL_LANGUAGE_SERVER_WARNING) : true
+                    ),
                     map(langServer => ({
                         langServer,
                         mutation: enableLangServer,
@@ -152,7 +164,10 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            merge(this.refreshLangServers, interval(2500))
+            // TODO(chris): Investigate slow API calls to langServers. 2.5s is
+            // not enough (the call keeps getting canceled). 10s seems to be
+            // enough.
+            merge(this.refreshLangServers, interval(10000))
                 .pipe(
                     startWith<void | number>(0),
                     switchMap(() =>
@@ -204,26 +219,38 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                         <span className="site-admin-lang-servers__error-text">Error: {this.state.error.message}</span>
                     </div>
                 )}
-                {this.state.langServers.map((langServer, i) => (
-                    <div className="site-admin-lang-servers__list-item" key={i}>
-                        <div className="site-admin-lang-servers__left-area">
-                            <div className="site-admin-lang-servers__language">
-                                {langServer.displayName}
-                                {langServer.custom && (
-                                    <span
-                                        className="site-admin-lang-servers__language-custom"
-                                        data-tooltip="This language server is custom / does not come built in with Sourcegraph. It was added via the site configuration."
-                                    >
-                                        (custom)
-                                    </span>
-                                )}
-                                {this.renderStatus(langServer)}
+                {// Sort the language servers in a stable fashion such that
+                // experimental ones are at the bottom of the list.
+                _.sortBy(this.state.langServers, langServer => (langServer.experimental ? 1 : 0)).map(
+                    (langServer, i) => (
+                        <div className="site-admin-lang-servers__list-item" key={i}>
+                            <div className="site-admin-lang-servers__left-area">
+                                <div className="site-admin-lang-servers__language">
+                                    {langServer.displayName}
+                                    {langServer.experimental && (
+                                        <span
+                                            className="site-admin-lang-servers__language-experimental"
+                                            data-tooltip="This language server is experimental. Beware it may run arbitrary code and might have limited functionality."
+                                        >
+                                            (experimental)
+                                        </span>
+                                    )}
+                                    {langServer.custom && (
+                                        <span
+                                            className="site-admin-lang-servers__language-custom"
+                                            data-tooltip="This language server is custom / does not come built in with Sourcegraph. It was added via the site configuration."
+                                        >
+                                            (custom)
+                                        </span>
+                                    )}
+                                    {this.renderStatus(langServer)}
+                                </div>
+                                {this.renderRepo(langServer)}
                             </div>
-                            {this.renderRepo(langServer)}
+                            {this.renderActions(langServer)}
                         </div>
-                        {this.renderActions(langServer)}
-                    </div>
-                ))}
+                    )
+                )}
             </div>
         )
     }

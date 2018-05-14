@@ -780,6 +780,7 @@ export function fetchLangServers(): Observable<GQL.ILangServer[]> {
                     canRestart
                     canUpdate
                     healthy
+                    experimental
                 }
             }
         }

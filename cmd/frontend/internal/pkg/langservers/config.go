@@ -14,8 +14,9 @@ type ConfigState int
 
 const (
 	// StateNone represents that code intelligence for a given language is
-	// neither disabled nor enabled. It can be enabled by a plain user when in
-	// this state.
+	// neither disabled nor enabled. If the language server is not experimental,
+	// plain users can enable it when in this state. Only admins can enable
+	// experimental language servers.
 	StateNone ConfigState = iota
 
 	// StateEnabled represents that code intelligence for a given language
