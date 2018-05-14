@@ -1,5 +1,5 @@
 FROM python:3.6-alpine
-RUN apk add --no-cache git tini && pip install pip pipenv --upgrade
+RUN apk add --no-cache git tini && pip install pip==9.0.3 pipenv==11.9.0 --upgrade
 
 ADD python-langserver /src
 WORKDIR /src
