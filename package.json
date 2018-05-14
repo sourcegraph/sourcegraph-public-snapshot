@@ -2,7 +2,7 @@
   "name": "sourcegraph",
   "private": true,
   "engines": {
-    "npm": "^6.0.0",
+    "npm": "^6.0.0 ^6.0.1-next.0",
     "node": ">=8.0.0 <11.0.0"
   },
   "scripts": {
