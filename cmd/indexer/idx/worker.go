@@ -74,7 +74,7 @@ func (w *Worker) Work() {
 			log15.Debug("Index finished", "repo", repoRev.repo, "rev", repoRev.rev, "isPrimary", isPrimary, "duration", time.Since(start))
 		} else if vcs.IsCloneInProgress(err) {
 			if isPrimary {
-				log15.Info("Index postponed (clone in progress)", "repo", repoRev.repo, "rev", repoRev.rev)
+				log15.Debug("Index postponed (clone in progress)", "repo", repoRev.repo, "rev", repoRev.rev)
 			}
 		} else if !vcs.IsRevisionNotFound(err) {
 			log15.Error("Index failed", "repo", repoRev.repo, "rev", repoRev.rev, "isPrimary", isPrimary, "error", err)
