@@ -46,7 +46,7 @@
       "token": "e99201f23d4c8d2d7d3df4c0cb23a4804ad5f1b8" // unprivileged sqs-test user
     },
     {
-      "url": "https://ghe.sgdev.org",
+      "url": "http://ghe.sgdev.org",
       "token": "23993bbf8e0fee068b8f70db05fc445d5a7a83da"
     }
   ],
