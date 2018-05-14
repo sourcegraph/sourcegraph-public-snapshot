@@ -43,6 +43,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
   the [Javaconfig Gradle plugin](https://about.sourcegraph.com/docs/code-intelligence/java#build-configuration).
 * The new `auth.providers` site config is an array of authentication provider objects. Currently only 1 auth provider is supported. The singular `auth.provider` is deprecated.
 * Users authenticated with OpenID Connect are now able to sign out of Sourcegraph (if the provider supports token revocation or the end-session endpoint).
+* Users can now specify the number of days, weeks, and months of site activity to query through the GraphQL API.
 
 ## 2.7.6
 

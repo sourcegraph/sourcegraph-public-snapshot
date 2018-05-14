@@ -2169,7 +2169,14 @@ type Site implements ConfigurationSubject {
     # verify users' email addresses.
     sendsEmailVerificationEmails: Boolean!
     # The activity.
-    activity: SiteActivity!
+    activity(
+        # Days of history.
+        days: Int
+        # Weeks of history.
+        weeks: Int
+        # Months of history.
+        months: Int
+    ): SiteActivity!
 }
 
 # The configuration for a site.

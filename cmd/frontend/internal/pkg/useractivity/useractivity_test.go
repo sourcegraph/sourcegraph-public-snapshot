@@ -304,10 +304,11 @@ func TestUserActivity_DAUs_WAUs_MAUs(t *testing.T) {
 	}
 
 	mockTimeNow(now)
+	days, weeks, months := 7, 4, 3
 	siteActivity, err := GetSiteActivity(&SiteActivityOptions{
-		Days:   7,
-		Weeks:  4,
-		Months: 3,
+		Days:   &days,
+		Weeks:  &weeks,
+		Months: &months,
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -108,14 +108,31 @@ func (r *siteResolver) HasCodeIntelligence() bool {
 	return envvar.HasCodeIntelligence()
 }
 
-func (r *siteResolver) Activity(ctx context.Context) (*siteActivityResolver, error) {
+func (r *siteResolver) Activity(ctx context.Context, args *struct {
+	Days   *int32
+	Weeks  *int32
+	Months *int32
+}) (*siteActivityResolver, error) {
 	// 🚨 SECURITY
 	// TODO(Dan, Beyang): this endpoint should eventually only be accessible by site admins.
 	// It is temporarily exposed to all users on an instance.
 	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("site analytics is not available on sourcegraph.com")
 	}
-	activity, err := useractivity.GetSiteActivity(nil)
+	opt := &useractivity.SiteActivityOptions{}
+	if args.Days != nil {
+		d := int(*args.Days)
+		opt.Days = &d
+	}
+	if args.Weeks != nil {
+		w := int(*args.Weeks)
+		opt.Weeks = &w
+	}
+	if args.Months != nil {
+		m := int(*args.Months)
+		opt.Months = &m
+	}
+	activity, err := useractivity.GetSiteActivity(opt)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ package useractivity
 import (
 	"context"
 	"fmt"
-	"math"
 	"math/rand"
 	"os"
 	"strconv"
@@ -38,9 +37,11 @@ const (
 	fCodeIntelActions              = "codeintelactions"
 	fLastActiveCodeHostIntegration = "lastactivecodehostintegration"
 
-	daysOfHistory   = 14
-	weeksOfHistory  = 10
-	monthsOfHistory = 3
+	defaultDays   = 14
+	defaultWeeks  = 10
+	defaultMonths = 3
+
+	maxStorageDays = 93
 )
 
 func init() {
@@ -162,9 +163,9 @@ func GetByUserID(userID int32) (*types.UserActivity, error) {
 }
 
 type SiteActivityOptions struct {
-	Days   int
-	Weeks  int
-	Months int
+	Days   *int
+	Weeks  *int
+	Months *int
 }
 
 func minIntOrZero(a, b int) int {
@@ -181,15 +182,21 @@ func minIntOrZero(a, b int) int {
 // GetSiteActivity returns the current site's SiteActivity
 func GetSiteActivity(opt *SiteActivityOptions) (*types.SiteActivity, error) {
 	var (
-		days   = daysOfHistory
-		weeks  = weeksOfHistory
-		months = monthsOfHistory
+		days   = defaultDays
+		weeks  = defaultWeeks
+		months = defaultMonths
 	)
 
 	if opt != nil {
-		days = minIntOrZero(opt.Days, daysOfHistory)
-		weeks = minIntOrZero(opt.Weeks, weeksOfHistory)
-		months = minIntOrZero(opt.Months, monthsOfHistory)
+		if opt.Days != nil {
+			days = minIntOrZero(maxStorageDays, *opt.Days)
+		}
+		if opt.Weeks != nil {
+			weeks = minIntOrZero(maxStorageDays/7, *opt.Weeks)
+		}
+		if opt.Months != nil {
+			months = minIntOrZero(maxStorageDays/31, *opt.Months)
+		}
 	}
 
 	daus, err := DAUs(days)
@@ -470,7 +477,7 @@ func gc() {
 		key := usersActiveKeyFromDaysAgo(0)
 
 		c := pool.Get()
-		err := c.Send("EXPIRE", key, 60*60*24*int(math.Max(31*monthsOfHistory, math.Max(7*weeksOfHistory, daysOfHistory))))
+		err := c.Send("EXPIRE", key, 60*60*24*int(maxStorageDays))
 		c.Close()
 
 		if err != nil {
