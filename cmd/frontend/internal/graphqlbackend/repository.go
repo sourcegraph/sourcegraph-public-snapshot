@@ -313,27 +313,32 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		patch = diff
 	}
 
-	description := ""
-	if args.Description != nil {
-		description = *args.Description
-	}
-
 	var info *phabricator.DiffInfo
-	if client != nil && args.AuthorEmail == nil || args.AuthorName == nil || args.Date == nil {
+	if client != nil && (args.AuthorEmail == nil || args.AuthorName == nil || args.Date == nil) {
 		info, err = client.GetDiffInfo(int(args.DiffID))
 		// Not all the information was given and we couldn't fetch it
 		if err != nil {
 			return nil, err
 		}
 	} else {
+		var description, authorName, authorEmail string
+		if args.Description != nil {
+			description = *args.Description
+		}
+		if args.AuthorName != nil {
+			authorName = *args.AuthorName
+		}
+		if args.AuthorEmail != nil {
+			authorEmail = *args.AuthorEmail
+		}
 		date, err := phabricator.ParseDate(*args.Date)
 		if err != nil {
 			return nil, err
 		}
 
 		info = &phabricator.DiffInfo{
-			AuthorName:  *args.AuthorName,
-			AuthorEmail: *args.AuthorEmail,
+			AuthorName:  authorName,
+			AuthorEmail: authorEmail,
 			Message:     description,
 			Date:        *date,
 		}
