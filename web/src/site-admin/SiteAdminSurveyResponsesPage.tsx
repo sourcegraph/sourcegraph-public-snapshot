@@ -46,7 +46,10 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
                                 'anonymous user'
                             )}
                         </strong>
-                        <div className={`ml-4 badge badge-pill ${this.scoreToClassName(this.props.node.score)}`}>
+                        <div
+                            className={`ml-4 badge badge-pill ${this.scoreToClassName(this.props.node.score)}`}
+                            data-tooltip={`${this.props.node.score} out of 10`}
+                        >
                             Score: {this.props.node.score}
                         </div>
                     </div>
@@ -55,27 +58,23 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
                     </div>
                 </div>
                 {(this.props.node.reason || this.props.node.better) && (
-                    <div className="mt-3">
+                    <dl className="mt-3">
                         {this.props.node.reason &&
                             this.props.node.reason !== '' && (
-                                <div>
-                                    <h5 className="mb-1 text-muted">
-                                        What is the most important reason for the score you gave Sourcegraph?
-                                    </h5>
-                                    <small>{this.props.node.reason}</small>
-                                </div>
+                                <>
+                                    <dt>What is the most important reason for the score you gave Sourcegraph?</dt>
+                                    <dd>{this.props.node.reason}</dd>
+                                </>
                             )}
                         {this.props.node.reason && this.props.node.better && <div className="mt-2" />}
                         {this.props.node.better &&
                             this.props.node.better !== '' && (
-                                <div>
-                                    <h5 className="mb-1 text-muted">
-                                        What could Sourcegraph do to provide a better product?
-                                    </h5>
-                                    <small>{this.props.node.better}</small>
-                                </div>
+                                <>
+                                    <dt>What could Sourcegraph do to provide a better product?</dt>
+                                    <dd>{this.props.node.better}</dd>
+                                </>
                             )}
-                    </div>
+                    </dl>
                 )}
             </li>
         )
@@ -113,9 +112,8 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                 <p>
                     After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
                     it that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some
-                    feedback. Those results are visible below.
+                    feedback. Responses are visible below (and are also sent to Sourcegraph).
                 </p>
-                <p>These survey responses are also sent to Sourcegraph.</p>
 
                 <FilteredSurveyResponseConnection
                     className="list-group list-group-flush"

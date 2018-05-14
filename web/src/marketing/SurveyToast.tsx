@@ -1,4 +1,4 @@
-import EmojiIcon from '@sourcegraph/icons/lib/Emoji'
+import EmoticonIcon from '@sourcegraph/icons/lib/Emoticon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
@@ -101,7 +101,7 @@ export class SurveyToast extends React.Component<{}, State> {
 
         return (
             <Toast
-                icon={<EmojiIcon className="icon-inline" />}
+                icon={<EmoticonIcon className="icon-inline" />}
                 title="Tell us what you think"
                 subtitle="How likely is it that you would recommend Sourcegraph to a friend?"
                 cta={

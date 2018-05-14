@@ -1,4 +1,3 @@
-import EmojiIcon from '@sourcegraph/icons/lib/Emoji'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import * as H from 'history'
@@ -177,7 +176,7 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
             return (
                 <div className="survey-page">
                     <PageTitle title="Thanks" />
-                    <HeroPage icon={EmojiIcon} title="Thank you for submitting!" />
+                    <HeroPage title="Thank you for sending feedback." />
                 </div>
             )
         }
@@ -185,7 +184,6 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
             <div className="survey-page">
                 <PageTitle title="Almost there..." />
                 <HeroPage
-                    icon={EmojiIcon}
                     title="Almost there..."
                     cta={
                         <SurveyForm
