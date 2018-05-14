@@ -64,7 +64,8 @@ const config: webpack.Configuration = {
     },
     stats: {
         all: false,
-        modules: true,
+        timings: true,
+        modules: false,
         maxModules: 0,
         errors: true,
         warnings: true,
