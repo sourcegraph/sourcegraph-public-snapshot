@@ -259,22 +259,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 			return
 		}
 
-		// Redirect to the page the user was trying to access before login. To prevent an open-redirect vulnerability,
-		// strip the host from the redirect URL, so only relative redirects are valid.
-		//
-		// 🚨 SECURITY
-		var redirect string
-		if redirectURL, err := url.Parse(state.Redirect); err == nil {
-			redirectURL.Scheme = ""
-			redirectURL.Host = ""
-			redirect = redirectURL.String()
-			if !strings.HasPrefix(redirect, "/") {
-				redirect = "/" + redirect
-			}
-		} else {
-			redirect = "/"
-		}
-		http.Redirect(w, r, redirect, http.StatusFound)
+		// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid an open-redirect vuln.
+		http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 
 	default:
 		http.Error(w, "", http.StatusNotFound)
