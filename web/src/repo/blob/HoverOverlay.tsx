@@ -6,11 +6,10 @@ import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Hover, MarkedString, MarkupContent, MarkupKind } from 'vscode-languageserver-types'
+import { Hover, MarkedString, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types'
 import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { toPrettyBlobURL } from '../../util/url'
-import { HoveredToken } from './tooltips'
 
 const isMarkupContent = (markup: any): markup is MarkupContent =>
     typeof markup === 'object' && markup !== null && 'kind' in markup
@@ -67,7 +66,7 @@ interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<Vie
      * The hovered token (position and word).
      * Used for the Find References/Implementations buttons and for error messages
      */
-    hoveredToken?: HoveredToken
+    hoveredTokenPosition?: Position
 }
 
 /** Returns true if the input is successful jump URL result */
@@ -143,13 +142,13 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                     </ButtonOrLink>
                     <ButtonOrLink
                         to={
-                            props.hoveredToken &&
+                            props.hoveredTokenPosition &&
                             toPrettyBlobURL({
                                 repoPath: props.repoPath,
                                 commitID: props.commitID,
                                 rev: props.rev,
                                 filePath: props.filePath,
-                                position: props.hoveredToken,
+                                position: props.hoveredTokenPosition,
                                 range: props.range,
                                 viewState: 'references',
                             })
@@ -160,13 +159,13 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                     </ButtonOrLink>
                     <ButtonOrLink
                         to={
-                            props.hoveredToken &&
+                            props.hoveredTokenPosition &&
                             toPrettyBlobURL({
                                 repoPath: props.repoPath,
                                 commitID: props.commitID,
                                 rev: props.rev,
                                 filePath: props.filePath,
-                                position: props.hoveredToken,
+                                position: props.hoveredTokenPosition,
                                 range: props.range,
                                 viewState: 'impl',
                             })
@@ -184,12 +183,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
         </div>
         {props.definitionURLOrError === null ? (
             <div className="alert alert-info m-0 p-2 rounded-0">
-                <InformationOutlineIcon className="icon-inline" /> No definition found{' '}
-                {props.hoveredToken && (
-                    <>
-                        for <code>{props.hoveredToken.word}</code>
-                    </>
-                )}
+                <InformationOutlineIcon className="icon-inline" /> No definition found
             </div>
         ) : (
             isErrorLike(props.definitionURLOrError) && (

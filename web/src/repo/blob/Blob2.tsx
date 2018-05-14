@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, merge, of, Subject, Subscription } from 'rxjs'
+import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -15,13 +15,14 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
-import { Hover } from 'vscode-languageserver-types'
+import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { asError, ErrorLike } from '../../util/errors'
+import { isDefined, propertyIsDefined } from '../../util/types'
 import { parseHash } from '../../util/url'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
-import { convertNode, getTableDataCell, getTargetLineAndOffset, HoveredToken } from './tooltips'
+import { convertNode, findElementWithOffset, getTableDataCell, getTargetLineAndOffset } from './tooltips'
 
 /**
  * `padding-top` of the blob element in px.
@@ -81,10 +82,6 @@ const LOADING: 'loading' = 'loading'
 
 const isHover = (val: any): val is Hover => typeof val === 'object' && val !== null && Array.isArray(val.contents)
 
-function isDefined<T>(val: T): val is NonNullable<T> {
-    return val !== undefined && val !== null
-}
-
 interface BlobState {
     hoverOrError?: typeof LOADING | Hover | null | ErrorLike
     definitionURLOrError?: typeof LOADING | { jumpURL: string } | null | ErrorLike
@@ -100,7 +97,7 @@ interface BlobState {
     clickedGoToDefinition: false | 'same-tab' | 'new-tab'
 
     /** The currently hovered token */
-    hoveredToken?: HoveredToken
+    hoveredTokenPosition?: Position
 }
 
 export class Blob2 extends React.Component<BlobProps, BlobState> {
@@ -121,7 +118,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     /** Emits whenever something is hovered in the code */
     private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextBlobMouseOver = (event: React.MouseEvent<HTMLElement>) => this.codeMouseOvers.next(event)
+    private nextCodeMouseOver = (event: React.MouseEvent<HTMLElement>) => this.codeMouseOvers.next(event)
 
     /** Emits whenever something is clicked in the code */
     private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
@@ -168,20 +165,63 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             map(([target, codeElement]) => ({ target, codeElement: codeElement! }))
         )
 
+        /** Emits new positions found in the URL */
+        const positionsFromLocationHash: Observable<Position> = this.componentUpdates.pipe(
+            map(props => parseHash(props.location.hash)),
+            filter(Position.is),
+            map(position => ({ line: position.line, character: position.character })),
+            distinctUntilChanged((a, b) => isEqual(a, b)),
+            share()
+        )
+
+        /** Emits DOM elements at new positions found in the URL */
+        const targetsFromLocationHash: Observable<{
+            target: HTMLElement
+            codeElement: HTMLElement
+        }> = positionsFromLocationHash.pipe(
+            withLatestFrom(this.codeElements),
+            map(([position, codeElement]) => ({ position, codeElement })),
+            filter(propertyIsDefined('codeElement')),
+            map(({ position, codeElement }) => {
+                const table = codeElement.firstElementChild as HTMLTableElement
+                const row = table.rows[position.line - 1]
+                if (!row) {
+                    alert(`Could not find line ${position.line} in file`)
+                    return { codeElement }
+                }
+                const cell = row.cells[1]
+                const target = findElementWithOffset(cell, position.character)
+                if (!target) {
+                    console.warn('Could not find target for position in file', position)
+                }
+                return { target, codeElement }
+            }),
+            filter(propertyIsDefined('target'))
+        )
+
+        // REPOSITIONING
         // On every componentDidUpdate (after the component was rerendered, e.g. from a hover state update) resposition
         // the tooltip
         // It's important to add this subscription first so that withLatestFrom will be guaranteed to have gotten the
         // latest hover target by the time componentDidUpdate is triggered from the setState() in the second chain
         this.subscriptions.add(
+            // Take every rerender
             this.componentUpdates
                 .pipe(
-                    filter(() => !this.state.hoverIsFixed),
-                    withLatestFrom(this.hoverOverlayElements, codeMouseOverTargets),
-                    map(([, hoverElement, { target, codeElement }]) => ({ hoverElement, target, codeElement })),
-                    filter(
-                        (data): data is typeof data & { hoverElement: NonNullable<typeof data['hoverElement']> } =>
-                            !!data.hoverElement
-                    )
+                    // with the latest target that came from either a mouseover, click or location change (whatever was the most recent)
+                    withLatestFrom(
+                        merge(
+                            codeMouseOverTargets.pipe(map(data => ({ ...data, source: 'mouseover' }))),
+                            codeClickTargets.pipe(map(data => ({ ...data, source: 'click' }))),
+                            targetsFromLocationHash.pipe(map(data => ({ ...data, source: 'location' })))
+                        )
+                    ),
+                    map(([, { target, codeElement, source }]) => ({ target, codeElement, source })),
+                    // When the new target came from the URL, we don't care whether the hover is currently fixed or not, it needs to be respositioned.
+                    filter(({ source }) => source === 'location' || !this.state.hoverIsFixed),
+                    withLatestFrom(this.hoverOverlayElements),
+                    map(([{ target, codeElement }, hoverElement]) => ({ target, hoverElement, codeElement })),
+                    filter(propertyIsDefined('hoverElement'))
                 )
                 .subscribe(({ codeElement, hoverElement, target }) => {
                     const overlayPosition = calculateOverlayPosition(codeElement, target, hoverElement)
@@ -189,16 +229,22 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
-        /** Emits with the position at which a new tooltip is to be shown */
-        const filteredTargetPositions = merge(
-            codeMouseOverTargets.pipe(filter(() => !this.state.hoverIsFixed)),
-            codeClickTargets.pipe(filter(() => this.state.hoverIsFixed))
-        ).pipe(
-            // Find out the position that was hovered over
-            map(({ target, codeElement }) => getTargetLineAndOffset(target, codeElement, false)),
-            filter(isDefined),
-            share()
-        )
+        /** Emits with the position at which a new tooltip is to be shown from a mouseover, click or location change */
+        const filteredTargetPositions: Observable<Position> = merge(
+            // When the location changes and and includes a line/column pair, use that position
+            positionsFromLocationHash,
+            merge(
+                // mouseovers should only trigger a new hover when the overlay is not fixed
+                codeMouseOverTargets.pipe(filter(() => !this.state.hoverIsFixed)),
+                // clicks should trigger a new hover when the overlay is fixed
+                codeClickTargets.pipe(filter(() => this.state.hoverIsFixed))
+            ).pipe(
+                // Find out the position that was hovered over
+                map(({ target, codeElement }) => getTargetLineAndOffset(target, codeElement, false)),
+                filter(isDefined),
+                map(position => ({ line: position.line, character: position.character }))
+            )
+        ).pipe(share())
 
         // On every new hover position, fetch new hover contents and update the state
         this.subscriptions.add(
@@ -222,6 +268,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
+        // GO TO DEFINITION FETCH
         // On every new hover position, (pre)fetch definition and update the state
         this.subscriptions.add(
             filteredTargetPositions
@@ -261,9 +308,17 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         // On every click on a go to definition button, reveal loader/error/not found UI
         this.subscriptions.add(
             this.goToDefinitionClicks.subscribe(event => {
-                // This causes an error/loader/not found UI to get shown if needed
-                // Remember if ctrl/cmd was pressed to determine whether the definition should be opened in a new tab once loaded
-                this.setState({ clickedGoToDefinition: event.ctrlKey || event.metaKey ? 'new-tab' : 'same-tab' })
+                this.setState({
+                    // This causes an error/loader/not found UI to get shown if needed
+                    // Remember if ctrl/cmd was pressed to determine whether the definition should be opened in a new tab once loaded
+                    clickedGoToDefinition: event.ctrlKey || event.metaKey ? 'new-tab' : 'same-tab',
+                    // Set fixed so hover overlay appears is shown at the destination
+                    hoverIsFixed: true,
+                    // Reset overlay
+                    overlayPosition: undefined,
+                    hoverOrError: undefined,
+                    hoveredTokenPosition: undefined,
+                })
                 // If we don't have a result yet, prevent default link behaviour (jump will occur dynamically once finished)
                 if (!isJumpURL(this.state.definitionURLOrError)) {
                     event.preventDefault()
@@ -271,9 +326,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
         this.subscriptions.add(
-            filteredTargetPositions.subscribe(hoveredToken => {
+            filteredTargetPositions.subscribe(hoveredTokenPosition => {
                 this.setState({
-                    hoveredToken,
+                    hoveredTokenPosition,
                     // On every new target (from mouseover or click) hide the j2d loader/error/not found UI again
                     clickedGoToDefinition: false,
                 })
@@ -295,20 +350,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                                   hoverIsFixed: true,
                               }
                 )
-            })
-        )
-
-        // When the location, reset and hide any existing overlay
-        this.subscriptions.add(
-            this.componentUpdates.pipe(map(props => props.location), distinctUntilChanged()).subscribe(() => {
-                this.setState({
-                    clickedGoToDefinition: false,
-                    definitionURLOrError: undefined,
-                    hoveredToken: undefined,
-                    hoverIsFixed: false,
-                    hoverOrError: undefined,
-                    overlayPosition: undefined,
-                })
             })
         )
 
@@ -357,7 +398,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     ref={this.nextCodeElement}
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                     onClick={this.nextCodeClick}
-                    onMouseOver={this.nextBlobMouseOver}
+                    onMouseOver={this.nextCodeMouseOver}
                 />
                 {this.state.hoverOrError &&
                     !(isHover(this.state.hoverOrError) && isEmptyHover(this.state.hoverOrError)) && (
@@ -371,7 +412,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             }
                             onGoToDefinitionClick={this.nextGoToDefinitionClick}
                             hoverOrError={this.state.hoverOrError}
-                            hoveredToken={this.state.hoveredToken}
+                            hoveredTokenPosition={this.state.hoveredTokenPosition}
                             overlayPosition={this.state.overlayPosition}
                             isFixed={this.state.hoverIsFixed}
                             {...this.props}
