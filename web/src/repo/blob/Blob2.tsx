@@ -17,7 +17,7 @@ import {
 } from 'rxjs/operators'
 import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
+import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { asError, ErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
 import { parseHash } from '../../util/url'
@@ -263,7 +263,15 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             commitID: this.props.commitID,
                             filePath: this.props.filePath,
                             position,
-                        }).pipe(catchError(error => [asError(error)]), share())
+                        }).pipe(
+                            catchError(error => {
+                                if (error && error.code === EMODENOTFOUND) {
+                                    return [undefined]
+                                }
+                                return [asError(error)]
+                            }),
+                            share()
+                        )
                         // Show a loader if it hasn't returned after 100ms
                         return merge(hoverFetch, of(LOADING).pipe(delay(100), takeUntil(hoverFetch)))
                     })
