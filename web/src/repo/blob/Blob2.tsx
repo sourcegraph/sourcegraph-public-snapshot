@@ -229,8 +229,11 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
-        /** Emits with the position at which a new tooltip is to be shown from a mouseover, click or location change */
-        const filteredTargetPositions: Observable<Position> = merge(
+        /**
+         * Emits with the position at which a new tooltip is to be shown from a mouseover, click or location change.
+         * Emits `undefined` when a target was hovered/clicked that does not correspond to a position (e.g. after the end of the line).
+         */
+        const filteredTargetPositions: Observable<Position | undefined> = merge(
             // When the location changes and and includes a line/column pair, use that position
             positionsFromLocationHash,
             merge(
@@ -241,16 +244,19 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             ).pipe(
                 // Find out the position that was hovered over
                 map(({ target, codeElement }) => getTargetLineAndOffset(target, codeElement, false)),
-                filter(isDefined),
-                map(position => ({ line: position.line, character: position.character }))
+                map(position => position && { line: position.line, character: position.character })
             )
         ).pipe(share())
 
+        // HOVER FETCH
         // On every new hover position, fetch new hover contents and update the state
         this.subscriptions.add(
             filteredTargetPositions
                 .pipe(
                     switchMap(position => {
+                        if (!position) {
+                            return [undefined]
+                        }
                         // Fetch the hover for that position
                         const hoverFetch = fetchHover({
                             repoPath: this.props.repoPath,
@@ -273,9 +279,12 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         this.subscriptions.add(
             filteredTargetPositions
                 .pipe(
-                    // Fetch the hover for that position
-                    switchMap(position =>
-                        concat(
+                    // Fetch the definition location for that position
+                    switchMap(position => {
+                        if (!position) {
+                            return [undefined]
+                        }
+                        return concat(
                             [LOADING],
                             fetchJumpURL({
                                 repoPath: this.props.repoPath,
@@ -287,7 +296,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                                 catchError(error => [asError(error)])
                             )
                         )
-                    )
+                    })
                 )
                 .subscribe(definitionURLOrError => {
                     this.setState({ definitionURLOrError })
