@@ -128,7 +128,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
             return
         }
 
-        if (!this.props.score) {
+        if (this.props.score === undefined) {
             this.setState({ error: new Error('Please select a score') })
             return
         }
