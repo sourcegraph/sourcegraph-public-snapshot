@@ -16,20 +16,20 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 		log15.Error("Error in signout.", "err", err)
 	}
 
+	var endSessionEndpoint string
 	var err error
 	p := conf.AuthProvider()
 	switch {
 	case p.Openidconnect != nil:
-		var endSessionEndpoint string
 		endSessionEndpoint, err = openidconnect.SignOut(w, r)
-		if endSessionEndpoint != "" {
-			// Load the end-session endpoint *and* redirect.
-			renderEndSessionTemplate(w, r, endSessionEndpoint)
-			return
-		}
 	}
 	if err != nil {
 		log15.Error("Error clearing auth provider session data.", "err", err)
+	}
+	if endSessionEndpoint != "" {
+		// Load the end-session endpoint *and* redirect.
+		renderEndSessionTemplate(w, r, endSessionEndpoint)
+		return
 	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
