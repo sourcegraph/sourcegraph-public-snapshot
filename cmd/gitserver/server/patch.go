@@ -123,7 +123,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 
 	cmtHash := strings.TrimSpace(string(out))
 
-	cmd = exec.CommandContext(ctx, "cp", "-R", tmpObjectsDir+"/", realObjectsDir)
+	cmd = exec.CommandContext(ctx, "cp", "-a", tmpObjectsDir+"/.", realObjectsDir)
 	cmd.Dir = tmpRepoDir
 
 	if err := cmd.Run(); err != nil {
