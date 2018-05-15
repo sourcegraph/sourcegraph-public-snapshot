@@ -78,17 +78,17 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 		return
 	}
 
+	// Delegate to the OpenID Connect login handler to handle the OIDC Authentication Code Flow
+	// callback.
+	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/") {
+		loginHandler(w, r, pc)
+		return
+	}
+
 	// Unauthenticated API requests are rejected immediately (no redirect to auth flow because there
 	// is no interactive user to redirect).
 	if isAPIRequest {
 		http.Error(w, "requires authentication", http.StatusUnauthorized)
-		return
-	}
-
-	// Delegate to the OpenID Connect login handler to handle the OIDC Authentication Code Flow
-	// callback.
-	if strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/") {
-		loginHandler(w, r, pc)
 		return
 	}
 
