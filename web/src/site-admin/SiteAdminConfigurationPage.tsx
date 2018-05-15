@@ -264,7 +264,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             'authProxyIP',
             'authProxyPassword',
             'deploymentOverrides',
-            'experimentIndexedSearch',
             'gitoliteIP',
             'gitserverCount',
             'gitserverDiskSize',
