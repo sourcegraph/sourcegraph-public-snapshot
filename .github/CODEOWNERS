@@ -4,7 +4,6 @@
 
 *git* @keegancsmith
 migrations/ @keegancsmith
-migrations/ @nicksnyder
 monolith/ @keegancsmith
 search @keegancsmith
 web/ @felixfbecker
