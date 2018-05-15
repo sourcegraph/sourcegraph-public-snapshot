@@ -8,3 +8,10 @@ monolith/ @keegancsmith
 search @keegancsmith
 web/ @felixfbecker
 xlang/ @keegancsmith
+schema/ @sqs
+web/src/site-admin/ @sqs
+web/src/settings/ @sqs
+conf/ @sqs
+cmd/frontend/internal/auth/ @sqs
+dev/auth-provider/ @sqs
+dev/config.json @sqs
