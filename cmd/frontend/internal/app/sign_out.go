@@ -17,37 +17,36 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 		log15.Error("Error in signout.", "err", err)
 	}
 
-	var endSessionEndpoint string
+	var signoutURL string
 	var err error
 	p := conf.AuthProvider()
 	switch {
 	case p.Openidconnect != nil:
-		endSessionEndpoint, err = openidconnect.SignOut(w, r)
+		signoutURL, err = openidconnect.SignOut(w, r)
 	case p.Saml != nil && conf.EnhancedSAMLEnabled():
-		endSessionEndpoint, err = saml.SignOut(w, r)
+		signoutURL, err = saml.SignOut(w, r)
 	}
 	if err != nil {
 		log15.Error("Error clearing auth provider session data.", "err", err)
 	}
-	if endSessionEndpoint != "" {
-		// Load the end-session endpoint *and* redirect.
-		renderEndSessionTemplate(w, r, endSessionEndpoint)
+	if signoutURL != "" {
+		renderSignoutPageTemplate(w, r, signoutURL)
 		return
 	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func renderEndSessionTemplate(w http.ResponseWriter, r *http.Request, endSessionEndpoint string) {
+func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutURL string) {
 	data := struct {
-		EndSessionURL string
+		SignoutURL string
 	}{
-		EndSessionURL: endSessionEndpoint,
+		SignoutURL: signoutURL,
 	}
 
 	var buf bytes.Buffer
-	if err := renderEndSessionPageTemplate.Execute(&buf, data); err != nil {
-		log15.Error("Error rendering end-session template.", "err", err)
+	if err := signoutPageTemplate.Execute(&buf, data); err != nil {
+		log15.Error("Error rendering signout page template.", "err", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -56,13 +55,13 @@ func renderEndSessionTemplate(w http.ResponseWriter, r *http.Request, endSession
 }
 
 var (
-	renderEndSessionPageTemplate = template.Must(template.New("").Parse(`
+	signoutPageTemplate = template.Must(template.New("").Parse(`
 <pre>
-<strong>Logged out of Sourcegraph</strong>
+<strong>Signed out of Sourcegraph</strong>
 <br>
 <a href="/">Go to Sourcegraph</a>
 <br>
-<a href="{{.EndSessionURL}}">Log out of authentication provider</a>
+<a href="{{.SignoutURL}}">Sign out of authentication provider</a>
 </pre>
 `))
 )
