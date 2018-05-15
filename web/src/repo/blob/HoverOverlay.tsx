@@ -11,9 +11,19 @@ import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toPrettyBlobURL } from '../../util/url'
 
+/** Returns true if the given value looks like an LSP MarkupContent */
 const isMarkupContent = (markup: any): markup is MarkupContent =>
     typeof markup === 'object' && markup !== null && 'kind' in markup
 
+/**
+ * Attempts to syntax-highlight the given code.
+ * If the language is not given, it is auto-detected.
+ * If an error occurs, the code is returned as plain text with escaped HTML entities
+ *
+ * @param code The code to highlight
+ * @param language The language of the code, if known
+ * @return Safe HTML
+ */
 const highlightCodeSafe = (code: string, language?: string): string => {
     try {
         if (language) {
