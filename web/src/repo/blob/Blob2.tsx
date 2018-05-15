@@ -85,10 +85,10 @@ const isHover = (val: any): val is Hover => typeof val === 'object' && val !== n
 interface BlobState {
     hoverOrError?: typeof LOADING | Hover | null | ErrorLike
     definitionURLOrError?: typeof LOADING | { jumpURL: string } | null | ErrorLike
-    hoverIsFixed: boolean
+    hoverOverlayIsFixed: boolean
 
     /** The desired position of the hover overlay */
-    overlayPosition?: { left: number; top: number }
+    hoverOverlayPosition?: { left: number; top: number }
 
     /**
      * Whether the user has clicked the go to definition button for the current overlay yet,
@@ -134,7 +134,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     constructor(props: BlobProps) {
         super(props)
         this.state = {
-            hoverIsFixed: false,
+            hoverOverlayIsFixed: false,
             clickedGoToDefinition: false,
         }
 
@@ -218,14 +218,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     ),
                     map(([, { target, codeElement, source }]) => ({ target, codeElement, source })),
                     // When the new target came from the URL, we don't care whether the hover is currently fixed or not, it needs to be respositioned.
-                    filter(({ source }) => source === 'location' || !this.state.hoverIsFixed),
+                    filter(({ source }) => source === 'location' || !this.state.hoverOverlayIsFixed),
                     withLatestFrom(this.hoverOverlayElements),
                     map(([{ target, codeElement }, hoverElement]) => ({ target, hoverElement, codeElement })),
                     filter(propertyIsDefined('hoverElement'))
                 )
                 .subscribe(({ codeElement, hoverElement, target }) => {
-                    const overlayPosition = calculateOverlayPosition(codeElement, target, hoverElement)
-                    this.setState({ overlayPosition })
+                    const hoverOverlayPosition = calculateOverlayPosition(codeElement, target, hoverElement)
+                    this.setState({ hoverOverlayPosition })
                 })
         )
 
@@ -238,9 +238,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             positionsFromLocationHash,
             merge(
                 // mouseovers should only trigger a new hover when the overlay is not fixed
-                codeMouseOverTargets.pipe(filter(() => !this.state.hoverIsFixed)),
+                codeMouseOverTargets.pipe(filter(() => !this.state.hoverOverlayIsFixed)),
                 // clicks should trigger a new hover when the overlay is fixed
-                codeClickTargets.pipe(filter(() => this.state.hoverIsFixed))
+                codeClickTargets.pipe(filter(() => this.state.hoverOverlayIsFixed))
             ).pipe(
                 // Find out the position that was hovered over
                 map(({ target, codeElement }) => getTargetLineAndOffset(target, codeElement, false)),
@@ -278,7 +278,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 )
                 .subscribe(hoverOrError => {
                     // Reset the hover position, it's gonna be repositioned after the hover was rendered
-                    this.setState({ hoverOrError, overlayPosition: undefined })
+                    this.setState({ hoverOrError, hoverOverlayPosition: undefined })
                 })
         )
 
@@ -330,9 +330,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     // Remember if ctrl/cmd was pressed to determine whether the definition should be opened in a new tab once loaded
                     clickedGoToDefinition: event.ctrlKey || event.metaKey ? 'new-tab' : 'same-tab',
                     // Set fixed so hover overlay appears is shown at the destination
-                    hoverIsFixed: true,
+                    hoverOverlayIsFixed: true,
                     // Reset overlay
-                    overlayPosition: undefined,
+                    hoverOverlayPosition: undefined,
                     hoverOrError: undefined,
                     hoveredTokenPosition: undefined,
                 })
@@ -357,14 +357,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             this.codeClicks.subscribe(() => {
                 this.setState(
                     prevState =>
-                        prevState.hoverIsFixed
+                        prevState.hoverOverlayIsFixed
                             ? {
-                                  hoverIsFixed: false,
+                                  hoverOverlayIsFixed: false,
                                   hoverOrError: undefined,
-                                  overlayPosition: undefined,
+                                  hoverOverlayPosition: undefined,
                               }
                             : {
-                                  hoverIsFixed: true,
+                                  hoverOverlayIsFixed: true,
                               }
                 )
             })
@@ -431,7 +431,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}
                         hoverOrError={this.state.hoverOrError}
                         hoveredTokenPosition={this.state.hoveredTokenPosition}
-                        overlayPosition={this.state.overlayPosition}
+                        overlayPosition={this.state.hoverOverlayPosition}
                         {...this.props}
                     />
                 )}
