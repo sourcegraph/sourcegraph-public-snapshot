@@ -3,7 +3,6 @@ import {
     SymbolLocationInformation,
     WorkspaceReferenceParams,
 } from 'javascript-typescript-langserver/lib/request-type'
-import { isEmpty } from 'lodash'
 import { Observable, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map } from 'rxjs/operators'
@@ -174,7 +173,7 @@ export const fetchHover = memoizeObservable(
             map(hover => {
                 // Be nice and treat an empty object (not spec-compliant) like null
                 // https://github.com/sourcegraph/python-langserver/issues/55
-                if (isEmpty(hover)) {
+                if (typeof hover === 'object' && hover !== null && Object.keys(hover).length === 0) {
                     console.warn('Received invalid hover response', hover, 'treating as', null)
                     return null
                 }
