@@ -100,62 +100,65 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                   }
         }
     >
-        <div className="hover-overlay__contents">
-            {props.hoverOrError === LOADING ? (
-                <div className="hover-overlay__row hover-overlay__loader-row">
-                    <Loader className="icon-inline" />
-                </div>
-            ) : isErrorLike(props.hoverOrError) ? (
-                <div className="hover-overlay__row alert alert-danger">
-                    <AlertCircleOutlineIcon className="icon-inline" /> {upperFirst(props.hoverOrError.message)}
-                </div>
-            ) : (
-                props.hoverOrError &&
-                // tslint:disable-next-line deprecation We want to handle the deprecated MarkedString
-                castArray<MarkedString | MarkupContent>(props.hoverOrError.contents)
-                    .map(value => (typeof value === 'string' ? { kind: MarkupKind.Markdown, value } : value))
-                    .map((content, i) => {
-                        if (isMarkupContent(content)) {
-                            if (content.kind === MarkupKind.Markdown) {
-                                try {
-                                    const rendered = marked(content.value, {
-                                        gfm: true,
-                                        breaks: true,
-                                        sanitize: true,
-                                        highlight: (code, language) =>
-                                            '<code>' + highlightCodeSafe(code, language) + '</code>',
-                                    })
-                                    return (
-                                        <div
-                                            className="hover-overlay__content hover-overlay__row"
-                                            key={i}
-                                            dangerouslySetInnerHTML={{ __html: rendered }}
-                                        />
-                                    )
-                                } catch (err) {
-                                    return (
-                                        <div className="hover-overlay__row alert alert-danger">
-                                            <strong>
-                                                <AlertCircleOutlineIcon className="icon-inline" /> Error rendering hover{' '}
-                                                content
-                                            </strong>{' '}
-                                            {upperFirst(asError(err).message)}
-                                        </div>
-                                    )
+        {props.hoverOrError && (
+            <div className="hover-overlay__contents">
+                {props.hoverOrError === LOADING ? (
+                    <div className="hover-overlay__row hover-overlay__loader-row">
+                        <Loader className="icon-inline" />
+                    </div>
+                ) : isErrorLike(props.hoverOrError) ? (
+                    <div className="hover-overlay__row alert alert-danger">
+                        <AlertCircleOutlineIcon className="icon-inline" /> {upperFirst(props.hoverOrError.message)}
+                    </div>
+                ) : (
+                    // tslint:disable-next-line deprecation We want to handle the deprecated MarkedString
+                    castArray<MarkedString | MarkupContent>(props.hoverOrError.contents)
+                        .map(value => (typeof value === 'string' ? { kind: MarkupKind.Markdown, value } : value))
+                        .map((content, i) => {
+                            if (isMarkupContent(content)) {
+                                if (content.kind === MarkupKind.Markdown) {
+                                    try {
+                                        const rendered = marked(content.value, {
+                                            gfm: true,
+                                            breaks: true,
+                                            sanitize: true,
+                                            highlight: (code, language) =>
+                                                '<code>' + highlightCodeSafe(code, language) + '</code>',
+                                        })
+                                        return (
+                                            <div
+                                                className="hover-overlay__content hover-overlay__row"
+                                                key={i}
+                                                dangerouslySetInnerHTML={{ __html: rendered }}
+                                            />
+                                        )
+                                    } catch (err) {
+                                        return (
+                                            <div className="hover-overlay__row alert alert-danger">
+                                                <strong>
+                                                    <AlertCircleOutlineIcon className="icon-inline" /> Error rendering
+                                                    hover content
+                                                </strong>{' '}
+                                                {upperFirst(asError(err).message)}
+                                            </div>
+                                        )
+                                    }
                                 }
+                                return content.value
                             }
-                            return content.value
-                        }
-                        return (
-                            <code
-                                className="hover-overlay__content hover-overlay__row"
-                                key={i}
-                                dangerouslySetInnerHTML={{ __html: highlightCodeSafe(content.value, content.language) }}
-                            />
-                        )
-                    })
-            )}
-        </div>
+                            return (
+                                <code
+                                    className="hover-overlay__content hover-overlay__row"
+                                    key={i}
+                                    dangerouslySetInnerHTML={{
+                                        __html: highlightCodeSafe(content.value, content.language),
+                                    }}
+                                />
+                            )
+                        })
+                )}
+            </div>
+        )}
 
         <div className="hover-overlay__actions hover-overlay__row">
             <ButtonOrLink
