@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +126,8 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd = exec.CommandContext(ctx, "git", "update-ref", "refs/"+req.TargetRef, cmtHash)
 	cmd.Dir = realDir
 
-	if err = cmd.Run(); err != nil {
+	if out, err = cmd.CombinedOutput(); err != nil {
+		log15.Error("Failed to create ref for commit.", "output", out)
 		http.Error(w, "gitserver: creating ref - "+err.Error(), http.StatusInternalServerError)
 		return
 	}
