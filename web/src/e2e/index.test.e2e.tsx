@@ -89,15 +89,15 @@ describe('e2e test suite', () => {
         // Wait for the repository container or a repository error page to be shown.
         await Promise.race([
             // Add or enable repository.
-            page
-                .waitForSelector('.repository-error-page__btn:not([disabled])')
-                .then(
-                    () =>
-                        page
-                            .click('.repository-error-page__btn:not([disabled])')
-                            .then(() => page.waitForSelector('.repo-rev-container')),
-                    () => void 0
-                ),
+            (async () => {
+                try {
+                    await page.waitForSelector('.repository-error-page__btn:not([disabled])')
+                } catch {
+                    return
+                }
+                await page.click('.repository-error-page__btn:not([disabled])')
+                await page.waitForSelector('.repo-rev-container')
+            })(),
 
             // Repository is cloning.
             page.waitForSelector('.repository-cloning-in-progress-page'),
