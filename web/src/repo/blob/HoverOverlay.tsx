@@ -1,6 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
-import { castArray, upperFirst } from 'lodash'
+import { castArray, escape, upperFirst } from 'lodash'
 import marked from 'marked'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
@@ -8,20 +8,23 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Hover, MarkedString, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types'
 import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
-import { ErrorLike, isErrorLike } from '../../util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toPrettyBlobURL } from '../../util/url'
 
 const isMarkupContent = (markup: any): markup is MarkupContent =>
     typeof markup === 'object' && markup !== null && 'kind' in markup
 
-const renderMarkdown = (markdown: string) =>
-    marked(markdown, {
-        gfm: true,
-        breaks: true,
-        sanitize: true,
-        highlight: (code, language) =>
-            '<code>' + (language ? highlight(language, code, true).value : highlightAuto(code).value) + '</code>',
-    })
+const highlightCodeSafe = (code: string, language?: string): string => {
+    try {
+        if (language) {
+            return highlight(language, code, true).value
+        }
+        return highlightAuto(code).value
+    } catch (err) {
+        console.error('Error syntax-highlighting hover markdown code block', err)
+        return escape(code)
+    }
+}
 
 /**
  * Uses a placeholder `<button>` or a React Router `<Link>` depending on whether `to` is set.
@@ -103,30 +106,46 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                 // tslint:disable-next-line deprecation We want to handle the deprecated MarkedString
                 castArray<MarkedString | MarkupContent>(props.hoverOrError.contents)
                     .map(value => (typeof value === 'string' ? { kind: MarkupKind.Markdown, value } : value))
-                    .map(
-                        (content, i) =>
-                            isMarkupContent(content) ? (
-                                content.kind === MarkupKind.Markdown ? (
-                                    <div
-                                        className="hover-overlay__content hover-overlay__row"
-                                        key={i}
-                                        dangerouslySetInnerHTML={{
-                                            __html: renderMarkdown(content.value),
-                                        }}
-                                    />
-                                ) : (
-                                    content.value
-                                )
-                            ) : (
-                                <code
-                                    className="hover-overlay__content hover-overlay__row"
-                                    key={i}
-                                    dangerouslySetInnerHTML={{
-                                        __html: highlight(content.language, content.value).value,
-                                    }}
-                                />
-                            )
-                    )
+                    .map((content, i) => {
+                        if (isMarkupContent(content)) {
+                            if (content.kind === MarkupKind.Markdown) {
+                                try {
+                                    const rendered = marked(content.value, {
+                                        gfm: true,
+                                        breaks: true,
+                                        sanitize: true,
+                                        highlight: (code, language) =>
+                                            '<code>' + highlightCodeSafe(code, language) + '</code>',
+                                    })
+                                    return (
+                                        <div
+                                            className="hover-overlay__content hover-overlay__row"
+                                            key={i}
+                                            dangerouslySetInnerHTML={{ __html: rendered }}
+                                        />
+                                    )
+                                } catch (err) {
+                                    return (
+                                        <div className="hover-overlay__row alert alert-danger">
+                                            <strong>
+                                                <AlertCircleOutlineIcon className="icon-inline" /> Error rendering hover{' '}
+                                                content
+                                            </strong>{' '}
+                                            {upperFirst(asError(err).message)}
+                                        </div>
+                                    )
+                                }
+                            }
+                            return content.value
+                        }
+                        return (
+                            <code
+                                className="hover-overlay__content hover-overlay__row"
+                                key={i}
+                                dangerouslySetInnerHTML={{ __html: highlightCodeSafe(content.value, content.language) }}
+                            />
+                        )
+                    })
             )}
         </div>
 
