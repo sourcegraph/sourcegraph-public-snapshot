@@ -60,7 +60,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
 
 	if out, err := cmd.CombinedOutput(); err != nil {
-		log15.Error("Failed to base the temporary repo on the base revision.", "ref", req.TargetRef, "base", req.BaseCommit, "output", out)
+		log15.Error("Failed to base the temporary repo on the base revision.", "ref", req.TargetRef, "base", req.BaseCommit, "output", string(out))
 
 		http.Error(w, "gitserver: basing staging on base rev - "+err.Error(), http.StatusInternalServerError)
 		return
@@ -72,7 +72,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd.Stdin = strings.NewReader(req.Patch)
 
 	if out, err := cmd.CombinedOutput(); err != nil {
-		log15.Error("Failed to apply patch.", "ref", req.TargetRef, "output", out)
+		log15.Error("Failed to apply patch.", "ref", req.TargetRef, "output", string(out))
 
 		http.Error(w, "gitserver: applying patch - "+err.Error(), http.StatusInternalServerError)
 		return
@@ -135,7 +135,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd.Dir = realDir
 
 	if out, err = cmd.CombinedOutput(); err != nil {
-		log15.Error("Failed to create ref for commit.", "ref", req.TargetRef, "commit", cmtHash, "output", out)
+		log15.Error("Failed to create ref for commit.", "ref", req.TargetRef, "commit", cmtHash, "output", string(out))
 
 		http.Error(w, "gitserver: creating ref - "+err.Error(), http.StatusInternalServerError)
 		return
