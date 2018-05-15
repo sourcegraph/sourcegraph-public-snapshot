@@ -5,7 +5,7 @@ import {
 } from 'javascript-typescript-langserver/lib/request-type'
 import { Observable, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
-import { catchError, map } from 'rxjs/operators'
+import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
@@ -107,6 +107,12 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
         },
         body: JSON.stringify(wrapLSPRequests(ctx, mode, requests)),
     }).pipe(
+        // Workaround for https://github.com/ReactiveX/rxjs/issues/3606
+        tap(response => {
+            if (response.status === 0) {
+                throw Object.assign(new Error('Ajax status 0'), response)
+            }
+        }),
         catchError<AjaxResponse, never>(err => {
             normalizeAjaxError(err)
             throw err
