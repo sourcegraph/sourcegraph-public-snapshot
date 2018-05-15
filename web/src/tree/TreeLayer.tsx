@@ -279,7 +279,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 <tr key={fileOrDirInfo.path} className={className} onClick={this.handleDirClick}>
                                     <td>
                                         <div
-                                            className="tree__row-contents"
+                                            className="tree__row-contents tree__row-contents-new"
                                             data-tree-directory="true"
                                             data-tree-path={fileOrDirInfo.path}
                                         >

@@ -49,10 +49,13 @@
         display: flex;
         color: white;
         align-items: center;
-        justify-content: space-between;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
         cursor: pointer;
+
+        &-new {
+            justify-content: space-between;
+        }
 
         &-text {
             display: flex;
