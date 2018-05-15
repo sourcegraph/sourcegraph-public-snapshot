@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp/syntax"
 	"sort"
 	"strconv"
@@ -700,9 +699,6 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 
 	// Support index:yes (default), index:only, and index:no in search query.
 	index, _ := query.StringValues(searchquery.FieldIndex)
-	if !common.indexUnavailable && len(index) == 0 && os.Getenv("SEARCH10_INDEX_DEFAULT") != "" && len(args.repos) > 10 {
-		index = []string{os.Getenv("SEARCH10_INDEX_DEFAULT")}
-	}
 	if len(index) > 0 {
 		index := index[len(index)-1]
 		switch index {
