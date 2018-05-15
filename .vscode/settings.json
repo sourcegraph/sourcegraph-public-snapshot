@@ -6,6 +6,9 @@
     "**/bower_components": true,
     "ui/assets": true
   },
+  "files.associations": {
+    "**/dev/config.json": "jsonc"
+  },
   "json.schemas": [
     {
       "fileMatch": ["dev/config.json"],
