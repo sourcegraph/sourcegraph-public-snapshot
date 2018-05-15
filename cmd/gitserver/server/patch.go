@@ -127,7 +127,8 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd.Dir = realDir
 
 	if out, err = cmd.CombinedOutput(); err != nil {
-		log15.Error("Failed to create ref for commit.", "output", out)
+		log15.Error("Failed to create ref for commit.", "ref", "refs"+req.TargetRef, "commit", cmtHash, "output", out)
+
 		http.Error(w, "gitserver: creating ref - "+err.Error(), http.StatusInternalServerError)
 		return
 	}
