@@ -59,9 +59,6 @@ interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<Vie
     /** The position of the tooltip (assigned to `style`) */
     overlayPosition?: { left: number; top: number }
 
-    /** Whether this tooltip is fixed or not. Determines whether actions are shown or not. */
-    isFixed: boolean
-
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLElement>
 
@@ -150,55 +147,47 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
         </div>
 
         <div className="hover-overlay__actions hover-overlay__row">
-            {props.isFixed ? (
-                <>
-                    <ButtonOrLink
-                        to={isJumpURL(props.definitionURLOrError) ? props.definitionURLOrError.jumpURL : undefined}
-                        className="btn btn-secondary hover-overlay__action"
-                        onClick={props.onGoToDefinitionClick}
-                    >
-                        Go to definition {props.definitionURLOrError === LOADING && <Loader className="icon-inline" />}
-                    </ButtonOrLink>
-                    <ButtonOrLink
-                        to={
-                            props.hoveredTokenPosition &&
-                            toPrettyBlobURL({
-                                repoPath: props.repoPath,
-                                commitID: props.commitID,
-                                rev: props.rev,
-                                filePath: props.filePath,
-                                position: props.hoveredTokenPosition,
-                                range: props.range,
-                                viewState: 'references',
-                            })
-                        }
-                        className="btn btn-secondary hover-overlay__action"
-                    >
-                        Find references
-                    </ButtonOrLink>
-                    <ButtonOrLink
-                        to={
-                            props.hoveredTokenPosition &&
-                            toPrettyBlobURL({
-                                repoPath: props.repoPath,
-                                commitID: props.commitID,
-                                rev: props.rev,
-                                filePath: props.filePath,
-                                position: props.hoveredTokenPosition,
-                                range: props.range,
-                                viewState: 'impl',
-                            })
-                        }
-                        className="btn btn-secondary hover-overlay__action"
-                    >
-                        Find implementations
-                    </ButtonOrLink>
-                </>
-            ) : (
-                <button className="btn btn-secondary hover-overlay__actions-placeholder" disabled={true}>
-                    <em>Click for actions</em>
-                </button>
-            )}
+            <ButtonOrLink
+                to={isJumpURL(props.definitionURLOrError) ? props.definitionURLOrError.jumpURL : undefined}
+                className="btn btn-secondary hover-overlay__action"
+                onClick={props.onGoToDefinitionClick}
+            >
+                Go to definition {props.definitionURLOrError === LOADING && <Loader className="icon-inline" />}
+            </ButtonOrLink>
+            <ButtonOrLink
+                to={
+                    props.hoveredTokenPosition &&
+                    toPrettyBlobURL({
+                        repoPath: props.repoPath,
+                        commitID: props.commitID,
+                        rev: props.rev,
+                        filePath: props.filePath,
+                        position: props.hoveredTokenPosition,
+                        range: props.range,
+                        viewState: 'references',
+                    })
+                }
+                className="btn btn-secondary hover-overlay__action"
+            >
+                Find references
+            </ButtonOrLink>
+            <ButtonOrLink
+                to={
+                    props.hoveredTokenPosition &&
+                    toPrettyBlobURL({
+                        repoPath: props.repoPath,
+                        commitID: props.commitID,
+                        rev: props.rev,
+                        filePath: props.filePath,
+                        position: props.hoveredTokenPosition,
+                        range: props.range,
+                        viewState: 'impl',
+                    })
+                }
+                className="btn btn-secondary hover-overlay__action"
+            >
+                Find implementations
+            </ButtonOrLink>
         </div>
         {props.definitionURLOrError === null ? (
             <div className="alert alert-info m-0 p-2 rounded-0">

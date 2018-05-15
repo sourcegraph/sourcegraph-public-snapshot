@@ -431,7 +431,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             hoverOrError={this.state.hoverOrError}
                             hoveredTokenPosition={this.state.hoveredTokenPosition}
                             overlayPosition={this.state.overlayPosition}
-                            isFixed={this.state.hoverIsFixed}
                             {...this.props}
                         />
                     )}
