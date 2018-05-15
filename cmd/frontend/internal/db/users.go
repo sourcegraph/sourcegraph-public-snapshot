@@ -120,7 +120,6 @@ type NewUser struct {
 // It's implemented as part of the (users).Create call instead of relying on the caller to do it in
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
-
 func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
