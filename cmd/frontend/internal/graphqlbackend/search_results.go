@@ -352,6 +352,11 @@ func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMat
 	}()
 
 	// Blame the first line match.
+	lineMatches := fm.LineMatches()
+	if len(lineMatches) == 0 {
+		// No line match
+		return time.Time{}, nil
+	}
 	lm := fm.LineMatches()[0]
 	hunks, err := backend.Repos.VCS(gitserver.Repo{Name: fm.repo.URI}).BlameFile(ctx, fm.JPath, &vcs.BlameOptions{
 		NewestCommit: fm.commitID,
