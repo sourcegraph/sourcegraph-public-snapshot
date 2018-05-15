@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"golang.org/x/net/context/ctxhttp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers")
@@ -476,9 +477,9 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, repo api.RepoURI, op
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("gitserver err res:", string(b))
+		log15.Warn("gitserver create-commit-from-patch error:", string(b))
 
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d", resp.StatusCode)}
+		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(b))}
 	}
 
 	var res protocol.CreatePatchFromPatchResponse
