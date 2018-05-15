@@ -55,6 +55,15 @@ describe('e2e test suite', () => {
     } else {
         before('Start browser', async () => {
             browser = await launch()
+
+            // Make feature flags mirror production
+            const page = await browser.newPage()
+            await page.goto(baseURL)
+            await page.evaluate(() => {
+                window.localStorage.clear()
+                window.localStorage.setItem('disableDefaultFeatureFlags', 'true')
+            })
+            await page.close()
         })
         after('Close browser', async () => {
             if (browser) {
