@@ -31,7 +31,7 @@ const highlightCodeSafe = (code: string, language?: string): string => {
         }
         return highlightAuto(code).value
     } catch (err) {
-        console.error('Error syntax-highlighting hover markdown code block', err)
+        console.warn('Error syntax-highlighting hover markdown code block', err)
         return escape(code)
     }
 }
