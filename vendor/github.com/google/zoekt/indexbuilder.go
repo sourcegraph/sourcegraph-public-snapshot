@@ -278,7 +278,7 @@ func IsText(content []byte) bool {
 		}
 
 		r, sz := utf8.DecodeRune(content)
-		if r == utf8.RuneError {
+		if r == utf8.RuneError && sz < 2 {
 			return false
 		}
 		content = content[sz:]

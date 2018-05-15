@@ -283,7 +283,8 @@ func (b *Builder) flush() error {
 		return b.buildError
 	}
 
-	if len(todo) == 0 {
+	hasShard := b.nextShardNum > 0
+	if len(todo) == 0 && hasShard {
 		return nil
 	}
 

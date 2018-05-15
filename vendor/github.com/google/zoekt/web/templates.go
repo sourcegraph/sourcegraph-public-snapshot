@@ -52,6 +52,9 @@ var TemplateText = map[string]string{
     border-color: #aaa !important;
     color: black;
   }
+  .noselect {
+    user-select: none;
+  }
   a.label-dup:hover {
     color: black;
     background: #ddd;
@@ -228,7 +231,7 @@ var TemplateText = map[string]string{
         {{range .Matches}}
         <tr>
           <td style="background-color: rgba(238, 238, 255, 0.6);">
-            <pre class="inline-pre">{{if .URL}}<a href="{{.URL}}">{{end}}<u>{{.LineNum}}</u>{{if .URL}}</a>{{end}}: {{range .Fragments}}{{LimitPre 100 .Pre}}<b>{{.Match}}</b>{{LimitPost 100 .Post}}{{end}}</pre>
+            <pre class="inline-pre"><span class="noselect">{{if .URL}}<a href="{{.URL}}">{{end}}<u>{{.LineNum}}</u>{{if .URL}}</a>{{end}}: </span>{{range .Fragments}}{{LimitPre 100 .Pre}}<b>{{.Match}}</b>{{LimitPost 100 .Post}}{{end}}</pre>
           </td>
         </tr>
         {{end}}
@@ -258,13 +261,16 @@ var TemplateText = map[string]string{
 <body id="results">
   <div class="container">
     {{template "navbar" .Last}}
+    <div><b>
+    Found {{.Stats.Repos}} repositories ({{.Stats.Documents}} files, {{HumanUnit .Stats.ContentBytes}}b content)
+    </b></div>
     <table class="table table-hover table-condensed">
     <thead>
       <tr>
-        <th>Found {{.Stats.Repos}} repositories ({{.Stats.Documents}} files, {{HumanUnit .Stats.ContentBytes}}b content)</th>
-        <th>Last updated</th>
+        <th>Name <a href="/search?q={{.Last.Query}}&order=name">▼</a><a href="/search?q={{.Last.Query}}&order=revname">▲</a></th>
+        <th>Last updated <a href="/search?q={{.Last.Query}}&order=revtime">▼</a><a href="/search?q={{.Last.Query}}&order=time">▲</a></th>
         <th>Branches</th>
-        <th>Size</th>
+        <th>Size <a href="/search?q={{.Last.Query}}&order=revsize">▼</a><a href="/search?q={{.Last.Query}}&order=size">▲</a></th>
       </tr>
     </thead>
     <tbody>
@@ -297,7 +303,7 @@ var TemplateText = map[string]string{
   <div class="container-fluid container-results" >
      <div class="table table-hover table-condensed" style="overflow:auto; background: #eef;">
        {{ range $index, $ln := .Lines}}
-	 <pre id="l{{Inc $index}}" class="inline-pre"><a href="#l{{Inc $index}}">{{Inc $index}}</a>: {{$ln}}</pre>
+	 <pre id="l{{Inc $index}}" class="inline-pre"><span class="noselect"><a href="#l{{Inc $index}}">{{Inc $index}}</a>: </span>{{$ln}}</pre>
        {{end}}
      </div>
   </div>

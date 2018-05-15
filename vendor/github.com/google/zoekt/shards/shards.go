@@ -285,7 +285,6 @@ func (ss *shardedSearcher) List(ctx context.Context, r query.Q) (rl *zoekt.RepoL
 	crashes := 0
 	uniq := map[string]*zoekt.RepoListEntry{}
 
-	var names []string
 	for i := 0; i < shardCount; i++ {
 		r := <-all
 		if r.err != nil {
@@ -297,17 +296,15 @@ func (ss *shardedSearcher) List(ctx context.Context, r query.Q) (rl *zoekt.RepoL
 			if !ok {
 				cp := *r
 				uniq[r.Repository.Name] = &cp
-				names = append(names, r.Repository.Name)
 			} else {
 				prev.Stats.Add(&r.Stats)
 			}
 		}
 	}
-	sort.Strings(names)
 
-	aggregate := make([]*zoekt.RepoListEntry, 0, len(names))
-	for _, k := range names {
-		aggregate = append(aggregate, uniq[k])
+	aggregate := make([]*zoekt.RepoListEntry, 0, len(uniq))
+	for _, v := range uniq {
+		aggregate = append(aggregate, v)
 	}
 	return &zoekt.RepoList{
 		Repos:   aggregate,

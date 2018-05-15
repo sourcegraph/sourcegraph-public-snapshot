@@ -2,18 +2,19 @@
 //
 // Example via github.com:
 //
-//   zoekt-archive-index -index $PWD/index -incremental -commit b57cb1605fd11ba2ecfa7f68992b4b9cc791934d -name github.com/gorilla/mux https://codeload.github.com/gorilla/mux/legacy.tar.gz/b57cb1605fd11ba2ecfa7f68992b4b9cc791934d
+//   zoekt-archive-index -incremental -commit b57cb1605fd11ba2ecfa7f68992b4b9cc791934d -name github.com/gorilla/mux -strip_components 1 https://codeload.github.com/gorilla/mux/legacy.tar.gz/b57cb1605fd11ba2ecfa7f68992b4b9cc791934d
+//
+//   zoekt-archive-index -branch master https://github.com/gorilla/mux/commit/b57cb1605fd11ba2ecfa7f68992b4b9cc791934d
 package main
 
 import (
-	"archive/tar"
-	"compress/gzip"
+	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
-	"os"
+	"net/url"
 	"reflect"
 	"strings"
 
@@ -21,123 +22,203 @@ import (
 	"github.com/google/zoekt/build"
 )
 
-func main() {
-	var sizeMax = flag.Int("file_limit", 128*1024, "maximum file size")
-	var shardLimit = flag.Int("shard_limit", 100<<20, "maximum corpus size for a shard")
-	var parallelism = flag.Int("parallelism", 4, "maximum number of parallel indexing processes.")
-	name := flag.String("name", "", "The repository name for the archive")
-	branch := flag.String("branch", "HEAD", "The branch name for the archive")
-	commit := flag.String("commit", "", "The commit sha for the archive. If incremental this will avoid updating shards already at commit")
+// stripComponents removes the specified number of leading path
+// elements. Pathnames with fewer elements will return the empty string.
+func stripComponents(path string, count int) string {
+	for i := 0; path != "" && i < count; i++ {
+		i := strings.Index(path, "/")
+		if i < 0 {
+			return ""
+		}
+		path = path[i+1:]
+	}
+	return path
+}
 
-	indexDir := flag.String("index", build.DefaultDir, "index directory for *.zoekt files.")
-	incremental := flag.Bool("incremental", true, "only index changed repositories")
-	ctags := flag.Bool("require_ctags", false, "If set, ctags calls must succeed.")
+type Options struct {
+	Incremental bool
+
+	Archive string
+	Name    string
+	RepoURL string
+	Branch  string
+	Commit  string
+	Strip   int
+}
+
+func (o *Options) SetDefaults() {
+	// We guess based on the archive URL.
+	u, _ := url.Parse(o.Archive)
+	if u == nil {
+		return
+	}
+
+	setRef := func(ref string) {
+		if len(ref) == 40 && o.Commit == "" {
+			o.Commit = ref
+		}
+		if len(ref) != 40 && o.Branch == "" {
+			o.Branch = ref
+		}
+	}
+
+	switch u.Host {
+	case "github.com", "codeload.github.com":
+		// https://github.com/octokit/octokit.rb/commit/3d21ec53a331a6f037a91c368710b99387d012c1
+		// https://github.com/octokit/octokit.rb/blob/master/README.md
+		// https://github.com/octokit/octokit.rb/tree/master/lib
+		// https://codeload.github.com/octokit/octokit.rb/legacy.tar.gz/master
+		parts := strings.Split(u.Path, "/")
+		if len(parts) > 2 && o.Name == "" {
+			o.Name = fmt.Sprintf("github.com/%s/%s", parts[1], parts[2])
+			o.RepoURL = fmt.Sprintf("https://github.com/%s/%s", parts[1], parts[2])
+		}
+		if len(parts) > 4 {
+			setRef(parts[4])
+			if u.Host == "github.com" {
+				o.Archive = fmt.Sprintf("https://codeload.github.com/%s/%s/legacy.tar.gz/%s", parts[1], parts[2], parts[4])
+			}
+		}
+		o.Strip = 1
+	case "api.github.com":
+		// https://api.github.com/repos/octokit/octokit.rb/tarball/master
+		parts := strings.Split(u.Path, "/")
+		if len(parts) > 2 && o.Name == "" {
+			o.Name = fmt.Sprintf("github.com/%s/%s", parts[1], parts[2])
+			o.RepoURL = fmt.Sprintf("https://github.com/%s/%s", parts[1], parts[2])
+		}
+		if len(parts) > 5 {
+			setRef(parts[5])
+		}
+		o.Strip = 1
+	}
+}
+
+func do(opts Options, bopts build.Options) error {
+	opts.SetDefaults()
+
+	if opts.Name == "" && opts.RepoURL == "" {
+		return errors.New("-name or -url required")
+	}
+	if opts.Branch == "" {
+		return errors.New("-branch required")
+	}
+
+	if opts.Name != "" {
+		bopts.RepositoryDescription.Name = opts.Name
+	}
+	if opts.RepoURL != "" {
+		u, err := url.Parse(opts.RepoURL)
+		if err != nil {
+			return err
+		}
+		// We do not use this functionality to avoid pulling in the transitive deps of gitindex
+		//if err := gitindex.SetTemplatesFromOrigin(&bopts.RepositoryDescription, u); err != nil {
+		//	return err
+		//}
+	}
+	bopts.SetDefaults()
+	bopts.RepositoryDescription.Branches = []zoekt.RepositoryBranch{{Name: opts.Branch, Version: opts.Commit}}
+	brs := []string{opts.Branch}
+
+	if opts.Incremental {
+		versions := bopts.IndexVersions()
+		if reflect.DeepEqual(versions, bopts.RepositoryDescription.Branches) {
+			return nil
+		}
+	}
+
+	a, err := openArchive(opts.Archive)
+	if err != nil {
+		return err
+	}
+	defer a.Close()
+
+	builder, err := build.NewBuilder(bopts)
+	if err != nil {
+		return err
+	}
+
+	for {
+		f, err := a.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		// We do not index large files
+		if f.Size > int64(bopts.SizeMax) {
+			continue
+		}
+
+		contents, err := ioutil.ReadAll(f)
+		if err != nil {
+			return err
+		}
+
+		name := stripComponents(f.Name, opts.Strip)
+		if name == "" {
+			continue
+		}
+
+		err = builder.Add(zoekt.Document{
+			Name:     name,
+			Content:  contents,
+			Branches: brs,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return builder.Finish()
+}
+
+func main() {
+	var (
+		sizeMax     = flag.Int("file_limit", 128*1024, "maximum file size")
+		shardLimit  = flag.Int("shard_limit", 100<<20, "maximum corpus size for a shard")
+		parallelism = flag.Int("parallelism", 4, "maximum number of parallel indexing processes.")
+		indexDir    = flag.String("index", build.DefaultDir, "index directory for *.zoekt files.")
+		incremental = flag.Bool("incremental", true, "only index changed repositories")
+		ctags       = flag.Bool("require_ctags", false, "If set, ctags calls must succeed.")
+
+		name   = flag.String("name", "", "The repository name for the archive")
+		urlRaw = flag.String("url", "", "The repository URL for the archive")
+		branch = flag.String("branch", "", "The branch name for the archive")
+		commit = flag.String("commit", "", "The commit sha for the archive. If incremental this will avoid updating shards already at commit")
+		strip  = flag.Int("strip_components", 0, "Remove the specified number of leading path elements. Pathnames with fewer elements will be silently skipped.")
+	)
 	flag.Parse()
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	opts := build.Options{
+	if len(flag.Args()) != 1 {
+		log.Fatal("expected argument for archive location")
+	}
+	archive := flag.Args()[0]
+
+	bopts := build.Options{
 		Parallelism:      *parallelism,
 		SizeMax:          *sizeMax,
 		ShardMax:         *shardLimit,
 		IndexDir:         *indexDir,
 		CTagsMustSucceed: *ctags,
 	}
-	opts.SetDefaults()
+	opts := Options{
+		Incremental: *incremental,
 
-	// For now just make all these args required. In the future we can read
-	// extended attributes.
-	if *name == "" {
-		log.Fatal("-name required")
-	}
-	if *branch == "" {
-		log.Fatal("-branch required")
-	}
-	if len(*commit) != 40 {
-		log.Fatal("-commit required to be absolute commit sha")
-	}
-	if len(flag.Args()) != 1 {
-		log.Fatal("expected argument for archive location")
-	}
-	archive := flag.Args()[0]
-
-	opts.RepositoryDescription.Name = *name
-	opts.RepositoryDescription.Branches = []zoekt.RepositoryBranch{{Name: *branch, Version: *commit}}
-	brs := []string{*branch}
-
-	if *incremental {
-		versions := opts.IndexVersions()
-		if reflect.DeepEqual(versions, opts.RepositoryDescription.Branches) {
-			return
-		}
+		Archive: archive,
+		Name:    *name,
+		RepoURL: *urlRaw,
+		Branch:  *branch,
+		Commit:  *commit,
+		Strip:   *strip,
 	}
 
-	var r io.Reader
-	if strings.HasPrefix(archive, "https://") || strings.HasPrefix(archive, "http://") {
-		resp, err := http.Get(archive)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer resp.Body.Close()
-		r = resp.Body
-		if resp.Header.Get("Content-Type") == "application/x-gzip" {
-			r, err = gzip.NewReader(r)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	} else if archive == "-" {
-		r = os.Stdin
-	} else {
-		f, err := os.Open(archive)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-		r = f
-	}
-
-	builder, err := build.NewBuilder(opts)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	tr := tar.NewReader(r)
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// We only care about files
-		if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
-			continue
-		}
-		// We do not index large files
-		if hdr.Size > int64(opts.SizeMax) {
-			continue
-		}
-
-		contents, err := ioutil.ReadAll(tr)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = builder.Add(zoekt.Document{
-			Name:     hdr.Name,
-			Content:  contents,
-			Branches: brs,
-		})
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	err = builder.Finish()
-	if err != nil {
+	if err := do(opts, bopts); err != nil {
 		log.Fatal(err)
 	}
 }

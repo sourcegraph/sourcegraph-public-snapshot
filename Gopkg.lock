@@ -336,7 +336,7 @@
     "shards",
     "web"
   ]
-  revision = "c2eb52797299742c8f0231a0707cd214689a64c0"
+  revision = "a49e2ff04d3b53de8813dee50e54c690415ffc38"
   source = "github.com/sourcegraph/zoekt"
 
 [[projects]]

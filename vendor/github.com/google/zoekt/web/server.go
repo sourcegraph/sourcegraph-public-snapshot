@@ -23,7 +23,9 @@ import (
 	"net/http"
 	"regexp"
 	"regexp/syntax"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -406,6 +408,34 @@ func (s *Server) serveListReposErr(q query.Q, qStr string, w http.ResponseWriter
 	repos, err := s.Searcher.List(ctx, q)
 	if err != nil {
 		return err
+	}
+
+	qvals := r.URL.Query()
+	order := qvals.Get("order")
+	switch order {
+	case "", "name", "revname":
+		sort.Slice(repos.Repos, func(i, j int) bool {
+			return strings.Compare(repos.Repos[i].Repository.Name, repos.Repos[j].Repository.Name) < 0
+		})
+	case "size", "revsize":
+		sort.Slice(repos.Repos, func(i, j int) bool {
+			return repos.Repos[i].Stats.ContentBytes < repos.Repos[j].Stats.ContentBytes
+		})
+	case "time", "revtime":
+		sort.Slice(repos.Repos, func(i, j int) bool {
+			return repos.Repos[i].IndexMetadata.IndexTime.Before(
+				repos.Repos[j].IndexMetadata.IndexTime)
+		})
+	default:
+		return fmt.Errorf("got unknown sort key %q, allowed [rev]name, [rev]time, [rev]size", order)
+	}
+	if strings.HasPrefix(order, "rev") {
+		for i, j := 0, len(repos.Repos)-1; i < j; {
+			repos.Repos[i], repos.Repos[j] = repos.Repos[j], repos.Repos[i]
+			i++
+			j--
+
+		}
 	}
 
 	aggregate := zoekt.RepoStats{

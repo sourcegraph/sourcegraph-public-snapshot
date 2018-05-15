@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"log"
 	"math"
 	"net/http"
@@ -14,74 +15,201 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
+
+	"golang.org/x/net/trace"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/build"
 )
 
-func loggedRun(cmd *exec.Cmd) {
+// Server is the main functionality of zoekt-sourcegraph-indexserver. It
+// exists to conveniently use all the options passed in via func main.
+type Server struct {
+	// Root is the base URL for the Sourcegraph instance to index. Normally
+	// http://sourcegraph-frontend-internal or http://localhost:3090.
+	Root *url.URL
+
+	// IndexDir is the index directory to use.
+	IndexDir string
+
+	// Interval is how often we sync with Sourcegraph.
+	Interval time.Duration
+
+	// CPUCount is the amount of parallelism to use when indexing a
+	// repository.
+	CPUCount int
+
+	// Debug when true will output extra debug logs.
+	Debug bool
+
+	mu    sync.Mutex
+	repos []string
+}
+
+func (s *Server) loggedRun(tr trace.Trace, cmd *exec.Cmd) {
 	out := &bytes.Buffer{}
 	errOut := &bytes.Buffer{}
 	cmd.Stdout = out
 	cmd.Stderr = errOut
 
+	tr.LazyPrintf("%s", cmd.Args)
 	if err := cmd.Run(); err != nil {
+		outS := out.String()
+		errS := errOut.String()
+		tr.LazyPrintf("failed: %v", err)
+		tr.LazyPrintf("stdout: %s", outS)
+		tr.LazyPrintf("stderr: %s", errS)
+		tr.SetError()
 		log.Printf("command %s failed: %v\nOUT: %s\nERR: %s",
-			cmd.Args, err, out.String(), errOut.String())
+			cmd.Args, err, outS, errS)
 	} else {
-		log.Printf("ran successfully %s", cmd.Args)
+		tr.LazyPrintf("success")
+		if s.Debug {
+			log.Printf("ran successfully %s", cmd.Args)
+		}
 	}
 }
 
-func refresh(root *url.URL, indexDir string, interval time.Duration, cpuFraction float64) {
-	cpuCount := int(math.Round(float64(runtime.NumCPU()) * cpuFraction))
-	if cpuCount < 1 {
-		cpuCount = 1
-	}
-
-	t := time.NewTicker(interval)
+// Refresh is starts the sync loop. It blocks forever.
+func (s *Server) Refresh() {
+	t := time.NewTicker(s.Interval)
 	for {
-		repos, err := listRepos(root)
+		repos, err := listRepos(s.Root)
 		if err != nil {
 			log.Println(err)
 			<-t.C
 			continue
 		}
 
+		// update repos for indexing interface
+		s.mu.Lock()
+		s.repos = repos
+		s.mu.Unlock()
+
+		start := time.Now()
+		log.Printf("indexing %d repositories", len(repos))
 		for _, name := range repos {
-			commit, err := resolveRevision(root, name, "HEAD")
-			if err != nil || commit == "" {
-				log.Printf("failed to resolve revision HEAD for %v: %v", name, err)
-				continue
-			}
-
-			cmd := exec.Command("zoekt-archive-index",
-				fmt.Sprintf("-parallelism=%d", cpuCount),
-				"-index", indexDir,
-				"-incremental",
-				"-branch", "HEAD",
-				"-commit", commit,
-				"-name", name,
-				tarballURL(root, name, commit))
-			// Prevent prompting
-			cmd.Stdin = &bytes.Buffer{}
-			loggedRun(cmd)
+			s.Index(name)
 		}
+		log.Printf("indexed %d repositories after %s", len(repos), time.Since(start))
 
-		if len(repos) == 0 {
-			log.Printf("no repos found")
-		} else {
+		if len(repos) > 0 {
 			// Only delete shards if we found repositories
 			exists := make(map[string]bool)
 			for _, name := range repos {
 				exists[name] = true
 			}
-			deleteStaleIndexes(indexDir, exists)
+			s.deleteStaleIndexes(exists)
 		}
 
 		<-t.C
 	}
+}
+
+func (s *Server) Index(name string) error {
+	tr := trace.New("index", name)
+	defer tr.Finish()
+
+	commit, err := resolveRevision(s.Root, name, "HEAD")
+	if err != nil || commit == "" {
+		if os.IsNotExist(err) {
+			// If we get to this point, it means we have an empty
+			// repository (ie we know it exists). As such, we just
+			// create an empty shard.
+			tr.LazyPrintf("empty repository")
+			s.createEmptyShard(tr, name)
+			return nil
+		}
+		log.Printf("failed to resolve revision HEAD for %v: %v", name, err)
+		tr.LazyPrintf("%v", err)
+		return err
+	}
+
+	cmd := exec.Command("zoekt-archive-index",
+		fmt.Sprintf("-parallelism=%d", s.CPUCount),
+		"-index", s.IndexDir,
+		"-incremental",
+		"-branch", "HEAD",
+		"-commit", commit,
+		"-name", name,
+		tarballURL(s.Root, name, commit))
+	// Prevent prompting
+	cmd.Stdin = &bytes.Buffer{}
+	s.loggedRun(tr, cmd)
+	return nil
+}
+
+func (s *Server) createEmptyShard(tr trace.Trace, name string) {
+	cmd := exec.Command("zoekt-archive-index",
+		"-index", s.IndexDir,
+		"-incremental",
+		"-branch", "HEAD",
+		// dummy commit
+		"-commit", "404aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"-name", name,
+		"-")
+	// Empty archive
+	cmd.Stdin = bytes.NewBuffer(bytes.Repeat([]byte{0}, 1024))
+	s.loggedRun(tr, cmd)
+}
+
+func (s *Server) deleteStaleIndexes(exists map[string]bool) {
+	expr := s.IndexDir + "/*"
+	fs, err := filepath.Glob(expr)
+	if err != nil {
+		log.Printf("Glob(%q): %v", expr, err)
+	}
+
+	for _, f := range fs {
+		if err := deleteIfStale(exists, f); err != nil {
+			log.Printf("deleteIfStale(%q): %v", f, err)
+		}
+	}
+}
+
+var repoTmpl = template.Must(template.New("name").Parse(`
+<html><body>
+<a href="debug/requests">Traces</a><br>
+{{.IndexMsg}}<br />
+<br />
+<h3>Re-index repository</h3>
+<form action="/" method="post">
+{{range .Repos}}
+<input type="submit" name="repo" value="{{ . }}" /> <br />
+{{end}}
+</form>
+</body></html>
+`))
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/debug/requests" {
+		trace.Traces(w, r)
+		return
+	}
+
+	var data struct {
+		Repos    []string
+		IndexMsg string
+	}
+
+	if r.Method == "POST" {
+		r.ParseForm()
+		name := r.Form.Get("repo")
+		err := s.Index(name)
+		if err != nil {
+			data.IndexMsg = fmt.Sprintf("Indexing %s failed: %s", name, err)
+		} else {
+			data.IndexMsg = "Indexed " + name
+		}
+	}
+
+	s.mu.Lock()
+	data.Repos = s.repos
+	s.mu.Unlock()
+
+	repoTmpl.Execute(w, data)
 }
 
 func listRepos(root *url.URL) ([]string, error) {
@@ -91,6 +219,10 @@ func listRepos(root *url.URL) ([]string, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to list repositories: status %s", resp.Status)
+	}
 
 	var data []struct {
 		URI string
@@ -114,6 +246,13 @@ func resolveRevision(root *url.URL, repo, spec string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return "", os.ErrNotExist
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to resolve revision %s@%s: status %s", repo, spec, resp.Status)
+	}
 
 	var b bytes.Buffer
 	_, err = b.ReadFrom(resp.Body)
@@ -155,26 +294,15 @@ func deleteIfStale(exists map[string]bool, fn string) error {
 	return nil
 }
 
-func deleteStaleIndexes(indexDir string, exists map[string]bool) {
-	expr := indexDir + "/*"
-	fs, err := filepath.Glob(expr)
-	if err != nil {
-		log.Printf("Glob(%q): %v", expr, err)
-	}
-
-	for _, f := range fs {
-		if err := deleteIfStale(exists, f); err != nil {
-			log.Printf("deleteIfStale(%q): %v", f, err)
-		}
-	}
-}
-
 func main() {
 	root := flag.String("sourcegraph_url", "", "http://sourcegraph-frontend-internal or http://localhost:3090")
 	interval := flag.Duration("interval", 10*time.Minute, "sync with sourcegraph this often")
 	index := flag.String("index", build.DefaultDir, "set index directory to use")
+	listen := flag.String("listen", "", "listen on this address.")
 	cpuFraction := flag.Float64("cpu_fraction", 0.25,
 		"use this fraction of the cores for indexing.")
+	debug := flag.Bool("debug", false,
+		"turn on more verbose logging.")
 	flag.Parse()
 
 	if *cpuFraction <= 0.0 || *cpuFraction > 1.0 {
@@ -203,5 +331,27 @@ func main() {
 		}
 	}
 
-	refresh(rootURL, *index, *interval, *cpuFraction)
+	cpuCount := int(math.Round(float64(runtime.NumCPU()) * (*cpuFraction)))
+	if cpuCount < 1 {
+		cpuCount = 1
+	}
+	s := &Server{
+		Root:     rootURL,
+		IndexDir: *index,
+		Interval: *interval,
+		CPUCount: cpuCount,
+		Debug:    *debug,
+	}
+
+	if *listen != "" {
+		go func() {
+			trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
+				return true, true
+			}
+			log.Printf("serving HTTP on %s", *listen)
+			log.Fatal(http.ListenAndServe(*listen, s))
+		}()
+	}
+
+	s.Refresh()
 }
