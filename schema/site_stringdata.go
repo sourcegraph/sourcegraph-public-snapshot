@@ -102,6 +102,11 @@ const SiteSchemaJSON = `{
       "anyOf": [{ "type": "string", "enum": ["on", "off", "load-balanced"] }, { "type": "boolean" }],
       "default": "off"
     },
+    "httpStrictTransportSecurity": {
+      "description": "The value of the Strict-Transport-Security HTTP header sent by Sourcegraph, if non-empty",
+      "type": "string",
+      "examples": ["max-age=8640000"]
+    },
     "corsOrigin": {
       "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",
       "type": "string"

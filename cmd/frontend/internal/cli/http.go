@@ -99,7 +99,10 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Header().Set("X-Frame-Options", "DENY")
-		if v, _ := strconv.ParseBool(enableHSTS); v {
+		if hsts := conf.Get().HttpStrictTransportSecurity; hsts != "" {
+			w.Header().Set("Strict-Transport-Security", hsts)
+		} else if v, _ := strconv.ParseBool(enableHSTS); v {
+			// TODO(nick): DEPRECATED CODE PATH
 			w.Header().Set("Strict-Transport-Security", "max-age=8640000")
 		}
 		// no cache by default
