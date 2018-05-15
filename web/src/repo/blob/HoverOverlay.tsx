@@ -42,7 +42,7 @@ const LOADING: 'loading' = 'loading'
 
 interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<ViewStateSpec>, Partial<RangeSpec> {
     /** What to show as contents */
-    hoverOrError: typeof LOADING | Hover | ErrorLike
+    hoverOrError?: typeof LOADING | Hover | null | ErrorLike
 
     /**
      * The URL to jump to on go to definition.
@@ -100,6 +100,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                     <AlertCircleOutlineIcon className="icon-inline" /> {upperFirst(props.hoverOrError.message)}
                 </div>
             ) : (
+                props.hoverOrError &&
                 // tslint:disable-next-line deprecation We want to handle the deprecated MarkedString
                 castArray<MarkedString | MarkupContent>(props.hoverOrError.contents)
                     .map(value => (typeof value === 'string' ? { kind: MarkupKind.Markdown, value } : value))

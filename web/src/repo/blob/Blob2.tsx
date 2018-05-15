@@ -417,23 +417,24 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     onClick={this.nextCodeClick}
                     onMouseOver={this.nextCodeMouseOver}
                 />
-                {this.state.hoverOrError &&
-                    !(isHover(this.state.hoverOrError) && isEmptyHover(this.state.hoverOrError)) && (
-                        <HoverOverlay
-                            hoverRef={this.nextOverlayElement}
-                            definitionURLOrError={
-                                // always modify the href, but only show error/loader/not found after the button was clicked
-                                isJumpURL(this.state.definitionURLOrError) || this.state.clickedGoToDefinition
-                                    ? this.state.definitionURLOrError
-                                    : undefined
-                            }
-                            onGoToDefinitionClick={this.nextGoToDefinitionClick}
-                            hoverOrError={this.state.hoverOrError}
-                            hoveredTokenPosition={this.state.hoveredTokenPosition}
-                            overlayPosition={this.state.overlayPosition}
-                            {...this.props}
-                        />
-                    )}
+                {((this.state.hoverOrError &&
+                    !(isHover(this.state.hoverOrError) && isEmptyHover(this.state.hoverOrError))) ||
+                    isJumpURL(this.state.definitionURLOrError)) && (
+                    <HoverOverlay
+                        hoverRef={this.nextOverlayElement}
+                        definitionURLOrError={
+                            // always modify the href, but only show error/loader/not found after the button was clicked
+                            isJumpURL(this.state.definitionURLOrError) || this.state.clickedGoToDefinition
+                                ? this.state.definitionURLOrError
+                                : undefined
+                        }
+                        onGoToDefinitionClick={this.nextGoToDefinitionClick}
+                        hoverOrError={this.state.hoverOrError}
+                        hoveredTokenPosition={this.state.hoveredTokenPosition}
+                        overlayPosition={this.state.overlayPosition}
+                        {...this.props}
+                    />
+                )}
             </div>
         )
     }
