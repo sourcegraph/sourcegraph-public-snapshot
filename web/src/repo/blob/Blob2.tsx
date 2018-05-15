@@ -20,7 +20,7 @@ import { AbsoluteRepoFile, RenderMode } from '..'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { asError, ErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
-import { parseHash } from '../../util/url'
+import { parseHash, toPositionOrRangeHash } from '../../util/url'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
 import { convertNode, findElementWithOffset, getTableDataCell, getTargetLineAndOffset } from './tooltips'
 
@@ -65,6 +65,28 @@ const calculateOverlayPosition = (
         tooltipTop = relBottom + BLOB_PADDING_TOP
     }
     return { left: relLeft, top: tooltipTop }
+}
+
+/**
+ * Sets a new line to be highlighted and unhighlights the previous highlighted line, if exists.
+ *
+ * @param codeElement The `<code>` element
+ * @param line The line number to select, 1-indexed
+ */
+const highlightLine = (codeElement: HTMLElement, line?: number): void => {
+    const current = codeElement.querySelector('.selected')
+    if (current) {
+        current.classList.remove('selected')
+    }
+    if (line === undefined) {
+        return
+    }
+    const tableElement = codeElement.firstElementChild as HTMLTableElement
+    const row = tableElement.rows[line - 1]
+    if (!row) {
+        return
+    }
+    row.classList.add('selected')
 }
 
 interface BlobProps extends AbsoluteRepoFile {
@@ -128,6 +150,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
     private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => this.goToDefinitionClicks.next(event)
 
+    /** Emits when the close button was clicked */
+    private closeButtonClicks = new Subject<void>()
+    private nextCloseButtonClick = () => this.closeButtonClicks.next()
+
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
 
@@ -162,7 +188,25 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             map(event => event.target as HTMLElement),
             withLatestFrom(this.codeElements),
             // If there was a click, there _must_ have been a blob element
-            map(([target, codeElement]) => ({ target, codeElement: codeElement! }))
+            map(([target, codeElement]) => ({ target, codeElement: codeElement! })),
+            share()
+        )
+
+        // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
+        this.subscriptions.add(
+            codeClickTargets
+                .pipe(
+                    // TODO this should also work when clicking empty space or the line number
+                    map(({ target, codeElement }) => getTargetLineAndOffset(target, codeElement, false)),
+                    withLatestFrom(this.codeElements)
+                )
+                .subscribe(([position, codeElement]) => {
+                    let hash = toPositionOrRangeHash({ position })
+                    if (!hash.startsWith('#')) {
+                        hash = '#' + hash
+                    }
+                    this.props.history.push(hash)
+                })
         )
 
         /** Emits new positions found in the URL */
@@ -172,6 +216,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             map(position => ({ line: position.line, character: position.character })),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
+        )
+
+        // Fix tooltip if a location includes a position
+        this.subscriptions.add(
+            positionsFromLocationHash.subscribe(() => {
+                this.setState({ hoverOverlayIsFixed: true })
+            })
         )
 
         /** Emits DOM elements at new positions found in the URL */
@@ -211,14 +262,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     // with the latest target that came from either a mouseover, click or location change (whatever was the most recent)
                     withLatestFrom(
                         merge(
-                            codeMouseOverTargets.pipe(map(data => ({ ...data, source: 'mouseover' }))),
-                            codeClickTargets.pipe(map(data => ({ ...data, source: 'click' }))),
-                            targetsFromLocationHash.pipe(map(data => ({ ...data, source: 'location' })))
+                            codeMouseOverTargets.pipe(map(data => ({ ...data, source: 'mouseover' as 'mouseover' }))),
+                            codeClickTargets.pipe(map(data => ({ ...data, source: 'click' as 'click' }))),
+                            targetsFromLocationHash.pipe(map(data => ({ ...data, source: 'location' as 'location' })))
                         )
                     ),
                     map(([, { target, codeElement, source }]) => ({ target, codeElement, source })),
-                    // When the new target came from the URL, we don't care whether the hover is currently fixed or not, it needs to be respositioned.
-                    filter(({ source }) => source === 'location' || !this.state.hoverOverlayIsFixed),
+                    // When the new target came from a mouseover, only reposition the hover if it is not fixed
+                    filter(({ source }) => source !== 'mouseover' || !this.state.hoverOverlayIsFixed),
                     withLatestFrom(this.hoverOverlayElements),
                     map(([{ target, codeElement }, hoverElement]) => ({ target, hoverElement, codeElement })),
                     filter(propertyIsDefined('hoverElement'))
@@ -329,12 +380,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     // This causes an error/loader/not found UI to get shown if needed
                     // Remember if ctrl/cmd was pressed to determine whether the definition should be opened in a new tab once loaded
                     clickedGoToDefinition: event.ctrlKey || event.metaKey ? 'new-tab' : 'same-tab',
-                    // Set fixed so hover overlay appears is shown at the destination
-                    hoverOverlayIsFixed: true,
-                    // Reset overlay
-                    hoverOverlayPosition: undefined,
-                    hoverOrError: undefined,
-                    hoveredTokenPosition: undefined,
                 })
                 // If we don't have a result yet, prevent default link behaviour (jump will occur dynamically once finished)
                 if (!isJumpURL(this.state.definitionURLOrError)) {
@@ -352,21 +397,27 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
 
-        // Whenever something is clicked in the code, fix/unfix the hover
+        // HOVER OVERLAY PINNING
         this.subscriptions.add(
-            this.codeClicks.subscribe(() => {
-                this.setState(
-                    prevState =>
-                        prevState.hoverOverlayIsFixed
-                            ? {
-                                  hoverOverlayIsFixed: false,
-                                  hoverOrError: undefined,
-                                  hoverOverlayPosition: undefined,
-                              }
-                            : {
-                                  hoverOverlayIsFixed: true,
-                              }
-                )
+            codeClickTargets.subscribe(({ target, codeElement }) => {
+                this.setState({
+                    // If a token inside a code cell was clicked, pin the hover
+                    // Otherwise if empty space was clicked, unpin it
+                    hoverOverlayIsFixed: !target.matches('td.code'),
+                })
+            })
+        )
+        // When the close button is clicked, unpin, hide and reset the hover
+        this.subscriptions.add(
+            this.closeButtonClicks.subscribe(() => {
+                this.setState({
+                    hoverOverlayIsFixed: false,
+                    hoverOverlayPosition: undefined,
+                    hoverOrError: undefined,
+                    hoveredTokenPosition: undefined,
+                    definitionURLOrError: undefined,
+                    clickedGoToDefinition: false,
+                })
             })
         )
 
@@ -376,17 +427,22 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 .pipe(
                     map(props => parseHash(props.location.hash).line),
                     distinctUntilChanged(),
-                    filter(isDefined),
                     withLatestFrom(this.blobElements.pipe(filter(isDefined)), this.codeElements.pipe(filter(isDefined)))
                 )
                 .subscribe(([line, blobElement, codeElement]) => {
-                    const blobBound = blobElement.getBoundingClientRect()
-                    const codeBound = codeElement.getBoundingClientRect()
                     const tableElement = codeElement.firstElementChild as HTMLTableElement
-                    const row = tableElement.rows[line - 1]!
-                    const rowBound = row.getBoundingClientRect()
-                    const scrollTop = rowBound.top - codeBound.top - blobBound.height / 2 + rowBound.height / 2
-                    blobElement.scrollTop = scrollTop
+                    highlightLine(codeElement, line)
+                    if (line !== undefined) {
+                        const row = tableElement.rows[line - 1]
+                        if (row) {
+                            // Scroll to line
+                            const blobBound = blobElement.getBoundingClientRect()
+                            const codeBound = codeElement.getBoundingClientRect()
+                            const rowBound = row.getBoundingClientRect()
+                            const scrollTop = rowBound.top - codeBound.top - blobBound.height / 2 + rowBound.height / 2
+                            blobElement.scrollTop = scrollTop
+                        }
+                    }
                 })
         )
     }
@@ -429,9 +485,11 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                                 : undefined
                         }
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}
+                        onCloseButtonClick={this.nextCloseButtonClick}
                         hoverOrError={this.state.hoverOrError}
                         hoveredTokenPosition={this.state.hoveredTokenPosition}
                         overlayPosition={this.state.hoverOverlayPosition}
+                        showCloseButton={this.state.hoverOverlayIsFixed}
                         {...this.props}
                     />
                 )}

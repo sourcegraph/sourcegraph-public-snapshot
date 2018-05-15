@@ -31,6 +31,18 @@
             }
         }
 
+        tr {
+            transition: background 200ms ease-out;
+            &.selected {
+                .theme-light & {
+                    background: $gray-02;
+                }
+                .theme-dark & {
+                    background: $gray-21;
+                }
+            }
+        }
+
         td.line,
         td.code {
             padding: 0;

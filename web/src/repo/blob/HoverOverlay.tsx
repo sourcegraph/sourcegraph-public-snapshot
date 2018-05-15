@@ -3,6 +3,7 @@ import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
 import { castArray, escape, upperFirst } from 'lodash'
 import marked from 'marked'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -77,6 +78,12 @@ interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<Vie
      * Used for the Find References/Implementations buttons and for error messages
      */
     hoveredTokenPosition?: Position
+
+    /** Whether to show the close button for the hover overlay */
+    showCloseButton: boolean
+
+    /** Called when the close button is clicked */
+    onCloseButtonClick: () => void
 }
 
 /** Returns true if the input is successful jump URL result */
@@ -92,14 +99,21 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
             props.overlayPosition
                 ? {
                       opacity: 1,
+                      visibility: 'visible',
                       left: props.overlayPosition.left + 'px',
                       top: props.overlayPosition.top + 'px',
                   }
                 : {
                       opacity: 0,
+                      visibility: 'hidden',
                   }
         }
     >
+        {props.showCloseButton && (
+            <button className="hover-overlay__close-button btn btn-icon" onClick={props.onCloseButtonClick}>
+                <CloseIcon className="icon-inline" />
+            </button>
+        )}
         {props.hoverOrError && (
             <div className="hover-overlay__contents">
                 {props.hoverOrError === LOADING ? (

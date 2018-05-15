@@ -7,6 +7,13 @@
     align-items: stretch;
     transition: opacity 200ms ease-in-out;
 
+    &__close-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 0.25rem;
+    }
+
     &__row {
         display: block;
         width: 100%;
