@@ -2,6 +2,22 @@ package conf
 
 import "github.com/sourcegraph/sourcegraph/schema"
 
+// AuthProviderType returns the type string for the auth provider.
+func AuthProviderType(p schema.AuthProviders) string {
+	switch {
+	case p.Builtin != nil:
+		return p.Builtin.Type
+	case p.Openidconnect != nil:
+		return p.Openidconnect.Type
+	case p.Saml != nil:
+		return p.Saml.Type
+	case p.HttpHeader != nil:
+		return p.HttpHeader.Type
+	default:
+		return ""
+	}
+}
+
 // AuthProvider returns the auth provider config. It supports auth.providers (highest precedence),
 // auth.provider (backcompat, middle precedence), and legacy saml*/oidc* properties (lowest
 // precedence).
