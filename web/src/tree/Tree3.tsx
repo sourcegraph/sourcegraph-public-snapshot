@@ -33,6 +33,8 @@ export interface State {
     resolveTo: string[]
     /** The tree node currently in focus */
     selectedNode: TreeNode
+    /** The tree node of the file or directory currently being viewed */
+    activeNode: TreeNode
 }
 
 export interface TreeNode {
@@ -143,6 +145,7 @@ export class Tree3 extends React.PureComponent<Props, State> {
             parentPath,
             resolveTo: [],
             selectedNode: this.node,
+            activeNode: this.node,
         }
 
         this.treeElement = null
@@ -156,6 +159,9 @@ export class Tree3 extends React.PureComponent<Props, State> {
                 }))
                 if (!expanded) {
                     // For directory nodes that are collapsed, unset the childNodes so we don't traverse them.
+                    if (this.treeElement) {
+                        this.treeElement.focus()
+                    }
                     node.childNodes = []
                 }
             })
@@ -172,7 +178,7 @@ export class Tree3 extends React.PureComponent<Props, State> {
                     if (queryParams.has('suggestion') && dotPathAsUndefined(newParentPath)) {
                         this.setState({
                             parentPath: dotPathAsUndefined(newParentPath),
-                            resolveTo: [...this.state.resolveTo, newParentPath],
+                            resolveTo: [newParentPath],
                         })
                     }
 
@@ -209,22 +215,33 @@ export class Tree3 extends React.PureComponent<Props, State> {
                             this.node = ref.node
                         }
                     }}
-                    parent={null}
+                    activeNode={this.state.activeNode}
                     activePath={this.props.activePath}
                     activePathIsDir={this.props.activePathIsDir}
+                    depth={0}
+                    history={this.props.history}
                     repoPath={this.props.repoPath}
                     rev={this.props.rev}
-                    depth={0}
-                    resolveTo={this.state.resolveTo}
-                    history={this.props.history}
-                    onSelect={this.selectNode}
+                    isRoot={true}
+                    index={0}
+                    // The root is always expanded so it loads the top level
+                    isExpanded={true}
+                    // A node with parent null tells us we're at the root of the tree
+                    parent={null}
                     parentPath={this.state.parentPath}
+                    expandedDirectories={this.state.resolveTo}
+                    onSelect={this.selectNode}
+                    onToggleExpand={this.toggleExpandDirectory}
                     selectedNode={this.state.selectedNode}
-                    onChangeViewState={this.onChangeEntryViewState}
-                    focusTreeOnUnmount={this.focusTree}
+                    setChildNodes={this.setChildNode}
+                    setActiveNode={this.setActiveNode}
                 />
             </div>
         )
+    }
+
+    private setChildNode = (node: TreeNode, index: number) => {
+        this.node.childNodes[index] = node
     }
 
     private onArrowDown(): void {
@@ -303,6 +320,7 @@ export class Tree3 extends React.PureComponent<Props, State> {
                 })
             }
             this.selectNode(this.state.selectedNode)
+            this.setActiveNode(this.state.selectedNode)
             const urlProps = {
                 repoPath: this.props.repoPath,
                 rev: this.props.rev,
@@ -325,8 +343,14 @@ export class Tree3 extends React.PureComponent<Props, State> {
         }
     }
 
+    /** Set active node sets the active node when a directory or file is selected. It also sets the selected node in this case. */
+    private setActiveNode = (node: TreeNode): void => {
+        this.setState({ activeNode: node })
+        this.selectNode(node)
+    }
+
     /** Called when a tree entry is expanded or collapsed. */
-    private onChangeEntryViewState = (path: string, expanded: boolean, node: TreeNode): void => {
+    private toggleExpandDirectory = (path: string, expanded: boolean, node: TreeNode): void => {
         this.expandDirectoryChanges.next({ path, expanded, node })
     }
 
@@ -341,11 +365,6 @@ export class Tree3 extends React.PureComponent<Props, State> {
     private setTreeElement = (el: HTMLElement | null): void => {
         if (el) {
             this.treeElement = el
-        }
-    }
-    private focusTree = (): void => {
-        if (this.treeElement) {
-            this.treeElement.focus()
         }
     }
 }

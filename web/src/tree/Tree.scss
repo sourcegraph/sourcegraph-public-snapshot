@@ -49,22 +49,20 @@
         display: flex;
         color: white;
         align-items: center;
+        justify-content: space-between;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
         cursor: pointer;
+
+        &-text {
+            display: flex;
+            align-items: center;
+        }
     }
 
     &__row-label {
         margin-left: 0.25rem;
         color: white !important; // override link color
-    }
-
-    &__row-loader {
-        position: relative;
-        bottom: 25px;
-        display: inherit;
-        float: right;
-        height: 0;
     }
 }
 
@@ -104,9 +102,5 @@
 }
 
 .tree-layer {
-    width: 100%;
-}
-
-.tree-row {
     width: 100%;
 }
