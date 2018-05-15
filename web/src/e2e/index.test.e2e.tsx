@@ -41,6 +41,15 @@ describe('e2e test suite', () => {
 
     const browserWSEndpoint = process.env.BROWSER_WS_ENDPOINT
 
+    const disableDefaultFeatureFlags = async (page: Page) => {
+        // Make feature flags mirror production
+        await page.goto(baseURL)
+        await page.evaluate(() => {
+            window.localStorage.clear()
+            window.localStorage.setItem('disableDefaultFeatureFlags', 'true')
+        })
+    }
+
     let browser: Browser
     let page: Page
     if (browserWSEndpoint) {
@@ -55,15 +64,6 @@ describe('e2e test suite', () => {
     } else {
         before('Start browser', async () => {
             browser = await launch()
-
-            // Make feature flags mirror production
-            const page = await browser.newPage()
-            await page.goto(baseURL)
-            await page.evaluate(() => {
-                window.localStorage.clear()
-                window.localStorage.setItem('disableDefaultFeatureFlags', 'true')
-            })
-            await page.close()
         })
         after('Close browser', async () => {
             if (browser) {
@@ -74,6 +74,7 @@ describe('e2e test suite', () => {
     beforeEach('Open page', async () => {
         page = await browser.newPage()
         await authenticate(page)
+        await disableDefaultFeatureFlags(page)
     })
     afterEach('Close page', async () => {
         await page.close()
