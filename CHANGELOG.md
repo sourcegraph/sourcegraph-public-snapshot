@@ -31,6 +31,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Code intelligence hover tooltips have been redesigned and greatly improved!
 * Diff searches over empty repositories no longer fail in Sourcegraph Server (this was not an issue in Sourcegraph Data Center).
 * Stray `tmp_pack_*` files from interrupted fetches should now go away.
+* When multiple `repo:` tokens match the same repo, process @revspec requirements from all of them, not just the first one in the search.
 
 ### Removed
 

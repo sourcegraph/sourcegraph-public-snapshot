@@ -208,6 +208,10 @@ func makeRepositoryRevisions(repos ...string) []*repositoryRevisions {
 	r := make([]*repositoryRevisions, len(repos))
 	for i, urispec := range repos {
 		uri, revs := parseRepositoryRevisions(urispec)
+		if len(revs) == 0 {
+			// treat empty list as preferring master
+			revs = []revspecOrRefGlob{{revspec: ""}}
+		}
 		r[i] = &repositoryRevisions{repo: &types.Repo{URI: uri}, revs: revs}
 	}
 	return r

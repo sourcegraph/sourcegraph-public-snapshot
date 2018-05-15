@@ -58,7 +58,12 @@ type repositoryRevisions struct {
 func parseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []revspecOrRefGlob) {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
-		return api.RepoURI(repoAndOptionalRev), []revspecOrRefGlob{{revspec: ""}} // default branch
+		// return an empty slice to indicate that there's no revisions; callers
+		// have to distinguish between "none specified" and "default" to handle
+		// cases where two repo specs both match the same repository, and only one
+		// specifies a revspec, which normally implies "master" but in that case
+		// really means "didn't specify"
+		return api.RepoURI(repoAndOptionalRev), []revspecOrRefGlob{}
 	}
 
 	repo := api.RepoURI(repoAndOptionalRev[:i])

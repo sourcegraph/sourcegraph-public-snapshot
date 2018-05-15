@@ -211,6 +211,96 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	return repoRevs, missingRepoRevs, repoResults, overLimit, err
 }
 
+// a patternRevspec maps an include pattern to a list of revisions
+// for repos matching that pattern. "map" in this case does not mean
+// an actual map, because we want regexp matches, not identity matches.
+type patternRevspec struct {
+	includePattern *regexp.Regexp
+	revs           []revspecOrRefGlob
+}
+
+// given a URI, determine whether it matched any patterns for which we have
+// revspecs (or ref globs), and if so, return the matching/allowed ones.
+func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []revspecOrRefGlob, clashing []revspecOrRefGlob) {
+	revLists := make([][]revspecOrRefGlob, 0, len(pats))
+	for _, rev := range pats {
+		if rev.includePattern.MatchString(string(repo)) {
+			revLists = append(revLists, rev.revs)
+		}
+	}
+	// exactly one match: we accept that list
+	if len(revLists) == 1 {
+		matched = revLists[0]
+		return
+	}
+	// no matches: we generate a dummy list containing only master
+	if len(revLists) == 0 {
+		matched = []revspecOrRefGlob{{revspec: ""}}
+		return
+	}
+	// if two repo specs match, and both provided non-empty rev lists,
+	// we want their intersection
+	allowedRevs := make(map[revspecOrRefGlob]struct{}, len(revLists[0]))
+	allRevs := make(map[revspecOrRefGlob]struct{}, len(revLists[0]))
+	// starting point: everything is "true" if it is currently allowed
+	for _, rev := range revLists[0] {
+		allowedRevs[rev] = struct{}{}
+		allRevs[rev] = struct{}{}
+	}
+	// in theory, "master-by-default" entries won't even be participating
+	// in this.
+	for _, revList := range revLists[1:] {
+		restrictedRevs := make(map[revspecOrRefGlob]struct{}, len(revList))
+		for _, rev := range revList {
+			allRevs[rev] = struct{}{}
+			if _, ok := allowedRevs[rev]; ok {
+				restrictedRevs[rev] = struct{}{}
+			}
+		}
+		allowedRevs = restrictedRevs
+	}
+	if len(allowedRevs) > 0 {
+		matched = make([]revspecOrRefGlob, 0, len(allowedRevs))
+		for rev := range allowedRevs {
+			matched = append(matched, rev)
+		}
+		return
+	}
+	// build a list of the revspecs which broke this, return it
+	// as the "clashing" list.
+	clashing = make([]revspecOrRefGlob, 0, len(allRevs))
+	for rev := range allRevs {
+		clashing = append(clashing, rev)
+	}
+	return
+}
+
+// findPatternRevs mutates the given list of include patterns to
+// be a raw list of the repository name patterns we want, separating
+// out their revision specs, if any.
+func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevspec, err error) {
+	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
+	for i, includePattern := range includePatterns {
+		repoPattern, revs := parseRepositoryRevisions(includePattern)
+		// Validate pattern now so the error message is more recognizable to the
+		// user
+		if _, err := regexp.Compile(string(repoPattern)); err != nil {
+			return nil, &badRequestError{err}
+		}
+		repoPattern = api.RepoURI(optimizeRepoPatternWithHeuristics(string(repoPattern)))
+		includePatterns[i] = string(repoPattern)
+		if len(revs) > 0 {
+			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")
+			if err != nil {
+				return nil, &badRequestError{err}
+			}
+			patternRev := patternRevspec{includePattern: p, revs: revs}
+			includePatternRevs = append(includePatternRevs, patternRev)
+		}
+	}
+	return
+}
+
 func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
 	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("repoFilters: %v, minusRepoFilters: %v, repoGroupFilters: %v", repoFilters, minusRepoFilters, repoGroupFilters))
 	defer func() {
@@ -249,49 +339,11 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		}
 	}
 
-	// Treat an include pattern with a suffix of "@rev" as meaning that all
-	// matched repos should be resolved to "rev".
-	includePatternRevs := make([][]revspecOrRefGlob, 0, len(includePatterns))
-	includePatternHasRev := make([]bool, len(includePatterns))
-	for i, includePattern := range includePatterns {
-		repoPattern, revs := parseRepositoryRevisions(includePattern)
-		// Validate pattern now so the error message is more recognizable to the
-		// user
-		if _, err := regexp.Compile(string(repoPattern)); err != nil {
-			return nil, nil, nil, false, &badRequestError{err}
-		}
-		repoPattern = api.RepoURI(optimizeRepoPatternWithHeuristics(string(repoPattern)))
-		includePatterns[i] = string(repoPattern)
-		includePatternHasRev[i] = len(revs) > 0
-		if len(revs) > 0 {
-			includePatternRevs = append(includePatternRevs, revs)
-		}
-	}
-
-	// Support determining which include pattern with a rev (if any) matched
-	// a repo in the result set. We only need to do this for include patterns with a rev.
-	//
-	// The element at index `i` in includePatternRevs corresponds to the element at index `i`
-	// in compiledIncludePatterns. (Include patterns with no revs are omitted in both of these
-	// slices.)
-	compiledIncludePatterns := make([]*regexp.Regexp, 0, len(includePatternRevs))
-	for i, includePattern := range includePatterns {
-		if !includePatternHasRev[i] {
-			continue // has no rev
-		}
-		p, err := regexp.Compile("(?i:" + includePattern + ")")
-		if err != nil {
-			return nil, nil, nil, false, &badRequestError{err}
-		}
-		compiledIncludePatterns = append(compiledIncludePatterns, p)
-	}
-	getRevsForMatchedRepo := func(repo api.RepoURI) []revspecOrRefGlob {
-		for i, pat := range compiledIncludePatterns {
-			if pat.MatchString(string(repo)) {
-				return includePatternRevs[i]
-			}
-		}
-		return nil
+	// note that this mutates the strings in includePatterns, stripping their
+	// revision specs, if they had any.
+	includePatternRevs, err := findPatternRevs(includePatterns)
+	if err != nil {
+		return nil, nil, nil, false, err
 	}
 
 	tr.LazyPrintf("Repos.List - start")
@@ -317,14 +369,17 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 			gitserverRepo: gitserver.Repo{Name: repo.URI},
 		}
 
-		revs := getRevsForMatchedRepo(repo.URI)
-		if len(revs) == 0 {
-			// If no revs explicitly specified, use default branch.
-			revs = append(revs, revspecOrRefGlob{revspec: ""})
-		}
+		revs, clashingRevs := getRevsForMatchedRepo(repo.URI, includePatternRevs)
 
 		repoResolver := &repositoryResolver{repo: repo}
 
+		// if multiple specified revisions clash, report this usefully:
+		if len(revs) == 0 && clashingRevs != nil {
+			missingRepoRevisions = append(missingRepoRevisions, &repositoryRevisions{
+				repo: repo,
+				revs: clashingRevs,
+			})
+		}
 		// Check if the repository actually has the revisions that the user specified.
 		for _, rev := range revs {
 			if rev.refGlob != "" || rev.excludeRefGlob != "" {

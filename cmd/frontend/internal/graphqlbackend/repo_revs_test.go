@@ -12,7 +12,7 @@ func TestParseRepositoryRevisions(t *testing.T) {
 		repo api.RepoURI
 		revs []revspecOrRefGlob
 	}{
-		"repo":           {repo: "repo", revs: []revspecOrRefGlob{{revspec: ""}}},
+		"repo":           {repo: "repo", revs: []revspecOrRefGlob{}},
 		"repo@":          {repo: "repo", revs: []revspecOrRefGlob{{revspec: ""}}},
 		"repo@rev":       {repo: "repo", revs: []revspecOrRefGlob{{revspec: "rev"}}},
 		"repo@rev1:rev2": {repo: "repo", revs: []revspecOrRefGlob{{revspec: "rev1"}, {revspec: "rev2"}}},

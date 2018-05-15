@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 )
 
@@ -324,6 +325,92 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 			if !reflect.DeepEqual(actualDynamicFilterStrs, test.expectedDynamicFilterStrs) {
 				t.Errorf("actual: %v, expected: %v", actualDynamicFilterStrs, test.expectedDynamicFilterStrs)
+			}
+		})
+	}
+}
+
+// TestSearchRevspecs tests a repository name against a list of
+// repository specs with optional revspecs, and determines whether
+// we get the expected error, list of matching rev specs, or list
+// of clashing revspecs (if no matching rev specs were found)
+func TestSearchRevspecs(t *testing.T) {
+	type testCase struct {
+		descr    string
+		specs    []string
+		repo     string
+		err      error
+		matched  []revspecOrRefGlob
+		clashing []revspecOrRefGlob
+	}
+
+	tests := []testCase{
+		testCase{
+			descr:    "simple match",
+			specs:    []string{"foo"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []revspecOrRefGlob{{revspec: ""}},
+			clashing: nil,
+		},
+		testCase{
+			descr:    "single revspec",
+			specs:    []string{".*o@123456"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []revspecOrRefGlob{{revspec: "123456"}},
+			clashing: nil,
+		},
+		testCase{
+			descr:    "revspec plus unspecified rev",
+			specs:    []string{".*o@123456", "foo"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []revspecOrRefGlob{{revspec: "123456"}},
+			clashing: nil,
+		},
+		testCase{
+			descr:    "revspec plus unspecified rev, but backwards",
+			specs:    []string{".*o", "foo@123456"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []revspecOrRefGlob{{revspec: "123456"}},
+			clashing: nil,
+		},
+		testCase{
+			descr:    "conflicting revspecs",
+			specs:    []string{".*o@123456", "foo@234567"},
+			repo:     "foo",
+			err:      nil,
+			matched:  nil,
+			clashing: []revspecOrRefGlob{{revspec: "123456"}, {revspec: "234567"}},
+		},
+		testCase{
+			descr:    "overlapping revspecs",
+			specs:    []string{".*o@a:b", "foo@b:c"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []revspecOrRefGlob{{revspec: "b"}},
+			clashing: nil,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.descr, func(t *testing.T) {
+			pats, err := findPatternRevs(test.specs)
+			if (err != nil) != (test.err != nil) {
+				t.Errorf("unexpected error state: got '%s', expected '%s'", err, test.err)
+			}
+			if err != nil && test.err != nil {
+				if err.Error() != test.err.Error() {
+					t.Errorf("incorrect error: got '%s', expected '%s'", err, test.err)
+				}
+			}
+			matched, clashing := getRevsForMatchedRepo(api.RepoURI(test.repo), pats)
+			if !reflect.DeepEqual(matched, test.matched) {
+				t.Errorf("matched repo mismatch: actual: %#v, expected: %#v", matched, test.matched)
+			}
+			if !reflect.DeepEqual(clashing, test.clashing) {
+				t.Errorf("clashing repo mismatch: actual: %#v, expected: %#v", clashing, test.clashing)
 			}
 		})
 	}
