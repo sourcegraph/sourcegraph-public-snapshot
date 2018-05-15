@@ -122,7 +122,11 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                     </div>
                 ) : isErrorLike(props.hoverOrError) ? (
                     <div className="hover-overlay__row alert alert-danger">
-                        <AlertCircleOutlineIcon className="icon-inline" /> {upperFirst(props.hoverOrError.message)}
+                        <h4>
+                            <AlertCircleOutlineIcon className="icon-inline" /> Error from language server for hover
+                            request:
+                        </h4>
+                        {upperFirst(props.hoverOrError.message)}
                     </div>
                 ) : (
                     // tslint:disable-next-line deprecation We want to handle the deprecated MarkedString
