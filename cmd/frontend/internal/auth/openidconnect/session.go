@@ -17,6 +17,10 @@ type sessionData struct {
 	Token    *oauth2.Token
 }
 
+func (d sessionData) toProviderKey() providerKey {
+	return providerKey{issuerURL: d.Issuer, clientID: d.ClientID}
+}
+
 // SignOut clears OpenID Connect-related data from the session. If possible, it revokes the token
 // from the OP. If there is an end-session endpoint, it returns that for the caller to present to
 // the user.
@@ -29,7 +33,7 @@ func SignOut(w http.ResponseWriter, r *http.Request) (endSessionEndpoint string,
 		return "", errors.WithMessage(err, "clearing OpenID Connect session data")
 	}
 	if data != nil {
-		pc := getProviderConfig(data.Issuer, data.ClientID)
+		pc := getProviderConfig(data.toProviderKey())
 		if pc == nil {
 			return "", fmt.Errorf("unable to revoke token or end session for OpenID Connect because site config no longer contains issuer %q and client ID %q", data.Issuer, data.ClientID)
 		}

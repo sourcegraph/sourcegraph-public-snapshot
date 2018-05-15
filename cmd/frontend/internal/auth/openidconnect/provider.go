@@ -92,14 +92,6 @@ func newProvider(ctx context.Context, issuerURL string) (*provider, error) {
 	return p, nil
 }
 
-func getProviderConfig(issuerURL, clientID string) *schema.OpenIDConnectAuthProvider {
-	pc := conf.AuthProvider().Openidconnect
-	if pc != nil && pc.Issuer == issuerURL && pc.ClientID == clientID {
-		return pc
-	}
-	return nil
-}
-
 // revokeToken implements Token Revocation. See https://tools.ietf.org/html/rfc7009.
 func revokeToken(ctx context.Context, pc *schema.OpenIDConnectAuthProvider, revocationEndpoint string, token *oauth2.Token) error {
 	postData := url.Values{}
