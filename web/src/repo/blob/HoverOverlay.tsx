@@ -123,8 +123,8 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                 ) : isErrorLike(props.hoverOrError) ? (
                     <div className="hover-overlay__row alert alert-danger">
                         <h4>
-                            <AlertCircleOutlineIcon className="icon-inline" /> Error from language server for hover
-                            request:
+                            <AlertCircleOutlineIcon className="icon-inline" /> Error fetching hover from language
+                            server:
                         </h4>
                         {upperFirst(props.hoverOrError.message)}
                     </div>
