@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -96,13 +95,6 @@ func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
 func (r *siteResolver) BuildVersion() string { return env.Version }
 
 func (r *siteResolver) ProductVersion() string { return updatecheck.ProductVersion }
-
-func (r *siteResolver) TelemetrySamples(ctx context.Context) ([]string, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-	return telemetry.Samples(), nil
-}
 
 func (r *siteResolver) HasCodeIntelligence() bool {
 	return envvar.HasCodeIntelligence()

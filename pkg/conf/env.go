@@ -21,7 +21,6 @@ var legacyEnvToFieldName = map[string]string{
 	// AuthUserOrgMap has no env var
 	"CorsOrigin": "CORS_ORIGIN",
 	// DisablePublicRepoRedirects is handled specially (inverted PUBLIC_REPO_REDIRECTS)
-	"DisableTelemetry":               "DISABLE_TELEMETRY",
 	"ExecuteGradleOriginalRootPaths": "EXECUTE_GRADLE_ORIGINAL_ROOT_PATHS",
 	"GitOriginMap":                   "ORIGIN_MAP",
 	"Github":                         "GITHUB_CONFIG",

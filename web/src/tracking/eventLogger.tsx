@@ -1,44 +1,30 @@
 import { matchPath } from 'react-router'
+import uuid from 'uuid'
 import { currentUser } from '../auth'
 import * as GQL from '../backend/graphqlschema'
 import { parseBrowserRepoURL } from '../repo'
 import { repoRevRoute } from '../routes'
 import { getPathExtension } from '../util'
-import {
-    browserExtensionMessageReceived,
-    browserExtensionServerConfigurationMessageReceived,
-    handleQueryEvents,
-    pageViewQueryParameters,
-} from './analyticsUtils'
+import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
 import { telligent } from './services/telligentWrapper'
+
+const uidKey = 'sourcegraphAnonymousUid'
 
 class EventLogger {
     private hasStrippedQueryParameters = false
     private user?: GQL.IUser | null
 
+    private anonUid?: string
+
     constructor() {
         browserExtensionMessageReceived.subscribe(isInstalled => {
             telligent.setUserProperty('installed_chrome_extension', 'true')
+            this.log('BrowserExtensionConnectedToServer')
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
             }
-
-            // Subscribe to the currentUser Subject to send a success response back to the extension
-            // right now, and on any future user changes.
-            currentUser.subscribe(user => {
-                const detail = { deviceId: telligent.getTelligentDuid(), userId: user ? user.email : undefined }
-                document.dispatchEvent(
-                    new CustomEvent('sourcegraph:identify', {
-                        detail,
-                    })
-                )
-            })
-        })
-
-        browserExtensionServerConfigurationMessageReceived.subscribe(() => {
-            this.log('SourcegraphServerBrowserExtensionConfigureClicked')
         })
 
         currentUser.subscribe(
@@ -92,11 +78,6 @@ class EventLogger {
 
     public setUserEmail(primaryEmail: string): void {
         telligent.setUserProperty('email', primaryEmail)
-    }
-
-    public setUserInvited(invitingUserId: string, invitedToOrg: string): void {
-        telligent.setUserProperty('invited_by_user', invitingUserId)
-        telligent.setUserProperty('org_invite', invitedToOrg)
     }
 
     /**
@@ -175,9 +156,41 @@ class EventLogger {
     /**
      * Access the Telligent unique user ID stored in a cookie on the user's computer. Cookie TTL is 2 years
      * https://sourcegraph.com/github.com/telligent-data/telligent-javascript-tracker@890d6a69b84fc0518a3e848f5469b34817da69fd/-/blob/src/js/tracker.js#L178
+     *
+     * Only used on Sourcegraph.com, not on self-hosted Sourcegraph instances.
      */
-    public uniqueUserCookieID(): string {
+    private getTelligentDuid(): string {
         return telligent.getTelligentDuid() || ''
+    }
+
+    /**
+     * Generate a new anonymous user ID if one has not yet been set and stored.
+     */
+    private generateAnonUserID(): string {
+        const telID = this.getTelligentDuid()
+        if (telID !== null) {
+            return telID
+        }
+        return uuid.v4()
+    }
+
+    /**
+     * Get the anonymous identifier for this user (used to allow site admins
+     * on a Sourcegraph instance to see a count of unique users on a daily,
+     * weekly, and monthly basis).
+     */
+    public getAnonUserID(): string {
+        if (this.anonUid) {
+            return this.anonUid
+        }
+
+        let id = localStorage.getItem(uidKey)
+        if (id === null) {
+            id = this.generateAnonUserID()
+            localStorage.setItem(uidKey, id)
+        }
+        this.anonUid = id
+        return this.anonUid
     }
 }
 

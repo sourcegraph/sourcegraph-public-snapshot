@@ -217,6 +217,12 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
     )
 }
 
+/**
+ * Log a user action (used to allow site admins on a Sourcegraph instance
+ * to see a count of unique users on a daily, weekly, and monthly basis).
+ *
+ * Not used at all for public/sourcegraph.com usage.
+ */
 export function logUserEvent(event: GQL.UserEvent): void {
     if (window.context.sourcegraphDotComMode) {
         return
@@ -229,7 +235,7 @@ export function logUserEvent(event: GQL.UserEvent): void {
                 }
             }
         `,
-        { event, userCookieID: eventLogger.uniqueUserCookieID() }
+        { event, userCookieID: eventLogger.getAnonUserID() }
     )
         .pipe(
             map(({ data, errors }) => {

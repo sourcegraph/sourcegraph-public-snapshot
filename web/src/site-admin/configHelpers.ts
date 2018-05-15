@@ -157,18 +157,30 @@ export const siteConfigActions: EditorAction[] = [
 ]
 
 /**
- * Parses out the 'disableTelemetry' key from the JSON site config and returns the inverse.
- * If this config option is not set, or if the configuration has a parse error, default is true.
+ * Indicates whether the site config has set the `disableTelemetry` option.
  */
-export function getTelemetryEnabled(text: string): boolean {
+export function getDisableTelemetryUsed(text: string): boolean {
     try {
         const parsedConfig = parseJSON(text) as SiteConfiguration
         if (!parsedConfig) {
             return false
         }
-        return !parsedConfig.disableTelemetry
+        return parsedConfig.disableTelemetry !== undefined
     } catch (err) {
         console.error(err)
-        return true
+        return false
+    }
+}
+
+export function getUpdateChannel(cfgText: string): string | null {
+    try {
+        const parsedConfig = parseJSON(cfgText) as SiteConfiguration
+        if (!parsedConfig) {
+            return null
+        }
+        return parsedConfig['update.channel'] || null
+    } catch (err) {
+        console.error(err)
+        return null
     }
 }

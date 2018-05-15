@@ -37,7 +37,7 @@ const SiteSchemaJSON = `{
     },
     "disableTelemetry": {
       "description":
-        "Prevent usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
+        "(Deprecated: event-level telemetry is now always disabled) Prevent usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
       "type": "boolean"
     },
     "disableExampleSearches": {

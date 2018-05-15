@@ -10,16 +10,17 @@ class TelligentWrapper {
     private PROD_ENV = 'production'
 
     constructor() {
+        // Never log anything in self-hosted Sourcegraph instances.
+        if (!window.context.sourcegraphDotComMode) {
+            return
+        }
+
         if (window && window.telligent) {
             this.telligent = window.telligent
         } else {
             return
         }
         this.initialize(window.context.siteID, window.context.version === 'dev' ? this.DEV_ENV : this.PROD_ENV)
-    }
-
-    public isTelligentLoaded(): boolean {
-        return Boolean(this.telligent)
     }
 
     public addStaticMetadataObject(metadata: any): void {
@@ -38,50 +39,6 @@ class TelligentWrapper {
 
     public track(eventAction: string, eventProps: any): void {
         if (!this.telligent) {
-            return
-        }
-        // for on-prem usage, we only want to collect high level event context
-        // note user identification information is still captured through persistent `user_info`
-        // metadata stored in a cookie
-        if (!window.context.sourcegraphDotComMode) {
-            const limitedEventProps = {
-                event_action: eventProps.eventAction,
-                event_category: eventProps.eventCategory,
-                event_label: eventProps.eventLabel,
-                page_title: eventProps.page_title,
-                language: eventProps.language,
-                lang_server: eventProps.lang_server
-                    ? {
-                          language: eventProps.language,
-                      }
-                    : undefined,
-                code_search: eventProps.code_search
-                    ? {
-                          query_data: eventProps.code_search.query_data
-                              ? {
-                                    query: eventProps.code_search.query_data.query,
-                                }
-                              : undefined,
-                          results: eventProps.code_search.results,
-                          source: eventProps.code_search.source,
-                          suggestion: eventProps.code_search.suggestion
-                              ? {
-                                    type: eventProps.code_search.suggestion.type,
-                                }
-                              : undefined,
-                      }
-                    : undefined,
-                id: eventProps.id,
-                platform: eventProps.platform,
-                server: eventProps.server,
-                tab: eventProps.tab,
-                feedback: eventProps.feedback
-                    ? {
-                          experience: eventProps.feedback.experience,
-                      }
-                    : undefined,
-            }
-            this.telligent('track', eventAction, limitedEventProps)
             return
         }
         this.telligent('track', eventAction, eventProps)
@@ -109,9 +66,7 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
-        const telligentUrl = window.context.sourcegraphDotComMode
-            ? 'sourcegraph-logging.telligentdata.com'
-            : `${window.location.host}/.api/telemetry`
+        const telligentUrl = 'sourcegraph-logging.telligentdata.com'
         this.telligent('newTracker', 'sg', telligentUrl, {
             appId: siteID,
             platform: 'Web',
@@ -119,7 +74,7 @@ class TelligentWrapper {
             env,
             configUseCookies: true,
             useCookies: true,
-            trackUrls: window.context.sourcegraphDotComMode,
+            trackUrls: true,
             /**
              * NOTE: do not use window.location.hostname (which includes subdomains) as the cookieDomain
              * on sourcegraph.com subdomains (such as about.sourcegraph.com). Subdomains should be removed
@@ -133,11 +88,6 @@ class TelligentWrapper {
                 webPage: true,
             },
         })
-
-        // If on-prem, record Sourcegraph Server version
-        if (!window.context.sourcegraphDotComMode) {
-            this.telligent('addStaticMetadata', 'sgVersion', window.context.version, 'header')
-        }
     }
 
     private inspectTelligentCookie(): string[] | null {

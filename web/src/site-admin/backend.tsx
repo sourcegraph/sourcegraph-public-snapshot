@@ -435,7 +435,7 @@ export function fetchSiteAnalytics(): Observable<GQL.ISiteActivity> {
  *
  * @return Observable that emits the site
  */
-export function fetchSite(opt: { telemetrySamples?: boolean }): Observable<GQL.ISite> {
+export function fetchSite(): Observable<GQL.ISite> {
     return queryGraphQL(gql`
         query Site {
             site {
@@ -447,7 +447,6 @@ export function fetchSite(opt: { telemetrySamples?: boolean }): Observable<GQL.I
                     canUpdate
                     source
                 }
-                ${opt && opt.telemetrySamples ? 'telemetrySamples' : ''}
             }
         }
     `).pipe(

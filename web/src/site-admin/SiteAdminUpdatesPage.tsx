@@ -10,10 +10,9 @@ import { Subscription } from 'rxjs'
 import { withLatestFrom } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
-import { SiteConfiguration } from '../schema/site.schema'
-import { parseJSON } from '../settings/configuration'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
+import { getUpdateChannel } from './configHelpers'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -37,7 +36,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
         eventLogger.logViewEvent('SiteAdminUpdates')
 
         this.subscriptions.add(
-            fetchSite({ telemetrySamples: false })
+            fetchSite()
                 .pipe(withLatestFrom(fetchSiteUpdateCheck()))
                 .subscribe(
                     ([site, { buildVersion, productVersion, updateCheck }]) =>
@@ -126,18 +125,5 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                 </p>
             </div>
         )
-    }
-}
-
-function getUpdateChannel(cfgText: string): string | null {
-    try {
-        const parsedConfig = parseJSON(cfgText) as SiteConfiguration
-        if (!parsedConfig) {
-            return null
-        }
-        return parsedConfig['update.channel'] || null
-    } catch (err) {
-        console.error(err)
-        return null
     }
 }

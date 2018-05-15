@@ -2149,8 +2149,6 @@ type Site implements ConfigurationSubject {
     productVersion: String!
     # Information about software updates for the version of Sourcegraph that this site is running.
     updateCheck: UpdateCheck!
-    # Samples of recent telemetry payloads, visible to the site administrator only.
-    telemetrySamples: [String!]!
     # Whether the site needs to be configured to add repositories.
     needsRepositoryConfiguration: Boolean!
     # Whether the site has zero access-enabled repositories.

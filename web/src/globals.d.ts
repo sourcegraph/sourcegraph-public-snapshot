@@ -55,9 +55,6 @@ interface SourcegraphContext {
 
     sourcegraphDotComMode: boolean
 
-    /** Whether telemetry is disabled. */
-    disableTelemetry: boolean
-
     /**
      * siteID is the identifier of the Sourcegraph site. It is also the Telligent app ID.
      */

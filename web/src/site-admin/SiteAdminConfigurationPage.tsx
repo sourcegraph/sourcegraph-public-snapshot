@@ -14,7 +14,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { getTelemetryEnabled, siteConfigActions } from './configHelpers'
+import { siteConfigActions } from './configHelpers'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -92,7 +92,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         )
 
         this.subscriptions.add(
-            this.remoteRefreshes.pipe(mergeMap(() => fetchSite({}))).subscribe(
+            this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
                 site =>
                     this.setState({
                         site,
@@ -140,7 +140,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     delay(2000),
                     mergeMap(() =>
                         // wait for server to restart
-                        fetchSite({}).pipe(
+                        fetchSite().pipe(
                             retryWhen(x => x.pipe(tap(() => this.forceUpdate()), delay(500))),
                             timeout(5000)
                         )
@@ -399,11 +399,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     }
 
     private save = () => {
-        eventLogger.log('SiteConfigurationSaved', {
-            server: {
-                telemetryEnabled: getTelemetryEnabled(this.state.contents || ''),
-            },
-        })
+        eventLogger.log('SiteConfigurationSaved')
         this.remoteUpdates.next(this.state.contents)
     }
 

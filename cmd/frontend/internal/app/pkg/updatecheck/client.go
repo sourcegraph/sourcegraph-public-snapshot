@@ -18,6 +18,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -76,10 +77,11 @@ func getSiteActivityJSON() ([]byte, error) {
 	return json.Marshal(siteActivity)
 }
 
-func updateURL() string {
+func updateURL(ctx context.Context) string {
 	q := url.Values{}
 	q.Set("version", ProductVersion)
 	q.Set("site", siteid.Get())
+	q.Set("auth", conf.AuthProviderType()) // TODO(sqs) replace with strings.join(..., ",") when multiple auth provider types are available, no need to marshal to proper JSON string
 	q.Set("deployType", conf.DeployType())
 	count, err := useractivity.GetUsersActiveTodayCount()
 	if err != nil {
@@ -91,6 +93,11 @@ func updateURL() string {
 	} else {
 		q.Set("act", string(act))
 	}
+	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	if err != nil {
+		log15.Error("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+	}
+	q.Set("initAdmin", initAdminEmail)
 	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
@@ -99,7 +106,7 @@ func updateURL() string {
 // (returned by Last and IsPending).
 func check(ctx context.Context) (*Status, error) {
 	doCheck := func() (updateVersion string, err error) {
-		resp, err := ctxhttp.Get(ctx, nil, updateURL())
+		resp, err := ctxhttp.Get(ctx, nil, updateURL(ctx))
 		if err != nil {
 			return "", err
 		}

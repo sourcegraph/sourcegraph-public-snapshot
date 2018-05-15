@@ -34,6 +34,16 @@ func (err userEmailNotFoundError) NotFound() bool {
 // userEmails provides access to the `user_emails` table.
 type userEmails struct{}
 
+// GetInitialSiteAdminEmail returns a best guess of the email of the initial Sourcegraph installer/site admin.
+// Because the initial site admin's email isn't marked, this returns the email of the active site admin with
+// the lowest user ID.
+func (*userEmails) GetInitialSiteAdminEmail(ctx context.Context) (email string, err error) {
+	if err := globalDB.QueryRowContext(ctx, "SELECT email FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email); err != nil {
+		return "", errors.New("initial site admin email not found")
+	}
+	return email, nil
+}
+
 // GetPrimaryEmail gets the oldest email associated with the user.
 func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
 	if Mocks.UserEmails.GetPrimaryEmail != nil {

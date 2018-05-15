@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
@@ -62,6 +63,8 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
+	InjectSourcegraphTracker bool
+
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
 	Rev          string // unresolved / user-specified revision (e.x.: "@master")
@@ -94,6 +97,11 @@ func repoShortName(uri api.RepoURI) string {
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
+	injectTelligentTracker := false
+	if envvar.SourcegraphDotComMode() {
+		injectTelligentTracker = true
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
@@ -104,6 +112,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assets.URL("").String(),
 		Title:    title,
+
+		InjectSourcegraphTracker: injectTelligentTracker,
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {

@@ -178,12 +178,12 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                     )}
                     <li className="sidebar__item">
                         <NavLink
-                            to="/site-admin/telemetry"
+                            to="/site-admin/pings"
                             className="sidebar__item-link"
                             activeClassName="sidebar__item--active"
                             exact={true}
                         >
-                            Telemetry
+                            Pings
                         </NavLink>
                     </li>
                 </ul>

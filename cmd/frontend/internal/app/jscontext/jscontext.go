@@ -47,8 +47,6 @@ type JSContext struct {
 	Version        string            `json:"version"`
 	User           *immutableUser    `json:"user"`
 
-	DisableTelemetry bool `json:"disableTelemetry"`
-
 	SentryDSN      string `json:"sentryDSN"`
 	SiteID         string `json:"siteID"`
 	Debug          bool   `json:"debug"`
@@ -123,7 +121,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AssetsRoot:          assets.URL("").String(),
 		Version:             env.Version,
 		User:                user,
-		DisableTelemetry:    conf.Get().DisableTelemetry,
 		SentryDSN:           sentryDSNFrontend,
 		Debug:               envvar.DebugMode(),
 		SiteID:              siteID,

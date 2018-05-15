@@ -253,7 +253,7 @@ func uniques(dayStart time.Time, years int, months int, days int) ([]string, []s
 			bid := id.([]byte)
 			sid := string(bid)
 			allUniqueUserIds[sid] = true
-			if len(bid) != 36 { // id is a numerical Sourcegraph user id, not an anonymous user's Telligent cookie id
+			if len(bid) != 36 { // id is a numerical Sourcegraph user id, not an anonymous user's UUID
 				registeredUserIds[sid] = true
 			} else {
 				anonymousUserIds[sid] = true

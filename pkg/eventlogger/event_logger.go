@@ -19,9 +19,8 @@ var backendEventsTrackingSiteID = "SourcegraphBackend"
 // defaultLogger is a singleton for event logging from the backend
 var defaultLogger = new()
 
-// LogEvent sends a payload representing an event to either the remote
-// analytics endpoint or, if not in Sourcegraph.com mode, the Server's
-// internal telemetry endpoint.
+// LogEvent sends a payload representing an event to the api/telemetry endpoint. This
+// endpoint only functions on Sourcegraph.com, not on self-hosted instances.
 //
 // This method should be invoked after the frontend service has started. It is
 // safe to not do so (it will just log an error), but logging the actual event

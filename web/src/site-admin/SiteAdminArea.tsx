@@ -11,11 +11,11 @@ import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
 import { SiteAdminInviteUserPage } from './SiteAdminInviteUserPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
+import { SiteAdminPingsPage } from './SiteAdminPingsPage'
 import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
 import { SiteAdminSettingsPage } from './SiteAdminSettingsPage'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
 import { SiteAdminSurveyResponsesPage } from './SiteAdminSurveyResponsesPage'
-import { SiteAdminTelemetryPage } from './SiteAdminTelemetryPage'
 import { SiteAdminThreadsPage } from './SiteAdminThreadsPage'
 import { SiteAdminTokensPage } from './SiteAdminTokensPage'
 import { SiteAdminUpdatesPage } from './SiteAdminUpdatesPage'
@@ -134,11 +134,7 @@ export class SiteAdminArea extends React.Component<Props> {
                             )}
                         />
                         <Route path={`${this.props.match.url}/updates`} component={SiteAdminUpdatesPage} exact={true} />
-                        <Route
-                            path={`${this.props.match.url}/telemetry`}
-                            component={SiteAdminTelemetryPage}
-                            exact={true}
-                        />
+                        <Route path={`${this.props.match.url}/pings`} component={SiteAdminPingsPage} exact={true} />
                         <Route
                             path={`${this.props.match.url}/surveys`}
                             exact={true}

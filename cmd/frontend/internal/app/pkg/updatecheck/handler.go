@@ -54,8 +54,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	deployType := q.Get("deployType")
 	clientVersionString := q.Get("version")
 	clientSiteID := q.Get("site")
+	authProviders := q.Get("auth")
 	uniqueUsers := q.Get("u")
 	activity := q.Get("act")
+	initialAdminEmail := q.Get("initAdmin")
 	hasCodeIntelligence := q.Get("codeintel")
 	if clientVersionString == "" {
 		http.Error(w, "no version specified", http.StatusBadRequest)
@@ -101,7 +103,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			"has_update": "%s",
 			"unique_users_today": "%s",
 			"has_code_intelligence": "%s",
-			"site_activity": %s
+			"site_activity": %s,
+			"installer_email": %s,
+			"auth_providers": %s
 		}`,
 			clientAddr,
 			clientVersionString,
@@ -110,6 +114,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			uniqueUsers,
 			hasCodeIntelligence,
 			activity,
+			initialAdminEmail,
+			authProviders,
 		)))
 	}
 
