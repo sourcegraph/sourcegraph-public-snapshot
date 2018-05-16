@@ -735,6 +735,16 @@
   revision = "8b1c2da0d56deffdbb9e48d4414b4e674bd8083e"
 
 [[projects]]
+  name = "github.com/russellhaering/gosaml2"
+  packages = [
+    ".",
+    "types",
+    "uuid"
+  ]
+  revision = "4f381189230874b6542a39d68f3f89dfd66f969d"
+  version = "v0.3.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/russellhaering/goxmldsig"
   packages = [
@@ -1386,6 +1396,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f33cdc0a6587123df7cc84f8a5a8e29ceb456346cd3fc34bb1db8ebab363fb6a"
+  inputs-digest = "a281bef8be3f3e8154357a4a06f532a1f0c4c7f2a9f11d4d0072633171fc26bc"
   solver-name = "gps-cdcl"
   solver-version = 1

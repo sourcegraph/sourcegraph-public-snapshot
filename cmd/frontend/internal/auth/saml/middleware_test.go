@@ -26,6 +26,7 @@ import (
 	"github.com/crewjam/saml"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 
 	"github.com/crewjam/saml/samlidp"
 )
@@ -147,12 +148,40 @@ func newSAMLIDPServer(t *testing.T) (*httptest.Server, *samlidp.Server) {
 	return srv, idpServer
 }
 
-func Test_newSAMLAuthMiddleware(t *testing.T) {
+func TestMiddleware(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
 
+	// Set SAML global parameters
+	conf.MockGetData = &schema.SiteConfiguration{
+		AuthProvider: "saml",
+		AuthSaml: &schema.SAMLAuthProvider{
+			IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
+			ServiceProviderCertificate:  testSAMLSPCert,
+			ServiceProviderPrivateKey:   testSAMLSPKey,
+		},
+		ExperimentalFeatures: &schema.ExperimentalFeatures{},
+	}
+	defer func() { conf.MockGetData = nil }()
+
+	// Test both the old (1) and new (2) implementations.
+	t.Run("1", func(t *testing.T) {
+		testMiddleware(t, idpHTTPServer.URL, idpServer, false)
+	})
+	t.Run("2", func(t *testing.T) {
+		conf.MockGetData.ExperimentalFeatures.EnhancedSAML = "enabled"
+		testMiddleware(t, idpHTTPServer.URL, idpServer, true)
+	})
+}
+
+// testMiddleware tests the SAML middleware. It assumes the site config has been mocked by the
+// caller (with conf.MockGetData).
+func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isImpl2 bool) {
+	cleanup := session.ResetMockSessionStore(t)
+	defer cleanup()
+
 	// Mock user
-	mockedProvider := idpHTTPServer.URL + "/metadata"
+	mockedProvider := idpURL + "/metadata"
 	mockedExternalID := samlToExternalID(mockedProvider, "testuser_id")
 	const mockedUserID = 123
 	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
@@ -168,17 +197,6 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		return nil
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
-
-	// Set SAML global parameters
-	conf.MockGetData = &schema.SiteConfiguration{
-		AuthProvider: "saml",
-		AuthSaml: &schema.SAMLAuthProvider{
-			IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
-			ServiceProviderCertificate:  testSAMLSPCert,
-			ServiceProviderPrivateKey:   testSAMLSPKey,
-		},
-	}
-	defer func() { conf.MockGetData = nil }()
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()
@@ -206,8 +224,12 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		}
 	})))
 
-	// doRequest simulates a request to our authed handler (i.e., the SAML Service Provider)
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, form url.Values) *http.Response {
+	// doRequest simulates a request to our authed handler (i.e., the SAML Service Provider).
+	//
+	// authed2 sets an authed actor in the request context to simulate an authenticated request. It
+	// only takes effect for the new (2) implementation (because the old (1) implementation only
+	// consults the sg-session JWT, not the request context, for auth).
+	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed2 bool, form url.Values) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
@@ -215,6 +237,9 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		if form != nil {
 			req.PostForm = form
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		}
+		if authed2 && isImpl2 {
+			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockedUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
 		authedHandler.ServeHTTP(respRecorder, req)
@@ -227,7 +252,7 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		authnRequestURL string
 	)
 	t.Run("unauthenticated homepage visit -> IDP SSO URL", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, nil)
+		resp := doRequest("GET", "http://example.com/", "", nil, false, nil)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -251,7 +276,7 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated API visit -> HTTP 401 Unauthorized", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, nil)
+		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false, nil)
 		if got, want := resp.StatusCode, http.StatusUnauthorized; got != want {
 			t.Errorf("wrong response code: got %v, want %v", got, want)
 		}
@@ -260,7 +285,7 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		loggedInCookies []*http.Cookie
 	)
 	t.Run("get SP metadata and register SP with IDP", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/saml/metadata", "", nil, nil)
+		resp := doRequest("GET", "http://example.com/.auth/saml/metadata", "", nil, false, nil)
 		service := samlidp.Service{}
 		if err := xml.NewDecoder(resp.Body).Decode(&service.Metadata); err != nil {
 			t.Fatal(err)
@@ -269,12 +294,17 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, err := http.NewRequest("PUT", idpHTTPServer.URL+"/services/id", bytes.NewBuffer(serviceMetadataBytes))
+		req, err := http.NewRequest("PUT", idpURL+"/services/id", bytes.NewBuffer(serviceMetadataBytes))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if resp, err := http.DefaultClient.Do(req); err != nil {
+		resp, err = http.DefaultClient.Do(req)
+		if err != nil {
 			t.Fatalf("could not register SP with IDP, error: %s, resp: %v", err, resp)
+		}
+		defer resp.Body.Close()
+		if want := http.StatusNoContent; resp.StatusCode != want {
+			t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
 		}
 	})
 	t.Run("get SAML assertion from IDP and post the assertion to the SP ACS URL", func(t *testing.T) {
@@ -315,19 +345,19 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		reqParams := url.Values{}
 		reqParams.Set("SAMLResponse", samlResponse)
 		reqParams.Set("RelayState", idpAuthnReq.RelayState)
-		resp := doRequest("POST", "http://example.com/.auth/saml/acs", "", authnCookies, reqParams)
+		resp := doRequest("POST", "http://example.com/.auth/saml/acs", "", authnCookies, false, reqParams)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "http://example.com/"; got != want {
-			t.Errorf("got redirect location %v, want %v", got, want)
+		if got, want1, want2 := resp.Header.Get("Location"), "http://example.com/", "/"; got != want1 && got != want2 {
+			t.Errorf("got redirect location %v, want %v or %v", got, want1, want2)
 		}
 
 		// save the cookies from the login response
 		loggedInCookies = unexpiredCookies(resp)
 	})
 	t.Run("authenticated request to home page", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", loggedInCookies, nil)
+		resp := doRequest("GET", "http://example.com/", "", loggedInCookies, true, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
@@ -337,7 +367,7 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("authenticated request to sub page", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/page", "", loggedInCookies, nil)
+		resp := doRequest("GET", "http://example.com/page", "", loggedInCookies, true, nil)
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
@@ -347,13 +377,13 @@ func Test_newSAMLAuthMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("verify actor gets set in request context", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/require-authn", "", loggedInCookies, nil)
+		resp := doRequest("GET", "http://example.com/require-authn", "", loggedInCookies, true, nil)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("verify actor gets set in API request context", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", loggedInCookies, nil)
+		resp := doRequest("GET", "http://example.com/.api/foo", "", loggedInCookies, true, nil)
 		if got, want := resp.StatusCode, http.StatusOK; got != want {
 			t.Errorf("wrong status code: got %v, want %v", got, want)
 		}

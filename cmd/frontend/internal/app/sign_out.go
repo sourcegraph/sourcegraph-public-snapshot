@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -22,6 +23,8 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case p.Openidconnect != nil:
 		endSessionEndpoint, err = openidconnect.SignOut(w, r)
+	case p.Saml != nil && conf.EnhancedSAMLEnabled():
+		endSessionEndpoint, err = saml.SignOut(w, r)
 	}
 	if err != nil {
 		log15.Error("Error clearing auth provider session data.", "err", err)

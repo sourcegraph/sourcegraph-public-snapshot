@@ -3,6 +3,7 @@
   "appURL": "http://localhost:3080",
   "experimentalFeatures": {
     "searchTimeoutParameter": "enabled",
+    "enhancedSAML": "enabled",
     "hostSurveysLocally": "enabled"
   },
   "htmlHeadTop":

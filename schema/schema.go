@@ -80,6 +80,7 @@ type BuiltinAuthProvider struct {
 
 // ExperimentalFeatures Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
+	EnhancedSAML           string `json:"enhancedSAML,omitempty"`
 	HostSurveysLocally     string `json:"hostSurveysLocally,omitempty"`
 	JumpToDefOSSIndex      string `json:"jumpToDefOSSIndex,omitempty"`
 	SearchTimeoutParameter string `json:"searchTimeoutParameter,omitempty"`

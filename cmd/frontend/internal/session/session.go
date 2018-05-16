@@ -245,13 +245,10 @@ func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, i
 }
 
 func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
-	if conf.AuthProvider().Saml != nil {
-		// Skip session cookie because when SAML is used, the "sg-session" cookie actually contains
-		// a SAML-specific JWT, which is completely different from our session cookie and is not
-		// validated by our session store.
-		//
-		// TODO(sqs): Make it so that our SAML cookies use a different name (and do this without logging
-		// all SAML users out).
+	if conf.AuthProvider().Saml != nil && !conf.EnhancedSAMLEnabled() {
+		// Skip session cookie because when the old SAML impl (not the enhancedSAML experiment) is
+		// used, the "sg-session" cookie actually contains a SAML-specific JWT, which is completely
+		// different from our session cookie and is not validated by our session store.
 		return r.Context()
 	}
 

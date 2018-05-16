@@ -17,6 +17,13 @@ func SearchTimeoutParameterEnabled() bool {
 	return p != "disabled"
 }
 
+// EnhancedSAMLEnabled returns true if enhancedSAML experiment is enabled.
+func EnhancedSAMLEnabled() bool {
+	// default is disabled
+	x := Get().ExperimentalFeatures
+	return x != nil && x.EnhancedSAML == "enabled"
+}
+
 // JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
 func JumpToDefOSSIndexEnabled() bool {
 	p := Get().ExperimentalFeatures.JumpToDefOSSIndex

@@ -73,7 +73,13 @@ type providerExtraClaims struct {
 	RevocationEndpoint string `json:"revocation_endpoint,omitempty"`
 }
 
+var mockNewProvider func(issuerURL string) (*provider, error)
+
 func newProvider(ctx context.Context, issuerURL string) (*provider, error) {
+	if mockNewProvider != nil {
+		return mockNewProvider(issuerURL)
+	}
+
 	bp, err := oidc.NewProvider(context.Background(), issuerURL)
 	if err != nil {
 		return nil, err

@@ -17,7 +17,10 @@ func (r *userResolver) Session(ctx context.Context) (*sessionResolver, error) {
 	}
 
 	var sr sessionResolver
-	sr.canSignOut = (r.user.ExternalID == nil || (conf.AuthProvider().Openidconnect != nil && r.user.ExternalID != nil)) && actor.FromSessionCookie
+	if actor.FromSessionCookie {
+		sr.canSignOut = r.user.ExternalID == nil ||
+			(r.user.ExternalID != nil && (conf.AuthProvider().Openidconnect != nil || (conf.EnhancedSAMLEnabled() && conf.AuthProvider().Saml != nil)))
+	}
 	return &sr, nil
 }
 

@@ -1,20 +1,21 @@
 package saml
 
 import (
-	"crypto/rsa"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"reflect"
 	"sync"
 
-	"github.com/crewjam/saml/samlsp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -43,7 +44,13 @@ func init() {
 		pc = newPC
 		if pc != nil {
 			go func(pc schema.SAMLAuthProvider) {
-				if _, err := cache.get(pc); err != nil {
+				var err error
+				if conf.EnhancedSAMLEnabled() {
+					_, err = cache2.get(pc)
+				} else {
+					_, err = cache1.get(pc)
+				}
+				if err != nil {
 					log15.Error("Error prefetching SAML service provider metadata.", "error", err)
 				}
 			}(*pc)
@@ -52,30 +59,33 @@ func init() {
 	init = false
 }
 
-func getServiceProvider(pc *schema.SAMLAuthProvider) (*samlsp.Middleware, error) {
-	appURL, err := url.Parse(conf.Get().AppURL)
+type providerConfig struct {
+	entityID *url.URL
+	keyPair  tls.Certificate
+
+	// Exactly 1 of these is set:
+	identityProviderMetadataURL *url.URL
+	identityProviderMetadata    []byte
+}
+
+func readProviderConfig(pc *schema.SAMLAuthProvider, appURLStr string) (*providerConfig, error) {
+	appURL, err := url.Parse(appURLStr)
 	if err != nil {
 		return nil, errors.WithMessage(err, "parsing app URL for SAML service provider client")
 	}
-	entityIDURL, err := url.Parse(appURL.ResolveReference(&url.URL{Path: auth.AuthURLPrefix}).String())
-	if err != nil {
-		return nil, err
-	}
-	keyPair, err := tls.X509KeyPair([]byte(pc.ServiceProviderCertificate), []byte(pc.ServiceProviderPrivateKey))
-	if err != nil {
-		return nil, err
-	}
-	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
-	if err != nil {
-		return nil, err
-	}
 
-	opt := samlsp.Options{
-		URL:          *entityIDURL,
-		Key:          keyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate:  keyPair.Leaf,
-		CookieMaxAge: session.DefaultExpiryPeriod,
-		CookieSecure: entityIDURL.Scheme == "https",
+	var c providerConfig
+	c.entityID, err = url.Parse(appURL.ResolveReference(&url.URL{Path: auth.AuthURLPrefix}).String())
+	if err != nil {
+		return nil, err
+	}
+	c.keyPair, err = tls.X509KeyPair([]byte(pc.ServiceProviderCertificate), []byte(pc.ServiceProviderPrivateKey))
+	if err != nil {
+		return nil, err
+	}
+	c.keyPair.Leaf, err = x509.ParseCertificate(c.keyPair.Certificate[0])
+	if err != nil {
+		return nil, err
 	}
 
 	// Allow specifying either URL to SAML Identity Provider metadata XML file, or the XML
@@ -83,29 +93,40 @@ func getServiceProvider(pc *schema.SAMLAuthProvider) (*samlsp.Middleware, error)
 	switch {
 	case pc.IdentityProviderMetadataURL != "" && pc.IdentityProviderMetadata != "":
 		return nil, errors.New("invalid SAML configuration: set either identityProviderMetadataURL or identityProviderMetadata, not both")
+
 	case pc.IdentityProviderMetadataURL != "":
-		opt.IDPMetadataURL, err = url.Parse(pc.IdentityProviderMetadataURL)
+		c.identityProviderMetadataURL, err = url.Parse(pc.IdentityProviderMetadataURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing SAML Identity Provider metadata URL")
 		}
+
 	case pc.IdentityProviderMetadata != "":
-		if err := xml.Unmarshal([]byte(pc.IdentityProviderMetadata), &opt.IDPMetadata); err != nil {
-			return nil, errors.Wrap(err, "parsing SAML Identity Provider metadata XML (note: a root element of <EntityDescriptor> is expected)")
-		}
+		c.identityProviderMetadata = []byte(pc.IdentityProviderMetadata)
+
 	default:
 		return nil, errors.New("invalid SAML configuration: must provide the SAML metadata, using either identityProviderMetadataURL (URL where XML file is available) or identityProviderMetadata (XML file contents)")
 	}
 
-	samlSP, err := samlsp.New(opt)
-	if err != nil {
-		return nil, err
+	return &c, nil
+}
+
+func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byte, error) {
+	if c.identityProviderMetadata != nil {
+		return []byte(c.identityProviderMetadata), nil
 	}
-	samlSP.ClientToken.(*samlsp.ClientCookies).Name = "sg-session"
 
-	// Cookie domains can't contain port numbers. Work around a bug in github.com/crewjam/saml where
-	// it uses appURL.Host (which includes the appURL's port number, if any, thereby causing warning
-	// messages like `net/http: invalid Cookie.Domain "localhost:3080"; dropping domain attribute`.
-	samlSP.ClientToken.(*samlsp.ClientCookies).Domain = appURL.Hostname()
+	resp, err := ctxhttp.Get(ctx, nil, c.identityProviderMetadataURL.String())
+	if err != nil {
+		return nil, errors.WithMessage(err, "fetching SAML Identity Provider metadata")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("non-200 HTTP response for SAML Identity Provider metadata URL: %s", c.identityProviderMetadataURL)
+	}
 
-	return samlSP, nil
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.WithMessage(err, "reading SAML Identity Provider metadata")
+	}
+	return data, nil
 }

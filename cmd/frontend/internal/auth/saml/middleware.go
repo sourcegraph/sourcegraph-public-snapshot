@@ -6,12 +6,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/crewjam/saml/samlsp"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -22,93 +21,60 @@ import (
 var Middleware = &auth.Middleware{
 	API: func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHandler(w, r, next, true)
+			getAuthHandler()(w, r, next, true)
 		})
 	},
 	App: func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHandler(w, r, next, false)
+			getAuthHandler()(w, r, next, false)
 		})
 	},
 }
 
-func authHandler(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+func authHandlerCommon(w http.ResponseWriter, r *http.Request, next http.Handler, pc *schema.SAMLAuthProvider) (handled bool) {
 	// Check the SAML auth provider configuration.
-	pc := conf.AuthProvider().Saml
 	if pc != nil && (pc.ServiceProviderCertificate == "" || pc.ServiceProviderPrivateKey == "") {
 		log15.Error("No certificate and/or private key set for SAML auth provider in site configuration.")
 		http.Error(w, "misconfigured SAML auth provider", http.StatusInternalServerError)
-		return
+		return true
 	}
 
 	// If SAML isn't enabled, or actor is already authenticated (e.g., via access token), skip SAML auth.
 	if pc == nil || actor.FromContext(r.Context()).IsAuthenticated() {
 		next.ServeHTTP(w, r)
-		return
+		return true
 	}
 
-	// Otherwise, we need to use SAML.
-	samlSP, err := cache.get(*pc)
-	if err != nil {
-		log15.Error("Error getting SAML service provider.", "error", err)
-		http.Error(w, "unexpected error in SAML authentication provider", http.StatusInternalServerError)
-		return
+	return false
+}
+
+// getAuthHandler returns the auth HTTP handler to use, depending on whether the enhancedSAML
+// experiment is enabled.
+func getAuthHandler() func(http.ResponseWriter, *http.Request, http.Handler, bool) {
+	if conf.EnhancedSAMLEnabled() {
+		return authHandler2
 	}
-
-	if !isAPIRequest {
-		// Delegate to SAML ACS and metadata endpoint handlers.
-		if strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
-			samlSP.ServeHTTP(w, r)
-			return
-		}
-	}
-
-	// HACK: Return HTTP 401 for API requests without a cookie (unlike for app requests, where we
-	// need to HTTP 302 redirect the user to the SAML login flow). This behavior provides no
-	// additional security but is nicer for API requests.
-	if isAPIRequest {
-		if c, _ := r.Cookie(samlSP.ClientToken.(*samlsp.ClientCookies).Name); c == nil {
-			http.Error(w, "requires authentication", http.StatusUnauthorized)
-			return
-		}
-	}
-
-	// Require SAML auth to proceed (redirect to SAML login flow).
-	samlSP.RequireAccount(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		idpID := samlSP.ServiceProvider.IDPMetadata.EntityID
-		samlActor, err := getActorFromSAML(r.Context(), idpID)
-		if err != nil {
-			log15.Error("Error looking up SAML-authenticated user.", "error", err)
-			http.Error(w, "Error looking up SAML-authenticated user. "+auth.CouldNotGetUserDescription, http.StatusInternalServerError)
-			return
-		}
-
-		next.ServeHTTP(w, r.WithContext(actor.WithActor(r.Context(), samlActor)))
-	})).ServeHTTP(w, r)
+	return authHandler1
 }
 
 // getActorFromSAML translates the SAML token's claims (set in request context by the SAML
 // middleware) into an Actor.
-func getActorFromSAML(ctx context.Context, idpID string) (*actor.Actor, error) {
-	token := samlsp.Token(ctx)
-	if token == nil {
-		return nil, errors.New("no SAML token in request context")
-	}
+func getActorFromSAML(ctx context.Context, subjectNameID, idpID string, attr interface {
+	Get(string) string
+}) (*actor.Actor, error) {
+	externalID := samlToExternalID(idpID, subjectNameID)
 
-	subject := token.Subject
-	externalID := samlToExternalID(idpID, subject)
-
-	email := token.Attributes.Get("email")
-	if email == "" && mightBeEmail(subject) {
-		email = subject
+	email := attr.Get("email")
+	if email == "" && mightBeEmail(subjectNameID) {
+		email = subjectNameID
 	}
-	login := token.Attributes.Get("login")
+	login := attr.Get("login")
 	if login == "" {
-		login = token.Attributes.Get("uid")
+		login = attr.Get("uid")
 	}
-	displayName := token.Attributes.Get("displayName")
+	displayName := attr.Get("displayName")
 	if displayName == "" {
-		displayName = token.Attributes.Get("givenName")
+		displayName = attr.Get("givenName")
 	}
 	if displayName == "" {
 		displayName = login
@@ -117,7 +83,7 @@ func getActorFromSAML(ctx context.Context, idpID string) (*actor.Actor, error) {
 		displayName = email
 	}
 	if displayName == "" {
-		displayName = subject
+		displayName = subjectNameID
 	}
 	if login == "" {
 		login = email
