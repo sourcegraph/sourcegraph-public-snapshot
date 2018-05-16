@@ -81,6 +81,13 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "multipleAuthProviders": {
+          "description":
+            "Enables or disables the use of multiple authentication providers. (WARNING: Do not use this unless you know what you're doing.)",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       }
     },

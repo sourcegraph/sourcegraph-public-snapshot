@@ -5,8 +5,7 @@ import (
 )
 
 // AuthProviderType returns the type string for the auth provider.
-func AuthProviderType() string {
-	p := AuthProvider()
+func AuthProviderType(p schema.AuthProviders) string {
 	switch {
 	case p.Builtin != nil:
 		return p.Builtin.Type
@@ -21,18 +20,40 @@ func AuthProviderType() string {
 	}
 }
 
-// AuthProvider returns the auth provider config. It supports auth.providers (highest precedence),
-// auth.provider (backcompat, middle precedence), and legacy saml*/oidc* properties (lowest
-// precedence).
+// AuthProviders returns the configured auth providers. It supports auth.providers (highest
+// precedence), auth.provider (backcompat, middle precedence), and legacy saml*/oidc* properties
+// (lowest precedence).
 //
-// A nil return value means "forbid all access to server" NOT "server is 100% public, no auth
-// needed".
-//
-// 🚨 SECURITY: The return value schema.AuthProviders{} indicates that no auth provider is set. In
-// this case, all access MUST be forbidden. The goal is to prevent a config typo from resulting in a
-// data breach.
-func AuthProvider() schema.AuthProviders {
-	return authProvider(Get())
+// 🚨 SECURITY: If len(AuthProviders()) == 0, then no auth provider is set. In this case, all access
+// MUST be forbidden. The goal is to prevent a config typo from resulting in a data breach.
+func AuthProviders() []schema.AuthProviders { return authProviders(Get()) }
+func authProviders(c *schema.SiteConfiguration) []schema.AuthProviders {
+	if c.AuthProviders != nil {
+		return c.AuthProviders
+	}
+
+	// BACKCOMPAT: A singular provider was configured.
+	p := authProvider(c)
+	if p == (schema.AuthProviders{}) || AuthProviderType(p) == "" {
+		return nil // no auth providers were set
+	}
+	return []schema.AuthProviders{p}
+}
+
+// AuthProvidersIncludesOldSAML reports whether the SAML auth provider is present in site
+// configuration *and* the enhancedSAML experiment is disabled. The old SAML auth provider does not
+// support usage with other auth providers.
+func AuthProvidersIncludesOldSAML() bool { return authProvidersIncludesOldSAML(Get()) }
+func authProvidersIncludesOldSAML(c *schema.SiteConfiguration) bool {
+	if enhancedSAMLEnabled(c) {
+		return false
+	}
+	for _, p := range authProviders(c) {
+		if p.Saml != nil {
+			return true
+		}
+	}
+	return false
 }
 
 // authProvider (see AuthProvider).
@@ -77,7 +98,7 @@ func authProviderSingular(c *schema.SiteConfiguration) schema.AuthProviders {
 			AllowSignup: c.AuthAllowSignup,
 		}}
 	default:
-		// 🚨 SECURITY: This is means "forbid all access". See the func authProvider SECURITY note.
+		// 🚨 SECURITY: This means "forbid all access". See the func AuthProviders SECURITY note.
 		return schema.AuthProviders{}
 	}
 }
@@ -107,10 +128,15 @@ func authProviderLegacy(c *schema.SiteConfiguration) schema.AuthProviders {
 
 // AuthPublic reports whether the site is public. Currently only the builtin auth provider allows
 // sites to be public. AuthPublic only returns true if auth.public (in site config) is true *and*
-// the active auth provider is builtin.
+// there is a builtin auth provider.
 func AuthPublic() bool { return authPublic(Get()) }
 func authPublic(c *schema.SiteConfiguration) bool {
-	return authProvider(c).Builtin != nil && c.AuthPublic
+	for _, p := range authProviders(c) {
+		if p.Builtin != nil && c.AuthPublic {
+			return true
+		}
+	}
+	return false
 }
 
 // AuthAllowSignup reports whether the site allows signup. Currently only the builtin auth
@@ -118,6 +144,10 @@ func authPublic(c *schema.SiteConfiguration) bool {
 // auth.providers' builtin provider has allowSignup true (in site config).
 func AuthAllowSignup() bool { return authAllowSignup(Get()) }
 func authAllowSignup(c *schema.SiteConfiguration) bool {
-	p := authProvider(c).Builtin
-	return p != nil && p.AllowSignup
+	for _, p := range authProviders(c) {
+		if p.Builtin != nil && p.Builtin.AllowSignup {
+			return true
+		}
+	}
+	return false
 }

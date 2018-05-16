@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -26,19 +25,25 @@ const (
 //
 // 🚨 SECURITY
 func Middleware(next http.Handler) http.Handler {
+	const misconfiguredMessage = "Misconfigured http-header auth provider."
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authProvider := conf.AuthProvider()
-		if authProvider.HttpHeader == nil {
+		authProvider, multiple := getProviderConfig()
+		if multiple {
+			log15.Error("At most 1 HTTP header auth provider may be set in site config.")
+			http.Error(w, misconfiguredMessage, http.StatusInternalServerError)
+			return
+		}
+		if authProvider == nil {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if authProvider.HttpHeader.UsernameHeader == "" {
+		if authProvider.UsernameHeader == "" {
 			log15.Error("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
 			http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
 			return
 		}
 
-		headerValue := r.Header.Get(authProvider.HttpHeader.UsernameHeader)
+		headerValue := r.Header.Get(authProvider.UsernameHeader)
 		if headerValue == "" {
 			// The auth proxy is expected to proxy *all* requests, so don't let any non-proxied requests
 			// proceed. Note that if an attacker can send HTTP requests directly to this server (not via
@@ -70,7 +75,7 @@ func Middleware(next http.Handler) http.Handler {
 			AccountID: UserProviderHTTPHeader + ":" + headerValue,
 		})
 		if err != nil {
-			log15.Error("unable to get/create user from SSO header", "header", authProvider.HttpHeader.UsernameHeader, "headerValue", headerValue, "err", err)
+			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err)
 			http.Error(w, "unable to get/create user", http.StatusInternalServerError)
 			return
 		}

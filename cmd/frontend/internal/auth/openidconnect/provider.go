@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"sync"
 
@@ -23,29 +22,33 @@ func init() {
 	var (
 		init = true
 
-		mu sync.Mutex
-		pc *schema.OpenIDConnectAuthProvider
+		mu  sync.Mutex
+		cur []*schema.OpenIDConnectAuthProvider
 	)
 	conf.Watch(func() {
 		mu.Lock()
 		defer mu.Unlock()
 
 		// Only react when the config changes.
-		newPC := conf.AuthProvider().Openidconnect
-		if reflect.DeepEqual(newPC, pc) {
+		new := providersOfType(conf.AuthProviders())
+		diff := diffProviderConfig(cur, new)
+		if len(diff) == 0 {
 			return
 		}
 
 		if !init {
 			log15.Info("Reloading changed OpenID Connect authentication provider configuration.")
 		}
-		pc = newPC
-		if pc != nil {
-			go func(pc schema.OpenIDConnectAuthProvider) {
-				if _, err := cache.get(pc.Issuer); err != nil {
-					log15.Error("Error prefetching OpenID Connect provider metadata.", "issuer", pc.Issuer, "clientID", pc.ClientID, "error", err)
-				}
-			}(*pc)
+
+		cur = new
+		for pc, op := range diff {
+			if op == opAdded || op == opChanged {
+				go func(pc schema.OpenIDConnectAuthProvider) {
+					if _, err := cache.get(pc.Issuer); err != nil {
+						log15.Error("Error prefetching OpenID Connect provider metadata.", "issuer", pc.Issuer, "clientID", pc.ClientID, "error", err)
+					}
+				}(pc)
+			}
 		}
 	})
 	init = false

@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -64,7 +63,10 @@ var Middleware = &auth.Middleware{
 // both API requests and non-API requests.
 func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Check the OpenID Connect auth provider configuration.
-	pc := conf.AuthProvider().Openidconnect
+	pc, handled := handleGetFirstProviderConfig(w)
+	if handled {
+		return
+	}
 	if pc != nil && pc.Issuer == "" {
 		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).")
 		http.Error(w, "misconfigured OpenID Connect auth provider", http.StatusInternalServerError)

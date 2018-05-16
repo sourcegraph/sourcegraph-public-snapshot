@@ -29,23 +29,47 @@ func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, er
 	} else if cfg.AuthProvider != "" {
 		invalid(`auth.provider is deprecated; use auth.providers instead`)
 	}
-	if len(cfg.AuthProviders) >= 2 {
+	if len(cfg.AuthProviders) >= 2 && !multipleAuthProvidersEnabled(&cfg) {
 		invalid(`auth.providers supports only a single entry (entries other than the first are IGNORED)`)
 	}
-
-	authProvider := authProvider(&cfg)
-	if authProvider == (schema.AuthProviders{}) {
-		invalid("no auth provider set (all access will be forbidden)")
+	if multipleAuthProvidersEnabled(&cfg) {
+		if authProvidersIncludesOldSAML(&cfg) {
+			invalid(`must enable experimentalFeatures.enhancedSAML to use the SAML auth provider as one of multiple auth providers`)
+		}
+		byType := map[string]int{}
+		for _, p := range authProviders(&cfg) {
+			byType[AuthProviderType(p)]++
+		}
+		for _, pt := range sortedKeys(byType) {
+			n := byType[pt]
+			if n >= 2 {
+				invalid(fmt.Sprintf("exactly 0 or 1 auth providers of type %q must be specified (got %d)", pt, n))
+			}
+		}
 	}
-	if cfg.AuthAllowSignup && authProvider.Builtin == nil {
-		invalid(fmt.Sprintf("auth.allowSignup requires auth provider \"builtin\" (got %q)", cfg.AuthProvider))
+
+	authProviders := authProviders(&cfg)
+	if len(authProviders) == 0 {
+		invalid("no auth providers set (all access will be forbidden)")
+	}
+	var hasBuiltinAuthProvider, loggedNeedsAppURL bool
+	for _, p := range authProviders {
+		if p.Builtin != nil {
+			hasBuiltinAuthProvider = true
+		}
+		if (p.Openidconnect != nil || p.Saml != nil) && cfg.AppURL == "" && !loggedNeedsAppURL {
+			invalid(fmt.Sprintf(`auth provider %q requires appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`, AuthProviderType(p)))
+			loggedNeedsAppURL = true
+		}
+		if p.Openidconnect != nil && p.Openidconnect.OverrideToken != "" {
+			invalid(`OpenID Connect auth provider "overrideToken" is deprecated (because it applies to all auth providers, not just OIDC); use OVERRIDE_AUTH_SECRET env var instead`)
+		}
+	}
+	if cfg.AuthAllowSignup && !hasBuiltinAuthProvider {
+		invalid(fmt.Sprintf("auth.allowSignup requires auth provider \"builtin\""))
 	}
 	if cfg.AuthAllowSignup {
 		invalid(fmt.Sprintf(`auth.allowSignup is deprecated; use "auth.providers" with an entry of {"type":"builtin","allowSignup":true} instead`))
-	}
-
-	if (authProvider.Openidconnect != nil || authProvider.Saml != nil) && cfg.AppURL == "" {
-		invalid(`auth providers "openidconnect" and "saml" require appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
 	}
 
 	{
@@ -63,10 +87,6 @@ func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, er
 		if hasSingularOIDC && cfg.AuthProvider != "openidconnect" {
 			invalid(`must set auth.provider == "openidconnect" for auth.openIDConnect config to take effect`)
 		}
-	}
-
-	if authProvider.Openidconnect != nil && authProvider.Openidconnect.OverrideToken != "" {
-		invalid(`OpenID Connect auth provider "overrideToken" is deprecated (because it applies to all auth providers, not just OIDC); use OVERRIDE_AUTH_SECRET env var instead`)
 	}
 
 	{
@@ -136,4 +156,12 @@ func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, er
 	}
 
 	return validationErrors, nil
+}
+
+func sortedKeys(m map[string]int) (keys []string) {
+	keys = make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }

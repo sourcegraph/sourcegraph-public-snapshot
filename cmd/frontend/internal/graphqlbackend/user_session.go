@@ -18,8 +18,13 @@ func (r *userResolver) Session(ctx context.Context) (*sessionResolver, error) {
 
 	var sr sessionResolver
 	if actor.FromSessionCookie {
-		sr.canSignOut = r.user.ExternalID == nil ||
-			(r.user.ExternalID != nil && (conf.AuthProvider().Openidconnect != nil || (conf.EnhancedSAMLEnabled() && conf.AuthProvider().Saml != nil)))
+		// The http-header auth provider is the only auth provider that a user can't sign out from.
+		for _, p := range conf.AuthProviders() {
+			if p.HttpHeader == nil {
+				sr.canSignOut = true
+				break
+			}
+		}
 	}
 	return &sr, nil
 }

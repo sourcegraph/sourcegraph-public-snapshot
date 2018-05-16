@@ -73,6 +73,10 @@ func Validate(input string) (messages []string, err error) {
 			continue
 		}
 
+		if MultipleAuthProvidersEnabled() && keyPath == "auth.providers" && strings.Contains(e.Description(), "Array must have at most 1 items") {
+			continue
+		}
+
 		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 

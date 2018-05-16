@@ -18,10 +18,10 @@ func SearchTimeoutParameterEnabled() bool {
 }
 
 // EnhancedSAMLEnabled returns true if enhancedSAML experiment is enabled.
-func EnhancedSAMLEnabled() bool {
+func EnhancedSAMLEnabled() bool { return enhancedSAMLEnabled(Get()) }
+func enhancedSAMLEnabled(c *schema.SiteConfiguration) bool {
 	// default is disabled
-	x := Get().ExperimentalFeatures
-	return x != nil && x.EnhancedSAML == "enabled"
+	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.EnhancedSAML == "enabled"
 }
 
 // JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
@@ -36,6 +36,13 @@ func HostSurveysLocallyEnabled() bool {
 	p := Get().ExperimentalFeatures.HostSurveysLocally
 	// default is disabled
 	return p == "enabled"
+}
+
+// MultipleAuthProvidersEnabled reports whether the "multipleAuthProviders" experiment is enabled.
+func MultipleAuthProvidersEnabled() bool { return multipleAuthProvidersEnabled(Get()) }
+func multipleAuthProvidersEnabled(c *schema.SiteConfiguration) bool {
+	// default is disabled
+	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.MultipleAuthProviders == "enabled"
 }
 
 // AccessTokensEnabled returns whether access tokens are enabled.

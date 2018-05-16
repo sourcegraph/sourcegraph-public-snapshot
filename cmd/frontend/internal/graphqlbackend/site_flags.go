@@ -60,7 +60,14 @@ func noRepositoriesEnabled(ctx context.Context) (bool, error) {
 	return len(repos) == 0, nil
 }
 
-func (*siteResolver) ExternalAuthEnabled() bool { return conf.AuthProvider().Builtin == nil }
+func (*siteResolver) ExternalAuthEnabled() bool {
+	for _, p := range conf.AuthProviders() {
+		if p.Builtin == nil {
+			return true // has a non-builtin auth provider
+		}
+	}
+	return false
+}
 
 func (*siteResolver) ConfigurationNotice(ctx context.Context) bool {
 	// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a security

@@ -17,31 +17,38 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 		log15.Error("Error in signout.", "err", err)
 	}
 
-	var signoutURL string
-	var err error
-	p := conf.AuthProvider()
-	switch {
-	case p.Openidconnect != nil:
-		signoutURL, err = openidconnect.SignOut(w, r)
-	case p.Saml != nil && conf.EnhancedSAMLEnabled():
-		signoutURL, err = saml.SignOut(w, r)
+	// TODO(sqs): Show the auth provider name corresponding to each signout URL (helpful when there
+	// are multiple).
+	var signoutURLs []string
+	for _, p := range conf.AuthProviders() {
+		var signoutURL string
+		var err error
+		switch {
+		case p.Openidconnect != nil:
+			signoutURL, err = openidconnect.SignOut(w, r)
+		case p.Saml != nil && conf.EnhancedSAMLEnabled():
+			signoutURL, err = saml.SignOut(w, r)
+		}
+		if signoutURL != "" {
+			signoutURLs = append(signoutURLs, signoutURL)
+		}
+		if err != nil {
+			log15.Error("Error clearing auth provider session data.", "err", err)
+		}
 	}
-	if err != nil {
-		log15.Error("Error clearing auth provider session data.", "err", err)
-	}
-	if signoutURL != "" {
-		renderSignoutPageTemplate(w, r, signoutURL)
+	if len(signoutURLs) > 0 {
+		renderSignoutPageTemplate(w, r, signoutURLs)
 		return
 	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutURL string) {
+func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutURLs []string) {
 	data := struct {
-		SignoutURL string
+		SignoutURLs []string
 	}{
-		SignoutURL: signoutURL,
+		SignoutURLs: signoutURLs,
 	}
 
 	var buf bytes.Buffer
@@ -61,7 +68,9 @@ var (
 <br>
 <a href="/">Go to Sourcegraph</a>
 <br>
-<a href="{{.SignoutURL}}">Sign out of authentication provider</a>
+{{range .SignoutURLs}}
+<a href="{{.}}">Sign out of authentication provider</a><br>
+{{end}}
 </pre>
 `))
 )

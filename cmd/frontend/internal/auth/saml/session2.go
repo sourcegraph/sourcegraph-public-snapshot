@@ -12,7 +12,7 @@ import (
 // SignOut returns the URL where the user can initiate a logout from the SAML IdentityProvider, if
 // it has a SingleLogoutService.
 func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err error) {
-	pc := conf.AuthProvider().Saml
+	pc, _ := getFirstProviderConfig()
 	if pc == nil || !conf.EnhancedSAMLEnabled() {
 		return "", nil
 	}

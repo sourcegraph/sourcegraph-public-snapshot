@@ -7,7 +7,6 @@ import (
 	"github.com/crewjam/saml/samlsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -19,7 +18,10 @@ import (
 // applications of SAML, but it makes it difficult to support multiple auth providers with SAML and
 // expose other SAML functionality (such as token revocation).
 func authHandler1(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
-	pc := conf.AuthProvider().Saml
+	pc, handled := handleGetFirstProviderConfig(w)
+	if handled {
+		return
+	}
 	if handled := authHandlerCommon(w, r, next, pc); handled {
 		return
 	}

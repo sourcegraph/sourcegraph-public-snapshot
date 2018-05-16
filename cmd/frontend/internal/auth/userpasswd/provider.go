@@ -21,7 +21,7 @@ func init() {
 		defer mu.Unlock()
 
 		// Only react when the config changes.
-		newPC := conf.AuthProvider().Builtin
+		newPC, _ := getProviderConfig()
 		if reflect.DeepEqual(newPC, pc) {
 			return
 		}

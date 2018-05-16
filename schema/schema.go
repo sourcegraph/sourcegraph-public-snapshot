@@ -83,6 +83,7 @@ type ExperimentalFeatures struct {
 	EnhancedSAML           string `json:"enhancedSAML,omitempty"`
 	HostSurveysLocally     string `json:"hostSurveysLocally,omitempty"`
 	JumpToDefOSSIndex      string `json:"jumpToDefOSSIndex,omitempty"`
+	MultipleAuthProviders  string `json:"multipleAuthProviders,omitempty"`
 	SearchTimeoutParameter string `json:"searchTimeoutParameter,omitempty"`
 }
 

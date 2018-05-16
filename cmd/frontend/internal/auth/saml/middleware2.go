@@ -9,7 +9,6 @@ import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -19,7 +18,10 @@ import (
 // It uses github.com/russelhaering/gosaml2 and (unlike authHandler1) makes it possible to support
 // multiple auth providers with SAML and expose more SAML functionality.
 func authHandler2(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
-	pc := conf.AuthProvider().Saml
+	pc, handled := handleGetFirstProviderConfig(w)
+	if handled {
+		return
+	}
 	if handled := authHandlerCommon(w, r, next, pc); handled {
 		return
 	}

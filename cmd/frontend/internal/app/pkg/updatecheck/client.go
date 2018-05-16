@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -81,7 +82,7 @@ func updateURL(ctx context.Context) string {
 	q := url.Values{}
 	q.Set("version", ProductVersion)
 	q.Set("site", siteid.Get())
-	q.Set("auth", conf.AuthProviderType()) // TODO(sqs) replace with strings.join(..., ",") when multiple auth provider types are available, no need to marshal to proper JSON string
+	q.Set("auth", strings.Join(authProviderTypes(), ","))
 	q.Set("deployType", conf.DeployType())
 	count, err := useractivity.GetUsersActiveTodayCount()
 	if err != nil {
@@ -100,6 +101,15 @@ func updateURL(ctx context.Context) string {
 	q.Set("initAdmin", initAdminEmail)
 	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
+}
+
+func authProviderTypes() []string {
+	ps := conf.AuthProviders()
+	types := make([]string, len(ps))
+	for i, p := range ps {
+		types[i] = conf.AuthProviderType(p)
+	}
+	return types
 }
 
 // check performs an update check. It returns the result and updates the global state

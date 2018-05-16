@@ -27,11 +27,10 @@ type credentials struct {
 
 // HandleSignUp handles submission of the user signup form.
 func HandleSignUp(w http.ResponseWriter, r *http.Request) {
-	if conf.AuthProvider().Builtin == nil {
-		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+	if handleEnabledCheck(w) {
 		return
 	}
-	if !conf.AuthAllowSignup() {
+	if pc, _ := getProviderConfig(); !pc.AllowSignup {
 		http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 		return
 	}
@@ -134,8 +133,7 @@ func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.U
 // HandleSignIn accepts a POST containing username-password credentials and authenticates the
 // current session if the credentials are valid.
 func HandleSignIn(w http.ResponseWriter, r *http.Request) {
-	if conf.AuthProvider().Builtin == nil {
-		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+	if handleEnabledCheck(w) {
 		return
 	}
 
@@ -183,8 +181,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
 func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
-	if conf.AuthProvider().Builtin == nil {
-		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+	if handleEnabledCheck(w) {
 		return
 	}
 	if !conf.CanSendEmail() {
@@ -258,8 +255,7 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
 // HandleResetPassword resets the password if the correct code is provided.
 func HandleResetPassword(w http.ResponseWriter, r *http.Request) {
-	if conf.AuthProvider().Builtin == nil {
-		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+	if handleEnabledCheck(w) {
 		return
 	}
 

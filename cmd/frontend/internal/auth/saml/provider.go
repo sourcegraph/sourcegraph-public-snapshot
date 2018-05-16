@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"reflect"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -25,35 +24,39 @@ func init() {
 	var (
 		init = true
 
-		mu sync.Mutex
-		pc *schema.SAMLAuthProvider
+		mu  sync.Mutex
+		cur []*schema.SAMLAuthProvider
 	)
 	conf.Watch(func() {
 		mu.Lock()
 		defer mu.Unlock()
 
 		// Only react when the config changes.
-		newPC := conf.AuthProvider().Saml
-		if reflect.DeepEqual(newPC, pc) {
+		new := providersOfType(conf.AuthProviders())
+		diff := diffProviderConfig(cur, new)
+		if len(diff) == 0 {
 			return
 		}
 
 		if !init {
 			log15.Info("Reloading changed SAML authentication provider configuration.")
 		}
-		pc = newPC
-		if pc != nil {
-			go func(pc schema.SAMLAuthProvider) {
-				var err error
-				if conf.EnhancedSAMLEnabled() {
-					_, err = cache2.get(pc)
-				} else {
-					_, err = cache1.get(pc)
-				}
-				if err != nil {
-					log15.Error("Error prefetching SAML service provider metadata.", "error", err)
-				}
-			}(*pc)
+
+		cur = new
+		for pc, op := range diff {
+			if op == opAdded || op == opChanged {
+				go func(pc schema.SAMLAuthProvider) {
+					var err error
+					if conf.EnhancedSAMLEnabled() {
+						_, err = cache2.get(pc)
+					} else {
+						_, err = cache1.get(pc)
+					}
+					if err != nil {
+						log15.Error("Error prefetching SAML service provider metadata.", "error", err)
+					}
+				}(pc)
+			}
 		}
 	})
 	init = false
