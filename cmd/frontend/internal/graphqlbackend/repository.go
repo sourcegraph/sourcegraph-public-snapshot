@@ -100,7 +100,15 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
-	commit, err := getCommit(ctx, r.repo, args.Rev)
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
+	if err != nil {
+		if vcs.IsRevisionNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
 	if commit == nil || err != nil {
 		return nil, err
 	}
@@ -108,17 +116,6 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 	resolver := toGitCommitResolver(r, commit)
 	resolver.inputRev = &args.Rev
 	return resolver, nil
-}
-
-func getCommit(ctx context.Context, repo *types.Repo, rev string) (*vcs.Commit, error) {
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, rev)
-	if err != nil {
-		if vcs.IsRevisionNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return backend.Repos.GetCommit(ctx, repo, commitID)
 }
 
 func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCommitResolver, error) {
@@ -276,16 +273,27 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	if err != nil {
 		return nil, err
 	}
-
+	vcsrepo := backend.Repos.CachedVCS(repo)
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
-
-	repoResolver := &repositoryResolver{repo: repo}
-	// If we already created the commit
-	if commit, err := getCommit(ctx, repo, targetRef); commit != nil && err == nil {
-		return toGitCommitResolver(repoResolver, commit), nil
+	getCommit := func() (*gitCommitResolver, error) {
+		// We first check via the vcsrepo api so that we can toggle
+		// NoEnsureRevision. We do this, otherwise repositoryResolver.Commit
+		// will try and fetch it from the remote host. However, this is not on
+		// the remote host since we created it.
+		_, err := vcsrepo.ResolveRevision(ctx, targetRef, &vcs.ResolveRevisionOptions{
+			NoEnsureRevision: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+		r := &repositoryResolver{repo: repo}
+		return r.Commit(ctx, &struct{ Rev string }{Rev: targetRef})
 	}
 
-	vcsrepo := backend.Repos.CachedVCS(repo)
+	// If we already created the commit
+	if commit, err := getCommit(); commit != nil || (err != nil && !vcs.IsRevisionNotFound(err)) {
+		return commit, err
+	}
 
 	origin := ""
 	if phabRepo, err := db.Phabricator.GetByURI(ctx, api.RepoURI(args.RepoName)); err == nil {
@@ -344,7 +352,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		}
 	}
 
-	rev, err := vcsrepo.CreateCommitFromPatch(ctx, vcs.PatchOptions{
+	_, err = vcsrepo.CreateCommitFromPatch(ctx, vcs.PatchOptions{
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
 		Patch:      patch,
@@ -359,14 +367,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	commit, err := getCommit(ctx, repo, rev)
-	if err != nil {
-		return nil, err
-	}
-	if commit == nil {
-		return nil, fmt.Errorf("unable to fetch commit that was just created")
-	}
-	return toGitCommitResolver(repoResolver, commit), nil
+	return getCommit()
 }
 
 func makePhabClientForOrigin(origin string) (*phabricator.Client, error) {
