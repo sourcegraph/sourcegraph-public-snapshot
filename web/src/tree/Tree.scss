@@ -47,6 +47,12 @@
         }
     }
 
+    &__row-alert {
+        display: block;
+        padding: 0.25rem 0;
+        margin: 0;
+    }
+
     &__row-icon {
         color: white !important; // override link color
         display: flex;
