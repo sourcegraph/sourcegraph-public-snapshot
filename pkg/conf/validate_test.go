@@ -34,6 +34,7 @@ func TestValidateCustom(t *testing.T) {
 		input                schema.SiteConfiguration
 		raw                  string
 		wantValidationErrors []string
+		ignoreOthers         bool
 	}{
 		"no auth.provider": {
 			input:                schema.SiteConfiguration{},
@@ -53,6 +54,11 @@ func TestValidateCustom(t *testing.T) {
 				AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}},
 			},
 			wantValidationErrors: []string{"auth.providers takes precedence"},
+		},
+		"auth.allowSignup deprecation": {
+			input:                schema.SiteConfiguration{AuthAllowSignup: true},
+			wantValidationErrors: []string{"auth.allowSignup is deprecated"},
+			ignoreOthers:         true,
 		},
 	}
 	for name, test := range tests {
@@ -80,7 +86,7 @@ func TestValidateCustom(t *testing.T) {
 						break
 					}
 				}
-				if !found {
+				if !found && !test.ignoreOthers {
 					t.Errorf("got unexpected error %q", e)
 				}
 			}

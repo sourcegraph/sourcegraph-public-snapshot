@@ -40,6 +40,9 @@ func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, er
 	if cfg.AuthAllowSignup && authProvider.Builtin == nil {
 		invalid(fmt.Sprintf("auth.allowSignup requires auth provider \"builtin\" (got %q)", cfg.AuthProvider))
 	}
+	if cfg.AuthAllowSignup {
+		invalid(fmt.Sprintf(`auth.allowSignup is deprecated; use "auth.providers" with an entry of {"type":"builtin","allowSignup":true} instead`))
+	}
 
 	if (authProvider.Openidconnect != nil || authProvider.Saml != nil) && cfg.AppURL == "" {
 		invalid(`auth providers "openidconnect" and "saml" require appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
