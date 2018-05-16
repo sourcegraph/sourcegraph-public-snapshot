@@ -76,6 +76,16 @@ export class SettingsArea extends React.Component<Props, State> {
             return <Redirect to={newUrl.pathname + newUrl.search} />
         }
 
+        if (this.props.authenticatedUser.id !== this.props.user.id && !this.props.user.viewerCanAdminister) {
+            return (
+                <HeroPage
+                    icon={DirectionalSignIcon}
+                    title="403: Forbidden"
+                    subtitle="You are not authorized to view or edit this user's settings."
+                />
+            )
+        }
+
         if (this.props.match.isExact) {
             return <Redirect to={`${this.props.match.path}/profile`} />
         }
