@@ -70,7 +70,7 @@ func IsUsernameExists(err error) bool {
 	return ok && e.code == errorCodeUsernameExists
 }
 
-// IsEmailExists reports whether err is an error indicating that the intended username exists.
+// IsEmailExists reports whether err is an error indicating that the intended email exists.
 func IsEmailExists(err error) bool {
 	e, ok := err.(errCannotCreateUser)
 	return ok && e.code == errorCodeEmailExists
@@ -230,7 +230,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		if err != nil {
 			if pqErr, ok := err.(*pq.Error); ok {
 				switch pqErr.Constraint {
-				case "user_emails_email_key":
+				case "user_emails_unique_verified_email":
 					return nil, errCannotCreateUser{errorCodeEmailExists}
 				}
 			}
