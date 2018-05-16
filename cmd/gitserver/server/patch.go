@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -27,7 +27,13 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	}
 
 	repo := string(protocol.NormalizeRepo(req.Repo))
-	realDir := path.Join(s.ReposDir, repo)
+	repoGitDir := filepath.Join(s.ReposDir, repo, ".git")
+	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
+		repoGitDir = filepath.Join(s.ReposDir, repo)
+		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
+			http.Error(w, "gitserver: repo does not exist - "+err.Error(), http.StatusInternalServerError)
+		}
+	}
 
 	ref := req.TargetRef
 
@@ -55,12 +61,12 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 
 	ctx := r.Context()
 
-	tmpGitPathEnv := fmt.Sprintf("GIT_DIR=%s/.git", tmpRepoDir)
+	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")
 
-	tmpObjectsDir := fmt.Sprintf("%s/.git/objects", tmpRepoDir)
-	realObjectsDir := fmt.Sprintf("%s/.git/objects", realDir)
+	tmpObjectsDir := filepath.Join(tmpRepoDir, ".git", "objects")
+	repoObjectsDir := filepath.Join(repoGitDir, "objects")
 
-	altObjectsEnv := fmt.Sprintf("GIT_ALTERNATE_OBJECT_DIRECTORIES=%s", realObjectsDir)
+	altObjectsEnv := "GIT_ALTERNATE_OBJECT_DIRECTORIES=" + repoObjectsDir
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	cmd.Dir = tmpRepoDir
@@ -139,16 +145,36 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 
 	cmtHash := strings.TrimSpace(string(out))
 
-	cmd = exec.CommandContext(ctx, "cp", "-a", tmpObjectsDir+"/.", realObjectsDir)
-	cmd.Dir = tmpRepoDir
-
-	if _, err := run(cmd); err != nil {
+	// Move objects from tmpObjectsDir to repoObjectsDir.
+	err = filepath.Walk(tmpObjectsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(tmpObjectsDir, path)
+		if err != nil {
+			return err
+		}
+		dst := filepath.Join(repoObjectsDir, rel)
+		if err := os.MkdirAll(filepath.Dir(dst), os.ModePerm); err != nil {
+			return err
+		}
+		// do the actual move. If dst exists we can ignore the error since it
+		// will contain the same content (content addressable FTW).
+		if err := os.Rename(path, dst); err != nil && !os.IsExist(err) {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		http.Error(w, "gitserver: copying git objects - "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "update-ref", req.TargetRef, cmtHash)
-	cmd.Dir = realDir
+	cmd.Dir = repoGitDir
 
 	if out, err = run(cmd); err != nil {
 		log15.Error("Failed to create ref for commit.", "ref", req.TargetRef, "commit", cmtHash, "output", string(out))
