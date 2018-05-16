@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, Subscription } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
@@ -8,25 +8,7 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
-
-interface ExternalAccountNodeProps {
-    node: GQL.IExternalAccount
-}
-
-class ExternalAccountNode extends React.PureComponent<ExternalAccountNodeProps> {
-    public render(): JSX.Element | null {
-        return (
-            <li className="list-group-item py-2">
-                <div className="d-flex align-items-center justify-content-between">
-                    <strong>{this.props.node.serviceName}</strong>
-                    <div>
-                        {this.props.node.canAuthenticate && <span className="badge badge-success">Allows login</span>}
-                    </div>
-                </div>
-            </li>
-        )
-    }
-}
+import { externalAccountFragment, ExternalAccountNode, ExternalAccountNodeProps } from './ExternalAccountNode'
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
@@ -38,13 +20,17 @@ interface ExternalAccountConnection {
     totalCount: number
 }
 
-class FilteredExternalAccountConnection extends FilteredConnection<GQL.IExternalAccount> {}
+class FilteredExternalAccountConnection extends FilteredConnection<
+    GQL.IExternalAccount,
+    Pick<ExternalAccountNodeProps, 'onDidUpdate'>
+> {}
 
 /**
  * Displays the external accounts (from authentication providers) associated with the user's account.
  */
 export class UserSettingsExternalAccountsPage extends React.Component<Props> {
     private subscriptions = new Subscription()
+    private externalAccountUpdates = new Subject<void>()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsExternalAccounts')
@@ -55,6 +41,10 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
+        const nodeProps: Pick<ExternalAccountNodeProps, 'onDidUpdate'> = {
+            onDidUpdate: this.onDidUpdateExternalAccount,
+        }
+
         return (
             <div className="user-settings-external-accounts-page">
                 <PageTitle title="Connected accounts" />
@@ -65,6 +55,8 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                     pluralNoun="connected accounts"
                     queryConnection={this.queryUserExternalAccounts}
                     nodeComponent={ExternalAccountNode}
+                    nodeComponentProps={nodeProps}
+                    updates={this.externalAccountUpdates}
                     hideFilter={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
@@ -81,13 +73,12 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                     node(id: $user) {
                         ... on User {
                             externalAccounts {
-                                serviceName
-                                serviceUserID
-                                canAuthenticate
+                                ...ExternalAccountFields
                             }
                         }
                     }
                 }
+                ${externalAccountFragment}
             `,
             { user: this.props.user.id }
         ).pipe(
@@ -105,4 +96,6 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                 }
             })
         )
+
+    private onDidUpdateExternalAccount = () => this.externalAccountUpdates.next()
 }

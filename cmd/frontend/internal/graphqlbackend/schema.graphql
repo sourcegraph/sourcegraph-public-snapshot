@@ -261,6 +261,11 @@ type Mutation {
     #
     # Only site admins or the user who owns the token may perform this mutation.
     deleteAccessToken(byID: ID, byToken: String): EmptyResponse!
+    # Deletes the association between an external account and its Sourcegraph user. It does NOT delete the external
+    # account on the external service where it resides.
+    #
+    # Only site admins or the user who is associated with the external account may perform this mutation.
+    deleteExternalAccount(externalAccount: ID!): EmptyResponse!
     # Accepts a user invite.
     acceptUserInvite(inviteToken: String!): EmptyResponse
     # Immediately add a user to the organization, either by username or email address, without sending an
@@ -1854,8 +1859,7 @@ type User implements Node, ConfigurationSubject {
         # Returns the first n access tokens from the list.
         first: Int
     ): AccessTokenConnection!
-    # Information about the user's accounts on external services that are associated with their Sourcegraph user
-    # account.
+    # A list of external accounts that are associated with the user.
     externalAccounts: [ExternalAccount!]!
     # The user's currently active session.
     #
@@ -1897,18 +1901,22 @@ type AccessTokenConnection {
     pageInfo: PageInfo!
 }
 
-# Information about a user's account on a service that is associated with their Sourcegraph user account.
-type ExternalAccount {
-    # The Sourcegraph user.
+# An external account associated with a user.
+type ExternalAccount implements Node {
+    # The unique ID for the external account.
+    id: ID!
+    # The user on Sourcegraph.
     user: User!
-    # The human-readable name of the service.
-    serviceName: String!
-    # The ID of the service.
+    # The type of the external service where the external account resides.
+    serviceType: String!
+    # An identifier for the external service where the external account resides.
     serviceID: String!
-    # The ID of the user's account on the service.
-    serviceUserID: String!
-    # Whether the user can authenticate to Sourcegraph using this external account.
-    canAuthenticate: Boolean!
+    # An identifier for the external account (typically equal to or derived from the ID on the external service).
+    accountID: String!
+    # The creation date of this external account on Sourcegraph.
+    createdAt: String!
+    # The last-updated date of this external account on Sourcegraph.
+    updatedAt: String!
 }
 
 # An active user session.

@@ -89,6 +89,11 @@ func (r *nodeResolver) ToDependency() (*dependencyResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
+	n, ok := r.node.(*externalAccountResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
 	n, ok := r.node.(*gitRefResolver)
 	return n, ok
@@ -148,6 +153,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
+	case "ExternalAccount":
+		return externalAccountByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
 	case "Comment":
