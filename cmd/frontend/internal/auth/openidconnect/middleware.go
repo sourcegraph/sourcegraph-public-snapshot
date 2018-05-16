@@ -233,10 +233,10 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 		if err := userInfo.Claims(&claims); err != nil {
 			log15.Warn("Could not parse userInfo claims", "error", err)
 		}
-		actr, err := getActor(ctx, idToken, userInfo, &claims)
+		actr, safeErrMsg, err := getActor(ctx, idToken, userInfo, &claims)
 		if err != nil {
-			log15.Error("Error looking up OpenID-authenticated user.", "error", err)
-			http.Error(w, "Error looking up OpenID-authenticated user. "+auth.CouldNotGetUserDescription, http.StatusInternalServerError)
+			log15.Error("Error looking up OpenID-authenticated user.", "error", err, "userErr", safeErrMsg)
+			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
 
@@ -273,7 +273,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
 // Because Actors must correspond to users in our DB, it creates the user in the DB if the user does not yet
 // exist.
-func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *UserClaims) (*actor.Actor, error) {
+func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *UserClaims) (_ *actor.Actor, safeErrMsg string, err error) {
 	provider := idToken.Issuer
 	externalID := oidcToExternalID(provider, idToken.Subject)
 	login := claims.PreferredUsername
@@ -289,21 +289,21 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 			displayName = login
 		}
 	}
-	login, err := auth.NormalizeUsername(login)
+	login, err = auth.NormalizeUsername(login)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Sprintf("Error normalizing the username %q. See https://about.sourcegraph.com/docs/config/authentication#username-normalization.", login), err
 	}
 
-	userID, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
+	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
 		Username:    login,
 		Email:       email,
 		DisplayName: displayName,
 		AvatarURL:   claims.Picture,
 	}, db.ExternalAccountSpec{ServiceType: "openidconnect", ServiceID: idToken.Issuer, AccountID: externalID})
 	if err != nil {
-		return nil, err
+		return nil, safeErrMsg, err
 	}
-	return actor.FromUser(userID), nil
+	return actor.FromUser(userID), "", nil
 }
 
 func ssoErrMsg(err string, description interface{}) string {

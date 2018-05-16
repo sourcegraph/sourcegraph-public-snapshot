@@ -99,10 +99,10 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLService
 			return
 		}
 
-		actor, err := getActorFromSAML(r.Context(), info.NameID, sp.IdentityProviderIssuer, samlAssertionValues(info.Values))
+		actor, safeErrMsg, err := getActorFromSAML(r.Context(), info.NameID, sp.IdentityProviderIssuer, samlAssertionValues(info.Values))
 		if err != nil {
-			log15.Error("Error looking up SAML-authenticated user.", "err", err)
-			http.Error(w, "Error looking up SAML-authenticated user. "+auth.CouldNotGetUserDescription, http.StatusInternalServerError)
+			log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
+			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
 		var exp time.Duration

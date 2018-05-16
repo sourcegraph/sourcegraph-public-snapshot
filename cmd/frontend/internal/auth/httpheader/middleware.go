@@ -66,7 +66,7 @@ func Middleware(next http.Handler) http.Handler {
 			http.Error(w, "unable to normalize username", http.StatusInternalServerError)
 			return
 		}
-		userID, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{Username: username}, db.ExternalAccountSpec{
+		userID, safeErrMsg, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{Username: username}, db.ExternalAccountSpec{
 			ServiceType: UserProviderHTTPHeader,
 
 			// Store headerValue, not normalized username, to prevent two users with distinct
@@ -75,8 +75,8 @@ func Middleware(next http.Handler) http.Handler {
 			AccountID: UserProviderHTTPHeader + ":" + headerValue,
 		})
 		if err != nil {
-			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err)
-			http.Error(w, "unable to get/create user", http.StatusInternalServerError)
+			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err, "userErr", safeErrMsg)
+			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
 

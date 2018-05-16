@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -61,7 +62,7 @@ func getAuthHandler() func(http.ResponseWriter, *http.Request, http.Handler, boo
 // middleware) into an Actor.
 func getActorFromSAML(ctx context.Context, subjectNameID, idpID string, attr interface {
 	Get(string) string
-}) (*actor.Actor, error) {
+}) (_ *actor.Actor, safeErrMsg string, err error) {
 	externalID := samlToExternalID(idpID, subjectNameID)
 
 	email := attr.Get("email")
@@ -89,14 +90,14 @@ func getActorFromSAML(ctx context.Context, subjectNameID, idpID string, attr int
 		login = email
 	}
 	if login == "" {
-		return nil, fmt.Errorf("could not create user, because SAML assertion did not contain email attribute statement")
+		return nil, "The SAML authentication provider did not contain an email attribute.", errors.New("SAML response did not contain email")
 	}
-	login, err := auth.NormalizeUsername(login)
+	login, err = auth.NormalizeUsername(login)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Sprintf("Error normalizing the username %q. See https://about.sourcegraph.com/docs/config/authentication#username-normalization.", login), err
 	}
 
-	userID, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
+	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
 		Username:    login,
 		Email:       email,
 		DisplayName: displayName,
@@ -105,9 +106,9 @@ func getActorFromSAML(ctx context.Context, subjectNameID, idpID string, attr int
 		db.ExternalAccountSpec{ServiceType: "saml", ServiceID: idpID, AccountID: externalID},
 	)
 	if err != nil {
-		return nil, err
+		return nil, safeErrMsg, err
 	}
-	return actor.FromUser(userID), nil
+	return actor.FromUser(userID), "", nil
 }
 
 func samlToExternalID(idpID, subject string) string {

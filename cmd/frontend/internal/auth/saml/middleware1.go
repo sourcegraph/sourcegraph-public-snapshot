@@ -63,10 +63,10 @@ func authHandler1(w http.ResponseWriter, r *http.Request, next http.Handler, isA
 			return
 		}
 
-		samlActor, err := getActorFromSAML(r.Context(), token.Subject, idpID, token.Attributes)
+		samlActor, safeErrMsg, err := getActorFromSAML(r.Context(), token.Subject, idpID, token.Attributes)
 		if err != nil {
-			log15.Error("Error looking up SAML-authenticated user.", "error", err)
-			http.Error(w, "Error looking up SAML-authenticated user. "+auth.CouldNotGetUserDescription, http.StatusInternalServerError)
+			log15.Error("Error looking up SAML-authenticated user.", "error", err, "userErr", safeErrMsg)
+			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
 
