@@ -5,7 +5,7 @@
 ## Using Keycloak in local dev
 
 1.  Run Keycloak: `./keycloak.sh`
-1.  To make your local Sourcegraph dev server use OpenID or SAML provided by Keycloak, uncomment the relevant section in `dev/config.json` or on the site admin configuration page.
+1.  To make your local Sourcegraph dev server use OpenID or SAML provided by Keycloak, follow the instructions in the comments near the `dev/config.json` **`auth.providers`** section.
 
 > If Keycloak is useful, we will add it to the dev/Procfile so it always runs in local dev.
 
