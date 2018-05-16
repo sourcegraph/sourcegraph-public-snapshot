@@ -74,7 +74,6 @@ interface SourcegraphContext {
      * A subset of the site configuration. Not all fields are set.
      */
     site: {
-        'auth.allowSignup': boolean
         'auth.public': boolean
     }
 
@@ -106,6 +105,9 @@ interface SourcegraphContext {
      * Whether the hostSurveysLocally feature flag is enabled.
      */
     hostSurveysLocallyEnabled: boolean
+
+    /** Whether signup is allowed on the site. */
+    allowSignup: boolean
 }
 
 declare module '*.json' {

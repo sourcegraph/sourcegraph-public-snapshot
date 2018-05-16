@@ -184,7 +184,7 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
             return <Redirect to={returnTo} />
         }
 
-        if (!window.context.site['auth.allowSignup']) {
+        if (!window.context.allowSignup) {
             return <Redirect to="/sign-in" />
         }
 

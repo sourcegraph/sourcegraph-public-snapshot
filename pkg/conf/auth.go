@@ -112,3 +112,12 @@ func AuthPublic() bool { return authPublic(Get()) }
 func authPublic(c *schema.SiteConfiguration) bool {
 	return authProvider(c).Builtin != nil && c.AuthPublic
 }
+
+// AuthAllowSignup reports whether the site allows signup. Currently only the builtin auth
+// provider allows signup. AuthAllowSignup returns true if auth.allowSignup is true OR if
+// auth.providers' builtin provider has allowSignup true (in site config).
+func AuthAllowSignup() bool { return authAllowSignup(Get()) }
+func authAllowSignup(c *schema.SiteConfiguration) bool {
+	p := authProvider(c).Builtin
+	return p != nil && p.AllowSignup
+}

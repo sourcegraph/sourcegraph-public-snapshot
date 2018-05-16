@@ -65,6 +65,8 @@ type JSContext struct {
 	HostSurveysLocallyEnabled     bool `json:"hostSurveysLocallyEnabled"`
 
 	AccessTokensEnabled bool `json:"accessTokensEnabled"`
+
+	AllowSignup bool `json:"allowSignup"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -139,6 +141,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		HostSurveysLocallyEnabled:     conf.HostSurveysLocallyEnabled(),
 
 		AccessTokensEnabled: conf.AccessTokensEnabled(),
+
+		AllowSignup: conf.AuthAllowSignup(),
 	}
 }
 
@@ -147,8 +151,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 func publicSiteConfiguration() schema.SiteConfiguration {
 	c := conf.Get()
 	return schema.SiteConfiguration{
-		AuthAllowSignup: c.AuthAllowSignup,
-		AuthPublic:      c.AuthPublic,
+		AuthPublic: c.AuthPublic,
 	}
 }
 

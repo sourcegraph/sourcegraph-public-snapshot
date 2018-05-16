@@ -32,8 +32,8 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
 		return
 	}
-	if !conf.Get().AuthAllowSignup {
-		http.Error(w, "Signup is not enabled (auth.allowSignup site configuration option)", http.StatusNotFound)
+	if !conf.AuthAllowSignup() {
+		http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 		return
 	}
 	doServeSignUp(w, r, false)
