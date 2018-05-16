@@ -227,7 +227,6 @@ type Settings struct {
 
 // SiteConfiguration Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
-	AdminUsernames                    string                       `json:"adminUsernames,omitempty"`
 	AppURL                            string                       `json:"appURL,omitempty"`
 	AuthAllowSignup                   bool                         `json:"auth.allowSignup,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`

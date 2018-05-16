@@ -155,7 +155,6 @@ func Main() error {
 	siteid.Init()
 
 	go bg.ApplyUserOrgMap(context.Background())
-	go bg.MigrateAdminUsernames(context.Background())
 	goroutine.Go(func() {
 		bg.MigrateOrgSlackWebhookURLs(context.Background())
 	})
