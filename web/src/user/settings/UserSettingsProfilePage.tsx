@@ -262,6 +262,12 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                         View public profile
                                     </Link>
                                 )}
+                            {window.context.sourcegraphDotComMode && (
+                                <p className="mt-4">
+                                    <a href="https://about.sourcegraph.com/contact">Contact support</a> to delete your
+                                    account.
+                                </p>
+                            )}
                         </Form>
                     )}
             </div>
