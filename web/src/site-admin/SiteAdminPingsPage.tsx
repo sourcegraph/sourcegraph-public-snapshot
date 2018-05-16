@@ -64,7 +64,8 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
                     <li>Deployment type (Server or Data Center)</li>
                     <li>Randomly generated site identifier</li>
                     <li>
-                        The email address of the initial site installer (or if deleted, the first active site admin)
+                        The email address of the initial site installer (or if deleted, the first active site admin), to
+                        know who to contact regarding sales, product updates, and policy updates
                     </li>
                     <li>
                         Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, or
