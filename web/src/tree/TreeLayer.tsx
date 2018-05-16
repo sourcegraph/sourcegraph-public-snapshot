@@ -11,6 +11,7 @@ import {
     delay,
     distinctUntilChanged,
     filter,
+    mergeMap,
     share,
     switchMap,
     takeUntil,
@@ -112,8 +113,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         this.subscriptions.add(
             this.rowHovers
                 .pipe(
-                    debounceTime(25),
-                    switchMap(path =>
+                    debounceTime(100),
+                    mergeMap(path =>
                         fetchTree({
                             repoPath: this.props.repoPath,
                             rev: this.props.rev || '',
@@ -420,8 +421,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     /**
      * Non-root tree layers call this to activate a prefetch request in the root tree layer
      */
-    private invokeOnHover = (): void => {
+    private invokeOnHover = (e: React.MouseEvent<HTMLElement>): void => {
         if (this.props.onHover) {
+            e.stopPropagation()
             this.props.onHover(this.node.path)
         }
     }
