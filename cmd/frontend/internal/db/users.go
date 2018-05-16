@@ -78,13 +78,11 @@ func IsEmailExists(err error) bool {
 
 // NewUser describes a new to-be-created user.
 type NewUser struct {
-	ExternalID       string
-	Email            string
-	Username         string
-	DisplayName      string
-	ExternalProvider string
-	Password         string
-	AvatarURL        string // the new user's avatar URL, if known
+	Email       string
+	Username    string
+	DisplayName string
+	Password    string
+	AvatarURL   string // the new user's avatar URL, if known
 
 	// EmailVerificationCode, if given, causes the new user's email address to be unverified until
 	// they perform the email verification process and provied this code.
@@ -93,7 +91,7 @@ type NewUser struct {
 	// EmailIsVerified is whether the email address should be considered already verified.
 	//
 	// 🚨 SECURITY: Only site admins are allowed to create users whose email addresses are initially
-	// verified (i.e., with EmailVerificationCode == "" and ExternalProvider == "").
+	// verified (i.e., with EmailVerificationCode == "").
 	EmailIsVerified bool `json:"-"` // forbid this field being set by JSON, just in case
 
 	// FailIfNotInitialUser causes the (users).Create call to return an error and not create the
@@ -102,12 +100,11 @@ type NewUser struct {
 	FailIfNotInitialUser bool `json:"-"` // forbid this field being set by JSON, just in case
 }
 
-// Create creates a new user in the database. The provider specifies what identity providers was responsible for authenticating
-// the user:
-// - If the provider is empty, the user is a builtin user with no external auth account associated
-// - If the provider is something else, the user was authenticated by an SSO provider
+// Create creates a new user in the database.
 //
-// Builtin users must also specify a password and email upon creation.
+// If a password is given, then unauthenticated users can sign into the account using the
+// username/email and password. If no password is given, a non-builtin auth provider must be used to
+// sign into the account.
 //
 // CREATION OF SITE ADMINS
 //
@@ -120,25 +117,34 @@ type NewUser struct {
 // It's implemented as part of the (users).Create call instead of relying on the caller to do it in
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
-func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+	tx, err := globalDB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	return u.create(ctx, tx, info)
+}
+
+// create is like Create, except it uses the provided DB transaction. It must execute in a
+// transaction because the post-user-creation hooks must run atomically with the user creation.
+func (*users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
 	}
 
-	if info.ExternalID != "" && info.ExternalProvider == "" {
-		return nil, errors.New("external ID is set but external provider is empty")
-	}
-	if info.ExternalProvider != "" && info.ExternalID == "" {
-		return nil, errors.New("external provider is set but external ID is empty")
-	}
-	if info.ExternalID == "" && (info.Password == "" || info.Email == "") {
-		return nil, errors.New("no password or email provided for new builtin user")
-	}
-	if info.ExternalID == "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {
-		return nil, errors.New("no email verification code provided for new builtin user")
-	}
-	if info.ExternalID != "" && (info.Password != "" || info.EmailVerificationCode != "") {
-		return nil, errors.New("password and/or email verification code provided for external user")
+	if info.Email != "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {
+		return nil, errors.New("no email verification code provided for new user with unverified email")
 	}
 
 	createdAt := time.Now()
@@ -161,30 +167,8 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 		avatarURL = &info.AvatarURL
 	}
 
-	dbExternalID := sql.NullString{String: info.ExternalID}
-	dbExternalID.Valid = info.ExternalID != ""
-
-	dbExternalProvider := sql.NullString{String: info.ExternalProvider}
-	dbExternalProvider.Valid = info.ExternalProvider != ""
-
 	dbEmailCode := sql.NullString{String: info.EmailVerificationCode}
 	dbEmailCode.Valid = info.EmailVerificationCode != ""
-
-	// Wrap in transaction so we can execute hooks below atomically.
-	tx, err := globalDB.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
 
 	// Creating the initial site admin user is equivalent to initializing the
 	// site. ensureInitialized runs in the transaction, so we are guaranteed that the user account
@@ -202,15 +186,13 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 	var siteAdmin bool
 	err = tx.QueryRowContext(
 		ctx,
-		"INSERT INTO users(external_id, username, display_name, avatar_url, external_provider, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
-		dbExternalID, info.Username, info.DisplayName, avatarURL, dbExternalProvider, createdAt, updatedAt, passwd, !alreadyInitialized).Scan(&id, &siteAdmin)
+		"INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, site_admin) VALUES($1, $2, $3, $4, $5, $6, $7 AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+		info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, !alreadyInitialized).Scan(&id, &siteAdmin)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
 			case "users_username":
 				return nil, errCannotCreateUser{errorCodeUsernameExists}
-			case "users_external_id":
-				return nil, errCannotCreateUser{"err_external_id_exists"}
 			}
 		}
 		return nil, err
@@ -255,15 +237,13 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 	}
 
 	return &types.User{
-		ID:               id,
-		ExternalID:       &info.ExternalID,
-		Username:         info.Username,
-		DisplayName:      info.DisplayName,
-		AvatarURL:        info.AvatarURL,
-		ExternalProvider: info.ExternalProvider,
-		CreatedAt:        createdAt,
-		UpdatedAt:        updatedAt,
-		SiteAdmin:        siteAdmin,
+		ID:          id,
+		Username:    info.Username,
+		DisplayName: info.DisplayName,
+		AvatarURL:   info.AvatarURL,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
+		SiteAdmin:   siteAdmin,
 	}, nil
 }
 
@@ -371,6 +351,9 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 	if _, err := tx.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1", id); err != nil {
 		return err
 	}
+	if _, err := tx.ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE user_id=$1 AND deleted_at IS NULL", id); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -410,18 +393,6 @@ func (u *users) GetByID(ctx context.Context, id int32) (*types.User, error) {
 		return Mocks.Users.GetByID(ctx, id)
 	}
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", id)
-}
-
-// GetByExternalID gets the user (if any) from the database that is associated with an external
-// user account, based on the given provider and ID on the provider.
-func (u *users) GetByExternalID(ctx context.Context, provider, id string) (*types.User, error) {
-	if provider == "" || id == "" {
-		panic(fmt.Sprintf("GetByExternalID: both provider (%q) and id (%q) must be nonempty", provider, id))
-	}
-	if Mocks.Users.GetByExternalID != nil {
-		return Mocks.Users.GetByExternalID(ctx, provider, id)
-	}
-	return u.getOneBySQL(ctx, "WHERE external_provider=$1 AND external_id=$2 AND deleted_at IS NULL LIMIT 1", provider, id)
 }
 
 // GetByVerifiedEmail returns the user (if any) with the specified verified email address. If a user
@@ -554,7 +525,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.User, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.external_id, u.username, u.display_name, u.external_provider, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -563,19 +534,13 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	defer rows.Close()
 	for rows.Next() {
 		var u types.User
-		var displayName, dbExternalID, dbExternalProvider, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &dbExternalID, &u.Username, &displayName, &dbExternalProvider, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
+		var displayName, avatarURL sql.NullString
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin)
 		if err != nil {
 			return nil, err
 		}
 		u.DisplayName = displayName.String
 		u.AvatarURL = avatarURL.String
-		if dbExternalID.Valid {
-			u.ExternalID = &dbExternalID.String
-		}
-		if dbExternalProvider.Valid {
-			u.ExternalProvider = dbExternalProvider.String
-		}
 		users = append(users, &u)
 	}
 	if err = rows.Err(); err != nil {

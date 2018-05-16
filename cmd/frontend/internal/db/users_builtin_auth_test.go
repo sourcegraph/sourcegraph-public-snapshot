@@ -14,36 +14,9 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 		Email:       "foo@bar.com",
 		Username:    "foo",
 		DisplayName: "foo",
-	}); err == nil {
-		t.Fatal("builtin user created without password")
-	}
-	if _, err := Users.Create(ctx, NewUser{
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
 		Password:    "asdfasdf",
 	}); err == nil {
-		t.Fatal("builtin user created without email verification code")
-	}
-	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:       "sso:foo@bar.com",
-		Email:            "foo@bar.com",
-		Username:         "foo",
-		DisplayName:      "foo",
-		ExternalProvider: "sso",
-		Password:         "qwer",
-	}); err == nil {
-		t.Fatal("sso user created with password")
-	}
-	if _, err := Users.Create(ctx, NewUser{
-		ExternalID:            "sso:foo@bar.com",
-		Email:                 "foo@bar.com",
-		Username:              "foo",
-		DisplayName:           "foo",
-		ExternalProvider:      "sso",
-		EmailVerificationCode: "qwer",
-	}); err == nil {
-		t.Fatal("sso user created with email verification code")
+		t.Fatal("user created without email verification code or admin-verified status")
 	}
 
 	usr, err := Users.Create(ctx, NewUser{

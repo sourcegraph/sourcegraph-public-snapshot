@@ -72,7 +72,7 @@ func Middleware(next http.Handler) http.Handler {
 			// Store headerValue, not normalized username, to prevent two users with distinct
 			// pre-normalization usernames from being merged into the same normalized username
 			// (and therefore letting them each impersonate the other).
-			AccountID: UserProviderHTTPHeader + ":" + headerValue,
+			AccountID: headerValue,
 		})
 		if err != nil {
 			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err, "userErr", safeErrMsg)

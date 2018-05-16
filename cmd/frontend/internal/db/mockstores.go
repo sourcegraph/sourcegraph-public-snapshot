@@ -21,4 +21,6 @@ type MockStores struct {
 	UserEmails  MockUserEmails
 
 	Phabricator MockPhabricator
+
+	ExternalAccounts MockExternalAccounts
 }

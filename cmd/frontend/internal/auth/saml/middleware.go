@@ -63,8 +63,6 @@ func getAuthHandler() func(http.ResponseWriter, *http.Request, http.Handler, boo
 func getActorFromSAML(ctx context.Context, subjectNameID, idpID string, attr interface {
 	Get(string) string
 }) (_ *actor.Actor, safeErrMsg string, err error) {
-	externalID := samlToExternalID(idpID, subjectNameID)
-
 	email := attr.Get("email")
 	if email == "" && mightBeEmail(subjectNameID) {
 		email = subjectNameID
@@ -98,21 +96,18 @@ func getActorFromSAML(ctx context.Context, subjectNameID, idpID string, attr int
 	}
 
 	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		Username:    login,
-		Email:       email,
-		DisplayName: displayName,
+		Username:        login,
+		Email:           email,
+		EmailIsVerified: email != "", // TODO(sqs): https://github.com/sourcegraph/sourcegraph/issues/10118
+		DisplayName:     displayName,
 		// SAML has no standard way of providing an avatar URL.
 	},
-		db.ExternalAccountSpec{ServiceType: "saml", ServiceID: idpID, AccountID: externalID},
+		db.ExternalAccountSpec{ServiceType: "saml", ServiceID: idpID, AccountID: subjectNameID},
 	)
 	if err != nil {
 		return nil, safeErrMsg, err
 	}
 	return actor.FromUser(userID), "", nil
-}
-
-func samlToExternalID(idpID, subject string) string {
-	return fmt.Sprintf("%s:%s", idpID, subject)
 }
 
 func mightBeEmail(s string) bool {

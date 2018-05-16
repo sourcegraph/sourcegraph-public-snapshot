@@ -13,7 +13,6 @@ type MockUsers struct {
 	SetIsSiteAdmin       func(id int32, isSiteAdmin bool) error
 	GetByID              func(ctx context.Context, id int32) (*types.User, error)
 	GetByUsername        func(ctx context.Context, username string) (*types.User, error)
-	GetByExternalID      func(ctx context.Context, provider, id string) (*types.User, error)
 	GetByCurrentAuthUser func(ctx context.Context) (*types.User, error)
 	Count                func(ctx context.Context, opt UsersListOptions) (int, error)
 	List                 func(ctx context.Context, opt *UsersListOptions) ([]*types.User, error)
@@ -23,15 +22,6 @@ type MockUsers struct {
 func (s *MockUsers) MockGetByID_Return(t *testing.T, returns *types.User, returnsErr error) (called *bool) {
 	called = new(bool)
 	s.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		*called = true
-		return returns, returnsErr
-	}
-	return
-}
-
-func (s *MockUsers) MockGetByExternalID_Return(t *testing.T, returns *types.User, returnsErr error) (called *bool) {
-	called = new(bool)
-	s.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
 		*called = true
 		return returns, returnsErr
 	}

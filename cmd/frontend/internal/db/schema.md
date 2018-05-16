@@ -456,6 +456,28 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.user_external_accounts"
+```
+    Column    |           Type           |                              Modifiers                              
+--------------+--------------------------+---------------------------------------------------------------------
+ id           | integer                  | not null default nextval('user_external_accounts_id_seq'::regclass)
+ user_id      | integer                  | not null
+ service_type | text                     | not null
+ service_id   | text                     | not null
+ account_id   | text                     | not null
+ auth_data    | jsonb                    | 
+ account_data | jsonb                    | 
+ created_at   | timestamp with time zone | not null default now()
+ updated_at   | timestamp with time zone | not null default now()
+ deleted_at   | timestamp with time zone | 
+Indexes:
+    "user_external_accounts_pkey" PRIMARY KEY, btree (id)
+    "user_external_accounts_account" UNIQUE, btree (service_type, service_id, account_id) WHERE deleted_at IS NULL
+Foreign-key constraints:
+    "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+
+```
+
 # Table "public.user_tags"
 ```
    Column   |           Type           |                       Modifiers                        
@@ -478,14 +500,12 @@ Foreign-key constraints:
       Column       |           Type           |                     Modifiers                      
 -------------------+--------------------------+----------------------------------------------------
  id                | integer                  | not null default nextval('users_id_seq'::regclass)
- external_id       | text                     | 
  username          | citext                   | not null
  display_name      | text                     | 
  avatar_url        | text                     | 
  created_at        | timestamp with time zone | not null default now()
  updated_at        | timestamp with time zone | not null default now()
  deleted_at        | timestamp with time zone | 
- external_provider | text                     | 
  invite_quota      | integer                  | not null default 15
  passwd            | text                     | 
  passwd_reset_code | text                     | 
@@ -495,10 +515,8 @@ Foreign-key constraints:
  search_queries    | integer                  | not null default 0
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
-    "users_external_id" UNIQUE, btree (external_id, external_provider) WHERE external_provider IS NOT NULL AND deleted_at IS NULL
     "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
 Check constraints:
-    "check_external_id" CHECK ((external_provider IS NULL) = (external_id IS NULL))
     "users_display_name_valid" CHECK (char_length(display_name) <= 64)
     "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:
@@ -512,6 +530,7 @@ Referenced by:
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "threads" CONSTRAINT "threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 
 ```

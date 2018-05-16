@@ -60,15 +60,13 @@ type SiteConfig struct {
 
 // User represents a registered user.
 type User struct {
-	ID               int32
-	ExternalID       *string
-	Username         string
-	ExternalProvider string
-	DisplayName      string
-	AvatarURL        string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	SiteAdmin        bool
+	ID          int32
+	Username    string
+	DisplayName string
+	AvatarURL   string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	SiteAdmin   bool
 }
 
 // OrgRepo represents a repo that exists on a native client's filesystem, but

@@ -56,7 +56,7 @@ func TestMiddleware(t *testing.T) {
 		var calledMock bool
 		auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
 			calledMock = true
-			if a.ServiceType == "http-header" && a.ServiceID == "" && a.AccountID == "http-header:alice" {
+			if a.ServiceType == "http-header" && a.ServiceID == "" && a.AccountID == "alice" {
 				return 1, nil
 			}
 			return 0, fmt.Errorf("account %v not found in mock", a)
@@ -93,7 +93,7 @@ func TestMiddleware(t *testing.T) {
 			if u.Username != wantNormalizedUsername {
 				t.Errorf("got %q, want %q", u.Username, wantNormalizedUsername)
 			}
-			if a.ServiceType == "http-header" && a.ServiceID == "" && a.AccountID == "http-header:alice.zhao" {
+			if a.ServiceType == "http-header" && a.ServiceID == "" && a.AccountID == "alice.zhao" {
 				return 1, nil
 			}
 			return 0, fmt.Errorf("account %v not found in mock", a)

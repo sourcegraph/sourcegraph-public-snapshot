@@ -161,6 +161,7 @@ func Main() error {
 	goroutine.Go(func() {
 		bg.StartLangServers(context.Background())
 	})
+	goroutine.Go(func() { bg.MigrateExternalAccounts(context.Background()) })
 	go updatecheck.Start()
 	go useractivity.MigrateUserActivityData(context.Background())
 

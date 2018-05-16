@@ -23,4 +23,6 @@ var (
 	CertCache    = &certCache{}
 
 	SurveyResponses = &surveyResponses{}
+
+	ExternalAccounts = &userExternalAccounts{}
 )

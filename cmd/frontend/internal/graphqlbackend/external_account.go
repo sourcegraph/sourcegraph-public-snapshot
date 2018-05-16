@@ -2,16 +2,17 @@ package graphqlbackend
 
 import (
 	"context"
+	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )
 
 type externalAccountResolver struct {
-	user      *userResolver
-	serviceID string
-	accountID string
+	user    *userResolver
+	account *db.ExternalAccount
 }
 
 func externalAccountByID(ctx context.Context, id graphql.ID) (*externalAccountResolver, error) {
@@ -19,27 +20,21 @@ func externalAccountByID(ctx context.Context, id graphql.ID) (*externalAccountRe
 	if err != nil {
 		return nil, err
 	}
-
-	userID := externalAccountID // TEMPORARY: users each have 0 or 1 external account, so just use user ID
-
-	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
-		return nil, err
-	}
-
-	user, err := userByIDInt32(ctx, userID)
+	account, err := db.ExternalAccounts.Get(ctx, externalAccountID)
 	if err != nil {
 		return nil, err
 	}
-	var externalID string
-	if user.user.ExternalID != nil {
-		externalID = *user.user.ExternalID
+
+	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, account.UserID); err != nil {
+		return nil, err
 	}
-	return &externalAccountResolver{
-		user:      user,
-		serviceID: user.user.ExternalProvider,
-		accountID: externalID,
-	}, nil
+
+	user, err := userByIDInt32(ctx, account.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return &externalAccountResolver{user: user, account: account}, nil
 }
 
 func marshalExternalAccountID(repo int32) graphql.ID { return relay.MarshalID("ExternalAccount", repo) }
@@ -49,10 +44,10 @@ func unmarshalExternalAccountID(id graphql.ID) (externalAccountID int32, err err
 	return
 }
 
-func (r *externalAccountResolver) ID() graphql.ID      { return marshalExternalAccountID(r.user.user.ID) }
+func (r *externalAccountResolver) ID() graphql.ID      { return marshalExternalAccountID(r.account.ID) }
 func (r *externalAccountResolver) User() *userResolver { return r.user }
-func (r *externalAccountResolver) ServiceType() string { return "" }
-func (r *externalAccountResolver) ServiceID() string   { return r.serviceID }
-func (r *externalAccountResolver) AccountID() string   { return r.accountID }
-func (r *externalAccountResolver) CreatedAt() string   { return r.user.CreatedAt() }
-func (r *externalAccountResolver) UpdatedAt() string   { return r.user.CreatedAt() }
+func (r *externalAccountResolver) ServiceType() string { return r.account.ServiceType }
+func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
+func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
+func (r *externalAccountResolver) CreatedAt() string   { return r.account.CreatedAt.Format(time.RFC3339) }
+func (r *externalAccountResolver) UpdatedAt() string   { return r.account.UpdatedAt.Format(time.RFC3339) }

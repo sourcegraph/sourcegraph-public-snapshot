@@ -274,8 +274,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 // Because Actors must correspond to users in our DB, it creates the user in the DB if the user does not yet
 // exist.
 func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *UserClaims) (_ *actor.Actor, safeErrMsg string, err error) {
-	provider := idToken.Issuer
-	externalID := oidcToExternalID(provider, idToken.Subject)
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
@@ -295,11 +293,12 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 	}
 
 	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		Username:    login,
-		Email:       email,
-		DisplayName: displayName,
-		AvatarURL:   claims.Picture,
-	}, db.ExternalAccountSpec{ServiceType: "openidconnect", ServiceID: idToken.Issuer, AccountID: externalID})
+		Username:        login,
+		Email:           email,
+		EmailIsVerified: email != "", // TODO(sqs): https://github.com/sourcegraph/sourcegraph/issues/10118
+		DisplayName:     displayName,
+		AvatarURL:       claims.Picture,
+	}, db.ExternalAccountSpec{ServiceType: "openidconnect", ServiceID: idToken.Issuer, AccountID: idToken.Subject})
 	if err != nil {
 		return nil, safeErrMsg, err
 	}
@@ -332,8 +331,4 @@ func (s *authnState) Decode(encoded string) error {
 		return err
 	}
 	return json.Unmarshal(b, s)
-}
-
-func oidcToExternalID(issuer, subject string) string {
-	return fmt.Sprintf("%s:%s", issuer, subject)
 }

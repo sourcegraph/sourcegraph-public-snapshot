@@ -182,7 +182,7 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 
 	// Mock user
 	mockedProvider := idpURL + "/metadata"
-	mockedExternalID := samlToExternalID(mockedProvider, "testuser_id")
+	mockedExternalID := "testuser_id"
 	const mockedUserID = 123
 	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
 		if a.ServiceType == "saml" && a.ServiceID == mockedProvider && a.AccountID == mockedExternalID {
