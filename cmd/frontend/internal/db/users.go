@@ -92,13 +92,13 @@ type NewUser struct {
 
 	// EmailVerificationCode, if given, causes the new user's email address to be unverified until
 	// they perform the email verification process and provied this code.
-	EmailVerificationCode string // forbid this field being set by JSON, just in case
+	EmailVerificationCode string `json:"-"` // forbid this field being set by JSON, just in case
 
 	// EmailIsVerified is whether the email address should be considered already verified.
 	//
 	// 🚨 SECURITY: Only site admins are allowed to create users whose email addresses are initially
 	// verified (i.e., with EmailVerificationCode == "" and ExternalProvider == "").
-	EmailIsVerified bool // forbid this field being set by JSON, just in case
+	EmailIsVerified bool `json:"-"` // forbid this field being set by JSON, just in case
 
 	// FailIfNotInitialUser causes the (users).Create call to return an error and not create the
 	// user if at least one of the following is true: (1) the site has already been initialized or
