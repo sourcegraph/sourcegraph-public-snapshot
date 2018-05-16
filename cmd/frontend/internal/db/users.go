@@ -322,7 +322,7 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 	res, err := globalDB.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "users_username" {
-			return errors.New("username already exists")
+			return errCannotCreateUser{errorCodeUsernameExists}
 		}
 		return err
 	}
