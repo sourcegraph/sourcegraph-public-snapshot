@@ -292,13 +292,11 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 	}
 
 	userID, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		ExternalProvider: provider,
-		ExternalID:       externalID,
-		Username:         login,
-		Email:            email,
-		DisplayName:      displayName,
-		AvatarURL:        claims.Picture,
-	})
+		Username:    login,
+		Email:       email,
+		DisplayName: displayName,
+		AvatarURL:   claims.Picture,
+	}, db.ExternalAccountSpec{ServiceType: "openidconnect", ServiceID: idToken.Issuer, AccountID: externalID})
 	if err != nil {
 		return nil, err
 	}

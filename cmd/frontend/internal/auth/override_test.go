@@ -9,10 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 func TestOverrideAuthMiddleware(t *testing.T) {
@@ -62,34 +60,27 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		}
 	})
 
-	t.Run("sent, new user", func(t *testing.T) {
+	t.Run("sent, actor not set", func(t *testing.T) {
 		envOverrideAuthSecret = overrideSecret
 		defer func() { envOverrideAuthSecret = "" }()
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(overrideHeader, overrideSecret)
-		var calledGetByExternalID, calledCreate bool
-		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-			calledGetByExternalID = true
-			return nil, &errcode.Mock{IsNotFound: true}
-		}
-		db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*types.User, error) {
-			if want := "anon-user"; info.Username != want {
-				t.Errorf("got %q, want %q", info.Username, want)
+		var calledMock bool
+		MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+			calledMock = true
+			if want := "anon-user"; u.Username != want {
+				t.Errorf("got %q, want %q", u.Username, want)
 			}
-			calledCreate = true
-			return &types.User{ID: 1, ExternalID: &info.ExternalID, Username: info.Username}, nil
+			return 1, nil
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { MockCreateOrUpdateUser = nil }()
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 1"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
-		if !calledGetByExternalID {
-			t.Error("!calledGetByExternalID")
-		}
-		if !calledCreate {
-			t.Error("!calledCreate")
+		if !calledMock {
+			t.Error("!calledMock")
 		}
 	})
 
@@ -100,45 +91,21 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(overrideHeader, overrideSecret)
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
-		var calledGetByExternalID bool
-		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-			calledGetByExternalID = true
-			if provider == "override" && id == "anon-user" {
-				return &types.User{ID: 1, ExternalID: &id, Username: "anon-user"}, nil
+		var calledMock bool
+		MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+			calledMock = true
+			if a.ServiceType == "override" && a.AccountID == "anon-user" {
+				return 1, nil
 			}
-			return nil, &errcode.Mock{IsNotFound: true}
+			return 0, errors.New("x")
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { MockCreateOrUpdateUser = nil }()
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 1"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
-		if !calledGetByExternalID {
-			t.Error("!calledGetByExternalID")
-		}
-	})
-
-	t.Run("sent, existing user", func(t *testing.T) {
-		envOverrideAuthSecret = overrideSecret
-		defer func() { envOverrideAuthSecret = "" }()
-		rr := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(overrideHeader, overrideSecret)
-		var calledGetByExternalID bool
-		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-			calledGetByExternalID = true
-			if provider == "override" && id == "anon-user" {
-				return &types.User{ID: 1, ExternalID: &id, Username: "anon-user"}, nil
-			}
-			return nil, errors.New("x")
-		}
-		defer func() { db.Mocks = db.MockStores{} }()
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 1"; got != want {
-			t.Errorf("got %q, want %q", got, want)
-		}
-		if !calledGetByExternalID {
-			t.Error("!calledGetByExternalID")
+		if !calledMock {
+			t.Error("!calledMock")
 		}
 	})
 

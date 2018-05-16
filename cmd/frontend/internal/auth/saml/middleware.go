@@ -97,13 +97,13 @@ func getActorFromSAML(ctx context.Context, subjectNameID, idpID string, attr int
 	}
 
 	userID, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		ExternalProvider: idpID,
-		ExternalID:       externalID,
-		Username:         login,
-		Email:            email,
-		DisplayName:      displayName,
+		Username:    login,
+		Email:       email,
+		DisplayName: displayName,
 		// SAML has no standard way of providing an avatar URL.
-	})
+	},
+		db.ExternalAccountSpec{ServiceType: "saml", ServiceID: idpID, AccountID: externalID},
+	)
 	if err != nil {
 		return nil, err
 	}

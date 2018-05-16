@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -98,17 +98,11 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 
 	srv := httptest.NewServer(s)
 
-	// Mock user
-	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-		if provider == oidcProvider.Issuer && id == srv.URL+":"+testOIDCUser {
-			return &types.User{
-				ID:         123,
-				ExternalID: &id,
-				Username:   id,
-				AvatarURL:  "https://example.com/picture.png",
-			}, nil
+	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+		if a.ServiceType == "openidconnect" && a.ServiceID == oidcProvider.Issuer && a.AccountID == oidcProvider.Issuer+":"+testOIDCUser {
+			return 123, nil
 		}
-		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
+		return 0, fmt.Errorf("account %v not found in mock", a)
 	}
 
 	return srv
@@ -131,6 +125,7 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 
 	oidcIDServer := newOIDCIDServer(t, "THECODE", oidcProvider)
 	defer oidcIDServer.Close()
+	defer func() { auth.MockCreateOrUpdateUser = nil }()
 	oidcProvider.Issuer = oidcIDServer.URL
 
 	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
@@ -149,21 +144,7 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 		}
 	}
 
-	testOIDCExternalID := oidcToExternalID(oidcProvider.Issuer, testOIDCUser)
 	const mockUserID = 123
-	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-		if provider == oidcProvider.Issuer && id == testOIDCExternalID {
-			return &types.User{ID: mockUserID, ExternalID: &id, Username: "testuser"}, nil
-		}
-		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
-	}
-	db.Mocks.Users.Update = func(userID int32, update db.UserUpdate) error {
-		if userID != mockUserID {
-			t.Errorf("got userID %d, want %d", userID, mockUserID)
-		}
-		return nil
-	}
-	defer func() { db.Mocks = db.MockStores{} }()
 
 	authedHandler := http.NewServeMux()
 	authedHandler.Handle("/.api/", Middleware.API(requireAuthenticatedActor(t)))
@@ -287,6 +268,7 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 
 	oidcIDServer := newOIDCIDServer(t, "THECODE", oidcProvider)
 	defer oidcIDServer.Close()
+	defer func() { auth.MockCreateOrUpdateUser = nil }()
 	oidcProvider.Issuer = oidcIDServer.URL
 
 	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}

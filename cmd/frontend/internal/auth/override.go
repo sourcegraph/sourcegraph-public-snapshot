@@ -25,11 +25,9 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 		// Accept both old header (X-Oidc-Override, deprecated) and new overrideHeader for now.
 		if secret != "" && (r.Header.Get("X-Oidc-Override") == secret || r.Header.Get(overrideHeader) == secret) {
 			userID, err := CreateOrUpdateUser(r.Context(), db.NewUser{
-				ExternalProvider: "override",
-				ExternalID:       "anon-user",
-				Username:         "anon-user",
-				Email:            "anon-user@sourcegraph.com",
-			})
+				Username: "anon-user",
+				Email:    "anon-user@sourcegraph.com",
+			}, db.ExternalAccountSpec{ServiceType: "override", AccountID: "anon-user"})
 			if err != nil {
 				log15.Error("Error getting/creating anonymous user.", "error", err)
 				http.Error(w, "error getting/creating anonymous user", http.StatusInternalServerError)

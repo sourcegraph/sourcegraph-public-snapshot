@@ -24,8 +24,8 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 
 	"github.com/crewjam/saml/samlidp"
@@ -184,19 +184,13 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 	mockedProvider := idpURL + "/metadata"
 	mockedExternalID := samlToExternalID(mockedProvider, "testuser_id")
 	const mockedUserID = 123
-	db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-		if provider == mockedProvider && id == mockedExternalID {
-			return &types.User{ID: mockedUserID, ExternalID: &id, Username: id}, nil
+	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+		if a.ServiceType == "saml" && a.ServiceID == mockedProvider && a.AccountID == mockedExternalID {
+			return mockedUserID, nil
 		}
-		return nil, fmt.Errorf("provider %q user %q not found in mock", provider, id)
+		return 0, fmt.Errorf("account %v not found in mock", a)
 	}
-	db.Mocks.Users.Update = func(userID int32, update db.UserUpdate) error {
-		if userID != mockedUserID {
-			t.Errorf("got userID %d, want %d", userID, mockedUserID)
-		}
-		return nil
-	}
-	defer func() { db.Mocks = db.MockStores{} }()
+	defer func() { auth.MockCreateOrUpdateUser = nil }()
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()

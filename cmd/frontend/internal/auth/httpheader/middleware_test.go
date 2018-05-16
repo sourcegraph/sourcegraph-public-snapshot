@@ -7,11 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -50,32 +49,25 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 
-	t.Run("sent, new user", func(t *testing.T) {
+	t.Run("sent, user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(headerName, "alice")
-		var calledGetByUsername, calledCreate bool
-		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-			if want := "http-header:alice"; id != want {
-				t.Errorf("got %q, want %q", id, want)
+		var calledMock bool
+		auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+			calledMock = true
+			if a.ServiceType == "http-header" && a.ServiceID == "" && a.AccountID == "http-header:alice" {
+				return 1, nil
 			}
-			calledGetByUsername = true
-			return nil, &errcode.Mock{Message: "user not found", IsNotFound: true}
+			return 0, fmt.Errorf("account %v not found in mock", a)
 		}
-		db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*types.User, error) {
-			calledCreate = true
-			return &types.User{ID: 1, ExternalID: &info.ExternalID, Username: info.Username}, nil
-		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { auth.MockCreateOrUpdateUser = nil }()
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 1"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
-		if !calledGetByUsername {
-			t.Error("!calledGetByUsername")
-		}
-		if !calledCreate {
-			t.Error("!calledCreate")
+		if !calledMock {
+			t.Error("!calledMock")
 		}
 	})
 
@@ -90,58 +82,29 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 
-	t.Run("sent, new user with un-normalized username", func(t *testing.T) {
+	t.Run("sent, with un-normalized username", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(headerName, "alice.zhao")
 		const wantNormalizedUsername = "alice-zhao"
-		var calledGetByUsername, calledCreate bool
-		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-			if want := "http-header:alice.zhao"; /* pre-normalized */ id != want {
-				t.Errorf("got %q, want %q", id, want)
+		var calledMock bool
+		auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+			calledMock = true
+			if u.Username != wantNormalizedUsername {
+				t.Errorf("got %q, want %q", u.Username, wantNormalizedUsername)
 			}
-			calledGetByUsername = true
-			return nil, &errcode.Mock{Message: "user not found", IsNotFound: true}
-		}
-		db.Mocks.Users.Create = func(ctx context.Context, info db.NewUser) (*types.User, error) {
-			if info.Username != wantNormalizedUsername {
-				t.Errorf("got %q, want %q", info.Username, wantNormalizedUsername)
+			if a.ServiceType == "http-header" && a.ServiceID == "" && a.AccountID == "http-header:alice.zhao" {
+				return 1, nil
 			}
-			calledCreate = true
-			return &types.User{ID: 1, ExternalID: &info.ExternalID, Username: info.Username}, nil
+			return 0, fmt.Errorf("account %v not found in mock", a)
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { auth.MockCreateOrUpdateUser = nil }()
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 1"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
-		if !calledGetByUsername {
-			t.Error("!calledGetByUsername")
-		}
-		if !calledCreate {
-			t.Error("!calledCreate")
-		}
-	})
-
-	t.Run("sent, existing user", func(t *testing.T) {
-		rr := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(headerName, "bob")
-		var calledGetByUsername bool
-		db.Mocks.Users.GetByExternalID = func(ctx context.Context, provider, id string) (*types.User, error) {
-			if want := "http-header:bob"; id != want {
-				t.Errorf("got %q, want %q", id, want)
-			}
-			calledGetByUsername = true
-			return &types.User{ID: 1, ExternalID: &id, Username: "bob"}, nil
-		}
-		defer func() { db.Mocks = db.MockStores{} }()
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 1"; got != want {
-			t.Errorf("got %q, want %q", got, want)
-		}
-		if !calledGetByUsername {
-			t.Error("!calledGetByUsername")
+		if !calledMock {
+			t.Error("!calledMock")
 		}
 	})
 }
