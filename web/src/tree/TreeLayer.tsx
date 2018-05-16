@@ -222,7 +222,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 <table className="tree-layer">
                     <tbody>
                         <tr>
-                            <td>
+                            <td className="tree__cell">
                                 {this.state.treeOrError === LOADING ? (
                                     <div className="tree__row-loader">
                                         <Loader className="icon-inline directory-page__entries-loader" />Loading files
@@ -277,7 +277,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                         {fileOrDirInfo.isDirectory ? (
                             <>
                                 <tr key={fileOrDirInfo.path} className={className} onClick={this.handleDirClick}>
-                                    <td>
+                                    <td className="tree__cell">
                                         <div
                                             className="tree__row-contents tree__row-contents-new"
                                             data-tree-directory="true"
@@ -326,7 +326,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 {this.props.isExpanded &&
                                     this.state.treeOrError !== LOADING && (
                                         <tr>
-                                            <td>
+                                            <td className="tree__cell">
                                                 {isErrorLike(this.state.treeOrError) ? (
                                                     <div className="alert alert-danger">
                                                         Error loading file tree: {this.state.treeOrError.message}
@@ -370,7 +370,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             </>
                         ) : (
                             <tr key={fileOrDirInfo.path} className={className}>
-                                <td>
+                                <td className="tree__cell">
                                     <Link
                                         className="tree__row-contents"
                                         to={toBlobURL({

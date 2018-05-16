@@ -16,6 +16,11 @@
         border-spacing: 0;
     }
 
+    &__cell {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
     &__row {
         color: white;
         width: 100%;
