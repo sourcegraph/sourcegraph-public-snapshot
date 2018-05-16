@@ -368,6 +368,9 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 	if _, err := tx.ExecContext(ctx, "UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id=$1 OR creator_user_id=$1", id); err != nil {
 		return err
 	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1", id); err != nil {
+		return err
+	}
 
 	return nil
 }
