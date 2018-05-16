@@ -104,8 +104,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			"unique_users_today": "%s",
 			"has_code_intelligence": "%s",
 			"site_activity": %s,
-			"installer_email": %s,
-			"auth_providers": %s
+			"installer_email": "%s",
+			"auth_providers": "%s",
+			"deploy_type": "%s"
 		}`,
 			clientAddr,
 			clientVersionString,
@@ -116,6 +117,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			activity,
 			initialAdminEmail,
 			authProviders,
+			deployType,
 		)))
 	}
 
