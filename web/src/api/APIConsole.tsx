@@ -17,11 +17,9 @@ query {
   currentUser {
     username
   }
-  site {
-    repositories(first: 1) {
-      nodes {
-        name
-      }
+  repositories(first: 1) {
+    nodes {
+      name
     }
   }
 }
