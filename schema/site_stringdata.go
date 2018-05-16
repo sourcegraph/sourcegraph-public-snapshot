@@ -59,7 +59,7 @@ const SiteSchemaJSON = `{
           "description": "Enables or disables the ` + "`" + `timeout:` + "`" + ` parameter in searches.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "jumpToDefOSSIndex": {
           "description":
