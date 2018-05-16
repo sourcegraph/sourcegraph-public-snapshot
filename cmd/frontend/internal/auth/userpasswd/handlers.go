@@ -1,11 +1,10 @@
-package app
+package userpasswd
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
@@ -26,8 +25,8 @@ type credentials struct {
 	Password string `json:"password"`
 }
 
-// serveSignUp handles submission of the user signup form.
-func serveSignUp(w http.ResponseWriter, r *http.Request) {
+// HandleSignUp handles submission of the user signup form.
+func HandleSignUp(w http.ResponseWriter, r *http.Request) {
 	if conf.AuthProvider().Builtin == nil {
 		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
 		return
@@ -36,15 +35,15 @@ func serveSignUp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 		return
 	}
-	doServeSignUp(w, r, false)
+	handleSignUp(w, r, false)
 }
 
-// serveSiteInit handles submission of the site initialization form, where the initial site admin user is created.
-func serveSiteInit(w http.ResponseWriter, r *http.Request) {
+// HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
+func HandleSiteInit(w http.ResponseWriter, r *http.Request) {
 	// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
 	// allow signups after those conditions become true, so we don't need to check auth.allowSignup
 	// in site config.
-	doServeSignUp(w, r, true)
+	handleSignUp(w, r, true)
 }
 
 // doServeSignUp is called to create a new user account. It is called for the normal user signup process (where a
@@ -53,7 +52,7 @@ func serveSiteInit(w http.ResponseWriter, r *http.Request) {
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
-func doServeSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -132,7 +131,9 @@ func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.U
 	return db.Users.GetByUsername(ctx, emailOrUsername)
 }
 
-func serveSignIn(w http.ResponseWriter, r *http.Request) {
+// HandleSignIn accepts a POST containing username-password credentials and authenticates the
+// current session if the credentials are valid.
+func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 	if conf.AuthProvider().Builtin == nil {
 		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
 		return
@@ -180,50 +181,8 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	email := r.URL.Query().Get("email")
-	verifyCode := r.URL.Query().Get("code")
-	actr := actor.FromContext(ctx)
-	if !actr.IsAuthenticated() {
-		redirectTo := r.URL.String()
-		q := make(url.Values)
-		q.Set("returnTo", redirectTo)
-		http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
-		return
-	}
-	// 🚨 SECURITY: require correct authed user to verify email
-	usr, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
-		return
-	}
-
-	email, alreadyVerified, err := db.UserEmails.Get(ctx, usr.ID, email)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("No email %q found for user %d", email, usr.ID), http.StatusBadRequest)
-		return
-	}
-	if alreadyVerified {
-		http.Error(w, fmt.Sprintf("User %d email %q is already verified", usr.ID, email), http.StatusBadRequest)
-		return
-	}
-	verified, err := db.UserEmails.Verify(ctx, usr.ID, email, verifyCode)
-	if err != nil {
-		log15.Error("Failed to verify user email.", "userID", usr.ID, "email", email, "error", err)
-		http.Error(w, "Unexpected error when verifying user.", http.StatusInternalServerError)
-		return
-	}
-	if !verified {
-		http.Error(w, "Could not verify user email. Email verification code did not match.", http.StatusUnauthorized)
-		return
-	}
-
-	http.Redirect(w, r, "/settings/emails", http.StatusFound)
-}
-
-// serveResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
-func serveResetPasswordInit(w http.ResponseWriter, r *http.Request) {
+// HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
+func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	if conf.AuthProvider().Builtin == nil {
 		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
 		return
@@ -297,8 +256,8 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 	})
 )
 
-// serveResetPassword resets the password if the correct code is provided.
-func serveResetPassword(w http.ResponseWriter, r *http.Request) {
+// HandleResetPassword resets the password if the correct code is provided.
+func HandleResetPassword(w http.ResponseWriter, r *http.Request) {
 	if conf.AuthProvider().Builtin == nil {
 		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
 		return

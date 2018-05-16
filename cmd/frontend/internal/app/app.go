@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
@@ -54,13 +55,13 @@ func NewHandler() http.Handler {
 
 	r.Get(router.UI).Handler(ui.Router())
 
-	r.Get(router.SignUp).Handler(trace.TraceRoute(http.HandlerFunc(serveSignUp)))
-	r.Get(router.SiteInit).Handler(trace.TraceRoute(http.HandlerFunc(serveSiteInit)))
-	r.Get(router.SignIn).Handler(trace.TraceRoute(http.HandlerFunc(serveSignIn)))
+	r.Get(router.SignUp).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleSignUp)))
+	r.Get(router.SiteInit).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleSiteInit)))
+	r.Get(router.SignIn).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleSignIn)))
 	r.Get(router.SignOut).Handler(trace.TraceRoute(http.HandlerFunc(serveSignOut)))
 	r.Get(router.VerifyEmail).Handler(trace.TraceRoute(http.HandlerFunc(serveVerifyEmail)))
-	r.Get(router.ResetPasswordInit).Handler(trace.TraceRoute(http.HandlerFunc(serveResetPasswordInit)))
-	r.Get(router.ResetPassword).Handler(trace.TraceRoute(http.HandlerFunc(serveResetPassword)))
+	r.Get(router.ResetPasswordInit).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPasswordInit)))
+	r.Get(router.ResetPassword).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPassword)))
 
 	r.Get(router.GDDORefs).Handler(trace.TraceRoute(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(trace.TraceRoute(errorutil.Handler(serveEditor)))
