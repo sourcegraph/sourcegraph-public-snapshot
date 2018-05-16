@@ -376,6 +376,9 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 }
 
 func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
+	if Mocks.Users.SetIsSiteAdmin != nil {
+		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
+	}
 	_, err := globalDB.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", isSiteAdmin, id)
 	return err
 }

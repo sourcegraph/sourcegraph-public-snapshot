@@ -49,7 +49,6 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	appHandler := app.NewHandler()
 	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
 	appHandler = authMiddlewares.App(appHandler)                                          // 🚨 SECURITY: auth middleware
-	appHandler = auth.OverrideAuthMiddleware(appHandler)                                  // 🚨 SECURITY: override auth using secret
 	appHandler = session.CookieMiddleware(appHandler)                                     // app accepts cookies
 
 	// Mount handlers and assets.
@@ -64,6 +63,7 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
 	h = httpheader.Middleware(h)
+	h = auth.OverrideAuthMiddleware(h)
 	h = auth.ForbidAllRequestsMiddleware(h)
 	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
 	h = tracepkg.Middleware(h)
