@@ -9,7 +9,11 @@
 
 > If Keycloak is useful, we will add it to the dev/Procfile so it always runs in local dev.
 
-## Configuring Keycloak, adding users, etc.
+## Advanced
+
+Most people don't need to keep reading.
+
+### Configuring Keycloak, adding users, etc.
 
 If you need to edit client or user information and want to persist your changes:
 
