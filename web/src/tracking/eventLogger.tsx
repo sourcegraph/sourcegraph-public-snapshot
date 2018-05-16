@@ -48,13 +48,12 @@ class EventLogger {
         user:
             | GQL.IUser
             | {
-                  externalID: string
                   sourcegraphID: number | null
                   username: string | null
                   email: string | null
               }
     ): void {
-        this.setUserIds(user.sourcegraphID, user.externalID || '', user.username)
+        this.setUserIds(user.sourcegraphID, user.username)
         if (user.email) {
             this.setUserEmail(user.email)
         }
@@ -63,17 +62,15 @@ class EventLogger {
     /**
      * Set user ID in Telligent tracker script.
      * @param uniqueSourcegraphId Unique Sourcegraph user ID (corresponds to User.ID from backend)
-     * @param uniqueExternalID Unique user external auth provider ID
      * @param username Human-readable user identifier, not guaranteed to always stay the same
      */
-    public setUserIds(uniqueSourcegraphId: number | null, uniqueExternalID: string, username: string | null): void {
+    public setUserIds(uniqueSourcegraphId: number | null, username: string | null): void {
         if (username) {
             telligent.setUserProperty('username', username)
         }
         if (uniqueSourcegraphId) {
             telligent.setUserProperty('user_id', uniqueSourcegraphId)
         }
-        telligent.setUserProperty('internal_user_id', uniqueExternalID)
     }
 
     public setUserEmail(primaryEmail: string): void {

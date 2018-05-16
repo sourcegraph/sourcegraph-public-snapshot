@@ -23,7 +23,6 @@ const fetchUser = memoizeObservable(
                 query User($username: String!) {
                     user(username: $username) {
                         id
-                        externalID
                         username
                         displayName
                         avatarURL

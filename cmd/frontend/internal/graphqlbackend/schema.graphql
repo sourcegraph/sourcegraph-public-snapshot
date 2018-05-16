@@ -1806,15 +1806,6 @@ type User implements Node, ConfigurationSubject {
     id: ID!
     # The user's username.
     username: String!
-    # The auth ID.
-    authID: String! @deprecated(reason: "use externalID instead")
-    # The auth0 ID.
-    auth0ID: String! @deprecated(reason: "use externalID instead")
-    # The external authentication system's ID for this user, if applicable. For example, if this user is
-    # authenticated via an SSO provider (using OpenID, SAML, etc.), then this is the ID from that provider.
-    #
-    # Only the user and site admins can access this field.
-    externalID: String
     # The unique numeric ID for the user.
     sourcegraphID: Int! @deprecated(reason: "use id instead")
     # The user's primary email address.

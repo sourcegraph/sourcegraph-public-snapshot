@@ -19,7 +19,6 @@ interface Window {
  */
 interface ImmutableUser {
     readonly UID: number
-    readonly externalID: string
 }
 
 /**

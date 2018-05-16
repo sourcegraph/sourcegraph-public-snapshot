@@ -120,7 +120,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, "SignupCompleted")
+		go tracking.TrackUser(usr.AvatarURL, creds.Email, "SignupCompleted")
 	}
 }
 
@@ -177,7 +177,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(usr.AvatarURL, usr.ExternalID, creds.Email, "SigninCompleted")
+		go tracking.TrackUser(usr.AvatarURL, creds.Email, "SigninCompleted")
 	}
 }
 

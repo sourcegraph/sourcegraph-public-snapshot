@@ -19,12 +19,7 @@ import (
 // TrackUser handles user data logging during auth flows
 //
 // Specifically, updating user data properties in HubSpot
-func TrackUser(avatarURL string, externalID *string, email, event string) {
-	var uid string
-	if externalID != nil {
-		uid = *externalID
-	}
-
+func TrackUser(avatarURL string, email, event string) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.TrackUser: %s", err)
@@ -39,7 +34,6 @@ func TrackUser(avatarURL string, externalID *string, email, event string) {
 	// Generate a single set of user parameters for HubSpot and Slack exports
 	contactParams := &hubspot.ContactProperties{
 		UserID:     email,
-		UID:        uid,
 		LookerLink: lookerUserLink(email),
 	}
 
@@ -53,7 +47,7 @@ func TrackUser(avatarURL string, externalID *string, email, event string) {
 	if event == "SignupCompleted" {
 		err = slackinternal.NotifyOnSignup(avatarURL, email, contactParams, hsResponse)
 		if err != nil {
-			log15.Error("Error sending new signup details to Slack", "error", err)
+			log15.Error("error sending new signup details to Slack", "error", err)
 			return
 		}
 	}
@@ -61,7 +55,7 @@ func TrackUser(avatarURL string, externalID *string, email, event string) {
 
 func trackHubSpotContact(email string, eventLabel string, params *hubspot.ContactProperties) (*hubspot.ContactResponse, error) {
 	if email == "" {
-		return nil, errors.New("User must have a valid email address.")
+		return nil, errors.New("user must have a valid email address")
 	}
 
 	c := hubspotutil.Client()

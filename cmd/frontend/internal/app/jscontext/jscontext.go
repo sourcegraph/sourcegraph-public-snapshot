@@ -25,8 +25,7 @@ var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN use
 
 // immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
 type immutableUser struct {
-	UID        int32
-	ExternalID *string `json:"externalID,omitempty"`
+	UID int32
 }
 
 // JSContext is made available to JavaScript code via the
@@ -98,10 +97,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	var user *immutableUser
 	if actor.IsAuthenticated() {
 		user = &immutableUser{UID: actor.UID}
-
-		if u, err := db.Users.GetByID(req.Context(), actor.UID); err == nil && u != nil {
-			user.ExternalID = u.ExternalID
-		}
 	}
 
 	siteID := siteid.Get()

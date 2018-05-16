@@ -52,25 +52,6 @@ func unmarshalUserID(id graphql.ID) (userID int32, err error) {
 	return
 }
 
-func (r *userResolver) ExternalID(ctx context.Context) (*string, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the external ID, because it might
-	// leak authentication-related secrets.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
-		return nil, err
-	}
-	return r.user.ExternalID, nil
-}
-
-func (r *userResolver) AuthID(ctx context.Context) (string, error) {
-	id, err := r.ExternalID(ctx)
-	if err != nil || id == nil {
-		return "", err
-	}
-	return *id, nil
-}
-
-func (r *userResolver) Auth0ID(ctx context.Context) (string, error) { return r.AuthID(ctx) }
-
 func (r *userResolver) SourcegraphID() int32 { return r.user.ID }
 
 func (r *userResolver) Email(ctx context.Context) (string, error) {

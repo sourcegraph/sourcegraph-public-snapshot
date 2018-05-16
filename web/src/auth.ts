@@ -28,7 +28,6 @@ export function refreshCurrentUser(): Observable<never> {
             currentUser {
                 __typename
                 id
-                externalID
                 sourcegraphID
                 username
                 avatarURL

@@ -15,7 +15,6 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                 users(first: $first, query: $query) {
                     nodes {
                         id
-                        externalID
                         username
                         displayName
                         emails {
