@@ -220,7 +220,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         // If isRoot or there's no file or directory info, we are at the root layer, so simply load all top-level directories and files.
         if (this.props.isRoot || !fileOrDirInfo) {
             return (
-                <table className="tree-layer">
+                <table className="tree-layer" tabIndex={0}>
                     <tbody>
                         <tr>
                             <td className="tree__cell">
@@ -299,6 +299,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     onClick={this.noopRowClick}
                                                     // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                                     style={treePadding(this.props.depth, true)}
+                                                    tabIndex={-1}
                                                 >
                                                     {this.props.isExpanded ? (
                                                         <ChevronDownIcon className="icon-inline" />
@@ -316,6 +317,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     className="tree__row-label"
                                                     draggable={false}
                                                     title={fileOrDirInfo.path}
+                                                    tabIndex={-1}
                                                 >
                                                     {fileOrDirInfo.name}
                                                 </Link>
@@ -393,6 +395,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                         title={fileOrDirInfo.path}
                                         // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                         style={treePadding(this.props.depth, false)}
+                                        tabIndex={-1}
                                     >
                                         {fileOrDirInfo.name}
                                     </Link>
