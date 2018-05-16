@@ -144,7 +144,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	phabRepo, err := db.Phabricator.CreateIfNotExists(r.Context(), repo.Callsign, repo.RepoURI, repo.URL)
+	phabRepo, err := db.Phabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoURI, repo.URL)
 	if err != nil {
 		return err
 	}
