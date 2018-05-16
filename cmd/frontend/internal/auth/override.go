@@ -36,7 +36,8 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 
 			userID, err := CreateOrUpdateUser(r.Context(), db.NewUser{
 				Username: username,
-			}, db.ExternalAccountSpec{ServiceType: "override", AccountID: username})
+				// TODO(sqs): remove "override" when the backend-multiple-accounts branch is merged into master
+			}, db.ExternalAccountSpec{ServiceType: "override", ServiceID: "override", AccountID: username})
 			if err != nil {
 				log15.Error("Error getting/creating auth-override user.", "error", err)
 				http.Error(w, "", http.StatusInternalServerError)
