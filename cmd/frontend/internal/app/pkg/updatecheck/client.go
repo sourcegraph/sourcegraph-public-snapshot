@@ -86,17 +86,17 @@ func updateURL(ctx context.Context) string {
 	q.Set("deployType", conf.DeployType())
 	count, err := useractivity.GetUsersActiveTodayCount()
 	if err != nil {
-		log15.Error("useractivity.GetUsersActiveTodayCount failed", "error", err)
+		log15.Warn("useractivity.GetUsersActiveTodayCount failed", "error", err)
 	}
 	q.Set("u", strconv.Itoa(count))
 	if act, err := getSiteActivityJSON(); err != nil {
-		log15.Error("getSiteActivityJSON failed", "error", err)
+		log15.Warn("getSiteActivityJSON failed", "error", err)
 	} else {
 		q.Set("act", string(act))
 	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
-		log15.Error("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		log15.Warn("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
 	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
