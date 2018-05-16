@@ -94,9 +94,6 @@ type Server struct {
 	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoURI]*locks
-
-	// patchMu protects creating a new patch.
-	patchMu sync.Mutex
 }
 
 type locks struct {
