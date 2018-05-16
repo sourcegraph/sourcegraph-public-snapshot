@@ -10,10 +10,14 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+var patchID uint64
 
 func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Request) {
 	s.patchMu.Lock()
@@ -37,6 +41,20 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	}
 	defer cleanUpTmpRepo(tmpRepoDir)
 
+	// Temporary logging command wrapper
+	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
+	run := func(cmd *exec.Cmd) ([]byte, error) {
+		t := time.Now()
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Printf("%scommand %s failed (%v): %v\nOUT: %s",
+				prefix, cmd.Args, time.Since(t), err, string(out))
+		} else {
+			log.Printf("%sran successfully %s (%v)\nOUT: %s", prefix, cmd.Args, time.Since(t), string(out))
+		}
+		return out, err
+	}
+
 	ctx := r.Context()
 
 	tmpGitPathEnv := fmt.Sprintf("GIT_DIR=%s/.git", tmpRepoDir)
@@ -50,7 +68,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(cmd.Env, tmpGitPathEnv)
 
-	if err := cmd.Run(); err != nil {
+	if _, err := run(cmd); err != nil {
 		http.Error(w, "gitserver: init tmp repo - "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -59,7 +77,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
 
-	if out, err := cmd.CombinedOutput(); err != nil {
+	if out, err := run(cmd); err != nil {
 		log15.Error("Failed to base the temporary repo on the base revision.", "ref", req.TargetRef, "base", req.BaseCommit, "output", string(out))
 
 		http.Error(w, "gitserver: basing staging on base rev - "+err.Error(), http.StatusInternalServerError)
@@ -71,7 +89,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
 	cmd.Stdin = strings.NewReader(req.Patch)
 
-	if out, err := cmd.CombinedOutput(); err != nil {
+	if out, err := run(cmd); err != nil {
 		log15.Error("Failed to apply patch.", "ref", req.TargetRef, "output", string(out))
 
 		http.Error(w, "gitserver: applying patch - "+err.Error(), http.StatusInternalServerError)
@@ -104,7 +122,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 		fmt.Sprintf("GIT_AUTHOR_DATE=%v", req.CommitInfo.Date),
 	}...)
 
-	if out, err := cmd.CombinedOutput(); err != nil {
+	if out, err := run(cmd); err != nil {
 		log15.Error("Failed to commit patch.", "ref", req.TargetRef, "output", out)
 
 		http.Error(w, "gitserver: commiting patch - "+err.Error(), http.StatusInternalServerError)
@@ -126,7 +144,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd = exec.CommandContext(ctx, "cp", "-a", tmpObjectsDir+"/.", realObjectsDir)
 	cmd.Dir = tmpRepoDir
 
-	if err := cmd.Run(); err != nil {
+	if _, err := run(cmd); err != nil {
 		http.Error(w, "gitserver: copying git objects - "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -134,7 +152,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd = exec.CommandContext(ctx, "git", "update-ref", req.TargetRef, cmtHash)
 	cmd.Dir = realDir
 
-	if out, err = cmd.CombinedOutput(); err != nil {
+	if out, err = run(cmd); err != nil {
 		log15.Error("Failed to create ref for commit.", "ref", req.TargetRef, "commit", cmtHash, "output", string(out))
 
 		http.Error(w, "gitserver: creating ref - "+err.Error(), http.StatusInternalServerError)
