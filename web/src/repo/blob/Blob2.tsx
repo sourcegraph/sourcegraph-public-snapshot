@@ -122,6 +122,14 @@ interface BlobState {
     hoveredTokenPosition?: Position
 }
 
+/**
+ * Returns true if the HoverOverlay component should be rendered according to the given state.
+ * The HoverOverlay is rendered when there is either a non-empty hover result or a non-empty definition result.
+ */
+const shouldRenderHover = (state: BlobState): boolean =>
+    (state.hoverOrError && !(isHover(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
+    isJumpURL(state.definitionURLOrError)
+
 export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
     private componentUpdates = new Subject<BlobProps>()
@@ -328,8 +336,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     })
                 )
                 .subscribe(hoverOrError => {
-                    // Reset the hover position, it's gonna be repositioned after the hover was rendered
-                    this.setState({ hoverOrError, hoverOverlayPosition: undefined })
+                    this.setState(state => ({
+                        hoverOrError,
+                        // Reset the hover position, it's gonna be repositioned after the hover was rendered
+                        hoverOverlayPosition: undefined,
+                        // If the conditions are met to not render the hover (empty etc), unpin it
+                        // Otherwise the hover would become invisible, with only clicking random tokens bringing it back
+                        hoverOverlayIsFixed: shouldRenderHover(state) ? state.hoverOverlayIsFixed : false,
+                    }))
                 })
         )
 
@@ -473,9 +487,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     onClick={this.nextCodeClick}
                     onMouseOver={this.nextCodeMouseOver}
                 />
-                {((this.state.hoverOrError &&
-                    !(isHover(this.state.hoverOrError) && isEmptyHover(this.state.hoverOrError))) ||
-                    isJumpURL(this.state.definitionURLOrError)) && (
+                {shouldRenderHover(this.state) && (
                     <HoverOverlay
                         hoverRef={this.nextOverlayElement}
                         definitionURLOrError={
