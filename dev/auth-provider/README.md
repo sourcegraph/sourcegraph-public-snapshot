@@ -1,11 +1,11 @@
 # Dev auth provider
 
-[Keycloak](https://www.keycloak.org) is an authentication provider that we use in development to test Sourcegraph's support for OpenID and SAML. It serves the same role as OpenID and SAML providers on Okta, OneLogin, G Suite, etc., but it runs locally and is easier to autoconfigure for use with your local dev server.
+[Keycloak](https://www.keycloak.org) is an authentication provider that we use in development to test Sourcegraph's support for OpenID Connect and SAML. It serves the same role as OpenID Connect and SAML providers on Okta, OneLogin, G Suite, etc., but it runs locally and is easier to autoconfigure for use with your local dev server.
 
 ## Using Keycloak in local dev
 
 1.  Run Keycloak: `./keycloak.sh`
-1.  To make your local Sourcegraph dev server use OpenID or SAML provided by Keycloak, follow the instructions in the comments near the `dev/config.json` **`auth.providers`** section.
+1.  To make your local Sourcegraph dev server use OpenID Connect or SAML provided by Keycloak, follow the instructions in the comments near the `dev/config.json` **`auth.providers`** section.
 
 > If Keycloak is useful, we will add it to the dev/Procfile so it always runs in local dev.
 

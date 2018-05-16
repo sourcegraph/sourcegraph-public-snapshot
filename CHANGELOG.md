@@ -80,7 +80,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * More detailed progress information is displayed on pages that are waiting for repositories to clone.
 * Admins can now see charts illustrating daily, weekly, and monthly unique user counts by visiting the site-admin Analytics page.
 * Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
-* Access tokens are now supported for all authentication providers (including OpenID and SAML, which were previously not supported).
+* Access tokens are now supported for all authentication providers (including OpenID Connect and SAML, which were previously not supported).
 * The new `motd` setting (in global, organization, and user settings) displays specified messages at the top of all pages.
 * Site admins may now view all access tokens site-wide (for all users) and revoke tokens from the new access tokens page in the site admin area.
 
@@ -109,10 +109,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
-* Users (and site admins) may now create and manage access tokens to authenticate API clients. The site config `auth.disableAccessTokens` disables this new feature. Access tokens are currently only supported when using the `builtin` and `http-header` authentication providers (not OpenID or SAML).
+* Users (and site admins) may now create and manage access tokens to authenticate API clients. The site config `auth.disableAccessTokens` disables this new feature. Access tokens are currently only supported when using the `builtin` and `http-header` authentication providers (not OpenID Connect or SAML).
 * User and site admin management capabilities for user email addresses are improved.
 * The user and organization management UI has been greatly improved. Site admins may now administer all organizations (even those they aren't a member of) and may edit profile info and configuration for all users.
-* If SSO is enabled (via OpenID or SAML) and the SSO system provides user avatar images and/or display names, those are now used by Sourcegraph.
+* If SSO is enabled (via OpenID Connect or SAML) and the SSO system provides user avatar images and/or display names, those are now used by Sourcegraph.
 * Enable new search timeout behavior by setting `"experimentalFeatures": { "searchTimeoutParameter": "enabled"}` in your site config.
   * Adds a new `timeout:` parameter to customize the timeout for searches. It defaults to 10s and may not be set higher than 1m.
   * The value of the `timeout:` parameter is a string that can be parsed by [time.Duration](https://golang.org/pkg/time/#ParseDuration) (e.g. "100ms", "2s").

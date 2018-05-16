@@ -45,7 +45,7 @@ keycloak_createuser bob q
 # Update realm's login page to mention valid usernames and passwords.
 docker exec $CONTAINER keycloak/bin/kcadm.sh update realms/$REALM -s displayNameHtml="<h3>Keycloak</h3><p style='font-size:12px;text-transform:none'><strong>Sourcegraph builtin usernames and passwords</strong><br/>$(cat "$MOTDFILE")root / q</p>"
 
-# Create OpenID and SAML clients.
+# Create OpenID Connect and SAML clients.
 keycloak_createclient () {
     CLIENTID=$1
     CONFIGFILE=$2
