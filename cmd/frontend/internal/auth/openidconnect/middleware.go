@@ -249,14 +249,15 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 		}
 
 		data := sessionData{
-			Issuer:   pc.Issuer,
-			ClientID: pc.ClientID,
-			Token:    oauth2Token,
+			Issuer:      pc.Issuer,
+			ClientID:    pc.ClientID,
+			AccessToken: oauth2Token.AccessToken,
+			TokenType:   oauth2Token.TokenType,
 		}
 		if err := session.SetData(w, r, sessionKey, data); err != nil {
-			log15.Error("Failed to set OpenID Connect session data.", "error", err)
-			http.Error(w, "Unexpected error initiating OpenID Connect session.", http.StatusInternalServerError)
-			return
+			// It's not fatal if this fails. It just means we won't be able to sign the user out of
+			// the OP.
+			log15.Warn("Failed to set OpenID Connect session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", "error", err)
 		}
 
 		// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid an open-redirect vuln.

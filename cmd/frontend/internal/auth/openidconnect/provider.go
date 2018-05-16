@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
-	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -93,11 +92,11 @@ func newProvider(ctx context.Context, issuerURL string) (*provider, error) {
 }
 
 // revokeToken implements Token Revocation. See https://tools.ietf.org/html/rfc7009.
-func revokeToken(ctx context.Context, pc *schema.OpenIDConnectAuthProvider, revocationEndpoint string, token *oauth2.Token) error {
+func revokeToken(ctx context.Context, pc *schema.OpenIDConnectAuthProvider, revocationEndpoint, accessToken, tokenType string) error {
 	postData := url.Values{}
-	postData.Set("token", token.AccessToken)
-	if token.TokenType != "" {
-		postData.Set("token_type_hint", token.TokenType)
+	postData.Set("token", accessToken)
+	if tokenType != "" {
+		postData.Set("token_type_hint", tokenType)
 	}
 	req, err := http.NewRequest(revocationEndpoint, "application/x-www-form-urlencoded", strings.NewReader(postData.Encode()))
 	if err != nil {
