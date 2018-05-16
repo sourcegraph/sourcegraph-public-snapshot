@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
@@ -53,6 +54,25 @@ func (*phabricator) Create(ctx context.Context, callsign string, uri api.RepoURI
 		"INSERT INTO phabricator_repos(callsign, uri, url) VALUES($1, $2, $3) RETURNING id",
 		r.Callsign, r.URI, r.URL).Scan(&r.ID)
 	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, uri api.RepoURI, phabURL string) (*types.PhabricatorRepo, error) {
+	r := &types.PhabricatorRepo{
+		Callsign: callsign,
+		URI:      uri,
+		URL:      phabURL,
+	}
+	err := globalDB.QueryRowContext(
+		ctx,
+		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE uri=$3 RETURNING id",
+		r.Callsign, r.URL, r.URI).Scan(&r.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return p.Create(ctx, callsign, uri, phabURL)
+		}
 		return nil, err
 	}
 	return r, nil
