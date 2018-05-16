@@ -26,10 +26,17 @@
         width: 100%;
         display: table;
 
-        &:hover,
+        &:hover {
+            background-color: $color-bg-3;
+        }
+
         &--selected {
-            background-color: rgba(42, 58, 81, 0.7);
+            background-color: $color-bg-5;
             cursor: pointer;
+
+            &:hover {
+                background-color: $color-bg-5;
+            }
         }
 
         &--active {
@@ -79,10 +86,18 @@
         &__row {
             color: inherit;
 
-            &:hover,
+            &:hover {
+                background-color: $color-light-bg-4;
+                color: inherit;
+            }
+
             &--selected {
                 background-color: $color-light-bg-3;
                 color: inherit;
+
+                &:hover {
+                    background-color: $color-light-bg-3;
+                }
             }
 
             &--active {
