@@ -207,7 +207,7 @@ func (*users) Create(ctx context.Context, info NewUser) (newUser *types.User, er
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Constraint {
-			case "users_username_key":
+			case "users_username":
 				return nil, errCannotCreateUser{errorCodeUsernameExists}
 			case "users_external_id":
 				return nil, errCannotCreateUser{"err_external_id_exists"}
@@ -321,7 +321,7 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := globalDB.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "users_username_key" {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "users_username" {
 			return errors.New("username already exists")
 		}
 		return err
