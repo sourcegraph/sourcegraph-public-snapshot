@@ -87,7 +87,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
-                    <div>
+                    <div className="mr-2">
                         <strong>{this.props.node.serviceID}</strong>{' '}
                         <span className="badge badge-secondary">{this.props.node.serviceType}</span>
                         <br />
@@ -98,7 +98,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                             </small>
                         </span>
                     </div>
-                    <div>
+                    <div className="text-nowrap">
                         {this.props.node.refreshURL && (
                             <a className="btn btn-secondary" href={this.props.node.refreshURL}>
                                 Refresh
