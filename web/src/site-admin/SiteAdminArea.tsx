@@ -6,6 +6,7 @@ import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
+import { SiteAdminAuthenticationPage } from './SiteAdminAuthenticationPage'
 import { SiteAdminCodeIntelligencePage } from './SiteAdminCodeIntelligencePage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
 import { SiteAdminInviteUserPage } from './SiteAdminInviteUserPage'
@@ -89,6 +90,11 @@ export class SiteAdminArea extends React.Component<Props> {
                         <Route
                             path={`${this.props.match.url}/repositories`}
                             component={SiteAdminRepositoriesPage}
+                            exact={true}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/authentication`}
+                            component={SiteAdminAuthenticationPage}
                             exact={true}
                         />
                         <Route

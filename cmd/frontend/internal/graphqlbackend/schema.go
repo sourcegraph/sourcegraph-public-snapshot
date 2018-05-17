@@ -1867,6 +1867,28 @@ type AccessTokenConnection {
     pageInfo: PageInfo!
 }
 
+# A list of authentication providers.
+type AuthProviderConnection {
+    # A list of authentication providers.
+    nodes: [AuthProvider!]!
+    # The total count of authentication providers in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A provider of user authentication, such as an external single-sign-on service (e.g., using OpenID
+# Connect or SAML).
+type AuthProvider {
+    # The human-readable name of the provider.
+    displayName: String!
+    # The type of the external service that provides authentication.
+    serviceType: String!
+    # An identifier for the external service that provides authentication.
+    serviceID: String!
+}
+
 # An external account associated with a user.
 type ExternalAccount implements Node {
     # The unique ID for the external account.
@@ -2143,6 +2165,8 @@ type Site implements ConfigurationSubject {
         # Returns the first n access tokens from the list.
         first: Int
     ): AccessTokenConnection!
+    # A list of all authentication providers.
+    authProviders: AuthProviderConnection!
     # The build version of the Sourcegraph software that is running on this site (of the form
     # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
     buildVersion: String!
