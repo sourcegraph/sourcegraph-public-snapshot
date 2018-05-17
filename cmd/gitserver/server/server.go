@@ -913,7 +913,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev,
 			return
 		}
 	}
-	cmd := exec.CommandContext(ctx, "git", "rev-parse", rev, "--")
+	cmd := exec.Command("git", "rev-parse", rev, "--")
 	cmd.Dir = repoDir
 	if err := cmd.Run(); err == nil {
 		return
