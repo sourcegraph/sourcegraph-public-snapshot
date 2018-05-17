@@ -28,6 +28,16 @@ func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 	return o.getConfiguration(ctx)
 }
 
+func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
+	if err := globalDB.QueryRowContext(ctx, `SELECT initialized FROM site_config LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	return alreadyInitialized, err
+}
+
 // ensureInitialized ensures the site is marked as having been initialized. If the site was already
 // initialized, it does nothing. It returns whether the site was already initialized prior to the
 // call.

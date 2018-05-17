@@ -79,6 +79,11 @@ func getSiteActivityJSON() ([]byte, error) {
 }
 
 func updateURL(ctx context.Context) string {
+	logFunc := log15.Debug
+	if envvar.SourcegraphDotComMode() {
+		logFunc = log15.Warn
+	}
+
 	q := url.Values{}
 	q.Set("version", ProductVersion)
 	q.Set("site", siteid.Get())
@@ -86,17 +91,17 @@ func updateURL(ctx context.Context) string {
 	q.Set("deployType", conf.DeployType())
 	count, err := useractivity.GetUsersActiveTodayCount()
 	if err != nil {
-		log15.Warn("useractivity.GetUsersActiveTodayCount failed", "error", err)
+		logFunc("useractivity.GetUsersActiveTodayCount failed", "error", err)
 	}
 	q.Set("u", strconv.Itoa(count))
 	if act, err := getSiteActivityJSON(); err != nil {
-		log15.Warn("getSiteActivityJSON failed", "error", err)
+		logFunc("getSiteActivityJSON failed", "error", err)
 	} else {
 		q.Set("act", string(act))
 	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
-		log15.Warn("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
 	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
