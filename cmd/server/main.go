@@ -40,7 +40,6 @@ var defaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL":   frontendInternalHost,
 	"GITHUB_BASE_URL":         "http://127.0.0.1:3180", // points to github-proxy
 	"LSP_PROXY":               "127.0.0.1:4388",
-	"ZOEKT_HOST":              zoektHost,
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for

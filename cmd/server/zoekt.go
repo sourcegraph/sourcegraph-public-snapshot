@@ -19,6 +19,7 @@ func maybeZoektProcfile(dataDir string) ([]string, error) {
 	if !enabled {
 		return nil, nil
 	}
+	setDefaultEnv("ZOEKT_HOST", zoektHost)
 	indexDir := filepath.Join(dataDir, "zoekt/index")
 	return []string{
 		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m", frontendInternalHost, indexDir),
