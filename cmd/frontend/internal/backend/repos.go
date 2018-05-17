@@ -83,14 +83,6 @@ func (s *repos) GetByURI(ctx context.Context, uri api.RepoURI) (_ *types.Repo, e
 		return nil, err
 	}
 
-	if !repo.Enabled {
-		if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
-			// 🚨 SECURITY: Prevent non-site-admins from seeing info about disabled repos. This does
-			// NOT yet conceal the existence, which is OK.
-			return &types.Repo{ID: repo.ID, URI: repo.URI, Enabled: false}, nil
-		}
-	}
-
 	return repo, nil
 }
 

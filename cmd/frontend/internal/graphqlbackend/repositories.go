@@ -82,14 +82,6 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 	r.once.Do(func() {
 		opt2 := r.opt
 
-		if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
-			// 🚨 SECURITY: Prevent non-site-admins from seeing info about disabled repos.
-			if opt2.Disabled {
-				r.err = errors.New("only site admins may query for disabled repositories (other users must set enabled: true)")
-				return
-			}
-		}
-
 		if envvar.SourcegraphDotComMode() {
 			// Don't allow non-admins to perform huge queries on Sourcegraph.com.
 			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
