@@ -186,6 +186,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 			http.Error(w, ssoErrMsg("OIDC state parameter was invalid", ""), http.StatusBadRequest)
 			return
 		}
+		// 🚨 SECURITY: TODO(sqs): Do we need to check state.CSRFToken?
 
 		// Exchange the code for an access token. See http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
 		oauth2Token, err := oauth2Config.Exchange(ctx, r.URL.Query().Get("code"))
