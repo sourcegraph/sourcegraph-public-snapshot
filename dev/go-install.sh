@@ -3,7 +3,12 @@
 mkdir -p .bin
 export GOBIN=$PWD/.bin
 
-go install github.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman
+go install \
+	github.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman \
+	github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-archive-index \
+	github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
+	github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-webserver
+
 
 TAGS='dev'
 if [ -n "$DELVE" ]; then
