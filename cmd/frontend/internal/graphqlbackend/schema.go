@@ -1883,6 +1883,8 @@ type ExternalAccount implements Node {
     createdAt: String!
     # The last-updated date of this external account on Sourcegraph.
     updatedAt: String!
+    # A URL that, when visited, re-initiates the authentication process.
+    refreshURL: String
 }
 
 # An active user session.

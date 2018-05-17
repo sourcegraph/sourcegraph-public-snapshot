@@ -51,3 +51,17 @@ func (r *externalAccountResolver) ServiceID() string   { return r.account.Servic
 func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
 func (r *externalAccountResolver) CreatedAt() string   { return r.account.CreatedAt.Format(time.RFC3339) }
 func (r *externalAccountResolver) UpdatedAt() string   { return r.account.UpdatedAt.Format(time.RFC3339) }
+
+func (r *externalAccountResolver) RefreshURL() *string {
+	var url string
+	switch r.account.ServiceType {
+	case "openidconnect":
+		url = "/.auth/login"
+	case "saml":
+		url = "/.auth/saml/login"
+	}
+	if url != "" {
+		return &url
+	}
+	return nil
+}

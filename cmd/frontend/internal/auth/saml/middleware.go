@@ -40,8 +40,8 @@ func authHandlerCommon(w http.ResponseWriter, r *http.Request, next http.Handler
 		return true
 	}
 
-	// If SAML isn't enabled, or actor is already authenticated (e.g., via access token), skip SAML auth.
-	if pc == nil || actor.FromContext(r.Context()).IsAuthenticated() {
+	// If SAML isn't enabled, skip SAML auth.
+	if pc == nil {
 		next.ServeHTTP(w, r)
 		return true
 	}

@@ -73,9 +73,8 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 		return
 	}
 
-	// If actor is already authenticated (e.g., via access token), or no OpenID Connect auth
-	// provider is configured, skip OpenID Connect auth.
-	if actor.FromContext(r.Context()).IsAuthenticated() || pc == nil {
+	// If OpenID Connect isn't enabled, skip OpenID Connect auth.
+	if pc == nil {
 		next.ServeHTTP(w, r)
 		return
 	}
@@ -84,6 +83,13 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 	// callback.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/") {
 		loginHandler(w, r, pc)
+		return
+	}
+
+	// If the actor is authenticated and not performing an OpenID Connect flow, then proceed to
+	// next.
+	if actor.FromContext(r.Context()).IsAuthenticated() {
+		next.ServeHTTP(w, r)
 		return
 	}
 

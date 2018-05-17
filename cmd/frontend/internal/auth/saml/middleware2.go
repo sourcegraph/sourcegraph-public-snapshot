@@ -9,6 +9,7 @@ import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -37,6 +38,12 @@ func authHandler2(w http.ResponseWriter, r *http.Request, next http.Handler, isA
 	// Delegate to SAML ACS and metadata endpoint handlers.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
 		samlSPHandler(w, r, sp)
+		return
+	}
+
+	// If the actor is authenticated and not performing a SAML operation, then proceed to next.
+	if actor.FromContext(r.Context()).IsAuthenticated() {
+		next.ServeHTTP(w, r)
 		return
 	}
 
@@ -71,6 +78,12 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLService
 			}
 			w.Header().Set("Content-Type", "application/samlmetadata+xml; charset=utf-8")
 			w.Write(buf)
+			return
+
+		case "/saml/login":
+			// It is safe to use r.Referer() because the redirect-to URL will be checked later,
+			// before the client is actually instructed to navigate there.
+			redirectToAuthURL(w, r, sp, r.Referer())
 			return
 		}
 	}

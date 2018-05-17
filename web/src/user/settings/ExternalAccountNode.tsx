@@ -4,6 +4,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { gql, mutateGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
+import { Timestamp } from '../../components/time/Timestamp'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 
 export const externalAccountFragment = gql`
@@ -14,6 +15,7 @@ export const externalAccountFragment = gql`
         accountID
         createdAt
         updatedAt
+        refreshURL
     }
 `
 
@@ -89,9 +91,19 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         <strong>{this.props.node.serviceID}</strong>{' '}
                         <span className="badge badge-secondary">{this.props.node.serviceType}</span>
                         <br />
-                        <span className="text-muted">{this.props.node.accountID}</span>
+                        <span className="text-muted">
+                            {this.props.node.accountID} &mdash;{' '}
+                            <small>
+                                updated <Timestamp date={this.props.node.updatedAt} />
+                            </small>
+                        </span>
                     </div>
                     <div>
+                        {this.props.node.refreshURL && (
+                            <a className="btn btn-secondary" href={this.props.node.refreshURL}>
+                                Refresh
+                            </a>
+                        )}{' '}
                         <button className="btn btn-danger" onClick={this.deleteExternalAccount} disabled={loading}>
                             Delete
                         </button>

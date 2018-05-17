@@ -35,11 +35,24 @@ func authHandler1(w http.ResponseWriter, r *http.Request, next http.Handler, isA
 	}
 
 	if !isAPIRequest {
+		if r.URL.Path == auth.AuthURLPrefix+"/saml/login" {
+			// Initiate login flow is not supported (it is only supported in authHandler2).
+			log15.Error("Unable to redirect to SAML login: must enable experimentalFeatures.enhancedSAML to use SAML auth provider with experimentalFeatures.multipleAuthProviders.")
+			http.Error(w, "SAML login is not supported.", http.StatusNotFound)
+			return
+		}
+
 		// Delegate to SAML ACS and metadata endpoint handlers.
 		if strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
 			samlSP.ServeHTTP(w, r)
 			return
 		}
+	}
+
+	// If the actor is authenticated and not performing a SAML operation, then proceed to next.
+	if actor.FromContext(r.Context()).IsAuthenticated() {
+		next.ServeHTTP(w, r)
+		return
 	}
 
 	// HACK: Return HTTP 401 for API requests without a cookie (unlike for app requests, where we
