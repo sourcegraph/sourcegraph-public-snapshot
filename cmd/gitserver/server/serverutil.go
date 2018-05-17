@@ -96,7 +96,10 @@ var repoLastFetched = func(dir string) (time.Time, error) {
 // doesn't exist or the remote doesn't exist and have a fetch URL, an error is returned. If there are
 // multiple fetch URLs, only the first is returned.
 var repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "remote", "get-url", "origin")
+	// We do not pass in context since this command is quick. We do a lot of
+	// logging around what this function does, so having to handle context
+	// failures in each case is verbose. Rather just prevent that.
+	cmd := exec.Command("git", "remote", "get-url", "origin")
 	cmd.Dir = dir
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

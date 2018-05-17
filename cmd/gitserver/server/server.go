@@ -810,8 +810,11 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 	}
 	defer cancel()
 
+	repo = protocol.NormalizeRepo(repo)
 	dir := path.Join(s.ReposDir, string(repo))
 
+	// If URL is not set, we can also consult our deprecated OriginMap or the
+	// last known working URL (set as the remote origin).
 	var urlIsGitRemote bool
 	if url == "" {
 		// BACKCOMPAT: if URL is not specified in API request, look it up in the OriginMap.
@@ -828,25 +831,23 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 		urlIsGitRemote = true
 	}
 
-	{
-		// Update Git remote URL if it differs from the configured remote URL (so that callers that
-		// don't specify the URL in the request will use the latest remote URL).
-		var gitRemoteURL string
-		if urlIsGitRemote {
-			gitRemoteURL = url
-		} else {
-			var err error
-			gitRemoteURL, err = repoRemoteURL(ctx, dir)
-			if err != nil || url == "" {
-				log15.Error("Failed to determine Git remote URL", "repo", repo, "error", err, "url", url)
-				return
-			}
+	// url is now guaranteed to != "". Store the URL as the remote origin. If
+	// a future call does not set the URL, we can fallback to this one. This
+	// is best-effort, so we do not fail the repoUpdate if updating the remote
+	// fails.
+	if !urlIsGitRemote {
+		// Note: We do not use CommandContext since it is a fast operation.
+		var cmd *exec.Cmd
+		if current, _ := repoRemoteURL(ctx, dir); current == "" {
+			cmd = exec.Command("git", "remote", "add", "origin", url)
+		} else if current != url {
+			cmd = exec.Command("git", "remote", "set-url", "origin", "--", url)
 		}
-
-		cmd := exec.CommandContext(ctx, "git", "remote", "set-url", "origin", "--", gitRemoteURL)
-		cmd.Dir = dir
-		if err, _ := runCommand(ctx, cmd); err != nil {
-			log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "url", url, "error", err)
+		if cmd != nil {
+			cmd.Dir = dir
+			if err, _ := runCommand(ctx, cmd); err != nil {
+				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "url", url, "error", err)
+			}
 		}
 	}
 
