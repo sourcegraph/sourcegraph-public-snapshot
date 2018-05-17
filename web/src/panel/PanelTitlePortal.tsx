@@ -33,8 +33,8 @@ export class PanelTitlePortal extends React.PureComponent<Props> {
         this.subscription = Panel.setTitle(this.props.children)
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        if (this.props.children !== props.children) {
+    public componentDidUpdate(prevProps: Props): void {
+        if (this.props.children !== prevProps.children) {
             if (this.subscription) {
                 this.subscription.unsubscribe()
             }
