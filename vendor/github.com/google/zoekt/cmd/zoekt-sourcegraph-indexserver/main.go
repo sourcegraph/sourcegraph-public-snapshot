@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
 	"golang.org/x/net/trace"
@@ -152,6 +153,7 @@ func (s *Server) Index(name, commit string) error {
 	cmd := exec.Command("zoekt-archive-index",
 		fmt.Sprintf("-parallelism=%d", s.CPUCount),
 		"-index", s.IndexDir,
+		"-file_limit", strconv.Itoa(1<<20), // 1 MB; match https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/blob/cmd/symbols/internal/symbols/search.go#L22
 		"-incremental",
 		"-branch", "HEAD",
 		"-commit", commit,

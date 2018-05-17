@@ -13,6 +13,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Changes to the `auth.userIdentityHTTPHeader` site config are applied immediately in Sourcegraph Server (no restart needed).
 * Changes to the `auth.public` site config are applied immediately in Sourcegraph Server (no restart needed).
 * The new search timeout behavior is now enabled by default. Set `"experimentalFeatures": { "searchTimeoutParameter": "disabled"}` in site config to disable it.
+* Search includes files up to 1MB (previous limit was 512KB for unindexed search and 128KB for indexed search).
 
 ### Fixed
 

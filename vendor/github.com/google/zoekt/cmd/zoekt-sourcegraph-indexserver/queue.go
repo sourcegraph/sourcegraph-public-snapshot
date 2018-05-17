@@ -116,8 +116,8 @@ type pqueue []*queueItem
 func (pq pqueue) Len() int { return len(pq) }
 
 func (pq pqueue) Less(i, j int) bool {
-	// If we know a needs an update and b doesn't, then return true. Otherwise
-	// they are either equal priority or b is more urgent.
+	// If we know x needs an update and y doesn't, then return true. Otherwise
+	// they are either equal priority or y is more urgent.
 	x := pq[i]
 	y := pq[j]
 	if (x.indexedCommit == x.latestCommit) == (y.indexedCommit == y.latestCommit) {
