@@ -28,7 +28,7 @@ func handleGetFirstProviderConfig(w http.ResponseWriter) (pc *schema.SAMLAuthPro
 	pc, multiple := getFirstProviderConfig()
 	if multiple {
 		log15.Error("At most 1 SAML auth provider may be set in site config.")
-		http.Error(w, "Misconfigured SAML Connect auth provider.", http.StatusInternalServerError)
+		http.Error(w, "Misconfigured SAML auth provider.", http.StatusInternalServerError)
 		return nil, true
 	}
 	return pc, false
