@@ -371,6 +371,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	var stdoutN, stderrN int64
 	var status string
 	var errStr string
+	var ensureRevisionStatus string
 
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
@@ -410,6 +411,8 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
+				ev.AddField("ensure_revision", req.EnsureRevision)
+				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("duration_ms", duration.Seconds()*1000)
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
@@ -469,7 +472,12 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.ensureRevision(ctx, req.Repo, req.URL, req.EnsureRevision, dir)
+	didUpdate := s.ensureRevision(ctx, req.Repo, req.URL, req.EnsureRevision, dir)
+	if didUpdate {
+		ensureRevisionStatus = "fetched"
+	} else {
+		ensureRevisionStatus = "noop"
+	}
 
 	w.Header().Set("Trailer", "X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr")
 	w.WriteHeader(http.StatusOK)
@@ -924,25 +932,26 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 	}
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) bool {
 	if rev == "" {
-		return
+		return false
 	}
 	if rev == "HEAD" {
 		if _, err := quickRevParseHead(repoDir); err == nil {
-			return
+			return false
 		}
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
 	cmd.Dir = repoDir
 	if err := cmd.Run(); err == nil {
-		return
+		return false
 	}
 	if rev == "HEAD" {
-		return
+		return false
 	}
 	// Revision not found, update before returning.
 	s.doRepoUpdate(ctx, repo, url)
+	return true
 }
 
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
