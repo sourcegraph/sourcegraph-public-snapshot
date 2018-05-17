@@ -131,6 +131,25 @@ func shortGitCommandTimeout(args []string) time.Duration {
 	}
 }
 
+// shortGitCommandSlow returns the threshold for regarding an git command as
+// slow. Some commands such as "git archive" are inherently slower than "git
+// rev-parse", so this will return an appropriate threshold given the command.
+func shortGitCommandSlow(args []string) time.Duration {
+	if len(args) < 1 {
+		return time.Second
+	}
+	switch args[0] {
+	case "archive":
+		return 1 * time.Minute
+
+	case "blame", "ls-tree", "log", "show":
+		return 5 * time.Second
+
+	default:
+		return 2500 * time.Millisecond
+	}
+}
+
 // This is a timeout for long git commands like clone or remote update.
 // that may take a while for large repos. These types of commands should
 // be run in the background.
@@ -405,7 +424,8 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				}
 				ev.Send()
 			}
-			if cmdDuration > 2500*time.Millisecond {
+
+			if cmdDuration > shortGitCommandSlow(req.Args) {
 				log15.Warn("Long exec request", "repo", req.Repo, "args", req.Args, "duration", cmdDuration)
 			}
 			if fetchDuration > 10*time.Second {
