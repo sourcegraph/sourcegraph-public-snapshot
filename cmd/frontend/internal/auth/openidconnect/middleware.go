@@ -250,16 +250,16 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 		}
 
 		var exp time.Duration
-		if !idToken.Expiry.IsZero() {
-			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the line below to make our own sessions
-			// only last for as long as the OP said the access token is active for. Unfortunately,
-			// until we support refreshing access tokens in the background
-			// (https://github.com/sourcegraph/sourcegraph/issues/11340), this provides a bad user
-			// experience because users need to re-authenticate via OIDC every minute or so
-			// (assuming their OIDC OP, like many, has a 1-minute access token validity period).
-			//
-			// exp = time.Until(idToken.Expiry)
-		}
+		// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
+		// only last for as long as the OP said the access token is active for. Unfortunately,
+		// until we support refreshing access tokens in the background
+		// (https://github.com/sourcegraph/sourcegraph/issues/11340), this provides a bad user
+		// experience because users need to re-authenticate via OIDC every minute or so
+		// (assuming their OIDC OP, like many, has a 1-minute access token validity period).
+		//
+		// if !idToken.Expiry.IsZero() {
+		// 	exp = time.Until(idToken.Expiry)
+		// }
 		if err := session.SetActor(w, r, actr, exp); err != nil {
 			log15.Error("Could not initiate session", "error", err)
 			http.Error(w, ssoErrMsg("Could not initiate session", err), http.StatusInternalServerError)
