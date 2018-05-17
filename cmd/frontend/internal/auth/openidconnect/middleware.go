@@ -215,6 +215,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 			}
 		}
 
+		// 🚨 SECURITY: TODO(sqs): Check that idToken.Issuer is sane (probably that it is on the
+		// same domain as the original OIDC metadata URL).
+
 		// Validate the nonce. The Verify method explicitly doesn't handle nonce validation, so we do that here.
 		// We set the nonce to be the same as the state in the Authentication Request state, so we check for equality
 		// here.
