@@ -54,13 +54,13 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
 }
 
 /**
- * Fetches all orgs.
+ * Fetches all organizations.
  */
-export function fetchAllOrgs(args: { first?: number; query?: string }): Observable<GQL.IOrgConnection> {
+export function fetchAllOrganizations(args: { first?: number; query?: string }): Observable<GQL.IOrgConnection> {
     return queryGraphQL(
         gql`
-            query Orgs($first: Int, $query: String) {
-                orgs(first: $first, query: $query) {
+            query Organizations($first: Int, $query: String) {
+                organizations(first: $first, query: $query) {
                     nodes {
                         id
                         name

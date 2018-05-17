@@ -12,7 +12,7 @@ import { PageTitle } from '../components/PageTitle'
 import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
 import { pluralize } from '../util/strings'
-import { deleteOrganization, fetchAllOrgs } from './backend'
+import { deleteOrganization, fetchAllOrganizations } from './backend'
 
 interface OrgNodeProps {
     /**
@@ -160,7 +160,7 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                     className="list-group list-group-flush mt-3"
                     noun="organization"
                     pluralNoun="organizations"
-                    queryConnection={fetchAllOrgs}
+                    queryConnection={fetchAllOrganizations}
                     nodeComponent={OrgNode}
                     nodeComponentProps={nodeProps}
                     updates={this.orgUpdates}
