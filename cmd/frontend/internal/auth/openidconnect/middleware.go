@@ -25,7 +25,7 @@ import (
 
 const stateCookieName = "sg-oidc-state"
 
-type UserClaims struct {
+type userClaims struct {
 	Name              string `json:"name"`
 	GivenName         string `json:"given_name"`
 	FamilyName        string `json:"family_name"`
@@ -239,7 +239,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 			return
 		}
 
-		var claims UserClaims
+		var claims userClaims
 		if err := userInfo.Claims(&claims); err != nil {
 			log15.Warn("Could not parse userInfo claims", "error", err)
 		}
@@ -290,7 +290,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
 // Because Actors must correspond to users in our DB, it creates the user in the DB if the user does not yet
 // exist.
-func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *UserClaims) (_ *actor.Actor, safeErrMsg string, err error) {
+func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims) (_ *actor.Actor, safeErrMsg string, err error) {
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
