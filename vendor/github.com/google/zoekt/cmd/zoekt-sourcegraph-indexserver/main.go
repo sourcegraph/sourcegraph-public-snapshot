@@ -1,4 +1,5 @@
-// zoekt-sourcegraph-indexserver periodically reindexes enabled repositories on sourcegraph
+// Command zoekt-sourcegraph-indexserver periodically reindexes enabled
+// repositories on sourcegraph
 package main
 
 import (
@@ -15,7 +16,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"time"
 
 	"golang.org/x/net/trace"
@@ -43,12 +43,9 @@ type Server struct {
 
 	// Debug when true will output extra debug logs.
 	Debug bool
-
-	mu    sync.Mutex
-	repos []string
 }
 
-func (s *Server) loggedRun(tr trace.Trace, cmd *exec.Cmd) {
+func (s *Server) loggedRun(tr trace.Trace, cmd *exec.Cmd) error {
 	out := &bytes.Buffer{}
 	errOut := &bytes.Buffer{}
 	cmd.Stdout = out
@@ -62,69 +59,94 @@ func (s *Server) loggedRun(tr trace.Trace, cmd *exec.Cmd) {
 		tr.LazyPrintf("stdout: %s", outS)
 		tr.LazyPrintf("stderr: %s", errS)
 		tr.SetError()
-		log.Printf("command %s failed: %v\nOUT: %s\nERR: %s",
+		return fmt.Errorf("command %s failed: %v\nOUT: %s\nERR: %s",
 			cmd.Args, err, outS, errS)
-	} else {
-		tr.LazyPrintf("success")
-		if s.Debug {
-			log.Printf("ran successfully %s", cmd.Args)
-		}
 	}
+	tr.LazyPrintf("success")
+	if s.Debug {
+		log.Printf("ran successfully %s", cmd.Args)
+	}
+	return nil
 }
 
-// Refresh is starts the sync loop. It blocks forever.
-func (s *Server) Refresh() {
-	t := time.NewTicker(s.Interval)
-	for {
-		repos, err := listRepos(s.Root)
-		if err != nil {
-			log.Println(err)
+// Run the sync loop. This blocks forever.
+func (s *Server) Run() {
+	queue := &Queue{}
+
+	// Start a goroutine which updates the queue with commits to index.
+	go func() {
+		t := time.NewTicker(s.Interval)
+		for {
+			repos, err := listRepos(s.Root)
+			if err != nil {
+				log.Println(err)
+				<-t.C
+				continue
+			}
+
+			log.Printf("updating index queue with %d repositories", len(repos))
+
+			// ResolveRevision is IO bound on the gitserver service. So we do
+			// them concurrently.
+			sem := newSemaphore(32)
+			tr := trace.New("resolveRevisions", "")
+			tr.LazyPrintf("resolving HEAD for %d repos", len(repos))
+			for _, name := range repos {
+				sem.Acquire()
+				go func(name string) {
+					defer sem.Release()
+					commit, err := resolveRevision(s.Root, name, "HEAD")
+					if err != nil && !os.IsNotExist(err) {
+						tr.LazyPrintf("failed resolving HEAD for %v: %v", name, err)
+						tr.SetError()
+						return
+					}
+					queue.AddOrUpdate(name, commit)
+				}(name)
+			}
+			sem.Wait()
+			tr.Finish()
+
+			// Only delete shards if we found repositories, to prevent strange
+			// bugs in responses causing us to delete everything.
+			if len(repos) > 0 {
+				exists := make(map[string]bool)
+				for _, name := range repos {
+					exists[name] = true
+				}
+				s.deleteStaleIndexes(exists)
+			}
+
 			<-t.C
+		}
+	}()
+
+	// In the current goroutine process the queue forever.
+	for {
+		name, commit, ok := queue.Pop()
+		if !ok {
+			time.Sleep(time.Second)
 			continue
 		}
 
-		// update repos for indexing interface
-		s.mu.Lock()
-		s.repos = repos
-		s.mu.Unlock()
-
-		start := time.Now()
-		log.Printf("indexing %d repositories", len(repos))
-		for _, name := range repos {
-			s.Index(name)
+		err := s.Index(name, commit)
+		if err != nil {
+			log.Printf("error indexing %s@%s: %s", name, commit, err)
+			continue
 		}
-		log.Printf("indexed %d repositories after %s", len(repos), time.Since(start))
-
-		if len(repos) > 0 {
-			// Only delete shards if we found repositories
-			exists := make(map[string]bool)
-			for _, name := range repos {
-				exists[name] = true
-			}
-			s.deleteStaleIndexes(exists)
-		}
-
-		<-t.C
+		queue.SetIndexed(name, commit)
 	}
 }
 
-func (s *Server) Index(name string) error {
+// Index starts an index job for repo name at commit.
+func (s *Server) Index(name, commit string) error {
 	tr := trace.New("index", name)
 	defer tr.Finish()
 
-	commit, err := resolveRevision(s.Root, name, "HEAD")
-	if err != nil || commit == "" {
-		if os.IsNotExist(err) {
-			// If we get to this point, it means we have an empty
-			// repository (ie we know it exists). As such, we just
-			// create an empty shard.
-			tr.LazyPrintf("empty repository")
-			s.createEmptyShard(tr, name)
-			return nil
-		}
-		log.Printf("failed to resolve revision HEAD for %v: %v", name, err)
-		tr.LazyPrintf("%v", err)
-		return err
+	tr.LazyPrintf("commit: %v", commit)
+
+	if commit == "" {
+		return s.createEmptyShard(tr, name)
 	}
 
 	cmd := exec.Command("zoekt-archive-index",
@@ -137,11 +159,10 @@ func (s *Server) Index(name string) error {
 		tarballURL(s.Root, name, commit))
 	// Prevent prompting
 	cmd.Stdin = &bytes.Buffer{}
-	s.loggedRun(tr, cmd)
-	return nil
+	return s.loggedRun(tr, cmd)
 }
 
-func (s *Server) createEmptyShard(tr trace.Trace, name string) {
+func (s *Server) createEmptyShard(tr trace.Trace, name string) error {
 	cmd := exec.Command("zoekt-archive-index",
 		"-index", s.IndexDir,
 		"-incremental",
@@ -152,7 +173,7 @@ func (s *Server) createEmptyShard(tr trace.Trace, name string) {
 		"-")
 	// Empty archive
 	cmd.Stdin = bytes.NewBuffer(bytes.Repeat([]byte{0}, 1024))
-	s.loggedRun(tr, cmd)
+	return s.loggedRun(tr, cmd)
 }
 
 func (s *Server) deleteStaleIndexes(exists map[string]bool) {
@@ -197,7 +218,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		r.ParseForm()
 		name := r.Form.Get("repo")
-		err := s.Index(name)
+		index := func() error {
+			commit, err := resolveRevision(s.Root, name, "HEAD")
+			if err != nil && !os.IsNotExist(err) {
+				return err
+			}
+			return s.Index(name, commit)
+		}
+		err := index()
 		if err != nil {
 			data.IndexMsg = fmt.Sprintf("Indexing %s failed: %s", name, err)
 		} else {
@@ -205,9 +233,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s.mu.Lock()
-	data.Repos = s.repos
-	s.mu.Unlock()
+	var err error
+	data.Repos, err = listRepos(s.Root)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	repoTmpl.Execute(w, data)
 }
@@ -353,5 +384,5 @@ func main() {
 		}()
 	}
 
-	s.Refresh()
+	s.Run()
 }
