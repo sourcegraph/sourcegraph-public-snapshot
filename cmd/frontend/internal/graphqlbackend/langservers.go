@@ -79,32 +79,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			return nil, errors.Wrap(err, "langservers.State")
 		}
 
-		if conf.IsDataCenter(conf.DeployType()) || (conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker()) {
-			// We cannot execute Docker commands, so we have less information.
-			results = append(results, &langServerResolver{
-				language:     language,
-				displayName:  langservers.StaticInfo[language].DisplayName,
-				homepageURL:  langservers.StaticInfo[language].HomepageURL,
-				issuesURL:    langservers.StaticInfo[language].IssuesURL,
-				docsURL:      langservers.StaticInfo[language].DocsURL,
-				dataCenter:   conf.IsDataCenter(conf.DeployType()),
-				custom:       false,
-				experimental: langservers.StaticInfo[language].Experimental,
-				state:        state,
-				pending:      false,
-				canEnable:    false,
-				canDisable:   false,
-				canRestart:   false,
-				canUpdate:    false,
-				healthy:      false,
-			})
-			continue
-		}
-
-		info, err := langservers.Info(language)
-		if err != nil {
-			return nil, errors.Wrap(err, "langservers.Info")
-		}
+		info, infoErr := langservers.Info(language)
 
 		results = append(results, &langServerResolver{
 			language:     language,
@@ -112,16 +87,16 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			homepageURL:  langservers.StaticInfo[language].HomepageURL,
 			issuesURL:    langservers.StaticInfo[language].IssuesURL,
 			docsURL:      langservers.StaticInfo[language].DocsURL,
-			dataCenter:   false,
+			dataCenter:   conf.IsDataCenter(conf.DeployType()),
 			custom:       false,
 			experimental: langservers.StaticInfo[language].Experimental,
 			state:        state,
-			pending:      info.Pulling || info.Status == langservers.StatusStarting,
-			canEnable:    isSiteAdmin || state == langservers.StateNone,
-			canDisable:   isSiteAdmin,
-			canRestart:   isSiteAdmin && state == langservers.StateEnabled,
-			canUpdate:    isSiteAdmin,
-			healthy:      info.Pulling || info.Status != langservers.StatusUnhealthy,
+			pending:      infoErr == nil && (info.Pulling || info.Status == langservers.StatusStarting),
+			canEnable:    infoErr == nil && (isSiteAdmin || state == langservers.StateNone),
+			canDisable:   infoErr == nil && isSiteAdmin,
+			canRestart:   infoErr == nil && isSiteAdmin && state == langservers.StateEnabled,
+			canUpdate:    infoErr == nil && isSiteAdmin,
+			healthy:      infoErr == nil && (info.Pulling || info.Status != langservers.StatusUnhealthy),
 		})
 	}
 

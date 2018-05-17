@@ -278,9 +278,25 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
             )
         }
 
-        // If we're running in data center mode OR the language server is
-        // custom, then all we know at this point is that it is enabled.
-        if (langServer.dataCenter || langServer.custom) {
+        // TODO(chris): Remove this when more robust health checking is
+        // available (e.g. TCP checks).
+        const couldDetermineHealth =
+            langServer.pending ||
+            langServer.canEnable ||
+            langServer.canDisable ||
+            langServer.canRestart ||
+            langServer.canUpdate ||
+            langServer.healthy
+
+        // In data center (and in dev mode without DEBUG_MANAGE_DOCKER=t) the
+        // docker socket is unavailable, which prevents the backend from running
+        // `docker inspect` to determine if the language server is healthy.
+        // Custom language servers are not managed by our infrastructure, so we
+        // have no insight into their state other than the associated TCP
+        // connection or stdio handles to the process. This could be improved in
+        // the future by checking that the TCP connection is still open or that
+        // the process is still running.
+        if (langServer.dataCenter || langServer.custom || !couldDetermineHealth) {
             return (
                 <span className="site-admin-lang-servers__status site-admin-lang-servers__status--running">
                     ● Enabled
