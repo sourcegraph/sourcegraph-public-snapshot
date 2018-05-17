@@ -120,6 +120,12 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLService
 		}
 		var exp time.Duration
 		if info.SessionNotOnOrAfter != nil {
+			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the line below to make our own sessions
+			// only last for as long as the IdP said the authn grant is active for. Unfortunately,
+			// until we support refreshing SAML authn in the background
+			// (https://github.com/sourcegraph/sourcegraph/issues/11340), this provides a bad user
+			// experience because users need to re-authenticate via SAML every minute or so
+			// (assuming their SAML IdP, like many, has a 1-minute access token validity period).
 			exp = time.Until(*info.SessionNotOnOrAfter)
 		}
 		if err := session.SetActor(w, r, actor, exp); err != nil {
