@@ -13,6 +13,7 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { pluralize } from '../../util/strings'
+import { toRepoURL } from '../../util/url'
 
 /**
  * Fetches a repository's text search index information.
@@ -77,7 +78,12 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
             <Icon
                 className={`icon-inline repo-settings-index-page__ref-icon repo-settings-index-page__ref-icon--${iconClassName}`}
             />
-            <Link to={`/${repo.uri}@${indexedRef.ref.abbrevName}`}>
+            <Link
+                to={toRepoURL({
+                    repoPath: repo.uri,
+                    rev: indexedRef.ref.abbrevName,
+                })}
+            >
                 <strong>
                     <code>{indexedRef.ref.displayName}</code>
                 </strong>
@@ -86,7 +92,12 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
                 <span>
                     &nbsp;&mdash; indexed at{' '}
                     <code>
-                        <Link to={`/${repo.uri}@${indexedRef.indexedCommit!.oid}`}>
+                        <Link
+                            to={toRepoURL({
+                                repoPath: repo.uri,
+                                rev: indexedRef.indexedCommit ? indexedRef.indexedCommit.oid : null,
+                            })}
+                        >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </Link>
                     </code>{' '}
