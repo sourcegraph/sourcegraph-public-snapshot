@@ -869,6 +869,7 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 		if current, _ := repoRemoteURL(ctx, dir); current == "" {
 			cmd = exec.Command("git", "remote", "add", "origin", url)
 		} else if current != url {
+			log15.Info("repository remote URL changed", "repo", repo, "old", current, "new", url)
 			cmd = exec.Command("git", "remote", "set-url", "origin", "--", url)
 		}
 		if cmd != nil {
