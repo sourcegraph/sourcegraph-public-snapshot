@@ -300,19 +300,19 @@ export const fetchFileExternalLinks = memoizeObservable(
 )
 
 export const fetchTree = memoizeObservable(
-    (ctx: FetchFileMetadataCtx): Observable<GQL.ITree> =>
+    (args: FetchFileMetadataCtx & { first?: number }): Observable<GQL.ITree> =>
         queryGraphQL(
             gql`
-                query Tree($repoPath: String!, $rev: String!, $filePath: String!) {
+                query Tree($repoPath: String!, $rev: String!, $filePath: String!, $first: Int) {
                     repository(uri: $repoPath) {
                         commit(rev: $rev) {
                             tree(path: $filePath) {
-                                directories {
+                                directories(first: $first) {
                                     name
                                     path
                                     isDirectory
                                 }
-                                files {
+                                files(first: $first) {
                                     name
                                     path
                                     isDirectory
@@ -322,7 +322,37 @@ export const fetchTree = memoizeObservable(
                     }
                 }
             `,
-            ctx
+            args
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || errors || !data.repository || !data.repository.commit || !data.repository.commit.tree) {
+                    throw createAggregateError(errors)
+                }
+                return data.repository.commit.tree
+            })
+        ),
+    makeRepoURI
+)
+
+export const fetchTreeEntries = memoizeObservable(
+    (args: FetchFileMetadataCtx & { first?: number }): Observable<GQL.ITree> =>
+        queryGraphQL(
+            gql`
+                query Tree($repoPath: String!, $rev: String!, $filePath: String!, $first: Int) {
+                    repository(uri: $repoPath) {
+                        commit(rev: $rev) {
+                            tree(path: $filePath) {
+                                entries(first: $first) {
+                                    name
+                                    path
+                                    isDirectory
+                                }
+                            }
+                        }
+                    }
+                }
+            `,
+            args
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || errors || !data.repository || !data.repository.commit || !data.repository.commit.tree) {

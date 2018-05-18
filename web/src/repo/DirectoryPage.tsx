@@ -152,6 +152,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             repoPath: props.repoPath,
                             rev: props.commitID,
                             filePath: props.filePath,
+                            first: 2500,
                         }).pipe(
                             catchError(err => [asError(err)]),
                             map(c => ({ treeOrError: c })),

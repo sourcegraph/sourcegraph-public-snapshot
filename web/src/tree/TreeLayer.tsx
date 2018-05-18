@@ -17,7 +17,7 @@ import {
     takeUntil,
 } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
-import { fetchTree } from '../repo/backend'
+import { fetchTreeEntries } from '../repo/backend'
 import { Repo } from '../repo/index'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { toBlobURL, toTreeURL } from '../util/url'
@@ -54,6 +54,8 @@ const treePadding = (depth: number, directory: boolean) => ({
     paddingRight: '16px',
 })
 
+const maxFilesOrDirs = 2500
+
 export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     public node: TreeNode
     private subscriptions = new Subscription()
@@ -88,10 +90,11 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     ),
                     filter(props => props.isExpanded),
                     switchMap(props => {
-                        const treeFetch = fetchTree({
+                        const treeFetch = fetchTreeEntries({
                             repoPath: props.repoPath,
                             rev: props.rev || '',
                             filePath: props.parentPath || '',
+                            first: maxFilesOrDirs,
                         }).pipe(catchError(err => [asError(err)]), share())
                         return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
                     })
@@ -115,10 +118,11 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 .pipe(
                     debounceTime(100),
                     mergeMap(path =>
-                        fetchTree({
+                        fetchTreeEntries({
                             repoPath: this.props.repoPath,
                             rev: this.props.rev || '',
                             filePath: path || '',
+                            first: maxFilesOrDirs,
                         }).pipe(catchError(err => [asError(err)]))
                     )
                 )
@@ -239,33 +243,31 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     </div>
                                 ) : (
                                     this.state.treeOrError &&
-                                    [...this.state.treeOrError.directories, ...this.state.treeOrError.files].map(
-                                        (item, i) => (
-                                            <TreeLayer
-                                                key={item.path}
-                                                activeNode={this.props.activeNode}
-                                                history={this.props.history}
-                                                activePath={this.props.activePath}
-                                                activePathIsDir={this.props.activePathIsDir}
-                                                depth={0}
-                                                index={i}
-                                                isExpanded={this.props.expandedDirectories.includes(item.path)}
-                                                isRoot={false}
-                                                expandedDirectories={this.props.expandedDirectories}
-                                                repoPath={this.props.repoPath}
-                                                rev={this.props.rev}
-                                                fileOrDirectoryInfo={item}
-                                                parent={this.node}
-                                                parentPath={item.path}
-                                                onSelect={this.props.onSelect}
-                                                onToggleExpand={this.props.onToggleExpand}
-                                                onHover={this.fetchChildContents}
-                                                selectedNode={this.props.selectedNode}
-                                                setChildNodes={this.setChildNode}
-                                                setActiveNode={this.props.setActiveNode}
-                                            />
-                                        )
-                                    )
+                                    this.state.treeOrError.entries.map((item, i) => (
+                                        <TreeLayer
+                                            key={item.path}
+                                            activeNode={this.props.activeNode}
+                                            history={this.props.history}
+                                            activePath={this.props.activePath}
+                                            activePathIsDir={this.props.activePathIsDir}
+                                            depth={0}
+                                            index={i}
+                                            isExpanded={this.props.expandedDirectories.includes(item.path)}
+                                            isRoot={false}
+                                            expandedDirectories={this.props.expandedDirectories}
+                                            repoPath={this.props.repoPath}
+                                            rev={this.props.rev}
+                                            fileOrDirectoryInfo={item}
+                                            parent={this.node}
+                                            parentPath={item.path}
+                                            onSelect={this.props.onSelect}
+                                            onToggleExpand={this.props.onToggleExpand}
+                                            onHover={this.fetchChildContents}
+                                            selectedNode={this.props.selectedNode}
+                                            setChildNodes={this.setChildNode}
+                                            setActiveNode={this.props.setActiveNode}
+                                        />
+                                    ))
                                 )}
                             </td>
                         </tr>
@@ -327,6 +329,16 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     <Loader className="icon-inline directory-page__entries-loader" />
                                                 </div>
                                             )}
+                                            {this.props.index === maxFilesOrDirs - 1 && (
+                                                <div
+                                                    className="tree__row-alert alert alert-warning"
+                                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                                    style={treePadding(this.props.depth, true)}
+                                                >
+                                                    Too many entries in this directory. Use search to find a specific
+                                                    file.
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -344,10 +356,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     </div>
                                                 ) : (
                                                     this.state.treeOrError &&
-                                                    [
-                                                        ...this.state.treeOrError.directories,
-                                                        ...this.state.treeOrError.files,
-                                                    ].map((item, i) => (
+                                                    this.state.treeOrError.entries.map((item, i) => (
                                                         <TreeLayer
                                                             key={item.path}
                                                             history={this.props.history}
@@ -399,6 +408,15 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     >
                                         {fileOrDirInfo.name}
                                     </Link>
+                                    {this.props.index === maxFilesOrDirs - 1 && (
+                                        <div
+                                            className="tree__row-alert alert alert-warning"
+                                            // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                            style={treePadding(this.props.depth, true)}
+                                        >
+                                            Too many entries in this directory. Use search to jump to file.
+                                        </div>
+                                    )}
                                 </td>
                             </tr>
                         )}

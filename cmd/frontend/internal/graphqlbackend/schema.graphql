@@ -1595,11 +1595,20 @@ type Person {
 # A tree.
 type Tree {
     # The directories.
-    directories: [Directory]!
+    directories(
+        # Returns the first n files from the tree
+        first: Int
+    ): [Directory]!
     # The files
-    files: [File]!
+    files(
+        # Returns the first n files from the tree
+        first: Int
+    ): [File]!
     # Consists of directories plus files.
-    entries: [TreeEntry!]!
+    entries(
+        # Returns the first n files from the tree
+        first: Int
+    ): [TreeEntry!]!
 
     # FOR INTERNAL USE ONLY.
     #

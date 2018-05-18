@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -63,20 +64,57 @@ func (r *treeResolver) toFileResolvers(filter func(fi os.FileInfo) bool, alloc i
 	return l
 }
 
-func (r *treeResolver) Entries() []*fileResolver {
-	return r.toFileResolvers(nil, len(r.entries))
+type byDirectory []os.FileInfo
+
+func (s byDirectory) Len() int {
+	return len(s)
 }
 
-func (r *treeResolver) Directories() []*fileResolver {
-	return r.toFileResolvers(func(fi os.FileInfo) bool {
+func (s byDirectory) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byDirectory) Less(i, j int) bool {
+	if s[i].IsDir() && !s[j].IsDir() {
+		return true
+	}
+
+	if !s[i].IsDir() && s[j].IsDir() {
+		return false
+	}
+
+	return s[i].Name() < s[j].Name()
+}
+
+func (r *treeResolver) Entries(args *connectionArgs) []*fileResolver {
+	sort.Sort(byDirectory(r.entries))
+	fileResolvers := r.toFileResolvers(nil, len(r.entries))
+	if args.First != nil && len(r.entries) > int(*args.First) {
+		return fileResolvers[:int(*args.First)]
+	}
+	return fileResolvers
+}
+
+func (r *treeResolver) Directories(args *connectionArgs) []*fileResolver {
+	fileResolvers := r.toFileResolvers(func(fi os.FileInfo) bool {
 		return fi.Mode().IsDir()
 	}, len(r.entries)/8) // heuristic: 1/8 of the entries in a repo are dirs
+	if args.First != nil && len(fileResolvers) > int(*args.First) {
+		return fileResolvers[:int(*args.First)]
+	}
+
+	return fileResolvers
 }
 
-func (r *treeResolver) Files() []*fileResolver {
-	return r.toFileResolvers(func(fi os.FileInfo) bool {
+func (r *treeResolver) Files(args *connectionArgs) []*fileResolver {
+	fileResolvers := r.toFileResolvers(func(fi os.FileInfo) bool {
 		return !fi.Mode().IsDir()
 	}, len(r.entries))
+	if args.First != nil && len(fileResolvers) > int(*args.First) {
+		return fileResolvers[:int(*args.First)]
+	}
+
+	return fileResolvers
 }
 
 // InternalRaw returns the raw tree encoded for consumption by the frontend tree component.
