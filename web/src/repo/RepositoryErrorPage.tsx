@@ -238,8 +238,14 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                         {(this.state.canAddOrError === false ||
                                             isErrorLike(this.state.canAddOrError)) && (
                                             <>
-                                                The repository can't be added because it doesn't exist on any code hosts
-                                                configured on this site.
+                                                <p>
+                                                    The repository can't be added because it is not accessbile from any
+                                                    code hosts configured on this site.
+                                                </p>
+                                                <p>
+                                                    Check that this site is configured with a token that has access to
+                                                    this repository.
+                                                </p>
                                             </>
                                         )}
                                         {this.state.canAddOrError === true && (
