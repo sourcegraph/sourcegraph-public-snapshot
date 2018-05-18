@@ -366,9 +366,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 
 		// workspace/symbol queries must have their `dir:` query filter
 		// rewritten for github.com/golang/go due to its specialized directory
-		// structure. e.g. `dir:src/net/http` should work, but the LS will
-		// expect `dir:net/http` as any real/valid Go project will have package
-		// paths align with the directory structure.
+		// structure. e.g. `dir:src/net/http` should work, but the language
+		// server will expect `dir:net/http` as any real/valid Go project will
+		// have package paths align with the directory structure.
 		if req.Method == "workspace/symbol" && strings.HasPrefix(string(h.init.OriginalRootURI), "git://github.com/golang/go") {
 			var wsparams lsext.WorkspaceSymbolParams
 			if err := json.Unmarshal(*req.Params, &wsparams); err != nil {

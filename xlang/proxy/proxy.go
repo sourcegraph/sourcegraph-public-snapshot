@@ -118,7 +118,7 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 		}
 	}()
 
-	// Watch for LS conf changes and restart if anything changes
+	// Watch for language server conf changes and restart if anything changes
 	var lsConfMu sync.Mutex
 	lsConf, err := json.Marshal(conf.Get().Langservers)
 	if err != nil {

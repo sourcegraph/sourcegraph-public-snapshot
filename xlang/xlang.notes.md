@@ -2,18 +2,18 @@
 
 ## Shocking things!
 
-* Everything is done in memory (except reading source files from GOROOT for the Go langserver at the moment).
+* Everything is done in memory (except reading source files from GOROOT for the Go language server at the moment).
   * An entire repo "clone" plus in-memory analysis of docker/machine takes 1.3s to complete, end-to-end, and ~27 MB of memory to keep resident.
-* There is no shared state other than what is passed over the JSON-RPC connection between the LSP proxy and the build/lang server.
-  * To integrate a new build/lang server, Sourcegraph just needs a socket address (TCP, Unix socket, or even stdio will suffice), and it doesn't need any control over the environment. No shared state!
+* There is no shared state other than what is passed over the JSON-RPC connection between the LSP proxy and the build/language server.
+  * To integrate a new build/language server, Sourcegraph just needs a socket address (TCP, Unix socket, or even stdio will suffice), and it doesn't need any control over the environment. No shared state!
 * Disk is used as a cache for repos, but the system is fast even when it needs to fetch them all on the fly. It fetches GitHub repos (which is where most Go repos live) using GitHub's zip archive APIs and keeps them in memory.
 * Deps are fetched on the fly based on whatever the currently viewed source file needs. For Go, this is easy; I use code from gddo.
 
 Changes from current system:
 
-* The Go lang server now uses go/types (go/loader) instead of shelling out to `godef`, etc.
-* The Go lang processor is now called the Go build server, and the Go build and lang servers both speak standard LSP now.
-* Sourcegraph does not need to set up the file system or environment on the build/lang server anymore, beyond sending it LSP messages.
+* The Go language server now uses go/types (go/loader) instead of shelling out to `godef`, etc.
+* The Go lang processor is now called the Go build server, and the Go build and language servers both speak standard LSP now.
+* Sourcegraph does not need to set up the file system or environment on the build/language server anymore, beyond sending it LSP messages.
 * Monaco speaks LSP in HTTP request bodies now.
 
 Try it out:
@@ -29,12 +29,12 @@ Note: Go-to-def and hover are implemented for Go only right now. Find Local Refe
 
 To dig into the code:
 
-1.  The Go bit is really 2 "LSP" servers: a Go build server, which wraps (and communicates LSP to/from) a Go language server. Read the Architecture section for more about those. The only deviation from LSP is that the Go build server sends some extra GOPATH, GOROOT, etc., initialize parameters to the Go lang server.
+1.  The Go bit is really 2 "LSP" servers: a Go build server, which wraps (and communicates LSP to/from) a Go language server. Read the Architecture section for more about those. The only deviation from LSP is that the Go build server sends some extra GOPATH, GOROOT, etc., initialize parameters to the Go language server.
 1.  The heavy lifting in the LSP proxy is in xlang/client_proxy.go (which frontend/internal/httpapi/xlang.go multiplexes web clients onto) and xlang/server_proxy.go (which manages build servers and routes client requests to the right build servers).
 
 Diagram:
 
-Web client --> LSP data request in an HTTP POST body --> frontend/internal/httpapi/xlang.go handler --> xlang/client_proxy.go --> xlang/server_proxy.go --> Go build server --> Go lang server
+Web client --> LSP data request in an HTTP POST body --> frontend/internal/httpapi/xlang.go handler --> xlang/client_proxy.go --> xlang/server_proxy.go --> Go build server --> Go language server
 
 # Architecture
 
@@ -78,7 +78,7 @@ The build server then sends the following requests to the language server:
 * `--> initialize rootPath=file:/// typescript.sdk=2.0`
 * `--> textDocument/definition textDocument=file:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
 
-The language server receives these requests and behaves as a standard LSP server. It returns the following response to the build server:
+The language server receives these requests and behaves as a standard language server. It returns the following response to the build server:
 
 * `<-- textDocument/definition Location: uri=file:///ui/node_modules/react/lib/ReactClass.js range=30:40-45`
 
@@ -201,7 +201,7 @@ For now, as described above, we can release a CLI tool for developers to upload 
 
 # Adding new build/language servers
 
-## Creating a new build/lang server
+## Creating a new build/language server
 
 * The big thing is that it should not depend on the OS file system. Any files sent via `textDocument/didOpen` should take precedence over files on the file system. And if the rootPath's scheme is `vfs` (not `file`), then it should access the virtual file system on the LSP proxy.
 
@@ -211,7 +211,7 @@ For now, as described above, we can release a CLI tool for developers to upload 
 
 Otherwise, just speak LSP and it'll work with both Sourcegraph and VS Code!
 
-## Hooking up a build/lang server to Sourcegraph
+## Hooking up a build/language server to Sourcegraph
 
 1.  Figure out the mode ID of your language. Consult [the language ID table](https://code.visualstudio.com/docs/languages/overview#_language-id), or figure out what existing VSCode extensions are using. If you can't figure it out, just make something up and be consistent.
 1.  Make sure our temporarily hacky `getModeByFilename` func in `EditorService.tsx` includes a branch for the language/mode with the proper file extensions.
@@ -227,10 +227,10 @@ LANGSERVER_JAVASCRIPT=tcp://localhost:2089 LANGSERVER_TYPESCRIPT=tcp://localhost
 
 Notes:
 
-1.  `typescript` and `javascript` are separate modes in Monaco, so you'll have to register the JS/TS lang server twice, one for each mode (see the above example).
-1.  Until the JS/TS lang server supports running in stdio, you need to register its TCP listen address, and you need to run it in a separate terminal (see its README.md for more info).
-1.  The Go build/lang server currently runs in-process for simplicity, so you needn't register it. That will change soon.
-1.  All you need to provide Sourcegraph is a single entrypoint. If you have separate build and lang servers (see the rest of this doc for the distinction), then you still only give Sourcegraph one entrypoint, since the build server wraps the lang server.
+1.  `typescript` and `javascript` are separate modes in Monaco, so you'll have to register the JS/TS language server twice, one for each mode (see the above example).
+1.  Until the JS/TS language server supports running in stdio, you need to register its TCP listen address, and you need to run it in a separate terminal (see its README.md for more info).
+1.  The Go build/language server currently runs in-process for simplicity, so you needn't register it. That will change soon.
+1.  All you need to provide Sourcegraph is a single entrypoint. If you have separate build and language servers (see the rest of this doc for the distinction), then you still only give Sourcegraph one entrypoint, since the build server wraps the language server.
 1.  VSCode/Monaco have a concept of "modes," which is basically a language. A mode's ID is a string like `go`, `javascript`, `python`, `typescript`, etc. We will reuse this existing taxonomy.
 
 # Further work

@@ -33,7 +33,7 @@ var (
 		Namespace: "golangserver",
 		Subsystem: "build",
 		Name:      "open_connections",
-		Help:      "Number of open connections to the langserver.",
+		Help:      "Number of open connections to the language server.",
 	})
 )
 

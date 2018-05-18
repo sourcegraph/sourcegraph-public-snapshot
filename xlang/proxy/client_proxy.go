@@ -562,11 +562,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// others may trigger overlay code / cache invalidation in the
 		// language server.
 		if c.didOpenHoverLimiter.TakeAvailable(1) != 1 {
-			// vscode sends didOpen for every result in a
-			// references result. If we send a fake hover for
-			// every didOpen it would overwhelm the LS. So we rate
-			// limit it to keep the normal perf benefit for
-			// interactive use.
+			// vscode sends didOpen for every result in a references result. If
+			// we send a fake hover for every didOpen it would overwhelm the
+			// language server. So we rate limit it to keep the normal perf
+			// benefit for interactive use.
 			return nil, nil
 		}
 		var params lsp.DidOpenTextDocumentParams

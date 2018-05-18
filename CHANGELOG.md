@@ -37,7 +37,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * The new repository contributors page (linked from the repository homepage) displays the top Git commit authors in a repository, with filtering options.
-* Custom langservers in the site config may now specify a `metadata` property containing things like homepage/docs/issues URLs for the language server project, as well as whether or not the language server should be considered experimental (not ready for prime-time). This `metadata` will be displayed in the UI to better communicate the status of a language server project.
+* Custom language servers in the site config may now specify a `metadata` property containing things like homepage/docs/issues URLs for the language server project, as well as whether or not the language server should be considered experimental (not ready for prime-time). This `metadata` will be displayed in the UI to better communicate the status of a language server project.
 * Access tokens now have scopes (which define the set of operations they permit). All access tokens still provide full control of all resources associated with the user account (the `user:all` scope, which is now explicitly displayed).
 * The new access token scope `site-admin:sudo` allows the holder to perform any action as any other user. Only site admins may create this token.
 * Links to Sourcegraph's changelog have been added to the site admin Updates page and update alert.
@@ -68,7 +68,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
-* Fixed an issue where langservers that were not enabled would display the "Restart" button in the Code Intelligence management panel.
+* Fixed an issue where language servers that were not enabled would display the "Restart" button in the Code Intelligence management panel.
 * Fixed an issue where the "Update" button in the Code Intelligence management panel would be displayed inconsistently.
 * Fixed an issue where toggling a dynamic search scope would not also remove `@rev` (if specified)
 * Fixed an issue where in the webui where modes that can only be determined by the full filename (not just the file extension) of a path weren't supported (Dockerfiles are the first example of this).

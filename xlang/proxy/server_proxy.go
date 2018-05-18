@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
-var repoLargeSubstr = strings.Fields(env.Get("REPO_LARGE_SUBSTR", "", "repo substrings which should be sent to LS with the mode suffix _large. Separated by whitespace"))
+var repoLargeSubstr = strings.Fields(env.Get("REPO_LARGE_SUBSTR", "", "repo substrings which should be sent to language server with the mode suffix _large. Separated by whitespace"))
 
 // serverID identifies a lang/build server by the minimal state
 // necessary to reinitialize it. At most one lang/build server per
@@ -107,13 +107,13 @@ var (
 		Namespace: "src",
 		Subsystem: "xlang",
 		Name:      "open_lsp_server_connections",
-		Help:      "Open connections (initialized + uninitialized) to the LSP servers.",
+		Help:      "Open connections (initialized + uninitialized) to the language servers.",
 	}, []string{"mode"})
 	serverConnsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
 		Name:      "cumu_lsp_server_connections",
-		Help:      "Cumulative number of connections (initialized + uninitialized) to the LSP servers (total of open + previously closed since process startup).",
+		Help:      "Cumulative number of connections (initialized + uninitialized) to the language servers (total of open + previously closed since process startup).",
 	}, []string{"mode"})
 	serverConnsMethodCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",

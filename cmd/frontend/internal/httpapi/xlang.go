@@ -237,7 +237,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	resps := make([]*jsonrpc2.Response, 0, len(reqs))
 	for i, req := range reqs {
 		// ?prepare indicates we are only doing the request to warm up
-		// the LSP servers. Only the HTTP gateway understands this, so
+		// the language servers. Only the HTTP gateway understands this, so
 		// we do not pass it on.
 		req.Method = strings.TrimSuffix(req.Method, "?prepare")
 		if req.Notif {

@@ -461,7 +461,7 @@ const SiteSchemaJSON = `{
         "additionalProperties": false,
         "properties": {
           "language": {
-            "description": "Name of the language mode for the langserver (e.g. go, java)",
+            "description": "Name of the language mode for the language server (e.g. go, java)",
             "type": "string",
             "examples": ["go", "java", "javascript", "typescript", "php", "python"]
           },

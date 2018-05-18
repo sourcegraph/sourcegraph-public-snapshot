@@ -90,7 +90,7 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    /** The LSP server capabilities information. */
+    /** The language server capabilities information. */
     serverCapabilitiesOrError?: ServerCapabilities | ErrorLike
 
     /** The hover information for the subject. */

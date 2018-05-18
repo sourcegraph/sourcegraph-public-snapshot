@@ -67,7 +67,7 @@ interface CodeIntelStatusIndicatorProps extends AbsoluteRepoFile {
     language?: string
 }
 interface CodeIntelStatusIndicatorState {
-    /** The language server, error, undefined while loading or null if no langserver registered */
+    /** The language server, error, undefined while loading or null if no language server registered */
 
     langServerOrError?: LangServer | ErrorLike | null
 }

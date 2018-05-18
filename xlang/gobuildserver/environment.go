@@ -34,8 +34,8 @@ const (
 	goarch = "amd64"
 )
 
-// determineEnvironment will setup the LS InitializeParams based what it can
-// detect from the filesystem and what it received from the client's
+// determineEnvironment will setup the language server InitializeParams based
+// what it can detect from the filesystem and what it received from the client's
 // InitializeParams.
 //
 // It is expected that fs will be mounted at InitializeParams.RootURI.
