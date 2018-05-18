@@ -49,8 +49,6 @@ var (
 	appURL                  = conf.GetTODO().AppURL
 	disableBrowserExtension = conf.GetTODO().DisableBrowserExtension
 
-	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
-
 	tlsCert = conf.GetTODO().TlsCert
 	tlsKey  = conf.GetTODO().TlsKey
 

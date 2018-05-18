@@ -54,6 +54,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Users authenticated with OpenID Connect are now able to sign out of Sourcegraph (if the provider supports token revocation or the end-session endpoint).
 * Users can now specify the number of days, weeks, and months of site activity to query through the GraphQL API.
 * Added 14 new experimental language servers on the code intelligence admin page.
+* Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header. It defaults to `max-age=31536000` (one year).
 * Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header.
 * Added `nameIDFormat` in the `saml` auth provider to set the SAML NameID format. The default changed from transient to persistent.
 

@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/NYTimes/gziphandler"
@@ -99,11 +98,8 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Header().Set("X-Frame-Options", "DENY")
-		if hsts := conf.Get().HttpStrictTransportSecurity; hsts != "" {
+		if hsts := conf.HTTPStrictTransportSecurity(); hsts != "" {
 			w.Header().Set("Strict-Transport-Security", hsts)
-		} else if v, _ := strconv.ParseBool(enableHSTS); v {
-			// TODO(nick): DEPRECATED CODE PATH
-			w.Header().Set("Strict-Transport-Security", "max-age=8640000")
 		}
 		// no cache by default
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")

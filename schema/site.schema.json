@@ -106,8 +106,8 @@
     },
     "httpStrictTransportSecurity": {
       "description": "The value of the Strict-Transport-Security HTTP header sent by Sourcegraph, if non-empty",
-      "type": "string",
-      "examples": ["max-age=8640000"]
+      "anyOf": [{ "type": "string" }, { "type": "boolean" }],
+      "default": "max-age=31536000"
     },
     "corsOrigin": {
       "description": "Value for the Access-Control-Allow-Origin header returned with all requests.",

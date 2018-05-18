@@ -276,7 +276,7 @@ type SiteConfiguration struct {
 	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
 	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
-	HttpStrictTransportSecurity       string                       `json:"httpStrictTransportSecurity,omitempty"`
+	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
 	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
 	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
