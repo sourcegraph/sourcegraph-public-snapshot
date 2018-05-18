@@ -43,7 +43,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
 
         return (
             <div className="user-settings-tokens-page">
-                <PageTitle title="Access tokens" />
+                <PageTitle title="Access tokens - Admin" />
                 <div className="d-flex justify-content-between align-items-center">
                     <h2>Access tokens</h2>
                     <Link

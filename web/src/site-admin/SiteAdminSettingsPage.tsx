@@ -42,7 +42,7 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="user-settings-configuration-page">
-                <PageTitle title="Site settings" />
+                <PageTitle title="Site settings - Admin" />
                 <h2>Configuration</h2>
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 <p>View and edit global settings for search scopes and saved queries.</p>
