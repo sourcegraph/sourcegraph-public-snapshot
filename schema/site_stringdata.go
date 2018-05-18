@@ -455,7 +455,27 @@ const SiteSchemaJSON = `{
           "language": {
             "description": "Name of the language mode for the language server (e.g. go, java)",
             "type": "string",
-            "examples": ["go", "java", "javascript", "typescript", "php", "python"]
+            "examples": [
+              "go",
+              "java",
+              "javascript",
+              "typescript",
+              "php",
+              "python",
+              "bash",
+              "clojure",
+              "cpp",
+              "cs",
+              "css",
+              "dockerfile",
+              "elixir",
+              "html",
+              "lua",
+              "ocaml",
+              "r",
+              "ruby",
+              "rust"
+            ]
           },
           "address": {
             "description":
