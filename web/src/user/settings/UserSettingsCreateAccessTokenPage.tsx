@@ -68,6 +68,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        eventLogger.logViewEvent('NewAccessToken')
         this.subscriptions.add(
             this.submits
                 .pipe(
