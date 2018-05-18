@@ -143,18 +143,21 @@
     //
     {
       "type": "openidconnect",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
       "issuer": "http://localhost:3220/auth/realms/master",
       "clientID": "sourcegraph-client-openid",
       "clientSecret": "3153e9d7-2d06-49d7-be84-cc61c07173a4"
     },
     {
       "type": "openidconnect",
+      "displayName": "Keycloak local OpenID Connect #2 (dev)",
       "issuer": "http://localhost:3220/auth/realms/master",
       "clientID": "sourcegraph-client-openid-2",
       "clientSecret": "0d60ca04-f333-48a4-96a1-aacf5f06b351"
     },
     {
       "type": "saml",
+      "displayName": "Keycloak local SAML #1 (dev)",
       "identityProviderMetadataURL": "http://localhost:3220/auth/realms/master/protocol/saml/descriptor",
       "serviceProviderCertificate":
         "-----BEGIN CERTIFICATE-----\nMIICvTCCAaUCBgFjJFU+ZzANBgkqhkiG9w0BAQsFADAiMSAwHgYDVQQDDBdzb3VyY2VncmFwaC1jbGllbnQtc2FtbDAeFw0xODA1MDMwNDQ3MzZaFw0yODA1MDMwNDQ5MTZaMCIxIDAeBgNVBAMMF3NvdXJjZWdyYXBoLWNsaWVudC1zYW1sMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgq7miil7oDONBrArqhBDr+E56mdhrgbO1PMDnbMPKxmshdEChVZ1Gu8PyoYU1Dc1bukfL3vXWgXv3kVYnJhRJMpiUHe5RGRPD5moUKiZhGTIocIczC1Pg5L7C5ulVsiuIWCLfZBt/4qo53C/jeeemwo/NOWuC76SvxDgHLFkwkRSMbCP83yNXdQ4leC60e4Byyd2De1gT6Fb5h3vW+qYEXYvKLdTC4JJIxgCzKm3OvAP83ibGL6/NJK1jiSXZFP/95ByIhOqE+0L1VT0e1nUnxmom/xIz7wT/ffJJbefKPohIE5Tapc8qjrvVRuEkHxbMgILRjKCypsRk3n/9Vp5KQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBrabQMIwg4XM3xadTA8v/3WkQNe822sWXLZZaOUSqDBAfCyvVTRzhlc92U7vd52WjvmDPGUYWj3EWDjqJoFZCo3b1s8yXlysIzlBrg/jxq7Nv8A93phdHzgznIw1Bk0gYi0PsqHPoK6W752+JHz9gtYdc6O70iJXg6pMieDjb2wP8kI1PnGea9coli+S1TMKA1C42S1LbcXkcMzDfJYS8zEFUWqLWdYFkfF47hb7RO2XrrPEbIR/MtS7O/nfIPvzspSsgNnbWMRJPA3xxSgHzMTVO932pvEmp7EfW3rYIJvoyZqmS5HU7Lv8yKMFwhlBjYFzGrXom7nTi0aGZlrOm8\n-----END CERTIFICATE-----",
@@ -163,6 +166,7 @@
     },
     {
       "type": "saml",
+      "displayName": "Keycloak local SAML #2 (dev)",
       "identityProviderMetadataURL": "http://localhost:3220/auth/realms/master/protocol/saml/descriptor",
       "serviceProviderCertificate":
         "-----BEGIN CERTIFICATE-----\nMIICnzCCAYcCBgFjcKNWhzANBgkqhkiG9w0BAQsFADATMREwDwYDVQQDDAhhc2Rhc2RhczAeFw0xODA1MTgwMDI0MDJaFw0yODA1MTgwMDI1NDJaMBMxETAPBgNVBAMMCGFzZGFzZGFzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlhRcloHlrelwc+FJgCYukn5zJ4WXfSXL1G9PBljxUPLzW1LHtmv6aZBGdrrFtrGsFTp1ucP+8LVmqiNY/3rUy3/0EpiI5R+UApxL8YvApnSAsRBhy5ZmWdHtC8eqKjDvoHbVa6LmRNto9HCCk8RiafZRVl1Xz4mVWVrgeilNAxvd8sGkTfu/2pDnfgPzFcBoTLEIslG9L/8xstCd06TEMbHLkXeXanQBhZFqVOIMErSRUTwhgdFtQK/jWcotPrK3+cvXs9JUyLpe0By5dxB+zEEm5JzQfEbOTlDg4azYVwlC4AXwRWg65fkXCsSf42bi+ae1qBNrzX36JWWyY4BNoQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBqUA7jsYfV0di0oo0Sk2VV36/bBmDL3E+c1XgxIHb7hwordZq8fCJSpJiId3z4VKFqclMZK9XDFy6xAMr+skLsmjpebCkA5vdJ6xGfGt2cCcCxE9Liyhsi/yRmGIwjLzCvsUGP183DwvPznDF4GLfKATl8NljWvP4YC0CZsPVdd9mbvnY6ZN7DZBLMzlQLtMKrJUbb/PK4nisIpLSxF3L6vbnMTzhmYpHFv2uo5O9YhUXDIpsCWqOYo1fTTCCT8ffaPwB2F4D2IUOy02my1oOBDfZFMiI+3bvwACwfLPqlfBgZmVY1asut+RPWQgSnoydzDKNbN3G5VAbWm3QtQ0qw\n-----END CERTIFICATE-----",
@@ -173,6 +177,7 @@
       // User login: alice@example.com / Miltonwoof1
       // Admin login: https://dev-433675-admin.oktapreview.com / beyang@sourcegraph.com / I3muNS06Ide6DjeZrIjC14Ua
       "type": "saml",
+      "displayName": "Okta SAML (dev)",
       "identityProviderMetadataURL": "https://dev-433675.oktapreview.com/app/exkcgo5zoe8HqHBdH0h7/sso/saml/metadata",
       "serviceProviderCertificate":
         "-----BEGIN CERTIFICATE-----\nMIIDEzCCAfugAwIBAgIJAJWPqXKa/qa4MA0GCSqGSIb3DQEBCwUAMCAxHjAcBgNV\nBAMMFW15c2VydmljZS5leGFtcGxlLmNvbTAeFw0xNzEwMTgyMjAxNDlaFw0xODEw\nMTgyMjAxNDlaMCAxHjAcBgNVBAMMFW15c2VydmljZS5leGFtcGxlLmNvbTCCASIw\nDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAOfS98TlXRYRX/IOYpHo9/azVMlJ\ndDVXGgqawi244vnY8LIkJspa/Ns01zhLcotWtgTZJvg69ZhvzPhTgxzlHEuni56Q\nnQpROBrVQygDxOk1Vjf43noO3x6GHHoki07b8pU2lzIRyrlWzX/ukFyj2ViNCiKw\nBSLxfVg80x0Vkv/RRz8MPZHntrLGQ26PltlzxhhqNs4a961giHFmfXnYWRcjMqPC\npCFPF6GzEVl5SYo+KfS7XuHnhfyFDSIaT4MVOaZrleOTR5yG64RHQqRKtF1ZVH2H\ne8Rb1wAZ1w0l7837hDdjy8kjYHn7Pau1tpXOi2AN2pW5NHmUrH/5m09HLM0CAwEA\nAaNQME4wHQYDVR0OBBYEFCD8uIR5o2g5S4YYDzZ7qI9v4mXQMB8GA1UdIwQYMBaA\nFCD8uIR5o2g5S4YYDzZ7qI9v4mXQMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEL\nBQADggEBAMwjcNBI+StGpnRyZd8iQoFpMWCHeBZanuF8XiI/6Yz/oSt2vL70JR1y\n7oJe6fbpwH86kucSDscNTKK7lTzqniX6wlqKiD1/ko+MTydZXFrYIbvv3Nu3zgr9\nE4Vh23qQXrOA6FP2Hp+GZ7SEOdry1w/QGOSPV3hdUAWtueDJ4UcNRTNQ+laZoE3A\nP2CSv5nit+i3H3cBwEF2CTFVEsZc6E8H4Atj1rQf85yoXmip/GLY43a/vdOeP9Pc\nAVmxf4Db2ZQa5CN/bh2Zw/JXPn17uI+5MbgrdkUDX+jaDRLjIOGgSJ5f/i7ohRMa\nfaYc3fZoo5Q3JXim5gq9dCJZnK0I08c=\n-----END CERTIFICATE-----",
@@ -183,6 +188,7 @@
       // User login: alice@example.com / Miltonwoof1
       // Admin login: https://dev-433675-admin.oktapreview.com / beyang@sourcegraph.com / I3muNS06Ide6DjeZrIjC14Ua
       "type": "openidconnect",
+      "displayName": "Okta OpenID Connect (dev)",
       "issuer": "https://dev-433675.oktapreview.com",
       "clientID": "0oaevek08cpSUP6iX0h7",
       "clientSecret": "m7qQ-b0HePaXcj4hFYhTwKspNnyFRNBzTaYMFI7i"
@@ -191,6 +197,7 @@
       // User login: alice@example.com / Miltonwoof1
       // Admin login: https://sourcegraph-dev.onelogin.com / beyang@sourcegraph.com / Mtg&7gZMnirBVsyaeQTAjnzu
       "type": "saml",
+      "displayName": "OneLogin SAML (dev)",
       "identityProviderMetadataURL": "https://sourcegraph-dev.onelogin.com/saml/metadata/736334",
       "serviceProviderCertificate":
         "-----BEGIN CERTIFICATE-----\nMIICmTCCAYECBgFjcYAQETANBgkqhkiG9w0BAQsFADAQMQ4wDAYDVQQDDAVmZGZzZDAeFw0xODA1MTgwNDI1MDhaFw0yODA1MTgwNDI2NDhaMBAxDjAMBgNVBAMMBWZkZnNkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmaL6f3AmwbePU6hKCvwJErj+Fjxb7b0BBDReQuz1AFWXbQuCReNGkIzG0Yvimv52EM+3m01O4QKZJ+Ikl2kgHFOA0fQqfqILERIBb2SX6hKF0TyrVcjvr6qt8Nxm+bGoDXxwavQ3PF+zKG/j6hWX/eR+XtxzNryAgs94wDIN2pzz8yse0WZyEQ4+ZSgQwtgETXfy5+JdXuJfUL7vaqkvsKItO/eycbZ9rPYiXPt7Yd7N71fW9yzSrnxBZJhPaDktnGGXmXMM/BYw4/M55upZ0JjcyFoTiPsbmng02xoXwhRGtqwXr0zc/pW8JwyZOXLRhzqltzzox2h8C0rTgACt/QIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQAD+cqRHE70M+3Ixg09CTGN0DwGzwOoxdAEBDLToswpfg5EDrfEiaJYTBT+IuLPh7q9PbTI4VkpGifBv1mByvTiNrbZA9ZFC+VKqreWUSiSIqjL0a002PDzG/jtPgL/dlycIwKhvWhT8PH6uN/WjtrikGeqCHlQ7mATxVBpriEml/MTofSFooIA3VQo2Jw/jmjRdmpwMBrK3mEupleH+r6HSgcUGA/M4HUMWcMQ0nodybRL4BN/AZWqVeVS3/iF8GPEvo50tO/2NhApWPnhGtY6JWltB7sUUkyaKvuOAl6imyi6q8ZsC+2TctOzH+3f745KPxMTp/vWUa6gucPv/wHt\n-----END CERTIFICATE-----",

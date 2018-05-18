@@ -95,6 +95,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 	if strings.HasPrefix(req.URL.Path, "/.assets/") || strings.HasPrefix(req.URL.Path, "/.api/telemetry/log/v1/") {
 		return true
 	}
+
 	apiRouteName := matchedRouteName(req, router.Router())
 	if apiRouteName == router.UI {
 		// Test against UI router. (Some of its handlers inject private data into the title or meta tags.)

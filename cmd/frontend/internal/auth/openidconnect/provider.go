@@ -12,107 +12,55 @@ import (
 	oidc "github.com/coreos/go-oidc"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// Start trying to populate the cache of issuer metadata (given the configured OpenID Connect issuer
-// URL) immediately upon server startup and site config changes so users don't incur the wait on the
-// first auth flow request.
-func init() {
-	var (
-		init = true
+const providerType = "openidconnect"
 
-		mu  sync.Mutex
-		cur []*schema.OpenIDConnectAuthProvider
-		reg = map[providerKey]*auth.Provider{}
-	)
-	conf.Watch(func() {
-		mu.Lock()
-		defer mu.Unlock()
-
-		// Only react when the config changes.
-		new := providersOfType(conf.AuthProviders())
-		diff := diffProviderConfig(cur, new)
-		if len(diff) == 0 {
-			return
-		}
-
-		if !init {
-			log15.Info("Reloading changed OpenID Connect authentication provider configuration.")
-		}
-		updates := make(map[*auth.Provider]bool, len(diff))
-		for pc, op := range diff {
-			pcKey := toProviderKey(&pc)
-			if old, ok := reg[pcKey]; ok {
-				delete(reg, pcKey)
-				updates[old] = false
-			}
-			if op == opAdded || op == opChanged {
-				new := newProviderInstance(&pc)
-				reg[pcKey] = new
-				updates[new] = true
-			}
-		}
-		auth.UpdateProviders(updates)
-
-		cur = new
-		for pc, op := range diff {
-			if op == opAdded || op == opChanged {
-				go func(pc schema.OpenIDConnectAuthProvider) {
-					if _, err := cache.get(pc.Issuer); err != nil {
-						log15.Error("Error prefetching OpenID Connect provider metadata.", "issuer", pc.Issuer, "clientID", pc.ClientID, "error", err)
-					}
-				}(pc)
-			}
-		}
-	})
-	init = false
-}
-
-func newProviderInstance(pc *schema.OpenIDConnectAuthProvider) *auth.Provider {
-	if pc == nil {
-		return nil
-	}
-
-	var displayNameSuffix string
-	// Disambiguate based on hostname. This is not sufficient for the general case.
-	u, err := url.Parse(pc.Issuer)
-	if err == nil {
-		displayNameSuffix = " on " + u.Host
-	}
-
-	// For our dev client IDs, disambiguate them in the display name.
-	if pc.ClientID == "sourcegraph-client-openid" {
-		displayNameSuffix += " (1)"
-	} else if pc.ClientID == "sourcegraph-client-openid-2" {
-		displayNameSuffix += " (2)"
-	}
-
-	return &auth.Provider{
-		ProviderID: auth.ProviderID{
-			ServiceType: pc.Type,
-			Key:         toProviderKey(pc).KeyString(),
-		},
-		Public: auth.PublicProviderInfo{
-			DisplayName: "OpenID Connect" + displayNameSuffix,
-			AuthenticationURL: (&url.URL{
-				Path:     path.Join(auth.AuthURLPrefix, "openidconnect", "login"),
-				RawQuery: (url.Values{"p": []string{toProviderKey(pc).KeyString()}}).Encode(),
-			}).String(),
-		},
-	}
-}
-
-// provider is an OpenID Connect provider with additional claims parsed from the service provider
-// discovery response (beyond what github.com/coreos/go-oidc parses by default).
 type provider struct {
 	config schema.OpenIDConnectAuthProvider
-	oidc.Provider
-	providerExtraClaims
+
+	mu         sync.Mutex
+	oidc       *oidcProvider
+	refreshErr error
+}
+
+// ID implements auth.Provider.
+func (p *provider) ID() auth.ProviderID {
+	return auth.ProviderID{
+		Type: providerType,
+		ID:   toProviderID(&p.config).KeyString(),
+	}
+}
+
+// Config implements auth.Provider.
+func (p *provider) Config() schema.AuthProviders {
+	return schema.AuthProviders{Openidconnect: &p.config}
+}
+
+// Refresh implements auth.Provider.
+func (p *provider) Refresh(ctx context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.oidc, p.refreshErr = newProvider(ctx, p.config.Issuer)
+	return p.refreshErr
+}
+
+// CachedInfo implements auth.Provider.
+func (p *provider) CachedInfo() *auth.ProviderInfo {
+	info := auth.ProviderInfo{
+		DisplayName: p.config.DisplayName,
+		AuthenticationURL: (&url.URL{
+			Path:     path.Join(authPrefix, "login"),
+			RawQuery: (url.Values{"p": []string{toProviderID(&p.config).KeyString()}}).Encode(),
+		}).String(),
+	}
+	if info.DisplayName == "" {
+		info.DisplayName = "OpenID Connect"
+	}
+	return &info
 }
 
 func (p *provider) oauth2Config() *oauth2.Config {
@@ -123,9 +71,16 @@ func (p *provider) oauth2Config() *oauth2.Config {
 		// "/.auth/openidconnect/callback" not "/.auth/callback"). We need to use the old value for
 		// BACKCOMPAT because clients typically have hardcoded redirect URIs (of the old value).
 		RedirectURL: globals.AppURL.ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).String(),
-		Endpoint:    p.Provider.Endpoint(),
+		Endpoint:    p.oidc.Endpoint(),
 		Scopes:      []string{oidc.ScopeOpenID, "profile", "email"},
 	}
+}
+
+// oidcProvider is an OpenID Connect oidcProvider with additional claims parsed from the service oidcProvider
+// discovery response (beyond what github.com/coreos/go-oidc parses by default).
+type oidcProvider struct {
+	oidc.Provider
+	providerExtraClaims
 }
 
 type providerExtraClaims struct {
@@ -141,9 +96,9 @@ type providerExtraClaims struct {
 	RevocationEndpoint string `json:"revocation_endpoint,omitempty"`
 }
 
-var mockNewProvider func(issuerURL string) (*provider, error)
+var mockNewProvider func(issuerURL string) (*oidcProvider, error)
 
-func newProvider(ctx context.Context, issuerURL string) (*provider, error) {
+func newProvider(ctx context.Context, issuerURL string) (*oidcProvider, error) {
 	if mockNewProvider != nil {
 		return mockNewProvider(issuerURL)
 	}
@@ -153,7 +108,7 @@ func newProvider(ctx context.Context, issuerURL string) (*provider, error) {
 		return nil, err
 	}
 
-	p := &provider{Provider: *bp}
+	p := &oidcProvider{Provider: *bp}
 	if err := bp.Claims(&p.providerExtraClaims); err != nil {
 		return nil, err
 	}
@@ -161,24 +116,24 @@ func newProvider(ctx context.Context, issuerURL string) (*provider, error) {
 }
 
 // revokeToken implements Token Revocation. See https://tools.ietf.org/html/rfc7009.
-func revokeToken(ctx context.Context, pc *schema.OpenIDConnectAuthProvider, revocationEndpoint, accessToken, tokenType string) error {
+func revokeToken(ctx context.Context, p *provider, accessToken, tokenType string) error {
 	postData := url.Values{}
 	postData.Set("token", accessToken)
 	if tokenType != "" {
 		postData.Set("token_type_hint", tokenType)
 	}
-	req, err := http.NewRequest(revocationEndpoint, "application/x-www-form-urlencoded", strings.NewReader(postData.Encode()))
+	req, err := http.NewRequest(p.oidc.RevocationEndpoint, "application/x-www-form-urlencoded", strings.NewReader(postData.Encode()))
 	if err != nil {
 		return err
 	}
-	req.SetBasicAuth(pc.ClientID, pc.ClientSecret)
+	req.SetBasicAuth(p.config.ClientID, p.config.ClientSecret)
 	resp, err := ctxhttp.Do(ctx, nil, req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("non-200 HTTP response from token revocation endpoint %s: HTTP %d", revocationEndpoint, resp.StatusCode)
+		return fmt.Errorf("non-200 HTTP response from token revocation endpoint %s: HTTP %d", p.oidc.RevocationEndpoint, resp.StatusCode)
 	}
 	return nil
 }

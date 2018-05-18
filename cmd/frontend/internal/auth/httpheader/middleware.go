@@ -9,10 +9,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-const (
-	// UserProviderHTTPHeader is the http-header auth provider.
-	UserProviderHTTPHeader = "http-header"
-)
+const providerType = "http-header"
 
 // Middleware is middleware that checks for an HTTP header from an auth proxy that specifies the
 // client's authenticated username. It's for use with auth proxies like
@@ -67,13 +64,13 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 		userID, safeErrMsg, err := auth.CreateOrUpdateUser(r.Context(), db.NewUser{Username: username}, db.ExternalAccountSpec{
-			ServiceType: UserProviderHTTPHeader,
+			ServiceType: providerType,
 
 			// Store headerValue, not normalized username, to prevent two users with distinct
 			// pre-normalization usernames from being merged into the same normalized username
 			// (and therefore letting them each impersonate the other).
 			AccountID: headerValue,
-		})
+		}, db.ExternalAccountData{})
 		if err != nil {
 			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "headerValue", headerValue, "err", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)

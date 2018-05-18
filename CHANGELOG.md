@@ -51,6 +51,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Users can now specify the number of days, weeks, and months of site activity to query through the GraphQL API.
 * Added 14 new experimental language servers on the code intelligence admin page.
 * Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header.
+* Added `nameIDFormat` in the `saml` auth provider to set the SAML NameID format. The default changed from transient to persistent.
 
 ## 2.7.6
 

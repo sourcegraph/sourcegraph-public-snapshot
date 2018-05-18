@@ -12,6 +12,12 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+type signoutURL struct {
+	ProviderDisplayName string
+	ProviderServiceType string
+	URL                 string
+}
+
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	if err := session.SetActor(w, r, nil, 0); err != nil {
 		log15.Error("Error in signout.", "err", err)
@@ -19,34 +25,40 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 
 	// TODO(sqs): Show the auth provider name corresponding to each signout URL (helpful when there
 	// are multiple).
-	var signoutURLs []string
+	var signoutURLs []signoutURL
 	for _, p := range conf.AuthProviders() {
-		var signoutURL string
+		var e signoutURL
 		var err error
 		switch {
 		case p.Openidconnect != nil:
-			signoutURL, err = openidconnect.SignOut(w, r)
+			e.ProviderDisplayName = p.Openidconnect.DisplayName
+			e.ProviderServiceType = p.Openidconnect.Type
+			e.URL, err = openidconnect.SignOut(w, r)
 		case p.Saml != nil && conf.EnhancedSAMLEnabled():
-			signoutURL, err = saml.SignOut(w, r)
+			e.ProviderDisplayName = p.Saml.DisplayName
+			e.ProviderServiceType = p.Saml.Type
+			e.URL, err = saml.SignOut(w, r)
 		}
-		if signoutURL != "" {
-			signoutURLs = append(signoutURLs, signoutURL)
+		if e.URL != "" {
+			signoutURLs = append(signoutURLs, e)
 		}
 		if err != nil {
 			log15.Error("Error clearing auth provider session data.", "err", err)
 		}
 	}
-	if len(signoutURLs) > 0 {
-		renderSignoutPageTemplate(w, r, signoutURLs)
-		return
+	if conf.MultipleAuthProvidersEnabled() {
+		if len(signoutURLs) > 0 {
+			renderSignoutPageTemplate(w, r, signoutURLs)
+			return
+		}
 	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutURLs []string) {
+func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutURLs []signoutURL) {
 	data := struct {
-		SignoutURLs []string
+		SignoutURLs []signoutURL
 	}{
 		SignoutURLs: signoutURLs,
 	}
@@ -66,10 +78,10 @@ var (
 <pre>
 <strong>Signed out of Sourcegraph</strong>
 <br>
-<a href="/">Go to Sourcegraph</a>
+<a href="/">Return to Sourcegraph</a>
 <br>
 {{range .SignoutURLs}}
-<a href="{{.}}">Sign out of authentication provider</a><br>
+<a href="{{.URL}}">Sign out of {{if .ProviderDisplayName}}{{.ProviderDisplayName}}{{else}}{{.ProviderServiceType}} authentication provider{{end}}</a><br>
 {{end}}
 </pre>
 `))

@@ -152,43 +152,41 @@ func TestMiddleware(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
 
-	// Set SAML global parameters
-	p := &schema.SAMLAuthProvider{
+	config := schema.SAMLAuthProvider{
+		Type: "saml",
 		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
 		ServiceProviderCertificate:  testSAMLSPCert,
 		ServiceProviderPrivateKey:   testSAMLSPKey,
 	}
+
 	conf.MockGetData = &schema.SiteConfiguration{
-		AuthProvider:         "saml",
-		AuthSaml:             p,
 		ExperimentalFeatures: &schema.ExperimentalFeatures{},
 	}
 	defer func() { conf.MockGetData = nil }()
 
 	// Test both the old (1) and new (2) implementations.
 	t.Run("1", func(t *testing.T) {
-		testMiddleware(t, idpHTTPServer.URL, idpServer, false, p)
+		conf.MockGetData.AuthProviders = []schema.AuthProviders{{Saml: &config}}
+		defer func() { conf.MockGetData.AuthProviders = nil }()
+		testMiddleware(t, idpHTTPServer.URL, idpServer, false, config)
 	})
 	t.Run("2", func(t *testing.T) {
 		conf.MockGetData.ExperimentalFeatures.EnhancedSAML = "enabled"
-		testMiddleware(t, idpHTTPServer.URL, idpServer, true, p)
+		mockGetProviderValue = &provider{config: config}
+		defer func() { mockGetProviderValue = nil }()
+		auth.MockProviders = []auth.Provider{mockGetProviderValue}
+		defer func() { auth.MockProviders = nil }()
+		testMiddleware(t, idpHTTPServer.URL, idpServer, true, config)
 	})
 }
 
 // testMiddleware tests the SAML middleware. It assumes the site config has been mocked by the
 // caller (with conf.MockGetData).
-func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isImpl2 bool, p *schema.SAMLAuthProvider) {
+func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isImpl2 bool, p schema.SAMLAuthProvider) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	providerKey := toProviderKey(p).KeyString()
-
-	spCertData, _ := pem.Decode([]byte(testSAMLSPCert))
-	spCert, err := x509.ParseCertificate(spCertData.Bytes)
-	if err != nil {
-		t.Fatal(err)
-	}
-	certFingerprint := certFingerprint(spCert)
+	providerID := toProviderID(&p).KeyString()
 
 	// Mock user
 	mockedProvider := idpURL + "/metadata"
@@ -197,7 +195,7 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
 		wantServiceID := mockedProvider
 		if isImpl2 {
-			wantServiceID += ":" + certFingerprint
+			wantServiceID = providerID
 		}
 		if a.ServiceType == "saml" && a.ServiceID == wantServiceID && a.AccountID == mockedExternalID {
 			return mockedUserID, nil
@@ -302,7 +300,7 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 		loggedInCookies []*http.Cookie
 	)
 	t.Run("get SP metadata and register SP with IDP", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/saml/metadata?p="+providerKey, "", nil, false, nil)
+		resp := doRequest("GET", "http://example.com/.auth/saml/metadata?p="+providerID, "", nil, false, nil)
 		service := samlidp.Service{}
 		if err := xml.NewDecoder(resp.Body).Decode(&service.Metadata); err != nil {
 			t.Fatal(err)

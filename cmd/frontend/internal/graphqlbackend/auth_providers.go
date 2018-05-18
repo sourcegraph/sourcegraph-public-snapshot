@@ -23,7 +23,7 @@ func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnecti
 // 🚨 SECURITY: When instantiating an authProviderConnectionResolver value, the caller MUST check
 // permissions.
 type authProviderConnectionResolver struct {
-	authProviders []*auth.Provider
+	authProviders []auth.Provider
 }
 
 func (r *authProviderConnectionResolver) Nodes(ctx context.Context) ([]*authProviderResolver, error) {
@@ -36,7 +36,10 @@ func (r *authProviderConnectionResolver) Nodes(ctx context.Context) ([]*authProv
 
 	var rs []*authProviderResolver
 	for _, authProvider := range r.authProviders {
-		rs = append(rs, &authProviderResolver{authProvider: authProvider})
+		rs = append(rs, &authProviderResolver{
+			authProvider: authProvider,
+			info:         authProvider.CachedInfo(),
+		})
 	}
 	return rs, nil
 }

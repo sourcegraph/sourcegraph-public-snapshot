@@ -17,6 +17,11 @@ type AWSCodeCommitConnection struct {
 	SecretAccessKey             string `json:"secretAccessKey"`
 }
 
+// AuthProviderCommon Common properties for authentication providers.
+type AuthProviderCommon struct {
+	DisplayName string `json:"displayName,omitempty"`
+}
+
 // AuthProviders
 type AuthProviders struct {
 	Builtin       *BuiltinAuthProvider
@@ -154,6 +159,7 @@ type Metadata struct {
 type OpenIDConnectAuthProvider struct {
 	ClientID           string `json:"clientID"`
 	ClientSecret       string `json:"clientSecret"`
+	DisplayName        string `json:"displayName,omitempty"`
 	Issuer             string `json:"issuer"`
 	OverrideToken      string `json:"overrideToken,omitempty"`
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
@@ -183,8 +189,10 @@ type Repository struct {
 
 // SAMLAuthProvider Configures the SAML authentication provider for SSO.
 type SAMLAuthProvider struct {
+	DisplayName                 string `json:"displayName,omitempty"`
 	IdentityProviderMetadata    string `json:"identityProviderMetadata,omitempty"`
 	IdentityProviderMetadataURL string `json:"identityProviderMetadataURL,omitempty"`
+	NameIDFormat                string `json:"nameIDFormat,omitempty"`
 	ServiceProviderCertificate  string `json:"serviceProviderCertificate"`
 	ServiceProviderPrivateKey   string `json:"serviceProviderPrivateKey"`
 	Type                        string `json:"type"`

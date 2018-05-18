@@ -20,7 +20,7 @@ var MockCreateOrUpdateUser func(db.NewUser, db.ExternalAccountSpec) (int32, erro
 // 🚨 SECURITY: The safeErrMsg is an error message that can be shown to unauthenticated users to
 // describe the problem. The err may contain sensitive information and should only be written to the
 // server error logs, not to the HTTP response to shown to unauthenticated users.
-func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, externalAccount db.ExternalAccountSpec) (userID int32, safeErrMsg string, err error) {
+func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, externalAccount db.ExternalAccountSpec, data db.ExternalAccountData) (userID int32, safeErrMsg string, err error) {
 	if MockCreateOrUpdateUser != nil {
 		userID, err = MockCreateOrUpdateUser(newOrUpdatedUser, externalAccount)
 		return userID, "", err
@@ -31,12 +31,12 @@ func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, extern
 		// the existing user account.
 		userID = actor.UID
 
-		if err := db.ExternalAccounts.AssociateUserAndSave(ctx, userID, externalAccount, db.ExternalAccountData{}); err != nil {
+		if err := db.ExternalAccounts.AssociateUserAndSave(ctx, userID, externalAccount, data); err != nil {
 			safeErrMsg = "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem."
 			return 0, safeErrMsg, err
 		}
 	} else {
-		userID, err = db.ExternalAccounts.LookupUserAndSave(ctx, externalAccount, db.ExternalAccountData{})
+		userID, err = db.ExternalAccounts.LookupUserAndSave(ctx, externalAccount, data)
 		if err != nil && !errcode.IsNotFound(err) {
 			return 0, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", err
 		}
@@ -46,7 +46,7 @@ func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, extern
 			const allowMatchOnUsernameOrEmailOnly = true
 			associateUser := false
 
-			userID, err = db.ExternalAccounts.CreateUserAndSave(ctx, newOrUpdatedUser, externalAccount, db.ExternalAccountData{})
+			userID, err = db.ExternalAccounts.CreateUserAndSave(ctx, newOrUpdatedUser, externalAccount, data)
 			switch {
 			case db.IsUsernameExists(err):
 				if allowMatchOnUsernameOrEmailOnly {
@@ -77,7 +77,7 @@ func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, extern
 			}
 
 			if associateUser {
-				if err := db.ExternalAccounts.AssociateUserAndSave(ctx, userID, externalAccount, db.ExternalAccountData{}); err != nil {
+				if err := db.ExternalAccounts.AssociateUserAndSave(ctx, userID, externalAccount, data); err != nil {
 					safeErrMsg = "Unexpected error associating the external account with the existing Sourcegraph user with the same username or email address."
 					return 0, safeErrMsg, err
 				}

@@ -10,113 +10,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path"
-	"strings"
-	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// Start trying to populate the cache of SAML IdP metadata immediately upon server startup and site
-// config changes so users don't incur the wait on the first auth flow request.
-func init() {
-	var (
-		init = true
-
-		mu  sync.Mutex
-		cur []*schema.SAMLAuthProvider
-		reg = map[providerKey]*auth.Provider{}
-	)
-	conf.Watch(func() {
-		mu.Lock()
-		defer mu.Unlock()
-
-		// Only react when the config changes.
-		new := providersOfType(conf.AuthProviders())
-		diff := diffProviderConfig(cur, new)
-		if len(diff) == 0 {
-			return
-		}
-
-		if !init {
-			log15.Info("Reloading changed SAML authentication provider configuration.")
-		}
-		updates := make(map[*auth.Provider]bool, len(diff))
-		for pc, op := range diff {
-			pcKey := toProviderKey(&pc)
-			if old, ok := reg[pcKey]; ok {
-				delete(reg, pcKey)
-				updates[old] = false
-			}
-			if op == opAdded || op == opChanged {
-				new := newProviderInstance(&pc)
-				reg[pcKey] = new
-				updates[new] = true
-			}
-		}
-		auth.UpdateProviders(updates)
-
-		cur = new
-		for pc, op := range diff {
-			if op == opAdded || op == opChanged {
-				go func(pc schema.SAMLAuthProvider) {
-					var err error
-					if conf.EnhancedSAMLEnabled() {
-						_, err = cache2.get(pc)
-					} else {
-						_, err = cache1.get(pc)
-					}
-					if err != nil {
-						log15.Error("Error prefetching SAML service provider metadata.", "error", err)
-					}
-				}(pc)
-			}
-		}
-	})
-	init = false
-}
-
-func newProviderInstance(pc *schema.SAMLAuthProvider) *auth.Provider {
-	if pc == nil {
-		return nil
-	}
-
-	var displayNameSuffix string
-
-	// Disambiguate based on hostname. This is not sufficient for the general case.
-	if pc.IdentityProviderMetadataURL != "" {
-		u, err := url.Parse(pc.IdentityProviderMetadataURL)
-		if err == nil {
-			displayNameSuffix = " on " + u.Host
-		}
-	}
-
-	// For our dev client IDs, disambiguate them in the display name.
-	if strings.Contains(pc.ServiceProviderCertificate, "MIICvTCCAaUCBgFjJFU+ZzANBgkqhkiG9w") {
-		displayNameSuffix += " (1)"
-	} else if strings.Contains(pc.ServiceProviderCertificate, "MIICnzCCAYcCBgFjcKNWhzANBgkqhkiG9w") {
-		displayNameSuffix += " (2)"
-	}
-
-	return &auth.Provider{
-		ProviderID: auth.ProviderID{
-			ServiceType: pc.Type,
-			Key:         toProviderKey(pc).KeyString(),
-		},
-		Public: auth.PublicProviderInfo{
-			DisplayName: "SAML" + displayNameSuffix,
-			AuthenticationURL: (&url.URL{
-				Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
-				RawQuery: (url.Values{"p": []string{toProviderKey(pc).KeyString()}}).Encode(),
-			}).String(),
-		},
-	}
-}
+const providerType = "saml"
 
 type providerConfig struct {
 	entityID        *url.URL

@@ -8,15 +8,38 @@ import (
 
 var (
 	allProvidersMu sync.Mutex
-	allProviders   []*Provider // all configured authentication provider instances (modified by UpdateProviders)
+	allProviders   []Provider // all configured authentication provider instances (modified by UpdateProviders)
 )
 
 // Providers returns a list of all authentication provider instances that are active in the site
 // config. The return value is immutable.
-func Providers() []*Provider {
+func Providers() []Provider {
+	if MockProviders != nil {
+		return MockProviders
+	}
 	allProvidersMu.Lock()
 	defer allProvidersMu.Unlock()
 	return allProviders
+}
+
+// GetProvider returns the provider with the given ID (if it is currently registered via
+// UpdateProviders).
+func GetProvider(id ProviderID) Provider {
+	var ps []Provider
+	if MockProviders != nil {
+		ps = MockProviders
+	} else {
+		allProvidersMu.Lock()
+		defer allProvidersMu.Unlock()
+		ps = allProviders
+	}
+
+	for _, p := range ps {
+		if p.ID() == id {
+			return p
+		}
+	}
+	return nil
 }
 
 // UpdateProviders updates the set of active authentication provider instances. It adds providers
@@ -24,13 +47,17 @@ func Providers() []*Provider {
 //
 // It is generally called by site configuration listeners associated with authentication provider
 // implementations after any change to the set of configured instances of that type.
-func UpdateProviders(updates map[*Provider]bool) {
+func UpdateProviders(updates map[Provider]bool) {
+	if MockProviders != nil {
+		panic("not yet implemented: calling UpdateProviders when MockProviders is non-nil")
+	}
+
 	allProvidersMu.Lock()
 	defer allProvidersMu.Unlock()
 
 	// Copy on write (not copy on read) because this is written rarely and read often.
 	oldProviders := allProviders
-	allProviders = make([]*Provider, 0, len(oldProviders))
+	allProviders = make([]Provider, 0, len(oldProviders))
 	for _, p := range oldProviders {
 		op, ok := updates[p]
 		if !ok || op {
@@ -49,8 +76,11 @@ func UpdateProviders(updates map[*Provider]bool) {
 	}
 
 	sort.Slice(allProviders, func(i, j int) bool {
-		ai := allProviders[i]
-		aj := allProviders[j]
-		return ai.Public.DisplayName < aj.Public.DisplayName
+		ai := allProviders[i].ID()
+		aj := allProviders[j].ID()
+		return ai.Type < aj.Type || (ai.Type == aj.Type && ai.ID < aj.ID)
 	})
 }
+
+// MockProviders mocks the auth provider registry for tests.
+var MockProviders []Provider

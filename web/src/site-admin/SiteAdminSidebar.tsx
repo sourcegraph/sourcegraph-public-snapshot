@@ -16,9 +16,6 @@ interface State {}
 /** Feature flag for showing the comments site admin page link in the sidebar. */
 const showComments = localStorage.getItem('showComments') !== null
 
-/** Feature flag for showing authentication page link in the sidebar. */
-const showAuth = localStorage.getItem('showAuth') !== null
-
 /**
  * Sidebar for the site admin area.
  */
@@ -69,7 +66,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             Repositories
                         </NavLink>
                     </li>
-                    {showAuth && (
+                    {window.context.multipleAuthProvidersEnabled && (
                         <li className="sidebar__item">
                             <NavLink
                                 to="/site-admin/authentication"

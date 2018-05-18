@@ -16,6 +16,7 @@ export const externalAccountFragment = gql`
         createdAt
         updatedAt
         refreshURL
+        accountData
     }
 `
 
@@ -47,10 +48,15 @@ export interface ExternalAccountNodeProps {
 interface ExternalAccountNodeState {
     /** Undefined means in progress, null means done or not started. */
     deletionOrError?: null | ErrorLike
+
+    showData: boolean
 }
 
 export class ExternalAccountNode extends React.PureComponent<ExternalAccountNodeProps, ExternalAccountNodeState> {
-    public state: ExternalAccountNodeState = { deletionOrError: null }
+    public state: ExternalAccountNodeState = {
+        deletionOrError: null,
+        showData: false,
+    }
 
     private deletes = new Subject<void>()
     private subscriptions = new Subscription()
@@ -99,6 +105,11 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         </span>
                     </div>
                     <div className="text-nowrap">
+                        {this.props.node.accountData && (
+                            <button className="btn btn-secondary" onClick={this.toggleShowData}>
+                                {this.state.showData ? 'Hide' : 'Show'} data
+                            </button>
+                        )}{' '}
                         {this.props.node.refreshURL && (
                             <a className="btn btn-secondary" href={this.props.node.refreshURL}>
                                 Refresh
@@ -114,9 +125,16 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         )}
                     </div>
                 </div>
+                {this.state.showData && (
+                    <pre className="p-2 mt-2 mb-4">
+                        <small>{JSON.stringify(this.props.node.accountData, null, 2)}</small>
+                    </pre>
+                )}
             </li>
         )
     }
 
     private deleteExternalAccount = () => this.deletes.next()
+
+    private toggleShowData = () => this.setState(prev => ({ showData: !prev.showData }))
 }

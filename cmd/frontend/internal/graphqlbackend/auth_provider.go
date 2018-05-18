@@ -4,14 +4,17 @@ import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 
 // authProviderResolver resolves an auth provider.
 type authProviderResolver struct {
-	authProvider *auth.Provider
+	authProvider auth.Provider
+
+	info *auth.ProviderInfo // == authProvider.CachedInfo()
 }
 
-func (r *authProviderResolver) ServiceType() string { return r.authProvider.ProviderID.ServiceType }
-func (r *authProviderResolver) DisplayName() string { return r.authProvider.Public.DisplayName }
-func (r *authProviderResolver) IsBuiltin() bool     { return r.authProvider.Public.IsBuiltin }
+func (r *authProviderResolver) ServiceType() string { return r.authProvider.ID().Type }
+func (r *authProviderResolver) ServiceID() string   { return r.authProvider.ID().ID }
+func (r *authProviderResolver) DisplayName() string { return r.info.DisplayName }
+func (r *authProviderResolver) IsBuiltin() bool     { return r.authProvider.Config().Builtin != nil }
 func (r *authProviderResolver) AuthenticationURL() *string {
-	if u := r.authProvider.Public.AuthenticationURL; u != "" {
+	if u := r.info.AuthenticationURL; u != "" {
 		return &u
 	}
 	return nil

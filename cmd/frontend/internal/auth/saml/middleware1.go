@@ -6,6 +6,7 @@ import (
 
 	"github.com/crewjam/saml/samlsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -86,7 +87,10 @@ func authHandler1(w http.ResponseWriter, r *http.Request, next http.Handler, isA
 			return
 		}
 
-		samlActor, safeErrMsg, err := getActorFromSAML(r.Context(), token.Subject, idpID, token.Attributes)
+		var data db.ExternalAccountData
+		auth.SetExternalAccountData(&data.AccountData, token)
+
+		samlActor, safeErrMsg, err := getOrCreateUser(r.Context(), token.Subject, idpID, token.Attributes, data)
 		if err != nil {
 			log15.Error("Error looking up SAML-authenticated user.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)

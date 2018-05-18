@@ -29,6 +29,12 @@ type immutableUser struct {
 	UID int32
 }
 
+type authProviderInfo struct {
+	IsBuiltin         bool   `json:"isBuiltin"`
+	DisplayName       string `json:"displayName"`
+	AuthenticationURL string `json:"authenticationURL"`
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 //
@@ -69,7 +75,7 @@ type JSContext struct {
 
 	AllowSignup bool `json:"allowSignup"`
 
-	AuthProviders []auth.PublicProviderInfo `json:"authProviders"`
+	AuthProviders []authProviderInfo `json:"authProviders"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -110,9 +116,16 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	showOnboarding := err == nil && !siteConfig.Initialized
 
 	// Auth providers
-	var publicProviderInfos []auth.PublicProviderInfo
+	var authProviders []authProviderInfo
 	for _, p := range auth.Providers() {
-		publicProviderInfos = append(publicProviderInfos, p.Public)
+		info := p.CachedInfo()
+		if info != nil {
+			authProviders = append(authProviders, authProviderInfo{
+				IsBuiltin:         p.Config().Builtin != nil,
+				DisplayName:       info.DisplayName,
+				AuthenticationURL: info.AuthenticationURL,
+			})
+		}
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -150,7 +163,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		AllowSignup: conf.AuthAllowSignup(),
 
-		AuthProviders: publicProviderInfos,
+		AuthProviders: authProviders,
 	}
 }
 

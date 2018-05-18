@@ -11,27 +11,27 @@ import (
 // SignOut returns the URL where the user can initiate a logout from the SAML IdentityProvider, if
 // it has a SingleLogoutService.
 func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err error) {
+	// TODO!(sqs): Only supports a single SAML auth provider.
 	pc, _ := getFirstProviderConfig()
 	if pc == nil || !conf.EnhancedSAMLEnabled() {
 		return "", nil
 	}
-
-	p, err := cache2.get(*pc)
-	if err != nil {
-		return "", errors.WithMessage(err, "looking up SAML provider metadata")
+	p := getProvider(toProviderID(pc).KeyString())
+	if p == nil {
+		return "", nil
 	}
 
 	doc, err := newLogoutRequest(p)
 	if err != nil {
 		return "", errors.WithMessage(err, "creating SAML LogoutRequest")
 	}
-	return p.BuildAuthURLRedirect("/", doc)
+	return p.samlSP.BuildAuthURLRedirect("/", doc)
 }
 
 func newLogoutRequest(p *provider) (*etree.Document, error) {
 	// Start with the doc for AuthnRequest and change a few things to make it into a LogoutRequest
 	// doc. This saves us from needing to duplicate a bunch of code.
-	doc, err := p.BuildAuthRequestDocumentNoSig()
+	doc, err := p.samlSP.BuildAuthRequestDocumentNoSig()
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func newLogoutRequest(p *provider) (*etree.Document, error) {
 		root.RemoveChild(t)
 	}
 
-	if p.SignAuthnRequests {
-		signed, err := p.SignAuthnRequest(root)
+	if p.samlSP.SignAuthnRequests {
+		signed, err := p.samlSP.SignAuthnRequest(root)
 		if err != nil {
 			return nil, err
 		}

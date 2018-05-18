@@ -863,6 +863,7 @@ const SiteSchemaJSON = `{
           "type": "string",
           "const": "openidconnect"
         },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "issuer": {
           "description": "The URL of the OpenID Connect issuer.\n\nFor Google Apps: https://accounts.google.com",
           "type": "string",
@@ -904,6 +905,7 @@ const SiteSchemaJSON = `{
           "type": "string",
           "const": "saml"
         },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "identityProviderMetadataURL": {
           "description":
             "SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",
@@ -913,7 +915,7 @@ const SiteSchemaJSON = `{
         },
         "identityProviderMetadata": {
           "description":
-            "SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is ` + "`" + `<EntityDescriptor>` + "`" + `.",
+            "SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is ` + "`" + `<EntityDescriptor>` + "`" + ` or ` + "`" + `<EntityDescriptors>` + "`" + `.",
           "type": "string"
         },
         "serviceProviderCertificate": {
@@ -927,6 +929,19 @@ const SiteSchemaJSON = `{
             "SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\").",
           "type": "string",
           "pattern": "^-----BEGIN PRIVATE KEY-----\n"
+        },
+        "nameIDFormat": {
+          "description": "The SAML NameID format to use when performing user authentication.",
+          "type": "string",
+          "pattern": "^urn:",
+          "default": "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+          "examples": [
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:persistent",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:emailAddress",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+          ]
         }
       }
     },
@@ -944,6 +959,18 @@ const SiteSchemaJSON = `{
         "usernameHeader": {
           "description":
             "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".",
+          "type": "string"
+        }
+      }
+    },
+    "AuthProviderCommon": {
+      "$comment": "This schema is not used directly. The *AuthProvider schemas refer to its properties directly.",
+      "description": "Common properties for authentication providers.",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "description":
+            "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
         }
       }

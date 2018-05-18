@@ -34,3 +34,11 @@ func derefPtrType(x ast.Expr) *ast.Ident {
 	}
 	return x.(*ast.Ident)
 }
+
+func isBasicType(x ast.Expr) bool {
+	t, ok := x.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	return t.Name == "string" || t.Name == "bool" || t.Name == "int" || t.Name == "float64"
+}

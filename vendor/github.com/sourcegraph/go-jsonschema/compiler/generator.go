@@ -85,8 +85,7 @@ func (g *generator) emitStructType(schema *jsonschema.Schema) ([]ast.Decl, []*as
 			_, isPtrToArray := typeExpr.(*ast.ArrayType)
 			_, isPtrToMap := typeExpr.(*ast.MapType)
 			_, isPtrToInterface := typeExpr.(*ast.InterfaceType)
-			isGoBuiltinType := len(prop.Type) == 1 && goBuiltinType(prop.Type[0]) != ""
-			if !isPtrToArray && !isPtrToMap && !isPtrToInterface && !isGoBuiltinType {
+			if !isPtrToArray && !isPtrToMap && !isPtrToInterface && !isBasicType(typeExpr) {
 				typeExpr = &ast.StarExpr{X: typeExpr}
 			}
 			jsonStructTagExtra = ",omitempty"

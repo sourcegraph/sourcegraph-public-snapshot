@@ -13,7 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var mockGetServiceProvider1 func(*schema.SAMLAuthProvider) (*samlsp.Middleware, error)
+
 func getServiceProvider1(ctx context.Context, pc *schema.SAMLAuthProvider) (*samlsp.Middleware, error) {
+	if mockGetServiceProvider1 != nil {
+		return mockGetServiceProvider1(pc)
+	}
+
 	c, err := readProviderConfig(pc, conf.Get().AppURL)
 	if err != nil {
 		return nil, err
@@ -43,6 +49,7 @@ func getServiceProvider1(ctx context.Context, pc *schema.SAMLAuthProvider) (*sam
 		return nil, err
 	}
 	samlSP.ClientToken.(*samlsp.ClientCookies).Name = "sg-session"
+	samlSP.ServiceProvider.AuthnNameIDFormat = saml.NameIDFormat(getNameIDFormat(pc))
 
 	// Cookie domains can't contain port numbers. Work around a bug in github.com/crewjam/saml where
 	// it uses appURL.Host (which includes the appURL's port number, if any, thereby causing warning

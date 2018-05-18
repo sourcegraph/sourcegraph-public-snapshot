@@ -47,7 +47,7 @@ func TestCreateOrUpdateUser(t *testing.T) {
 			return wantUserID, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
-		userID, _, err := CreateOrUpdateUser(context.Background(), db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{})
+		userID, _, err := CreateOrUpdateUser(context.Background(), db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}, db.ExternalAccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,7 +69,7 @@ func TestCreateOrUpdateUser(t *testing.T) {
 			return 0, wantErr
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
-		if _, _, err := CreateOrUpdateUser(context.Background(), db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}); err != wantErr {
+		if _, _, err := CreateOrUpdateUser(context.Background(), db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}, db.ExternalAccountData{}); err != wantErr {
 			t.Fatalf("got err %q, want %q", err, wantErr)
 		}
 		if !calledCreateUserAndSave {
@@ -91,7 +91,7 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: wantAuthedUserID})
-		userID, _, err := CreateOrUpdateUser(ctx, db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{})
+		userID, _, err := CreateOrUpdateUser(ctx, db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}, db.ExternalAccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -115,7 +115,7 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: wantAuthedUserID})
-		if _, _, err := CreateOrUpdateUser(ctx, db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}); err != wantErr {
+		if _, _, err := CreateOrUpdateUser(ctx, db.NewUser{Username: wantUsername}, db.ExternalAccountSpec{}, db.ExternalAccountData{}); err != wantErr {
 			t.Fatalf("got err %q, want %q", err, wantErr)
 		}
 		if !calledAssociateUserAndSave {

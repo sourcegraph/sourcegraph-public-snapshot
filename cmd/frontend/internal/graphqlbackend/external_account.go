@@ -56,3 +56,16 @@ func (r *externalAccountResolver) RefreshURL() *string {
 	// TODO(sqs): Not supported.
 	return nil
 }
+
+func (r *externalAccountResolver) AccountData(ctx context.Context) (*jsonValue, error) {
+	// 🚨 SECURITY: Only the site admins can view this information, because the auth provider might
+	// provide sensitive information that is not known to the user.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	if r.account.AccountData != nil {
+		return &jsonValue{value: r.account.AccountData}, nil
+	}
+	return nil, nil
+}

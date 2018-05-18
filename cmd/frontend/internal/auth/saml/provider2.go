@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/beevik/etree"
@@ -15,22 +16,56 @@ import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type provider struct {
-	*saml2.SAMLServiceProvider
-	config *providerConfig
+	config schema.SAMLAuthProvider
+
+	mu         sync.Mutex
+	samlSP     *saml2.SAMLServiceProvider
+	refreshErr error
 }
 
-var mockGetServiceProvider2 func(*schema.SAMLAuthProvider) (*provider, error)
-
-func getServiceProvider2(ctx context.Context, pc *schema.SAMLAuthProvider) (*provider, error) {
-	if mockGetServiceProvider2 != nil {
-		return mockGetServiceProvider2(pc)
+// ID implements auth.Provider.
+func (p *provider) ID() auth.ProviderID {
+	return auth.ProviderID{
+		Type: providerType,
+		ID:   toProviderID(&p.config).KeyString(),
 	}
+}
 
+// Config implements auth.Provider.
+func (p *provider) Config() schema.AuthProviders {
+	return schema.AuthProviders{Saml: &p.config}
+}
+
+// Refresh implements auth.Provider.
+func (p *provider) Refresh(ctx context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.samlSP, p.refreshErr = getServiceProvider2(ctx, &p.config)
+	return p.refreshErr
+}
+
+// CachedInfo implements auth.Provider.
+func (p *provider) CachedInfo() *auth.ProviderInfo {
+	info := auth.ProviderInfo{
+		DisplayName: p.config.DisplayName,
+		AuthenticationURL: (&url.URL{
+			Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
+			RawQuery: (url.Values{"p": []string{toProviderID(&p.config).KeyString()}}).Encode(),
+		}).String(),
+	}
+	if info.DisplayName == "" {
+		info.DisplayName = "SAML"
+	}
+	return &info
+}
+
+func getServiceProvider2(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error) {
 	c, err := readProviderConfig(pc, conf.Get().AppURL)
 	if err != nil {
 		return nil, err
@@ -65,21 +100,17 @@ func getServiceProvider2(ctx context.Context, pc *schema.SAMLAuthProvider) (*pro
 	}
 
 	issuerURL := c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/metadata")}).String()
-	return &provider{
-		SAMLServiceProvider: &saml2.SAMLServiceProvider{
-			IdentityProviderSSOURL:      metadata.IDPSSODescriptor.SingleSignOnServices[0].Location,
-			IdentityProviderIssuer:      metadata.EntityID,
-			ServiceProviderIssuer:       issuerURL,
-			AssertionConsumerServiceURL: c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/acs")}).String(),
-			SignAuthnRequests:           true,
-			AudienceURI:                 issuerURL,
-			IDPCertificateStore:         &certStore,
-			SPKeyStore:                  dsig.TLSCertKeyStore(c.keyPair),
-			// TODO(sqs): Use the persistent NameIDFormat (https://github.com/sourcegraph/sourcegraph/issues/11206).
-			NameIdFormat:           "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
-			ValidateEncryptionCert: true,
-		},
-		config: c,
+	return &saml2.SAMLServiceProvider{
+		IdentityProviderSSOURL:      metadata.IDPSSODescriptor.SingleSignOnServices[0].Location,
+		IdentityProviderIssuer:      metadata.EntityID,
+		ServiceProviderIssuer:       issuerURL,
+		AssertionConsumerServiceURL: c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/acs")}).String(),
+		SignAuthnRequests:           true,
+		AudienceURI:                 issuerURL,
+		IDPCertificateStore:         &certStore,
+		SPKeyStore:                  dsig.TLSCertKeyStore(c.keyPair),
+		NameIdFormat:                getNameIDFormat(pc),
+		ValidateEncryptionCert:      true,
 	}, nil
 }
 

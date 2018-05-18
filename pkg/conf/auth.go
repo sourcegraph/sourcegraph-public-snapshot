@@ -29,6 +29,11 @@ func AuthProviderType(p schema.AuthProviders) string {
 func AuthProviders() []schema.AuthProviders { return authProviders(Get()) }
 func authProviders(c *schema.SiteConfiguration) []schema.AuthProviders {
 	if c.AuthProviders != nil {
+		if !multipleAuthProvidersEnabled(c) && len(c.AuthProviders) >= 1 {
+			// Only return first auth provider because the multipleAuthProviders experiment is
+			// disabled.
+			return c.AuthProviders[:1]
+		}
 		return c.AuthProviders
 	}
 

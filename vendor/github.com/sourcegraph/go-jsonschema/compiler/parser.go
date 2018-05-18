@@ -48,7 +48,11 @@ func (v *locationVisitor) Visit(schema *jsonschema.Schema, rel []jsonschema.Refe
 	}
 
 	// Skip trivial schemas.
-	if schema.IsEmpty || schema.IsNegated || (len(schema.Type) == 1 && goBuiltinType(schema.Type[0]) != "") {
+	//
+	// TODO(sqs): The ref-to-primitive test case demonstrates a downside to this simple filter: some
+	// schemas must have a description for them to be $ref'd. Make this (and/or the resolution
+	// logic) smarter.
+	if schema.IsEmpty || schema.IsNegated || (len(schema.Type) == 1 && schema.Description == nil && goBuiltinType(schema.Type[0]) != "") {
 		return nil
 	}
 

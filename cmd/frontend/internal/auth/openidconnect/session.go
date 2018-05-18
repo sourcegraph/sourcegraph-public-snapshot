@@ -5,23 +5,19 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
 
 const sessionKey = "oidc@0"
 
 type sessionData struct {
-	Issuer   string
-	ClientID string
+	ID auth.ProviderID
 
 	// Store only the oauth2.Token fields we need, to avoid hitting the ~4096-byte session data
 	// limit.
 	AccessToken string
 	TokenType   string
-}
-
-func (d sessionData) toProviderKey() providerKey {
-	return providerKey{issuerURL: d.Issuer, clientID: d.ClientID}
 }
 
 // SignOut clears OpenID Connect-related data from the session. If possible, it revokes the token
@@ -42,19 +38,15 @@ func SignOut(w http.ResponseWriter, r *http.Request) (endSessionEndpoint string,
 		return "", errors.WithMessage(err, "clearing OpenID Connect session data")
 	}
 	if data != nil {
-		pc := getProviderConfig(data.toProviderKey())
-		if pc == nil {
-			return "", fmt.Errorf("unable to revoke token or end session for OpenID Connect because site config no longer contains issuer %q and client ID %q", data.Issuer, data.ClientID)
-		}
-		p, err := cache.get(data.Issuer)
-		if err != nil {
-			return "", errors.WithMessage(err, "looking up OpenID Connect provider metadata")
+		p := getProvider(data.ID.ID)
+		if p == nil {
+			return "", fmt.Errorf("unable to revoke token or end session for OpenID Connect because no provider %q exists", data.ID)
 		}
 
-		endSessionEndpoint = p.EndSessionEndpoint
+		endSessionEndpoint = p.oidc.EndSessionEndpoint
 
-		if p.RevocationEndpoint != "" {
-			if err := revokeToken(r.Context(), pc, p.RevocationEndpoint, data.AccessToken, data.TokenType); err != nil {
+		if p.oidc.RevocationEndpoint != "" {
+			if err := revokeToken(r.Context(), p, data.AccessToken, data.TokenType); err != nil {
 				return endSessionEndpoint, errors.WithMessage(err, "revoking OpenID Connect token")
 			}
 		}

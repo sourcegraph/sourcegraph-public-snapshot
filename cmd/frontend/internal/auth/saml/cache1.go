@@ -27,6 +27,11 @@ type providerCacheEntry1 struct {
 	expires time.Time
 }
 
+var (
+	cache1TTLOK  = 5 * time.Minute
+	cache1TTLErr = 5 * time.Second
+)
+
 // get gets the SAML service provider with the specified config. If the service provider is cached,
 // it returns it from the cache; otherwise it performs a network request to look up the provider. At
 // most one network request will be in flight for a given provider config; later requests block on
@@ -51,9 +56,9 @@ func (c *providerCache1) get(pc schema.SAMLAuthProvider) (*samlsp.Middleware, er
 
 		var ttl time.Duration
 		if e.err == nil {
-			ttl = 5 * time.Minute
+			ttl = cache1TTLOK
 		} else {
-			ttl = 5 * time.Second
+			ttl = cache1TTLErr
 		}
 		c.mu.Lock()
 		e.expires = time.Now().Add(ttl)

@@ -1,7 +1,6 @@
 package openidconnect
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,10 +10,8 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -87,21 +84,20 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 	// and it's an app request, redirect to signin immediately. The user wouldn't be able to do
 	// anything else anyway; there's no point in showing them a signin screen with just a single
 	// signin option.
-	if ps := conf.AuthProviders(); len(ps) == 1 && ps[0].Openidconnect != nil && !isAPIRequest {
-		pc := ps[0].Openidconnect
-		p, err := cache.get(pc.Issuer)
-		if err != nil {
-			log15.Error("Error getting OpenID Connect provider metadata.", "issuer", pc.Issuer, "error", err)
-			http.Error(w, "unexpected error in OpenID Connect authentication provider", http.StatusInternalServerError)
+	if ps := auth.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
+		p, handled := handleGetProvider(r.Context(), w, ps[0].ID().ID)
+		if handled {
 			return
 		}
-		key := toProviderKey(pc).KeyString()
-		redirectToAuthRequest(w, r, key, p, auth.SafeRedirectURL(r.URL.String()))
+		redirectToAuthRequest(w, r, p, auth.SafeRedirectURL(r.URL.String()))
 		return
 	}
 
 	next.ServeHTTP(w, r)
 }
+
+// mockVerifyIDToken mocks the OIDC ID Token verification step. It should only be set in tests.
+var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
 
 // authHandler handles the OIDC Authentication Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
@@ -111,71 +107,73 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 	case "/login":
 		// Endpoint that starts the Authentication Request Code Flow.
-		key := r.URL.Query().Get("p")
-		p, handled := handleGetProviderConfig(w, key)
+		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("p"))
 		if handled {
 			return
 		}
-		redirectToAuthRequest(w, r, key, p, r.URL.Query().Get("redirect"))
+		redirectToAuthRequest(w, r, p, r.URL.Query().Get("redirect"))
 		return
 
 	case "/callback":
 		// Endpoint for the OIDC Authorization Response. See http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
 		ctx := r.Context()
 		if authError := r.URL.Query().Get("error"); authError != "" {
-			log15.Error("Authentication error returned by SSO provider", "error", authError, "description", r.URL.Query().Get("error_description"))
-			http.Error(w, ssoErrMsg(authError, r.URL.Query().Get("error_description")), http.StatusUnauthorized)
+			errorDesc := r.URL.Query().Get("error_description")
+			log15.Error("OpenID Connect auth provider returned error to callback.", "error", authError, "description", errorDesc)
+			http.Error(w, fmt.Sprintf("Authentication failed. The authentication provider reported the following problems.\n\n%s\n\n%s", authError, errorDesc), http.StatusUnauthorized)
 			return
 		}
 
 		// Validate state parameter to prevent CSRF attacks
 		stateParam := r.URL.Query().Get("state")
 		if stateParam == "" {
-			http.Error(w, ssoErrMsg("No OIDC state query parameter specified", ""), http.StatusBadRequest)
+			http.Error(w, "Authentication failed. No OpenID Connect state query parameter specified.", http.StatusBadRequest)
 			return
 		}
 		stateCookie, err := r.Cookie(stateCookieName)
 		if err == http.ErrNoCookie {
-			log15.Error("No OIDC state cookie found - possible request forgery", "error", err)
-			http.Error(w, ssoErrMsg("No OIDC state cookie found", "possible request forgery"), http.StatusBadRequest)
+			log15.Error("OpenID Connect auth failed: no state cookie found (possible request forgery).")
+			http.Error(w, "Authentication failed. No OpenID Connect state cookie found (possible request forgery).", http.StatusBadRequest)
 			return
 		} else if err != nil {
-			log15.Error("Could not read OIDC state cookie", "error", err)
-			http.Error(w, "Could not read OIDC state cookie", http.StatusInternalServerError)
+			log15.Error("OpenID Connect auth failed: could not read state cookie (possible request forgery).", "error", err)
+			http.Error(w, "Authentication failed. Invalid OpenID Connect state cookie.", http.StatusInternalServerError)
 			return
 		}
 		if stateCookie.Value != stateParam {
-			http.Error(w, ssoErrMsg("OIDC state parameter is incorrect", "possible request forgery"), http.StatusBadRequest)
+			log15.Error("OpenID Connect auth failed: state cookie mismatch (possible request forgery).")
+			http.Error(w, "Authentication failed. OpenID Connect state parameter did not match the expected value (possible request forgery).", http.StatusBadRequest)
 			return
 		}
 
 		// Decode state param value
 		var state authnState
 		if err := state.Decode(stateParam); err != nil {
-			log15.Error("OIDC state parameter was invalid", "error", err)
-			http.Error(w, ssoErrMsg("OIDC state parameter was invalid", ""), http.StatusBadRequest)
+			log15.Error("OpenID Connect auth failed: state parameter was malformed.", "error", err)
+			http.Error(w, "Authentication failed. OpenID Connect state parameter was malformed.", http.StatusBadRequest)
 			return
 		}
 		// 🚨 SECURITY: TODO(sqs): Do we need to check state.CSRFToken?
 
-		p, handled := handleGetProviderConfig(w, state.ProviderKey)
+		p, handled := handleGetProvider(r.Context(), w, state.ProviderID)
 		if handled {
 			return
 		}
-		verifier := p.Provider.Verifier(&oidc.Config{ClientID: p.config.ClientID})
+		verifier := p.oidc.Verifier(&oidc.Config{ClientID: p.config.ClientID})
 
 		// Exchange the code for an access token. See http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
 		oauth2Token, err := p.oauth2Config().Exchange(ctx, r.URL.Query().Get("code"))
 		if err != nil {
-			log15.Error("Failed to obtain access token from OpenID Provider", "error", err)
-			http.Error(w, ssoErrMsg("Failed to obtain access token from OpenID Provider", err), http.StatusUnauthorized)
+			log15.Error("OpenID Connect auth failed: failed to obtain access token from OP.", "error", err)
+			http.Error(w, "Authentication failed. Unable to obtain access token from issuer.", http.StatusUnauthorized)
 			return
 		}
 
 		// Extract the ID Token from the Access Token. See http://openid.net/specs/openid-connect-core-1_0.html#TokenResponse.
 		rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 		if !ok {
-			http.Error(w, ssoErrMsg("Authorization response did not contain ID Token", ""), http.StatusUnauthorized)
+			log15.Error("OpenID Connect auth failed: the issuer's authorization response did not contain an ID token.")
+			http.Error(w, "Authentication failed. The issuer's authorization response did not contain an ID token.", http.StatusUnauthorized)
 			return
 		}
 
@@ -186,8 +184,8 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			idToken, err = verifier.Verify(ctx, rawIDToken)
 			if err != nil {
-				log15.Error("ID Token verification failed", "error", err)
-				http.Error(w, ssoErrMsg("ID Token verification failed", ""), http.StatusUnauthorized)
+				log15.Error("OpenID Connect auth failed: the ID token verification failed.", "error", err)
+				http.Error(w, "Authentication failed. OpenID Connect ID token could not be verified.", http.StatusUnauthorized)
 				return
 			}
 		}
@@ -196,11 +194,12 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		// We set the nonce to be the same as the state in the Authentication Request state, so we check for equality
 		// here.
 		if idToken.Nonce != stateParam {
-			http.Error(w, ssoErrMsg("Incorrect nonce value when fetching ID Token, possible replay attack", ""), http.StatusUnauthorized)
+			log15.Error("OpenID Connect auth failed: nonce is incorrect (possible replay attach).")
+			http.Error(w, "Authentication failed. The OpenID Connect nonce is incorrect (possible replay attack).", http.StatusUnauthorized)
 			return
 		}
 
-		userInfo, err := p.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
+		userInfo, err := p.oidc.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
 		if err != nil {
 			log15.Error("Failed to get userinfo", "error", err)
 			http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
@@ -208,17 +207,18 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if p.config.RequireEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+p.config.RequireEmailDomain) {
-			http.Error(w, ssoErrMsg("Invalid email domain", "Required: "+p.config.RequireEmailDomain), http.StatusUnauthorized)
+			log15.Error("OpenID Connect auth failed: user's email is not from allowed domain.", "userEmail", userInfo.Email, "requireEmailDomain", p.config.RequireEmailDomain)
+			http.Error(w, fmt.Sprintf("Authentication failed. Only users in %q are allowed.", p.config.RequireEmailDomain), http.StatusUnauthorized)
 			return
 		}
 
 		var claims userClaims
 		if err := userInfo.Claims(&claims); err != nil {
-			log15.Warn("Could not parse userInfo claims", "error", err)
+			log15.Warn("OpenID Connect auth: could not parse userInfo claims.", "error", err)
 		}
-		actr, safeErrMsg, err := getActor(ctx, p.config.ClientID, idToken, userInfo, &claims)
+		actr, safeErrMsg, err := getOrCreateUser(ctx, p, idToken, userInfo, &claims)
 		if err != nil {
-			log15.Error("Error looking up OpenID-authenticated user.", "error", err, "userErr", safeErrMsg)
+			log15.Error("OpenID Connect auth failed: error looking up OpenID-authenticated user.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
@@ -235,14 +235,13 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		// 	exp = time.Until(idToken.Expiry)
 		// }
 		if err := session.SetActor(w, r, actr, exp); err != nil {
-			log15.Error("Could not initiate session", "error", err)
-			http.Error(w, ssoErrMsg("Could not initiate session", err), http.StatusInternalServerError)
+			log15.Error("OpenID Connect auth failed: could not initiate session.", "error", err)
+			http.Error(w, "Authentication failed. Could not initiate session.", http.StatusInternalServerError)
 			return
 		}
 
 		data := sessionData{
-			Issuer:      p.config.Issuer,
-			ClientID:    p.config.ClientID,
+			ID:          p.ID(),
 			AccessToken: oauth2Token.AccessToken,
 			TokenType:   oauth2Token.TokenType,
 		}
@@ -260,59 +259,13 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
-// Because Actors must correspond to users in our DB, it creates the user in the DB if the user does not yet
-// exist.
-func getActor(ctx context.Context, clientID string, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims) (_ *actor.Actor, safeErrMsg string, err error) {
-	login := claims.PreferredUsername
-	if login == "" {
-		login = userInfo.Email
-	}
-	email := userInfo.Email
-	var displayName = claims.GivenName
-	if displayName == "" {
-		if claims.Name == "" {
-			displayName = claims.Name
-		} else {
-			displayName = login
-		}
-	}
-	login, err = auth.NormalizeUsername(login)
-	if err != nil {
-		return nil, fmt.Sprintf("Error normalizing the username %q. See https://about.sourcegraph.com/docs/config/authentication#username-normalization.", login), err
-	}
-
-	userID, safeErrMsg, err := auth.CreateOrUpdateUser(ctx, db.NewUser{
-		Username:        login,
-		Email:           email,
-		EmailIsVerified: email != "", // TODO(sqs): https://github.com/sourcegraph/sourcegraph/issues/10118
-		DisplayName:     displayName,
-		AvatarURL:       claims.Picture,
-	}, db.ExternalAccountSpec{
-		ServiceType: "openidconnect",
-		ServiceID:   idToken.Issuer + ":" + clientID,
-		AccountID:   idToken.Subject,
-	})
-	if err != nil {
-		return nil, safeErrMsg, err
-	}
-	return actor.FromUser(userID), "", nil
-}
-
-func ssoErrMsg(err string, description interface{}) string {
-	return fmt.Sprintf("SSO error: %s\n%v", err, description)
-}
-
-// mockVerifyIDToken mocks the OIDC ID Token verification step. It should only be set in tests.
-var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
-
 // authnState is the state parameter passed to the Authn request and returned in the Authn response callback.
 type authnState struct {
 	CSRFToken string `json:"csrfToken"`
 	Redirect  string `json:"redirect"`
 
 	// Allow /.auth/callback to demux callbacks from multiple OpenID Connect OPs.
-	ProviderKey string `json:"p"`
+	ProviderID string `json:"p"`
 }
 
 // Encode returns the base64-encoded JSON representation of the authn state.
@@ -330,16 +283,16 @@ func (s *authnState) Decode(encoded string) error {
 	return json.Unmarshal(b, s)
 }
 
-func redirectToAuthRequest(w http.ResponseWriter, r *http.Request, providerKey string, p *provider, returnToURL string) {
+func redirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *provider, returnToURL string) {
 	// The state parameter is an opaque value used to maintain state between the original Authentication Request
 	// and the callback. We do not record any state beyond a CSRF token used to defend against CSRF attacks against the callback.
 	// We use the CSRF token created by gorilla/csrf that is used for other app endpoints as the OIDC state parameter.
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
 	state := (&authnState{
-		CSRFToken:   csrf.Token(r),
-		Redirect:    returnToURL,
-		ProviderKey: providerKey,
+		CSRFToken:  csrf.Token(r),
+		Redirect:   returnToURL,
+		ProviderID: p.ID().ID,
 	}).Encode()
 	http.SetCookie(w, &http.Cookie{
 		Name:    stateCookieName,

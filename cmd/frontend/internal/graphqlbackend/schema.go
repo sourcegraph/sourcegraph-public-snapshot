@@ -1890,8 +1890,10 @@ type AuthProviderConnection {
 # A provider of user authentication, such as an external single-sign-on service (e.g., using OpenID
 # Connect or SAML).
 type AuthProvider {
-    # The type of the external service that provides authentication.
+    # The type of the auth provider.
     serviceType: String!
+    # An identifier for the auth provider that is unique among all other auth providers of the same type.
+    serviceID: String!
     # The human-readable name of the provider.
     displayName: String!
     # Whether this auth provider is the builtin username-password auth provider.
@@ -1918,6 +1920,10 @@ type ExternalAccount implements Node {
     updatedAt: String!
     # A URL that, when visited, re-initiates the authentication process.
     refreshURL: String
+    # Provider-specific data about the external account.
+    #
+    # Only site admins may query this field.
+    accountData: JSONValue
 }
 
 # An active user session.
