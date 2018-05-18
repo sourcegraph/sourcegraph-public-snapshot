@@ -18,7 +18,8 @@ import {
 import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
-import { asError, ErrorLike } from '../../util/errors'
+import { eventLogger } from '../../tracking/eventLogger'
+import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
 import { parseHash, toPositionOrRangeHash } from '../../util/url'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
@@ -156,7 +157,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     /** Emits when the go to definition button was clicked */
     private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => this.goToDefinitionClicks.next(event)
+    private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => {
+        eventLogger.log('GoToDefClicked')
+        this.goToDefinitionClicks.next(event)
+    }
 
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<void>()
@@ -164,6 +168,30 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
+
+    /** logs a hover event, if the hover is valid and new. Waits a tick to prevent any performance hit. */
+    private logHover = (
+        prevHover?: typeof LOADING | Hover | null | ErrorLike,
+        newHover?: typeof LOADING | Hover | null | ErrorLike
+    ) => setTimeout(() => this.logHoverSync(prevHover, newHover), 0)
+    private logHoverSync = (
+        prevHover?: typeof LOADING | Hover | null | ErrorLike,
+        newHover?: typeof LOADING | Hover | null | ErrorLike
+    ) => {
+        if (
+            newHover &&
+            newHover !== LOADING &&
+            !isErrorLike(newHover) &&
+            !(
+                prevHover &&
+                prevHover !== LOADING &&
+                !isErrorLike(prevHover) &&
+                isEqual(newHover.contents, prevHover.contents)
+            )
+        ) {
+            eventLogger.log('SymbolHovered')
+        }
+    }
 
     constructor(props: BlobProps) {
         super(props)
@@ -336,6 +364,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     })
                 )
                 .subscribe(hoverOrError => {
+                    this.logHover(this.state.hoverOrError, hoverOrError)
                     this.setState(state => ({
                         hoverOrError,
                         // Reset the hover position, it's gonna be repositioned after the hover was rendered

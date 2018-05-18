@@ -9,6 +9,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Hover, MarkedString, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types'
 import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
+import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toPrettyBlobURL } from '../../util/url'
 
@@ -85,6 +86,9 @@ interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<Vie
     /** Called when the close button is clicked */
     onCloseButtonClick: () => void
 }
+
+const onFindImplementationsClick = () => eventLogger.log('FindImplementationsClicked')
+const onFindReferencesClick = () => eventLogger.log('FindRefsClicked')
 
 /** Returns true if the input is successful jump URL result */
 export const isJumpURL = (val: any): val is { jumpURL: string } =>
@@ -187,6 +191,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                 Go to definition {props.definitionURLOrError === LOADING && <Loader className="icon-inline" />}
             </ButtonOrLink>
             <ButtonOrLink
+                onClick={onFindReferencesClick}
                 to={
                     props.hoveredTokenPosition &&
                     toPrettyBlobURL({
@@ -204,6 +209,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                 Find references
             </ButtonOrLink>
             <ButtonOrLink
+                onClick={onFindImplementationsClick}
                 to={
                     props.hoveredTokenPosition &&
                     toPrettyBlobURL({

@@ -30,6 +30,7 @@ class ServerAdminWrapper {
             } else if (
                 eventAction === 'SymbolHovered' ||
                 eventAction === 'FindRefsClicked' ||
+                eventAction === 'FindImplementationsClicked' ||
                 eventAction === 'GoToDefClicked'
             ) {
                 logUserEvent(GQL.UserEvent.CODEINTEL)
