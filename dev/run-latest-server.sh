@@ -17,7 +17,7 @@ IMAGE=sourcegraph/server:insiders
 docker pull $IMAGE
 
 echo "starting server..."
-gcloud docker -- run "$@" \
+docker run "$@" \
  --publish 7080:7080 --rm \
  --volume $DATA/config:/etc/sourcegraph \
  --volume $DATA/data:/var/opt/sourcegraph \
