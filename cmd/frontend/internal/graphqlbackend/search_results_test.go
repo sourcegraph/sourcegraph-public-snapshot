@@ -393,17 +393,30 @@ func TestSearchRevspecs(t *testing.T) {
 			matched:  []revspecOrRefGlob{{revspec: "b"}},
 			clashing: nil,
 		},
+		testCase{
+			descr:    "invalid regexp",
+			specs:    []string{"*o@a:b"},
+			repo:     "foo",
+			err:      fmt.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
+			matched:  nil,
+			clashing: nil,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
 			pats, err := findPatternRevs(test.specs)
-			if (err != nil) != (test.err != nil) {
-				t.Errorf("unexpected error state: got '%s', expected '%s'", err, test.err)
-			}
-			if err != nil && test.err != nil {
-				if err.Error() != test.err.Error() {
+			if err != nil {
+				if test.err == nil {
+					t.Errorf("unexpected error: '%s'", err)
+				}
+				if test.err != nil && err.Error() != test.err.Error() {
 					t.Errorf("incorrect error: got '%s', expected '%s'", err, test.err)
 				}
+				// don't try to use the pattern list if we got an error
+				return
+			}
+			if test.err != nil {
+				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
 			}
 			matched, clashing := getRevsForMatchedRepo(api.RepoURI(test.repo), pats)
 			if !reflect.DeepEqual(matched, test.matched) {
