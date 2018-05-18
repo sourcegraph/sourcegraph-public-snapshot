@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"reflect"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -53,7 +54,7 @@ func (g *generator) emitTaggedUnionType(schema *jsonschema.Schema) ([]ast.Decl, 
 	}
 	// Ensure the common property can discriminate between the schemas (no value satisfies multiple
 	// of the oneOf schemas).
-	enumValuesToSchema := make(map[string]*jsonschema.Schema, len(oneOfSchemas))
+	constValuesToSchema := make(map[string]*jsonschema.Schema, len(oneOfSchemas))
 	discriminantValues := make([]string, 0, len(oneOfSchemas))
 	for _, s := range oneOfSchemas {
 		prop := (*s.Properties)[discriminantPropName]
@@ -72,29 +73,41 @@ func (g *generator) emitTaggedUnionType(schema *jsonschema.Schema) ([]ast.Decl, 
 		if len(prop.Type) != 1 || prop.Type[0] != jsonschema.StringType {
 			return nil, nil, errors.New("invalid oneOf schema discriminant prop type for !go.taggedUnionType extension (must be string type)")
 		}
-		if len(prop.Enum) != 1 {
-			return nil, nil, errors.New("invalid oneOf schema discriminant prop enum for !go.taggedUnionType extension (must have enum with exactly 1 string value)")
+		var constVal *interface{}
+		if prop.Const != nil {
+			constVal = prop.Const
 		}
-		switch ev := prop.Enum[0].(type) {
-		case string:
-			if _, seen := enumValuesToSchema[ev]; seen {
-				return nil, nil, fmt.Errorf("invalid oneOf schema discriminant prop enum value for !go.taggedUnionType extension (value %q is allowed by other type)", ev)
+		for _, enumVal := range prop.Enum {
+			if constVal == nil {
+				v := (interface{}(enumVal))
+				constVal = &v
+			} else if !reflect.DeepEqual(*constVal, enumVal) {
+				return nil, nil, fmt.Errorf("invalid oneOf schema discriminant prop enum value for !go.taggedUnionType extension (must have exactly 1 unique string value, got %q != %q)", *constVal, enumVal)
 			}
-			enumValuesToSchema[ev] = s
+		}
+		if constVal == nil {
+			return nil, nil, fmt.Errorf("no oneOf schema discriminant prop enum value for !go.taggedUnionType extension (must have either const or enum)")
+		}
+		switch ev := (*constVal).(type) {
+		case string:
+			if _, seen := constValuesToSchema[ev]; seen {
+				return nil, nil, fmt.Errorf("invalid oneOf schema discriminant prop const value for !go.taggedUnionType extension (value %q is allowed by other type)", ev)
+			}
+			constValuesToSchema[ev] = s
 			discriminantValues = append(discriminantValues, ev)
 		default:
-			return nil, nil, fmt.Errorf("invalid oneOf schema discriminant prop enum value for !go.taggedUnionType extension (got %T not string)", ev)
+			return nil, nil, fmt.Errorf("invalid oneOf schema discriminant prop const value for !go.taggedUnionType extension (got %T not string)", ev)
 		}
 	}
 
 	// Generate Go union type.
 	fields := make([]*ast.Field, len(oneOfSchemas))
 	fieldNames := make([]string, len(oneOfSchemas))
-	fieldNameToEnumValue := make(map[string]string, len(oneOfSchemas))
+	fieldNameToConstValue := make(map[string]string, len(oneOfSchemas))
 	for i, s := range oneOfSchemas {
-		enumValue := (*s.Properties)[discriminantPropName].Enum[0].(string)
-		fieldNames[i] = toGoName(enumValue, "Enum_")
-		fieldNameToEnumValue[fieldNames[i]] = enumValue
+		constValue := discriminantValues[i]
+		fieldNames[i] = toGoName(constValue, "Const_")
+		fieldNameToConstValue[fieldNames[i]] = constValue
 		typeExpr, err := g.expr(s)
 		if err != nil {
 			return nil, nil, errors.WithMessage(err, fmt.Sprintf("failed to get type expression for !go.taggedUnionType union type %q", fieldNames[i]))
@@ -121,10 +134,10 @@ func (g *generator) emitTaggedUnionType(schema *jsonschema.Schema) ([]ast.Decl, 
 
 	// Generate MarshalJSON and UnmarshalJSON methods on the Go union type.
 	templateData := map[string]interface{}{
-		"fieldNames":           fieldNames,
-		"discriminantPropName": discriminantPropName,
-		"discriminantValues":   discriminantValues,
-		"fieldNameToEnumValue": fieldNameToEnumValue,
+		"fieldNames":            fieldNames,
+		"discriminantPropName":  discriminantPropName,
+		"discriminantValues":    discriminantValues,
+		"fieldNameToConstValue": fieldNameToConstValue,
 	}
 	makeMethod := func(f *ast.FuncDecl, recvType ast.Expr, name string) {
 		f.Recv = &ast.FieldList{
@@ -171,8 +184,8 @@ func(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
-	{{- range $fieldName, $enumValue := .fieldNameToEnumValue}}
-	case {{$enumValue|printf "%q"}}:
+	{{- range $fieldName, $constValue := .fieldNameToConstValue}}
+	case {{$constValue|printf "%q"}}:
 		return json.Unmarshal(data, &v.{{$fieldName}}){{end}}
 	}
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", {{.discriminantPropName|printf "%q"}}, {{.discriminantValues|printf "%#v"}})

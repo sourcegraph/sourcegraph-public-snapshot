@@ -843,7 +843,7 @@ const SiteSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["builtin"]
+          "const": "builtin"
         },
         "allowSignup": {
           "description":
@@ -861,7 +861,7 @@ const SiteSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["openidconnect"]
+          "const": "openidconnect"
         },
         "issuer": {
           "description": "The URL of the OpenID Connect issuer.\n\nFor Google Apps: https://accounts.google.com",
@@ -902,7 +902,7 @@ const SiteSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["saml"]
+          "const": "saml"
         },
         "identityProviderMetadataURL": {
           "description":
@@ -939,7 +939,7 @@ const SiteSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["http-header"]
+          "const": "http-header"
         },
         "usernameHeader": {
           "description":
@@ -993,7 +993,7 @@ const SiteSchemaJSON = `{
         "properties": {
           "multipleAuthProviders": {
             "type": "string",
-            "enum": ["enabled"]
+            "const": "enabled"
           }
         }
       }
