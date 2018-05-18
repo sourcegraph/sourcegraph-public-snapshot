@@ -1,4 +1,6 @@
-//docker:install git openssh-client
+// Alpine 3.6.2 ships with Git 2.13.5 but we need at least 2.15.0 because https://github.com/sourcegraph/issues/issues/78#issuecomment-390151299
+// It is easier and less risky to use an edge version of Git than to update Alpine.
+//docker:install git@edge openssh-client
 //docker:user sourcegraph /data/repos
 
 // gitserver is the gitserver server.

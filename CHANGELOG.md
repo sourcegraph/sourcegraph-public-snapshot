@@ -27,6 +27,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Interpret `X-Forwarded-Proto` HTTP header when `httpToHttpsRedirect` is set to `load-balanced`.
 * Deleting a user account no longer prevents the creation of a new user account with the same username and/or association with authentication provider account (SAML/OpenID/etc.)
 * It is now possible for a user to verify an email address that was previously associated with now-deleted user account.
+* Diff searches over empty repositories no longer fail in Sourcegraph Server (this was not an issue in Sourcegraph Data Center).
 
 ### Removed
 
