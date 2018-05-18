@@ -44,7 +44,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * The new access token scope `site-admin:sudo` allows the holder to perform any action as any other user. Only site admins may create this token.
 * Links to Sourcegraph's changelog have been added to the site admin Updates page and update alert.
 * If the site configuration is invalid or uses deprecated properties, a global alert will be shown to all site admins.
-* Added disclaimer to blob code intelligence status indicator when running an `experimental` language server.
+* There is now a code intelligence status indicator when viewing files. It contains information about the capabailities of the language server that is providing code intelligence for the file.
 * Java code intelligence can now be enabled for repositories that aren't automatically supported using a
   `javaconfig.json` file. For Gradle plugins, this file can be generated using
   the [Javaconfig Gradle plugin](https://about.sourcegraph.com/docs/code-intelligence/java#build-configuration).

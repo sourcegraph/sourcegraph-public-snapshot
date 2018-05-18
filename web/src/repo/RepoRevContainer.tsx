@@ -53,7 +53,7 @@ export const useNewBlobPanel = localStorage.getItem('oldBlobPanel') === null || 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
 
-const codeIntelStatusIndicatorEnabled = localStorage.getItem('codeIntelStatusIndicator') === 'true'
+const codeIntelStatusIndicatorEnabled = localStorage.getItem('disableCodeIntelStatusIndicator') !== 'true'
 
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
