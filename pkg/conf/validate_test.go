@@ -84,17 +84,6 @@ func TestValidateCustom(t *testing.T) {
 			},
 			wantValidationErrors: []string{"auth.providers supports only a single"},
 		},
-		"old SAML auth provider with multiple providers": {
-			input: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "enabled"},
-				AuthProviders: []schema.AuthProviders{
-					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
-					{Saml: &schema.SAMLAuthProvider{Type: "saml"}},
-				},
-			},
-			wantValidationErrors: []string{"must enable experimentalFeatures.enhancedSAML"},
-			ignoreOthers:         true,
-		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {

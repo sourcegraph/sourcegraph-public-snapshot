@@ -15,12 +15,14 @@ import (
 // getOrCreateUser gets or creates a user account based on the SAML claims. It returns the
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, subjectNameID, serviceID string, attr interface {
-	Get(string) string
-}, data db.ExternalAccountData) (_ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, p *provider, info *saml2.AssertionInfo) (_ *actor.Actor, safeErrMsg string, err error) {
+	var data db.ExternalAccountData
+	auth.SetExternalAccountData(&data.AccountData, info)
+
+	attr := samlAssertionValues(info.Values)
 	email := attr.Get("email")
-	if email == "" && mightBeEmail(subjectNameID) {
-		email = subjectNameID
+	if email == "" && mightBeEmail(info.NameID) {
+		email = info.NameID
 	}
 	login := attr.Get("login")
 	if login == "" {
@@ -37,7 +39,7 @@ func getOrCreateUser(ctx context.Context, subjectNameID, serviceID string, attr 
 		displayName = email
 	}
 	if displayName == "" {
-		displayName = subjectNameID
+		displayName = info.NameID
 	}
 	if login == "" {
 		login = email
@@ -59,8 +61,9 @@ func getOrCreateUser(ctx context.Context, subjectNameID, serviceID string, attr 
 	},
 		db.ExternalAccountSpec{
 			ServiceType: providerType,
-			ServiceID:   serviceID,
-			AccountID:   subjectNameID},
+			ServiceID:   p.ID().ID,
+			AccountID:   info.NameID,
+		},
 		data,
 	)
 	if err != nil {
@@ -71,12 +74,6 @@ func getOrCreateUser(ctx context.Context, subjectNameID, serviceID string, attr 
 
 func mightBeEmail(s string) bool {
 	return strings.Count(s, "@") == 1
-}
-
-func getOrCreateUser2(ctx context.Context, p *provider, info *saml2.AssertionInfo) (_ *actor.Actor, safeErrMsg string, err error) {
-	var data db.ExternalAccountData
-	auth.SetExternalAccountData(&data.AccountData, info)
-	return getOrCreateUser(ctx, info.NameID, p.ID().ID, samlAssertionValues(info.Values), data)
 }
 
 type samlAssertionValues saml2.Values

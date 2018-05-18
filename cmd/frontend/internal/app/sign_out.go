@@ -34,7 +34,7 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 			e.ProviderDisplayName = p.Openidconnect.DisplayName
 			e.ProviderServiceType = p.Openidconnect.Type
 			e.URL, err = openidconnect.SignOut(w, r)
-		case p.Saml != nil && conf.EnhancedSAMLEnabled():
+		case p.Saml != nil:
 			e.ProviderDisplayName = p.Saml.DisplayName
 			e.ProviderServiceType = p.Saml.Type
 			e.URL, err = saml.SignOut(w, r)

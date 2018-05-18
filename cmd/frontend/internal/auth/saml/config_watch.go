@@ -66,13 +66,7 @@ func init() {
 				updates[new] = true
 
 				go func(p *provider) {
-					var err error
-					if conf.EnhancedSAMLEnabled() {
-						err = p.Refresh(context.Background())
-					} else {
-						_, err = cache1.get(pc)
-					}
-					if err != nil {
+					if err := p.Refresh(context.Background()); err != nil {
 						log15.Error("Error prefetching SAML service provider metadata.", "error", err)
 					}
 				}(new)

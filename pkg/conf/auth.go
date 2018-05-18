@@ -45,22 +45,6 @@ func authProviders(c *schema.SiteConfiguration) []schema.AuthProviders {
 	return []schema.AuthProviders{p}
 }
 
-// AuthProvidersIncludesOldSAML reports whether the SAML auth provider is present in site
-// configuration *and* the enhancedSAML experiment is disabled. The old SAML auth provider does not
-// support usage with other auth providers.
-func AuthProvidersIncludesOldSAML() bool { return authProvidersIncludesOldSAML(Get()) }
-func authProvidersIncludesOldSAML(c *schema.SiteConfiguration) bool {
-	if enhancedSAMLEnabled(c) {
-		return false
-	}
-	for _, p := range authProviders(c) {
-		if p.Saml != nil {
-			return true
-		}
-	}
-	return false
-}
-
 // authProvider (see AuthProvider).
 func authProvider(c *schema.SiteConfiguration) schema.AuthProviders {
 	switch {

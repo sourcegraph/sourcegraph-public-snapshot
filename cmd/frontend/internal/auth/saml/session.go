@@ -6,14 +6,15 @@ import (
 	"github.com/beevik/etree"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // SignOut returns the URL where the user can initiate a logout from the SAML IdentityProvider, if
 // it has a SingleLogoutService.
 func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err error) {
-	// TODO!(sqs): Only supports a single SAML auth provider.
+	// TODO(sqs): Only supports a single SAML auth provider.
 	pc, _ := getFirstProviderConfig()
-	if pc == nil || !conf.EnhancedSAMLEnabled() {
+	if pc == nil {
 		return "", nil
 	}
 	p := getProvider(toProviderID(pc).KeyString())
@@ -26,6 +27,21 @@ func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err erro
 		return "", errors.WithMessage(err, "creating SAML LogoutRequest")
 	}
 	return p.samlSP.BuildAuthURLRedirect("/", doc)
+}
+
+// getFirstProviderConfig returns the SAML auth provider config. At most 1 can be specified in site
+// config; if there is more than 1, it returns multiple == true (which the caller should handle by
+// returning an error and refusing to proceed with auth).
+func getFirstProviderConfig() (pc *schema.SAMLAuthProvider, multiple bool) {
+	for _, p := range conf.AuthProviders() {
+		if p.Saml != nil {
+			if pc != nil {
+				return pc, true // multiple SAML auth providers
+			}
+			pc = p.Saml
+		}
+	}
+	return pc, false
 }
 
 func newLogoutRequest(p *provider) (*etree.Document, error) {

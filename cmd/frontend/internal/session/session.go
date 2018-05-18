@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 
@@ -245,13 +244,6 @@ func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, i
 }
 
 func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
-	if conf.AuthProvidersIncludesOldSAML() {
-		// Skip session cookie because when the old SAML impl (not the enhancedSAML experiment) is
-		// used, the "sg-session" cookie actually contains a SAML-specific JWT, which is completely
-		// different from our session cookie and is not validated by our session store.
-		return r.Context()
-	}
-
 	// If the request is already authenticated, then do not clobber the request's existing
 	// authenticated actor with the actor (if any) derived from the session cookie.
 	if actor.FromContext(r.Context()).IsAuthenticated() {

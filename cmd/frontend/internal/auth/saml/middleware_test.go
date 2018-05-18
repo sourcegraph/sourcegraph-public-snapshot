@@ -164,39 +164,21 @@ func TestMiddleware(t *testing.T) {
 	}
 	defer func() { conf.MockGetData = nil }()
 
-	// Test both the old (1) and new (2) implementations.
-	t.Run("1", func(t *testing.T) {
-		conf.MockGetData.AuthProviders = []schema.AuthProviders{{Saml: &config}}
-		defer func() { conf.MockGetData.AuthProviders = nil }()
-		testMiddleware(t, idpHTTPServer.URL, idpServer, false, config)
-	})
-	t.Run("2", func(t *testing.T) {
-		conf.MockGetData.ExperimentalFeatures.EnhancedSAML = "enabled"
-		mockGetProviderValue = &provider{config: config}
-		defer func() { mockGetProviderValue = nil }()
-		auth.MockProviders = []auth.Provider{mockGetProviderValue}
-		defer func() { auth.MockProviders = nil }()
-		testMiddleware(t, idpHTTPServer.URL, idpServer, true, config)
-	})
-}
+	mockGetProviderValue = &provider{config: config}
+	defer func() { mockGetProviderValue = nil }()
+	auth.MockProviders = []auth.Provider{mockGetProviderValue}
+	defer func() { auth.MockProviders = nil }()
 
-// testMiddleware tests the SAML middleware. It assumes the site config has been mocked by the
-// caller (with conf.MockGetData).
-func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isImpl2 bool, p schema.SAMLAuthProvider) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	providerID := toProviderID(&p).KeyString()
+	providerID := toProviderID(&mockGetProviderValue.config).KeyString()
 
 	// Mock user
-	mockedProvider := idpURL + "/metadata"
 	mockedExternalID := "testuser_id"
 	const mockedUserID = 123
 	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
-		wantServiceID := mockedProvider
-		if isImpl2 {
-			wantServiceID = providerID
-		}
+		wantServiceID := providerID
 		if a.ServiceType == "saml" && a.ServiceID == wantServiceID && a.AccountID == mockedExternalID {
 			return mockedUserID, nil
 		}
@@ -207,7 +189,7 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()
 	authedHandler.Handle("/.api/", Middleware.API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID && !(isImpl2 && uid == 0) {
+		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID && uid != 0 {
 			t.Errorf("got actor UID %d, want %d", uid, mockedUserID)
 		}
 	})))
@@ -232,10 +214,8 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 
 	// doRequest simulates a request to our authed handler (i.e., the SAML Service Provider).
 	//
-	// authed2 sets an authed actor in the request context to simulate an authenticated request. It
-	// only takes effect for the new (2) implementation (because the old (1) implementation only
-	// consults the sg-session JWT, not the request context, for auth).
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed2 bool, form url.Values) *http.Response {
+	// authed sets an authed actor in the request context to simulate an authenticated request.
+	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool, form url.Values) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
@@ -244,7 +224,7 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 			req.PostForm = form
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 		}
-		if authed2 && isImpl2 {
+		if authed {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockedUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
@@ -281,21 +261,12 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 			t.Fatal(err)
 		}
 	})
-	if isImpl2 {
-		t.Run("unauthenticated API visit -> pass through", func(t *testing.T) {
-			resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false, nil)
-			if got, want := resp.StatusCode, http.StatusOK; got != want {
-				t.Errorf("wrong response code: got %v, want %v", got, want)
-			}
-		})
-	} else {
-		t.Run("unauthenticated API visit -> HTTP 401 Unauthorized", func(t *testing.T) {
-			resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false, nil)
-			if got, want := resp.StatusCode, http.StatusUnauthorized; got != want {
-				t.Errorf("wrong response code: got %v, want %v", got, want)
-			}
-		})
-	}
+	t.Run("unauthenticated API visit -> pass through", func(t *testing.T) {
+		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false, nil)
+		if got, want := resp.StatusCode, http.StatusOK; got != want {
+			t.Errorf("wrong response code: got %v, want %v", got, want)
+		}
+	})
 	var (
 		loggedInCookies []*http.Cookie
 	)
@@ -309,7 +280,7 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, err := http.NewRequest("PUT", idpURL+"/services/id", bytes.NewBuffer(serviceMetadataBytes))
+		req, err := http.NewRequest("PUT", idpHTTPServer.URL+"/services/id", bytes.NewBuffer(serviceMetadataBytes))
 		if err != nil {
 			t.Fatal(err)
 		}

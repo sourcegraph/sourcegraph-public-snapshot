@@ -33,9 +33,6 @@ func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, er
 		invalid(`auth.providers supports only a single entry (entries other than the first are IGNORED)`)
 	}
 	if multipleAuthProvidersEnabled(&cfg) {
-		if authProvidersIncludesOldSAML(&cfg) {
-			invalid(`must enable experimentalFeatures.enhancedSAML to use the SAML auth provider as one of multiple auth providers`)
-		}
 		byType := map[string]int{}
 		for _, p := range authProviders(&cfg) {
 			byType[AuthProviderType(p)]++
