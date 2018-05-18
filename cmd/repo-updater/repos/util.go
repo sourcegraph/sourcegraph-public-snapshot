@@ -80,7 +80,7 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 			if !isCloned {
 				cloned++
 			}
-			log15.Debug("fetching repo", "repo", createdRepo.URI, "cloned", isCloned)
+			log15.Debug("fetching repo", "repo", createdRepo.URI, "url", op.URL, "cloned", isCloned)
 			err = gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: createdRepo.URI, URL: op.URL})
 			if err != nil {
 				log15.Warn("Error enqueueing Git clone/update for repository", "repo", op.RepoURI, "error", err)
