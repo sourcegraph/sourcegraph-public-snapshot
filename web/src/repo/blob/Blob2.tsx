@@ -349,6 +349,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             repoPath: this.props.repoPath,
                             commitID: this.props.commitID,
                             filePath: this.props.filePath,
+                            rev: this.props.rev,
                             position,
                         }).pipe(
                             catchError(error => {
@@ -392,6 +393,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                                 repoPath: this.props.repoPath,
                                 commitID: this.props.commitID,
                                 filePath: this.props.filePath,
+                                rev: this.props.rev,
                                 position,
                             }).pipe(
                                 map(url => (url !== null ? { jumpURL: url } : null)),
