@@ -95,7 +95,7 @@ interface State {
     blobOrError?: GQL.IFile | ErrorLike
 }
 
-const useNewBlob = localStorage.getItem('newBlob') === 'true'
+const useNewBlob = localStorage.getItem('disableNewBlob') !== 'true'
 
 export class BlobPage extends React.PureComponent<Props, State> {
     private propsUpdates = new Subject<Props>()
