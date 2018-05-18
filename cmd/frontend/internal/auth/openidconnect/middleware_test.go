@@ -33,7 +33,10 @@ type providerJSON struct {
 	UserInfoURL string `json:"userinfo_endpoint"`
 }
 
-var testOIDCUser = "bob-test-user"
+var (
+	testOIDCUser = "bob-test-user"
+	testClientID = "aaaaaaaaaaaaaa"
+)
 
 // new OIDCIDServer returns a new running mock OIDC ID Provider service. It is the caller's
 // responsibility to call Close().
@@ -99,7 +102,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 	srv := httptest.NewServer(s)
 
 	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
-		if a.ServiceType == "openidconnect" && a.ServiceID == oidcProvider.Issuer && a.AccountID == testOIDCUser {
+		if a.ServiceType == "openidconnect" && a.ServiceID == oidcProvider.Issuer+":"+testClientID && a.AccountID == testOIDCUser {
 			return 123, nil
 		}
 		return 0, fmt.Errorf("account %v not found in mock", a)
@@ -108,7 +111,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 	return srv
 }
 
-func Test_newOIDCAuthMiddleware(t *testing.T) {
+func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -119,7 +122,7 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 	defer os.RemoveAll(tempdir)
 
 	oidcProvider := &schema.OpenIDConnectAuthProvider{
-		ClientID:     "aaaaaaaaaaaaaa",
+		ClientID:     testClientID,
 		ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
 
@@ -127,11 +130,12 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 	defer oidcIDServer.Close()
 	defer func() { auth.MockCreateOrUpdateUser = nil }()
 	oidcProvider.Issuer = oidcIDServer.URL
+	providerKey := toProviderKey(oidcProvider).KeyString()
 
 	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
 	defer func() { conf.MockGetData = nil }()
 
-	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect"}).Encode()
+	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderKey: providerKey}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
 			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
@@ -146,9 +150,10 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 
 	const mockUserID = 123
 
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware.API(requireAuthenticatedActor(t)))
-	authedHandler.Handle("/", Middleware.App(requireAuthenticatedActor(t)))
+	authedHandler.Handle("/.api/", Middleware.API(h))
+	authedHandler.Handle("/", Middleware.App(h))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -163,41 +168,57 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 		return respRecorder.Result()
 	}
 
-	t.Run("unauthenticated homepage visit -> login redirect", func(t *testing.T) {
+	state := func(urlStr string) (state authnState) {
+		u, _ := url.Parse(urlStr)
+		if err := state.Decode(u.Query().Get("nonce")); err != nil {
+			panic(err)
+		}
+		return state
+	}
+	t.Run("unauthenticated homepage visit -> oidc auth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/.auth/login?redirect=%2F"; got != want {
-			t.Errorf("got redirect URL %v, want %v", got, want)
+		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
+			t.Errorf("got redirect URL %v, want contains %v", got, want)
+		}
+		if state, want := state(resp.Header.Get("Location")), "/"; state.Redirect != want {
+			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
 		}
 	})
-	t.Run("unauthenticated subpage visit -> login redirect", func(t *testing.T) {
+	t.Run("unauthenticated subpage visit -> oidc auth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/.auth/login?redirect=%2Fpage"; got != want {
-			t.Errorf("got redirect URL %v, want %v", got, want)
+		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
+			t.Errorf("got redirect URL %v, want contains %v", got, want)
+		}
+		if state, want := state(resp.Header.Get("Location")), "/page"; state.Redirect != want {
+			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
 		}
 	})
-	t.Run("unauthenticated non-existent page visit -> login redirect", func(t *testing.T) {
+	t.Run("unauthenticated non-existent page visit -> oidc auth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/nonexistent", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/.auth/login?redirect=%2Fnonexistent"; got != want {
-			t.Errorf("got redirect URL %v, want %v", got, want)
+		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
+			t.Errorf("got redirect URL %v, want contains %v", got, want)
+		}
+		if state, want := state(resp.Header.Get("Location")), "/nonexistent"; state.Redirect != want {
+			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
 		}
 	})
-	t.Run("unauthenticated API request -> HTTP 401 Unauthorized", func(t *testing.T) {
+	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false)
-		if want := http.StatusUnauthorized; resp.StatusCode != want {
+		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
-	t.Run("login redirect -> sso login", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/login", "", nil, false)
+	t.Run("login -> oidc auth flow", func(t *testing.T) {
+		resp := doRequest("GET", "http://example.com/.auth/openidconnect/login?p="+providerKey, "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -223,7 +244,8 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state=ASDF", "", nil, false)
+		invalidState := (&authnState{CSRFToken: "bad", ProviderKey: providerKey}).Encode()
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", nil, false)
 		if want := http.StatusBadRequest; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
@@ -251,7 +273,7 @@ func Test_newOIDCAuthMiddleware(t *testing.T) {
 	})
 }
 
-func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
+func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
@@ -274,7 +296,7 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "openidconnect", AuthOpenIDConnect: oidcProvider}
 	defer func() { conf.MockGetData = nil }()
 
-	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com"}).Encode()
+	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderKey: toProviderKey(oidcProvider).KeyString()}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
 			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
@@ -287,7 +309,8 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	authedHandler := Middleware.App(requireAuthenticatedActor(t))
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	authedHandler := Middleware.App(h)
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -307,13 +330,5 @@ func Test_newOIDCAuthMiddleware_NoOpenRedirect(t *testing.T) {
 		if got, want := resp.Header.Get("Location"), "/"; got != want {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		} // Redirect to "/", NOT "http://evil.com"
-	})
-}
-
-func requireAuthenticatedActor(t *testing.T) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !actor.FromContext(r.Context()).IsAuthenticated() {
-			t.Errorf("unauthenticated actor requested %s", r.URL)
-		}
 	})
 }

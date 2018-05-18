@@ -1,4 +1,4 @@
-package auth
+package auth_test
 
 import (
 	"context"
@@ -10,6 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
+
+	// Import for side effects so that the UI router gets created and is accessible in the
+	// ../app/ui/router package's Router var.
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 )
 
 func TestAllowAnonymousRequest(t *testing.T) {
@@ -42,7 +47,7 @@ func TestAllowAnonymousRequest(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s %s", test.req.Method, test.req.URL), func(t *testing.T) {
-			got := allowAnonymousRequest(test.req)
+			got := auth.AllowAnonymousRequest(test.req)
 			if got != test.want {
 				t.Errorf("got %v, want %v", got, test.want)
 			}
@@ -112,8 +117,8 @@ func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 			setAllowedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { allowed = true })
 
 			handler := http.NewServeMux()
-			handler.Handle("/.api/", RequireAuthMiddleware.API(setAllowedHandler))
-			handler.Handle("/", RequireAuthMiddleware.App(setAllowedHandler))
+			handler.Handle("/.api/", auth.RequireAuthMiddleware.API(setAllowedHandler))
+			handler.Handle("/", auth.RequireAuthMiddleware.App(setAllowedHandler))
 			handler.ServeHTTP(rec, tst.req)
 
 			if allowed != tst.allowed {

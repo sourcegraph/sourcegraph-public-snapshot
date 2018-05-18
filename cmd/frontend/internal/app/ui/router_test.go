@@ -9,13 +9,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gorilla/mux"
+	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-
-	"github.com/gorilla/mux"
 )
 
 func init() {
@@ -126,7 +126,7 @@ func TestRouter(t *testing.T) {
 		// sign-in
 		{
 			path:      "/sign-in",
-			wantRoute: RouteSignIn,
+			wantRoute: uirouter.RouteSignIn,
 			wantVars:  map[string]string{},
 		},
 
@@ -145,7 +145,7 @@ func TestRouter(t *testing.T) {
 		// password invite
 		{
 			path:      "/password-reset",
-			wantRoute: RoutePasswordReset,
+			wantRoute: uirouter.RoutePasswordReset,
 			wantVars:  map[string]string{},
 		},
 

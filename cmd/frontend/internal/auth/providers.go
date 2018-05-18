@@ -2,9 +2,8 @@ package auth
 
 import (
 	"fmt"
+	"sort"
 	"sync"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -36,8 +35,6 @@ func UpdateProviders(updates map[*Provider]bool) {
 		op, ok := updates[p]
 		if !ok || op {
 			allProviders = append(allProviders, p) // keep
-		} else {
-			log15.Debug("Removed authentication provider instance.", "providerInstance", p)
 		}
 		delete(updates, p) // don't double-add
 	}
@@ -49,6 +46,11 @@ func UpdateProviders(updates map[*Provider]bool) {
 			panic(fmt.Sprintf("UpdateProviders: provider to remove did not exist: %+v", p))
 		}
 		allProviders = append(allProviders, p)
-		log15.Debug("Added authentication provider instance.", "providerInstance", p)
 	}
+
+	sort.Slice(allProviders, func(i, j int) bool {
+		ai := allProviders[i]
+		aj := allProviders[j]
+		return ai.Public.DisplayName < aj.Public.DisplayName
+	})
 }

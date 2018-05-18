@@ -19,13 +19,16 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
-                    <div>
+                    <div className="mr-2">
                         <strong>{this.props.node.displayName}</strong>{' '}
                         <span className="badge badge-secondary">{this.props.node.serviceType}</span>
-                        <br />
-                        <span className="text-muted">
-                            <code>{this.props.node.serviceID}</code>
-                        </span>
+                    </div>
+                    <div className="text-nowrap">
+                        {this.props.node.authenticationURL && (
+                            <a className="btn btn-secondary" href={this.props.node.authenticationURL}>
+                                Authenticate
+                            </a>
+                        )}
                     </div>
                 </div>
             </li>
@@ -35,9 +38,10 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
 
 const authProviderFragment = gql`
     fragment AuthProviderFields on AuthProvider {
-        displayName
         serviceType
-        serviceID
+        displayName
+        isBuiltin
+        authenticationURL
     }
 `
 

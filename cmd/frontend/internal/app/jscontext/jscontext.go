@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
@@ -62,10 +63,13 @@ type JSContext struct {
 	// Experimental features
 	SearchTimeoutParameterEnabled bool `json:"searchTimeoutParameterEnabled"`
 	HostSurveysLocallyEnabled     bool `json:"hostSurveysLocallyEnabled"`
+	MultipleAuthProvidersEnabled  bool `json:"multipleAuthProvidersEnabled"`
 
 	AccessTokensEnabled bool `json:"accessTokensEnabled"`
 
 	AllowSignup bool `json:"allowSignup"`
+
+	AuthProviders []auth.PublicProviderInfo `json:"authProviders"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -105,6 +109,12 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	siteConfig, err := db.SiteConfig.Get(req.Context())
 	showOnboarding := err == nil && !siteConfig.Initialized
 
+	// Auth providers
+	var publicProviderInfos []auth.PublicProviderInfo
+	for _, p := range auth.Providers() {
+		publicProviderInfos = append(publicProviderInfos, p.Public)
+	}
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -134,10 +144,13 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		// do the default behavior only in Go land.
 		SearchTimeoutParameterEnabled: conf.SearchTimeoutParameterEnabled(),
 		HostSurveysLocallyEnabled:     conf.HostSurveysLocallyEnabled(),
+		MultipleAuthProvidersEnabled:  conf.MultipleAuthProvidersEnabled(),
 
 		AccessTokensEnabled: conf.AccessTokensEnabled(),
 
 		AllowSignup: conf.AuthAllowSignup(),
+
+		AuthProviders: publicProviderInfos,
 	}
 }
 

@@ -1,6 +1,8 @@
 package saml
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"encoding/xml"
 	"net/http"
 	"strings"
@@ -10,8 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+// All SAML new implementation (2 not 1) endpoints are under this path prefix.
+const authPrefix = auth.AuthURLPrefix + "/saml"
 
 // authHandler2 is the new SAML HTTP auth handler. It is used when the enhancedSAML experiment is
 // enabled.
@@ -19,25 +25,9 @@ import (
 // It uses github.com/russelhaering/gosaml2 and (unlike authHandler1) makes it possible to support
 // multiple auth providers with SAML and expose more SAML functionality.
 func authHandler2(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
-	pc, handled := handleGetFirstProviderConfig(w)
-	if handled {
-		return
-	}
-	if handled := authHandlerCommon(w, r, next, pc); handled {
-		return
-	}
-
-	// Otherwise, we need to use SAML.
-	sp, err := cache2.get(*pc)
-	if err != nil {
-		log15.Error("Error getting SAML service provider.", "error", err)
-		http.Error(w, "Unexpected error in SAML authentication provider.", http.StatusInternalServerError)
-		return
-	}
-
 	// Delegate to SAML ACS and metadata endpoint handlers.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
-		samlSPHandler(w, r, sp)
+		samlSPHandler(w, r)
 		return
 	}
 
@@ -47,22 +37,39 @@ func authHandler2(w http.ResponseWriter, r *http.Request, next http.Handler, isA
 		return
 	}
 
-	// Respond to unauthenticated request.
-	if isAPIRequest {
-		http.Error(w, "Authentication required.", http.StatusUnauthorized)
+	// If there is only one auth provider configured, the single auth provider is SAML, and it's an
+	// app request, redirect to signin immediately. The user wouldn't be able to do anything else
+	// anyway; there's no point in showing them a signin screen with just a single signin option.
+	if ps := conf.AuthProviders(); len(ps) == 1 && ps[0].Saml != nil && !isAPIRequest {
+		pc := ps[0].Saml
+		sp, err := cache2.get(*pc)
+		if err != nil {
+			log15.Error("Error getting SAML service provider.", "error", err)
+			http.Error(w, "Unexpected error in SAML authentication provider.", http.StatusInternalServerError)
+			return
+		}
+		key := toProviderKey(pc).KeyString()
+		redirectToAuthURL(w, r, key, sp, auth.SafeRedirectURL(r.URL.String()))
 		return
 	}
-	// Redirect the user to where they can sign in.
-	redirectToAuthURL(w, r, sp, r.URL.String())
+
+	next.ServeHTTP(w, r)
 }
 
-func samlSPHandler(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLServiceProvider) {
-	requestPath := strings.TrimPrefix(r.URL.Path, auth.AuthURLPrefix)
+func samlSPHandler(w http.ResponseWriter, r *http.Request) {
+	requestPath := strings.TrimPrefix(r.URL.Path, authPrefix)
 
 	// Handle GET endpoints.
 	if r.Method == "GET" {
+		// All of these endpoints expect the provider key in the URL query.
+		key := r.URL.Query().Get("p")
+		sp, handled := handleGetProviderConfig(w, key)
+		if handled {
+			return
+		}
+
 		switch requestPath {
-		case "/saml/metadata":
+		case "/metadata":
 			metadata, err := sp.Metadata()
 			if err != nil {
 				log15.Error("Error generating SAML service provider metadata.", "err", err)
@@ -80,10 +87,10 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLService
 			w.Write(buf)
 			return
 
-		case "/saml/login":
+		case "/login":
 			// It is safe to use r.Referer() because the redirect-to URL will be checked later,
 			// before the client is actually instructed to navigate there.
-			redirectToAuthURL(w, r, sp, r.Referer())
+			redirectToAuthURL(w, r, key, sp, r.Referer())
 			return
 		}
 	}
@@ -97,9 +104,21 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLService
 		return
 	}
 
+	// The remaining endpoints all expect the provider key in the POST data's RelayState.
+	var relayState relayState
+	if err := relayState.decode(r.FormValue("RelayState")); err != nil {
+		log15.Error("Error decoding SAML relay state.", "err", err)
+		http.Error(w, "Error decoding SAML relay state.", http.StatusForbidden)
+		return
+	}
+	sp, handled := handleGetProviderConfig(w, relayState.ProviderKey)
+	if handled {
+		return
+	}
+
 	// Handle POST endpoints.
 	switch requestPath {
-	case "/saml/acs":
+	case "/acs":
 		info, err := sp.RetrieveAssertionInfo(r.FormValue("SAMLResponse"))
 		if err != nil {
 			log15.Error("Error validating SAML assertions.", "err", err)
@@ -112,7 +131,8 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLService
 			return
 		}
 
-		actor, safeErrMsg, err := getActorFromSAML(r.Context(), info.NameID, sp.IdentityProviderIssuer, samlAssertionValues(info.Values))
+		serviceID := sp.IdentityProviderIssuer + ":" + sp.config.certFingerprint
+		actor, safeErrMsg, err := getActorFromSAML(r.Context(), info.NameID, serviceID, samlAssertionValues(info.Values))
 		if err != nil {
 			log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -135,9 +155,9 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLService
 		}
 
 		// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid an open-redirect vuln.
-		http.Redirect(w, r, auth.SafeRedirectURL(r.FormValue("RelayState")), http.StatusFound)
+		http.Redirect(w, r, auth.SafeRedirectURL(relayState.ReturnToURL), http.StatusFound)
 
-	case "/saml/logout":
+	case "/logout":
 		// TODO(sqs): Fully validate the LogoutResponse here (i.e., also validate that the document
 		// is a valid LogoutResponse). It is possible that this request is being spoofed, but it
 		// doesn't let an attacker do very much (just log a user out and redirect).
@@ -177,8 +197,11 @@ func (v samlAssertionValues) Get(key string) string {
 	return ""
 }
 
-func redirectToAuthURL(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLServiceProvider, returnToURL string) {
-	authURL, err := buildAuthURLRedirect(sp, auth.SafeRedirectURL(returnToURL))
+func redirectToAuthURL(w http.ResponseWriter, r *http.Request, providerKey string, sp *provider, returnToURL string) {
+	authURL, err := buildAuthURLRedirect(sp, relayState{
+		ProviderKey: providerKey,
+		ReturnToURL: auth.SafeRedirectURL(returnToURL),
+	})
 	if err != nil {
 		log15.Error("Failed to build SAML auth URL.", "err", err)
 		http.Error(w, "Unexpected error in SAML authentication provider.", http.StatusInternalServerError)
@@ -187,10 +210,30 @@ func redirectToAuthURL(w http.ResponseWriter, r *http.Request, sp *saml2.SAMLSer
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
 
-func buildAuthURLRedirect(sp *saml2.SAMLServiceProvider, relayState string) (string, error) {
+func buildAuthURLRedirect(sp *provider, relayState relayState) (string, error) {
 	doc, err := sp.BuildAuthRequestDocument()
 	if err != nil {
 		return "", err
 	}
-	return sp.BuildAuthURLRedirect(relayState, doc)
+	return sp.BuildAuthURLRedirect(relayState.encode(), doc)
+}
+
+type relayState struct {
+	ProviderKey string `json:"k"`
+	ReturnToURL string `json:"r"`
+}
+
+// encode returns the base64-encoded JSON representation of the relay state.
+func (s *relayState) encode() string {
+	b, _ := json.Marshal(s)
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+// Decode decodes the base64-encoded JSON representation of the relay state into the receiver.
+func (s *relayState) decode(encoded string) error {
+	b, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, s)
 }

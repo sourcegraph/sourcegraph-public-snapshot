@@ -53,15 +53,6 @@ func (r *externalAccountResolver) CreatedAt() string   { return r.account.Create
 func (r *externalAccountResolver) UpdatedAt() string   { return r.account.UpdatedAt.Format(time.RFC3339) }
 
 func (r *externalAccountResolver) RefreshURL() *string {
-	var url string
-	switch r.account.ServiceType {
-	case "openidconnect":
-		url = "/.auth/login"
-	case "saml":
-		url = "/.auth/saml/login"
-	}
-	if url != "" {
-		return &url
-	}
+	// TODO(sqs): Not supported.
 	return nil
 }

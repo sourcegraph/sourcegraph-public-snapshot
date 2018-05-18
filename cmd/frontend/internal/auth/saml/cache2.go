@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,7 +21,7 @@ type providerCache2 struct {
 
 type providerCacheEntry2 struct {
 	once    sync.Once
-	val     *saml2.SAMLServiceProvider
+	val     *provider
 	err     error
 	expires time.Time
 }
@@ -36,7 +35,7 @@ var (
 // it returns it from the cache; otherwise it performs a network request to look up the provider. At
 // most one network request will be in flight for a given provider config; later requests block on
 // the original request.
-func (c *providerCache2) get(pc schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error) {
+func (c *providerCache2) get(pc schema.SAMLAuthProvider) (*provider, error) {
 	c.mu.Lock()
 	if c.data == nil {
 		c.data = map[schema.SAMLAuthProvider]*providerCacheEntry2{}

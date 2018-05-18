@@ -19,9 +19,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var mockGetServiceProvider2 func(*schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error)
+type provider struct {
+	*saml2.SAMLServiceProvider
+	config *providerConfig
+}
 
-func getServiceProvider2(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error) {
+var mockGetServiceProvider2 func(*schema.SAMLAuthProvider) (*provider, error)
+
+func getServiceProvider2(ctx context.Context, pc *schema.SAMLAuthProvider) (*provider, error) {
 	if mockGetServiceProvider2 != nil {
 		return mockGetServiceProvider2(pc)
 	}
@@ -60,18 +65,21 @@ func getServiceProvider2(ctx context.Context, pc *schema.SAMLAuthProvider) (*sam
 	}
 
 	issuerURL := c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/metadata")}).String()
-	return &saml2.SAMLServiceProvider{
-		IdentityProviderSSOURL:      metadata.IDPSSODescriptor.SingleSignOnServices[0].Location,
-		IdentityProviderIssuer:      metadata.EntityID,
-		ServiceProviderIssuer:       issuerURL,
-		AssertionConsumerServiceURL: c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/acs")}).String(),
-		SignAuthnRequests:           true,
-		AudienceURI:                 issuerURL,
-		IDPCertificateStore:         &certStore,
-		SPKeyStore:                  dsig.TLSCertKeyStore(c.keyPair),
-		// TODO(sqs): Use the persistent NameIDFormat (https://github.com/sourcegraph/sourcegraph/issues/11206).
-		NameIdFormat:           "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
-		ValidateEncryptionCert: true,
+	return &provider{
+		SAMLServiceProvider: &saml2.SAMLServiceProvider{
+			IdentityProviderSSOURL:      metadata.IDPSSODescriptor.SingleSignOnServices[0].Location,
+			IdentityProviderIssuer:      metadata.EntityID,
+			ServiceProviderIssuer:       issuerURL,
+			AssertionConsumerServiceURL: c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/acs")}).String(),
+			SignAuthnRequests:           true,
+			AudienceURI:                 issuerURL,
+			IDPCertificateStore:         &certStore,
+			SPKeyStore:                  dsig.TLSCertKeyStore(c.keyPair),
+			// TODO(sqs): Use the persistent NameIDFormat (https://github.com/sourcegraph/sourcegraph/issues/11206).
+			NameIdFormat:           "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+			ValidateEncryptionCert: true,
+		},
+		config: c,
 	}, nil
 }
 

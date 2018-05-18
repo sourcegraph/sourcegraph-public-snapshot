@@ -6,24 +6,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
+	"github.com/gorilla/csrf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	oidc "github.com/coreos/go-oidc"
-	"github.com/gorilla/csrf"
 )
 
 const stateCookieName = "sg-oidc-state"
+
+// All OpenID Connect endpoints are under this path prefix.
+const authPrefix = auth.AuthURLPrefix + "/openidconnect"
 
 type userClaims struct {
 	Name              string `json:"name"`
@@ -62,27 +63,16 @@ var Middleware = &auth.Middleware{
 // handleOpenIDConnectAuth performs OpenID Connect authentication (if configured) for HTTP requests,
 // both API requests and non-API requests.
 func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
-	// Check the OpenID Connect auth provider configuration.
-	pc, handled := handleGetFirstProviderConfig(w)
-	if handled {
-		return
-	}
-	if pc != nil && pc.Issuer == "" {
-		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).")
-		http.Error(w, "misconfigured OpenID Connect auth provider", http.StatusInternalServerError)
-		return
+	// BACKCOMPAT: Fixup URL path. Previously we used "/.auth/callback" as the redirect URI, and
+	// that is hardcoded in a lot of customers' existing OIDC client configs.
+	if r.URL.Path == auth.AuthURLPrefix+"/callback" {
+		// Rewrite "/.auth/callback" -> "/.auth/openidconnect/callback".
+		r.URL.Path = authPrefix + "/callback"
 	}
 
-	// If OpenID Connect isn't enabled, skip OpenID Connect auth.
-	if pc == nil {
-		next.ServeHTTP(w, r)
-		return
-	}
-
-	// Delegate to the OpenID Connect login handler to handle the OIDC Authentication Code Flow
-	// callback.
-	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/") {
-		loginHandler(w, r, pc)
+	// Delegate to the OpenID Connect auth handler.
+	if !isAPIRequest && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
+		authHandler(w, r)
 		return
 	}
 
@@ -93,61 +83,41 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 		return
 	}
 
-	// Unauthenticated API requests are rejected immediately (no redirect to auth flow because there
-	// is no interactive user to redirect).
-	if isAPIRequest {
-		http.Error(w, "requires authentication", http.StatusUnauthorized)
+	// If there is only one auth provider configured, the single auth provider is OpenID Connect,
+	// and it's an app request, redirect to signin immediately. The user wouldn't be able to do
+	// anything else anyway; there's no point in showing them a signin screen with just a single
+	// signin option.
+	if ps := conf.AuthProviders(); len(ps) == 1 && ps[0].Openidconnect != nil && !isAPIRequest {
+		pc := ps[0].Openidconnect
+		p, err := cache.get(pc.Issuer)
+		if err != nil {
+			log15.Error("Error getting OpenID Connect provider metadata.", "issuer", pc.Issuer, "error", err)
+			http.Error(w, "unexpected error in OpenID Connect authentication provider", http.StatusInternalServerError)
+			return
+		}
+		key := toProviderKey(pc).KeyString()
+		redirectToAuthRequest(w, r, key, p, auth.SafeRedirectURL(r.URL.String()))
 		return
 	}
 
-	// Otherwise, an unauthenticated client making an app request should be redirected to the OpenID
-	// Connect login flow.
-	redirectURL := url.URL{Path: r.URL.Path, RawQuery: r.URL.RawQuery, Fragment: r.URL.Fragment}
-	query := url.Values(map[string][]string{"redirect": {redirectURL.String()}})
-	http.Redirect(w, r, auth.AuthURLPrefix+"/login?"+query.Encode(), http.StatusFound)
+	next.ServeHTTP(w, r)
 }
 
-// loginHandler handles the OIDC Authentication Code Flow
+// authHandler handles the OIDC Authentication Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConnectAuthProvider) {
-	provider, err := cache.get(pc.Issuer)
-	if err != nil {
-		log15.Error("Error getting OpenID Connect provider metadata.", "issuer", pc.Issuer, "error", err)
-		http.Error(w, "unexpected error in OpenID Connect authentication provider", http.StatusInternalServerError)
-		return
-	}
-
-	oauth2Config := oauth2.Config{
-		ClientID:     pc.ClientID,
-		ClientSecret: pc.ClientSecret,
-		RedirectURL:  fmt.Sprintf("%s%s/%s", globals.AppURL.String(), auth.AuthURLPrefix, "callback"),
-		Endpoint:     provider.Endpoint(),
-		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
-	}
-	verifier := provider.Verifier(&oidc.Config{ClientID: pc.ClientID})
-
-	switch strings.TrimPrefix(r.URL.Path, auth.AuthURLPrefix) {
+func authHandler(w http.ResponseWriter, r *http.Request) {
+	switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 	case "/login":
 		// Endpoint that starts the Authentication Request Code Flow.
-
-		// The state parameter is an opaque value used to maintain state between the original Authentication Request
-		// and the callback. We do not record any state beyond a CSRF token used to defend against CSRF attacks against the callback.
-		// We use the CSRF token created by gorilla/csrf that is used for other app endpoints as the OIDC state parameter.
-		//
-		// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
-		state := (&authnState{CSRFToken: csrf.Token(r), Redirect: r.URL.Query().Get("redirect")}).Encode()
-		http.SetCookie(w, &http.Cookie{Name: stateCookieName, Value: state, Expires: time.Now().Add(time.Minute * 15)})
-
-		// Redirect to the OP's Authorization Endpoint for authentication. The nonce is an optional
-		// string value used to associate a Client session with an ID Token and to mitigate replay attacks.
-		// Whereas the state parameter is used in validating the Authentication Request
-		// callback, the nonce is used in validating the response to the ID Token request.
-		// We re-use the Authn request state as the nonce.
-		//
-		// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
-		http.Redirect(w, r, oauth2Config.AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
+		key := r.URL.Query().Get("p")
+		p, handled := handleGetProviderConfig(w, key)
+		if handled {
+			return
+		}
+		redirectToAuthRequest(w, r, key, p, r.URL.Query().Get("redirect"))
+		return
 
 	case "/callback":
 		// Endpoint for the OIDC Authorization Response. See http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
@@ -188,8 +158,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 		}
 		// 🚨 SECURITY: TODO(sqs): Do we need to check state.CSRFToken?
 
+		p, handled := handleGetProviderConfig(w, state.ProviderKey)
+		if handled {
+			return
+		}
+		verifier := p.Provider.Verifier(&oidc.Config{ClientID: p.config.ClientID})
+
 		// Exchange the code for an access token. See http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-		oauth2Token, err := oauth2Config.Exchange(ctx, r.URL.Query().Get("code"))
+		oauth2Token, err := p.oauth2Config().Exchange(ctx, r.URL.Query().Get("code"))
 		if err != nil {
 			log15.Error("Failed to obtain access token from OpenID Provider", "error", err)
 			http.Error(w, ssoErrMsg("Failed to obtain access token from OpenID Provider", err), http.StatusUnauthorized)
@@ -216,9 +192,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 			}
 		}
 
-		// 🚨 SECURITY: TODO(sqs): Check that idToken.Issuer is sane (probably that it is on the
-		// same domain as the original OIDC metadata URL).
-
 		// Validate the nonce. The Verify method explicitly doesn't handle nonce validation, so we do that here.
 		// We set the nonce to be the same as the state in the Authentication Request state, so we check for equality
 		// here.
@@ -227,15 +200,15 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 			return
 		}
 
-		userInfo, err := provider.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
+		userInfo, err := p.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
 		if err != nil {
 			log15.Error("Failed to get userinfo", "error", err)
 			http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if pc.RequireEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+pc.RequireEmailDomain) {
-			http.Error(w, ssoErrMsg("Invalid email domain", "Required: "+pc.RequireEmailDomain), http.StatusUnauthorized)
+		if p.config.RequireEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+p.config.RequireEmailDomain) {
+			http.Error(w, ssoErrMsg("Invalid email domain", "Required: "+p.config.RequireEmailDomain), http.StatusUnauthorized)
 			return
 		}
 
@@ -243,7 +216,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 		if err := userInfo.Claims(&claims); err != nil {
 			log15.Warn("Could not parse userInfo claims", "error", err)
 		}
-		actr, safeErrMsg, err := getActor(ctx, idToken, userInfo, &claims)
+		actr, safeErrMsg, err := getActor(ctx, p.config.ClientID, idToken, userInfo, &claims)
 		if err != nil {
 			log15.Error("Error looking up OpenID-authenticated user.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -268,8 +241,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 		}
 
 		data := sessionData{
-			Issuer:      pc.Issuer,
-			ClientID:    pc.ClientID,
+			Issuer:      p.config.Issuer,
+			ClientID:    p.config.ClientID,
 			AccessToken: oauth2Token.AccessToken,
 			TokenType:   oauth2Token.TokenType,
 		}
@@ -290,7 +263,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, pc *schema.OpenIDConne
 // getActor returns the actor corresponding to the user indicated by the OIDC ID Token and UserInfo response.
 // Because Actors must correspond to users in our DB, it creates the user in the DB if the user does not yet
 // exist.
-func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims) (_ *actor.Actor, safeErrMsg string, err error) {
+func getActor(ctx context.Context, clientID string, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims) (_ *actor.Actor, safeErrMsg string, err error) {
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
@@ -315,7 +288,11 @@ func getActor(ctx context.Context, idToken *oidc.IDToken, userInfo *oidc.UserInf
 		EmailIsVerified: email != "", // TODO(sqs): https://github.com/sourcegraph/sourcegraph/issues/10118
 		DisplayName:     displayName,
 		AvatarURL:       claims.Picture,
-	}, db.ExternalAccountSpec{ServiceType: "openidconnect", ServiceID: idToken.Issuer, AccountID: idToken.Subject})
+	}, db.ExternalAccountSpec{
+		ServiceType: "openidconnect",
+		ServiceID:   idToken.Issuer + ":" + clientID,
+		AccountID:   idToken.Subject,
+	})
 	if err != nil {
 		return nil, safeErrMsg, err
 	}
@@ -333,6 +310,9 @@ var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
 type authnState struct {
 	CSRFToken string `json:"csrfToken"`
 	Redirect  string `json:"redirect"`
+
+	// Allow /.auth/callback to demux callbacks from multiple OpenID Connect OPs.
+	ProviderKey string `json:"p"`
 }
 
 // Encode returns the base64-encoded JSON representation of the authn state.
@@ -348,4 +328,32 @@ func (s *authnState) Decode(encoded string) error {
 		return err
 	}
 	return json.Unmarshal(b, s)
+}
+
+func redirectToAuthRequest(w http.ResponseWriter, r *http.Request, providerKey string, p *provider, returnToURL string) {
+	// The state parameter is an opaque value used to maintain state between the original Authentication Request
+	// and the callback. We do not record any state beyond a CSRF token used to defend against CSRF attacks against the callback.
+	// We use the CSRF token created by gorilla/csrf that is used for other app endpoints as the OIDC state parameter.
+	//
+	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
+	state := (&authnState{
+		CSRFToken:   csrf.Token(r),
+		Redirect:    returnToURL,
+		ProviderKey: providerKey,
+	}).Encode()
+	http.SetCookie(w, &http.Cookie{
+		Name:    stateCookieName,
+		Value:   state,
+		Path:    auth.AuthURLPrefix + "/", // include the OIDC redirect URI (/.auth/callback not /.auth/openidconnect/callback for BACKCOMPAT)
+		Expires: time.Now().Add(time.Minute * 15),
+	})
+
+	// Redirect to the OP's Authorization Endpoint for authentication. The nonce is an optional
+	// string value used to associate a Client session with an ID Token and to mitigate replay attacks.
+	// Whereas the state parameter is used in validating the Authentication Request
+	// callback, the nonce is used in validating the response to the ID Token request.
+	// We re-use the Authn request state as the nonce.
+	//
+	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the OIDC spec.
+	http.Redirect(w, r, p.oauth2Config().AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
 }

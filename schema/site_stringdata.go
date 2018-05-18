@@ -84,7 +84,7 @@ const SiteSchemaJSON = `{
         },
         "multipleAuthProviders": {
           "description":
-            "Enables or disables the use of multiple authentication providers. (WARNING: Do not use this unless you know what you're doing.)",
+            "Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users. (WARNING: Do not use this unless you know what you're doing.)",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -395,7 +395,6 @@ const SiteSchemaJSON = `{
       "description":
         "The authentication providers to use for identifying and signing in users.\n\nOnly one authentication provider is supported. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
       "type": "array",
-      "maxItems": 1,
       "items": {
         "type": "object",
         "oneOf": [
@@ -981,6 +980,39 @@ const SiteSchemaJSON = `{
           "description": "The HELO domain to provide to the SMTP server (if needed).",
           "type": "string"
         }
+      }
+    }
+  },
+  "$comment": "Allow multiple auth.providers only if experimentalFeatures.multipleAuthProviders is enabled.",
+  "if": {
+    "type": "object",
+    "properties": {
+      "experimentalFeatures": {
+        "type": "object",
+        "required": ["multipleAuthProviders"],
+        "properties": {
+          "multipleAuthProviders": {
+            "type": "string",
+            "enum": ["enabled"]
+          }
+        }
+      }
+    }
+  },
+  "then": {
+    "type": "object",
+    "properties": {
+      "auth.providers": {
+        "type": "array"
+      }
+    }
+  },
+  "else": {
+    "type": "object",
+    "properties": {
+      "auth.providers": {
+        "type": "array",
+        "maxItems": 1
       }
     }
   }

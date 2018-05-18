@@ -87,9 +87,9 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
-                    <div className="mr-2">
-                        <strong>{this.props.node.serviceID}</strong>{' '}
-                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>
+                    <div className="mr-2 text-truncate">
+                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>{' '}
+                        <strong>{this.props.node.serviceID}</strong>
                         <br />
                         <span className="text-muted">
                             {this.props.node.accountID} &mdash;{' '}

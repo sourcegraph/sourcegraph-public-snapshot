@@ -5,7 +5,6 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/pkg/errors"
-	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -29,7 +28,7 @@ func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err erro
 	return p.BuildAuthURLRedirect("/", doc)
 }
 
-func newLogoutRequest(p *saml2.SAMLServiceProvider) (*etree.Document, error) {
+func newLogoutRequest(p *provider) (*etree.Document, error) {
 	// Start with the doc for AuthnRequest and change a few things to make it into a LogoutRequest
 	// doc. This saves us from needing to duplicate a bunch of code.
 	doc, err := p.BuildAuthRequestDocumentNoSig()

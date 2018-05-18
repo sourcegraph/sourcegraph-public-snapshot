@@ -1,37 +1,53 @@
 package openidconnect
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// getFirstProviderConfig returns the OpenID Connect auth provider config. At most 1 can be
-// specified in site config; if there is more than 1, it returns multiple == true (which the caller
-// should handle by returning an error and refusing to proceed with auth).
-func getFirstProviderConfig() (pc *schema.OpenIDConnectAuthProvider, multiple bool) {
+// getProviderConfigForKey returns the OpenID Connect auth provider config with the given key (==
+// (providerKey).KeyString()).
+func getProviderConfigForKey(key string) *schema.OpenIDConnectAuthProvider {
 	for _, p := range conf.AuthProviders() {
-		if p.Openidconnect != nil {
-			if pc != nil {
-				return pc, true // multiple OpenID Connect auth providers
-			}
-			pc = p.Openidconnect
+		if p.Openidconnect != nil && toProviderKey(p.Openidconnect).KeyString() == key {
+			return p.Openidconnect
 		}
 	}
-	return pc, false
+	return nil
 }
 
-func handleGetFirstProviderConfig(w http.ResponseWriter) (pc *schema.OpenIDConnectAuthProvider, handled bool) {
-	pc, multiple := getFirstProviderConfig()
-	if multiple {
-		log15.Error("At most 1 OpenID Connect auth provider may be set in site config.")
+func handleGetProviderConfig(w http.ResponseWriter, key string) (provider *provider, handled bool) {
+	pc := getProviderConfigForKey(key)
+	if pc == nil {
+		log15.Error("No OpenID Connect auth provider found with key.", "key", key)
 		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
 		return nil, true
 	}
-	return pc, false
+	if pc.Issuer == "" {
+		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).", "key", key)
+		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
+		return nil, true
+	}
+	provider, err := cache.get(pc.Issuer)
+	if err != nil {
+		log15.Error("Error getting OpenID Connect provider metadata.", "issuer", pc.Issuer, "error", err)
+		http.Error(w, "Unexpected error in OpenID Connect authentication provider.", http.StatusInternalServerError)
+		return
+	}
+
+	// Set config field (copying to avoid race condition).
+	tmp := *provider
+	tmp.config = *pc
+	provider = &tmp
+
+	return provider, false
 }
 
 func providersOfType(ps []schema.AuthProviders) []*schema.OpenIDConnectAuthProvider {
@@ -45,6 +61,11 @@ func providersOfType(ps []schema.AuthProviders) []*schema.OpenIDConnectAuthProvi
 }
 
 type providerKey struct{ issuerURL, clientID string }
+
+func (k providerKey) KeyString() string {
+	b := sha256.Sum256([]byte(strconv.Itoa(len(k.issuerURL)) + ":" + k.issuerURL + ":" + k.clientID))
+	return hex.EncodeToString(b[:10])
+}
 
 func toProviderKey(pc *schema.OpenIDConnectAuthProvider) providerKey {
 	return providerKey{issuerURL: pc.Issuer, clientID: pc.ClientID}

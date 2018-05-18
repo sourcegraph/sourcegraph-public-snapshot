@@ -153,39 +153,53 @@ func TestMiddleware(t *testing.T) {
 	defer idpHTTPServer.Close()
 
 	// Set SAML global parameters
+	p := &schema.SAMLAuthProvider{
+		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
+		ServiceProviderCertificate:  testSAMLSPCert,
+		ServiceProviderPrivateKey:   testSAMLSPKey,
+	}
 	conf.MockGetData = &schema.SiteConfiguration{
-		AuthProvider: "saml",
-		AuthSaml: &schema.SAMLAuthProvider{
-			IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
-			ServiceProviderCertificate:  testSAMLSPCert,
-			ServiceProviderPrivateKey:   testSAMLSPKey,
-		},
+		AuthProvider:         "saml",
+		AuthSaml:             p,
 		ExperimentalFeatures: &schema.ExperimentalFeatures{},
 	}
 	defer func() { conf.MockGetData = nil }()
 
 	// Test both the old (1) and new (2) implementations.
 	t.Run("1", func(t *testing.T) {
-		testMiddleware(t, idpHTTPServer.URL, idpServer, false)
+		testMiddleware(t, idpHTTPServer.URL, idpServer, false, p)
 	})
 	t.Run("2", func(t *testing.T) {
 		conf.MockGetData.ExperimentalFeatures.EnhancedSAML = "enabled"
-		testMiddleware(t, idpHTTPServer.URL, idpServer, true)
+		testMiddleware(t, idpHTTPServer.URL, idpServer, true, p)
 	})
 }
 
 // testMiddleware tests the SAML middleware. It assumes the site config has been mocked by the
 // caller (with conf.MockGetData).
-func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isImpl2 bool) {
+func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isImpl2 bool, p *schema.SAMLAuthProvider) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
+
+	providerKey := toProviderKey(p).KeyString()
+
+	spCertData, _ := pem.Decode([]byte(testSAMLSPCert))
+	spCert, err := x509.ParseCertificate(spCertData.Bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	certFingerprint := certFingerprint(spCert)
 
 	// Mock user
 	mockedProvider := idpURL + "/metadata"
 	mockedExternalID := "testuser_id"
 	const mockedUserID = 123
 	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
-		if a.ServiceType == "saml" && a.ServiceID == mockedProvider && a.AccountID == mockedExternalID {
+		wantServiceID := mockedProvider
+		if isImpl2 {
+			wantServiceID += ":" + certFingerprint
+		}
+		if a.ServiceType == "saml" && a.ServiceID == wantServiceID && a.AccountID == mockedExternalID {
 			return mockedUserID, nil
 		}
 		return 0, fmt.Errorf("account %v not found in mock", a)
@@ -195,7 +209,7 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()
 	authedHandler.Handle("/.api/", Middleware.API(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID {
+		if uid := actor.FromContext(r.Context()).UID; uid != mockedUserID && !(isImpl2 && uid == 0) {
 			t.Errorf("got actor UID %d, want %d", uid, mockedUserID)
 		}
 	})))
@@ -269,17 +283,26 @@ func testMiddleware(t *testing.T, idpURL string, idpServer *samlidp.Server, isIm
 			t.Fatal(err)
 		}
 	})
-	t.Run("unauthenticated API visit -> HTTP 401 Unauthorized", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false, nil)
-		if got, want := resp.StatusCode, http.StatusUnauthorized; got != want {
-			t.Errorf("wrong response code: got %v, want %v", got, want)
-		}
-	})
+	if isImpl2 {
+		t.Run("unauthenticated API visit -> pass through", func(t *testing.T) {
+			resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false, nil)
+			if got, want := resp.StatusCode, http.StatusOK; got != want {
+				t.Errorf("wrong response code: got %v, want %v", got, want)
+			}
+		})
+	} else {
+		t.Run("unauthenticated API visit -> HTTP 401 Unauthorized", func(t *testing.T) {
+			resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false, nil)
+			if got, want := resp.StatusCode, http.StatusUnauthorized; got != want {
+				t.Errorf("wrong response code: got %v, want %v", got, want)
+			}
+		})
+	}
 	var (
 		loggedInCookies []*http.Cookie
 	)
 	t.Run("get SP metadata and register SP with IDP", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/saml/metadata", "", nil, false, nil)
+		resp := doRequest("GET", "http://example.com/.auth/saml/metadata?p="+providerKey, "", nil, false, nil)
 		service := samlidp.Service{}
 		if err := xml.NewDecoder(resp.Body).Decode(&service.Metadata); err != nil {
 			t.Fatal(err)

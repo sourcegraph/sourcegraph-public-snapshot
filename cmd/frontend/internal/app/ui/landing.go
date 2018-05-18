@@ -11,7 +11,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
@@ -86,7 +85,7 @@ func serveDefRedirectToDefLanding(w http.ResponseWriter, r *http.Request) {
 		}
 		pairs = append(pairs, k, v)
 	}
-	u, err := router.Get(routeLegacyDefLanding).URL(pairs...)
+	u, err := Router().Get(routeLegacyDefLanding).URL(pairs...)
 	if err != nil {
 		log15.Error("Def redirect URL construction failed.", "url", r.URL.String(), "routeVars", routeVars, "err", err)
 		http.Error(w, "", http.StatusBadRequest)
@@ -98,10 +97,10 @@ func serveDefRedirectToDefLanding(w http.ResponseWriter, r *http.Request) {
 // Redirect from old /land/ def landing URLs to new /info/ URLs
 func serveOldRouteDefLanding(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	infoURL, err := router.Get(routeLegacyDefLanding).URL(
+	infoURL, err := Router().Get(routeLegacyDefLanding).URL(
 		"Repo", vars["Repo"], "Path", vars["Path"], "Rev", vars["Rev"], "UnitType", vars["UnitType"], "Unit", vars["Unit"])
 	if err != nil {
-		repoURL, err := router.Get(routeRepo).URL("Repo", vars["Repo"], "Rev", vars["Rev"])
+		repoURL, err := Router().Get(routeRepo).URL("Repo", vars["Repo"], "Rev", vars["Rev"])
 		if err != nil {
 			// Last recourse is redirect to homepage
 			http.Redirect(w, r, "/", http.StatusSeeOther)

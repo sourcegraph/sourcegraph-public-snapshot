@@ -60,4 +60,6 @@ keycloak_createclient () {
     docker exec -i $CONTAINER keycloak/bin/kcadm.sh create clients -f - < $CONFIGFILE
 }
 keycloak_createclient sourcegraph-client-openid config/client-openid.json
+keycloak_createclient sourcegraph-client-openid-2 config/client-openid-2.json
 keycloak_createclient http://localhost:3080/.auth/saml/metadata config/client-saml.json
+keycloak_createclient 'http://localhost:3080/.auth/saml/metadata?2' config/client-saml-2.json

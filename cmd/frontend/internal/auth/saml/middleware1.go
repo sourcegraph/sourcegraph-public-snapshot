@@ -22,7 +22,17 @@ func authHandler1(w http.ResponseWriter, r *http.Request, next http.Handler, isA
 	if handled {
 		return
 	}
-	if handled := authHandlerCommon(w, r, next, pc); handled {
+
+	// Check the SAML auth provider configuration.
+	if pc != nil && (pc.ServiceProviderCertificate == "" || pc.ServiceProviderPrivateKey == "") {
+		log15.Error("No certificate and/or private key set for SAML auth provider in site configuration.")
+		http.Error(w, "misconfigured SAML auth provider", http.StatusInternalServerError)
+		return
+	}
+
+	// If SAML isn't enabled, skip SAML auth.
+	if pc == nil {
+		next.ServeHTTP(w, r)
 		return
 	}
 

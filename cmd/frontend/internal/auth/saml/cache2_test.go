@@ -5,13 +5,12 @@ import (
 	"testing"
 	"time"
 
-	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestProviderCache2(t *testing.T) {
 	calls := 0
-	mockGetServiceProvider2 = func(*schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error) {
+	mockGetServiceProvider2 = func(*schema.SAMLAuthProvider) (*provider, error) {
 		calls++
 		return nil, nil
 	}

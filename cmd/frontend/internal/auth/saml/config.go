@@ -1,37 +1,42 @@
 package saml
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// getFirstProviderConfig returns the SAML auth provider config. At most 1 can be specified in site
-// config; if there is more than 1, it returns multiple == true (which the caller should handle by
-// returning an error and refusing to proceed with auth).
-func getFirstProviderConfig() (pc *schema.SAMLAuthProvider, multiple bool) {
+// getProviderConfigForKey returns the SAML auth provider config with the given key (==
+// (providerKey).KeyString()).
+func getProviderConfigForKey(key string) *schema.SAMLAuthProvider {
 	for _, p := range conf.AuthProviders() {
-		if p.Saml != nil {
-			if pc != nil {
-				return pc, true // multiple SAML auth providers
-			}
-			pc = p.Saml
+		if p.Saml != nil && toProviderKey(p.Saml).KeyString() == key {
+			return p.Saml
 		}
 	}
-	return pc, false
+	return nil
 }
 
-func handleGetFirstProviderConfig(w http.ResponseWriter) (pc *schema.SAMLAuthProvider, handled bool) {
-	pc, multiple := getFirstProviderConfig()
-	if multiple {
-		log15.Error("At most 1 SAML auth provider may be set in site config.")
+func handleGetProviderConfig(w http.ResponseWriter, key string) (provider *provider, handled bool) {
+	pc := getProviderConfigForKey(key)
+	if pc == nil {
+		log15.Error("No SAML auth provider found with key.", "key", key)
 		http.Error(w, "Misconfigured SAML auth provider.", http.StatusInternalServerError)
 		return nil, true
 	}
-	return pc, false
+	provider, err := cache2.get(*pc)
+	if err != nil {
+		log15.Error("Error getting SAML provider metadata.", "error", err)
+		http.Error(w, "Unexpected error in SAML authentication provider.", http.StatusInternalServerError)
+		return
+	}
+	return provider, false
 }
 
 func providersOfType(ps []schema.AuthProviders) []*schema.SAMLAuthProvider {
@@ -45,6 +50,11 @@ func providersOfType(ps []schema.AuthProviders) []*schema.SAMLAuthProvider {
 }
 
 type providerKey struct{ idpMetadata, idpMetadataURL, spCertificate string }
+
+func (k providerKey) KeyString() string {
+	b := sha256.Sum256([]byte(strconv.Itoa(len(k.idpMetadata)) + ":" + strconv.Itoa(len(k.idpMetadataURL)) + ":" + k.idpMetadata + ":" + k.idpMetadataURL + ":" + k.spCertificate))
+	return hex.EncodeToString(b[:10])
+}
 
 func toProviderKey(pc *schema.SAMLAuthProvider) providerKey {
 	return providerKey{

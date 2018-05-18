@@ -11,11 +11,34 @@ package auth
 // site may support OpenID Connect authentication either via G Suite or Okta, each of which would be
 // represented by its own Provider instance.
 type Provider struct {
+	// ProviderID uniquely identifies this provider among all of the active providers.
+	//
+	// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
+	// and anonymous clients.
+	ProviderID
+
 	// Public is publicly visible information about this provider.
 	//
 	// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
 	// and anonymous clients.
 	Public PublicProviderInfo
+}
+
+// ProviderID uniquely identifies a provider among all of the active providers.
+//
+// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated and
+// anonymous clients.
+type ProviderID struct {
+	// ServiceType is the type of this auth provider's external service.
+	ServiceType string `json:"serviceType"`
+
+	// Key is a unique key among all other providers with the same ServiceType value. It must be a
+	// valid single URI path component (i.e., it must not contain '/' or any other character that is
+	// not valid in a URI path component).
+	//
+	// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
+	// and anonymous clients.
+	Key string `json:"key,omitempty"`
 }
 
 // PublicProviderInfo is publicly visible information about an auth provider.
@@ -30,6 +53,9 @@ type PublicProviderInfo struct {
 	// a username and password form submission to sign in, not navigating to a login URL).
 	IsBuiltin bool `json:"isBuiltin"`
 
-	// LoginURL is the URL to visit in order to initiate authenticating via this provider.
-	LoginURL string `json:"loginURL,omitempty"`
+	// AuthenticationURL is the URL to visit in order to initiate authenticating via this provider.
+	//
+	// TODO(sqs): Support "return-to" post-authentication-redirect destinations so newly authed
+	// users aren't dumped back onto the homepage.
+	AuthenticationURL string `json:"authenticationURL,omitempty"`
 }

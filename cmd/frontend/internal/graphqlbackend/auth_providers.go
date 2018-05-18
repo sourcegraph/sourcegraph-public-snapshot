@@ -3,9 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnectionResolver, error) {
@@ -13,8 +12,9 @@ func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnecti
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
+
 	return &authProviderConnectionResolver{
-		authProviders: conf.AuthProviders(),
+		authProviders: auth.Providers(),
 	}, nil
 }
 
@@ -23,7 +23,7 @@ func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnecti
 // 🚨 SECURITY: When instantiating an authProviderConnectionResolver value, the caller MUST check
 // permissions.
 type authProviderConnectionResolver struct {
-	authProviders []schema.AuthProviders
+	authProviders []*auth.Provider
 }
 
 func (r *authProviderConnectionResolver) Nodes(ctx context.Context) ([]*authProviderResolver, error) {

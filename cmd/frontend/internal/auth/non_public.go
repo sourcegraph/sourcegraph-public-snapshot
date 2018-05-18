@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -24,7 +24,7 @@ var RequireAuthMiddleware = &Middleware{
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// If an anonymous user tries to access an API endpoint that requires authentication,
 			// prevent access.
-			if !actor.FromContext(r.Context()).IsAuthenticated() && !allowAnonymousRequest(r) {
+			if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
 				// Report HTTP 401 Unauthorized for API requests.
 				http.Error(w, "Private mode requires authentication.", http.StatusUnauthorized)
 				return
@@ -38,7 +38,7 @@ var RequireAuthMiddleware = &Middleware{
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// If an anonymous user tries to access an app endpoint that requires authentication,
 			// prevent access and redirect them to the login page.
-			if !actor.FromContext(r.Context()).IsAuthenticated() && !allowAnonymousRequest(r) {
+			if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
 				// Redirect 302 Found for web page requests.
 				q := url.Values{}
 				q.Set("returnTo", r.URL.String())
@@ -67,9 +67,9 @@ var (
 		router.ResetPassword:     {},
 	}
 	anonymousAccessibleUIRoutes = map[string]struct{}{
-		ui.RouteSignIn:        {},
-		ui.RouteSignUp:        {},
-		ui.RoutePasswordReset: {},
+		uirouter.RouteSignIn:        {},
+		uirouter.RouteSignUp:        {},
+		uirouter.RoutePasswordReset: {},
 	}
 )
 
@@ -81,13 +81,13 @@ func matchedRouteName(req *http.Request, router *mux.Router) string {
 	return m.Route.GetName()
 }
 
-// allowAnonymousRequest reports whether handling of the HTTP request (which is from an anonymous
+// AllowAnonymousRequest reports whether handling of the HTTP request (which is from an anonymous
 // user) should proceed. The eventual handler for the request may still perform other authn/authz
 // checks.
 //
 // 🚨 SECURITY: This func MUST return false if handling req would leak any sensitive data or allow unprivileged
 // users to perform undesired actions.
-func allowAnonymousRequest(req *http.Request) bool {
+func AllowAnonymousRequest(req *http.Request) bool {
 	if conf.AuthPublic() {
 		return true
 	}
@@ -98,7 +98,7 @@ func allowAnonymousRequest(req *http.Request) bool {
 	apiRouteName := matchedRouteName(req, router.Router())
 	if apiRouteName == router.UI {
 		// Test against UI router. (Some of its handlers inject private data into the title or meta tags.)
-		uiRouteName := matchedRouteName(req, ui.Router())
+		uiRouteName := matchedRouteName(req, uirouter.Router)
 		_, ok := anonymousAccessibleUIRoutes[uiRouteName]
 		return ok
 	}

@@ -73,7 +73,7 @@ func Validate(input string) (messages []string, err error) {
 			continue
 		}
 
-		if MultipleAuthProvidersEnabled() && keyPath == "auth.providers" && strings.Contains(e.Description(), "Array must have at most 1 items") {
+		if !MultipleAuthProvidersEnabled() && keyPath == "(root)" && e.Description() == "Must validate \"else\" as \"if\" was not valid" {
 			continue
 		}
 

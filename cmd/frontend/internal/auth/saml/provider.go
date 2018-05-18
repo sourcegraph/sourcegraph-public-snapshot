@@ -2,12 +2,16 @@ package saml
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -26,6 +30,7 @@ func init() {
 
 		mu  sync.Mutex
 		cur []*schema.SAMLAuthProvider
+		reg = map[providerKey]*auth.Provider{}
 	)
 	conf.Watch(func() {
 		mu.Lock()
@@ -41,6 +46,20 @@ func init() {
 		if !init {
 			log15.Info("Reloading changed SAML authentication provider configuration.")
 		}
+		updates := make(map[*auth.Provider]bool, len(diff))
+		for pc, op := range diff {
+			pcKey := toProviderKey(&pc)
+			if old, ok := reg[pcKey]; ok {
+				delete(reg, pcKey)
+				updates[old] = false
+			}
+			if op == opAdded || op == opChanged {
+				new := newProviderInstance(&pc)
+				reg[pcKey] = new
+				updates[new] = true
+			}
+		}
+		auth.UpdateProviders(updates)
 
 		cur = new
 		for pc, op := range diff {
@@ -62,9 +81,47 @@ func init() {
 	init = false
 }
 
+func newProviderInstance(pc *schema.SAMLAuthProvider) *auth.Provider {
+	if pc == nil {
+		return nil
+	}
+
+	var displayNameSuffix string
+
+	// Disambiguate based on hostname. This is not sufficient for the general case.
+	if pc.IdentityProviderMetadataURL != "" {
+		u, err := url.Parse(pc.IdentityProviderMetadataURL)
+		if err == nil {
+			displayNameSuffix = " on " + u.Host
+		}
+	}
+
+	// For our dev client IDs, disambiguate them in the display name.
+	if strings.Contains(pc.ServiceProviderCertificate, "MIICvTCCAaUCBgFjJFU+ZzANBgkqhkiG9w") {
+		displayNameSuffix += " (1)"
+	} else if strings.Contains(pc.ServiceProviderCertificate, "MIICnzCCAYcCBgFjcKNWhzANBgkqhkiG9w") {
+		displayNameSuffix += " (2)"
+	}
+
+	return &auth.Provider{
+		ProviderID: auth.ProviderID{
+			ServiceType: pc.Type,
+			Key:         toProviderKey(pc).KeyString(),
+		},
+		Public: auth.PublicProviderInfo{
+			DisplayName: "SAML" + displayNameSuffix,
+			AuthenticationURL: (&url.URL{
+				Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
+				RawQuery: (url.Values{"p": []string{toProviderKey(pc).KeyString()}}).Encode(),
+			}).String(),
+		},
+	}
+}
+
 type providerConfig struct {
-	entityID *url.URL
-	keyPair  tls.Certificate
+	entityID        *url.URL
+	keyPair         tls.Certificate
+	certFingerprint string
 
 	// Exactly 1 of these is set:
 	identityProviderMetadataURL *url.URL
@@ -90,6 +147,7 @@ func readProviderConfig(pc *schema.SAMLAuthProvider, appURLStr string) (*provide
 	if err != nil {
 		return nil, err
 	}
+	c.certFingerprint = certFingerprint(c.keyPair.Leaf)
 
 	// Allow specifying either URL to SAML Identity Provider metadata XML file, or the XML
 	// file contents directly.
@@ -111,6 +169,11 @@ func readProviderConfig(pc *schema.SAMLAuthProvider, appURLStr string) (*provide
 	}
 
 	return &c, nil
+}
+
+func certFingerprint(cert *x509.Certificate) string {
+	d := sha256.Sum256(cert.RawSubjectPublicKeyInfo)
+	return base64.RawStdEncoding.EncodeToString(d[:])
 }
 
 func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byte, error) {

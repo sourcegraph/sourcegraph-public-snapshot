@@ -75,6 +75,15 @@ func TestValidateCustom(t *testing.T) {
 			},
 			wantValidationErrors: []string{"exactly 0 or 1 auth providers of type \"builtin\""},
 		},
+		"multiple auth providers without experimentalFeature.multipleAuthProviders": {
+			input: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
+				},
+			},
+			wantValidationErrors: []string{"auth.providers supports only a single"},
+		},
 		"old SAML auth provider with multiple providers": {
 			input: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "enabled"},

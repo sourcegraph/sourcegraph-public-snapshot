@@ -866,7 +866,7 @@
     "compiler",
     "jsonschema"
   ]
-  revision = "dcaa8193c72bfd5ed1aff7e4fc152b733e81f1b6"
+  revision = "89c94ff373e9a027bd2a62fccfb6c9ac2c168d84"
 
 [[projects]]
   branch = "master"

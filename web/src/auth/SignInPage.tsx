@@ -32,7 +32,24 @@ export class SignInPage extends React.Component<SignInPageProps> {
                 <HeroPage
                     icon={KeyIcon}
                     title="Sign into Sourcegraph"
-                    cta={<UsernamePasswordSignInForm {...this.props} />}
+                    body={
+                        window.context.authProviders && window.context.authProviders.length > 0 ? (
+                            window.context.authProviders.map(
+                                (p, i) =>
+                                    p.isBuiltin ? (
+                                        <UsernamePasswordSignInForm key={i} {...this.props} />
+                                    ) : (
+                                        <a key={i} href={p.authenticationURL} className="btn btn-primary mb-2">
+                                            Sign in with {p.displayName}
+                                        </a>
+                                    )
+                            )
+                        ) : (
+                            <div className="alert alert-info mt-3">
+                                No authentication providers are available. Contact a site administrator for help.
+                            </div>
+                        )
+                    }
                 />
             </div>
         )

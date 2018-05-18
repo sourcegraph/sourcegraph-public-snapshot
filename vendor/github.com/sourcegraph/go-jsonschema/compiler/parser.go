@@ -39,6 +39,14 @@ func (v *locationVisitor) Visit(schema *jsonschema.Schema, rel []jsonschema.Refe
 		return nil
 	}
 
+	// TODO(sqs): Don't walk if/then/else because we're not validating, and those are usually only
+	// used for validation (not for defining types).
+	if len(rel) > 0 {
+		if t := rel[len(rel)-1]; t.Keyword && (t.Name == "if" || t.Name == "then" || t.Name == "else") {
+			return nil
+		}
+	}
+
 	// Skip trivial schemas.
 	if schema.IsEmpty || schema.IsNegated || (len(schema.Type) == 1 && goBuiltinType(schema.Type[0]) != "") {
 		return nil

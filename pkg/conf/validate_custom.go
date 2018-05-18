@@ -42,7 +42,7 @@ func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, er
 		}
 		for _, pt := range sortedKeys(byType) {
 			n := byType[pt]
-			if n >= 2 {
+			if n >= 2 && pt != "openidconnect" && pt != "saml" {
 				invalid(fmt.Sprintf("exactly 0 or 1 auth providers of type %q must be specified (got %d)", pt, n))
 			}
 		}

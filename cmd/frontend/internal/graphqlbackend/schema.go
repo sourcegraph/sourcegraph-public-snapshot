@@ -1890,12 +1890,14 @@ type AuthProviderConnection {
 # A provider of user authentication, such as an external single-sign-on service (e.g., using OpenID
 # Connect or SAML).
 type AuthProvider {
-    # The human-readable name of the provider.
-    displayName: String!
     # The type of the external service that provides authentication.
     serviceType: String!
-    # An identifier for the external service that provides authentication.
-    serviceID: String!
+    # The human-readable name of the provider.
+    displayName: String!
+    # Whether this auth provider is the builtin username-password auth provider.
+    isBuiltin: Boolean!
+    # A URL that, when visited, initiates the authentication process for this auth provider.
+    authenticationURL: String
 }
 
 # An external account associated with a user.
