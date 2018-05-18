@@ -39,7 +39,7 @@ export class SignInPage extends React.Component<SignInPageProps> {
                                     p.isBuiltin ? (
                                         <UsernamePasswordSignInForm key={i} {...this.props} />
                                     ) : (
-                                        <a key={i} href={p.authenticationURL} className="btn btn-primary mb-2">
+                                        <a key={i} href={p.authenticationURL} className="btn btn-primary mt-3 mb-1">
                                             Sign in with {p.displayName}
                                         </a>
                                     )
