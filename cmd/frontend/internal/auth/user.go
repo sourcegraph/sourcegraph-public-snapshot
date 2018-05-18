@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -39,15 +41,48 @@ func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, extern
 			return 0, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", err
 		}
 		if errcode.IsNotFound(err) {
+			// Looser requirements: if the external auth provider returns a username or email that
+			// already exists, just use that user instead of refusing.
+			const allowMatchOnUsernameOrEmailOnly = true
+			associateUser := false
+
 			userID, err = db.ExternalAccounts.CreateUserAndSave(ctx, newOrUpdatedUser, externalAccount, db.ExternalAccountData{})
 			switch {
 			case db.IsUsernameExists(err):
+				if allowMatchOnUsernameOrEmailOnly {
+					user, err2 := db.Users.GetByUsername(ctx, newOrUpdatedUser.Username)
+					if err2 == nil {
+						userID = user.ID
+						err = nil
+						associateUser = true
+					} else {
+						log15.Error("Unable to reuse user account with username for authentication via external provider.", "username", newOrUpdatedUser.Username, "err", err)
+					}
+				}
 				safeErrMsg = fmt.Sprintf("The Sourcegraph username %q already exists and is not linked to this external account. If possible, sign using the external account you used previously. If that's not possible, a site admin can unlink or delete the Sourcegraph account with that username to fix this problem.", newOrUpdatedUser.Username)
 			case db.IsEmailExists(err):
+				if allowMatchOnUsernameOrEmailOnly {
+					user, err2 := db.Users.GetByVerifiedEmail(ctx, newOrUpdatedUser.Email)
+					if err2 == nil {
+						userID = user.ID
+						err = nil
+						associateUser = true
+					} else {
+						log15.Error("Unable to reuse user account with email for authentication via external provider.", "email", newOrUpdatedUser.Email, "err", err)
+					}
+				}
 				safeErrMsg = fmt.Sprintf("The email address %q already exists and is associated with a different Sourcegraph user. A site admin can remove the email address from that Sourcegraph user to fix this problem.", newOrUpdatedUser.Email)
 			case err != nil:
 				safeErrMsg = "Unable to create a new user account due to a conflict or other unexpected error. Ask a site admin for help."
 			}
+
+			if associateUser {
+				if err := db.ExternalAccounts.AssociateUserAndSave(ctx, userID, externalAccount, db.ExternalAccountData{}); err != nil {
+					safeErrMsg = "Unexpected error associating the external account with the existing Sourcegraph user with the same username or email address."
+					return 0, safeErrMsg, err
+				}
+			}
+
 			return userID, safeErrMsg, err
 		}
 	}
