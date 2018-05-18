@@ -76,7 +76,7 @@ interface State {
 }
 // Run localStorage.treeVersion=3;location.reload() to get the newest file tree,
 // or run `localStorage.treeVersion=1;location.reload()` to get the oldest file tree in case of issues.
-const treeVersion = localStorage.getItem('treeVersion')
+const treeVersion = localStorage.getItem('treeVersion') || '3'
 
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
