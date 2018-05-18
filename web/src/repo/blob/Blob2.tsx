@@ -157,10 +157,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     /** Emits when the go to definition button was clicked */
     private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => {
-        eventLogger.log('GoToDefClicked')
-        this.goToDefinitionClicks.next(event)
-    }
+    private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => this.goToDefinitionClicks.next(event)
 
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<void>()
@@ -169,26 +166,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
 
-    /** logs a hover event, if the hover is valid and new. Waits a tick to prevent any performance hit. */
-    private logHover = (
-        prevHover?: typeof LOADING | Hover | null | ErrorLike,
-        newHover?: typeof LOADING | Hover | null | ErrorLike
-    ) => setTimeout(() => this.logHoverSync(prevHover, newHover), 0)
-    private logHoverSync = (
-        prevHover?: typeof LOADING | Hover | null | ErrorLike,
-        newHover?: typeof LOADING | Hover | null | ErrorLike
-    ) => {
-        if (
-            newHover &&
-            newHover !== LOADING &&
-            !isErrorLike(newHover) &&
-            !(
-                prevHover &&
-                prevHover !== LOADING &&
-                !isErrorLike(prevHover) &&
-                isEqual(newHover.contents, prevHover.contents)
-            )
-        ) {
+    /** logs a hover event, if the hover is valid */
+    private logHover(hoverOrError?: typeof LOADING | Hover | null | ErrorLike): void {
+        if (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)) {
             eventLogger.log('SymbolHovered')
         }
     }
@@ -340,6 +320,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         this.subscriptions.add(
             filteredTargetPositions
                 .pipe(
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
                     switchMap(position => {
                         if (!position) {
                             return [undefined]
@@ -365,7 +346,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     })
                 )
                 .subscribe(hoverOrError => {
-                    this.logHover(this.state.hoverOrError, hoverOrError)
+                    this.logHover(hoverOrError)
                     this.setState(state => ({
                         hoverOrError,
                         // Reset the hover position, it's gonna be repositioned after the hover was rendered
@@ -490,6 +471,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     }
                 })
         )
+
+        // Telemetry
+        this.subscriptions.add(this.goToDefinitionClicks.subscribe(() => eventLogger.log('GoToDefClicked')))
     }
 
     public componentDidMount(): void {
