@@ -94,7 +94,7 @@ func quickGitserverRepoInfo(repo api.RepoURI) *gitserver.Repo {
 	switch {
 	case strings.HasPrefix(strings.ToLower(string(repo)), "github.com/"):
 		if envvar.SourcegraphDotComMode() || !conf.HasGitHubDotComToken() {
-			return &gitserver.Repo{Name: repo, URL: "https://" + string(repo)}
+			return &gitserver.Repo{Name: repo, URL: "https://" + string(repo) + ".git"}
 		}
 
 	case strings.HasPrefix(strings.ToLower(string(repo)), "gitlab.com/"):
