@@ -11,11 +11,11 @@ type signatureResolver struct {
 	date   time.Time
 }
 
-func (r *signatureResolver) Person() *personResolver {
+func (r signatureResolver) Person() *personResolver {
 	return r.person
 }
 
-func (r *signatureResolver) Date() string {
+func (r signatureResolver) Date() string {
 	return r.date.Format(time.RFC3339)
 }
 

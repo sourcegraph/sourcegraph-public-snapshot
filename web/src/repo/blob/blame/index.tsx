@@ -1,5 +1,5 @@
 import { BehaviorSubject, interval, merge, Observable } from 'rxjs'
-import { map, switchMap, take, takeUntil } from 'rxjs/operators'
+import { catchError, map, switchMap, take, takeUntil } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
 import { openFromJS, toCommitURL } from '../../../util/url'
 import { AbsoluteRepoFilePosition, AbsoluteRepoFileRange } from '../../index'
@@ -17,7 +17,7 @@ export interface BlameData {
  * @param text the literal text to measure.
  * @param font the font string, e.g. '12px Menlo'
  */
-function measureTextWidth(text: string, font: string): number {
+export function measureTextWidth(text: string, font: string): number {
     const tmp = document.createElement('canvas').getContext('2d')
     tmp!.font = font
     return tmp!.measureText(text).width
@@ -41,7 +41,13 @@ blameEvents
             const fetch: Observable<BlameData> = fetchBlameFile({
                 ...ctx,
                 position: { line: ctx.range.start.line, character: 0 },
-            } as AbsoluteRepoFilePosition).pipe(map(hunks => ({ ctx, loading: false, hunks: hunks || [] })))
+            } as AbsoluteRepoFilePosition).pipe(
+                catchError(error => {
+                    console.error('Blame error:', error)
+                    return [null]
+                }),
+                map(hunks => ({ ctx, loading: false, hunks: hunks || [] }))
+            )
             // show loading data after 250ms if the fetch has not resolved
             const loading: Observable<BlameData> = interval(250).pipe(
                 take(1),

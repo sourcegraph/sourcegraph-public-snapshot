@@ -6,8 +6,8 @@ type hunkResolver struct {
 	hunk *vcs.Hunk
 }
 
-func (r *hunkResolver) Author() *signatureResolver {
-	return &signatureResolver{
+func (r *hunkResolver) Author() signatureResolver {
+	return signatureResolver{
 		person: &personResolver{
 			name:  r.hunk.Author.Name,
 			email: r.hunk.Author.Email,

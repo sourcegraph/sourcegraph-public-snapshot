@@ -1766,7 +1766,7 @@ type Hunk {
     # The rev.
     rev: String!
     # The author.
-    author: Signature
+    author: Signature!
     # The message.
     message: String!
 }

@@ -19,9 +19,11 @@ import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
+import { scrollIntoView } from '../../util'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
 import { parseHash, toPositionOrRangeHash } from '../../util/url'
+import { BlameLine } from './blame/BlameLine'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
 import { convertNode, findElementWithOffset, getTableDataCell, getTargetLineAndOffset } from './tooltips'
 
@@ -64,17 +66,23 @@ const calculateOverlayPosition = (
         // bottom.
         const relBottom = targetBound.bottom + scrollable.scrollTop - scrollableBounds.top
         tooltipTop = relBottom + BLOB_PADDING_TOP
+    } else {
+        tooltipTop -= BLOB_PADDING_TOP
     }
     return { left: relLeft, top: tooltipTop }
 }
 
+interface HightlightArgs {
+    /** The `<code>` element */
+    codeElement: HTMLElement
+    /** The table row that represents the new line */
+    line?: HTMLTableRowElement
+}
+
 /**
  * Sets a new line to be highlighted and unhighlights the previous highlighted line, if exists.
- *
- * @param codeElement The `<code>` element
- * @param line The line number to select, 1-indexed
  */
-const highlightLine = (codeElement: HTMLElement, line?: number): void => {
+const highlightLine = ({ line, codeElement }: HightlightArgs): void => {
     const current = codeElement.querySelector('.selected')
     if (current) {
         current.classList.remove('selected')
@@ -82,13 +90,14 @@ const highlightLine = (codeElement: HTMLElement, line?: number): void => {
     if (line === undefined) {
         return
     }
-    const tableElement = codeElement.firstElementChild as HTMLTableElement
-    const row = tableElement.rows[line - 1]
-    if (!row) {
-        return
-    }
-    row.classList.add('selected')
+
+    line.classList.add('selected')
 }
+
+/**
+ * toPortalID builds an ID that will be used for the blame portal containers.
+ */
+const toPortalID = (line: number) => `blame-portal-${line}`
 
 interface BlobProps extends AbsoluteRepoFile {
     /** The trusted syntax-highlighted code as HTML */
@@ -121,6 +130,15 @@ interface BlobState {
 
     /** The currently hovered token */
     hoveredTokenPosition?: Position
+
+    /**
+     * blameLineIDs is a map from line numbers with portal nodes created to portal IDs.
+     * It's used to render the portals for blames. The line numbers are taken from the blob
+     * so they are 1-indexed.
+     */
+    blameLineIDs: { [key: number]: string }
+
+    activeLine: number | null
 }
 
 /**
@@ -130,6 +148,9 @@ interface BlobState {
 const shouldRenderHover = (state: BlobState): boolean =>
     (state.hoverOrError && !(isHover(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
     isJumpURL(state.definitionURLOrError)
+
+/** The time in ms after which to show a loader if the result has not returned yet */
+const LOADER_DELAY = 100
 
 export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
@@ -153,7 +174,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     /** Emits whenever something is clicked in the code */
     private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => this.codeClicks.next(event)
+    private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => {
+        event.persist()
+        this.codeClicks.next(event)
+    }
 
     /** Emits when the go to definition button was clicked */
     private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
@@ -178,6 +202,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         this.state = {
             hoverOverlayIsFixed: false,
             clickedGoToDefinition: false,
+            blameLineIDs: {},
+            activeLine: null,
         }
 
         const codeMouseOverTargets = this.codeMouseOvers.pipe(
@@ -200,29 +226,85 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             share()
         )
 
+        /**
+         * lineClickElements gets the full row that was clicked, the line number cell, the code cell,
+         * and the line number itself.
+         */
+        const lineClickElements = this.codeClicks.pipe(
+            map(({ target }) => target as HTMLElement),
+            map(target => {
+                let row: HTMLElement | null = target
+                while (row.parentElement && row.tagName !== 'TR') {
+                    row = row.parentElement
+                }
+                return { target, row }
+            }),
+            filter(propertyIsDefined('row')),
+            map(({ target, row }) => ({
+                target,
+                row: row as HTMLElement,
+                lineNumCell: row.children.item(0) as HTMLElement,
+                codeCell: row.children.item(1) as HTMLElement,
+            })),
+            map(({ lineNumCell, ...rest }) => {
+                let lineNum: number | null = null
+
+                const data = lineNumCell.dataset
+                lineNum = parseInt(data.line!, 10)
+
+                return {
+                    lineNum,
+                    lineNumCell,
+                    ...rest,
+                }
+            })
+        )
+
+        // Highlight the clicked row
+        this.subscriptions.add(
+            lineClickElements
+                .pipe(
+                    withLatestFrom(this.codeElements),
+                    map(([{ row }, codeElement]) => ({ line: row, codeElement })),
+                    filter(propertyIsDefined('codeElement'))
+                )
+                .subscribe(highlightLine)
+        )
+
+        // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
+        this.subscriptions.add(
+            lineClickElements
+                .pipe(
+                    withLatestFrom(this.codeElements),
+                    map(([{ target, lineNum }, codeElement]) => ({ target, lineNum, codeElement })),
+                    filter(propertyIsDefined('codeElement')),
+                    map(({ target, lineNum, codeElement }) => ({
+                        lineNum,
+                        position: getTargetLineAndOffset(target, codeElement!, false),
+                    }))
+                )
+                .subscribe(({ position, lineNum }) => {
+                    let hash: string
+                    if (position !== undefined) {
+                        hash = toPositionOrRangeHash({ position })
+                    } else {
+                        hash = `#L${lineNum}`
+                    }
+
+                    if (!hash.startsWith('#')) {
+                        hash = '#' + hash
+                    }
+
+                    this.props.history.push(hash)
+                })
+        )
+
         const codeClickTargets = this.codeClicks.pipe(
             map(event => event.target as HTMLElement),
             withLatestFrom(this.codeElements),
             // If there was a click, there _must_ have been a blob element
             map(([target, codeElement]) => ({ target, codeElement: codeElement! })),
             share()
-        )
-
-        // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
-        this.subscriptions.add(
-            codeClickTargets
-                .pipe(
-                    // TODO this should also work when clicking empty space or the line number
-                    map(({ target, codeElement }) => getTargetLineAndOffset(target, codeElement, false)),
-                    withLatestFrom(this.codeElements)
-                )
-                .subscribe(([position, codeElement]) => {
-                    let hash = toPositionOrRangeHash({ position })
-                    if (!hash.startsWith('#')) {
-                        hash = '#' + hash
-                    }
-                    this.props.history.push(hash)
-                })
         )
 
         /** Emits new positions found in the URL */
@@ -291,9 +373,40 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     filter(propertyIsDefined('hoverElement'))
                 )
                 .subscribe(({ codeElement, hoverElement, target }) => {
-                    const hoverOverlayPosition = calculateOverlayPosition(codeElement, target, hoverElement)
+                    const hoverOverlayPosition = calculateOverlayPosition(
+                        codeElement.parentElement!, // ! because we know its there
+                        target,
+                        hoverElement
+                    )
                     this.setState({ hoverOverlayPosition })
                 })
+        )
+
+        // Add a dom node for the blame portals
+        this.subscriptions.add(
+            lineClickElements.subscribe(({ lineNum, codeCell }) => {
+                const portalNode = document.createElement('span')
+
+                const id = toPortalID(lineNum)
+                portalNode.id = id
+                portalNode.classList.add('blame-portal')
+
+                codeCell.appendChild(portalNode)
+
+                this.setState({
+                    blameLineIDs: {
+                        ...this.state.blameLineIDs,
+                        [lineNum]: id,
+                    },
+                })
+            })
+        )
+
+        // Set the currently active line from hover
+        this.subscriptions.add(
+            lineClickElements.pipe(map(({ lineNum }) => lineNum)).subscribe(activeLine => {
+                this.setState({ activeLine })
+            })
         )
 
         /**
@@ -342,7 +455,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             share()
                         )
                         // Show a loader if it hasn't returned after 100ms
-                        return merge(hoverFetch, of(LOADING).pipe(delay(100), takeUntil(hoverFetch)))
+                        return merge(hoverFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)))
                     })
                 )
                 .subscribe(hoverOrError => {
@@ -429,7 +542,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 this.setState({
                     // If a token inside a code cell was clicked, pin the hover
                     // Otherwise if empty space was clicked, unpin it
-                    hoverOverlayIsFixed: !target.matches('td.code'),
+                    hoverOverlayIsFixed: !target.matches('td'),
                 })
             })
         )
@@ -457,16 +570,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 )
                 .subscribe(([line, blobElement, codeElement]) => {
                     const tableElement = codeElement.firstElementChild as HTMLTableElement
-                    highlightLine(codeElement, line)
                     if (line !== undefined) {
                         const row = tableElement.rows[line - 1]
                         if (row) {
-                            // Scroll to line
-                            const blobBound = blobElement.getBoundingClientRect()
-                            const codeBound = codeElement.getBoundingClientRect()
-                            const rowBound = row.getBoundingClientRect()
-                            const scrollTop = rowBound.top - codeBound.top - blobBound.height / 2 + rowBound.height / 2
-                            blobElement.scrollTop = scrollTop
+                            scrollIntoView(blobElement, row)
                         }
                     }
                 })
@@ -493,6 +600,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     }
 
     public render(): React.ReactNode {
+        const blameLineNum = this.state.activeLine
+        let blamePortalID: string | null = null
+
+        if (blameLineNum) {
+            blamePortalID = this.state.blameLineIDs[blameLineNum]
+        }
+
         return (
             <div className={`blob2 ${this.props.className}`} ref={this.nextBlobElement}>
                 <code
@@ -520,6 +634,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         {...this.props}
                     />
                 )}
+                {blameLineNum &&
+                    blamePortalID && (
+                        <BlameLine key={blamePortalID} portalID={blamePortalID} line={blameLineNum} {...this.props} />
+                    )}
             </div>
         )
     }

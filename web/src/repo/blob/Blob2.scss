@@ -5,8 +5,11 @@
     overflow: auto;
     padding-top: 0.5rem;
     tab-size: 4;
+    display: flex;
 
     &__code {
+        flex: 1;
+
         table {
             border-collapse: collapse;
         }
@@ -52,6 +55,33 @@
             width: 100%;
             padding-left: 1rem;
             white-space: pre;
+
+            // Possibly not needed but without this, empty lines with blame-portals wrap incorrectly
+            span {
+                display: inline-block;
+            }
+
+            .blame-portal {
+                display: inline-block;
+
+                span::before {
+                    content: attr(data-blame);
+                }
+
+                .blame {
+                    padding-left: 1rem;
+                    display: inline-block;
+                    width: 0;
+                    outline: none;
+
+                    .theme-dark & {
+                        color: $gray-16;
+                    }
+                    .theme-light & {
+                        color: $gray-07;
+                    }
+                }
+            }
         }
 
         &--wrapped {
