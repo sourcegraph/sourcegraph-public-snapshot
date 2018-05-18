@@ -13,7 +13,7 @@ if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
 fi
 
 echo "pulling new docker image..."
-IMAGE=sourcegraph/server:insiders
+IMAGE=${IMAGE:-sourcegraph/server:insiders}
 docker pull $IMAGE
 
 echo "starting server..."
