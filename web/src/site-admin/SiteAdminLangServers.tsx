@@ -1,7 +1,6 @@
 import BugIcon from '@sourcegraph/icons/lib/Bug'
 import DownloadSimpleIcon from '@sourcegraph/icons/lib/DownloadSimple'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
-import FileDocumentBoxIcon from '@sourcegraph/icons/lib/FileDocumentBox'
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
@@ -202,7 +201,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="site-admin-lang-servers">
+            <div className="site-admin-lang-servers mb-3">
                 <div className="site-admin-lang-servers__header">
                     <div className="site-admin-lang-servers__header-icon">
                         <GlobeIcon className="icon-inline" />
@@ -226,13 +225,15 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                         <div className="site-admin-lang-servers__list-item" key={i}>
                             <div className="site-admin-lang-servers__left-area">
                                 <div className="site-admin-lang-servers__language">
-                                    {langServer.displayName}
+                                    <div className="site-admin-lang-servers__language-name">
+                                        {langServer.displayName}
+                                    </div>
                                     {langServer.experimental && (
                                         <span
-                                            className="site-admin-lang-servers__language-experimental"
+                                            className="badge badge-warning"
                                             data-tooltip="This language server is experimental. Beware it may run arbitrary code and might have limited functionality."
                                         >
-                                            (experimental)
+                                            experimental
                                         </span>
                                     )}
                                     {langServer.custom && (
@@ -243,11 +244,13 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                                             (custom)
                                         </span>
                                     )}
-                                    {this.renderStatus(langServer)}
                                 </div>
                                 {this.renderRepo(langServer)}
                             </div>
-                            {this.renderActions(langServer)}
+                            <div>
+                                {this.renderActions(langServer)}
+                                {this.renderStatus(langServer)}
+                            </div>
                         </div>
                     )
                 )}
@@ -340,8 +343,8 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                     <button
                         disabled={disabled}
                         type="button"
-                        className="site-admin-lang-servers__actions-update btn btn-sm"
-                        data-tooltip={!disabled ? 'Update server' : undefined}
+                        className="site-admin-lang-servers__actions-update btn btn-secondary"
+                        data-tooltip={!disabled ? 'Update language server' : undefined}
                         // tslint:disable-next-line:jsx-no-lambda
                         onClick={() => this.updateButtonClicks.next(langServer)}
                     >
@@ -354,7 +357,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                             disabled={disabled}
                             type="button"
                             className="site-admin-lang-servers__actions-restart btn btn-secondary"
-                            data-tooltip={!disabled ? 'Restart server' : undefined}
+                            data-tooltip={!disabled ? 'Restart language server' : undefined}
                             // tslint:disable-next-line:jsx-no-lambda
                             onClick={() => this.restartButtonClicks.next(langServer)}
                         >
@@ -394,55 +397,46 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
             return null
         }
         return (
-            <div className="site-admin-lang-servers__repo">
-                {langServer.homepageURL &&
-                    langServer.homepageURL.startsWith('https://github.com') && (
-                        <>
-                            <GitHubIcon className="icon-inline" />{' '}
+            <small>
+                <div className="site-admin-lang-servers__repo">
+                    {langServer.homepageURL &&
+                        langServer.homepageURL.startsWith('https://github.com') && (
+                            <>
+                                <a
+                                    className="site-admin-lang-servers__repo-link"
+                                    href={langServer.homepageURL}
+                                    target="_blank"
+                                    onClick={this.generateClickHandler('LangServerHomepageClicked', langServer)}
+                                >
+                                    <GitHubIcon className="icon-inline" />{' '}
+                                    {langServer.homepageURL.substr('https://github.com/'.length)}
+                                </a>
+                            </>
+                        )}
+                    {langServer.homepageURL &&
+                        !langServer.homepageURL.startsWith('https://github.com') && (
                             <a
                                 className="site-admin-lang-servers__repo-link"
                                 href={langServer.homepageURL}
                                 target="_blank"
                                 onClick={this.generateClickHandler('LangServerHomepageClicked', langServer)}
                             >
-                                {langServer.homepageURL.substr('https://github.com/'.length)}
+                                {langServer.homepageURL}
                             </a>
-                        </>
-                    )}
-                {langServer.homepageURL &&
-                    !langServer.homepageURL.startsWith('https://github.com') && (
+                        )}
+                    {langServer.issuesURL && (
                         <a
                             className="site-admin-lang-servers__repo-link"
-                            href={langServer.homepageURL}
+                            href={langServer.issuesURL}
                             target="_blank"
-                            onClick={this.generateClickHandler('LangServerHomepageClicked', langServer)}
+                            data-tooltip="View issues"
+                            onClick={this.generateClickHandler('LangServerIssuesClicked', langServer)}
                         >
-                            {langServer.homepageURL}
+                            <BugIcon className="icon-inline" />
                         </a>
                     )}
-                {langServer.docsURL && (
-                    <a
-                        className="site-admin-lang-servers__repo-link"
-                        href={langServer.docsURL}
-                        target="_blank"
-                        data-tooltip="View documentation"
-                        onClick={this.generateClickHandler('LangServerDocsClicked', langServer)}
-                    >
-                        <FileDocumentBoxIcon className="icon-inline" />
-                    </a>
-                )}
-                {langServer.issuesURL && (
-                    <a
-                        className="site-admin-lang-servers__repo-link"
-                        href={langServer.issuesURL}
-                        target="_blank"
-                        data-tooltip="View issues"
-                        onClick={this.generateClickHandler('LangServerIssuesClicked', langServer)}
-                    >
-                        <BugIcon className="icon-inline" />
-                    </a>
-                )}
-            </div>
+                </div>
+            </small>
         )
     }
 
