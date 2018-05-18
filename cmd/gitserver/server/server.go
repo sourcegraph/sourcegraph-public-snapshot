@@ -31,6 +31,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
@@ -38,6 +39,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+// traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
+// logs to stderr
+var traceLogs bool
+
+func init() {
+	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
+}
 
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
@@ -406,9 +415,10 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				fetchDuration = cmdStart.Sub(start)
 			}
 
-			if honey.Enabled() {
+			if honey.Enabled() || traceLogs {
 				ev := honey.Event("gitserver-exec")
 				ev.AddField("repo", req.Repo)
+				ev.AddField("remote_url", req.URL)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
 				ev.AddField("ensure_revision", req.EnsureRevision)
@@ -425,7 +435,13 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 					ev.AddField("cmd_duration_ms", cmdDuration.Seconds()*1000)
 					ev.AddField("fetch_duration_ms", fetchDuration.Seconds()*1000)
 				}
-				ev.Send()
+
+				if honey.Enabled() {
+					ev.Send()
+				}
+				if traceLogs {
+					log15.Debug("TRACE gitserver exec", mapToLog15Ctx(ev.Fields())...)
+				}
 			}
 
 			if cmdDuration > shortGitCommandSlow(req.Args) {

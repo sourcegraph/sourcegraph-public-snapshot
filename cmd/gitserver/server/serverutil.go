@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -312,4 +313,23 @@ func (w *progressWriter) String() string {
 // Bytes returns the contents of the buffer.
 func (w *progressWriter) Bytes() []byte {
 	return w.buf
+}
+
+// mapToLog15Ctx translates a map to log15 context fields.
+func mapToLog15Ctx(m map[string]interface{}) []interface{} {
+	// sort so its stable
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	ctx := make([]interface{}, len(m)*2)
+	for i, k := range keys {
+		j := i * 2
+		ctx[j] = k
+		ctx[j+1] = m[k]
+	}
+	return ctx
 }
