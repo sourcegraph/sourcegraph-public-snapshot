@@ -4,7 +4,7 @@ import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { Link } from 'react-router-dom'
 import { merge, of, Subject, Subscription } from 'rxjs'
-import { catchError, delay, switchMap, takeUntil, tap } from 'rxjs/operators'
+import { catchError, delay, switchMap, takeUntil } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { toCommitURL } from '../../../util/url'
