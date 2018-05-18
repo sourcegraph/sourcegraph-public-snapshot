@@ -105,6 +105,13 @@ export class APIConsole extends React.PureComponent<Props, State> {
                     this.setState({ graphiqlOrError })
                 })
         )
+
+        // Ensure that the Doc Explorer page opens by default the first time a
+        // user opens the API console.
+        window.localStorage.setItem(
+            'graphiql:docExplorerOpen',
+            window.localStorage.getItem('graphiql:docExplorerOpen') || 'true'
+        )
     }
 
     public componentWillUnmount(): void {
