@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func validateCustomRaw(normalizedInput []byte) (validationErrors []string, err error) {
+func validateCustomRaw(normalizedInput []byte) (problems []string, err error) {
 	var cfg schema.SiteConfiguration
 	if err := json.Unmarshal(normalizedInput, &cfg); err != nil {
 		return nil, err
@@ -18,10 +18,10 @@ func validateCustomRaw(normalizedInput []byte) (validationErrors []string, err e
 
 // validateCustom validates the site config using custom validation steps that are not
 // able to be expressed in the JSON Schema.
-func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, err error) {
+func validateCustom(cfg schema.SiteConfiguration) (problems []string, err error) {
 
 	invalid := func(msg string) {
-		validationErrors = append(validationErrors, msg)
+		problems = append(problems, msg)
 	}
 
 	if cfg.AuthProvider != "" && len(cfg.AuthProviders) > 0 {
@@ -172,7 +172,7 @@ func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, er
 		invalid(`gitOriginMap is deprecated; instead use code host configuration such as "github", "gitlab", "repos.list", documented at https://about.sourcegraph.com/docs/config/repositories`)
 	}
 
-	return validationErrors, nil
+	return problems, nil
 }
 
 func sortedKeys(m map[string]int) (keys []string) {
