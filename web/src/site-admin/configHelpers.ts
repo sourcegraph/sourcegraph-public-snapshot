@@ -164,25 +164,17 @@ export const siteConfigActions: EditorAction[] = [
  * Indicates whether the site config has set the `disableTelemetry` option.
  */
 export function getDisableTelemetryUsed(text: string): boolean {
-    try {
-        const parsedConfig = parseJSON(text) as SiteConfiguration
-        if (!parsedConfig) {
-            return false
-        }
-        return parsedConfig.disableTelemetry !== undefined
-    } catch (err) {
-        console.error(err)
-        return false
-    }
+    return getProperty(text, 'disableTelemetry')
 }
 
-export function getUpdateChannel(cfgText: string): string | null {
+export function getUpdateChannel(text: string): string | null {
+    return getProperty(text, 'update.channel')
+}
+
+function getProperty(text: string, property: keyof SiteConfiguration): any | null {
     try {
-        const parsedConfig = parseJSON(cfgText) as SiteConfiguration
-        if (!parsedConfig) {
-            return null
-        }
-        return parsedConfig['update.channel'] || null
+        const parsedConfig = parseJSON(text) as SiteConfiguration
+        return parsedConfig && parsedConfig[property] !== undefined ? parsedConfig[property] : null
     } catch (err) {
         console.error(err)
         return null
