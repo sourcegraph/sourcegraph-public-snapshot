@@ -103,7 +103,6 @@
     ".",
     "logger",
     "samlidp",
-    "samlsp",
     "xmlenc"
   ]
   revision = "e231b7a1204a93c343c1a5fa2374ca2f6572f715"
@@ -1396,6 +1395,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a281bef8be3f3e8154357a4a06f532a1f0c4c7f2a9f11d4d0072633171fc26bc"
+  inputs-digest = "a4f69c5a55b4174f8b9f1c41f6f2ef32f9fe970994cfb81cc084863e927c9ff9"
   solver-name = "gps-cdcl"
   solver-version = 1
