@@ -88,7 +88,7 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 		return nil, errors.WithMessage(err, "parsing SAML Identity Provider metadata")
 	}
 
-	certStore := dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{}}
+	idpCertStore := dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{}}
 	for _, kd := range metadata.IDPSSODescriptor.KeyDescriptors {
 		for i, xcert := range kd.KeyInfo.X509Data.X509Certificates {
 			if xcert.Data == "" {
@@ -102,7 +102,21 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 			if err != nil {
 				return nil, errors.WithMessage(err, fmt.Sprintf("parsing SAML Identity Provider metadata certificate %d X.509 data", i))
 			}
-			certStore.Roots = append(certStore.Roots, idpCert)
+			idpCertStore.Roots = append(idpCertStore.Roots, idpCert)
+		}
+	}
+
+	// The SP's signing and encryption keys. Some SAML IdPs
+	var spKeyStore dsig.X509KeyStore
+	var signRequests bool
+	if c.keyPair != nil {
+		spKeyStore = dsig.TLSCertKeyStore(*c.keyPair)
+		signRequests = pc.SignRequests == nil || *pc.SignRequests
+	} else {
+		// If the SP private key isn't specified, then the IdP must not care to validate.
+		spKeyStore = dsig.RandomKeyStoreForTest()
+		if pc.SignRequests != nil && *pc.SignRequests {
+			return nil, errors.New("signRequests is true for SAML Service Provider but no private key and cert are given")
 		}
 	}
 
@@ -112,11 +126,12 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 		IdentityProviderIssuer:      metadata.EntityID,
 		ServiceProviderIssuer:       issuerURL,
 		AssertionConsumerServiceURL: c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/acs")}).String(),
-		SignAuthnRequests:           true,
+		SignAuthnRequests:           signRequests,
 		AudienceURI:                 issuerURL,
-		IDPCertificateStore:         &certStore,
-		SPKeyStore:                  dsig.TLSCertKeyStore(c.keyPair),
+		IDPCertificateStore:         &idpCertStore,
+		SPKeyStore:                  spKeyStore,
 		NameIdFormat:                getNameIDFormat(pc),
+		SkipSignatureValidation:     pc.InsecureSkipAssertionSignatureValidation,
 		ValidateEncryptionCert:      true,
 	}, nil
 }
@@ -164,7 +179,7 @@ func unmarshalEntityDescriptor(data []byte) (*types.EntityDescriptor, error) {
 
 type providerConfig struct {
 	entityID        *url.URL
-	keyPair         tls.Certificate
+	keyPair         *tls.Certificate
 	certFingerprint string
 
 	// Exactly 1 of these is set:
@@ -183,13 +198,16 @@ func readProviderConfig(pc *schema.SAMLAuthProvider, appURLStr string) (*provide
 	if err != nil {
 		return nil, err
 	}
-	c.keyPair, err = tls.X509KeyPair([]byte(pc.ServiceProviderCertificate), []byte(pc.ServiceProviderPrivateKey))
-	if err != nil {
-		return nil, err
-	}
-	c.keyPair.Leaf, err = x509.ParseCertificate(c.keyPair.Certificate[0])
-	if err != nil {
-		return nil, err
+	if pc.ServiceProviderCertificate != "" && pc.ServiceProviderPrivateKey != "" {
+		keyPair, err := tls.X509KeyPair([]byte(pc.ServiceProviderCertificate), []byte(pc.ServiceProviderPrivateKey))
+		if err != nil {
+			return nil, err
+		}
+		keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
+		if err != nil {
+			return nil, err
+		}
+		c.keyPair = &keyPair
 	}
 	c.certFingerprint = certFingerprint(c.keyPair.Leaf)
 

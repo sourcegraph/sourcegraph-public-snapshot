@@ -919,7 +919,12 @@ const SiteSchemaJSON = `{
       "description": "Configures the SAML authentication provider for SSO.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "serviceProviderCertificate", "serviceProviderPrivateKey"],
+      "required": ["type"],
+      "dependencies": {
+        "serviceProviderCertificate": ["serviceProviderPrivateKey"],
+        "serviceProviderPrivateKey": ["serviceProviderCertificate"],
+        "signRequests": ["serviceProviderCertificate", "serviceProviderPrivateKey"]
+      },
       "properties": {
         "type": {
           "type": "string",
@@ -928,29 +933,31 @@ const SiteSchemaJSON = `{
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "identityProviderMetadataURL": {
           "description":
-            "SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",
+            "The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",
           "type": "string",
           "format": "uri",
           "pattern": "^https?://"
         },
         "identityProviderMetadata": {
           "description":
-            "SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is ` + "`" + `<EntityDescriptor>` + "`" + ` or ` + "`" + `<EntityDescriptors>` + "`" + `.",
+            "The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is ` + "`" + `<EntityDescriptor>` + "`" + ` or ` + "`" + `<EntityDescriptors>` + "`" + `.",
           "type": "string"
         },
         "serviceProviderCertificate": {
           "description":
-            "SAML Service Provider certificate in X.509 encoding (begins with \"-----BEGIN CERTIFICATE-----\").",
+            "The SAML Service Provider certificate in X.509 encoding (begins with \"-----BEGIN CERTIFICATE-----\"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (` + "`" + `serviceProviderPrivateKey` + "`" + `).",
           "type": "string",
           "$comment": "The pattern matches either X.509 encoding or an env var.",
-          "pattern": "^(-----BEGIN CERTIFICATE-----\n|\\$)"
+          "pattern": "^(-----BEGIN CERTIFICATE-----\n|\\$)",
+          "minLength": 1
         },
         "serviceProviderPrivateKey": {
           "description":
-            "SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\").",
+            "The SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\"). This private key is used to sign AuthnRequests and LogoutRequests. It corresponds to the Service Provider's certificate (` + "`" + `serviceProviderCertificate` + "`" + `).",
           "type": "string",
           "$comment": "The pattern matches either PKCS#8 encoding or an env var.",
-          "pattern": "^(-----BEGIN PRIVATE KEY-----\n|\\$)"
+          "pattern": "^(-----BEGIN PRIVATE KEY-----\n|\\$)",
+          "minLength": 1
         },
         "nameIDFormat": {
           "description": "The SAML NameID format to use when performing user authentication.",
@@ -964,6 +971,18 @@ const SiteSchemaJSON = `{
             "urn:oasis:names:tc:SAML:2.0:nameid-format:emailAddress",
             "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
           ]
+        },
+        "signRequests": {
+          "description":
+            "Sign AuthnRequests and LogoutRequests sent to the Identity Provider using the Service Provider's private key (` + "`" + `serviceProviderPrivateKey` + "`" + `). It defaults to true if the ` + "`" + `serviceProviderPrivateKey` + "`" + ` and ` + "`" + `serviceProviderCertificate` + "`" + ` are set, and false otherwise.",
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
+        "insecureSkipAssertionSignatureValidation": {
+          "description":
+            "Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.",
+          "type": "boolean",
+          "default": false
         }
       }
     },

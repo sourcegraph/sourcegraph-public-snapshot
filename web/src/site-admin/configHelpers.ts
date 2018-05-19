@@ -102,8 +102,6 @@ const addSAMLAuthProvider: ConfigInsertionFunction = config => {
     const value: SamlAuthProvider = {
         type: 'saml',
         identityProviderMetadataURL: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
-        serviceProviderCertificate: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
-        serviceProviderPrivateKey: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
     }
     return {
         edits: [

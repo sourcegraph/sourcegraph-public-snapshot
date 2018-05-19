@@ -58,6 +58,7 @@ type Schema struct {
 	// Go contains Go-specific extensions that JSON Schema authors can specify.
 	Go *struct {
 		TaggedUnionType bool `json:"taggedUnionType,omitempty"`
+		Pointer         bool `json:"pointer,omitempty"`
 	} `json:"!go,omitempty"`
 }
 

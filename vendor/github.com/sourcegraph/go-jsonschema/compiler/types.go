@@ -42,3 +42,5 @@ func isBasicType(x ast.Expr) bool {
 	}
 	return t.Name == "string" || t.Name == "bool" || t.Name == "int" || t.Name == "float64"
 }
+
+func forceGoPointer(schema *jsonschema.Schema) bool { return schema.Go != nil && schema.Go.Pointer }

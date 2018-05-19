@@ -189,13 +189,15 @@ type Repository struct {
 
 // SAMLAuthProvider Configures the SAML authentication provider for SSO.
 type SAMLAuthProvider struct {
-	DisplayName                 string `json:"displayName,omitempty"`
-	IdentityProviderMetadata    string `json:"identityProviderMetadata,omitempty"`
-	IdentityProviderMetadataURL string `json:"identityProviderMetadataURL,omitempty"`
-	NameIDFormat                string `json:"nameIDFormat,omitempty"`
-	ServiceProviderCertificate  string `json:"serviceProviderCertificate"`
-	ServiceProviderPrivateKey   string `json:"serviceProviderPrivateKey"`
-	Type                        string `json:"type"`
+	DisplayName                              string `json:"displayName,omitempty"`
+	IdentityProviderMetadata                 string `json:"identityProviderMetadata,omitempty"`
+	IdentityProviderMetadataURL              string `json:"identityProviderMetadataURL,omitempty"`
+	InsecureSkipAssertionSignatureValidation bool   `json:"insecureSkipAssertionSignatureValidation,omitempty"`
+	NameIDFormat                             string `json:"nameIDFormat,omitempty"`
+	ServiceProviderCertificate               string `json:"serviceProviderCertificate,omitempty"`
+	ServiceProviderPrivateKey                string `json:"serviceProviderPrivateKey,omitempty"`
+	SignRequests                             *bool  `json:"signRequests,omitempty"`
+	Type                                     string `json:"type"`
 }
 
 // SMTPServerConfig The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).

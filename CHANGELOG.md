@@ -17,6 +17,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Usernames and email addresses reported by OpenID Connect and SAML auth providers are now trusted, and users will sign into existing Sourcegraph accounts that match on the auth provider's reported username or email.
 * The repository sidebar file tree is much, much faster on massive repositories (200,000+ files)
 * The SAML authentication provider was significantly improved. Users who were signed in using SAML previously will need to reauthenticate via SAML next time they visit Sourcegraph.
+* The SAML `serviceProviderCertificate` and `serviceProviderPrivateKey` site config properties are now optional.
 
 ### Fixed
 
