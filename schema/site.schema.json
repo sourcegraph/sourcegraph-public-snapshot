@@ -937,13 +937,15 @@
           "description":
             "SAML Service Provider certificate in X.509 encoding (begins with \"-----BEGIN CERTIFICATE-----\").",
           "type": "string",
-          "pattern": "^-----BEGIN CERTIFICATE-----\n"
+          "$comment": "The pattern matches either X.509 encoding or an env var.",
+          "pattern": "^(-----BEGIN CERTIFICATE-----\n|\\$)"
         },
         "serviceProviderPrivateKey": {
           "description":
             "SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\").",
           "type": "string",
-          "pattern": "^-----BEGIN PRIVATE KEY-----\n"
+          "$comment": "The pattern matches either PKCS#8 encoding or an env var.",
+          "pattern": "^(-----BEGIN PRIVATE KEY-----\n|\\$)"
         },
         "nameIDFormat": {
           "description": "The SAML NameID format to use when performing user authentication.",
