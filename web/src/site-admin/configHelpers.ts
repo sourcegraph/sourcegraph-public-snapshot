@@ -82,7 +82,7 @@ const addOtherRepository: ConfigInsertionFunction = config => {
     return { edits, selectText: urlPlaceholder }
 }
 
-const addSSOViaGSuite: ConfigInsertionFunction = config => {
+const addGSuiteOIDCAuthProvider: ConfigInsertionFunction = config => {
     const value: OpenIdConnectAuthProvider = {
         type: 'openidconnect',
         issuer: 'https://accounts.google.com',
@@ -98,7 +98,7 @@ const addSSOViaGSuite: ConfigInsertionFunction = config => {
     }
 }
 
-const addSSOViaSAML: ConfigInsertionFunction = config => {
+const addSAMLAuthProvider: ConfigInsertionFunction = config => {
     const value: SamlAuthProvider = {
         type: 'saml',
         identityProviderMetadataURL: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
@@ -152,8 +152,12 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.addBitbucketServer', label: 'Add Bitbucket Server repositories', run: addBitbucketServer },
     { id: 'sourcegraph.site.addAWSCodeCommit', label: 'Add AWS CodeCommit repositories', run: addAWSCodeCommit },
     { id: 'sourcegraph.site.otherRepository', label: 'Add other repository', run: addOtherRepository },
-    { id: 'sourcegraph.site.ssoViaGSuite', label: 'Use SSO via Google (G Suite)', run: addSSOViaGSuite },
-    { id: 'sourcegraph.site.ssoViaSAML', label: 'Use SSO via SAML', run: addSSOViaSAML },
+    {
+        id: 'sourcegraph.site.addGSuiteOIDCAuthProvider',
+        label: 'Add G Suite user auth',
+        run: addGSuiteOIDCAuthProvider,
+    },
+    { id: 'sourcegraph.site.addSAMLAUthProvider', label: 'Add SAML user auth', run: addSAMLAuthProvider },
 ]
 
 /**
