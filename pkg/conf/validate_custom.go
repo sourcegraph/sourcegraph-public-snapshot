@@ -152,6 +152,26 @@ func validateCustom(cfg schema.SiteConfiguration) (validationErrors []string, er
 		}
 	}
 
+	if cfg.DisableExampleSearches {
+		if cfg.DisableBuiltInSearches {
+			invalid(`disableExampleSearches was renamed to disableBuiltInSearches, which is set; you can safely remove the disableExampleSearches setting`)
+		} else {
+			invalid(`disableExampleSearches was renamed to disableBuiltInSearches; use that instead`)
+		}
+	}
+
+	if cfg.GithubEnterpriseAccessToken != "" || cfg.GithubEnterpriseCert != "" || cfg.GithubEnterpriseURL != "" {
+		invalid(`githubEnterprise{AccessToken,Cert,URL} are deprecated; instead use {..., "github": [{"url": "https://github-enterprise.example.com", "token": "..."}], ...}`)
+	}
+
+	if cfg.GithubPersonalAccessToken != "" {
+		invalid(`githubPersonalAccessToken is deprecated; instead use {..., "github": [{"url": "https://github.com", "token": "..."}], ....}`)
+	}
+
+	if cfg.GitOriginMap != "" {
+		invalid(`gitOriginMap is deprecated; instead use code host configuration such as "github", "gitlab", "repos.list", documented at https://about.sourcegraph.com/docs/config/repositories`)
+	}
+
 	return validationErrors, nil
 }
 

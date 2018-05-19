@@ -37,7 +37,7 @@ const SiteSchemaJSON = `{
     },
     "disableTelemetry": {
       "description":
-        "(Deprecated: event-level telemetry is now always disabled) Prevent usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
+        "(Deprecated: event-level telemetry is now always disabled) Prevent event-level usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
       "type": "boolean"
     },
     "disableExampleSearches": {
@@ -250,7 +250,7 @@ const SiteSchemaJSON = `{
     },
     "gitOriginMap": {
       "description":
-        "Space separated list of mappings from repo name prefix to origin url, for example \"github.com/!https://github.com/%.git\".",
+        "Space separated list of mappings from repo name prefix to origin url, for example \"github.com/!https://github.com/%.git\". DEPRECATED: Use code host configuration or repos.list (for adding repositories by Git URL) instead; see https://about.sourcegraph.com/docs/config/repositories.",
       "type": "string"
     },
     "repos.list": {
