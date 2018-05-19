@@ -2,6 +2,7 @@
 {
   "appURL": "http://localhost:3080",
   "experimentalFeatures": {
+    "configVars": "enabled",
     "searchTimeoutParameter": "enabled",
     "multipleAuthProviders": "enabled",
     "hostSurveysLocally": "enabled"
@@ -83,7 +84,7 @@
   "lightstepProject": "sourcegraph-dev",
   "lightstepAccessToken": "025f49bbe1eb074930a1de12c90542d5",
   "repoListUpdateInterval": 1,
-  "email.address": "noreply@sourcegraph.com",
+  "email.address": "noreply+${USER}@sourcegraph.com", // ${USER} is interpolated when SOURCEGRAPH_EXPAND_CONFIG_VARS=1
   "email.smtp": {
     "host": "smtp.mandrillapp.com",
     "port": 587,

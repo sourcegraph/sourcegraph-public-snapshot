@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -24,6 +26,9 @@ var (
 )
 
 // Raw returns the raw site configuration JSON.
+//
+// If using SOURCEGRAPH_EXPAND_CONFIG_VARS, this value is NOT expanded. Callers must expand env vars
+// in it (using expandEnv) before validating or applying it.
 func Raw() string {
 	rawMu.RLock()
 	defer rawMu.RUnlock()
@@ -174,7 +179,20 @@ func parseConfig(data string) (*schema.SiteConfiguration, error) {
 
 	// SOURCEGRAPH_CONFIG takes lowest precedence.
 	if data != "" {
-		if err := UnmarshalJSON(data, &tmpConfig); err != nil {
+		data, err := parseJSON(data)
+		if err != nil {
+			return nil, err
+		}
+
+		data, seenVars, err := expandEnv(data)
+		if err != nil {
+			return nil, err
+		}
+		if configVarsEnabled {
+			log15.Debug("Experiment SOURCEGRAPH_EXPAND_CONFIG_VARS: expanded environment variables in site configuration JSON.", "seenVars", seenVars)
+		}
+
+		if err := json.Unmarshal(data, &tmpConfig); err != nil {
 			return nil, err
 		}
 	}

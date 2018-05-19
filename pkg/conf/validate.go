@@ -45,10 +45,15 @@ var ignoreLegacyDataCenterFields = map[string]struct{}{
 
 // Validate validates the site configuration the JSON Schema and other custom validation
 // checks.
-func Validate(input string) (messages []string, err error) {
-	normalizedInput := NormalizeJSON(input)
+func Validate(inputStr string) (messages []string, err error) {
+	input := []byte(NormalizeJSON(inputStr))
 
-	res, err := validate([]byte(schema.SiteSchemaJSON), normalizedInput)
+	input, _, err = expandEnv(input)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := validate([]byte(schema.SiteSchemaJSON), input)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +85,7 @@ func Validate(input string) (messages []string, err error) {
 		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 
-	customMessages, err := validateCustomRaw(normalizedInput)
+	customMessages, err := validateCustomRaw(input)
 	if err != nil {
 		return nil, err
 	}

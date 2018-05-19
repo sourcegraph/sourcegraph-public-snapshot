@@ -57,6 +57,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header. It defaults to `max-age=31536000` (one year).
 * Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header.
 * Added `nameIDFormat` in the `saml` auth provider to set the SAML NameID format. The default changed from transient to persistent.
+* Experimental env var expansion in site config JSON: set `SOURCEGRAPH_EXPAND_CONFIG_VARS=1` to replace `${var}` or `$var` based on environment variables. Use `SRC_LOG_LEVEL=dbug` to see which variables were expanded.
 
 ## 2.7.6
 

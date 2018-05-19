@@ -85,6 +85,7 @@ type BuiltinAuthProvider struct {
 
 // ExperimentalFeatures Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
+	ConfigVars             string `json:"configVars,omitempty"`
 	HostSurveysLocally     string `json:"hostSurveysLocally,omitempty"`
 	JumpToDefOSSIndex      string `json:"jumpToDefOSSIndex,omitempty"`
 	MultipleAuthProviders  string `json:"multipleAuthProviders,omitempty"`

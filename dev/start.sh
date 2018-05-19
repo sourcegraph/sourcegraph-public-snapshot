@@ -52,6 +52,7 @@ export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
 export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
+export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $var in site config JSON
 
 # To use webpack-dev-server for auto-reloading, use:
 #   export USE_WEBPACK_DEV_SERVER=1
