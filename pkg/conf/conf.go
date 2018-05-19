@@ -11,8 +11,6 @@ import (
 	"sync"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -184,12 +182,9 @@ func parseConfig(data string) (*schema.SiteConfiguration, error) {
 			return nil, err
 		}
 
-		data, seenVars, err := expandEnv(data)
+		data, _, err = expandEnv(data)
 		if err != nil {
 			return nil, err
-		}
-		if configVarsEnabled {
-			log15.Debug("Experiment SOURCEGRAPH_EXPAND_CONFIG_VARS: expanded environment variables in site configuration JSON.", "seenVars", seenVars)
 		}
 
 		if err := json.Unmarshal(data, &tmpConfig); err != nil {
