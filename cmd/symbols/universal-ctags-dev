@@ -9,10 +9,12 @@
 # To use your own `universal-ctags` binary instead of this wrapper in your local dev server, use
 # `CTAGS_COMMAND=path/to/ctags dev/start.sh`.
 
+set -e
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 IMAGE=docker.sourcegraph.com/symbols:latest
+NAME=universal-ctags
 
 if [[ -z "${OFFLINE-}" ]] && ! docker pull "$IMAGE" > /dev/null; then
 	echo
@@ -22,4 +24,7 @@ if [[ -z "${OFFLINE-}" ]] && ! docker pull "$IMAGE" > /dev/null; then
 	exit 1
 fi
 
-exec docker run -a stdin -a stdout -a stderr -i --user guest --name=universal-ctags --entrypoint /usr/local/bin/universal-ctags --rm "$IMAGE" "$@"
+if docker inspect -f '' /$NAME > /dev/null 2>&1; then
+    docker rm -f /$NAME
+fi
+exec docker run -a stdin -a stdout -a stderr -i --user guest --name=$NAME --entrypoint /usr/local/bin/universal-ctags --rm "$IMAGE" "$@"
