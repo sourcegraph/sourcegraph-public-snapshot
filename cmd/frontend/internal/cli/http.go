@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -65,12 +67,24 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	h = auth.OverrideAuthMiddleware(h)
 	h = auth.ForbidAllRequestsMiddleware(h)
 	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
+	h = healthCheckMiddleware(h)
 	h = tracepkg.Middleware(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
 	h = secureHeadersMiddleware(h)
 	h = gcontext.ClearHandler(h)
 	return h, nil
+}
+
+func healthCheckMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/healthz", "/__version":
+			fmt.Fprintf(w, env.Version)
+		default:
+			next.ServeHTTP(w, r)
+		}
+	})
 }
 
 // newInternalHTTPHandler creates and returns the HTTP handler for the internal API (accessible to

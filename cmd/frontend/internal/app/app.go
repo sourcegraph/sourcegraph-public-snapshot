@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -28,11 +26,6 @@ func NewHandler() http.Handler {
 	m := http.NewServeMux()
 
 	m.Handle("/", r)
-
-	m.Handle("/__version", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, env.Version)
-	}))
-	m.Handle("/healthz", http.HandlerFunc(handleHealthCheck)) // healthz is a conventional name for "health check"
 
 	r.Get(router.RobotsTxt).Handler(trace.TraceRoute(http.HandlerFunc(robotsTxt)))
 	r.Get(router.Favicon).Handler(trace.TraceRoute(http.HandlerFunc(favicon)))
