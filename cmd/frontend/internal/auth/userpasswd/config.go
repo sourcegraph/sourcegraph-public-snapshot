@@ -36,3 +36,23 @@ func handleEnabledCheck(w http.ResponseWriter) (handled bool) {
 	}
 	return false
 }
+
+func validateConfig(c *schema.SiteConfiguration) (problems []string) {
+	var builtinAuthProviders int
+	for _, p := range conf.AuthProvidersFromConfig(c) {
+		if p.Builtin != nil {
+			builtinAuthProviders++
+		}
+	}
+	if builtinAuthProviders >= 2 {
+		problems = append(problems, `at most 1 builtin auth provider may be used`)
+	}
+	hasBuiltinAuthProvider := builtinAuthProviders > 0
+	if c.AuthAllowSignup && !hasBuiltinAuthProvider {
+		problems = append(problems, "auth.allowSignup requires auth provider \"builtin\"")
+	}
+	if c.AuthAllowSignup {
+		problems = append(problems, `auth.allowSignup is deprecated; use "auth.providers" with an entry of {"type":"builtin","allowSignup":true} instead`)
+	}
+	return problems
+}

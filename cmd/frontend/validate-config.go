@@ -10,6 +10,13 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+
+	// Import packages that contribute validators.
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader"
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/saml"
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 )
 
 func main() {

@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -54,4 +55,33 @@ func (k providerID) KeyString() string {
 
 func toProviderID(pc *schema.OpenIDConnectAuthProvider) providerID {
 	return providerID{issuerURL: pc.Issuer, clientID: pc.ClientID}
+}
+
+func validateConfig(c *schema.SiteConfiguration) (problems []string) {
+	var loggedNeedsAppURL bool
+	for _, p := range conf.AuthProvidersFromConfig(c) {
+		if p.Openidconnect != nil && c.AppURL == "" && !loggedNeedsAppURL {
+			problems = append(problems, `openidconnect auth provider requires appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+			loggedNeedsAppURL = true
+		}
+		if p.Openidconnect != nil && p.Openidconnect.OverrideToken != "" {
+			problems = append(problems, `openidconnect auth provider "overrideToken" is deprecated (because it applies to all auth providers, not just OIDC); use OVERRIDE_AUTH_SECRET env var instead`)
+		}
+	}
+
+	hasOldOIDC := c.OidcProvider != "" || c.OidcClientID != "" || c.OidcClientSecret != "" || c.OidcEmailDomain != ""
+	hasSingularOIDC := c.AuthOpenIDConnect != nil
+	if hasOldOIDC {
+		problems = append(problems, `oidc* properties are deprecated; use auth provider "openidconnect" instead`)
+	}
+	if c.AuthProvider == "openidconnect" && !hasSingularOIDC {
+		problems = append(problems, `auth.openIDConnect must be configured when auth.provider == "openidconnect"`)
+	}
+	if hasOldOIDC && c.AuthProvider != "openidconnect" {
+		problems = append(problems, `must set auth.provider == "openidconnect" for oidc* config to take effect (also, oidc* config is deprecated; see other message to that effect)`)
+	}
+	if hasSingularOIDC && c.AuthProvider != "openidconnect" {
+		problems = append(problems, `must set auth.provider == "openidconnect" for auth.openIDConnect config to take effect`)
+	}
+	return problems
 }

@@ -19,3 +19,27 @@ func getProviderConfig() (pc *schema.HTTPHeaderAuthProvider, multiple bool) {
 	}
 	return pc, false
 }
+
+func validateConfig(c *schema.SiteConfiguration) (problems []string) {
+	var httpHeaderAuthProviders int
+	for _, p := range conf.AuthProvidersFromConfig(c) {
+		if p.HttpHeader != nil {
+			httpHeaderAuthProviders++
+		}
+	}
+	if httpHeaderAuthProviders >= 2 {
+		problems = append(problems, `at most 1 http-header auth provider may be used`)
+	}
+
+	hasSingularAuthHTTPHeader := c.AuthUserIdentityHTTPHeader != ""
+	if c.AuthProvider == "http-header" && !hasSingularAuthHTTPHeader {
+		problems = append(problems, `auth.userIdentityHTTPHeader must be configured when auth.provider == "http-header"`)
+	}
+	if hasSingularAuthHTTPHeader {
+		problems = append(problems, `auth.userIdentityHTTPHeader is deprecated; use "auth.providers" with an entry of {"type":"http-header","usernameHeader":"..."} instead`)
+		if c.AuthProvider != "http-header" {
+			problems = append(problems, `must set auth.provider == "http-header" for auth.userIdentityHTTPHeader config to take effect`)
+		}
+	}
+	return problems
+}

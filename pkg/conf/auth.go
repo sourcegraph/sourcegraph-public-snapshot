@@ -26,10 +26,13 @@ func AuthProviderType(p schema.AuthProviders) string {
 //
 // 🚨 SECURITY: If len(AuthProviders()) == 0, then no auth provider is set. In this case, all access
 // MUST be forbidden. The goal is to prevent a config typo from resulting in a data breach.
-func AuthProviders() []schema.AuthProviders { return authProviders(Get()) }
-func authProviders(c *schema.SiteConfiguration) []schema.AuthProviders {
+func AuthProviders() []schema.AuthProviders { return AuthProvidersFromConfig(Get()) }
+
+// AuthProvidersFromConfig is like AuthProvider, except it accepts a site configuration input value
+// instead of using the current global value.
+func AuthProvidersFromConfig(c *schema.SiteConfiguration) []schema.AuthProviders {
 	if c.AuthProviders != nil {
-		if !multipleAuthProvidersEnabled(c) && len(c.AuthProviders) >= 1 {
+		if !MultipleAuthProvidersEnabledFromConfig(c) && len(c.AuthProviders) >= 1 {
 			// Only return first auth provider because the multipleAuthProviders experiment is
 			// disabled.
 			return c.AuthProviders[:1]
@@ -120,7 +123,7 @@ func authProviderLegacy(c *schema.SiteConfiguration) schema.AuthProviders {
 // there is a builtin auth provider.
 func AuthPublic() bool { return authPublic(Get()) }
 func authPublic(c *schema.SiteConfiguration) bool {
-	for _, p := range authProviders(c) {
+	for _, p := range AuthProvidersFromConfig(c) {
 		if p.Builtin != nil && c.AuthPublic {
 			return true
 		}
@@ -133,7 +136,7 @@ func authPublic(c *schema.SiteConfiguration) bool {
 // auth.providers' builtin provider has allowSignup true (in site config).
 func AuthAllowSignup() bool { return authAllowSignup(Get()) }
 func authAllowSignup(c *schema.SiteConfiguration) bool {
-	for _, p := range authProviders(c) {
+	for _, p := range AuthProvidersFromConfig(c) {
 		if p.Builtin != nil && p.Builtin.AllowSignup {
 			return true
 		}

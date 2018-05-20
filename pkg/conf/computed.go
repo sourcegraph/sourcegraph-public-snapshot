@@ -49,8 +49,11 @@ func HostSurveysLocallyEnabled() bool {
 }
 
 // MultipleAuthProvidersEnabled reports whether the "multipleAuthProviders" experiment is enabled.
-func MultipleAuthProvidersEnabled() bool { return multipleAuthProvidersEnabled(Get()) }
-func multipleAuthProvidersEnabled(c *schema.SiteConfiguration) bool {
+func MultipleAuthProvidersEnabled() bool { return MultipleAuthProvidersEnabledFromConfig(Get()) }
+
+// MultipleAuthProvidersEnabledFromConfig is like MultipleAuthProvidersEnabled, except it accepts a
+// site configuration input value instead of using the current global value.
+func MultipleAuthProvidersEnabledFromConfig(c *schema.SiteConfiguration) bool {
 	// default is disabled
 	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.MultipleAuthProviders == "enabled"
 }

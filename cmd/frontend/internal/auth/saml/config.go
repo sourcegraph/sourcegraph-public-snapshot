@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -38,6 +39,32 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p
 		return nil, true
 	}
 	return p, false
+}
+
+func validateConfig(c *schema.SiteConfiguration) (problems []string) {
+	var loggedNeedsAppURL bool
+	for _, p := range conf.AuthProvidersFromConfig(c) {
+		if p.Saml != nil && c.AppURL == "" && !loggedNeedsAppURL {
+			problems = append(problems, `saml auth provider requires appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+			loggedNeedsAppURL = true
+		}
+	}
+
+	hasOldSAML := c.SamlIDProviderMetadataURL != "" || c.SamlSPCert != "" || c.SamlSPKey != ""
+	hasSingularSAML := c.AuthSaml != nil
+	if hasOldSAML {
+		problems = append(problems, `saml* properties are deprecated; use auth provider "saml" instead`)
+	}
+	if c.AuthProvider == "saml" && !hasSingularSAML {
+		problems = append(problems, `auth.saml must be configured when auth.provider == "saml"`)
+	}
+	if hasOldSAML && c.AuthProvider != "saml" {
+		problems = append(problems, `must set auth.provider == "saml" for saml* config to take effect (also, saml* config is deprecated; see other message to that effect)`)
+	}
+	if hasSingularSAML && c.AuthProvider != "saml" {
+		problems = append(problems, `must set auth.provider == "saml" for auth.saml config to take effect`)
+	}
+	return problems
 }
 
 type providerID struct{ idpMetadata, idpMetadataURL, spCertificate string }

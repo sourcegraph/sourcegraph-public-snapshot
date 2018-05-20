@@ -414,7 +414,7 @@ func TestAuthProvider(t *testing.T) {
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			got := authProviders(&test.input)
+			got := AuthProvidersFromConfig(&test.input)
 			if !reflect.DeepEqual(got, test.want) {
 				t.Errorf("got != want\ngot  %+v\nwant %+v", got, test.want)
 			}
