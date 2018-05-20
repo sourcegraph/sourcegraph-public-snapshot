@@ -47,7 +47,8 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 		AvatarURL:       claims.Picture,
 	}, db.ExternalAccountSpec{
 		ServiceType: providerType,
-		ServiceID:   idToken.Issuer + ":" + p.config.ClientID,
+		ServiceID:   idToken.Issuer,
+		ClientID:    p.config.ClientID,
 		AccountID:   idToken.Subject,
 	}, data)
 	if err != nil {

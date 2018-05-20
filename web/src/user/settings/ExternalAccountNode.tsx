@@ -12,6 +12,7 @@ export const externalAccountFragment = gql`
         id
         serviceType
         serviceID
+        clientID
         accountID
         createdAt
         updatedAt
@@ -95,7 +96,13 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="mr-2 text-truncate">
                         <span className="badge badge-secondary">{this.props.node.serviceType}</span>{' '}
-                        <strong>{this.props.node.serviceID}</strong>
+                        {this.props.node.clientID ? (
+                            <>
+                                {this.props.node.serviceID} &mdash; <strong>{this.props.node.clientID}</strong>
+                            </>
+                        ) : (
+                            <strong>{this.props.node.serviceID}</strong>
+                        )}
                         <br />
                         <span className="text-muted">
                             {this.props.node.accountID} &mdash;{' '}

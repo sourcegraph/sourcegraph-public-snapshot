@@ -39,6 +39,8 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
 const authProviderFragment = gql`
     fragment AuthProviderFields on AuthProvider {
         serviceType
+        serviceID
+        clientID
         displayName
         isBuiltin
         authenticationURL

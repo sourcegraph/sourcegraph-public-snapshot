@@ -11,6 +11,7 @@ type authProviderResolver struct {
 
 func (r *authProviderResolver) ServiceType() string { return r.authProvider.ID().Type }
 func (r *authProviderResolver) ServiceID() string   { return r.authProvider.ID().ID }
+func (r *authProviderResolver) ClientID() string    { return "" }
 func (r *authProviderResolver) DisplayName() string { return r.info.DisplayName }
 func (r *authProviderResolver) IsBuiltin() bool     { return r.authProvider.Config().Builtin != nil }
 func (r *authProviderResolver) AuthenticationURL() *string {

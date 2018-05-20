@@ -164,6 +164,8 @@
 // ../../../../../migrations/1525961108_user_unique_among_non-deleted.up.sql
 // ../../../../../migrations/1526364839_user_multiple_external_accounts.down.sql
 // ../../../../../migrations/1526364839_user_multiple_external_accounts.up.sql
+// ../../../../../migrations/1526804768_add_external_account_client.down.sql
+// ../../../../../migrations/1526804768_add_external_account_client.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3511,6 +3513,46 @@ func _1526364839_user_multiple_external_accountsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1526804768_add_external_account_clientDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xce\xc1\x6a\x84\x30\x10\x80\xe1\x7b\x9e\x62\x6e\xb6\xe0\x13\x34\xf4\x60\x75\xa0\x42\x1a\x6d\x4c\x68\x6f\x21\x24\x73\x08\x48\x2c\x1a\x4b\xfb\xf6\x8b\xcb\xee\xba\x17\x61\x6f\xc3\xf0\xcf\xf0\x35\xaa\xeb\xa1\x95\x0d\x7e\xc3\xba\xd0\x6c\xe9\x2f\xd3\x9c\xdc\x68\x9d\xf7\xd3\x9a\xf2\x72\x1d\x38\x33\x7d\x53\x69\x3c\xc8\x60\x40\x0d\x0b\xcd\xbf\xd1\x93\x8d\xe1\xd5\x4f\xc9\xbb\xfc\xb4\x6f\x4a\x28\x5e\x8a\x12\xfc\x18\x29\x65\x1b\xc3\x33\x67\x95\xd0\xa8\x40\x57\x6f\xe2\xf0\xeb\x99\x57\x77\xc2\x7c\xc8\xfd\x94\xb3\x5a\xe1\x46\x31\xb2\xfd\x34\xf8\x10\x1f\x3a\x79\x50\xdc\x8c\xf9\xff\x87\x4a\xb8\x17\x5f\x92\x4d\x0b\x5f\xef\xa8\x10\x02\x8d\x94\x29\x58\x97\xa1\x1d\x40\x1a\x21\x38\x3b\x05\x00\x00\xff\xff\x45\x45\x6b\xb4\x43\x01\x00\x00")
+
+func _1526804768_add_external_account_clientDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1526804768_add_external_account_clientDownSql,
+		"1526804768_add_external_account_client.down.sql",
+	)
+}
+
+func _1526804768_add_external_account_clientDownSql() (*asset, error) {
+	bytes, err := _1526804768_add_external_account_clientDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1526804768_add_external_account_client.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1526804768_add_external_account_clientUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8f\xb1\x6a\xc4\x30\x0c\x86\x77\x3f\x85\xb6\x6b\x21\x6f\x60\x3a\xb8\x67\x41\x03\xae\x7d\xf5\xd9\xb4\x9b\x09\xb6\x06\x43\x48\x4b\xa2\x2b\xd7\xb7\x2f\x39\x12\x32\x05\xb2\x49\xf0\x7d\xfa\x7f\x29\x13\xd0\x43\x50\xaf\x06\xe1\x36\xd1\x98\xe8\xce\x34\x0e\x5d\x9f\xba\x9c\xbf\x6f\x03\x4f\xa0\xb4\x86\xb3\x33\xf1\xdd\x42\xee\x2b\x0d\x9c\x6a\x01\xa6\x3b\x4b\x11\x2f\x5a\x85\x5d\xf1\x8a\x61\x33\x5e\x4e\x27\x29\x8e\xa4\x3d\x90\x2d\x68\x3e\x62\x5d\x00\x1b\x8d\x91\x42\x7b\x77\x81\xd6\x6a\xfc\xda\xf1\xd7\x41\x8a\xb3\xc7\xb9\x5b\xb4\xed\x47\xc4\x43\x0e\x38\xbb\x43\x3c\x4d\x34\xfe\xd6\x4c\x89\xff\x7e\xa8\x81\x75\xab\xa5\xd9\x9a\x36\xb0\xd0\xa9\x96\x67\xf8\x7c\x43\x8f\x50\xa8\x27\xa6\x92\x3a\x86\xf6\xba\xbc\xf0\x1f\x00\x00\xff\xff\xca\x78\x1b\xbb\x72\x01\x00\x00")
+
+func _1526804768_add_external_account_clientUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1526804768_add_external_account_clientUpSql,
+		"1526804768_add_external_account_client.up.sql",
+	)
+}
+
+func _1526804768_add_external_account_clientUpSql() (*asset, error) {
+	bytes, err := _1526804768_add_external_account_clientUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1526804768_add_external_account_client.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3727,6 +3769,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1525961108_user_unique_among_non-deleted.up.sql":             _1525961108_user_unique_among_nonDeletedUpSql,
 	"1526364839_user_multiple_external_accounts.down.sql":         _1526364839_user_multiple_external_accountsDownSql,
 	"1526364839_user_multiple_external_accounts.up.sql":           _1526364839_user_multiple_external_accountsUpSql,
+	"1526804768_add_external_account_client.down.sql":             _1526804768_add_external_account_clientDownSql,
+	"1526804768_add_external_account_client.up.sql":               _1526804768_add_external_account_clientUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3934,6 +3978,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1525961108_user_unique_among_non-deleted.up.sql":             &bintree{_1525961108_user_unique_among_nonDeletedUpSql, map[string]*bintree{}},
 	"1526364839_user_multiple_external_accounts.down.sql":         &bintree{_1526364839_user_multiple_external_accountsDownSql, map[string]*bintree{}},
 	"1526364839_user_multiple_external_accounts.up.sql":           &bintree{_1526364839_user_multiple_external_accountsUpSql, map[string]*bintree{}},
+	"1526804768_add_external_account_client.down.sql":             &bintree{_1526804768_add_external_account_clientDownSql, map[string]*bintree{}},
+	"1526804768_add_external_account_client.up.sql":               &bintree{_1526804768_add_external_account_clientUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory

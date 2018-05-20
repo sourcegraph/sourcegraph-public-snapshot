@@ -15,7 +15,8 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 	spec := ExternalAccountSpec{
 		ServiceType: "xa",
 		ServiceID:   "xb",
-		AccountID:   "xc",
+		ClientID:    "xc",
+		AccountID:   "xd",
 	}
 	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, ExternalAccountData{})
 	if err != nil {
@@ -45,7 +46,8 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	spec := ExternalAccountSpec{
 		ServiceType: "xa",
 		ServiceID:   "xb",
-		AccountID:   "xc",
+		ClientID:    "xc",
+		AccountID:   "xd",
 	}
 	if err := ExternalAccounts.AssociateUserAndSave(ctx, user.ID, spec, ExternalAccountData{}); err != nil {
 		t.Fatal(err)
@@ -75,7 +77,8 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	spec := ExternalAccountSpec{
 		ServiceType: "xa",
 		ServiceID:   "xb",
-		AccountID:   "xc",
+		ClientID:    "xc",
+		AccountID:   "xd",
 	}
 	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, ExternalAccountData{})
 	if err != nil {

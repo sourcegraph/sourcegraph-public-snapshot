@@ -62,6 +62,7 @@ func getOrCreateUser(ctx context.Context, p *provider, info *saml2.AssertionInfo
 		db.ExternalAccountSpec{
 			ServiceType: providerType,
 			ServiceID:   p.ID().ID,
+			ClientID:    "",
 			AccountID:   info.NameID,
 		},
 		data,

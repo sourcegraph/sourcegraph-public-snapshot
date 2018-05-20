@@ -101,7 +101,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 	srv := httptest.NewServer(s)
 
 	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
-		if a.ServiceType == "openidconnect" && a.ServiceID == oidcProvider.Issuer+":"+testClientID && a.AccountID == testOIDCUser {
+		if a.ServiceType == "openidconnect" && a.ServiceID == oidcProvider.Issuer && a.ClientID == testClientID && a.AccountID == testOIDCUser {
 			return 123, nil
 		}
 		return 0, fmt.Errorf("account %v not found in mock", a)

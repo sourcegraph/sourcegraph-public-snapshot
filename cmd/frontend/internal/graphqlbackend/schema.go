@@ -1892,8 +1892,10 @@ type AuthProviderConnection {
 type AuthProvider {
     # The type of the auth provider.
     serviceType: String!
-    # An identifier for the auth provider that is unique among all other auth providers of the same type.
+    # An identifier for the service that the auth provider represents.
     serviceID: String!
+    # An identifier for the client of the service that the auth provider represents.
+    clientID: String!
     # The human-readable name of the provider.
     displayName: String!
     # Whether this auth provider is the builtin username-password auth provider.
@@ -1912,6 +1914,9 @@ type ExternalAccount implements Node {
     serviceType: String!
     # An identifier for the external service where the external account resides.
     serviceID: String!
+    # An identifier for the client of the external service where the external account resides. This distinguishes
+    # among multiple authentication providers that access the same service with different parameters.
+    clientID: String!
     # An identifier for the external account (typically equal to or derived from the ID on the external service).
     accountID: String!
     # The creation date of this external account on Sourcegraph.

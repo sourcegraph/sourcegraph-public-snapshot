@@ -16,7 +16,7 @@ import (
 type ExternalAccount struct {
 	ID                  int32
 	UserID              int32
-	ExternalAccountSpec // ServiceType, ServiceID, AccountID
+	ExternalAccountSpec // ServiceType, ServiceID, ClientID, AccountID
 	ExternalAccountData // AuthData, AccountData
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
@@ -28,6 +28,7 @@ type ExternalAccount struct {
 type ExternalAccountSpec struct {
 	ServiceType string
 	ServiceID   string
+	ClientID    string
 	AccountID   string
 }
 
@@ -74,10 +75,10 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec Exter
 	}
 
 	err = globalDB.QueryRowContext(ctx, `
-UPDATE user_external_accounts SET auth_data=$4, account_data=$5, updated_at=now()
-WHERE service_type=$1 AND service_id=$2 AND account_id=$3 AND deleted_at IS NULL
+UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
+WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.AccountID, data.AuthData, data.AccountData).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.AccountData).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]interface{}{spec}}
 	}
@@ -119,8 +120,8 @@ func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID 
 	var existingID, associatedUserID int32
 	err = tx.QueryRowContext(ctx, `
 SELECT id, user_id FROM user_external_accounts
-WHERE service_type=$1 AND service_id=$2 AND account_id=$3 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.AccountID).Scan(&existingID, &associatedUserID)
+WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
@@ -139,9 +140,9 @@ WHERE service_type=$1 AND service_id=$2 AND account_id=$3 AND deleted_at IS NULL
 
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
-UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
-WHERE service_type=$1 AND service_id=$2 AND account_id=$3 AND user_id=$4 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.AccountID, userID, data.AuthData, data.AccountData)
+UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
+WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND user_id=$5 AND deleted_at IS NULL
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, data.AuthData, data.AccountData)
 	if err != nil {
 		return err
 	}
@@ -192,9 +193,9 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec ExternalAccountSpec, data ExternalAccountData) error {
 	_, err := tx.ExecContext(ctx, `
-INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, auth_data, account_data)
-VALUES($1, $2, $3, $4, $5, $6)
-`, userID, spec.ServiceType, spec.ServiceID, spec.AccountID, data.AuthData, data.AccountData)
+INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
+VALUES($1, $2, $3, $4, $5, $6, $7)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.AccountData)
 	return err
 }
 
@@ -220,8 +221,8 @@ func (*userExternalAccounts) Delete(ctx context.Context, id int32) error {
 
 // ExternalAccountsListOptions specifies the options for listing user external accounts.
 type ExternalAccountsListOptions struct {
-	UserID                 int32
-	ServiceType, ServiceID string
+	UserID                           int32
+	ServiceType, ServiceID, ClientID string
 	*LimitOffset
 }
 
@@ -286,7 +287,7 @@ func (s *userExternalAccounts) getBySQL(ctx context.Context, querySuffix *sqlf.Q
 }
 
 func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*ExternalAccount, error) {
-	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at FROM user_external_accounts t %s`, querySuffix)
+	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at FROM user_external_accounts t %s`, querySuffix)
 	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -295,7 +296,7 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	defer rows.Close()
 	for rows.Next() {
 		var o ExternalAccount
-		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.AccountID, &o.AuthData, &o.AccountData, &o.CreatedAt, &o.UpdatedAt); err != nil {
+		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &o.AuthData, &o.AccountData, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
 		results = append(results, &o)
@@ -309,8 +310,8 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id=%d", opt.UserID))
 	}
-	if opt.ServiceType != "" || opt.ServiceID != "" {
-		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s)", opt.ServiceType, opt.ServiceID))
+	if opt.ServiceType != "" || opt.ServiceID != "" || opt.ClientID != "" {
+		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
 	}
 	return conds
 }

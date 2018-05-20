@@ -48,6 +48,7 @@ func (r *externalAccountResolver) ID() graphql.ID      { return marshalExternalA
 func (r *externalAccountResolver) User() *userResolver { return r.user }
 func (r *externalAccountResolver) ServiceType() string { return r.account.ServiceType }
 func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
+func (r *externalAccountResolver) ClientID() string    { return r.account.ClientID }
 func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
 func (r *externalAccountResolver) CreatedAt() string   { return r.account.CreatedAt.Format(time.RFC3339) }
 func (r *externalAccountResolver) UpdatedAt() string   { return r.account.UpdatedAt.Format(time.RFC3339) }
