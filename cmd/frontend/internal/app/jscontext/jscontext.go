@@ -69,7 +69,6 @@ type JSContext struct {
 	// Experimental features
 	SearchTimeoutParameterEnabled bool `json:"searchTimeoutParameterEnabled"`
 	HostSurveysLocallyEnabled     bool `json:"hostSurveysLocallyEnabled"`
-	MultipleAuthProvidersEnabled  bool `json:"multipleAuthProvidersEnabled"`
 
 	AccessTokensEnabled bool `json:"accessTokensEnabled"`
 
@@ -157,7 +156,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		// do the default behavior only in Go land.
 		SearchTimeoutParameterEnabled: conf.SearchTimeoutParameterEnabled(),
 		HostSurveysLocallyEnabled:     conf.HostSurveysLocallyEnabled(),
-		MultipleAuthProvidersEnabled:  conf.MultipleAuthProvidersEnabled(),
 
 		AccessTokensEnabled: conf.AccessTokensEnabled(),
 

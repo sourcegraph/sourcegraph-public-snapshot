@@ -14,15 +14,9 @@ interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
 }
 
-/** We fake a XyzConnection type because our GraphQL API doesn't have one (or need one) for external accounts. */
-interface ExternalAccountConnection {
-    nodes: GQL.IExternalAccount[]
-    totalCount: number
-}
-
 class FilteredExternalAccountConnection extends FilteredConnection<
     GQL.IExternalAccount,
-    Pick<ExternalAccountNodeProps, 'onDidUpdate'>
+    Pick<ExternalAccountNodeProps, 'onDidUpdate' | 'showUser'>
 > {}
 
 /**
@@ -41,18 +35,19 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<ExternalAccountNodeProps, 'onDidUpdate'> = {
+        const nodeProps: Pick<ExternalAccountNodeProps, 'onDidUpdate' | 'showUser'> = {
             onDidUpdate: this.onDidUpdateExternalAccount,
+            showUser: false,
         }
 
         return (
             <div className="user-settings-external-accounts-page">
-                <PageTitle title="Connected accounts" />
-                <h2>Connected accounts</h2>
+                <PageTitle title="External accounts" />
+                <h2>External accounts</h2>
                 <FilteredExternalAccountConnection
                     className="list-group list-group-flush mt-3"
-                    noun="connected account"
-                    pluralNoun="connected accounts"
+                    noun="external account"
+                    pluralNoun="external accounts"
                     queryConnection={this.queryUserExternalAccounts}
                     nodeComponent={ExternalAccountNode}
                     nodeComponentProps={nodeProps}
@@ -66,21 +61,27 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
         )
     }
 
-    private queryUserExternalAccounts = (args: {}): Observable<ExternalAccountConnection> =>
+    private queryUserExternalAccounts = (args: { first?: number }): Observable<GQL.IExternalAccountConnection> =>
         queryGraphQL(
             gql`
-                query UserExternalAccounts($user: ID!) {
+                query UserExternalAccounts($user: ID!, $first: Int) {
                     node(id: $user) {
                         ... on User {
-                            externalAccounts {
-                                ...ExternalAccountFields
+                            externalAccounts(first: $first) {
+                                nodes {
+                                    ...ExternalAccountFields
+                                }
+                                totalCount
+                                pageInfo {
+                                    hasNextPage
+                                }
                             }
                         }
                     }
                 }
                 ${externalAccountFragment}
             `,
-            { user: this.props.user.id }
+            { user: this.props.user.id, first: args.first }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
@@ -90,10 +91,7 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                 if (!user.externalAccounts) {
                     throw createAggregateError(errors)
                 }
-                return {
-                    nodes: user.externalAccounts,
-                    totalCount: user.externalAccounts.length,
-                }
+                return user.externalAccounts
             })
         )
 

@@ -1,5 +1,7 @@
+import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
@@ -14,6 +16,9 @@ interface AuthProviderNodeProps {
     node: GQL.IAuthProvider
 }
 
+/** Whether to show experimental auth features. */
+export const authExp = localStorage.getItem('authExp') !== null
+
 class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
     public render(): JSX.Element | null {
         return (
@@ -22,14 +27,23 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
                     <div className="mr-2">
                         <strong>{this.props.node.displayName}</strong>{' '}
                         <span className="badge badge-secondary">{this.props.node.serviceType}</span>
-                    </div>
-                    <div className="text-nowrap">
-                        {this.props.node.authenticationURL && (
-                            <a className="btn btn-secondary" href={this.props.node.authenticationURL}>
-                                Authenticate
-                            </a>
+                        <br />
+                        {(this.props.node.serviceID || this.props.node.clientID) && (
+                            <small className="text-muted">
+                                {this.props.node.serviceID}
+                                {this.props.node.clientID && <> &mdash; {this.props.node.clientID}</>}
+                            </small>
                         )}
                     </div>
+                    {authExp && (
+                        <div className="text-nowrap">
+                            {this.props.node.authenticationURL && (
+                                <a className="btn btn-secondary" href={this.props.node.authenticationURL}>
+                                    Authenticate
+                                </a>
+                            )}
+                        </div>
+                    )}
                 </div>
             </li>
         )
@@ -54,7 +68,7 @@ class FilteredAuthProviderConnection extends FilteredConnection<GQL.IAuthProvide
 /**
  * A page displaying the auth providers in site configuration.
  */
-export class SiteAdminAuthenticationPage extends React.Component<Props> {
+export class SiteAdminAuthenticationProvidersPage extends React.Component<Props> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminAuthentication')
     }
@@ -62,8 +76,18 @@ export class SiteAdminAuthenticationPage extends React.Component<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="site-admin-authentication-page">
-                <PageTitle title="Authentication - Admin" />
-                <h2>Authentication</h2>
+                <PageTitle title="Authentication providers - Admin" />
+                <h2>Authentication providers</h2>
+                <p>
+                    Authentication providers allow users to sign into Sourcegraph. See{' '}
+                    <a href="https://about.sourcegraph.com/docs/config/authentication">authentication documentation</a>{' '}
+                    about configuring single-sign-on (SSO) via SAML and OpenID Connect.
+                </p>
+                <div>
+                    <Link to="/site-admin/configuration" className="btn btn-secondary">
+                        <GearIcon className="icon-inline" /> Configure auth providers
+                    </Link>
+                </div>
                 <FilteredAuthProviderConnection
                     className="mt-3"
                     listClassName="list-group list-group-flush"
@@ -71,8 +95,6 @@ export class SiteAdminAuthenticationPage extends React.Component<Props> {
                     pluralNoun="authentication providers"
                     queryConnection={this.queryAuthProviders}
                     nodeComponent={AuthProviderNode}
-                    noShowMore={true}
-                    shouldUpdateURLQuery={false}
                     hideFilter={true}
                     history={this.props.history}
                     location={this.props.location}

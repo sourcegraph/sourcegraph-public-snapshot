@@ -11,8 +11,7 @@ import (
 )
 
 type externalAccountResolver struct {
-	user    *userResolver
-	account *db.ExternalAccount
+	account db.ExternalAccount
 }
 
 func externalAccountByID(ctx context.Context, id graphql.ID) (*externalAccountResolver, error) {
@@ -30,11 +29,7 @@ func externalAccountByID(ctx context.Context, id graphql.ID) (*externalAccountRe
 		return nil, err
 	}
 
-	user, err := userByIDInt32(ctx, account.UserID)
-	if err != nil {
-		return nil, err
-	}
-	return &externalAccountResolver{user: user, account: account}, nil
+	return &externalAccountResolver{account: *account}, nil
 }
 
 func marshalExternalAccountID(repo int32) graphql.ID { return relay.MarshalID("ExternalAccount", repo) }
@@ -44,8 +39,10 @@ func unmarshalExternalAccountID(id graphql.ID) (externalAccountID int32, err err
 	return
 }
 
-func (r *externalAccountResolver) ID() graphql.ID      { return marshalExternalAccountID(r.account.ID) }
-func (r *externalAccountResolver) User() *userResolver { return r.user }
+func (r *externalAccountResolver) ID() graphql.ID { return marshalExternalAccountID(r.account.ID) }
+func (r *externalAccountResolver) User(ctx context.Context) (*userResolver, error) {
+	return userByIDInt32(ctx, r.account.UserID)
+}
 func (r *externalAccountResolver) ServiceType() string { return r.account.ServiceType }
 func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
 func (r *externalAccountResolver) ClientID() string    { return r.account.ClientID }

@@ -1,7 +1,9 @@
 import { upperFirst } from 'lodash'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import { userURL } from '..'
 import { gql, mutateGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -10,6 +12,10 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../uti
 export const externalAccountFragment = gql`
     fragment ExternalAccountFields on ExternalAccount {
         id
+        user {
+            id
+            username
+        }
         serviceType
         serviceID
         clientID
@@ -42,6 +48,8 @@ function deleteExternalAccount(externalAccount: GQL.ID): Observable<void> {
 
 export interface ExternalAccountNodeProps {
     node: GQL.IExternalAccount
+
+    showUser: boolean
 
     onDidUpdate: () => void
 }
@@ -95,21 +103,30 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="mr-2 text-truncate">
-                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>{' '}
-                        {this.props.node.clientID ? (
+                        {this.props.showUser && (
                             <>
-                                {this.props.node.serviceID} &mdash; <strong>{this.props.node.clientID}</strong>
+                                <strong>
+                                    <Link to={userURL(this.props.node.user.username)}>
+                                        {this.props.node.user.username}
+                                    </Link>
+                                </strong>{' '}
+                                &mdash;{' '}
                             </>
-                        ) : (
-                            <strong>{this.props.node.serviceID}</strong>
+                        )}
+                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>{' '}
+                        {this.props.node.accountID}
+                        {(this.props.node.serviceID || this.props.node.clientID) && (
+                            <small className="text-muted">
+                                <br />
+                                {this.props.node.serviceID}
+                                {this.state.showData &&
+                                    this.props.node.clientID && <> &mdash; {this.props.node.clientID}</>}
+                            </small>
                         )}
                         <br />
-                        <span className="text-muted">
-                            {this.props.node.accountID} &mdash;{' '}
-                            <small>
-                                updated <Timestamp date={this.props.node.updatedAt} />
-                            </small>
-                        </span>
+                        <small className="text-muted">
+                            Updated <Timestamp date={this.props.node.updatedAt} />
+                        </small>
                     </div>
                     <div className="text-nowrap">
                         {this.props.node.accountData && (

@@ -108,11 +108,6 @@ interface SourcegraphContext {
     /** Whether signup is allowed on the site. */
     allowSignup: boolean
 
-    /**
-     * Whether the multipleAuthProviders feature flag is enabled.
-     */
-    multipleAuthProvidersEnabled: boolean
-
     /** Authentication provider instances in site config. */
     authProviders?: {
         displayName: string

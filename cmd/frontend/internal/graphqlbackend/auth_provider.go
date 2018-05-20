@@ -10,8 +10,21 @@ type authProviderResolver struct {
 }
 
 func (r *authProviderResolver) ServiceType() string { return r.authProvider.ConfigID().Type }
-func (r *authProviderResolver) ServiceID() string   { return r.authProvider.ConfigID().ID }
-func (r *authProviderResolver) ClientID() string    { return "" }
+
+func (r *authProviderResolver) ServiceID() string {
+	if r.info != nil {
+		return r.info.ServiceID
+	}
+	return ""
+}
+
+func (r *authProviderResolver) ClientID() string {
+	if r.info != nil {
+		return r.info.ClientID
+	}
+	return ""
+}
+
 func (r *authProviderResolver) DisplayName() string { return r.info.DisplayName }
 func (r *authProviderResolver) IsBuiltin() bool     { return r.authProvider.Config().Builtin != nil }
 func (r *authProviderResolver) AuthenticationURL() *string {

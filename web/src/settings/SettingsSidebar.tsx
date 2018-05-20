@@ -10,6 +10,7 @@ import * as React from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { OrgAvatar } from '../org/OrgAvatar'
 import { SiteAdminAlert } from '../site-admin/SiteAdminAlert'
+import { authExp } from '../site-admin/SiteAdminAuthenticationProvidersPage'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAreaPageProps } from '../user/area/UserArea'
 
@@ -102,15 +103,15 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                         Emails
                     </NavLink>
                 </li>
-                {window.context.multipleAuthProvidersEnabled && (
+                {authExp && (
                     <li className="sidebar__item">
                         <NavLink
-                            to={`${props.match.path}/accounts`}
+                            to={`${props.match.path}/external-accounts`}
                             exact={true}
                             className="sidebar__item-link"
                             activeClassName="sidebar__item--active"
                         >
-                            Connected accounts
+                            External accounts
                         </NavLink>
                     </li>
                 )}

@@ -1835,7 +1835,10 @@ type User implements Node, ConfigurationSubject {
         first: Int
     ): AccessTokenConnection!
     # A list of external accounts that are associated with the user.
-    externalAccounts: [ExternalAccount!]!
+    externalAccounts(
+        # Returns the first n external accounts from the list.
+        first: Int
+    ): ExternalAccountConnection!
     # The user's currently active session.
     #
     # Only the currently authenticated user can access this field. Site admins are not able to access sessions for
@@ -1902,6 +1905,17 @@ type AuthProvider {
     isBuiltin: Boolean!
     # A URL that, when visited, initiates the authentication process for this auth provider.
     authenticationURL: String
+}
+
+# A list of external accounts.
+type ExternalAccountConnection {
+    # A list of external accounts.
+    nodes: [ExternalAccount!]!
+    # The total count of external accounts in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # An external account associated with a user.
@@ -2189,6 +2203,19 @@ type Site implements ConfigurationSubject {
     ): AccessTokenConnection!
     # A list of all authentication providers.
     authProviders: AuthProviderConnection!
+    # A list of all user external accounts on this site.
+    externalAccounts(
+        # Returns the first n external accounts from the list.
+        first: Int
+        # Include only external accounts associated with this user.
+        user: ID
+        # Include only external accounts with this service type.
+        serviceType: String
+        # Include only external accounts with this service ID.
+        serviceID: String
+        # Include only external accounts with this client ID.
+        clientID: String
+    ): ExternalAccountConnection!
     # The build version of the Sourcegraph software that is running on this site (of the form
     # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
     buildVersion: String!

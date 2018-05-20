@@ -1,4 +1,5 @@
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
+import LockIcon from '@sourcegraph/icons/lib/Lock'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as H from 'history'
 import * as React from 'react'
@@ -66,18 +67,6 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             Repositories
                         </NavLink>
                     </li>
-                    {window.context.multipleAuthProvidersEnabled && (
-                        <li className="sidebar__item">
-                            <NavLink
-                                to="/site-admin/authentication"
-                                className="sidebar__item-link"
-                                activeClassName="sidebar__item--active"
-                                exact={true}
-                            >
-                                Authentication
-                            </NavLink>
-                        </li>
-                    )}
                 </ul>
                 <ul className="sidebar__items">
                     <li className="sidebar__item">
@@ -98,16 +87,6 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             exact={true}
                         >
                             Invite user
-                        </NavLink>
-                    </li>
-                    <li className="sidebar__item">
-                        <NavLink
-                            to="/site-admin/tokens"
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                            exact={true}
-                        >
-                            Access tokens
                         </NavLink>
                     </li>
                     <li className="sidebar__item">
@@ -138,6 +117,44 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             exact={true}
                         >
                             Code intelligence
+                        </NavLink>
+                    </li>
+                </ul>
+                <ul className="sidebar__items">
+                    <li className="sidebar__header">
+                        <div className="sidebar__header-icon">
+                            <LockIcon className="icon-inline" />
+                        </div>
+                        <h5 className="sidebar__header-title">Auth</h5>
+                    </li>
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/site-admin/auth/providers"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                            exact={true}
+                        >
+                            Providers
+                        </NavLink>
+                    </li>
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/site-admin/auth/external-accounts"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                            exact={true}
+                        >
+                            External accounts
+                        </NavLink>
+                    </li>
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/site-admin/tokens"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                            exact={true}
+                        >
+                            Access tokens
                         </NavLink>
                     </li>
                 </ul>
