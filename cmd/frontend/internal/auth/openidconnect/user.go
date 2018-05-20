@@ -14,6 +14,11 @@ import (
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims) (_ *actor.Actor, safeErrMsg string, err error) {
+	pi, err := p.getCachedInfoAndError()
+	if err != nil {
+		return nil, "", err
+	}
+
 	login := claims.PreferredUsername
 	if login == "" {
 		login = userInfo.Email
@@ -47,8 +52,8 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 		AvatarURL:       claims.Picture,
 	}, db.ExternalAccountSpec{
 		ServiceType: providerType,
-		ServiceID:   idToken.Issuer,
-		ClientID:    p.config.ClientID,
+		ServiceID:   pi.ServiceID,
+		ClientID:    pi.ClientID,
 		AccountID:   idToken.Subject,
 	}, data)
 	if err != nil {

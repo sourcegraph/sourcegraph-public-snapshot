@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	oidc "github.com/coreos/go-oidc"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -48,9 +49,10 @@ func (p *provider) Refresh(ctx context.Context) error {
 	return p.refreshErr
 }
 
-// CachedInfo implements auth.Provider.
-func (p *provider) CachedInfo() *auth.ProviderInfo {
+func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
 	info := auth.ProviderInfo{
+		ServiceID:   p.config.Issuer,
+		ClientID:    p.config.ClientID,
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
 			Path:     path.Join(authPrefix, "login"),
@@ -60,7 +62,22 @@ func (p *provider) CachedInfo() *auth.ProviderInfo {
 	if info.DisplayName == "" {
 		info.DisplayName = "OpenID Connect"
 	}
-	return &info
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	err := p.refreshErr
+	if err != nil {
+		err = errors.WithMessage(err, "failed to initialize OpenID Connect auth provider")
+	} else if p.oidc == nil {
+		err = errors.New("OpenID Connect auth provider is not yet initialized")
+	}
+	return &info, err
+}
+
+// CachedInfo implements auth.Provider.
+func (p *provider) CachedInfo() *auth.ProviderInfo {
+	info, _ := p.getCachedInfoAndError()
+	return info
 }
 
 func (p *provider) oauth2Config() *oauth2.Config {

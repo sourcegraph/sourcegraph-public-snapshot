@@ -56,8 +56,7 @@ func (p *provider) Refresh(ctx context.Context) error {
 	return p.refreshErr
 }
 
-// CachedInfo implements auth.Provider.
-func (p *provider) CachedInfo() *auth.ProviderInfo {
+func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
 	info := auth.ProviderInfo{
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
@@ -68,7 +67,26 @@ func (p *provider) CachedInfo() *auth.ProviderInfo {
 	if info.DisplayName == "" {
 		info.DisplayName = "SAML"
 	}
-	return &info
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	err := p.refreshErr
+	if err != nil {
+		err = errors.WithMessage(err, "failed to initialize SAML Service Provider")
+	} else if p.samlSP == nil {
+		err = errors.New("SAML Service Provider is not yet initialized")
+	}
+	if p.samlSP != nil {
+		info.ServiceID = p.samlSP.IdentityProviderIssuer
+		info.ClientID = p.samlSP.ServiceProviderIssuer
+	}
+	return &info, err
+}
+
+// CachedInfo implements auth.Provider.
+func (p *provider) CachedInfo() *auth.ProviderInfo {
+	info, _ := p.getCachedInfoAndError()
+	return info
 }
 
 func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error) {
@@ -87,7 +105,15 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 		return nil, errors.WithMessage(err, "parsing SAML Identity Provider metadata")
 	}
 
-	idpCertStore := dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{}}
+	sp := saml2.SAMLServiceProvider{
+		IdentityProviderSSOURL:  metadata.IDPSSODescriptor.SingleSignOnServices[0].Location,
+		IdentityProviderIssuer:  metadata.EntityID,
+		NameIdFormat:            getNameIDFormat(pc),
+		SkipSignatureValidation: pc.InsecureSkipAssertionSignatureValidation,
+		ValidateEncryptionCert:  true,
+	}
+
+	idpCertStore := &dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{}}
 	for _, kd := range metadata.IDPSSODescriptor.KeyDescriptors {
 		for i, xcert := range kd.KeyInfo.X509Data.X509Certificates {
 			if xcert.Data == "" {
@@ -104,35 +130,33 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 			idpCertStore.Roots = append(idpCertStore.Roots, idpCert)
 		}
 	}
+	sp.IDPCertificateStore = idpCertStore
 
-	// The SP's signing and encryption keys. Some SAML IdPs
-	var spKeyStore dsig.X509KeyStore
-	var signRequests bool
+	// The SP's signing and encryption keys.
 	if c.keyPair != nil {
-		spKeyStore = dsig.TLSCertKeyStore(*c.keyPair)
-		signRequests = pc.SignRequests == nil || *pc.SignRequests
+		sp.SPKeyStore = dsig.TLSCertKeyStore(*c.keyPair)
+		sp.SignAuthnRequests = pc.SignRequests == nil || *pc.SignRequests
 	} else {
 		// If the SP private key isn't specified, then the IdP must not care to validate.
-		spKeyStore = dsig.RandomKeyStoreForTest()
+		sp.SPKeyStore = dsig.RandomKeyStoreForTest()
 		if pc.SignRequests != nil && *pc.SignRequests {
 			return nil, errors.New("signRequests is true for SAML Service Provider but no private key and cert are given")
 		}
 	}
 
-	issuerURL := c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/metadata")}).String()
-	return &saml2.SAMLServiceProvider{
-		IdentityProviderSSOURL:      metadata.IDPSSODescriptor.SingleSignOnServices[0].Location,
-		IdentityProviderIssuer:      metadata.EntityID,
-		ServiceProviderIssuer:       issuerURL,
-		AssertionConsumerServiceURL: c.entityID.ResolveReference(&url.URL{Path: path.Join(c.entityID.Path, "/saml/acs")}).String(),
-		SignAuthnRequests:           signRequests,
-		AudienceURI:                 issuerURL,
-		IDPCertificateStore:         &idpCertStore,
-		SPKeyStore:                  spKeyStore,
-		NameIdFormat:                getNameIDFormat(pc),
-		SkipSignatureValidation:     pc.InsecureSkipAssertionSignatureValidation,
-		ValidateEncryptionCert:      true,
-	}, nil
+	// pc.Issuer's default of ${appURL}/.auth/saml/metadata already applied (in withConfigDefaults).
+	sp.ServiceProviderIssuer = pc.ServiceProviderIssuer
+	if pc.ServiceProviderIssuer == "" {
+		return nil, errors.New("invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty appURL)")
+	}
+	appURL, err := url.Parse(conf.Get().AppURL)
+	if err != nil {
+		return nil, errors.WithMessage(err, "parsing app URL for SAML Service Provider")
+	}
+	sp.AssertionConsumerServiceURL = appURL.ResolveReference(&url.URL{Path: path.Join(authPrefix, "acs")}).String()
+	sp.AudienceURI = sp.ServiceProviderIssuer
+
+	return &sp, nil
 }
 
 // entitiesDescriptor represents the SAML EntitiesDescriptor object.

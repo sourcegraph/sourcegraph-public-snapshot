@@ -52,7 +52,15 @@ type ProviderID struct {
 
 // ProviderInfo contains information about an authentication provider.
 type ProviderInfo struct {
-	// DisplayName returns the name to use when displaying the provider in the UI.
+	// ServiceID identifies the external service that this authentication provider represents. It is
+	// a stable identifier.
+	ServiceID string
+
+	// ClientID identifies the external service client used when communicating with the external
+	// service. It is a stable identifier.
+	ClientID string
+
+	// DisplayName is the name to use when displaying the provider in the UI.
 	DisplayName string
 
 	// AuthenticationURL is the URL to visit in order to initiate authenticating via this provider.

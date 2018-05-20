@@ -926,6 +926,11 @@
           "const": "saml"
         },
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "serviceProviderIssuer": {
+          "description":
+            "The name of this SAML Service Provider, which is used by the Identity Provider to identify this Service Provider. It defaults to https://sourcegraph.example.com/.auth/saml/metadata (where https://sourcegraph.example.com is replaced with this Sourcegraph instance's \"appURL\"). It is only necessary to explicitly set the issuer if you are using multiple SAML authentication providers.",
+          "type": "string"
+        },
         "identityProviderMetadataURL": {
           "description":
             "The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",

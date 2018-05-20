@@ -129,14 +129,9 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 	// Handle POST endpoints.
 	switch requestPath {
 	case "/acs":
-		info, err := p.samlSP.RetrieveAssertionInfo(r.FormValue("SAMLResponse"))
+		info, err := readAuthnResponse(p, r.FormValue("SAMLResponse"))
 		if err != nil {
 			log15.Error("Error validating SAML assertions.", "err", err)
-			http.Error(w, "Error validating SAML assertions.", http.StatusForbidden)
-			return
-		}
-		if wi := info.WarningInfo; wi.InvalidTime || wi.NotInAudience {
-			log15.Error("Error validating SAML assertions", "warningInfo", wi)
 			http.Error(w, "Error validating SAML assertions.", http.StatusForbidden)
 			return
 		}

@@ -195,6 +195,7 @@ type SAMLAuthProvider struct {
 	InsecureSkipAssertionSignatureValidation bool   `json:"insecureSkipAssertionSignatureValidation,omitempty"`
 	NameIDFormat                             string `json:"nameIDFormat,omitempty"`
 	ServiceProviderCertificate               string `json:"serviceProviderCertificate,omitempty"`
+	ServiceProviderIssuer                    string `json:"serviceProviderIssuer,omitempty"`
 	ServiceProviderPrivateKey                string `json:"serviceProviderPrivateKey,omitempty"`
 	SignRequests                             *bool  `json:"signRequests,omitempty"`
 	Type                                     string `json:"type"`

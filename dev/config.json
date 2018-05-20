@@ -163,6 +163,7 @@
     {
       "type": "saml",
       "displayName": "Keycloak local SAML #2 (dev)",
+      "serviceProviderIssuer": "http://localhost:3080/.auth/saml/metadata?2",
       "identityProviderMetadataURL": "http://localhost:3220/auth/realms/master/protocol/saml/descriptor"
     },
     {
