@@ -73,7 +73,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 	// Handle GET endpoints.
 	if r.Method == "GET" {
 		// All of these endpoints expect the provider ID in the URL query.
-		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("p"))
+		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
 		if handled {
 			return
 		}

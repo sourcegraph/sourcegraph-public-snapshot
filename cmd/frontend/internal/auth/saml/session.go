@@ -17,7 +17,7 @@ func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err erro
 	if pc == nil {
 		return "", nil
 	}
-	p := getProvider(toProviderID(pc).KeyString())
+	p := getProvider(providerConfigID(pc))
 	if p == nil {
 		return "", nil
 	}
@@ -38,7 +38,7 @@ func getFirstProviderConfig() (pc *schema.SAMLAuthProvider, multiple bool) {
 			if pc != nil {
 				return pc, true // multiple SAML auth providers
 			}
-			pc = p.Saml
+			pc = withConfigDefaults(p.Saml)
 		}
 	}
 	return pc, false

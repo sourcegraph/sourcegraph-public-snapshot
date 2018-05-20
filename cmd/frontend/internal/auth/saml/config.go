@@ -3,10 +3,12 @@ package saml
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
+	"path"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -17,20 +19,20 @@ import (
 var mockGetProviderValue *provider
 
 // getProvider looks up the registered saml auth provider with the given ID.
-func getProvider(id string) *provider {
+func getProvider(pcID string) *provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
-	p, _ := auth.GetProvider(auth.ProviderID{Type: providerType, ID: id}).(*provider)
+	p, _ := auth.GetProvider(auth.ProviderID{Type: providerType, ID: pcID}).(*provider)
 	return p
 }
 
-func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p *provider, handled bool) {
+func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) (p *provider, handled bool) {
 	handled = true // safer default
 
-	p = getProvider(id)
+	p = getProvider(pcID)
 	if p == nil {
-		log15.Error("No SAML auth provider found with ID.", "id", id)
+		log15.Error("No SAML auth provider found with ID.", "id", pcID)
 		http.Error(w, "Misconfigured SAML auth provider.", http.StatusInternalServerError)
 		return nil, true
 	}
@@ -79,20 +81,20 @@ func validateConfig(c *schema.SiteConfiguration) (problems []string) {
 	return problems
 }
 
-type providerID struct{ idpMetadata, idpMetadataURL, spCertificate string }
+func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
+	if pc.ServiceProviderIssuer == "" {
+		appURL := conf.Get().AppURL
+		if appURL == "" {
+			// An empty issuer will be detected as an error later.
+			return pc
+		}
 
-func (k providerID) KeyString() string {
-	// TODO!(sqs): https://github.com/sourcegraph/sourcegraph/issues/11391
-	b := sha256.Sum256([]byte(strconv.Itoa(len(k.idpMetadata)) + ":" + strconv.Itoa(len(k.idpMetadataURL)) + ":" + k.idpMetadata + ":" + k.idpMetadataURL + ":" + k.spCertificate))
-	return hex.EncodeToString(b[:10])
-}
-
-func toProviderID(pc *schema.SAMLAuthProvider) providerID {
-	return providerID{
-		idpMetadata:    pc.IdentityProviderMetadata,
-		idpMetadataURL: pc.IdentityProviderMetadataURL,
-		spCertificate:  pc.ServiceProviderCertificate,
+		// Derive default issuer from appURL.
+		tmp := *pc
+		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().AppURL, "/") + path.Join(authPrefix, "metadata")
+		return &tmp
 	}
+	return pc
 }
 
 func getNameIDFormat(pc *schema.SAMLAuthProvider) string {
@@ -103,4 +105,16 @@ func getNameIDFormat(pc *schema.SAMLAuthProvider) string {
 		return pc.NameIDFormat
 	}
 	return defaultNameIDFormat
+}
+
+// providerConfigID produces a semi-stable identifier for a saml auth provider config object. It is
+// used to distinguish between multiple auth providers of the same type when in multi-step auth
+// flows. Its value is never persisted, and it must be deterministic.
+func providerConfigID(pc *schema.SAMLAuthProvider) string {
+	data, err := json.Marshal(pc)
+	if err != nil {
+		panic(err)
+	}
+	b := sha256.Sum256(data)
+	return base64.RawURLEncoding.EncodeToString(b[:16])
 }

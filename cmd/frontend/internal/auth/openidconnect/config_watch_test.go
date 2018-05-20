@@ -16,23 +16,23 @@ func TestDiffProviderConfig(t *testing.T) {
 
 	tests := map[string]struct {
 		old, new []*schema.OpenIDConnectAuthProvider
-		want     map[schema.OpenIDConnectAuthProvider]configOp
+		want     map[schema.OpenIDConnectAuthProvider]bool
 	}{
-		"empty": {want: map[schema.OpenIDConnectAuthProvider]configOp{}},
+		"empty": {want: map[schema.OpenIDConnectAuthProvider]bool{}},
 		"added": {
 			old:  nil,
 			new:  []*schema.OpenIDConnectAuthProvider{pc0, pc1},
-			want: map[schema.OpenIDConnectAuthProvider]configOp{*pc0: opAdded, *pc1: opAdded},
+			want: map[schema.OpenIDConnectAuthProvider]bool{*pc0: true, *pc1: true},
 		},
 		"changed": {
 			old:  []*schema.OpenIDConnectAuthProvider{pc0, pc1},
 			new:  []*schema.OpenIDConnectAuthProvider{pc0c, pc1},
-			want: map[schema.OpenIDConnectAuthProvider]configOp{*pc0c: opChanged},
+			want: map[schema.OpenIDConnectAuthProvider]bool{*pc0: false, *pc0c: true},
 		},
 		"removed": {
 			old:  []*schema.OpenIDConnectAuthProvider{pc0, pc1},
 			new:  []*schema.OpenIDConnectAuthProvider{pc1},
-			want: map[schema.OpenIDConnectAuthProvider]configOp{*pc0: opRemoved},
+			want: map[schema.OpenIDConnectAuthProvider]bool{*pc0: false},
 		},
 	}
 	for name, test := range tests {

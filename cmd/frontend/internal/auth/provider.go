@@ -14,7 +14,7 @@ import (
 // site may support OpenID Connect authentication either via G Suite or Okta, each of which would be
 // represented by its own Provider instance.
 type Provider interface {
-	// ID uniquely identifies this provider among all of the active providers.
+	// ID identifies this provider among all of the configured auth providers.
 	//
 	// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
 	// and anonymous clients.
@@ -34,7 +34,7 @@ type Provider interface {
 	Refresh(ctx context.Context) error
 }
 
-// ProviderID uniquely identifies a provider among all of the active providers.
+// ProviderID uniquely identifies a provider among all of the configured auth providers.
 //
 // 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated and
 // anonymous clients.

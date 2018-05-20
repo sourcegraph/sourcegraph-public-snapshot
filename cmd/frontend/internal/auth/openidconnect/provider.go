@@ -31,7 +31,7 @@ type provider struct {
 func (p *provider) ID() auth.ProviderID {
 	return auth.ProviderID{
 		Type: providerType,
-		ID:   toProviderID(&p.config).KeyString(),
+		ID:   providerConfigID(&p.config),
 	}
 }
 
@@ -54,7 +54,7 @@ func (p *provider) CachedInfo() *auth.ProviderInfo {
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
 			Path:     path.Join(authPrefix, "login"),
-			RawQuery: (url.Values{"p": []string{toProviderID(&p.config).KeyString()}}).Encode(),
+			RawQuery: (url.Values{"pc": []string{providerConfigID(&p.config)}}).Encode(),
 		}).String(),
 	}
 	if info.DisplayName == "" {

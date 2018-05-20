@@ -34,3 +34,12 @@ func TestValidateCustom(t *testing.T) {
 		})
 	}
 }
+
+func TestProviderConfigID(t *testing.T) {
+	p := schema.OpenIDConnectAuthProvider{Issuer: "x"}
+	id1 := providerConfigID(&p)
+	id2 := providerConfigID(&p)
+	if id1 != id2 {
+		t.Errorf("id1 (%q) != id2 (%q)", id1, id2)
+	}
+}

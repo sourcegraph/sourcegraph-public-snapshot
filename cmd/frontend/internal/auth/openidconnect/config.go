@@ -3,10 +3,10 @@ package openidconnect
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -47,17 +47,6 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p
 	return p, false
 }
 
-type providerID struct{ issuerURL, clientID string }
-
-func (k providerID) KeyString() string {
-	b := sha256.Sum256([]byte(strconv.Itoa(len(k.issuerURL)) + ":" + k.issuerURL + ":" + k.clientID))
-	return hex.EncodeToString(b[:10])
-}
-
-func toProviderID(pc *schema.OpenIDConnectAuthProvider) providerID {
-	return providerID{issuerURL: pc.Issuer, clientID: pc.ClientID}
-}
-
 func validateConfig(c *schema.SiteConfiguration) (problems []string) {
 	var loggedNeedsAppURL bool
 	for _, p := range conf.AuthProvidersFromConfig(c) {
@@ -96,4 +85,16 @@ func validateConfig(c *schema.SiteConfiguration) (problems []string) {
 		problems = append(problems, `must set auth.provider == "openidconnect" for auth.openIDConnect config to take effect`)
 	}
 	return problems
+}
+
+// providerConfigID produces a semi-stable identifier for an openidconnect auth provider config
+// object. It is used to distinguish between multiple auth providers of the same type when in
+// multi-step auth flows. Its value is never persisted, and it must be deterministic.
+func providerConfigID(pc *schema.OpenIDConnectAuthProvider) string {
+	data, err := json.Marshal(pc)
+	if err != nil {
+		panic(err)
+	}
+	b := sha256.Sum256(data)
+	return base64.RawURLEncoding.EncodeToString(b[:16])
 }

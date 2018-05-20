@@ -2,7 +2,6 @@ package saml
 
 import (
 	"context"
-	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -40,7 +39,7 @@ type provider struct {
 func (p *provider) ID() auth.ProviderID {
 	return auth.ProviderID{
 		Type: providerType,
-		ID:   toProviderID(&p.config).KeyString(),
+		ID:   providerConfigID(&p.config),
 	}
 }
 
@@ -63,7 +62,7 @@ func (p *provider) CachedInfo() *auth.ProviderInfo {
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
 			Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
-			RawQuery: (url.Values{"p": []string{toProviderID(&p.config).KeyString()}}).Encode(),
+			RawQuery: (url.Values{"pc": []string{providerConfigID(&p.config)}}).Encode(),
 		}).String(),
 	}
 	if info.DisplayName == "" {
@@ -73,7 +72,7 @@ func (p *provider) CachedInfo() *auth.ProviderInfo {
 }
 
 func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error) {
-	c, err := readProviderConfig(pc, conf.Get().AppURL)
+	c, err := readProviderConfig(pc)
 	if err != nil {
 		return nil, err
 	}
@@ -178,26 +177,16 @@ func unmarshalEntityDescriptor(data []byte) (*types.EntityDescriptor, error) {
 }
 
 type providerConfig struct {
-	entityID        *url.URL
-	keyPair         *tls.Certificate
-	certFingerprint string
+	keyPair *tls.Certificate
 
 	// Exactly 1 of these is set:
 	identityProviderMetadataURL *url.URL
 	identityProviderMetadata    []byte
 }
 
-func readProviderConfig(pc *schema.SAMLAuthProvider, appURLStr string) (*providerConfig, error) {
-	appURL, err := url.Parse(appURLStr)
-	if err != nil {
-		return nil, errors.WithMessage(err, "parsing app URL for SAML service provider client")
-	}
-
+func readProviderConfig(pc *schema.SAMLAuthProvider) (*providerConfig, error) {
 	var c providerConfig
-	c.entityID, err = url.Parse(appURL.ResolveReference(&url.URL{Path: auth.AuthURLPrefix}).String())
-	if err != nil {
-		return nil, err
-	}
+
 	if pc.ServiceProviderCertificate != "" && pc.ServiceProviderPrivateKey != "" {
 		keyPair, err := tls.X509KeyPair([]byte(pc.ServiceProviderCertificate), []byte(pc.ServiceProviderPrivateKey))
 		if err != nil {
@@ -209,7 +198,6 @@ func readProviderConfig(pc *schema.SAMLAuthProvider, appURLStr string) (*provide
 		}
 		c.keyPair = &keyPair
 	}
-	c.certFingerprint = certFingerprint(c.keyPair.Leaf)
 
 	// Allow specifying either URL to SAML Identity Provider metadata XML file, or the XML
 	// file contents directly.
@@ -218,6 +206,7 @@ func readProviderConfig(pc *schema.SAMLAuthProvider, appURLStr string) (*provide
 		return nil, errors.New("invalid SAML configuration: set either identityProviderMetadataURL or identityProviderMetadata, not both")
 
 	case pc.IdentityProviderMetadataURL != "":
+		var err error
 		c.identityProviderMetadataURL, err = url.Parse(pc.IdentityProviderMetadataURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing SAML Identity Provider metadata URL")
@@ -231,11 +220,6 @@ func readProviderConfig(pc *schema.SAMLAuthProvider, appURLStr string) (*provide
 	}
 
 	return &c, nil
-}
-
-func certFingerprint(cert *x509.Certificate) string {
-	d := sha256.Sum256(cert.RawSubjectPublicKeyInfo)
-	return base64.RawStdEncoding.EncodeToString(d[:])
 }
 
 func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byte, error) {

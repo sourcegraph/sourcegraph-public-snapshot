@@ -2,21 +2,12 @@ package openidconnect
 
 import (
 	"context"
-	"reflect"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-)
-
-type configOp int
-
-const (
-	opAdded configOp = iota
-	opChanged
-	opRemoved
 )
 
 // Start trying to populate the cache of issuer metadata (given the configured OpenID Connect issuer
@@ -38,7 +29,7 @@ func init() {
 
 		mu  sync.Mutex
 		cur []*schema.OpenIDConnectAuthProvider
-		reg = map[providerID]auth.Provider{}
+		reg = map[schema.OpenIDConnectAuthProvider]auth.Provider{}
 	)
 	conf.Watch(func() {
 		mu.Lock()
@@ -56,19 +47,17 @@ func init() {
 		}
 		updates := make(map[auth.Provider]bool, len(diff))
 		for pc, op := range diff {
-			pcKey := toProviderID(&pc)
-			if old, ok := reg[pcKey]; ok {
-				delete(reg, pcKey)
+			if old, ok := reg[pc]; ok {
+				delete(reg, pc)
 				updates[old] = false
 			}
-			if op == opAdded || op == opChanged {
+			if op {
 				new := &provider{config: pc}
-				reg[pcKey] = new
+				reg[pc] = new
 				updates[new] = true
-
 				go func(p *provider) {
 					if err := p.Refresh(context.Background()); err != nil {
-						log15.Error("Error refreshing OpenID Connect provider metadata.", "issuer", p.config.Issuer, "clientID", p.config.ClientID, "error", err)
+						log15.Error("Error prefetching OpenID Connect service provider metadata.", "error", err)
 					}
 				}(new)
 			}
@@ -79,30 +68,17 @@ func init() {
 	init = false
 }
 
-func toKeyMap(pcs []*schema.OpenIDConnectAuthProvider) map[providerID]*schema.OpenIDConnectAuthProvider {
-	m := make(map[providerID]*schema.OpenIDConnectAuthProvider, len(pcs))
-	for _, pc := range pcs {
-		m[toProviderID(pc)] = pc
+func diffProviderConfig(old, new []*schema.OpenIDConnectAuthProvider) map[schema.OpenIDConnectAuthProvider]bool {
+	diff := map[schema.OpenIDConnectAuthProvider]bool{}
+	for _, oldPC := range old {
+		diff[*oldPC] = false
 	}
-	return m
-}
-
-func diffProviderConfig(old, new []*schema.OpenIDConnectAuthProvider) map[schema.OpenIDConnectAuthProvider]configOp {
-	oldMap := toKeyMap(old)
-	diff := map[schema.OpenIDConnectAuthProvider]configOp{}
 	for _, newPC := range new {
-		newKey := toProviderID(newPC)
-		if oldPC, ok := oldMap[newKey]; ok {
-			if !reflect.DeepEqual(oldPC, newPC) {
-				diff[*newPC] = opChanged
-			}
-			delete(oldMap, newKey)
+		if _, ok := diff[*newPC]; ok {
+			delete(diff, *newPC)
 		} else {
-			diff[*newPC] = opAdded
+			diff[*newPC] = true
 		}
-	}
-	for _, oldPC := range oldMap {
-		diff[*oldPC] = opRemoved
 	}
 	return diff
 }

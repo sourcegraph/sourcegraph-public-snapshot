@@ -152,19 +152,20 @@ func TestMiddleware(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
 
-	config := schema.SAMLAuthProvider{
-		Type: "saml",
-		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
-		ServiceProviderCertificate:  testSAMLSPCert,
-		ServiceProviderPrivateKey:   testSAMLSPKey,
-	}
-
 	conf.MockGetData = &schema.SiteConfiguration{
+		AppURL:               "http://example.com",
 		ExperimentalFeatures: &schema.ExperimentalFeatures{},
 	}
 	defer func() { conf.MockGetData = nil }()
 
-	mockGetProviderValue = &provider{config: config}
+	config := withConfigDefaults(&schema.SAMLAuthProvider{
+		Type: "saml",
+		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
+		ServiceProviderCertificate:  testSAMLSPCert,
+		ServiceProviderPrivateKey:   testSAMLSPKey,
+	})
+
+	mockGetProviderValue = &provider{config: *config}
 	defer func() { mockGetProviderValue = nil }()
 	auth.MockProviders = []auth.Provider{mockGetProviderValue}
 	defer func() { auth.MockProviders = nil }()
@@ -172,7 +173,7 @@ func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	providerID := toProviderID(&mockGetProviderValue.config).KeyString()
+	providerID := providerConfigID(&mockGetProviderValue.config)
 
 	// Mock user
 	mockedExternalID := "testuser_id"

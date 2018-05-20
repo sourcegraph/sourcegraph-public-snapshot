@@ -107,7 +107,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 	case "/login":
 		// Endpoint that starts the Authentication Request Code Flow.
-		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("p"))
+		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
 		if handled {
 			return
 		}
