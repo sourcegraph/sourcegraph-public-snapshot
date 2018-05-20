@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -66,6 +67,17 @@ func validateConfig(c *schema.SiteConfiguration) (problems []string) {
 		}
 		if p.Openidconnect != nil && p.Openidconnect.OverrideToken != "" {
 			problems = append(problems, `openidconnect auth provider "overrideToken" is deprecated (because it applies to all auth providers, not just OIDC); use OVERRIDE_AUTH_SECRET env var instead`)
+		}
+	}
+
+	seen := map[schema.OpenIDConnectAuthProvider]int{}
+	for i, p := range conf.AuthProvidersFromConfig(c) {
+		if p.Openidconnect != nil {
+			if j, ok := seen[*p.Openidconnect]; ok {
+				problems = append(problems, fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j))
+			} else {
+				seen[*p.Openidconnect] = i
+			}
 		}
 	}
 

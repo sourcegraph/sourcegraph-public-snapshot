@@ -16,6 +16,17 @@ func TestValidateCustom(t *testing.T) {
 			input:        schema.SiteConfiguration{AppURL: "x", OidcClientID: "x"},
 			wantProblems: []string{"must set auth.provider", "oidc* properties are deprecated"},
 		},
+		"duplicates": {
+			input: schema.SiteConfiguration{
+				AppURL:               "x",
+				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "enabled"},
+				AuthProviders: []schema.AuthProviders{
+					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
+					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
+				},
+			},
+			wantProblems: []string{"OpenID Connect auth provider at index 1 is duplicate of index 0"},
+		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
