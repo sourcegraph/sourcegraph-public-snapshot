@@ -12,7 +12,7 @@ import (
 const sessionKey = "oidc@0"
 
 type sessionData struct {
-	ID auth.ProviderID
+	ID auth.ProviderConfigID
 
 	// Store only the oauth2.Token fields we need, to avoid hitting the ~4096-byte session data
 	// limit.

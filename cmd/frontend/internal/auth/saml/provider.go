@@ -35,9 +35,9 @@ type provider struct {
 	refreshErr error
 }
 
-// ID implements auth.Provider.
-func (p *provider) ID() auth.ProviderID {
-	return auth.ProviderID{
+// ConfigID implements auth.Provider.
+func (p *provider) ConfigID() auth.ProviderConfigID {
+	return auth.ProviderConfigID{
 		Type: providerType,
 		ID:   providerConfigID(&p.config),
 	}

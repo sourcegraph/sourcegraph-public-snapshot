@@ -23,7 +23,7 @@ func getProvider(pcID string) *provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
-	p, _ := auth.GetProvider(auth.ProviderID{Type: providerType, ID: pcID}).(*provider)
+	p, _ := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: providerType, ID: pcID}).(*provider)
 	return p
 }
 
@@ -37,7 +37,7 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) 
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
-		log15.Error("Error refreshing SAML auth provider.", "id", p.ID(), "error", err)
+		log15.Error("Error refreshing SAML auth provider.", "id", p.ConfigID(), "error", err)
 		http.Error(w, "Unexpected error refreshing SAML authentication provider.", http.StatusInternalServerError)
 		return nil, true
 	}

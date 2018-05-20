@@ -139,7 +139,7 @@ func TestMiddleware(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderValue.ID().ID}).Encode()
+	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
 			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
@@ -222,7 +222,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("login -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/openidconnect/login?p="+mockGetProviderValue.ID().ID, "", nil, false)
+		resp := doRequest("GET", "http://example.com/.auth/openidconnect/login?p="+mockGetProviderValue.ConfigID().ID, "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
@@ -248,7 +248,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
-		invalidState := (&authnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ID().ID}).Encode()
+		invalidState := (&authnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", nil, false)
 		if want := http.StatusBadRequest; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
@@ -306,7 +306,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderValue.ID().ID}).Encode()
+	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
 			t.Fatalf("unexpected raw ID token: %s", rawIDToken)

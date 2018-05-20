@@ -85,7 +85,7 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 	// anything else anyway; there's no point in showing them a signin screen with just a single
 	// signin option.
 	if ps := auth.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
-		p, handled := handleGetProvider(r.Context(), w, ps[0].ID().ID)
+		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return
 		}
@@ -241,7 +241,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		data := sessionData{
-			ID:          p.ID(),
+			ID:          p.ConfigID(),
 			AccessToken: oauth2Token.AccessToken,
 			TokenType:   oauth2Token.TokenType,
 		}
@@ -292,7 +292,7 @@ func redirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *provider, 
 	state := (&authnState{
 		CSRFToken:  csrf.Token(r),
 		Redirect:   returnToURL,
-		ProviderID: p.ID().ID,
+		ProviderID: p.ConfigID().ID,
 	}).Encode()
 	http.SetCookie(w, &http.Cookie{
 		Name:    stateCookieName,

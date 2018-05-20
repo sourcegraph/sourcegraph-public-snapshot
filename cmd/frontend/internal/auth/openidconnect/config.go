@@ -21,7 +21,7 @@ func getProvider(id string) *provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
-	p, _ := auth.GetProvider(auth.ProviderID{Type: providerType, ID: id}).(*provider)
+	p, _ := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: providerType, ID: id}).(*provider)
 	return p
 }
 
@@ -35,12 +35,12 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p
 		return nil, true
 	}
 	if p.config.Issuer == "" {
-		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).", "id", p.ID())
+		log15.Error("No issuer set for OpenID Connect auth provider (set the openidconnect auth provider's issuer property).", "id", p.ConfigID())
 		http.Error(w, "Misconfigured OpenID Connect auth provider.", http.StatusInternalServerError)
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
-		log15.Error("Error refreshing OpenID Connect auth provider.", "id", p.ID(), "error", err)
+		log15.Error("Error refreshing OpenID Connect auth provider.", "id", p.ConfigID(), "error", err)
 		http.Error(w, "Unexpected error refreshing OpenID Connect authentication provider.", http.StatusInternalServerError)
 		return nil, true
 	}

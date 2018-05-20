@@ -22,9 +22,9 @@ func Providers() []Provider {
 	return allProviders
 }
 
-// GetProvider returns the provider with the given ID (if it is currently registered via
-// UpdateProviders).
-func GetProvider(id ProviderID) Provider {
+// GetProviderByConfigID returns the provider with the given config ID (if it is currently
+// registered via UpdateProviders).
+func GetProviderByConfigID(id ProviderConfigID) Provider {
 	var ps []Provider
 	if MockProviders != nil {
 		ps = MockProviders
@@ -35,7 +35,7 @@ func GetProvider(id ProviderID) Provider {
 	}
 
 	for _, p := range ps {
-		if p.ID() == id {
+		if p.ConfigID() == id {
 			return p
 		}
 	}
@@ -76,8 +76,8 @@ func UpdateProviders(updates map[Provider]bool) {
 	}
 
 	sort.Slice(allProviders, func(i, j int) bool {
-		ai := allProviders[i].ID()
-		aj := allProviders[j].ID()
+		ai := allProviders[i].ConfigID()
+		aj := allProviders[j].ConfigID()
 		return ai.Type < aj.Type || (ai.Type == aj.Type && ai.ID < aj.ID)
 	})
 }

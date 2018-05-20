@@ -14,11 +14,12 @@ import (
 // site may support OpenID Connect authentication either via G Suite or Okta, each of which would be
 // represented by its own Provider instance.
 type Provider interface {
-	// ID identifies this provider among all of the configured auth providers.
+	// ConfigID returns the identifier for this provider's config in the auth.providers site
+	// configuration array.
 	//
 	// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
 	// and anonymous clients.
-	ID() ProviderID
+	ConfigID() ProviderConfigID
 
 	// Config is the entry in the site configuration "auth.providers" array that this provider
 	// represents.
@@ -34,16 +35,22 @@ type Provider interface {
 	Refresh(ctx context.Context) error
 }
 
-// ProviderID uniquely identifies a provider among all of the configured auth providers.
+// ProviderConfigID identifies a provider config object in the auth.providers site configuration
+// array.
 //
 // 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated and
 // anonymous clients.
-type ProviderID struct {
+type ProviderConfigID struct {
 	// Type is the type of this auth provider (equal to its "type" property in its entry in the
-	// "auth.providers" array in site configuration).
+	// auth.providers array in site configuration).
 	Type string
 
-	// ID is an identifier that is unique among all other providers with the same Type value.
+	// ID is an identifier that uniquely represents a provider's config among all other provider
+	// configs of the same type.
+	//
+	// This value MUST NOT be persisted or used to associate accounts with this provider because it
+	// can change when any property in this provider's config changes, even when those changes are
+	// not material for identification (such as changing the display name).
 	//
 	// 🚨 SECURITY: This MUST NOT contain secret information because it is shown to unauthenticated
 	// and anonymous clients.

@@ -56,7 +56,7 @@ func authHandler(w http.ResponseWriter, r *http.Request, next http.Handler, isAP
 	// app request, redirect to signin immediately. The user wouldn't be able to do anything else
 	// anyway; there's no point in showing them a signin screen with just a single signin option.
 	if ps := auth.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && !isAPIRequest {
-		p, handled := handleGetProvider(r.Context(), w, ps[0].ID().ID)
+		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return
 		}
@@ -193,7 +193,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 
 func redirectToAuthURL(w http.ResponseWriter, r *http.Request, p *provider, returnToURL string) {
 	authURL, err := buildAuthURLRedirect(p, relayState{
-		ProviderID:  p.ID().ID,
+		ProviderID:  p.ConfigID().ID,
 		ReturnToURL: auth.SafeRedirectURL(returnToURL),
 	})
 	if err != nil {

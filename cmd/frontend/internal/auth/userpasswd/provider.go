@@ -13,8 +13,8 @@ type provider struct {
 	c *schema.BuiltinAuthProvider
 }
 
-// ID implements auth.Provider.
-func (provider) ID() auth.ProviderID { return auth.ProviderID{Type: providerType} }
+// ConfigID implements auth.Provider.
+func (provider) ConfigID() auth.ProviderConfigID { return auth.ProviderConfigID{Type: providerType} }
 
 // Config implements auth.Provider.
 func (p provider) Config() schema.AuthProviders { return schema.AuthProviders{Builtin: p.c} }

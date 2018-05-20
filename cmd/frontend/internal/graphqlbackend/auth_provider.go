@@ -9,8 +9,8 @@ type authProviderResolver struct {
 	info *auth.ProviderInfo // == authProvider.CachedInfo()
 }
 
-func (r *authProviderResolver) ServiceType() string { return r.authProvider.ID().Type }
-func (r *authProviderResolver) ServiceID() string   { return r.authProvider.ID().ID }
+func (r *authProviderResolver) ServiceType() string { return r.authProvider.ConfigID().Type }
+func (r *authProviderResolver) ServiceID() string   { return r.authProvider.ConfigID().ID }
 func (r *authProviderResolver) ClientID() string    { return "" }
 func (r *authProviderResolver) DisplayName() string { return r.info.DisplayName }
 func (r *authProviderResolver) IsBuiltin() bool     { return r.authProvider.Config().Builtin != nil }
