@@ -15,7 +15,7 @@ import (
 
 func (g *generator) emitTaggedUnionType(schema *jsonschema.Schema) ([]ast.Decl, []*ast.ImportSpec, error) {
 	// Check that this schema can use the !go.taggedUnionType extension.
-	if len(schema.Type) != 1 || schema.Type[0] != jsonschema.ObjectType || len(schema.OneOf) == 0 {
+	if len(schema.Type) >= 2 || (len(schema.Type) == 1 && schema.Type[0] != jsonschema.ObjectType) || len(schema.OneOf) == 0 {
 		return nil, nil, errors.New("invalid schema for use with !go.taggedUnionType extension")
 	}
 

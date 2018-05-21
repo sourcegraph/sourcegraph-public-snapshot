@@ -157,7 +157,7 @@ func (g *generator) expr(schema *jsonschema.Schema) (ast.Expr, error) {
 	}
 
 	// Handle types represented by Go builtin types or some other non-named types.
-	if len(schema.Type) != 1 {
+	if len(schema.Type) != 1 && (schema.Go == nil || !schema.Go.TaggedUnionType) {
 		return emptyInterfaceType, nil
 	}
 	if len(schema.Type) == 1 && goBuiltinType(schema.Type[0]) != "" {
