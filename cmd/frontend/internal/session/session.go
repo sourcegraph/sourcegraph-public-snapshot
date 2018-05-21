@@ -176,8 +176,8 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	session, err := sessionStore.Get(r, cookieName)
+	session.Options.MaxAge = -1 // expire immediately
 	if err == nil {
-		session.Options.MaxAge = -1 // expire immediately
 		err = session.Save(r, w)
 	}
 	if err != nil && hasSessionCookie(r) {
