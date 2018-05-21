@@ -117,7 +117,7 @@ dockerd # if docker isn't already running
 docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
 ```
 
-*`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data.*
+_`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data._
 
 You need to have the redis image running when you run the Sourcegraph `dev/start.sh` script. If you do not have docker access without root, run these commands under `sudo`.
 
@@ -191,9 +191,7 @@ The `mattes/migrate` package has itself migrated to `golang-migrate/migrate`, bu
 
 If you see this error when opening the app:
 
-`500 Internal Server Error
-template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/style.bundle.css: no such file or directory
-`
+`500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/style.bundle.css: no such file or directory`
 
 that means Webpack hasn't finished compiling the styles yet (it takes about 3 minutes).
 Simply wait a little while for a message from webpack like `web | Time: 180000ms` to appear

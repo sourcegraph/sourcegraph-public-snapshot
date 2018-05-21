@@ -6,7 +6,7 @@ This doc contains config snippets and other tips to make it easier to QA Sourceg
 
 Okta SAML:
 
-``` json
+```json
   "appURL":"http://localhost:7080",
   "auth.providers": [
     {
