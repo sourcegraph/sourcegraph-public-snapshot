@@ -32,11 +32,16 @@ func init() {
 		if !init {
 			log15.Info("Reloading changed builtin authentication provider configuration.")
 		}
+		updates := map[auth.Provider]bool{}
 		var newPI *provider
 		if newPC != nil {
 			newPI = &provider{c: newPC}
+			updates[newPI] = true
 		}
-		auth.UpdateProviders(map[auth.Provider]bool{newPI: true, pi: false})
+		if pi != nil {
+			updates[pi] = false
+		}
+		auth.UpdateProviders(updates)
 		pc = newPC
 		pi = newPI
 	})
