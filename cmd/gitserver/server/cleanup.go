@@ -166,3 +166,32 @@ func (s *Server) removeAll(dir string) error {
 	}
 	return os.RemoveAll(tmpRoot)
 }
+
+// cleanTmpFiles tries to remove tmp_pack_* files from .git/objects/pack.
+// These files can be created by an interrupted fetch operation,
+// and would be purged by `git gc --prune=now`, but `git gc` is
+// very slow. Removing these files while they're in use will cause
+// an operation to fail, but not damage the repository.
+func (s *Server) cleanTmpFiles(dir string) {
+	now := time.Now()
+	packdir := filepath.Join(dir, ".git", "objects", "pack")
+	err := filepath.Walk(packdir, func(path string, info os.FileInfo, err error) error {
+		if path != packdir && info.IsDir() {
+			return filepath.SkipDir
+		}
+		file := filepath.Base(path)
+		if strings.HasPrefix(file, "tmp_pack_") {
+			if now.Sub(info.ModTime()) > longGitCommandTimeout {
+				err := os.Remove(path)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log15.Error("error removing tmp_pack_* files", "error", err)
+	}
+	return
+}

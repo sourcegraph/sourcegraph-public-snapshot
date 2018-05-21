@@ -912,6 +912,13 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 
 	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*")
 	cmd.Dir = dir
+
+	// drop temporary pack files after a fetch. this function won't
+	// return until this fetch has completed or definitely-failed,
+	// either way they can't still be in use. we don't care exactly
+	// when the cleanup happens, just that it does.
+	defer s.cleanTmpFiles(dir)
+
 	if output, err := s.runWithRemoteOpts(ctx, cmd, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return
