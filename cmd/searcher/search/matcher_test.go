@@ -275,13 +275,41 @@ func TestLowerRegexp(t *testing.T) {
 	// syntex.Regexp.String. So they may change between go versions. Just
 	// ensure they make sense.
 	cases := map[string]string{
-		"foo":           "foo",
-		"FoO":           "foo",
-		"(?m:^foo)":     "(?m:^)foo", // regex parse simplifies to this
-		"(?m:^FoO)":     "(?m:^)foo",
-		"[A-Z]":         "[a-z]",
-		"[^A-Z]":        "[^A-Z]", // before we matched lowercase, and still after
-		"[Z]":           "z",
+		"foo":       "foo",
+		"FoO":       "foo",
+		"(?m:^foo)": "(?m:^)foo", // regex parse simplifies to this
+		"(?m:^FoO)": "(?m:^)foo",
+
+		// Ranges for the characters can be tricky. So we include many
+		// cases. Importantly user intention when they write [^A-Z] is would
+		// expect [^a-z] to apply when ignoring case.
+		"[A-Z]":  "[a-z]",
+		"[^A-Z]": "[^A-Za-z]",
+		"[A-M]":  "[a-m]",
+		"[^A-M]": "[^A-Ma-m]",
+		"[A]":    "a",
+		"[^A]":   "[^Aa]",
+		"[M]":    "m",
+		"[^M]":   "[^Mm]",
+		"[Z]":    "z",
+		"[^Z]":   "[^Zz]",
+		"[a-z]":  "[a-z]",
+		"[^a-z]": "[^a-z]",
+		"[a-m]":  "[a-m]",
+		"[^a-m]": "[^a-m]",
+		"[a]":    "a",
+		"[^a]":   "[^a]",
+		"[m]":    "m",
+		"[^m]":   "[^m]",
+		"[z]":    "z",
+		"[^z]":   "[^z]",
+
+		// @ is tricky since it is 1 value less than A
+		"[^A-Z@]": "[^@-Za-z]",
+
+		// full unicode range should just be a .
+		"[\\x00-\\x{10ffff}]": "(?s:.)",
+
 		"[abB-Z]":       "[b-za-b]",
 		"([abB-Z]|FoO)": "([b-za-b]|foo)",
 		`[@-\[]`:        `[@-\[a-z]`,      // original range includes A-Z but excludes a-z
