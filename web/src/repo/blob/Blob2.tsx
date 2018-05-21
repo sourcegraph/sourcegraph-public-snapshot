@@ -8,6 +8,7 @@ import {
     delay,
     distinctUntilChanged,
     filter,
+    first,
     map,
     share,
     switchMap,
@@ -94,6 +95,55 @@ const highlightLine = ({ line, codeElement }: HightlightArgs): void => {
     line.classList.add('selected')
 }
 
+const getTextNodes = (node: Node): Node[] => {
+    if (node.nodeType === node.TEXT_NODE) {
+        return [node]
+    }
+
+    const nodes: Node[] = []
+    for (const child of Array.from(node.childNodes)) {
+        nodes.push(...getTextNodes(child))
+    }
+
+    return nodes
+}
+
+const findTokenToHighlight = (position: Position, node: Node): HTMLElement | null => {
+    const textNodes = getTextNodes(node)
+
+    let activeNode: Node | null = null
+
+    let offset = 0
+    for (let i = 0; i < textNodes.length; i++) {
+        const n = textNodes[i]
+
+        if (n.nodeValue) {
+            offset += n.nodeValue.length
+        }
+
+        if (offset + 1 === position.character) {
+            activeNode = textNodes[i + 1]
+            break
+        }
+    }
+
+    if (!activeNode) {
+        return null
+    }
+
+    return activeNode.parentElement
+}
+
+const scrollToCenter = (blobElement: HTMLElement, codeElement: HTMLElement, tableRow: HTMLElement) => {
+    // if theres a position hash on page load, scroll it to the center of the screen
+    const blobBound = blobElement.getBoundingClientRect()
+    const codeBound = codeElement.getBoundingClientRect()
+    const rowBound = tableRow.getBoundingClientRect()
+    const scrollTop = rowBound.top - codeBound.top - blobBound.height / 2 + rowBound.height / 2
+
+    blobElement.scrollTop = scrollTop
+}
+
 /**
  * toPortalID builds an ID that will be used for the blame portal containers.
  */
@@ -156,6 +206,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
     private componentUpdates = new Subject<BlobProps>()
 
+    private componentStateUpdates = new Subject<BlobState>()
+
     /** Emits whenever the ref callback for the code element is called */
     private codeElements = new Subject<HTMLElement | null>()
     private nextCodeElement = (element: HTMLElement | null) => this.codeElements.next(element)
@@ -167,6 +219,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
     private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
+
+    /** Emits whenever the ref callback for the blob element is called */
+    private highlightedElements = new Subject<HTMLElement | null>()
+    private nextHighlightedElement = (element: HTMLElement | null) => this.highlightedElements.next(element)
 
     /** Emits whenever something is hovered in the code */
     private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
@@ -269,6 +325,21 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     filter(propertyIsDefined('codeElement'))
                 )
                 .subscribe(highlightLine)
+        )
+
+        // Unhighlight old highlighted token when new tokens are hovered over
+        this.subscriptions.add(
+            this.codeMouseOvers
+                .pipe(withLatestFrom(this.highlightedElements.pipe(filter(isDefined))))
+                .subscribe(([, highlightedToken]) => {
+                    const highlighted = document.querySelectorAll('.selection-highlight')
+                    for (const h of Array.from(highlighted)) {
+                        if (this.state.hoverOverlayIsFixed && h === highlightedToken) {
+                            continue
+                        }
+                        h.classList.remove('selection-highlight')
+                    }
+                })
         )
 
         // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
@@ -464,9 +535,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         hoverOrError,
                         // Reset the hover position, it's gonna be repositioned after the hover was rendered
                         hoverOverlayPosition: undefined,
-                        // If the conditions are met to not render the hover (empty etc), unpin it
-                        // Otherwise the hover would become invisible, with only clicking random tokens bringing it back
-                        hoverOverlayIsFixed: shouldRenderHover(state) ? state.hoverOverlayIsFixed : false,
                     }))
                 })
         )
@@ -536,7 +604,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
 
-        // HOVER OVERLAY PINNING
+        // HOVER OVERLAY PINNING ON CLICK
         this.subscriptions.add(
             codeClickTargets.subscribe(({ target, codeElement }) => {
                 this.setState({
@@ -546,6 +614,17 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
             })
         )
+
+        this.subscriptions.add(
+            codeClickTargets
+                .pipe(withLatestFrom(this.highlightedElements.pipe(filter(isDefined))))
+                .subscribe(([{ target }, highlightedToken]) => {
+                    if (target !== highlightedToken || !target.contains(highlightedToken)) {
+                        highlightedToken.classList.remove('selection-highlight')
+                    }
+                })
+        )
+
         // When the close button is clicked, unpin, hide and reset the hover
         this.subscriptions.add(
             this.closeButtonClicks.subscribe(() => {
@@ -560,6 +639,40 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
 
+        // When the blob loads, highlight the active line and scroll it to center of viewport
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(props => {
+                        const pos = parseHash(props.location.hash)
+
+                        return { line: pos.line, character: pos.character }
+                    }),
+                    distinctUntilChanged(),
+                    filter(propertyIsDefined('line')),
+                    withLatestFrom(this.codeElements.pipe(filter(isDefined))),
+                    map(([position, codeElement]) => ({ position, codeElement })),
+                    map(({ position, codeElement }) => {
+                        const lineElem = codeElement.querySelector(`td[data-line="${position.line}"]`)
+                        if (lineElem && lineElem.parentElement) {
+                            return { position, codeElement, tableRow: lineElem.parentElement as HTMLTableRowElement }
+                        }
+
+                        return { position, codeElement, tableRow: undefined }
+                    }),
+                    filter(propertyIsDefined('tableRow')),
+                    first(({ tableRow }) => !!tableRow),
+                    withLatestFrom(this.blobElements.pipe(filter(isDefined)))
+                )
+                .subscribe(([{ position, tableRow, codeElement }, blobElement]) => {
+                    highlightLine({ codeElement, line: tableRow })
+
+                    // if theres a position hash on page load, scroll it to the center of the screen
+                    scrollToCenter(blobElement, codeElement, tableRow)
+                    this.setState({ hoverOverlayIsFixed: position.character !== undefined })
+                })
+        )
+
         // When the line in the location changes, scroll to it
         this.subscriptions.add(
             this.componentUpdates
@@ -572,10 +685,61 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     const tableElement = codeElement.firstElementChild as HTMLTableElement
                     if (line !== undefined) {
                         const row = tableElement.rows[line - 1]
-                        if (row) {
+                        if (!row) {
+                            return
+                        }
+
+                        if (this.state.clickedGoToDefinition) {
+                            scrollToCenter(blobElement, codeElement, row)
+                            highlightLine({ codeElement, line: row })
+                        } else {
                             scrollIntoView(blobElement, row)
                         }
                     }
+                })
+        )
+
+        this.subscriptions.add(
+            this.componentStateUpdates
+                .pipe(
+                    filter(propertyIsDefined('hoveredTokenPosition')),
+                    filter(propertyIsDefined('hoverOrError')),
+                    filter(propertyIsDefined('hoverOverlayPosition')),
+                    filter(({ hoverOrError }) => !(hoverOrError instanceof Error)),
+                    map(({ hoveredTokenPosition, hoverOverlayIsFixed }) => ({
+                        position: hoveredTokenPosition,
+                        isFixed: hoverOverlayIsFixed,
+                    })),
+                    withLatestFrom(this.codeElements.pipe(filter(isDefined))),
+                    map(([state, codeElement]) => {
+                        const lineElem = codeElement.querySelector(`[data-line="${state.position.line}"`)
+                        if (!lineElem) {
+                            return null
+                        }
+
+                        const codeCell = lineElem.nextElementSibling
+                        if (!codeCell) {
+                            return null
+                        }
+                        return { token: findTokenToHighlight(state.position, codeCell), isFixed: state.isFixed }
+                    }),
+                    filter(isDefined),
+                    filter(propertyIsDefined('token'))
+                )
+                .subscribe(({ token, isFixed }) => {
+                    if (!isFixed) {
+                        const highlighted = document.querySelectorAll('.selection-highlight')
+                        for (const h of Array.from(highlighted)) {
+                            if (h !== token) {
+                                h.classList.remove('selection-highlight')
+                            }
+                        }
+                    }
+                    if (!token.textContent || !token.textContent.trim().length) {
+                        return
+                    }
+                    token.classList.add('selection-highlight')
+                    this.nextHighlightedElement(token)
                 })
         )
 
@@ -593,6 +757,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
+        this.componentStateUpdates.next(this.state)
     }
 
     public componentWillUnmount(): void {
