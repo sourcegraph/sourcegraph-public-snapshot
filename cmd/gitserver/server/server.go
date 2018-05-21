@@ -25,9 +25,8 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go"
-	nettrace "golang.org/x/net/trace"
-
 	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -37,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	nettrace "golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -830,25 +830,43 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 	mu := l.mu
 	s.repoUpdateLocksMu.Unlock()
 
-	once.Do(func() {
-		mu.Lock() // Prevent multiple updates in parallel. It works fine, but it wastes resources.
-		defer mu.Unlock()
+	// doRepoUpdate2 can block longer than our context deadline. done will
+	// close when its done. We can return when either done is closed or our
+	// deadline has passed.
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		once.Do(func() {
+			mu.Lock() // Prevent multiple updates in parallel. It works fine, but it wastes resources.
+			defer mu.Unlock()
 
-		s.repoUpdateLocksMu.Lock()
-		l.once = new(sync.Once) // Make new requests wait for next update.
-		s.repoUpdateLocksMu.Unlock()
+			s.repoUpdateLocksMu.Lock()
+			l.once = new(sync.Once) // Make new requests wait for next update.
+			s.repoUpdateLocksMu.Unlock()
 
-		s.doRepoUpdate2(ctx, repo, url)
-	})
+			s.doRepoUpdate2(repo, url)
+		})
+	}()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		span.LogFields(otlog.String("event", "context canceled"))
+	}
 }
 
-func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string) {
-	ctx, cancel, err := s.acquireCloneLimiter(ctx)
+func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
+	// We do not want user request to interrupt updates, so we use a
+	// background context.
+	ctx, cancel1 := s.serverContext()
+	defer cancel1()
+
+	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
 	if err != nil {
 		log15.Error("error acquiring clone lock for update", "err", err, "repo", repo)
 		return
 	}
-	defer cancel()
+	defer cancel2()
 
 	repo = protocol.NormalizeRepo(repo)
 	dir := path.Join(s.ReposDir, string(repo))
