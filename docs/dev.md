@@ -46,13 +46,24 @@ This is a streamlined setup for Mac machines.
 
 If you don't already have an SSH key on your machine (e.g. `~/.ssh/id_rsa`), [you should create one](https://help.github.com/articles/connecting-to-github-with-ssh/). This allows you to pull code from GitHub without typing in your password.
 
-## Create a test GitHub account
+Note that you can use multiple SSH keys with different organizations, and have this handled automatically through your `.ssh/config` file. For instance:
 
-This should be a separate GitHub user account for development whose username has the suffix `-test`
+```
+Host    github.com
+        User    git
+        IdentityFile /home/YourNameHere/.ssh/github_rsa
+```
 
-* get somebody to add you to the "sourcegraphtest" GitHub organization
-* add a second profile to Chrome for your `*-test` GitHub user (https://cl.ly/3A3y1O040G3R),
-  or download [Chrome Canary](https://www.google.com/chrome/browser/canary.html) to use for development
+## Get the code
+
+You will want a local copy of the Sourcegraph tree. (If you don't have access to this yet, you need to be added to the Sourcegraph organization on GitHub.)
+
+```
+git clone git@github.com:sourcegraph/sourcegraph.git $GOPATH/src/github.com/sourcegraph/sourcegraph
+cd $GOPATH/src/github.com/sourcegraph/sourcegraph
+```
+
+This is your "Sourcegraph directory".
 
 ## Create a BuildKite Account
 
@@ -60,18 +71,38 @@ Create an account [here](https://buildkite.com/signup), and then ask someone to 
 
 ## Create a NPM Account
 
-Create an account [here](https://www.npmjs.com/signup), and then ask @sqs to add you to the Sourcegraph organization.
+Create an account [here](https://www.npmjs.com/signup), and then ask @sqs to add you to the Sourcegraph organization. You need to have recent NodeJS and `npm`; as of this writing, you want NodeJS 8 or 10, and npm 6. (See subhead below for instructions for Ubuntu.)
 
 Run [`npm login`](https://docs.npmjs.com/cli/adduser) inside the Sourcegraph directory, and input your npmjs.org credentials.
 
-## Get the code
+### Getting recent NodeJS on Ubuntu
+
+Ubuntu installs a fairly old NodeJS by default. To get a more recent version:
 
 ```
-git clone git@github.com:sourcegraph/sourcegraph.git $GOPATH/src/github.com/sourcegraph/sourcegraph
-cd $GOPATH/src/github.com/sourcegraph/sourcegraph
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+sudo apt-get install -y nodejs
 ```
 
-Running the preceding commands will build and install the `src` binary in `$GOPATH/bin`, which you will use in subsequent steps such as PostgreSQL setup.
+As of this writing, `setup_8.x` also works, but you may want to prefer the newer one.
+
+You may need to explicitly request `npm` version 6:
+
+```
+npm i npm@^6 -g
+```
+
+Package version problems can usually be solved by making sure you get the versions of npm and Node.js specified in `package.json`. To fix these:
+
+```
+npm cache clear -f; npm ci; cd web; npm ci
+```
+
+If this doesn't work, try deleting the `web/node_modules` subdirectory of your sourcegraph tree entirely.
+
+If you want to test things across multiple node versions, consider using nvm:
+
+https://github.com/creationix/nvm
 
 ## PostgreSQL
 
@@ -82,19 +113,21 @@ Running the preceding commands will build and install the `src` binary in `$GOPA
 If you didn't install Redis through Homebrew in the [Homebrew setup for macOS](#homebrew-setup-for-macos), you can follow the [instructions to install Redis natively](http://redis.io/topics/quickstart). If you have Docker installed and are running Linux, however, the easiest way to get Redis up and running is probably:
 
 ```
-sudo dockerd # if docker isn't already running
-sudo docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
+dockerd # if docker isn't already running
+docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
 ```
 
-**`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data.**
+*`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data.*
+
+You need to have the redis image running when you run the Sourcegraph `dev/start.sh` script. If you do not have docker access without root, run these commands under `sudo`.
 
 ## Build
 
 Make sure your [`$GOPATH` is set](https://golang.org/doc/code.html#GOPATH) and your `$PATH` includes `$GOPATH/bin`:
 
 ```
-echo $GOPATH # should print something
-echo $PATH # should include $GOPATH/bin
+echo $GOPATH   # should print something
+echo $PATH     # should include $GOPATH/bin
 ```
 
 Then in your terminal run:
@@ -120,15 +153,53 @@ This will continuously compile your code and live reload your locally running
 instance of Sourcegraph. Navigate your browser to http://localhost:3080 to
 see if everything worked.
 
+### Troubleshooting
+
+##### dial tcp 127.0.0.1:3090: connect: connection refused
+
+This means the `frontend` server failed to start, for some reason. Look through the previous logs for possible explanations, such as failure to contact the `redis` server, or database migrations failing.
+
+#### Database migration failures
+
+Typical error:
+
+`frontend | failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:Dirty database version 1514702776. Fix and force version.`
+
+You may have to run migrations manually. Grab
+`https://github.com/mattes/migrate`, and run something like:
+
+```
+go build -tags postgres -o ~/bin/migrate github.com/mattes/migrate/cli
+```
+
+Replace `~/bin` with a path which exists and is in `$PATH`.
+
+Then try:
+
+`dev/migrate.sh up`
+
+If you get something like `error: Dirty database version 1514702776. Fix and force version.`, you need to roll things back and start from scratch.
+
+```bash
+dev/migrate.sh drop
+dev/migrate.sh up
+```
+
+The `mattes/migrate` package has itself migrated to `golang-migrate/migrate`, but we still have the old version vendored in some of our stuff. The new one probably works, though.
+
+#### Internal Server Error
+
 If you see this error when opening the app:
 
-```
-500 Internal Server Error
+`500 Internal Server Error
 template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/style.bundle.css: no such file or directory
-```
+`
 
 that means Webpack hasn't finished compiling the styles yet (it takes about 3 minutes).
-Simply wait a little while for a message from webpack like `web | 1841 modules` to appear in the terminal.
+Simply wait a little while for a message from webpack like `web | Time: 180000ms` to appear
+in the terminal.
+
+#### Increase maximum available file descriptors.
 
 `./dev/start.sh` may ask you to run ulimit to increase the maximum number
 of available file descriptors for a process. You can make this setting
@@ -140,7 +211,7 @@ permanent for every shell session by adding the following line to your
 ulimit -n 10000
 ```
 
-If you ever need to wipe your local database, run the following command:
+If you ever need to wipe your local database, run the following command.
 
 ```
 ./dev/drop-entire-local-database.sh

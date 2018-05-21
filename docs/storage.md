@@ -7,6 +7,11 @@ on the filesystem.
 
 # Initializing PostgreSQL
 
+Sourcegraph assumes it has a dedicated PostgreSQL server, or at least that you
+can make global configuration changes, such as changing the timezone. If you
+need to use other settings for other databases, use a separate PostgreSQL
+instance.
+
 After installing PostgreSQL, set up up a `sourcegraph` user and database:
 
 ```
@@ -25,7 +30,8 @@ with `timezone =` to the following:
 timezone = 'UTC'
 ```
 
-Finally, restart your database server (mac: `brew services restart postgresql`)
+Finally, restart your database server (mac: `brew services restart postgresql`, recent linux
+probably `service postgresql restart`)
 
 # Configuring PostgreSQL
 
@@ -36,6 +42,7 @@ for example, in your `~/.bashrc`:
 
 ```
 export PGPORT=5432
+export PGHOST=localhost
 export PGUSER=sourcegraph
 export PGPASSWORD=sourcegraph
 export PGDATABASE=sourcegraph
@@ -45,6 +52,13 @@ export PGSSLMODE=disable
 To test the environment's credentials, run `psql` (the PostgreSQL CLI
 client) with the `PG*` environment variables set. If you see a
 database prompt, then the environment's credentials are valid.
+
+If you get an error message about "peer authentication", you are
+probably connecting over the Unix domain socket, rather than over TCP.
+Make sure you've set `PGHOST`. (Postgres can do peer authentication
+on local sockets, which provides reliable identification but must
+be specially configured to authenticate you as a user with a name
+different from your account name.)
 
 # Migrations
 
