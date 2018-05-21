@@ -198,7 +198,7 @@ interface BlobState {
  * The HoverOverlay is rendered when there is either a non-empty hover result or a non-empty definition result.
  */
 const shouldRenderHover = (state: BlobState): boolean =>
-    !state.mouseIsMoving &&
+    !(!state.hoverOverlayIsFixed && state.mouseIsMoving) &&
     ((state.hoverOrError && !(isHover(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
         isJumpURL(state.definitionURLOrError))
 
