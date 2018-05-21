@@ -2,6 +2,8 @@ import { assert } from 'chai'
 import { Browser, connect, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
 
+const e2eSelector = (key: string, ...subs: string[]) => [`[data-e2e="${key}"]`, ...subs].join(' ')
+
 describe('e2e test suite', () => {
     let authenticate: (page: Page) => Promise<void>
     let baseURL: string
@@ -181,26 +183,35 @@ describe('e2e test suite', () => {
     })
 
     describe('Repository component', () => {
-        const blobSelector = '.blob > table'
+        const blobSelector = e2eSelector('blob', '> table')
         const clickToken = async (line: number, spanOffset: number): Promise<void> => {
             const selector = `${blobSelector} tr:nth-child(${line}) > td.code > span:nth-child(${spanOffset})`
             await page.waitForSelector(selector)
             await page.click(selector)
         }
 
-        const getTooltipDoc = async (): Promise<string> => {
-            await page.waitForSelector('.tooltip__doc')
-            return await page.evaluate(() => document.querySelector('.tooltip__doc')!.textContent)
+        const tooltipContentSelector = e2eSelector('tooltip.content')
+
+        // expectedCount defaults to one because of we haven't specified, we just want to ensure it exists at all
+        const getTooltipContents = async (expectedCount = 1): Promise<string[]> => {
+            await page.waitForSelector(`${tooltipContentSelector}:nth-child(${expectedCount})`)
+
+            return await page.evaluate(() =>
+                // You can't reference tooltipContentSelector in puppeteer's page.evaluate
+                Array.from(document.querySelectorAll('[data-e2e="tooltip.content"]')).map(t => t.textContent)
+            )
+        }
+        const assertTooltipContentContains = async (val: string, count?: number) => {
+            assert.include(await getTooltipContents(count), val, 'tooltip contains expected contents')
         }
 
-        const tooltipActionsSelector = '.sg-tooltip > .tooltip__actions'
         const clickTooltipJ2D = async (): Promise<void> => {
-            const selector = `${tooltipActionsSelector} > a:nth-child(1)`
+            const selector = e2eSelector('tooltip.j2d')
             await page.waitForSelector(selector)
             await page.click(selector)
         }
         const clickTooltipFindRefs = async (): Promise<void> => {
-            const selector = `${tooltipActionsSelector} > a:nth-child(2)`
+            const selector = e2eSelector('tooltip.refs')
             await page.waitForSelector(selector)
             await page.click(selector)
         }
@@ -423,12 +434,12 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.blob')
+                await page.waitForSelector(blobSelector)
                 await clickToken(23, 2)
                 await assertWindowLocation(
                     '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
                 )
-                await getTooltipDoc() // verify there is a tooltip
+                await getTooltipContents() // verify there is a tooltip
             })
 
             it('gets displayed when navigating to a URL with a token position', async () => {
@@ -437,8 +448,12 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
                 )
                 await enableOrAddRepositoryIfNeeded()
-                await retry(async () =>
-                    assert.equal(await getTooltipDoc(), `The name of the program. Defaults to path.Base(os.Args[0]) \n`)
+                await retry(
+                    async () =>
+                        await assertTooltipContentContains(
+                            `The name of the program. Defaults to path.Base(os.Args[0]) \n`,
+                            2
+                        )
                 )
             })
 
@@ -461,19 +476,11 @@ describe('e2e test suite', () => {
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go'
                     )
                     await enableOrAddRepositoryIfNeeded()
-                    await clickToken(25, 5)
-                    // TODO before 2.8 release: Un-comment the rest of this test and make it pass
-                    // with the new blob/hover code.
-                    //
-                    // See https://github.com/sourcegraph/sourcegraph/issues/11413 and
-                    // https://sourcegraph.slack.com/archives/C96FP1KNJ/p1526669508000460 for
-                    // context.
-                    //
-                    //
-                    // await clickTooltipJ2D()
-                    // return await assertWindowLocation(
-                    //     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
-                    // )
+                    await clickToken(25, 3)
+                    await clickTooltipJ2D()
+                    return await assertWindowLocation(
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
+                    )
                 })
 
                 it('does navigation (same repo, different file)', async () => {

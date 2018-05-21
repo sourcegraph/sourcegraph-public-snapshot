@@ -152,6 +152,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                                                 className="hover-overlay__content hover-overlay__row"
                                                 key={i}
                                                 dangerouslySetInnerHTML={{ __html: rendered }}
+                                                data-e2e="tooltip.content"
                                             />
                                         )
                                     } catch (err) {
@@ -175,6 +176,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                                     dangerouslySetInnerHTML={{
                                         __html: highlightCodeSafe(content.value, content.language),
                                     }}
+                                    data-e2e="tooltip.content"
                                 />
                             )
                         })
@@ -187,6 +189,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                 to={isJumpURL(props.definitionURLOrError) ? props.definitionURLOrError.jumpURL : undefined}
                 className="btn btn-secondary hover-overlay__action"
                 onClick={props.onGoToDefinitionClick}
+                data-e2e="tooltip.j2d"
             >
                 Go to definition {props.definitionURLOrError === LOADING && <Loader className="icon-inline" />}
             </ButtonOrLink>
@@ -205,6 +208,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                     })
                 }
                 className="btn btn-secondary hover-overlay__action"
+                data-e2e="tooltip.refs"
             >
                 Find references
             </ButtonOrLink>
@@ -223,6 +227,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                     })
                 }
                 className="btn btn-secondary hover-overlay__action"
+                data-e2e="tooltip.impls"
             >
                 Find implementations
             </ButtonOrLink>

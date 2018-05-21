@@ -615,6 +615,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                     onClick={this.nextCodeClick}
                     onMouseOver={this.nextCodeMouseOver}
+                    data-e2e="blob"
                 />
                 {shouldRenderHover(this.state) && (
                     <HoverOverlay

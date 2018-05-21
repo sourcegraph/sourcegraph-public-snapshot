@@ -87,6 +87,7 @@ export function createTooltips(scrollableElement: HTMLElement): void {
     j2dAction.className = `btn btn-sm BtnGroup-item`
     j2dAction.className = 'tooltip__action'
     j2dAction.style.display = 'block'
+    j2dAction.dataset.e2e = 'tooltips.j2d'
 
     const referencesIcon = document.createElement('svg')
     referencesIcon.innerHTML = referencesIconSVG
@@ -97,6 +98,7 @@ export function createTooltips(scrollableElement: HTMLElement): void {
     findRefsAction.appendChild(document.createTextNode('Find references'))
     findRefsAction.className = 'tooltip__action'
     findRefsAction.style.display = 'block'
+    j2dAction.dataset.e2e = 'tooltips.refs'
 
     tooltipActions.appendChild(j2dAction)
     tooltipActions.appendChild(findRefsAction)
@@ -248,6 +250,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         if (doc) {
             const tooltipDoc = document.createElement('DIV')
             tooltipDoc.className = 'tooltip__doc'
+            tooltipDoc.dataset.e2e = 'tooltip.content'
             tooltipDoc.innerHTML = marked(doc, { gfm: true, breaks: true, sanitize: true })
             tooltipElements.tooltip.insertBefore(tooltipDoc, tooltipElements.moreContext)
 
@@ -334,6 +337,7 @@ export function convertNode(parentNode: HTMLElement): void {
     for (let i = 0; i < parentNode.childNodes.length; ++i) {
         const node = parentNode.childNodes[i]
         const isLastNode = i === parentNode.childNodes.length - 1
+
         if (node.nodeType === Node.TEXT_NODE) {
             let nodeText = unescape(node.textContent || '')
             if (nodeText === '') {

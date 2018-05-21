@@ -256,6 +256,7 @@ export class Blob extends React.Component<Props, State> {
                 className={`blob ${this.props.wrapCode ? ' blob--wrapped' : ''} ${this.props.className}`}
                 ref={this.onBlobRef}
                 dangerouslySetInnerHTML={{ __html: this.props.html }}
+                data-e2e="blob"
             />
         )
     }
