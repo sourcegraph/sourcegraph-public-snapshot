@@ -611,9 +611,11 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19'
                 )
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.blob > table > tbody > tr:nth-child(19) .blame')
+                await page.waitForSelector('.blob2 > .blob2__code > table > tbody > tr:nth-child(19) .blame')
                 await page.evaluate(() => {
-                    const blame = document.querySelector('.blob > table > tbody > tr:nth-child(19) .blame')!
+                    const blame = document.querySelector(
+                        '.blob2 > .blob2__code > table > tbody > tr:nth-child(19) .blame'
+                    )!
                     const rect = blame.getBoundingClientRect() as DOMRect
                     const ev = new MouseEvent('click', {
                         view: window,
