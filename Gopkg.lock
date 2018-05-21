@@ -272,6 +272,18 @@
   revision = "c0656edd0d9eab7c66d1eb0c568f9039345796f7"
 
 [[projects]]
+  name = "github.com/golang-migrate/migrate"
+  packages = [
+    ".",
+    "database",
+    "database/postgres",
+    "source",
+    "source/go-bindata"
+  ]
+  revision = "22f249514de9aa3f8a720a7cabbdd45d294f83a1"
+  version = "v3.2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/golang/glog"
   packages = ["."]
@@ -567,18 +579,6 @@
     "jwriter"
   ]
   revision = "8b799c424f57fa123fc63a99d6383bc6e4c02578"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mattes/migrate"
-  packages = [
-    ".",
-    "database",
-    "database/postgres",
-    "source",
-    "source/go-bindata"
-  ]
-  revision = "d23f71b03c4a439b81ccccb2ac5090032ec5c735"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -1396,6 +1396,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "231d2381d590c57fba01fddef56355036ff391b1bde468072e7e745acb10689d"
+  inputs-digest = "2b58cde63e22b0e26fe44ac5b2746b854752c4ecd99665afdb32c3dd5c48749b"
   solver-name = "gps-cdcl"
   solver-version = 1
