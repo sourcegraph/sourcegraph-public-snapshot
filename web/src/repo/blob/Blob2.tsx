@@ -411,13 +411,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        // Fix tooltip if a location includes a position
-        this.subscriptions.add(
-            positionsFromLocationHash.subscribe(() => {
-                this.setState({ hoverOverlayIsFixed: true })
-            })
-        )
-
         /** Emits DOM elements at new positions found in the URL */
         const targetsFromLocationHash: Observable<{
             target: HTMLElement
@@ -617,7 +610,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 this.setState({
                     // If a token inside a code cell was clicked, pin the hover
                     // Otherwise if empty space was clicked, unpin it
-                    hoverOverlayIsFixed: !target.matches('td'),
+                    hoverOverlayIsFixed: !target.matches('td') && !target.closest('td.code'),
                 })
             })
         )
