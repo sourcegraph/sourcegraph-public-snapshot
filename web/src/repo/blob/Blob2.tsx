@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { concat, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -727,6 +727,16 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     }
                     token.classList.add('selection-highlight')
                     this.nextHighlightedElement(token)
+                })
+        )
+
+        // Close tooltip when the user presses 'escape'.
+        this.subscriptions.add(
+            fromEvent<KeyboardEvent>(window, 'keydown')
+                .pipe(filter(event => event.keyCode === 27))
+                .subscribe(event => {
+                    event.preventDefault()
+                    this.closeButtonClicks.next()
                 })
         )
 
