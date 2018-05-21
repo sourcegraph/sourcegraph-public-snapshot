@@ -114,7 +114,7 @@ var repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
 		return "", fmt.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
 	}
 	remoteURLs := strings.SplitN(strings.TrimSpace(stdout.String()), "\n", 2)
-	if len(remoteURLs) == 0 {
+	if len(remoteURLs) == 0 || remoteURLs[0] == "" {
 		return "", fmt.Errorf("no remote URL for repo %s", dir)
 	}
 	return remoteURLs[0], nil

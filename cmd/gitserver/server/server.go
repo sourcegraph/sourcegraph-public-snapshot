@@ -293,10 +293,6 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if req.URL == "" {
-			http.Error(w, "no URL in IsRepoCloneableRequest and no Git remote URL in .git/config", http.StatusInternalServerError)
-			return
-		}
 	}
 
 	var resp protocol.IsRepoCloneableResponse
