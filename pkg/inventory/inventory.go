@@ -39,7 +39,7 @@ type Lang struct {
 
 // ConfigName matches the `langservers[].language` field in the site
 // configuration:
-// https://about.sourcegraph.com/docs/config/settings/#langservers-array
+// https://about.sourcegraph.com/docs/config/site/#langservers-array
 func (l *Lang) ConfigName() string {
 	switch l.Name {
 	case "Shell":
