@@ -946,20 +946,12 @@ func (s *Server) doRepoUpdate2(ctx context.Context, repo api.RepoURI, url string
 }
 
 func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) bool {
-	if rev == "" {
+	if rev == "" || rev == "HEAD" {
 		return false
-	}
-	if rev == "HEAD" {
-		if _, err := quickRevParseHead(repoDir); err == nil {
-			return false
-		}
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
 	cmd.Dir = repoDir
 	if err := cmd.Run(); err == nil {
-		return false
-	}
-	if rev == "HEAD" {
 		return false
 	}
 	// Revision not found, update before returning.
