@@ -34,6 +34,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { currentUser } from './auth'
 import * as GQL from './backend/graphqlschema'
+import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
 import './components/tooltip/Tooltip'
@@ -163,13 +164,7 @@ class App extends React.Component<{}, AppState> {
 
             let subtitle: JSX.Element | undefined
             if (errorID) {
-                subtitle = (
-                    <p>
-                        Sorry, there's been a problem. Please <a href="mailto:support@sourcegraph.com">contact us</a>{' '}
-                        and include the error ID:
-                        <span className="error-id">{errorID}</span>
-                    </p>
-                )
+                subtitle = <FeedbackText headerText="Sorry, there's been a problem." />
             }
             if (errorMessage) {
                 subtitle = (

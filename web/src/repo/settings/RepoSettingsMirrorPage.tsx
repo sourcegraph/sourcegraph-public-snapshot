@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, takeUntil, tap } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
+import { FeedbackText } from '../../components/FeedbackText'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { checkMirrorRepositoryConnection, updateMirrorRepository } from '../../site-admin/backend'
@@ -344,7 +345,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                                     for resolving other authentication issues (such as HTTPS certificates and SSH keys).
                                 </li>
                                 <li className="repo-settings-mirror-page__step">
-                                    <a href="mailto:support@sourcegraph.com">Contact support</a> for further help.
+                                    <FeedbackText headerText="Questions?" />
                                 </li>
                             </ul>
                         </div>

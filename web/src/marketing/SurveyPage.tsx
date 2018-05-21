@@ -5,6 +5,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { catchError } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
+import { FeedbackText } from '../components/FeedbackText'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
@@ -98,6 +99,12 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                         <Loader className="icon-inline" />
                     </div>
                 )}
+                <div>
+                    <small>
+                        Your response to this survey will be sent to Sourcegraph, and will be visible to your
+                        Sourcegraph site admins.
+                    </small>
+                </div>
             </Form>
         )
     }
@@ -176,7 +183,10 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
             return (
                 <div className="survey-page">
                     <PageTitle title="Thanks" />
-                    <HeroPage title="Thank you for sending feedback." />
+                    <HeroPage
+                        title="Thank you for sending feedback."
+                        cta={<FeedbackText headerText="Anything else?" />}
+                    />
                 </div>
             )
         }
