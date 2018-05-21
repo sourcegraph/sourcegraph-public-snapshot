@@ -414,7 +414,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                             style={treePadding(this.props.depth, true)}
                                         >
-                                            Too many entries in this directory. Use search to jump to file.
+                                            Too many entries in this directory. Use search to find a specific file.
                                         </div>
                                     )}
                                 </td>
