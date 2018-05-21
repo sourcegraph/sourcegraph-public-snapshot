@@ -9,10 +9,9 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * `gitMaxConcurrentClones` now also limits the concurrency of updates to repos in addition to the initial clone.
 * In the GraphQL API, `site.users` has been renamed to `users`, `site.orgs` has been renamed to `organizations`, and `site.repositories` has been renamed to `repositories`.
 * An authentication provider must be set in site configuration (see [authentication provider documentation](https://about.sourcegraph.com/docs/config/authentication). Previously the server defaulted to builtin auth if none was set.
-* If a process dies inside the Sourcegraph container the whole container will shutdown. We suggest operators configure a [Docker Restart Policy](https://docs.docker.com/config/containers/start-containers-automatically/#restart-policy-details) or a [Kubernetes Restart Policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy). Previously the container would operate in a degraded mode if a process died.
-* Changes to the `auth.userIdentityHTTPHeader` site config are applied immediately in Sourcegraph Server (no restart needed).
+* If a process dies inside the Sourcegraph container the whole container will shut down. We suggest operators configure a [Docker Restart Policy](https://docs.docker.com/config/containers/start-containers-automatically/#restart-policy-details) or a [Kubernetes Restart Policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy). Previously the container would operate in a degraded mode if a process died.
 * Changes to the `auth.public` site config are applied immediately in Sourcegraph Server (no restart needed).
-* The new search timeout behavior is now enabled by default. Set `"experimentalFeatures": { "searchTimeoutParameter": "disabled"}` in site config to disable it.
+* The new search timeout behavior is now enabled by default. Set `"experimentalFeatures": {"searchTimeoutParameter": "disabled"}` in site config to disable it.
 * Search includes files up to 1MB (previous limit was 512KB for unindexed search and 128KB for indexed search).
 * Usernames and email addresses reported by OpenID Connect and SAML auth providers are now trusted, and users will sign into existing Sourcegraph accounts that match on the auth provider's reported username or email.
 * The repository sidebar file tree is much, much faster on massive repositories (200,000+ files)
@@ -23,7 +22,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * Fixed an issue where Index Search status page failed to render.
 * User data on the site admin Analytics page is now paginated, filterable by a user's recent activity, and searchable.
-* The link to the root of a repo in the bread crumbs now preserves the revision you are at.
+* The link to the root of a repository in the repository header now preserves the revision you're currently viewing.
 * When using the `http-header` auth provider, signin/signup/signout links are now hidden.
 * Repository paths beginning with `go/` are no longer reservered by Sourcegraph.
 * Interpret `X-Forwarded-Proto` HTTP header when `httpToHttpsRedirect` is set to `load-balanced`.
@@ -82,16 +81,16 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where language servers that were not enabled would display the "Restart" button in the Code Intelligence management panel.
 * Fixed an issue where the "Update" button in the Code Intelligence management panel would be displayed inconsistently.
 * Fixed an issue where toggling a dynamic search scope would not also remove `@rev` (if specified)
-* Fixed an issue where in the webui where modes that can only be determined by the full filename (not just the file extension) of a path weren't supported (Dockerfiles are the first example of this).
-* Fixed an issue where the graphiql console failed when variables are specified.
+* Fixed an issue where where modes that can only be determined by the full filename (not just the file extension) of a path weren't supported (Dockerfiles are the first example of this).
+* Fixed an issue where the GraphiQL console failed when variables are specified.
 * In Sourcegraph Data Center, Indexed Search no longer maintains its own git clones. This significantly reduces disk size requirements for the indexed-search pod.
-* (Sourcegraph Server) Fixed an issue where language server Docker containers would not be automatically restarted if they crashed.
+* Fixed an issue where language server Docker containers would not be automatically restarted if they crashed (Sourcegraph Server only).
 * Fixed an issue where if the first user on a site authenticated via SSO, the site would remain stuck in uninitialized mode.
 
 ### Added
 
 * More detailed progress information is displayed on pages that are waiting for repositories to clone.
-* Admins can now see charts illustrating daily, weekly, and monthly unique user counts by visiting the site-admin Analytics page.
+* Admins can now see charts with daily, weekly, and monthly unique user counts by visiting the site-admin Analytics page.
 * Admins can now host and see results from Sourcegraph user satisfaction surveys locally by setting the `"experimentalFeatures": { "hostSurveysLocally": "enabled"}` site config option. This feature will be enabled for all instances once stable.
 * Access tokens are now supported for all authentication providers (including OpenID Connect and SAML, which were previously not supported).
 * The new `motd` setting (in global, organization, and user settings) displays specified messages at the top of all pages.
