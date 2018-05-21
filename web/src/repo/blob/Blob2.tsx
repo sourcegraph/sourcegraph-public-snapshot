@@ -411,13 +411,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        // Fix tooltip if a location includes a position
-        this.subscriptions.add(
-            positionsFromLocationHash.subscribe(() => {
-                this.setState({ hoverOverlayIsFixed: true })
-            })
-        )
-
         /** Emits DOM elements at new positions found in the URL */
         const targetsFromLocationHash: Observable<{
             target: HTMLElement
@@ -752,6 +745,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     token.classList.add('selection-highlight')
                     this.nextHighlightedElement(token)
                 })
+        )
+
+        this.subscriptions.add(
+            this.componentStateUpdates.subscribe(state => {
+                if (state.hoverOrError === null && state.hoverOverlayIsFixed) {
+                    this.setState({ hoverOverlayIsFixed: false })
+                }
+            })
         )
 
         // Close tooltip when the user presses 'escape'.
