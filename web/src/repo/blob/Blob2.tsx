@@ -189,6 +189,8 @@ interface BlobState {
     blameLineIDs: { [key: number]: string }
 
     activeLine: number | null
+
+    mouseIsMoving: boolean
 }
 
 /**
@@ -196,11 +198,15 @@ interface BlobState {
  * The HoverOverlay is rendered when there is either a non-empty hover result or a non-empty definition result.
  */
 const shouldRenderHover = (state: BlobState): boolean =>
-    (state.hoverOrError && !(isHover(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
-    isJumpURL(state.definitionURLOrError)
+    !state.mouseIsMoving &&
+    ((state.hoverOrError && !(isHover(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
+        isJumpURL(state.definitionURLOrError))
 
 /** The time in ms after which to show a loader if the result has not returned yet */
 const LOADER_DELAY = 100
+
+/** The time in ms after the mouse has stopped moving in which to show the tooltip */
+const TOOLTIP_DISPLAY_DELAY = 500
 
 export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
@@ -260,7 +266,22 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             clickedGoToDefinition: false,
             blameLineIDs: {},
             activeLine: null,
+            mouseIsMoving: false,
         }
+
+        // Mouse is moving, don't show the tooltip
+        this.subscriptions.add(
+            this.codeMouseOvers.subscribe(() => {
+                this.setState({ mouseIsMoving: true })
+            })
+        )
+
+        // Mouse stopped over a token for TOOLTIP_DISPLAY_DELAY, show tooltip
+        this.subscriptions.add(
+            this.codeMouseOvers.pipe(debounceTime(TOOLTIP_DISPLAY_DELAY)).subscribe(() => {
+                this.setState({ mouseIsMoving: false })
+            })
+        )
 
         const codeMouseOverTargets = this.codeMouseOvers.pipe(
             map(event => event.target as HTMLElement),
