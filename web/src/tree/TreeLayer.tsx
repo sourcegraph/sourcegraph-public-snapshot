@@ -329,17 +329,16 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     <Loader className="icon-inline directory-page__entries-loader" />
                                                 </div>
                                             )}
-                                            {this.props.index === maxFilesOrDirs - 1 && (
-                                                <div
-                                                    className="tree__row-alert alert alert-warning"
-                                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                                    style={treePadding(this.props.depth, true)}
-                                                >
-                                                    Too many entries in this directory. Use search to find a specific
-                                                    file.
-                                                </div>
-                                            )}
                                         </div>
+                                        {this.props.index === maxFilesOrDirs - 1 && (
+                                            <div
+                                                className="tree__row-alert alert alert-warning"
+                                                // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                                style={treePadding(this.props.depth, true)}
+                                            >
+                                                Too many entries in this directory. Use search to find a specific file.
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                                 {this.props.isExpanded &&
