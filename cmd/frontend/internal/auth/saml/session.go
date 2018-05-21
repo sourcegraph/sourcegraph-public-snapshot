@@ -45,6 +45,13 @@ func getFirstProviderConfig() (pc *schema.SAMLAuthProvider, multiple bool) {
 }
 
 func newLogoutRequest(p *provider) (*etree.Document, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.samlSP == nil {
+		return nil, errors.New("unable to create SAML LogoutRequest because provider is not yet initialized")
+	}
+
 	// Start with the doc for AuthnRequest and change a few things to make it into a LogoutRequest
 	// doc. This saves us from needing to duplicate a bunch of code.
 	doc, err := p.samlSP.BuildAuthRequestDocumentNoSig()
