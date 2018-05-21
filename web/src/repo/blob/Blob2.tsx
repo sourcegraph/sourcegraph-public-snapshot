@@ -454,24 +454,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         )
 
         // Add a dom node for the blame portals
-        this.subscriptions.add(
-            lineClickElements.subscribe(({ lineNum, codeCell }) => {
-                const portalNode = document.createElement('span')
-
-                const id = toPortalID(lineNum)
-                portalNode.id = id
-                portalNode.classList.add('blame-portal')
-
-                codeCell.appendChild(portalNode)
-
-                this.setState({
-                    blameLineIDs: {
-                        ...this.state.blameLineIDs,
-                        [lineNum]: id,
-                    },
-                })
-            })
-        )
+        this.subscriptions.add(lineClickElements.subscribe(this.createBlameDomNode))
 
         // Set the currently active line from hover
         this.subscriptions.add(
@@ -666,10 +649,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 )
                 .subscribe(([{ position, tableRow, codeElement }, blobElement]) => {
                     highlightLine({ codeElement, line: tableRow })
+                    this.createBlameDomNode({
+                        lineNum: position.line,
+                        codeCell: tableRow.children.item(1) as HTMLElement,
+                    })
 
                     // if theres a position hash on page load, scroll it to the center of the screen
                     scrollToCenter(blobElement, codeElement, tableRow)
-                    this.setState({ hoverOverlayIsFixed: position.character !== undefined })
+                    this.setState({ activeLine: position.line, hoverOverlayIsFixed: position.character !== undefined })
                 })
         )
 
@@ -806,5 +793,22 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     )}
             </div>
         )
+    }
+
+    private createBlameDomNode = ({ lineNum, codeCell }: { lineNum: number; codeCell: HTMLElement }): void => {
+        const portalNode = document.createElement('span')
+
+        const id = toPortalID(lineNum)
+        portalNode.id = id
+        portalNode.classList.add('blame-portal')
+
+        codeCell.appendChild(portalNode)
+
+        this.setState({
+            blameLineIDs: {
+                ...this.state.blameLineIDs,
+                [lineNum]: id,
+            },
+        })
     }
 }
