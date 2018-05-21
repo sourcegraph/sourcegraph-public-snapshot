@@ -2,7 +2,7 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-URL_MATCHES=$(git grep -h -e https://about.sourcegraph.com --and --not -e '^\s*//' --and --not -e 'CI\:URL_OK' -- '*.go' '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' ':(exclude)vendor' | grep -Eo 'https://about.sourcegraph.com[^'"'"'>" ]+' | sed 's/\.$//' | sort -u)
+URL_MATCHES=$(git grep -h -e https://about.sourcegraph.com --and --not -e '^\s*//' --and --not -e 'CI\:URL_OK' -- '*.go' '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' ':(exclude)vendor' | grep -Eo 'https://about.sourcegraph.com[^'"'"'`)>" ]+' | sed 's/\.$//' | sort -u)
 
 for url in $URL_MATCHES; do
     if ! curl -fsSL -o /dev/null --max-time 5 --retry 3 --retry-max-time 5 --retry-delay 1 "$url"; then
