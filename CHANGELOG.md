@@ -31,7 +31,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * It is now possible for a user to verify an email address that was previously associated with now-deleted user account.
 * Code intelligence hover tooltips have been redesigned and greatly improved!
 * Diff searches over empty repositories no longer fail in Sourcegraph Server (this was not an issue in Sourcegraph Data Center).
-* Stray tmp*pack*\* files from interrupted fetches should now go away.
+* Stray `tmp_pack_*` files from interrupted fetches should now go away.
 
 ### Removed
 
