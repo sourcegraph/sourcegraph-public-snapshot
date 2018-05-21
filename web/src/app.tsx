@@ -63,6 +63,11 @@ const Layout: React.SFC<LayoutProps> = props => {
 
     const hideNavbar = isSearchHomepage || isSiteInit
 
+    // Force light theme on site init page.
+    if (isSiteInit && !props.isLightTheme) {
+        props.onThemeChange()
+    }
+
     return (
         <div className="layout">
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
