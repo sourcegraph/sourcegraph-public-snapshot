@@ -666,10 +666,12 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 )
                 .subscribe(([{ position, tableRow, codeElement }, blobElement]) => {
                     highlightLine({ codeElement, line: tableRow })
+                    const codeCell = tableRow.children.item(1) as HTMLElement
                     this.createBlameDomNode({
                         lineNum: position.line,
-                        codeCell: tableRow.children.item(1) as HTMLElement,
+                        codeCell,
                     })
+                    convertNode(codeCell)
 
                     // if theres a position hash on page load, scroll it to the center of the screen
                     scrollToCenter(blobElement, codeElement, tableRow)

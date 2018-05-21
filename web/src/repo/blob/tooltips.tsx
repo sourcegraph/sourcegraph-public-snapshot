@@ -364,10 +364,9 @@ export function convertNode(parentNode: HTMLElement): void {
             }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
             const elementNode = node as HTMLElement
-            // if (elementNode.children.length > 0) {
-            // The element is something more complicated than <span>text</span>; recurse.
-            convertNode(elementNode)
-            // }
+            if (elementNode.children.length > 0 || (elementNode.textContent && elementNode.textContent.trim().length)) {
+                convertNode(elementNode)
+            }
         }
     }
 }
