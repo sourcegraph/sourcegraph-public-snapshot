@@ -387,7 +387,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         hash = '#' + hash
                     }
 
-                    this.props.history.push(hash)
+                    this.props.history.push({
+                        ...this.props.location,
+                        hash,
+                    })
                 })
         )
 
