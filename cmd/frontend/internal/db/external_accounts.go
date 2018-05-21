@@ -117,7 +117,7 @@ func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID 
 	// Find whether the account exists and, if so, which user ID the account is associated with.
 	var exists bool
 	var existingID, associatedUserID int32
-	err = globalDB.QueryRowContext(ctx, `
+	err = tx.QueryRowContext(ctx, `
 SELECT id, user_id FROM user_external_accounts
 WHERE service_type=$1 AND service_id=$2 AND account_id=$3 AND deleted_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.AccountID).Scan(&existingID, &associatedUserID)
