@@ -66,7 +66,7 @@ const calculateOverlayPosition = (
         // Tooltip wouldn't be visible from the top, so display it at the
         // bottom.
         const relBottom = targetBound.bottom + scrollable.scrollTop - scrollableBounds.top
-        tooltipTop = relBottom + BLOB_PADDING_TOP
+        tooltipTop = relBottom
     } else {
         tooltipTop -= BLOB_PADDING_TOP
     }
