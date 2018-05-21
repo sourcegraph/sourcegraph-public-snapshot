@@ -58,7 +58,6 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Users can now specify the number of days, weeks, and months of site activity to query through the GraphQL API.
 * Added 14 new experimental language servers on the code intelligence admin page.
 * Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header. It defaults to `max-age=31536000` (one year).
-* Added `httpStrictTransportSecurity` site configuration option to customize the Strict-Transport-Security HTTP header.
 * Added `nameIDFormat` in the `saml` auth provider to set the SAML NameID format. The default changed from transient to persistent.
 * Experimental env var expansion in site config JSON: set `SOURCEGRAPH_EXPAND_CONFIG_VARS=1` to replace `${var}` or `$var` (based on environment variables) in any string value in site config JSON (except for JSON object property names).
 * The new (optional) SAML `serviceProviderIssuer` site config property (in an `auth.providers` array entry with `{"type":"saml", ...}`) allows customizing the SAML Service Provider issuer name.
