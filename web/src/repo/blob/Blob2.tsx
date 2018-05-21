@@ -206,7 +206,7 @@ const shouldRenderHover = (state: BlobState): boolean =>
 const LOADER_DELAY = 100
 
 /** The time in ms after the mouse has stopped moving in which to show the tooltip */
-const TOOLTIP_DISPLAY_DELAY = 500
+const TOOLTIP_DISPLAY_DELAY = 100
 
 export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
