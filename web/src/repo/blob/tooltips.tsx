@@ -98,7 +98,7 @@ export function createTooltips(scrollableElement: HTMLElement): void {
     findRefsAction.appendChild(document.createTextNode('Find references'))
     findRefsAction.className = 'tooltip__action'
     findRefsAction.style.display = 'block'
-    j2dAction.dataset.e2e = 'tooltips.refs'
+    findRefsAction.dataset.e2e = 'tooltips.refs'
 
     tooltipActions.appendChild(j2dAction)
     tooltipActions.appendChild(findRefsAction)
@@ -226,6 +226,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
 
         const container = document.createElement('DIV')
         container.className = 'tooltip__divider'
+        container.dataset.e2e = 'tooltip.content'
 
         const tooltipText = document.createElement('DIV')
         tooltipText.className = `tooltip__title ${getModeFromPath(ctx.filePath)}`
