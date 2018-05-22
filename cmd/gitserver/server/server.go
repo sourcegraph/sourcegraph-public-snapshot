@@ -974,6 +974,11 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev,
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
+	// rev-parse on an OID does not check if the commit actually exists, so it
+	// is always works. So we append ^0 to force the check
+	if len(rev) == 40 {
+		rev = rev + "^0"
+	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
 	cmd.Dir = repoDir
 	if err := cmd.Run(); err == nil {
