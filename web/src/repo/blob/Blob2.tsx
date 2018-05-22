@@ -644,6 +644,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         )
 
         // When the blob loads, highlight the active line and scroll it to center of viewport
+        //
+        // THIS OBSERVABLE CHAIN ONLY EMITS ONCE
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -653,9 +655,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         return { line: pos.line, character: pos.character }
                     }),
                     distinctUntilChanged(),
-                    filter(propertyIsDefined('line')),
                     withLatestFrom(this.codeElements.pipe(filter(isDefined))),
+                    first(([, codeElement]) => !!codeElement),
                     map(([position, codeElement]) => ({ position, codeElement })),
+                    filter(({ position: { line } }) => !!line),
                     map(({ position, codeElement }) => {
                         const lineElem = codeElement.querySelector(`td[data-line="${position.line}"]`)
                         if (lineElem && lineElem.parentElement) {
@@ -665,21 +668,24 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         return { position, codeElement, tableRow: undefined }
                     }),
                     filter(propertyIsDefined('tableRow')),
-                    first(({ tableRow }) => !!tableRow),
                     withLatestFrom(this.blobElements.pipe(filter(isDefined)))
                 )
                 .subscribe(([{ position, tableRow, codeElement }, blobElement]) => {
                     highlightLine({ codeElement, line: tableRow })
+
+                    // ! because we filtered out undefined lines above
+                    const lineNum = position.line!
+
                     const codeCell = tableRow.children.item(1) as HTMLElement
                     this.createBlameDomNode({
-                        lineNum: position.line,
+                        lineNum,
                         codeCell,
                     })
                     convertNode(codeCell)
 
                     // if theres a position hash on page load, scroll it to the center of the screen
                     scrollToCenter(blobElement, codeElement, tableRow)
-                    this.setState({ activeLine: position.line, hoverOverlayIsFixed: position.character !== undefined })
+                    this.setState({ activeLine: lineNum, hoverOverlayIsFixed: position.character !== undefined })
                 })
         )
 
