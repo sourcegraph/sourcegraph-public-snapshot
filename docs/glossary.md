@@ -28,6 +28,10 @@ Large public source repository. SourceGraph has a number of useful integrations 
 
 Also used to refer to the Sourcegraph integration for GitHub, available as browser extensions for Chrome and Firefox.
 
+### [Goreman](https://github.com/mattn/goreman)
+
+A program to run several processes in parallel, prefixing their output lines with their process names, used to run sets of related processes. A golang clone of [foreman](https://github.com/ddollar/foreman). You may prefer [a longer description of foreman](http://blog.daviddollar.org/2011/05/06/introducing-foreman.html). This is what runs the various Sourcegraph processes and keeps them in touch with each other.
+
 ### [GraphQL](http://graphql.org/)
 
 Query language for APIs designed to allow ongoing revisions of APIs without breaking existing code. Used internally as interaction between the Sourcegraph server and other components, such as our UI.
@@ -35,6 +39,10 @@ Query language for APIs designed to allow ongoing revisions of APIs without brea
 ### [Gusto](https://app.gusto.com/login)
 
 Gusto is the third-party service which handles things like paychecks and benefits for most employees.
+
+### [Helm](https://docs.helm.sh/)
+
+Helm is a package manager for [kubernetes](#kubernetes).
 
 ### [Iteration](https://docs.google.com/document/d/1W7Stwye0zYX1jjMCCUdmjxDjv1OIBouBdcNyF3DAAWs/edit#)
 
@@ -48,9 +56,25 @@ Container infrastructure, used to let us build images to run that have predictab
 
 Lattice is the service used to do review and goal tracking. These are done quarterly.
 
-### [LSP](https://langserver.org/)
+### [LSP](https://microsoft.github.io/language-server-protocol/)
 
-Language Server Protocol. A Microsoft spec intended to provide an easier interface for interactions between tools which need code intelligence (such as editors, IDEs, and code search tools) and tools which can provide it, such as language analyzers.
+Language Server Protocol. A Microsoft spec intended to provide an easier interface for interactions between tools which need code intelligence (such as editors, IDEs, and code search tools) and tools which can provide it, such as language analyzers. Sourcegraph maintains resources for implementations and integrations at [langserver.org](https://langserver.org/).
+
+### monorepo
+
+A single monolithic repository holding all of a company's code, as contrasted with separate repositories for separate projects.
+
+### [Node](https://nodejs.org/en/) / NodeJS
+
+JavaScript runtime for using JavaScript code outside of web pages/browsers, based on Chrome's V8 JavaScript engine. Package management is handled by [npm](#npm). Used internally for running things written in JavaScript.
+
+### [npm](https://www.npmjs.com/)
+
+The [Node](#node) package management tool and ecosystem.
+
+### [Phabricator](https://www.phacility.com/phabricator/)
+
+Phabricator is a development workflow tool providing code review, auditing, and related functionality for use with various source control systems. There is a Sourcegraph integration for it.
 
 ### [PostgreSQL](https://www.postgresql.org/)
 
@@ -64,6 +88,10 @@ In-memory data store/cache, with fancy data structures and queries. Used in Sour
 
 The infrastructure repository is what holds configuration, setup, and tools used for [Sourcegraph Data Center](#sourcegraph-data-center), the public sourcegraph.com site, and other internal developer tools and resources. This repository does not have an issue tracker; file issues against the [main sourcegraph repository](#sourcegraph-sourcegraph).
 
+### [sourcegraph/deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
+
+The deploy-sourcegraph repo contains the tools and configuration used for deploying [Sourcegraph Data Center](#sourcegraph-data-center), especially the [Helm](#helm) charts.
+
 ### [sourcegraph/issues](https://github.com/sourcegraph/issues)
 
 Public issue tracker. This is where customers and interested third parties would file issues.
@@ -72,9 +100,25 @@ Public issue tracker. This is where customers and interested third parties would
 
 Our main repository, also our primary internal issue tracker.
 
+### [TypeScript](https://www.typescriptlang.org/)
+
+A type-checked variant of JavaScript, originating with Microsoft. Of particular interest, [the TypeScript spec](https://github.com/Microsoft/TypeScript/blob/master/doc/spec.md). Used for UI functionality of the web server which runs a Sourcegraph instance.
+
+### [universal-ctags](https://github.com/universal-ctags/ctags)
+
+A program which reads source files and generates indexes of symbols from them, used by [zoekt](#zoekt) to improve search ranking.
+
 ### [VSCode](https://code.visualstudio.com/)
 
 Microsoft's "Visual Studio Code", a fairly powerful and flexible programming editor, which has [LSP](#lsp) support.
+
+### [webpack](https://webpack.js.org/)
+
+A "bundler" which combines multiple source files (for instance, of javascript or CSS) into single unified files that can be more easily cached. Used in Sourcegraph to improve performance of some of the built-in web interface. Can also do translations, such as converting TypeScript to JavaScript.
+
+### [Zoekt](https://github.com/google/zoekt)
+
+Fast search program with indexing, used in Sourcegraph for some search functionality.
 
 ### [Zoom](https://zoom.us/)
 
