@@ -87,7 +87,7 @@ export function createTooltips(scrollableElement: HTMLElement): void {
     j2dAction.className = `btn btn-sm BtnGroup-item`
     j2dAction.className = 'tooltip__action'
     j2dAction.style.display = 'block'
-    j2dAction.dataset.e2e = 'tooltips.j2d'
+    j2dAction.dataset.e2e = 'tooltip.j2d'
 
     const referencesIcon = document.createElement('svg')
     referencesIcon.innerHTML = referencesIconSVG
