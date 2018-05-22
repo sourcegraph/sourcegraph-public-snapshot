@@ -98,7 +98,7 @@ export function createTooltips(scrollableElement: HTMLElement): void {
     findRefsAction.appendChild(document.createTextNode('Find references'))
     findRefsAction.className = 'tooltip__action'
     findRefsAction.style.display = 'block'
-    findRefsAction.dataset.e2e = 'tooltips.refs'
+    findRefsAction.dataset.e2e = 'tooltip.refs'
 
     tooltipActions.appendChild(j2dAction)
     tooltipActions.appendChild(findRefsAction)
