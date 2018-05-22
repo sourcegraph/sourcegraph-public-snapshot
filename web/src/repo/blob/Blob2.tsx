@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, concat, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -95,45 +95,6 @@ const highlightLine = ({ line, codeElement }: HightlightArgs): void => {
     line.classList.add('selected')
 }
 
-const getTextNodes = (node: Node): Node[] => {
-    if (node.nodeType === node.TEXT_NODE) {
-        return [node]
-    }
-
-    const nodes: Node[] = []
-    for (const child of Array.from(node.childNodes)) {
-        nodes.push(...getTextNodes(child))
-    }
-
-    return nodes
-}
-
-const findTokenToHighlight = (position: Position, node: Node): HTMLElement | null => {
-    const textNodes = getTextNodes(node)
-
-    let activeNode: Node | null = null
-
-    let offset = 0
-    for (let i = 0; i < textNodes.length; i++) {
-        const n = textNodes[i]
-
-        if (n.nodeValue) {
-            offset += n.nodeValue.length
-        }
-
-        if (offset + 1 === position.character) {
-            activeNode = textNodes[i + 1]
-            break
-        }
-    }
-
-    if (!activeNode) {
-        return null
-    }
-
-    return activeNode.parentElement
-}
-
 const scrollToCenter = (blobElement: HTMLElement, codeElement: HTMLElement, tableRow: HTMLElement) => {
     // if theres a position hash on page load, scroll it to the center of the screen
     const blobBound = blobElement.getBoundingClientRect()
@@ -193,14 +154,16 @@ interface BlobState {
     mouseIsMoving: boolean
 }
 
+const isValidHover = (hoverOrError?: typeof LOADING | Hover | null | ErrorLike): boolean =>
+    !!hoverOrError && isHover(hoverOrError) && !isEmptyHover(hoverOrError)
+
 /**
  * Returns true if the HoverOverlay component should be rendered according to the given state.
  * The HoverOverlay is rendered when there is either a non-empty hover result or a non-empty definition result.
  */
 const shouldRenderHover = (state: BlobState): boolean =>
     !(!state.hoverOverlayIsFixed && state.mouseIsMoving) &&
-    ((state.hoverOrError && !(isHover(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
-        isJumpURL(state.definitionURLOrError))
+    (isValidHover(state.hoverOrError) || isJumpURL(state.definitionURLOrError))
 
 /** The time in ms after which to show a loader if the result has not returned yet */
 const LOADER_DELAY = 100
@@ -211,8 +174,6 @@ const TOOLTIP_DISPLAY_DELAY = 100
 export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
     private componentUpdates = new Subject<BlobProps>()
-
-    private componentStateUpdates = new Subject<BlobState>()
 
     /** Emits whenever the ref callback for the code element is called */
     private codeElements = new Subject<HTMLElement | null>()
@@ -227,7 +188,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
 
     /** Emits whenever the ref callback for the blob element is called */
-    private highlightedElements = new Subject<HTMLElement | null>()
+    private highlightedElements = new BehaviorSubject<HTMLElement | null>(null)
     private nextHighlightedElement = (element: HTMLElement | null) => this.highlightedElements.next(element)
 
     /** Emits whenever something is hovered in the code */
@@ -248,6 +209,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<void>()
     private nextCloseButtonClick = () => this.closeButtonClicks.next()
+
+    /** Emits when a new hoverOrError is set */
+    private hoverOrErrorUpdates = new Subject<{
+        hoverOrError: typeof LOADING | Hover | null | ErrorLike
+        target: HTMLElement
+    }>()
+    private nextHoverOrErrorUpdate = (hoverOrError: typeof LOADING | Hover | null | ErrorLike, target: HTMLElement) =>
+        this.hoverOrErrorUpdates.next({ hoverOrError, target })
 
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
@@ -346,25 +315,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     filter(propertyIsDefined('codeElement'))
                 )
                 .subscribe(highlightLine)
-        )
-
-        // Unhighlight old highlighted token when new tokens are hovered over
-        this.subscriptions.add(
-            this.codeMouseOvers
-                .pipe(
-                    withLatestFrom(merge(this.highlightedElements.pipe(filter(isDefined)))),
-                    map(([, highlightedToken]) => ({ highlightedToken })),
-                    withLatestFrom(this.codeElements.pipe(filter(isDefined)))
-                )
-                .subscribe(([{ highlightedToken }, codeElement]) => {
-                    const highlighted = codeElement.querySelectorAll('.selection-highlight')
-                    for (const h of Array.from(highlighted)) {
-                        if (this.state.hoverOverlayIsFixed && h === highlightedToken) {
-                            continue
-                        }
-                        h.classList.remove('selection-highlight')
-                    }
-                })
         )
 
         // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
@@ -488,18 +438,24 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
          * Emits with the position at which a new tooltip is to be shown from a mouseover, click or location change.
          * Emits `undefined` when a target was hovered/clicked that does not correspond to a position (e.g. after the end of the line).
          */
-        const filteredTargetPositions: Observable<Position | undefined> = merge(
-            // When the location changes and and includes a line/column pair, use that position
-            positionsFromLocationHash,
+        const filteredTargetPositions: Observable<{ position: Position | undefined; target: HTMLElement }> = merge(
             merge(
+                // When the location changes and and includes a line/column pair, use that target
+                targetsFromLocationHash,
                 // mouseovers should only trigger a new hover when the overlay is not fixed
                 codeMouseOverTargets.pipe(filter(() => !this.state.hoverOverlayIsFixed)),
                 // clicks should trigger a new hover when the overlay is fixed
                 codeClickTargets.pipe(filter(() => this.state.hoverOverlayIsFixed))
             ).pipe(
                 // Find out the position that was hovered over
-                map(({ target, codeElement }) => getTargetLineAndOffset(target, codeElement, false)),
-                map(position => position && { line: position.line, character: position.character })
+                map(({ target, codeElement }) => ({
+                    target,
+                    position: getTargetLineAndOffset(target, codeElement, false),
+                })),
+                map(({ target, position }) => ({
+                    target,
+                    position: position && { line: position.line, character: position.character },
+                }))
             )
         ).pipe(share())
 
@@ -508,10 +464,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         this.subscriptions.add(
             filteredTargetPositions
                 .pipe(
-                    distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(position => {
+                    switchMap(({ target, position }) => {
                         if (!position) {
-                            return [undefined]
+                            return of({
+                                target,
+                                position,
+                                hoverOrError: undefined,
+                            })
                         }
                         // Fetch the hover for that position
                         const hoverFetch = fetchHover({
@@ -530,17 +489,34 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             share()
                         )
                         // Show a loader if it hasn't returned after 100ms
-                        return merge(hoverFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)))
+                        return merge(hoverFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch))).pipe(
+                            map(hoverOrError => ({
+                                target,
+                                position,
+                                hoverOrError,
+                            }))
+                        )
                     })
                 )
-                .subscribe(hoverOrError => {
-                    this.logHover(hoverOrError)
+                .subscribe(({ target, position, hoverOrError }) => {
                     this.setState(state => ({
                         hoverOrError,
                         // Reset the hover position, it's gonna be repositioned after the hover was rendered
                         hoverOverlayPosition: undefined,
                     }))
+                    this.nextHoverOrErrorUpdate(hoverOrError || null, target)
                 })
+        )
+
+        // Log hover telemetry when a new hover appears
+        this.subscriptions.add(
+            this.hoverOrErrorUpdates
+                .pipe(
+                    map(({ hoverOrError }) => hoverOrError),
+                    withLatestFrom(filteredTargetPositions),
+                    distinctUntilChanged(([, posA], [, posB]) => isEqual(posA, posB))
+                )
+                .subscribe(([hoverOrError]) => this.logHover(hoverOrError))
         )
 
         // GO TO DEFINITION FETCH
@@ -549,7 +525,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             filteredTargetPositions
                 .pipe(
                     // Fetch the definition location for that position
-                    switchMap(position => {
+                    switchMap(({ position }) => {
                         if (!position) {
                             return [undefined]
                         }
@@ -599,9 +575,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
         this.subscriptions.add(
-            filteredTargetPositions.subscribe(hoveredTokenPosition => {
+            filteredTargetPositions.subscribe(({ position }) => {
                 this.setState({
-                    hoveredTokenPosition,
+                    hoveredTokenPosition: position,
                     // On every new target (from mouseover or click) hide the j2d loader/error/not found UI again
                     clickedGoToDefinition: false,
                 })
@@ -619,14 +595,18 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
 
+        // After the hover is fetched, if the overlay was pinned, unpin it if the hover
+        // doesn't exist.
         this.subscriptions.add(
-            codeClickTargets
-                .pipe(withLatestFrom(this.highlightedElements.pipe(filter(isDefined))))
-                .subscribe(([{ target }, highlightedToken]) => {
-                    if (target !== highlightedToken || !target.contains(highlightedToken)) {
-                        highlightedToken.classList.remove('selection-highlight')
-                    }
+            this.hoverOrErrorUpdates.subscribe(({ hoverOrError }) => {
+                if (!this.state.hoverOverlayIsFixed) {
+                    return
+                }
+                this.setState({
+                    // If the hover is null or undefined, then unpin it no matter what
+                    hoverOverlayIsFixed: isValidHover(hoverOrError),
                 })
+            })
         )
 
         // When the close button is clicked, unpin, hide and reset the hover
@@ -715,60 +695,30 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
+        // Highlight tokens when hovered, clicked, or the URL is updated.
         this.subscriptions.add(
-            this.componentStateUpdates
-                .pipe(
-                    filter(propertyIsDefined('hoveredTokenPosition')),
-                    filter(propertyIsDefined('hoverOrError')),
-                    filter(propertyIsDefined('hoverOverlayPosition')),
-                    filter(({ hoverOrError }) => !(hoverOrError instanceof Error)),
-                    map(({ hoveredTokenPosition, hoverOverlayIsFixed }) => ({
-                        position: hoveredTokenPosition,
-                        isFixed: hoverOverlayIsFixed,
-                    })),
-                    withLatestFrom(this.codeElements.pipe(filter(isDefined))),
-                    map(([state, codeElement]) => {
-                        const lineElem = codeElement.querySelector(`[data-line="${state.position.line}"`)
-                        if (!lineElem) {
-                            return null
-                        }
-
-                        const codeCell = lineElem.nextElementSibling
-                        if (!codeCell) {
-                            return null
-                        }
-                        return {
-                            codeElement,
-                            token: findTokenToHighlight(state.position, codeCell),
-                            isFixed: state.isFixed,
-                        }
-                    }),
-                    filter(isDefined),
-                    filter(propertyIsDefined('token'))
-                )
-                .subscribe(({ codeElement, token, isFixed }) => {
-                    if (!isFixed) {
-                        const highlighted = codeElement.querySelectorAll('.selection-highlight')
-                        for (const h of Array.from(highlighted)) {
-                            if (h !== token) {
-                                h.classList.remove('selection-highlight')
-                            }
-                        }
-                    }
-                    if (!token.textContent || !token.textContent.trim().length) {
+            this.hoverOrErrorUpdates
+                .pipe(distinctUntilChanged((a, b) => a.target === b.target), withLatestFrom(this.highlightedElements))
+                .subscribe(([{ hoverOrError, target }, highlightedElement]) => {
+                    if (this.state.hoverOverlayIsFixed) {
                         return
                     }
-                    token.classList.add('selection-highlight')
-                    this.nextHighlightedElement(token)
+                    if (highlightedElement && target !== highlightedElement) {
+                        highlightedElement.classList.remove('selection-highlight')
+                    }
+                    // Only highlight if this is a text node that has content and if the
+                    // token has a valid hover
+                    if (
+                        target.children.length ||
+                        !target.textContent ||
+                        !target.textContent.trim().length ||
+                        !isValidHover(hoverOrError)
+                    ) {
+                        return
+                    }
+                    target.classList.add('selection-highlight')
+                    this.nextHighlightedElement(target)
                 })
-        )
-
-        this.subscriptions.add(
-            this.componentStateUpdates.subscribe(state => {
-                if (state.hoverOrError === null && state.hoverOverlayIsFixed) {
-                    this.setState({ hoverOverlayIsFixed: false })
-                }
-            })
         )
 
         // Close tooltip when the user presses 'escape'.
@@ -795,7 +745,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
-        this.componentStateUpdates.next(this.state)
     }
 
     public componentWillUnmount(): void {
