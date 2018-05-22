@@ -12,7 +12,6 @@ import { FilePathBreadcrumb } from '../repo/FilePathBreadcrumb'
 import { RepoHeader } from '../repo/RepoHeader'
 import { RepoHeaderActionPortal } from '../repo/RepoHeaderActionPortal'
 import { eventLogger } from '../tracking/eventLogger'
-import { toEditorURL } from '../util/url'
 import { ThreadRevisionAction } from './actions/ThreadRevisionAction'
 import { CodeView } from './CodeView'
 import { Comment } from './Comment'
@@ -134,17 +133,6 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
 
                 const itemRepo = isThread(item) ? item.thread.repo.canonicalRemoteID : item.thread.repo.remoteUri
 
-                const editorURL = toEditorURL(
-                    itemRepo,
-                    item.thread.branch || item.thread.repoRevision,
-                    item.thread.file,
-                    { line: item.thread.startLine },
-                    item.thread.databaseID
-                )
-                const openEditor = () => {
-                    eventLogger.log('OpenInNativeAppClicked')
-                }
-
                 const repoPath = item.thread.repo.repository ? item.thread.repo.repository.uri : itemRepo
 
                 return (
@@ -211,10 +199,6 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                                     <div className="comments-page__no-shared-code-container">
                                         <div className="comments-page__no-shared-code">
                                             The author of this discussion did not share the code.{' '}
-                                            <a href={editorURL} target="sourcegraphapp" onClick={openEditor}>
-                                                Open in Sourcegraph Editor
-                                            </a>{' '}
-                                            to see code.
                                         </div>
                                     </div>
                                 )}
@@ -235,22 +219,9 @@ export const ThreadSharedItemPage = reactive<Props>(props => {
                                     )
                                 )}
                             {item &&
-                                item.thread.comments.length === 0 && (
-                                    <a
-                                        className="btn btn-primary btn-block comments-page__reply-in-editor"
-                                        href={editorURL}
-                                        target="sourcegraphapp"
-                                        onClick={openEditor}
-                                    >
-                                        Open in Sourcegraph Editor
-                                    </a>
-                                )}
-                            {item &&
                                 item.thread.comments.length !== 0 &&
                                 (signedIn ? (
                                     <CommentsInput
-                                        editorURL={editorURL}
-                                        onOpenEditor={openEditor}
                                         threadID={item.thread.id}
                                         ulid={isSharedItem(item) ? ulid : undefined}
                                         onThreadUpdated={nextThreadUpdate}

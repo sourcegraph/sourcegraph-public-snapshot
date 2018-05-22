@@ -244,9 +244,6 @@ func initRouter() {
 	// comment
 	router.Get(routeComment).Handler(handler(serveComment))
 
-	// open
-	router.Get(routeOpen).Handler(handler(serveOpen))
-
 	// repo
 	serveRepoHandler := handler(serveRepoOrBlob(routeRepo, func(c *Common, r *http.Request) string {
 		// e.g. "gorilla/mux - Sourcegraph"
