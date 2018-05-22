@@ -351,9 +351,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         // Unhighlight old highlighted token when new tokens are hovered over
         this.subscriptions.add(
             this.codeMouseOvers
-                .pipe(withLatestFrom(this.highlightedElements.pipe(filter(isDefined))))
-                .subscribe(([, highlightedToken]) => {
-                    const highlighted = document.querySelectorAll('.selection-highlight')
+                .pipe(
+                    withLatestFrom(merge(this.highlightedElements.pipe(filter(isDefined)))),
+                    map(([, highlightedToken]) => ({ highlightedToken })),
+                    withLatestFrom(this.codeElements.pipe(filter(isDefined)))
+                )
+                .subscribe(([{ highlightedToken }, codeElement]) => {
+                    const highlighted = codeElement.querySelectorAll('.selection-highlight')
                     for (const h of Array.from(highlighted)) {
                         if (this.state.hoverOverlayIsFixed && h === highlightedToken) {
                             continue
@@ -727,14 +731,18 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         if (!codeCell) {
                             return null
                         }
-                        return { token: findTokenToHighlight(state.position, codeCell), isFixed: state.isFixed }
+                        return {
+                            codeElement,
+                            token: findTokenToHighlight(state.position, codeCell),
+                            isFixed: state.isFixed,
+                        }
                     }),
                     filter(isDefined),
                     filter(propertyIsDefined('token'))
                 )
-                .subscribe(({ token, isFixed }) => {
+                .subscribe(({ codeElement, token, isFixed }) => {
                     if (!isFixed) {
-                        const highlighted = document.querySelectorAll('.selection-highlight')
+                        const highlighted = codeElement.querySelectorAll('.selection-highlight')
                         for (const h of Array.from(highlighted)) {
                             if (h !== token) {
                                 h.classList.remove('selection-highlight')
