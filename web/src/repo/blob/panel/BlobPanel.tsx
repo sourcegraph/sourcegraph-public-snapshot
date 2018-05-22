@@ -177,8 +177,8 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         this.subscriptions.add(subjectChanges.pipe(skip(1)).subscribe(() => this.locationsUpdates.next()))
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
