@@ -194,8 +194,11 @@ describe('e2e test suite', () => {
 
         // expectedCount defaults to one because of we haven't specified, we just want to ensure it exists at all
         const getTooltipContents = async (expectedCount = 1): Promise<string[]> => {
-            await page.waitForSelector(`${tooltipContentSelector}:nth-child(${expectedCount})`)
-
+            const selector =
+                expectedCount > 1
+                    ? `${tooltipContentSelector}:nth-child(${expectedCount})`
+                    : `${tooltipContentSelector}`
+            await page.waitForSelector(selector)
             return await page.evaluate(() =>
                 // You can't reference tooltipContentSelector in puppeteer's page.evaluate
                 Array.from(document.querySelectorAll('[data-e2e="tooltip.content"]')).map(t => t.textContent)
