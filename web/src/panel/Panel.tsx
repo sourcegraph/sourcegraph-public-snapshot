@@ -2,7 +2,8 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import NoIcon from '@sourcegraph/icons/lib/No'
 import * as H from 'history'
 import * as React from 'react'
-import { Subject, Subscription, Unsubscribable } from 'rxjs'
+import { ReplaySubject, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { distinctUntilChanged } from 'rxjs/operators'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
@@ -28,15 +29,16 @@ interface Props {
     history: H.History
 }
 
-interface SingletonState {
+interface State {
     /** Panel title. */
     title?: React.ReactFragment
 
     /** Panel items to display. */
-    items?: PanelItem[]
+    items: PanelItem[]
 }
 
-interface State extends SingletonState {}
+// TODO: Panel should be mounted whenever the blob page is shown.
+// There's no reason to not have it rendered. We can just hide it. This will make the logic here a lot safer.
 
 /**
  * The panel, which is a tabbed component with contextual information. Components rendering the panel should
@@ -45,27 +47,27 @@ interface State extends SingletonState {}
  * Other components can contribute panel items to the panel.
  */
 export class Panel extends React.PureComponent<Props, State> {
-    private static singletonState: SingletonState = {}
-    private static singletonStateUpdates = new Subject<void>()
     private static forceUpdates = new Subject<void>()
+
+    // We'll use ReplaySubject so everything will get emitted even if the panel isn't mounted
+    private static newItems = new ReplaySubject<PanelItem>()
+    private static newTitles = new ReplaySubject<React.ReactFragment>()
+    private static itemsToRemove = new ReplaySubject<PanelItem>()
+    private static titlesToRemove = new ReplaySubject<React.ReactFragment>()
 
     private subscriptions = new Subscription()
 
-    public state: State = { ...Panel.singletonState }
+    public state: State = { items: [] }
 
     /**
      * Set the panel title. Do not call directly; use PanelTitlePortal instead.
      * @param fragment to set as the panel title
      */
     public static setTitle(fragment: React.ReactFragment | undefined): Unsubscribable {
-        Panel.singletonState.title = fragment
-        Panel.singletonStateUpdates.next()
+        Panel.newTitles.next(fragment)
         return {
             unsubscribe: () => {
-                if (Panel.singletonState.title === fragment) {
-                    Panel.singletonState.title = undefined
-                    Panel.singletonStateUpdates.next()
-                }
+                Panel.titlesToRemove.next(fragment)
             },
         }
     }
@@ -75,12 +77,10 @@ export class Panel extends React.PureComponent<Props, State> {
      * @param item to add to the header
      */
     public static addItem(item: PanelItem): Unsubscribable {
-        Panel.singletonState.items = (Panel.singletonState.items || []).concat(item).sort(byPriority)
-        Panel.singletonStateUpdates.next()
+        Panel.newItems.next(item)
         return {
             unsubscribe: () => {
-                Panel.singletonState.items = (Panel.singletonState.items || []).filter(other => other !== item)
-                Panel.singletonStateUpdates.next()
+                Panel.itemsToRemove.next(item)
             },
         }
     }
@@ -93,9 +93,39 @@ export class Panel extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(Panel.singletonStateUpdates.subscribe(() => this.setState(Panel.singletonState)))
-
         this.subscriptions.add(Panel.forceUpdates.subscribe(() => this.forceUpdate()))
+
+        this.subscriptions.add(
+            Panel.newItems.pipe(distinctUntilChanged()).subscribe(item => {
+                this.setState(state => ({
+                    items: state.items.concat(item).sort(byPriority),
+                }))
+            })
+        )
+
+        this.subscriptions.add(
+            Panel.itemsToRemove.subscribe(item => {
+                this.setState(state => ({
+                    items: state.items.filter(i => i !== item),
+                }))
+            })
+        )
+
+        this.subscriptions.add(
+            Panel.newTitles.pipe(distinctUntilChanged()).subscribe(title => {
+                this.setState({
+                    title,
+                })
+            })
+        )
+
+        this.subscriptions.add(
+            Panel.titlesToRemove.subscribe(title => {
+                if (this.state.title === title) {
+                    this.setState({ title: undefined })
+                }
+            })
+        )
     }
 
     public componentWillUnmount(): void {
@@ -113,7 +143,7 @@ export class Panel extends React.PureComponent<Props, State> {
             </button>
         )
 
-        const hasTabs = this.state.items && this.state.items.length > 0
+        const hasTabs = this.state.items.length > 0
 
         return (
             <div className="panel">
