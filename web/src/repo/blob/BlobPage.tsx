@@ -95,7 +95,7 @@ interface State {
     blobOrError?: GQL.IFile | ErrorLike
 }
 
-const useNewBlob = localStorage.getItem('blobVersion') !== '2'
+const useNewBlob = localStorage.getItem('blobVersion') === '2'
 
 export class BlobPage extends React.PureComponent<Props, State> {
     private propsUpdates = new Subject<Props>()
