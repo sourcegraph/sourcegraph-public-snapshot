@@ -34,6 +34,7 @@ var ignoreLegacyDataCenterFields = map[string]struct{}{
 	"langPython":            struct{}{},
 	"langSwift":             struct{}{},
 	"langTypeScript":        struct{}{},
+	"namespace":             struct{}{},
 	"nodeSSDPath":           struct{}{},
 	"phabricatorIP":         struct{}{},
 	"prometheus":            struct{}{},
