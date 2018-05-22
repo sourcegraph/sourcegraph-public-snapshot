@@ -827,7 +827,7 @@ func setContainerID() {
 // deleteLSPBridge deletes the lsp bridge network if it exists.
 func deleteLSPBridge() {
 	_, err := dockerCmd("network", "rm", "lsp")
-	if err != nil && !strings.Contains(err.Error(), "No such network") {
+	if err != nil && !strings.Contains(err.Error(), "No such network") && !strings.Contains(err.Error(), "not found") {
 		log15.Error("langservers: error deleting Docker lsp bridge network", "error", err)
 	}
 }
