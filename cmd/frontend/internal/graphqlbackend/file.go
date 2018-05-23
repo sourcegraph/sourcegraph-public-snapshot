@@ -168,12 +168,19 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 		return nil, errors.New("cannot render binary file")
 	}
 
+	extension := strings.TrimPrefix(path.Ext(r.path), ".")
+	if extension == "" {
+		// When the file does not have an extension, fall back to the basename
+		// (e.g. for Dockerfile).
+		extension = path.Base(r.path)
+	}
+
 	// Highlight the code.
 	var (
 		html   template.HTML
 		result = &highlightedFileResolver{}
 	)
-	html, result.aborted, err = highlight.Code(ctx, string(code), strings.TrimPrefix(path.Ext(r.path), "."), args.DisableTimeout, args.IsLightTheme)
+	html, result.aborted, err = highlight.Code(ctx, string(code), extension, args.DisableTimeout, args.IsLightTheme)
 	if err != nil {
 		return nil, err
 	}
