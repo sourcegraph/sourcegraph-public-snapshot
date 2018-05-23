@@ -145,7 +145,12 @@ export class SavedQueries extends React.Component<Props, State> {
                                     <AddIcon className="icon-inline" /> Add new search
                                 </button>
 
-                                <a onClick={this.onDidClickQueryHelp} className="btn btn-link" target="_blank">
+                                <a
+                                    href="https://about.sourcegraph.com/docs/search/saved-searches"
+                                    onClick={this.onDidClickQueryHelp}
+                                    className="btn btn-link"
+                                    target="_blank"
+                                >
                                     <HelpIcon className="icon-inline" /> Help
                                 </a>
                             </div>
