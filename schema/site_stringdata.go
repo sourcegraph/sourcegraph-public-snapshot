@@ -117,7 +117,7 @@ const SiteSchemaJSON = `{
       "default": "off"
     },
     "httpStrictTransportSecurity": {
-      "description": "The value of the Strict-Transport-Security HTTP header sent by Sourcegraph, if non-empty",
+      "description": "The value of the HTTP Strict-Transport-Security (HSTS) header sent by Sourcegraph, if non-empty",
       "anyOf": [{ "type": "string" }, { "type": "boolean" }],
       "default": "max-age=31536000"
     },
