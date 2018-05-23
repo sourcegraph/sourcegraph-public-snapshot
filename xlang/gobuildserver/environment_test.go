@@ -62,7 +62,10 @@ func TestDetermineEnvironment(t *testing.T) {
 			WantImportPath: "",
 			WantGoPath:     "/workspace/third_party:/workspace/code:/",
 			FS: map[string]string{
-				".vscode/settings.json": `{"go.gopath":"${workspaceRoot}/third_party:${workspaceRoot}/code"}`,
+				".vscode/settings.json": `{
+// this JSON document has comments!
+  "go.gopath": "${workspaceRoot}/third_party:${workspaceRoot}/code",
+}`,
 			},
 		},
 

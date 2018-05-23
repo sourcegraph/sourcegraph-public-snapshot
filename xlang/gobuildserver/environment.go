@@ -14,11 +14,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -135,14 +137,17 @@ func detectCustomGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []st
 // This is best-effort. If any errors occur or we do not detect a custom
 // gopath, an empty result is returned.
 func detectVSCodeGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
-	b, err := ctxvfs.ReadFile(ctx, fs, "/.vscode/settings.json")
+	const settingsPath = ".vscode/settings.json"
+	b, err := ctxvfs.ReadFile(ctx, fs, "/"+settingsPath)
 	if err != nil {
 		return nil
 	}
 	settings := struct {
 		GOPATH string `json:"go.gopath"`
 	}{}
-	_ = json.Unmarshal(b, &settings)
+	if err := unmarshalJSONC(string(b), &settings); err != nil {
+		log15.Warn("Failed to parse JSON in "+settingsPath+" file. Treating as empty.", "err", err)
+	}
 
 	var paths []string
 	for _, p := range filepath.SplitList(settings.GOPATH) {
@@ -153,6 +158,16 @@ func detectVSCodeGOPATH(ctx context.Context, fs ctxvfs.FileSystem) []string {
 		paths = append(paths, p[len("${workspaceRoot}"):])
 	}
 	return paths
+}
+
+// unmarshalJSONC unmarshals the JSON using a fault-tolerant parser that allows comments
+// and trailing commas. If any unrecoverable faults are found, an error is returned.
+func unmarshalJSONC(text string, v interface{}) error {
+	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to parse JSON: %v", errs)
+	}
+	return json.Unmarshal(data, v)
 }
 
 // detectEnvRCGOPATH tries to detect monorepos which require their own custom
