@@ -73,9 +73,9 @@ func (c *Cache) start() {
 
 		if listErr != nil {
 			// If we encounter an error, try again soon
-			randSleep(5*time.Second, 2*time.Second)
+			randSleep(2*time.Second, 1*time.Second)
 		} else {
-			randSleep(time.Minute, 30*time.Second)
+			randSleep(5*time.Second, 2*time.Second)
 		}
 	}
 }
