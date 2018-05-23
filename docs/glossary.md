@@ -22,6 +22,10 @@ Container/image infrastructure to let you specify sets of things to install in v
 
 Full-Time Teammate. Internal abbreviation used to refer to full-time staff here.
 
+### GHE
+
+[GitHub](#github) Enterprise. GitHub's fancy/expensive services.
+
 ### [GitHub](https://github.com/)
 
 Large public source repository. SourceGraph has a number of useful integrations with GitHub, also we use it for issue tracking and pull requests for many of our projects. You will need to be added to the `sourcegraph/ftts` team to get access to the internal repositories. Note that you can change notification settings, and probably should; the defaults are incredibly spammy. (Unwatch all repositories, watch issues only when pinged or participating.)
@@ -82,7 +86,7 @@ Relational database (SQL-based). Used in Sourcegraph for persistent data that ne
 
 ### [redis](https://redis.io/)
 
-In-memory data store/cache, with fancy data structures and queries. Used in Sourcegraph for transient data storage.
+In-memory data store/cache, with fancy data structures and queries. Sourcegraph uses this for two data sets; `redis-store` is used for analytics and user sessions, and `redis-cache` is used for even-more transient data.
 
 ### [sourcegraph/infrastructure](https://github.com/sourcegraph/infrastructure)
 
@@ -106,7 +110,7 @@ A type-checked variant of JavaScript, originating with Microsoft. Of particular 
 
 ### [universal-ctags](https://github.com/universal-ctags/ctags)
 
-A program which reads source files and generates indexes of symbols from them, used by [zoekt](#zoekt) to improve search ranking.
+A program which reads source files and generates indexes of symbols from them. Used by Sourcegraph for a symbol service. Could also be used by [zoekt](#zoekt) to improve search ranking, but isn't currently.
 
 ### [VSCode](https://code.visualstudio.com/)
 
@@ -118,7 +122,7 @@ A "bundler" which combines multiple source files (for instance, of javascript or
 
 ### [Zoekt](https://github.com/google/zoekt)
 
-Fast search program with indexing, used in Sourcegraph for some search functionality.
+Fast search program with indexing, used in Sourcegraph for some search functionality. We also maintain [a private fork](https://github.com/sourcegraph/zoekt).
 
 ### [Zoom](https://zoom.us/)
 
