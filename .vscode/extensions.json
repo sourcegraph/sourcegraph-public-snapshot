@@ -7,6 +7,7 @@
     "esbenp.prettier-vscode",
     "kumar-harsh.graphql-for-vscode",
     "ms-vscode.Go",
-    "shinnn.stylelint"
+    "shinnn.stylelint",
+    "exiasr.hadolint"
   ]
 }
