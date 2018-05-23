@@ -61,22 +61,34 @@ func (c *Cache) start() {
 	c.state = 1 // mark running
 	c.mu.Unlock()
 
+	errorCount := 0
 	state := int32(1)
 	for state == 1 {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		listResp, listErr := c.Client.List(ctx, listQueryAll)
 		cancel()
+
+		// Only update on error once it has happened 3 times in a row. This is
+		// to prevent us caching transient errors, and instead fallback on the
+		// old list.
+		update := true
+		if listErr != nil {
+			errorCount++
+			if errorCount <= 3 {
+				update = false
+			}
+		} else {
+			errorCount = 0
+		}
+
 		c.mu.Lock()
 		state = c.state
-		c.listResp, c.listErr = listResp, listErr
+		if update {
+			c.listResp, c.listErr = listResp, listErr
+		}
 		c.mu.Unlock()
 
-		if listErr != nil {
-			// If we encounter an error, try again soon
-			randSleep(2*time.Second, 1*time.Second)
-		} else {
-			randSleep(5*time.Second, 2*time.Second)
-		}
+		randSleep(5*time.Second, 2*time.Second)
 	}
 }
 
