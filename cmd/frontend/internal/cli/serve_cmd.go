@@ -152,6 +152,11 @@ func Main() error {
 
 	siteid.Init()
 
+	globals.AppURL, err = configureAppURL()
+	if err != nil {
+		return err
+	}
+
 	go bg.ApplyUserOrgMap(context.Background())
 	goroutine.Go(func() {
 		bg.MigrateOrgSlackWebhookURLs(context.Background())
@@ -163,10 +168,6 @@ func Main() error {
 	go updatecheck.Start()
 	go useractivity.MigrateUserActivityData(context.Background())
 
-	globals.AppURL, err = configureAppURL()
-	if err != nil {
-		return err
-	}
 	db.AppURL = globals.AppURL
 
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""

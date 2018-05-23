@@ -190,13 +190,13 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			ExcludePattern:         strptr("f"),
+			ExcludePattern:         "f",
 		},
 		"p -file:f1 -file:f2": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			ExcludePattern:         strptr("f1|f2"),
+			ExcludePattern:         "f1|f2",
 		},
 		"p lang:graphql": {
 			Pattern:                "p",
@@ -215,13 +215,13 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
 			IncludePatterns:        []string{"f"},
-			ExcludePattern:         strptr(`\.graphql$|\.gql$`),
+			ExcludePattern:         `\.graphql$|\.gql$`,
 		},
 		"p -lang:graphql -file:f": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			ExcludePattern:         strptr(`f|(\.graphql$|\.gql$)`),
+			ExcludePattern:         `f|(\.graphql$|\.gql$)`,
 		},
 	}
 	for queryStr, want := range tests {

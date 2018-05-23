@@ -66,9 +66,9 @@ type patternInfo struct {
 
 	// We do not support IsMultiline
 	//IsMultiline     bool
-	IncludePattern  *string
+	IncludePattern  string
 	IncludePatterns []string
-	ExcludePattern  *string
+	ExcludePattern  string
 
 	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
@@ -78,7 +78,7 @@ type patternInfo struct {
 }
 
 func (p *patternInfo) isEmpty() bool {
-	return p.Pattern == "" && p.ExcludePattern == nil && len(p.IncludePatterns) == 0 && p.IncludePattern == nil
+	return p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 && p.IncludePattern == ""
 }
 
 func (p *patternInfo) validate() error {
@@ -89,13 +89,13 @@ func (p *patternInfo) validate() error {
 	}
 
 	if p.PathPatternsAreRegExps {
-		if p.IncludePattern != nil {
-			if _, err := syntax.Parse(*p.IncludePattern, syntax.Perl); err != nil {
+		if p.IncludePattern != "" {
+			if _, err := syntax.Parse(p.IncludePattern, syntax.Perl); err != nil {
 				return err
 			}
 		}
-		if p.ExcludePattern != nil {
-			if _, err := syntax.Parse(*p.ExcludePattern, syntax.Perl); err != nil {
+		if p.ExcludePattern != "" {
+			if _, err := syntax.Parse(p.ExcludePattern, syntax.Perl); err != nil {
 				return err
 			}
 		}
@@ -197,26 +197,19 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 	// We still need to send IncludePattern (because searcher isn't guaranteed
 	// to be upgraded yet).
 	var includePatterns []string
-	if p.IncludePattern != nil && *p.IncludePattern != "" {
-		includePatterns = append(includePatterns, *p.IncludePattern)
+	if p.IncludePattern != "" {
+		includePatterns = append(includePatterns, p.IncludePattern)
 	}
 	includePatterns = append(includePatterns, p.IncludePatterns...)
 
-	var s string
-	if p.IncludePattern == nil {
-		p.IncludePattern = &s
-	}
-	if p.ExcludePattern == nil {
-		p.ExcludePattern = &s
-	}
 	q := url.Values{
 		"Repo":            []string{string(repo.Name)},
 		"URL":             []string{repo.URL},
 		"Commit":          []string{string(commit)},
 		"Pattern":         []string{p.Pattern},
-		"ExcludePattern":  []string{*p.ExcludePattern},
+		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": includePatterns,
-		"IncludePattern":  []string{*p.IncludePattern},
+		"IncludePattern":  []string{p.IncludePattern},
 		"FetchTimeout":    []string{fetchTimeout.String()},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
@@ -602,8 +595,8 @@ func queryToZoektQuery(query *patternInfo) (zoektquery.Q, error) {
 		}
 		and = append(and, q)
 	}
-	if query.ExcludePattern != nil {
-		q, err := fileRe(*query.ExcludePattern)
+	if query.ExcludePattern != "" {
+		q, err := fileRe(query.ExcludePattern)
 		if err != nil {
 			return nil, err
 		}

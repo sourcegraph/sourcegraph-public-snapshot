@@ -594,8 +594,7 @@ func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
 	}
 	if len(excludePatterns) > 0 {
-		excludePattern := unionRegExps(excludePatterns)
-		patternInfo.ExcludePattern = &excludePattern
+		patternInfo.ExcludePattern = unionRegExps(excludePatterns)
 	}
 	return patternInfo, nil
 }

@@ -221,13 +221,6 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return nil, false, false, err
 	}
 
-	strv := func(s *string) string {
-		if s == nil {
-			return ""
-		}
-		return *s
-	}
-
 	if !conf.SearchTimeoutParameterEnabled() {
 		// Add default deadline if none exists.
 		if _, ok := ctx.Deadline(); !ok {
@@ -242,7 +235,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		Query: op.textSearchOptions,
 		Paths: vcs.PathOptions{
 			IncludePatterns: op.info.IncludePatterns,
-			ExcludePattern:  strv(op.info.ExcludePattern),
+			ExcludePattern:  op.info.ExcludePattern,
 			IsCaseSensitive: op.info.PathPatternsAreCaseSensitive,
 			IsRegExp:        op.info.PathPatternsAreRegExps,
 		},

@@ -18,9 +18,6 @@ import (
 )
 
 func TestQueryToZoektQuery(t *testing.T) {
-	sPtr := func(s string) *string {
-		return &s
-	}
 	cases := []struct {
 		Name    string
 		Pattern *patternInfo
@@ -33,7 +30,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
 				IncludePatterns:              nil,
-				ExcludePattern:               nil,
+				ExcludePattern:               "",
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
@@ -46,7 +43,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				IsCaseSensitive:              false,
 				Pattern:                      "(foo).*?(bar)",
 				IncludePatterns:              nil,
-				ExcludePattern:               nil,
+				ExcludePattern:               "",
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
@@ -59,7 +56,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
 				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
-				ExcludePattern:               sPtr(`\bvendor\b`),
+				ExcludePattern:               `\bvendor\b`,
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
@@ -72,7 +69,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
 				IncludePatterns:              []string{`\.go$`, `yaml`},
-				ExcludePattern:               nil,
+				ExcludePattern:               "",
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: true,
 			},
@@ -85,7 +82,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
 				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
-				ExcludePattern:               sPtr(`\bvendor\b`),
+				ExcludePattern:               `\bvendor\b`,
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: true,
 			},

@@ -130,10 +130,6 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 		return nil, err
 	}
 
-	var excludePattern string
-	if patternInfo.ExcludePattern != nil {
-		excludePattern = *patternInfo.ExcludePattern
-	}
 	symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
 		Repo:            repoRevs.repo.URI,
 		CommitID:        commitID,
@@ -141,7 +137,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 		IsCaseSensitive: patternInfo.IsCaseSensitive,
 		IsRegExp:        patternInfo.IsRegExp,
 		IncludePatterns: patternInfo.IncludePatterns,
-		ExcludePattern:  excludePattern,
+		ExcludePattern:  patternInfo.ExcludePattern,
 		First:           limit,
 	})
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
