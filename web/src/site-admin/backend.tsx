@@ -45,7 +45,7 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.users) {
+            if (!data || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.users
@@ -380,7 +380,7 @@ export function fetchUserAnalytics(args: {
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.users) {
+            if (!data || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.users
@@ -421,7 +421,7 @@ export function fetchSiteAnalytics(): Observable<GQL.ISiteActivity> {
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.activity) {
+            if (!data || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.site.activity
