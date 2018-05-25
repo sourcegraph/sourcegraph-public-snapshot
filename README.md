@@ -6,4 +6,4 @@
 
 ## Building and testing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) and [docs/dev.md](./docs/dev.md) for build and test instructions.
+See [docs/dev.md](./docs/dev.md) for build and test instructions.
