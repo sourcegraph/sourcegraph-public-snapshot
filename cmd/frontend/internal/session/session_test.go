@@ -246,3 +246,45 @@ func sessionCookie(r *http.Request) string {
 	}
 	return c.Value
 }
+
+func TestRecoverFromInvalidCookieValue(t *testing.T) {
+	cleanup := ResetMockSessionStore(t)
+	defer cleanup()
+
+	// An actual cookie value that is an encoded JWT set by our old github.com/crewjam/saml-based
+	// SAML impl.
+	const signedToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjMwODAvLmF1dGgvc2FtbC9tZXRhZGF0YSIsImV4cCI6MTUzNDk5MTcwNiwiaWF0IjoxNTI3MjE1NzA2LCJuYmYiOjE1MjcyMTU3MDYsInN1YiI6IkctNDU0ZTBlYWEtYjcxOC00ZWUxLTk2NDctYWU5ZDExM2NlOTUzIiwiYXR0ciI6eyJSb2xlIjpbInVtYV9hdXRob3JpemF0aW9uIiwidmlldy1wcm9maWxlIiwiYWRtaW4iLCJtYW5hZ2UtaWRlbnRpdHktcHJvdmlkZXJzIiwiY3JlYXRlLWNsaWVudCIsInZpZXctcmVhbG0iLCJ2aWV3LWV2ZW50cyIsIm1hbmFnZS11c2VycyIsInZpZXctaWRlbnRpdHktcHJvdmlkZXJzIiwidmlldy1jbGllbnRzIiwidmlldy11c2VycyIsIm1hbmFnZS1yZWFsbSIsInF1ZXJ5LWNsaWVudHMiLCJtYW5hZ2UtY2xpZW50cyIsImNyZWF0ZS1yZWFsbSIsIm1hbmFnZS1ldmVudHMiLCJtYW5hZ2UtYXV0aG9yaXphdGlvbiIsInF1ZXJ5LXJlYWxtcyIsInZpZXctYXV0aG9yaXphdGlvbiIsInF1ZXJ5LWdyb3VwcyIsInF1ZXJ5LXVzZXJzIiwiaW1wZXJzb25hdGlvbiIsIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiXSwiZW1haWwiOlsiYWxpY2VAZXhhbXBsZS5jb20iXSwiZ2l2ZW5OYW1lIjpbIkFsaWNlIl0sInN1cm5hbWUiOlsiWmhhbyJdfX0.Pgoqfs6KI7hU10tn9eqW7N3JOUXNPqAJGaQtxiz-jxs"
+
+	// Issue a request with a cookie that resembles the cookies set by our old
+	// github.com/crewjam/saml-based SAML impl (which used JWTs in cookies).
+	//
+	// Attempting to decode this cookie will fail.
+	req, _ := http.NewRequest("GET", "/", nil)
+	req.AddCookie(&http.Cookie{
+		Name:     cookieName,
+		Value:    signedToken,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+	})
+	w := httptest.NewRecorder()
+
+	CookieMiddleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
+
+	// Want the request to succeed and clear the bad cookie.
+	resp := w.Result()
+	if want := http.StatusOK; resp.StatusCode != want {
+		t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
+	}
+	cookies := resp.Cookies()
+	if want := []*http.Cookie{{
+		Name:       cookieName,
+		Path:       "/",
+		RawExpires: "Thu, 01 Jan 1970 00:00:01 GMT",
+		MaxAge:     -1,
+		Expires:    time.Date(1970, time.January, 1, 0, 0, 1, 0, time.UTC),
+		Raw:        "sg-session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0",
+	}}; !reflect.DeepEqual(cookies, want) {
+		t.Errorf("got cookies %+v, want %+v", cookies, want)
+	}
+}
