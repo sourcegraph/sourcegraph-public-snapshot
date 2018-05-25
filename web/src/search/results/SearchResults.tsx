@@ -4,6 +4,7 @@ import * as React from 'react'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
+import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from './../backend'
 import { FilterChip } from './../FilterChip'
@@ -123,8 +124,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     public render(): JSX.Element | null {
+        const searchOptions = parseSearchURLQuery(this.props.location.search)
         return (
             <div className="search-results">
+                <PageTitle key="page-title" title={searchOptions && searchOptions.query} />
                 {isSearchResults(this.state.resultsOrError) &&
                     this.state.resultsOrError.dynamicFilters.length > 0 && (
                         <div className="search-results__filters-bar">

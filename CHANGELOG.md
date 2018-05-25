@@ -2,6 +2,12 @@
 
 All notable changes to Sourcegraph Server and Data Center are documented in this file.
 
+## Unreleased changes
+
+### Fixed
+
+* Fixed an issue where the search results page would not update its title.
+
 ## 2.8.0
 
 ### Changed
