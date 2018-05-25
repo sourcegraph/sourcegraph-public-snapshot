@@ -160,7 +160,7 @@ func doFetch(ctx context.Context, path string, fetcher Fetcher) (file *File, err
 	}
 	err = copyAndClose(f, r)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch missing archive cache item")
+		return nil, errors.Wrap(err, "failed to copy and close missing archive cache item")
 	}
 
 	// Put the partially written file in the correct place and open
