@@ -15,7 +15,7 @@ type package_parser interface {
 //-------------------------------------------------------------------------
 // package_file_cache
 //
-// Structure that represents a cache for an imported pacakge. In other words
+// Structure that represents a cache for an imported package. In other words
 // these are the contents of an archive (*.a) file.
 //-------------------------------------------------------------------------
 

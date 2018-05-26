@@ -59,9 +59,11 @@ func (a *symbolDescriptor) Contains(b lspext.SymbolDescriptor) bool {
 // our custom symbolDescriptor
 type symbolLocationInformation struct {
 	// A concrete location at which the definition is located, if any.
-	Location lsp.Location `json:"location,omitempty"`
+	Location     lsp.Location      `json:"location,omitempty"`
 	// Metadata about the definition.
-	Symbol *symbolDescriptor `json:"symbol"`
+	Symbol       *symbolDescriptor `json:"symbol"`
+	// the location of a type declaration, if one is available
+	TypeLocation lsp.Location      `json:"-"`
 }
 
 // referenceInformation is lspext.ReferenceInformation using our custom symbolDescriptor

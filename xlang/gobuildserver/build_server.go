@@ -48,7 +48,7 @@ func NewHandler() jsonrpc2.Handler {
 		HandlerShared: shared,
 		lang: &langserver.LangHandler{
 			HandlerShared: shared,
-			Config: langserver.Config{
+			DefaultConfig: langserver.Config{
 				MaxParallelism: runtime.GOMAXPROCS(0),
 			},
 		},

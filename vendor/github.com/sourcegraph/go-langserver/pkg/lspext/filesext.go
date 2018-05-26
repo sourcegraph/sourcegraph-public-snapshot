@@ -12,5 +12,5 @@ type ContentParams struct {
 
 // FilesParams is the input for 'workspace/xfiles'. The response is '[]TextDocumentIdentifier'
 type FilesParams struct {
-	Base string `json:"patterns,omitempty"`
+	Base string `json:"base,omitempty"`
 }

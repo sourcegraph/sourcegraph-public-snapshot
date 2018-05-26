@@ -51,20 +51,6 @@ func IsVendorDir(dir string) bool {
 	return strings.HasPrefix(dir, "vendor/") || strings.Contains(dir, "/vendor/")
 }
 
-// VendorlessImportPath returns the devendorized version of the provided import path.
-// e.g. "foo/bar/vendor/a/b" => "a/b"
-// NOTICE: It is copied directly from golang.org/x/tools/imports/fix.go.
-func VendorlessImportPath(ipath string) string {
-	// Devendorize for use in import statement.
-	if i := strings.LastIndex(ipath, "/vendor/"); i >= 0 {
-		return ipath[i+len("/vendor/"):]
-	}
-	if strings.HasPrefix(ipath, "vendor/") {
-		return ipath[len("vendor/"):]
-	}
-	return ipath
-}
-
 // IsURI tells if s denotes an URI
 func IsURI(s lsp.DocumentURI) bool {
 	return strings.HasPrefix(string(s), "file:///")

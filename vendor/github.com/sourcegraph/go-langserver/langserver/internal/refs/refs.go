@@ -300,11 +300,30 @@ func deepRecvType(sel *types.Selection) types.Type {
 	return typ
 }
 
-func dereferenceType(typ types.Type) types.Type {
-	if typ, ok := typ.(*types.Pointer); ok {
-		return typ.Elem()
+// Every types.Type with an Elem() is a dereferencable type,
+// such as slice, array, chan, pointer. In every case but
+// types.Map, it is unambiguous which type you would want to
+// look up if you were asked to look up the derived type.
+type dereferencable interface {
+	Elem() types.Type
+}
+
+// dereferenceType finds the "root" type of a thing, meaning
+// the type pointed-to by a pointer, the element type of
+// a slice or array, or the object type of a chan. The special
+// case for Map is because a Map would also have a key, and
+// you might be interested in either of those.
+func dereferenceType(otyp types.Type) types.Type {
+	for {
+		switch typ := otyp.(type) {
+			case *types.Map:
+				return otyp
+			case dereferencable:
+				otyp = typ.Elem()
+			default:
+				return otyp
+		}
 	}
-	return typ
 }
 
 func typeName(typ types.Type) (pkg, pkgName, name string, ok bool) {

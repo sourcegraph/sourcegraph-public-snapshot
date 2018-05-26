@@ -154,6 +154,7 @@ type ServerCapabilities struct {
 	CompletionProvider               *CompletionOptions               `json:"completionProvider,omitempty"`
 	SignatureHelpProvider            *SignatureHelpOptions            `json:"signatureHelpProvider,omitempty"`
 	DefinitionProvider               bool                             `json:"definitionProvider,omitempty"`
+	TypeDefinitionProvider           bool                             `json:"typeDefinitionProvider,omitempty"`
 	ReferencesProvider               bool                             `json:"referencesProvider,omitempty"`
 	DocumentHighlightProvider        bool                             `json:"documentHighlightProvider,omitempty"`
 	DocumentSymbolProvider           bool                             `json:"documentSymbolProvider,omitempty"`

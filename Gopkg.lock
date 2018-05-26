@@ -1107,7 +1107,7 @@
     "internal/fastwalk",
     "refactor/importgraph"
   ]
-  revision = "94b14834a20132093826ea5e2da5502a13908ad3"
+  revision = "a5b4c53f6e8bdcafa95a94671bf2d1203365858b"
 
 [[projects]]
   branch = "master"

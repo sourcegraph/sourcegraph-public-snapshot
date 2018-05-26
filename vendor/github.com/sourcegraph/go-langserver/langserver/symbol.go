@@ -342,7 +342,7 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2.JSONRPC2, 
 		rootPath := h.FilePath(h.init.Root())
 		bctx := h.BuildContext(ctx)
 
-		par := parallel.NewRun(h.Config.MaxParallelism)
+		par := parallel.NewRun(h.config.MaxParallelism)
 		for _, pkg := range tools.ListPkgsUnderDir(bctx, rootPath) {
 			// If we're restricting results to a single file or dir, ensure the
 			// package dir matches to avoid doing unnecessary work.

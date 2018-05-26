@@ -60,6 +60,12 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fil
 		return nil, nil, nil, nil, nil, nil, err
 	}
 
+	for _, ignoredGoFile := range bpkg.IgnoredGoFiles {
+		if path.Base(filename) == ignoredGoFile {
+			return nil, nil, nil, nil, nil, nil, fmt.Errorf("file %s is ignored by the build", filename)
+		}
+	}
+
 	// TODO(sqs): do all pkgs in workspace together?
 	fset, prog, diags, err := h.cachedTypecheck(ctx, bctx, bpkg)
 	if err != nil {

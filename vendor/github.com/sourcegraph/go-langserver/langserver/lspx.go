@@ -8,8 +8,29 @@ import "github.com/sourcegraph/go-langserver/pkg/lsp"
 // standalone operation on the local file system. (VSCode has no way
 // of including these fields.)
 
+// InitializationOptions are the options supported by go-langserver. It is the
+// Config struct, but each field is optional.
+type InitializationOptions struct {
+	// FuncSnippetEnabled is an optional version of Config.FuncSnippetEnabled
+	FuncSnippetEnabled *bool `json:"funcSnippetEnabled"`
+
+	// GocodeCompletionEnabled is an optional version of
+	// Config.GocodeCompletionEnabled
+	GocodeCompletionEnabled *bool `json:"gocodeCompletionEnabled"`
+
+	// MaxParallelism is an optional version of Config.MaxParallelism
+	MaxParallelism *int `json:"maxParallelism"`
+
+	// UseBinaryPkgCache is an optional version of Config.UseBinaryPkgCache
+	UseBinaryPkgCache *bool `json:"useBinaryPkgCache"`
+}
+
 type InitializeParams struct {
 	lsp.InitializeParams
+
+	InitializationOptions *InitializationOptions `json:"initializationOptions,omitempty"`
+
+	// TODO these should be InitializationOptions
 
 	// NoOSFileSystemAccess makes the server never access the OS file
 	// system. It exclusively uses the file overlay (from

@@ -442,7 +442,7 @@ func update_packages(ps map[string]*package_file_cache) {
 	}
 
 	// wait for its completion
-	for _ = range ps {
+	for range ps {
 		if !<-done {
 			panic("One of the package cache updaters panicked")
 		}
