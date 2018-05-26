@@ -1,14 +1,12 @@
 package db
 
 import (
-	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
 	"time"
-	"unicode"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -144,57 +142,6 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 	return repos, nil
 }
 
-// makeFuzzyLikeRepoQuery turns a string of "foo/bar" into "%foo%/%bar%".
-// Anything that is not a letter or digit is turned turned surrounded by %.
-// Except for space, which is just turned into %.
-func makeFuzzyLikeRepoQuery(q string) string {
-	var last rune
-	var b bytes.Buffer
-	b.Grow(len(q) + 4) // most queries will add around 4 wildcards (prefix, postfix and around separator)
-	writeRune := func(r rune) {
-		if r == '%' && last == '%' {
-			return
-		}
-		last = r
-		b.WriteRune(r)
-	}
-	writeEscaped := func(r rune) {
-		if last != '%' {
-			b.WriteRune('%')
-		}
-		b.WriteRune('\\')
-		b.WriteRune(r)
-		b.WriteRune('%')
-		last = '%'
-	}
-
-	writeRune('%') // prefix
-	for _, r := range q {
-		switch r {
-		case ' ':
-			// Ignore space, since repo URI can't contain it. Just add a wildcard
-			writeRune('%')
-		case '\\':
-			writeEscaped(r)
-		case '%':
-			writeEscaped(r)
-		case '_':
-			writeEscaped(r)
-		default:
-			if unicode.IsLetter(r) || unicode.IsDigit(r) {
-				writeRune(r)
-			} else {
-				writeRune('%')
-				writeRune(r)
-				writeRune('%')
-			}
-		}
-	}
-	writeRune('%') // postfix
-
-	return b.String()
-}
-
 // ReposListOptions specifies the options for listing repositories.
 //
 // Query and IncludePatterns/ExcludePatterns may not be used together.
@@ -298,7 +245,7 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
 	}
 	if opt.Query != "" {
-		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", makeFuzzyLikeRepoQuery(strings.ToLower(opt.Query))))
+		conds = append(conds, sqlf.Sprintf("lower(uri) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
 	}
 	for _, includePattern := range opt.IncludePatterns {
 		exact, like, pattern, err := parseIncludePattern(includePattern)

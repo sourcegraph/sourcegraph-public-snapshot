@@ -173,7 +173,6 @@ func TestRepos_List_query1(t *testing.T) {
 		{"ABC/DEF", []api.RepoURI{"abc/def"}},
 		{"xyz", []api.RepoURI{"github.com/abc/xyz"}},
 		{"mno/p", []api.RepoURI{"jkl/mno/pqr"}},
-		{"jkl mno pqr", []api.RepoURI{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
 		repos, err := Repos.List(ctx, ReposListOptions{Query: test.query, Enabled: true})
@@ -453,28 +452,6 @@ func TestRepos_Create_dupe(t *testing.T) {
 
 	// Add another repo with the same name.
 	createRepo(ctx, t, &types.Repo{URI: "a/b"})
-}
-
-func TestMakeFuzzyLikeRepoQuery(t *testing.T) {
-	cases := map[string]string{
-		"":           "%",
-		"/":          "%/%",
-		"foo":        "%foo%",
-		"/foo":       "%/%foo%",
-		"foo/":       "%foo%/%",
-		"//foo":      "%/%/%foo%",
-		"foo//":      "%foo%/%/%",
-		"/foo/":      "%/%foo%/%",
-		"foo/bar":    "%foo%/%bar%",
-		"/foo/bar/":  "%/%foo%/%bar%/%",
-		"/foo%/bar/": "%/%foo%\\%%/%bar%/%",
-	}
-	for query, want := range cases {
-		got := makeFuzzyLikeRepoQuery(query)
-		if want != got {
-			t.Errorf("makeFuzzyLikeQuery(%q) == %q != %q", query, got, want)
-		}
-	}
 }
 
 func boolptr(b bool) *bool {

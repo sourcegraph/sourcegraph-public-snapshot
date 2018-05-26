@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
+### Changed
+
+* Queries for repositories (in the explore, site admin repositories, and repository header dropdown) are matched on case-insensitive substrings, not using fuzzy matching logic.
+
 ### Fixed
 
 * Fixed an issue where the search results page would not update its title.
