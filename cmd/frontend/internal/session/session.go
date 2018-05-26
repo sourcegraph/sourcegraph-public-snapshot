@@ -258,7 +258,12 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 
 	var info *sessionInfo
 	if err := GetData(r, "actor", &info); err != nil {
-		log15.Error("Error reading session actor.", "err", err)
+		if !strings.Contains(err.Error(), "illegal base64 data at input byte 36") {
+			// Skip log if the error message indicates the cookie value was a JWT (which almost
+			// certainly means that the cookie was a pre-2.8 SAML cookie, so this error will only
+			// occur once and the user will be automatically redirected to the SAML auth flow).
+			log15.Warn("Error reading session actor. The session cookie was invalid and will be cleared. This error can be safely ignored unless it persists.", "err", err)
+		}
 		_ = deleteSession(w, r) // clear the bad value
 		return r.Context()
 	}
