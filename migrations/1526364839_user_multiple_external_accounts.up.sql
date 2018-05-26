@@ -20,7 +20,7 @@ CREATE UNIQUE INDEX user_external_accounts_account ON user_external_accounts(ser
 -- code upon next server startup.
 INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id)
 	SELECT id AS user_id, 'migration_in_progress'::text AS service_type, external_provider AS service_id,
-		   external_id AS account_id
+	       external_id AS account_id
 	FROM users
 	WHERE external_provider IS NOT NULL AND external_id IS NOT NULL;
 
