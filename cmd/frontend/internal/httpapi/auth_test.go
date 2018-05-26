@@ -48,7 +48,15 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		checkHTTPResponse(t, req, http.StatusOK, "user 123")
 	})
 
-	for _, invalidHeaderValue := range []string{"x", "x y", "token-sudo abc", `token-sudo token=""`, "token "} {
+	for _, unrecognizedHeaderValue := range []string{"x", "x y", "Basic abcd"} {
+		t.Run("unrecognized header "+unrecognizedHeaderValue, func(t *testing.T) {
+			req, _ := http.NewRequest("GET", "/", nil)
+			req.Header.Set("Authorization", unrecognizedHeaderValue)
+			checkHTTPResponse(t, req, http.StatusOK, "no user")
+		})
+	}
+
+	for _, invalidHeaderValue := range []string{"token-sudo abc", `token-sudo token=""`, "token "} {
 		t.Run("invalid header "+invalidHeaderValue, func(t *testing.T) {
 			req, _ := http.NewRequest("GET", "/", nil)
 			req.Header.Set("Authorization", invalidHeaderValue)

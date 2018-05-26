@@ -2,6 +2,7 @@ package authz
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -11,6 +12,16 @@ const (
 	SchemeToken     = "token"      // Scheme for Authorization header with only an access token
 	SchemeTokenSudo = "token-sudo" // Scheme for Authorization header with access token and sudo user
 )
+
+// errUnrecognizedScheme occurs when the Authorization header scheme (the first token) is not
+// recognized.
+var errUnrecognizedScheme = fmt.Errorf("unrecognized HTTP Authorization request header scheme (supported values: %q, %q)", SchemeToken, SchemeTokenSudo)
+
+// IsUnrecognizedScheme reports whether err indicates that the request's Authorization header scheme
+// is unrecognized or unparseable (i.e., is neither "token" nor "token-sudo").
+func IsUnrecognizedScheme(err error) bool {
+	return err == errUnrecognizedScheme || err == errHTTPAuthParamsDuplicateKey || err == errHTTPAuthParamsNoEquals
+}
 
 // ParseAuthorizationHeader parses the HTTP Authorization request header for supported credentials
 // values.
@@ -31,7 +42,7 @@ func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err e
 	}
 
 	if scheme != SchemeToken && scheme != SchemeTokenSudo {
-		return "", "", errors.New("unrecognized HTTP Authorization request header scheme (supported values: token, token-sudo)")
+		return "", "", errUnrecognizedScheme
 	}
 
 	if token68 != "" {

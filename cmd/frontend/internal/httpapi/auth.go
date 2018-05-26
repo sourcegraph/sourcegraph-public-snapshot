@@ -26,6 +26,16 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 
 			token, sudoUser, err := authz.ParseAuthorizationHeader(headerValue)
 			if err != nil {
+				if authz.IsUnrecognizedScheme(err) {
+					// Ignore Authorization headers that we don't handle.
+					log15.Debug("Ignoring unrecognized Authorization header.", "err", err)
+					next.ServeHTTP(w, r)
+					return
+				}
+
+				// Report errors on malformed Authorization headers for schemes we do handle, to
+				// make it clear to the client that their request is not proceeding with their
+				// supplied credentials.
 				log15.Error("Invalid Authorization header.", "err", err)
 				http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
 				return
