@@ -122,9 +122,7 @@ func (g *generator) emitTaggedUnionType(schema *jsonschema.Schema) ([]ast.Decl, 
 		return nil, nil, err
 	}
 	typeDecl := &ast.GenDecl{
-		Doc: &ast.CommentGroup{
-			List: []*ast.Comment{{Text: "\n// " + docForSchema(schema, goName)}},
-		},
+		Doc: docForSchema(schema, goName),
 		Tok: token.TYPE,
 		Specs: []ast.Spec{&ast.TypeSpec{
 			Name: ast.NewIdent(goName),
