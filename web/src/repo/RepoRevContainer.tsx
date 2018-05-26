@@ -238,24 +238,25 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         />
                                                     }
                                                 />
-                                                {codeIntelStatusIndicatorEnabled && (
-                                                    <RepoHeaderActionPortal
-                                                        position="right"
-                                                        priority={-10}
-                                                        element={
-                                                            <CodeIntelStatusIndicator
-                                                                key="code-intel-status"
-                                                                userIsSiteAdmin={
-                                                                    !!this.props.user && this.props.user.siteAdmin
-                                                                }
-                                                                repoPath={this.props.repo.uri}
-                                                                commitID={resolvedRev.commitID}
-                                                                filePath={filePath}
-                                                                language={getModeFromPath(filePath)}
-                                                            />
-                                                        }
-                                                    />
-                                                )}
+                                                {codeIntelStatusIndicatorEnabled &&
+                                                    objectType === 'blob' && (
+                                                        <RepoHeaderActionPortal
+                                                            position="right"
+                                                            priority={-10}
+                                                            element={
+                                                                <CodeIntelStatusIndicator
+                                                                    key="code-intel-status"
+                                                                    userIsSiteAdmin={
+                                                                        !!this.props.user && this.props.user.siteAdmin
+                                                                    }
+                                                                    repoPath={this.props.repo.uri}
+                                                                    commitID={resolvedRev.commitID}
+                                                                    filePath={filePath}
+                                                                    language={getModeFromPath(filePath)}
+                                                                />
+                                                            }
+                                                        />
+                                                    )}
                                             </>
                                         )}
                                         <RepoRevSidebar
