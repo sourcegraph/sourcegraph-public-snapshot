@@ -17,12 +17,8 @@ export const showDotComMarketing = window.context.sourcegraphDotComMode
 
 /**
  * Whether the application supports the user "forgot-password" flow.
- *
- * TODO(sqs): This actually is determined by whether the user is non-SSO and
- * the server has SMTP configured, but we don't yet have a way of knowing that
- * here and this is a good enough proxy.
  */
-export const userForgotPassword = window.context.sourcegraphDotComMode
+export const userForgotPassword = window.context.emailEnabled
 
 /**
  * Whether the signup form should show terms and privacy policy links.
