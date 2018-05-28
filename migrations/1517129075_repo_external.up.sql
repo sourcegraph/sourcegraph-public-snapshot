@@ -1,4 +1,3 @@
-BEGIN;
 ALTER TABLE repo RENAME COLUMN origin_repo_id TO external_id;
 ALTER TABLE repo RENAME COLUMN origin_service TO external_service_type;
 ALTER TABLE repo ALTER COLUMN external_service_type TYPE text USING CASE WHEN external_service_type=0 THEN 'github' ELSE null END;

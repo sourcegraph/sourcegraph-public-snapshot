@@ -1,4 +1,3 @@
-BEGIN;
 ALTER TABLE threads ADD COLUMN "author_user_id" text;
 ALTER TABLE threads ADD COLUMN "html_lines_before" text;
 ALTER TABLE threads ADD COLUMN "html_lines" text;
@@ -21,4 +20,3 @@ UPDATE threads
 	WHERE subquery.thread_id = threads.id;
 
 ALTER TABLE threads ALTER COLUMN author_user_id SET NOT NULL;
-COMMIT;

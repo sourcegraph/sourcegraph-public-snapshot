@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TABLE phabricator_repos DROP COLUMN url;
 

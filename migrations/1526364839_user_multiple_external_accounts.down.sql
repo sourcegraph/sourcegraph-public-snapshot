@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TABLE users ADD COLUMN external_id text;
 ALTER TABLE users ADD COLUMN external_provider text;
@@ -12,4 +11,3 @@ UPDATE users SET external_provider=x.service_id, external_id=x.account_id
 
 DROP TABLE user_external_accounts;
 
-COMMIT;

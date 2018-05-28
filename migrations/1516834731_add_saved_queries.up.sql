@@ -1,4 +1,3 @@
-BEGIN;
 CREATE TABLE saved_queries (
     "query" text NOT NULL,
     "last_executed" TIMESTAMP WITH TIME ZONE NOT NULL,

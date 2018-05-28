@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TABLE orgs
 	DROP CONSTRAINT org_name_valid_chars,

@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TABLE org_members ADD COLUMN "email" TEXT;
 ALTER TABLE org_members ADD COLUMN "username" TEXT;
@@ -23,4 +22,3 @@ ALTER TABLE org_members
 	ADD CONSTRAINT org_members_org_id_user_name_key UNIQUE (org_id, username),
 	ADD CONSTRAINT org_members_org_id_user_email_key UNIQUE (org_id, email);
 
-COMMIT;

@@ -1,4 +1,3 @@
-BEGIN;
 
 CREATE TABLE deployment_configuration (
 	id int primary key,
@@ -8,4 +7,3 @@ CREATE TABLE deployment_configuration (
 	last_updated text
 );
 
-COMMIT;

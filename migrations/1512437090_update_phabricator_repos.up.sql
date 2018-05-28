@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TABLE phabricator_repos ADD COLUMN url TEXT NOT NULL DEFAULT '';
 

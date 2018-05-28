@@ -1,4 +1,3 @@
-BEGIN;
 ALTER TABLE settings RENAME COLUMN author_auth_id TO author_user_id;
 
 ALTER TABLE settings RENAME COLUMN author_user_id TO author_user_id_old;
@@ -8,4 +7,3 @@ CREATE TABLE settings_bkup_1514702776 AS (SELECT * FROM settings WHERE author_us
 DELETE FROM settings WHERE author_user_id IS NULL;
 ALTER TABLE settings ALTER COLUMN author_user_id SET NOT NULL;
 ALTER TABLE settings DROP COLUMN author_user_id_old;
-COMMIT;

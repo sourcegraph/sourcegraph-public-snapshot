@@ -1,4 +1,3 @@
-BEGIN;
 CREATE TABLE user_activity (
 	id serial NOT NULL PRIMARY KEY,
 	user_id integer NOT NULL UNIQUE,
@@ -13,4 +12,3 @@ CREATE TABLE user_activity (
 INSERT INTO user_activity(user_id, page_views, search_queries) SELECT id AS user_id, page_views, search_queries FROM users;
 ALTER TABLE users DROP COLUMN page_views;
 ALTER TABLE users DROP COLUMN search_queries;
-COMMIT;

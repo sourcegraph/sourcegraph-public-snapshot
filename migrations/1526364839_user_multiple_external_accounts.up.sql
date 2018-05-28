@@ -1,4 +1,3 @@
-BEGIN;
 
 CREATE TABLE user_external_accounts(
 	id SERIAL PRIMARY KEY,
@@ -29,4 +28,3 @@ ALTER TABLE users DROP CONSTRAINT check_external_id;
 ALTER TABLE users DROP COLUMN external_provider;
 ALTER TABLE users DROP COLUMN external_id;
 
-COMMIT;

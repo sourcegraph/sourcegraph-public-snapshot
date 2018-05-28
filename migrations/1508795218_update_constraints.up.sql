@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TABLE "comments"
 	ALTER COLUMN "created_at" SET NOT NULL,
@@ -34,4 +33,3 @@ ALTER TABLE "users"
 
 ALTER TABLE "users" ALTER COLUMN deleted_at TYPE TIMESTAMP WITH TIME ZONE;
 
-COMMIT;

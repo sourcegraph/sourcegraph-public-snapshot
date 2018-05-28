@@ -1,4 +1,3 @@
-BEGIN;
 CREATE TABLE user_emails(
 	user_id integer NOT NULL REFERENCES users (id),
 	email citext NOT NULL UNIQUE,
@@ -12,4 +11,3 @@ INSERT INTO user_emails(user_id, email, created_at, verification_code, verified_
 	FROM users;
 ALTER TABLE users DROP COLUMN email;
 ALTER TABLE users DROP COLUMN email_code;
-COMMIT;

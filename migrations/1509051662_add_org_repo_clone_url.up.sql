@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TABLE "org_repos" ADD COLUMN "clone_url" text;
 
@@ -19,4 +18,3 @@ ALTER TABLE "org_repos"
 ALTER TABLE "org_repos"
 	RENAME "remote_uri" TO "canonical_remote_id";
 
-COMMIT;

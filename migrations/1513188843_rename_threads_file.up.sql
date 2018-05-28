@@ -1,4 +1,3 @@
-BEGIN;
 
 DROP INDEX threads_local_repo_id_file_idx;
 DROP INDEX threads_org_repo_id_file_branch_idx;
