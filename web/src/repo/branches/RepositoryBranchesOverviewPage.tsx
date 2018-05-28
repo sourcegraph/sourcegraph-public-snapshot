@@ -11,7 +11,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
-import { gitBranchFragment, GitBranchNode } from './RepositoryBranchesAllPage'
+import { gitRefFragment, GitRefNode } from '../GitRef'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 
 interface Data {
@@ -20,19 +20,19 @@ interface Data {
     hasMoreActiveBranches: boolean
 }
 
-const fetchGitBranches = memoizeObservable(
+const queryGitBranches = memoizeObservable(
     (args: { repo: GQL.ID; first: number }): Observable<Data> =>
         queryGraphQL(
             gql`
-                query RepositoryGitBranchesOverview($repo: ID!, $first: Int!) {
+                query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {
                     node(id: $repo) {
                         ... on Repository {
                             defaultBranch {
-                                ...GitBranchFields
+                                ...GitRefFields
                             }
                             gitRefs(first: $first, type: GIT_BRANCH, orderBy: AUTHORED_OR_COMMITTED_AT) {
                                 nodes {
-                                    ...GitBranchFields
+                                    ...GitRefFields
                                 }
                                 pageInfo {
                                     hasNextPage
@@ -41,9 +41,9 @@ const fetchGitBranches = memoizeObservable(
                         }
                     }
                 }
-                ${gitBranchFragment}
+                ${gitRefFragment}
             `,
-            args
+            { ...args, withBehindAhead: true }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
@@ -89,7 +89,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                     distinctUntilChanged((a, b) => a.repo.id === b.repo.id),
                     switchMap(({ repo }) => {
                         type PartialStateUpdate = Pick<State, 'dataOrError'>
-                        return fetchGitBranches({ repo: repo.id, first: 10 }).pipe(
+                        return queryGitBranches({ repo: repo.id, first: 10 }).pipe(
                             catchError(error => [error]),
                             map(c => ({ dataOrError: c } as PartialStateUpdate)),
                             startWith<PartialStateUpdate>({ dataOrError: undefined })
@@ -123,7 +123,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                             <div className="card repository-branches-page__card">
                                 <div className="card-header">Default branch</div>
                                 <ul className="list-group list-group-flush">
-                                    <GitBranchNode node={this.state.dataOrError.defaultBranch} />
+                                    <GitRefNode node={this.state.dataOrError.defaultBranch} />
                                 </ul>
                             </div>
                         )}
@@ -132,7 +132,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                 <div className="card-header">Active branches</div>
                                 <div className="list-group list-group-flush">
                                     {this.state.dataOrError.activeBranches.map((b, i) => (
-                                        <GitBranchNode key={i} node={b} />
+                                        <GitRefNode key={i} node={b} />
                                     ))}
                                     {this.state.dataOrError.hasMoreActiveBranches && (
                                         <Link
