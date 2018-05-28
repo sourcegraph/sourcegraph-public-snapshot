@@ -39,7 +39,7 @@ var (
 
 // new OIDCIDServer returns a new running mock OIDC ID Provider service. It is the caller's
 // responsibility to call Close().
-func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConnectAuthProvider) *httptest.Server {
+func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConnectAuthProvider) (server *httptest.Server, emailPtr *string) {
 	idBearerToken := "test_id_token_f4bdefbd77f"
 	s := http.NewServeMux()
 
@@ -79,6 +79,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 			"id_token": %q
 		}`, idBearerToken)))
 	})
+	email := "bob@example.com"
 	s.HandleFunc("/oauth2/v1/userinfo", func(w http.ResponseWriter, r *http.Request) {
 		authzHeader := r.Header.Get("Authorization")
 		authzParts := strings.Split(authzHeader, " ")
@@ -92,7 +93,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 		w.Write([]byte(fmt.Sprintf(`{
 			"sub": %q,
 			"profile": "This is a profile",
-			"email": "bob@foo.com",
+			"email": "`+email+`",
 			"email_verified": true,
 			"picture": "https://example.com/picture.png"
 		}`, testOIDCUser)))
@@ -107,7 +108,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 		return 0, fmt.Errorf("account %v not found in mock", a)
 	}
 
-	return srv
+	return srv, &email
 }
 
 func TestMiddleware(t *testing.T) {
@@ -122,15 +123,16 @@ func TestMiddleware(t *testing.T) {
 
 	mockGetProviderValue = &provider{
 		config: schema.OpenIDConnectAuthProvider{
-			ClientID:     testClientID,
-			ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
+			ClientID:           testClientID,
+			ClientSecret:       "aaaaaaaaaaaaaaaaaaaaaaaaa",
+			RequireEmailDomain: "example.com",
 		},
 	}
 	defer func() { mockGetProviderValue = nil }()
 	auth.MockProviders = []auth.Provider{mockGetProviderValue}
 	defer func() { auth.MockProviders = nil }()
 
-	oidcIDServer := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
+	oidcIDServer, emailPtr := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
 	defer oidcIDServer.Close()
 	defer func() { auth.MockCreateOrUpdateUser = nil }()
 	mockGetProviderValue.config.Issuer = oidcIDServer.URL
@@ -263,6 +265,13 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		}
 	})
+	*emailPtr = "bob@invalid.com" // doesn't match requiredEmailDomain
+	t.Run("OIDC callback with bad email domain -> error", func(t *testing.T) {
+		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: stateCookieName, Value: validState}}, false)
+		if want := http.StatusUnauthorized; resp.StatusCode != want {
+			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+		}
+	})
 	t.Run("authenticated app request", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, true)
 		if want := http.StatusOK; resp.StatusCode != want {
@@ -297,7 +306,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	auth.MockProviders = []auth.Provider{mockGetProviderValue}
 	defer func() { auth.MockProviders = nil }()
 
-	oidcIDServer := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
+	oidcIDServer, _ := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
 	defer oidcIDServer.Close()
 	defer func() { auth.MockCreateOrUpdateUser = nil }()
 	mockGetProviderValue.config.Issuer = oidcIDServer.URL
