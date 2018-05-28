@@ -69,16 +69,16 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                         disabled={this.state.loading}
                         autoComplete="current-password"
                     />
-                    {userForgotPassword && (
-                        <small className="form-text">
-                            <Link to="/password-reset">Forgot password?</Link>
-                        </small>
-                    )}
                 </div>
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
                         Sign in
                     </button>
+                    {userForgotPassword && (
+                        <small className="form-text">
+                            <Link to="/password-reset">Forgot password?</Link>
+                        </small>
+                    )}
                 </div>
                 {this.state.loading && (
                     <div className="signin-signup-form__loader">
