@@ -1,6 +1,7 @@
 import { Observable, ReplaySubject } from 'rxjs'
-import { mergeMap, tap } from 'rxjs/operators'
+import { filter, mergeMap, tap } from 'rxjs/operators'
 import { SiteFlags } from '.'
+import { authRequired } from '../auth'
 import { gql, queryGraphQL } from '../backend/graphql'
 import { createAggregateError } from '../util/errors'
 
@@ -14,25 +15,29 @@ export const siteFlags = new ReplaySubject<SiteFlags>(1)
  * the siteFlags const.
  */
 export function refreshSiteFlags(): Observable<never> {
-    return queryGraphQL(gql`
-        query SiteFlags {
-            site {
-                needsRepositoryConfiguration
-                noRepositoriesEnabled
-                configurationNotice
-                hasCodeIntelligence
-                externalAuthEnabled
-                disableBuiltInSearches
-                sendsEmailVerificationEmails
-                updateCheck {
-                    pending
-                    checkedAt
-                    errorMessage
-                    updateVersionAvailable
+    return authRequired.pipe(
+        filter(authRequired => !authRequired),
+        mergeMap(() =>
+            queryGraphQL(gql`
+                query SiteFlags {
+                    site {
+                        needsRepositoryConfiguration
+                        noRepositoriesEnabled
+                        configurationNotice
+                        hasCodeIntelligence
+                        externalAuthEnabled
+                        disableBuiltInSearches
+                        sendsEmailVerificationEmails
+                        updateCheck {
+                            pending
+                            checkedAt
+                            errorMessage
+                            updateVersionAvailable
+                        }
+                    }
                 }
-            }
-        }
-    `).pipe(
+            `)
+        ),
         tap(({ data, errors }) => {
             if (!data || !data.site) {
                 throw createAggregateError(errors)

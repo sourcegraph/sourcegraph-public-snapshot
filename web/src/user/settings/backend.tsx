@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs'
-import { map, mergeMap, tap } from 'rxjs/operators'
+import { filter, map, mergeMap, tap } from 'rxjs/operators'
+import { authRequired } from '../../auth'
 import { gql, mutateGraphQL, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { configurationCascade } from '../../settings/configuration'
@@ -11,7 +12,12 @@ import { createAggregateError } from '../../util/errors'
  * app to all consumers of configuration settings.
  */
 export function refreshConfiguration(): Observable<never> {
-    return fetchConfiguration().pipe(tap(result => configurationCascade.next(result)), mergeMap(() => []))
+    return authRequired.pipe(
+        filter(authRequired => !authRequired),
+        mergeMap(() => fetchConfiguration()),
+        tap(result => configurationCascade.next(result)),
+        mergeMap(() => [])
+    )
 }
 
 const configurationCascadeFragment = gql`

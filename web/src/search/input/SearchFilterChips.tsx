@@ -5,7 +5,8 @@ import * as React from 'react'
 import { matchPath } from 'react-router'
 import { NavLink } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, map, mergeMap } from 'rxjs/operators'
+import { authRequired } from '../../auth'
 import { currentUser } from '../../auth'
 import * as GQL from '../../backend/graphqlschema'
 import { Tooltip } from '../../components/tooltip/Tooltip'
@@ -49,8 +50,10 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
         this.state = { user: null }
 
         this.subscriptions.add(
-            fetchSearchScopes()
+            authRequired
                 .pipe(
+                    filter(authRequired => !authRequired),
+                    mergeMap(() => fetchSearchScopes()),
                     catchError(err => {
                         console.error(err)
                         return []

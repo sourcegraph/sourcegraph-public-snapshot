@@ -66,14 +66,24 @@ export function refreshCurrentUser(): Observable<never> {
     )
 }
 
-/** Whether auth is required to perform any action. */
-export const authRequired = currentUser.pipe(map(user => user === null && !window.context.site['auth.public']))
+const initialSiteConfigAuthPublic = window.context.site['auth.public']
 
-// Populate currentUser synchronously at page load time if possible.
-if (!window.context.user) {
+/**
+ * Whether auth is required to perform any action.
+ *
+ * If an HTTP request might be triggered by an unauthenticated user on a server with auth.public ==
+ * false, the caller must first check authRequired. If authRequired is true, then the component must
+ * not initiate the HTTP request. This prevents the browser's devtools console from showing HTTP 401
+ * errors, which mislead the user into thinking there is a problem (and make debugging any actual
+ * issue much harder).
+ */
+export const authRequired = currentUser.pipe(map(user => user === null && !initialSiteConfigAuthPublic))
+
+// Populate currentUser.
+if (window.context.user) {
+    refreshCurrentUser()
+        .toPromise()
+        .then(() => void 0, err => console.error(err))
+} else {
     currentUser.next(null)
 }
-
-refreshCurrentUser()
-    .toPromise()
-    .then(() => void 0, err => console.error(err))
