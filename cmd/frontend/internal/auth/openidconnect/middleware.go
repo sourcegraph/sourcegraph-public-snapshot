@@ -133,7 +133,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		stateCookie, err := r.Cookie(stateCookieName)
 		if err == http.ErrNoCookie {
 			log15.Error("OpenID Connect auth failed: no state cookie found (possible request forgery).")
-			http.Error(w, "Authentication failed. No OpenID Connect state cookie found (possible request forgery).", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Authentication failed. No OpenID Connect state cookie found (possible request forgery, or more than %s elapsed since you started the authentication process).", stateCookieTimeout), http.StatusBadRequest)
 			return
 		} else if err != nil {
 			log15.Error("OpenID Connect auth failed: could not read state cookie (possible request forgery).", "error", err)
@@ -283,6 +283,8 @@ func (s *authnState) Decode(encoded string) error {
 	return json.Unmarshal(b, s)
 }
 
+const stateCookieTimeout = time.Minute * 15
+
 func redirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *provider, returnToURL string) {
 	// The state parameter is an opaque value used to maintain state between the original Authentication Request
 	// and the callback. We do not record any state beyond a CSRF token used to defend against CSRF attacks against the callback.
@@ -298,7 +300,7 @@ func redirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *provider, 
 		Name:    stateCookieName,
 		Value:   state,
 		Path:    auth.AuthURLPrefix + "/", // include the OIDC redirect URI (/.auth/callback not /.auth/openidconnect/callback for BACKCOMPAT)
-		Expires: time.Now().Add(time.Minute * 15),
+		Expires: time.Now().Add(stateCookieTimeout),
 	})
 
 	// Redirect to the OP's Authorization Endpoint for authentication. The nonce is an optional
