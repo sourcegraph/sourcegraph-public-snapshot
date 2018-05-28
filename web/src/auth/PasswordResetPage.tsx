@@ -111,11 +111,15 @@ class PasswordResetForm extends React.Component<{}, State> {
                 } else if (resp.status === 429) {
                     this.setState({ error: 'Too many password reset requests. Try again in a few minutes.' })
                 } else {
-                    this.setState({ error: 'Could not reset password: Status code ' + resp.status })
+                    this.setState({ error: 'Error' })
+                    resp
+                        .text()
+                        .then(text => this.setState({ error: text || 'Unknown error' }))
+                        .catch(err => console.error(err))
                 }
             })
             .catch(err => {
-                this.setState({ error: 'Could not reset password: ' + (err && err.message) || err || 'Unknown Error' })
+                this.setState({ error: err && err.message ? err.message : err || 'Unknown error' })
             })
     }
 

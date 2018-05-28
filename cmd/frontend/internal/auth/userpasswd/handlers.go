@@ -203,7 +203,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 
 	usr, err := db.Users.GetByVerifiedEmail(ctx, creds.Email)
 	if err != nil {
-		httpLogAndError(w, "No user found for email", http.StatusBadRequest, "email", creds.Email)
+		httpLogAndError(w, "No user found with a matching verified email address", http.StatusBadRequest, "email", creds.Email)
 		return
 	}
 
