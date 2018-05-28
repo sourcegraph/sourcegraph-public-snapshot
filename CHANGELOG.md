@@ -13,6 +13,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * Fixed an issue where the search results page would not update its title.
 
+### Added
+
+* The repository revisions popover now shows the target commit's last-committed/authored date for branches and tags.
+
 ## 2.8.0
 
 ### Changed
