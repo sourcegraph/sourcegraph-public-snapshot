@@ -24,7 +24,7 @@ interface State {
 
 const DESCRIPTION_LOCAL_STORAGE_KEY = 'FeedbackForm-description'
 const EXPERIENCE_LOCAL_STORAGE_KEY = 'FeedbackForm-experience'
-const ISSUES_URL = 'https://github.com/sourcegraph/issues'
+const ISSUES_URL = 'https://github.com/sourcegraph/issues/issues/new/choose'
 const TWITTER_URL = 'https://twitter.com/intent/tweet?'
 const TWEET_HASHTAG = ' #UseTheSource'
 const TWEET_MENTION = ' via @srcgraph'
@@ -62,19 +62,23 @@ export class FeedbackForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         return (
             <Form className="feedback-form card" onSubmit={this.handleSubmit}>
-                <div className="card-body">
+                <h4 className="card-header d-flex justify-content-between">
+                    Share your feedback{' '}
                     <button type="reset" className="btn btn-icon feedback-form__close" onClick={this.props.onDismiss}>
                         <CloseIcon />
                     </button>
-                    <h2>Tweet us your feedback</h2>
+                </h4>
+                <div className="card-body">
                     <div className="form-group">
-                        <label>How was your experience?</label>
+                        <p>How was your experience?</p>
                         <div>
                             <button
                                 type="button"
                                 className={
-                                    'btn btn-icon feedback-form__emoticon' +
-                                    (this.state.experience === 'good' ? ' feedback-form__emoticon--happy' : '')
+                                    'btn btn-icon feedback-form__emoticon feedback-form__emoticon-happy' +
+                                    (this.state.experience === 'good'
+                                        ? ' feedback-form__emoticon--checked feedback-form__emoticon-happy--checked'
+                                        : '')
                                 }
                                 onClick={this.saveGoodExperience}
                             >
@@ -83,8 +87,10 @@ export class FeedbackForm extends React.Component<Props, State> {
                             <button
                                 type="button"
                                 className={
-                                    'btn btn-icon feedback-form__emoticon' +
-                                    (this.state.experience === 'bad' ? ' feedback-form__emoticon--sad' : '')
+                                    'btn btn-icon feedback-form__emoticon feedback-form__emoticon-sad' +
+                                    (this.state.experience === 'bad'
+                                        ? ' feedback-form__emoticon--checked feedback-form__emoticon-sad--checked'
+                                        : '')
                                 }
                                 onClick={this.saveBadExperience}
                             >
@@ -107,34 +113,29 @@ export class FeedbackForm extends React.Component<Props, State> {
                             required={true}
                             maxLength={this.calculateMaxCharacters()}
                             autoFocus={true}
+                            rows={3}
                         />
                     </div>
-                    <div className="form-group">
-                        <button type="submit" className="btn btn-primary">
-                            <TwitterIcon className="icon icon-inline" /> Tweet us
-                        </button>{' '}
-                        <button type="reset" className="btn btn-secondary" onClick={this.props.onDismiss}>
-                            Cancel
+                    <div className="form-group d-flex align-items-center mb-0">
+                        <button type="submit" className="btn btn-primary mr-2">
+                            <TwitterIcon className="icon icon-inline" /> Tweet
                         </button>
-                    </div>
-                    <div>
-                        Or{' '}
-                        <Link to={ISSUES_URL} onClick={this.reportIssue} target="_blank">
-                            report an issue
-                        </Link>.
+                        <div>
+                            Or{' '}
+                            <Link to={ISSUES_URL} onClick={this.fileIssue} target="_blank">
+                                file an issue
+                            </Link>.
+                        </div>
                     </div>
                 </div>
             </Form>
         )
     }
 
-    /**
-     * Tells if the query is unsupported for sending notifications.
-     */
-
-    private reportIssue = () => {
-        eventLogger.log('ReportIssueButtonClicked')
+    private fileIssue = () => {
+        eventLogger.log('FileIssueButtonClicked')
     }
+
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
@@ -170,9 +171,7 @@ export class FeedbackForm extends React.Component<Props, State> {
         localStorage.removeItem(EXPERIENCE_LOCAL_STORAGE_KEY)
         this.props.onDismiss()
     }
-    /**
-     * Calculates max characters for the description field
-     */
+
     private calculateMaxCharacters(): number {
         let maxCharacters = 280 - TWEET_MENTION.length
 
@@ -193,9 +192,7 @@ export class FeedbackForm extends React.Component<Props, State> {
         this.setState({ experience: 'bad' })
         eventLogger.log('FeedbackBadExperienceClicked')
     }
-    /**
-     * Handles description change by updating the component's state
-     */
+
     private handleDescriptionChange = (event: React.FocusEvent<HTMLTextAreaElement>): void => {
         this.setState({ description: event.currentTarget.value })
     }

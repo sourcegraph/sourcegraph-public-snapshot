@@ -1,16 +1,14 @@
 .feedback-form {
     position: absolute;
-    top: 2.3rem;
-    right: 0;
+    top: 1.9rem;
+    right: 0.5rem;
     z-index: 50; // Overlay any page contents
-    width: 20rem;
+    width: 22rem;
     max-width: 90vw;
     margin: 0 1rem;
 
     &__close {
-        position: absolute;
-        top: 0.25rem;
-        right: 0.25rem;
+        margin-right: -0.25rem;
     }
 
     &__emoticon {
@@ -18,20 +16,18 @@
         font-size: 24px;
         padding: 0.5rem;
 
-        &--happy {
-            &,
-            &:active,
-            &:hover {
-                color: $success !important;
-            }
+        border: solid 1px transparent;
+        &--checked {
+            border-color: $input-focus-border-color;
         }
 
-        &--sad {
-            &,
-            &:active,
-            &:hover {
-                color: $danger !important;
-            }
+        &-happy:hover,
+        &-happy--checked {
+            color: $success !important;
+        }
+        &-sad:hover,
+        &-sad--checked {
+            color: $danger !important;
         }
     }
 }

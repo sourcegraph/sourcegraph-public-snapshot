@@ -117,7 +117,7 @@ export class NavLinks extends React.Component<Props, State> {
                 )}
                 <button
                     className="btn btn-link nav-links__feedback"
-                    data-tooltip="Send feedback"
+                    data-tooltip={this.state.showFeedbackForm ? undefined : 'Send feedback & report issues'}
                     onClick={this.onFeedbackButtonClick}
                 >
                     <EmoticonIcon className="icon-inline" />
@@ -143,7 +143,7 @@ export class NavLinks extends React.Component<Props, State> {
 
     private onFeedbackButtonClick = (): void => {
         eventLogger.log('FeedbackFormOpened')
-        this.setState({ showFeedbackForm: true })
+        this.setState(prevState => ({ showFeedbackForm: !prevState.showFeedbackForm }))
     }
 
     private onFeedbackFormDismiss = (): void => {
