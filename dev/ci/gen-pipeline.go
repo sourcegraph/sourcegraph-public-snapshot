@@ -161,12 +161,13 @@ func main() {
 			)
 		}
 		cmds = append(cmds,
-			Cmd(fmt.Sprintf("gcloud docker -- push %s:%s", image, version)),
+			Cmd("gcloud auth configure-docker"),
+			Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
 		)
 		if latest {
 			cmds = append(cmds,
 				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
-				Cmd(fmt.Sprintf("gcloud docker -- push %s:latest", image)),
+				Cmd(fmt.Sprintf("docker push %s:latest", image)),
 			)
 			if app == "server" {
 				cmds = append(cmds,

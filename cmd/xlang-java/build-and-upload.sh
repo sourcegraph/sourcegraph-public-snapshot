@@ -8,10 +8,11 @@ export VERSION=$(date '+%Y-%m-%d-%H%M')
 
 ./build.sh
 
-gcloud docker -- push "$IMAGE:$VERSION"
+gcloud auth configure-docker
+docker push "$IMAGE:$VERSION"
 
 if [ -z "$NOTLATEST" ]; then
     # push latest version, too
     docker tag "$IMAGE:$VERSION" "${IMAGE}:latest"
-    gcloud docker -- push "${IMAGE}:latest"
+    docker push "${IMAGE}:latest"
 fi

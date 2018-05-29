@@ -33,7 +33,7 @@ parts will be automated. You will need to complete four main steps.
 #### (3) Test the Sourcegraph Server Docker image
 
 1.  Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
-1.  `gcloud docker -- pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
+1.  `gcloud auth configure-docker && docker pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
     You can find it on the build output CI page in the last Docker build step, it should look something like
     `08248_2017-12-14_8dad5ab`. Important: The version number must come from the [docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver) branch, not `master`. Make sure you are on the right buildkite page.
 1.  Run through the [https://about.sourcegraph.com/docs/server/], but using the
@@ -42,7 +42,8 @@ parts will be automated. You will need to complete four main steps.
     incompatible changes. In future this will be more automated. The `docker run` command you will use will look like:
 
 ```bash
-gcloud docker -- run \
+gcloud auth configure-docker && \
+docker run \
  --publish 7080:7080 --rm \
  --volume $HOME/.sourcegraph/config:/etc/sourcegraph \
  --volume $HOME/.sourcegraph/data:/var/opt/sourcegraph \
