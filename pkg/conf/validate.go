@@ -78,6 +78,9 @@ func Validate(inputStr string) (problems []string, err error) {
 		if e.Field() == "type" && (keyPath == "auth.openIDConnect" || keyPath == "auth.saml") {
 			continue
 		}
+		if e.Field() == "auth.saml.type" || e.Field() == "auth.openIDConnect.type" {
+			continue
+		}
 
 		if !MultipleAuthProvidersEnabled() && keyPath == "(root)" && e.Description() == "Must validate \"else\" as \"if\" was not valid" {
 			continue
