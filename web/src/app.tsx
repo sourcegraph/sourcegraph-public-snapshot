@@ -119,7 +119,7 @@ interface AppState {
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
-    showTwitterFeedbackForm: boolean
+    showFeedbackForm: boolean
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -131,7 +131,7 @@ class App extends React.Component<{}, AppState> {
     public state: AppState = {
         isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
         navbarSearchQuery: '',
-        showTwitterFeedbackForm: false,
+        showFeedbackForm: false,
     }
 
     private subscriptions = new Subscription()

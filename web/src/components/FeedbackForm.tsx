@@ -22,14 +22,14 @@ interface State {
     description: string
 }
 
-const DESCRIPTION_LOCAL_STORAGE_KEY = 'twitter-feedback-description'
-const EXPERIENCE_LOCAL_STORAGE_KEY = 'twitter-feedback-experience'
+const DESCRIPTION_LOCAL_STORAGE_KEY = 'FeedbackForm-description'
+const EXPERIENCE_LOCAL_STORAGE_KEY = 'FeedbackForm-experience'
 const ISSUES_URL = 'https://github.com/sourcegraph/issues'
 const TWITTER_URL = 'https://twitter.com/intent/tweet?'
 const TWEET_HASHTAG = ' #UseTheSource'
 const TWEET_MENTION = ' via @srcgraph'
 
-export class TwitterFeedbackForm extends React.Component<Props, State> {
+export class FeedbackForm extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -41,8 +41,8 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
         }
     }
 
-    // hide Twitter feedback box if escape key is pressed and text field isn't focused
     public componentDidMount(): void {
+        // Hide feedback form if escape key is pressed and text field isn't focused.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 .pipe(filter(event => event.key === 'Escape'))
@@ -61,13 +61,9 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
 
     public render(): JSX.Element {
         return (
-            <Form className="twitter-feedback-form card" onSubmit={this.handleSubmit}>
+            <Form className="feedback-form card" onSubmit={this.handleSubmit}>
                 <div className="card-body">
-                    <button
-                        type="reset"
-                        className="btn btn-icon twitter-feedback-form__close"
-                        onClick={this.props.onDismiss}
-                    >
+                    <button type="reset" className="btn btn-icon feedback-form__close" onClick={this.props.onDismiss}>
                         <CloseIcon />
                     </button>
                     <h2>Tweet us your feedback</h2>
@@ -77,8 +73,8 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                             <button
                                 type="button"
                                 className={
-                                    'btn btn-icon twitter-feedback-form__emoticon' +
-                                    (this.state.experience === 'good' ? ' twitter-feedback-form__emoticon--happy' : '')
+                                    'btn btn-icon feedback-form__emoticon' +
+                                    (this.state.experience === 'good' ? ' feedback-form__emoticon--happy' : '')
                                 }
                                 onClick={this.saveGoodExperience}
                             >
@@ -87,8 +83,8 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
                             <button
                                 type="button"
                                 className={
-                                    'btn btn-icon twitter-feedback-form__emoticon' +
-                                    (this.state.experience === 'bad' ? ' twitter-feedback-form__emoticon--sad' : '')
+                                    'btn btn-icon feedback-form__emoticon' +
+                                    (this.state.experience === 'bad' ? ' feedback-form__emoticon--sad' : '')
                                 }
                                 onClick={this.saveBadExperience}
                             >
@@ -164,7 +160,7 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
 
         window.open(url.href)
 
-        eventLogger.log('TwitterFeedbackSubmitted', {
+        eventLogger.log('FeedbackSubmitted', {
             feedback: {
                 experience: this.state.experience ? this.state.experience : undefined,
             },
@@ -190,12 +186,12 @@ export class TwitterFeedbackForm extends React.Component<Props, State> {
 
     private saveGoodExperience = (): void => {
         this.setState({ experience: 'good' })
-        eventLogger.log('TwitterFeedbackGoodExperienceClicked')
+        eventLogger.log('FeedbackGoodExperienceClicked')
     }
 
     private saveBadExperience = (): void => {
         this.setState({ experience: 'bad' })
-        eventLogger.log('TwitterFeedbackBadExperienceClicked')
+        eventLogger.log('FeedbackBadExperienceClicked')
     }
     /**
      * Handles description change by updating the component's state

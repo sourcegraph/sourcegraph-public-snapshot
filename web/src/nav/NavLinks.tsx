@@ -6,8 +6,8 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
+import { FeedbackForm } from '../components/FeedbackForm'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { TwitterFeedbackForm } from '../components/TwitterFeedbackForm'
 import { SearchHelp } from '../search/input/SearchHelp'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
@@ -22,9 +22,9 @@ interface Props {
     showScopes?: boolean
     onShowScopes?: () => void
     className?: string
-    showTwitterFeedbackForm?: boolean
-    onTwitterFeedbackFormClose?: () => void
-    onShowTwitterFeedbackForm?: () => void
+    showFeedbackForm?: boolean
+    onFeedbackFormClose?: () => void
+    onShowFeedbackForm?: () => void
 }
 
 interface State {
@@ -116,14 +116,14 @@ export class NavLinks extends React.Component<Props, State> {
                     </Link>
                 )}
                 <button
-                    className="btn btn-link nav-links__twitter-feedback"
+                    className="btn btn-link nav-links__feedback"
                     data-tooltip="Send feedback"
                     onClick={this.onFeedbackButtonClick}
                 >
                     <EmoticonIcon className="icon-inline" />
                 </button>
                 {this.state.showFeedbackForm && (
-                    <TwitterFeedbackForm onDismiss={this.onFeedbackFormDismiss} user={this.props.user} />
+                    <FeedbackForm onDismiss={this.onFeedbackFormDismiss} user={this.props.user} />
                 )}
                 {!this.props.user &&
                     this.props.location.pathname !== '/sign-in' && (
@@ -142,7 +142,7 @@ export class NavLinks extends React.Component<Props, State> {
     }
 
     private onFeedbackButtonClick = (): void => {
-        eventLogger.log('TwitterFeedbackFormOpened')
+        eventLogger.log('FeedbackFormOpened')
         this.setState({ showFeedbackForm: true })
     }
 
