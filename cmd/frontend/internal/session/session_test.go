@@ -120,7 +120,7 @@ func checkCookieDeleted(t *testing.T, resp *http.Response) {
 
 	deleteCookie := resp.Cookies()[0]
 	if deleteCookie.Name != cookieName {
-		t.Fatal("did not delete cookie (cookie name was not \"sg-session\")")
+		t.Fatalf("did not delete cookie (cookie name was not %q)", cookieName)
 	}
 	if deleteCookie.MaxAge >= 0 {
 		t.Fatal("did not delete cookie (max-age was not less than 0)")
@@ -232,7 +232,7 @@ func TestCookieMiddleware(t *testing.T) {
 				t.Errorf("on authenticated request, got actor %+v, expected %+v", gotActor, testcase.expActor)
 			}
 		})).ServeHTTP(rr, testcase.req)
-		if deleted := strings.Contains(rr.Header().Get("Set-Cookie"), "sg-session=;"); deleted != testcase.deleted {
+		if deleted := strings.Contains(rr.Header().Get("Set-Cookie"), cookieName+"=;"); deleted != testcase.deleted {
 			t.Errorf("got deleted %v, want %v", deleted, testcase.deleted)
 		}
 	}
@@ -283,7 +283,7 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 		RawExpires: "Thu, 01 Jan 1970 00:00:01 GMT",
 		MaxAge:     -1,
 		Expires:    time.Date(1970, time.January, 1, 0, 0, 1, 0, time.UTC),
-		Raw:        "sg-session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0",
+		Raw:        cookieName + "=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0",
 	}}; !reflect.DeepEqual(cookies, want) {
 		t.Errorf("got cookies %+v, want %+v", cookies, want)
 	}

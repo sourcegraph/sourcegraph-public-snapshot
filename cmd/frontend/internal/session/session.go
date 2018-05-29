@@ -29,7 +29,7 @@ var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used fo
 const DefaultExpiryPeriod = 90 * 24 * time.Hour
 
 // cookieName is the name of the HTTP cookie that stores the session ID.
-const cookieName = "sg-session"
+const cookieName = "sgs"
 
 // sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
 // enforce the maxAge field in its session store implementations, so we include the expiry here.

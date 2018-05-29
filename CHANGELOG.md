@@ -12,6 +12,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Fixed
 
 * Fixed an issue where the search results page would not update its title.
+* The session cookie name is now `sgs` (not `sg-session`) so that Sourcegraph 2.7 and Sourcegraph 2.8 can be run side-by-side temporarily during a rolling update without clearing each other's session cookies.
 
 ### Added
 
