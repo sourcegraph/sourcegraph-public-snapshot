@@ -141,7 +141,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 
 	log15.Debug("svc.local.repos.GetCommit", "repo", repo.URI, "commitID", commitID)
 
-	if !isAbsCommitID(commitID) {
+	if !vcs.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
@@ -156,5 +156,3 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 func isIgnorableRepoUpdaterError(err error) bool {
 	return errors.Cause(err) == repoupdater.ErrNotFound || errors.Cause(err) == repoupdater.ErrUnauthorized
 }
-
-func isAbsCommitID(commitID api.CommitID) bool { return len(commitID) == 40 }

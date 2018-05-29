@@ -147,7 +147,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 		return "", errors.WithMessage(err, fmt.Sprintf("exec `git rev-parse` failed with stderr: %s", stderr))
 	}
 	commit := api.CommitID(bytes.TrimSpace(stdout))
-	if len(commit) != 40 {
+	if !vcs.IsAbsoluteRevision(string(commit)) {
 		if commit == "HEAD" {
 			// We don't verify the existence of HEAD (see above comments), but
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
@@ -1090,7 +1090,7 @@ func (r *Repository) lsTreeUncached(ctx context.Context, commit api.CommitID, pa
 		}
 		typ := info[1]
 		oid := info[2]
-		if len(oid) != 40 {
+		if !vcs.IsAbsoluteRevision(oid) {
 			return nil, fmt.Errorf("invalid `git ls-tree` oid output: %q", oid)
 		}
 
@@ -1152,7 +1152,7 @@ func (r *Repository) ensureAbsCommit(commitID api.CommitID) {
 	// We don't want to even be running commands on non-absolute
 	// commit IDs if we can avoid it, because we can't cache the
 	// expensive part of those computations.
-	if len(commitID) != 40 {
+	if !vcs.IsAbsoluteRevision(string(commitID)) {
 		panic(fmt.Errorf("non-absolute commit ID: %q on %s", commitID, r.String()))
 	}
 }

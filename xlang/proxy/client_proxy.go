@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -404,7 +405,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if params.InitializationOptions.Mode == "" {
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
-		if len(rootURI.Rev()) != 40 {
+		if !vcs.IsAbsoluteRevision(rootURI.Rev()) {
 			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootURI %q", rootURI)
 		}
 		if repoBlacklist[rootURI.Repo()] {
