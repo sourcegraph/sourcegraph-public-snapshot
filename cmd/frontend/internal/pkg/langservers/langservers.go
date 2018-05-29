@@ -143,7 +143,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/OmniSharp/omnisharp-node-client/issues",
 		DocsURL:      "https://github.com/OmniSharp/omnisharp-node-client/blob/master/readme.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "cs", Address: "tcp://csharp:8080"},
+		siteConfig:   schema.Langservers{Language: "cs", Address: "tcp://cs:8080"},
 	},
 	"css": {
 		DisplayName:  "CSS",
@@ -199,7 +199,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/REditorSupport/languageserver/issues",
 		DocsURL:      "https://github.com/REditorSupport/languageserver/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "r", Address: "tcp://r:8080"},
+		siteConfig:   schema.Langservers{Language: "r", Address: "tcp://rlang:8080"},
 	},
 	"ruby": {
 		DisplayName:  "Ruby",
