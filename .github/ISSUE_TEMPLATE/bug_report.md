@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report bugs and unexpected behavior
+about: Report problems and unexpected behavior
 
 ---
 
