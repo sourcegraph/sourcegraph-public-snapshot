@@ -23,4 +23,4 @@ In addition to this forum, you can reach us at the following coordinates:
 
 ## Product documentation
 
-Visit or search [Sourcegraph Server documentation](https://about.sourcegraph.com/docs) for detailed instructions on setting up Sourcegraph and frequently asked questions.
+See [Sourcegraph documentation](https://about.sourcegraph.com/docs) for detailed instructions on setting up Sourcegraph and frequently asked questions.
