@@ -47,7 +47,7 @@ class PasswordResetForm extends React.Component<{}, State> {
                         />
                     </div>
                     <button className="btn btn-primary btn-block" type="submit">
-                        Reset Password
+                        Reset password
                     </button>
                 </Form>
             )
@@ -78,7 +78,7 @@ class PasswordResetForm extends React.Component<{}, State> {
                     />
                 </div>
                 <button className="btn btn-primary btn-block" type="submit">
-                    Reset Password
+                    Send reset password link
                 </button>
             </Form>
         )
