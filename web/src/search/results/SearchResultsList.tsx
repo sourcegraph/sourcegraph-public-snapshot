@@ -177,7 +177,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     })()
                 )}
                 <div className="pb-4" />
-                <SearchHelp />
+                {this.props.resultsOrError !== undefined && <SearchHelp />}
             </div>
         )
     }
