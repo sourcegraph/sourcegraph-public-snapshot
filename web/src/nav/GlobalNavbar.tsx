@@ -95,6 +95,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                             className="global-navbar__nav-links"
                             onShowScopes={this.onShowScopes}
                             showScopes={this.state.showScopes}
+                            adjacentToQueryInput={true}
                         />
                     )}
                 </div>

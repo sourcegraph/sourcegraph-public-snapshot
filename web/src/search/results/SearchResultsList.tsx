@@ -15,6 +15,7 @@ import { ModalContainer } from '../../components/ModalContainer'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { buildSearchURLQuery, parseSearchURLQuery } from '../index'
+import { SearchHelp } from '../input/SearchHelp'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
@@ -162,11 +163,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                             ])}
                                         </div>
                                     ) : (
-                                        <div className="alert alert-info">
-                                            <h3 className="m-0">
-                                                <SearchIcon className="icon-inline" /> No results
-                                            </h3>
-                                        </div>
+                                        <>
+                                            <div className="alert alert-info d-flex">
+                                                <h3 className="m-0">
+                                                    <SearchIcon className="icon-inline" /> No results
+                                                </h3>
+                                            </div>
+                                        </>
                                     ))
                                 )}
                             </>
@@ -174,6 +177,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     })()
                 )}
                 <div className="pb-4" />
+                <SearchHelp />
             </div>
         )
     }

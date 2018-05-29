@@ -18,6 +18,7 @@ interface Props {
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
+    adjacentToQueryInput?: boolean
     showScopes?: boolean
     onShowScopes?: () => void
     className?: string
@@ -59,19 +60,23 @@ export class NavLinks extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className={`nav-links ${this.props.className || ''}`}>
-                {this.props.onShowScopes && (
-                    <a
-                        className="nav-links__link nav-links__scopes-toggle"
-                        onClick={this.onShowScopes}
-                        data-tooltip={this.props.showScopes ? 'Hide scopes' : 'Show scopes'}
-                        href=""
-                    >
-                        {this.props.showScopes ? (
-                            <ChevronUpIcon className="icon-inline" />
-                        ) : (
-                            <ChevronDownIcon className="icon-inline" />
-                        )}
-                    </a>
+                {this.props.adjacentToQueryInput && (
+                    <>
+                        <a
+                            className="nav-links__scopes-toggle"
+                            onClick={this.onShowScopes}
+                            data-tooltip={this.props.showScopes ? 'Hide scopes' : 'Show scopes'}
+                            href=""
+                        >
+                            {this.props.showScopes ? (
+                                <ChevronUpIcon className="icon-inline" />
+                            ) : (
+                                <ChevronDownIcon className="icon-inline" />
+                            )}
+                        </a>
+                        <SearchHelp compact={true} />
+                        <div className="nav-links__spacer" />
+                    </>
                 )}
                 {showDotComMarketing && (
                     <a
@@ -132,7 +137,6 @@ export class NavLinks extends React.Component<Props, State> {
                         About
                     </a>
                 )}
-                <SearchHelp className="nav-links__link" />
             </div>
         )
     }

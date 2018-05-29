@@ -1,6 +1,6 @@
 .nav-links {
     display: flex;
-    padding-right: 0.25rem;
+    padding-right: 0.5rem;
     justify-content: flex-end;
     align-items: center;
     position: relative; // For feedback form
@@ -17,6 +17,11 @@
         &-user {
             font-weight: bold;
         }
+    }
+
+    &__spacer {
+        width: 0.25rem;
+        margin-left: 0.375rem;
     }
 
     &__twitter-feedback {
