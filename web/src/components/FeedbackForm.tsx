@@ -119,7 +119,7 @@ export class FeedbackForm extends React.Component<Props, State> {
                     </div>
                     <div>
                         Or{' '}
-                        <Link to={ISSUES_URL} onClick={this.reportIssue} target="_bank">
+                        <Link to={ISSUES_URL} onClick={this.reportIssue} target="_blank">
                             report an issue
                         </Link>.
                     </div>
