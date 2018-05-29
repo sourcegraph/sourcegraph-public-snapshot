@@ -1,6 +1,6 @@
 ---
-name: Issue template
-about: The template to use when filing Sourcegraph bug reports or feature requests.
+name: Bug report
+about: Report bugs and unexpected behavior
 
 ---
 
