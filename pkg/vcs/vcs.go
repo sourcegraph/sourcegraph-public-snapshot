@@ -104,3 +104,21 @@ type PersonCount struct {
 	Email string
 	Count int32
 }
+
+// IsAbsoluteRevision checks if the revision is a git OID SHA string.
+//
+// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
+// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+func IsAbsoluteRevision(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, r := range s {
+		if !(('0' <= r && r <= '9') ||
+			('a' <= r && r <= 'f') ||
+			('A' <= r && r <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
