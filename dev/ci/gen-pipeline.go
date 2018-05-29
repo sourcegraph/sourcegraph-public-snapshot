@@ -161,7 +161,7 @@ func main() {
 			)
 		}
 		cmds = append(cmds,
-			Cmd("gcloud auth configure-docker"),
+			Cmd("gcloud auth configure-docker -q"),
 			Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
 		)
 		if latest {
