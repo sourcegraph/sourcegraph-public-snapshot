@@ -46,8 +46,11 @@
         &-body {
             margin-top: 0.25rem;
             margin-bottom: 0.75rem;
-            font-size: 14px;
-            overflow-x: auto;
+            font-size: 12px;
+            overflow: visible;
+            max-width: 100%;
+            word-wrap: break-word;
+            white-space: pre-wrap;
         }
     }
 

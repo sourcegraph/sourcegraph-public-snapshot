@@ -187,9 +187,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                 </div>
                 {(this.props.expandCommitMessageBody || this.state.showCommitMessageBody) && (
                     <div className="git-commit-node__row">
-                        <pre className="git-commit-node__message-body">
-                            <code>{this.props.node.body}</code>
-                        </pre>
+                        <pre className="git-commit-node__message-body">{this.props.node.body}</pre>
                     </div>
                 )}
                 {this.props.showSHAAndParentsRow && (
