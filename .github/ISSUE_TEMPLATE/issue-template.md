@@ -1,3 +1,9 @@
+---
+name: Issue template
+about: The template to use when filing Sourcegraph bug reports or feature requests.
+
+---
+
 - **Issue type:** <!-- bug report, feature request, or question? -->
 - **Sourcegraph version:** <!-- the version of Sourcegraph (if self-hosted), or "Sourcegraph.com" -->
 - **Platform:** <!-- OS version, cloud provider, web browser version, Docker version, etc., depending on the issue -->
