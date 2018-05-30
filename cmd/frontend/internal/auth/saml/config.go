@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 
@@ -117,4 +118,15 @@ func providerConfigID(pc *schema.SAMLAuthProvider) string {
 	}
 	b := sha256.Sum256(data)
 	return base64.RawURLEncoding.EncodeToString(b[:16])
+}
+
+func authProviderURLs(base *url.URL) (urls []string) {
+	for _, p := range auth.Providers() {
+		if pc := p.Config().Saml; pc != nil {
+			urls = append(urls, base.ResolveReference(&url.URL{
+				RawQuery: providerIDQuery(pc).Encode(),
+			}).String())
+		}
+	}
+	return urls
 }

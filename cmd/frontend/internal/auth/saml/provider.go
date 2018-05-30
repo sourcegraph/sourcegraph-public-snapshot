@@ -56,12 +56,16 @@ func (p *provider) Refresh(ctx context.Context) error {
 	return p.refreshErr
 }
 
+func providerIDQuery(pc *schema.SAMLAuthProvider) url.Values {
+	return url.Values{"pc": []string{providerConfigID(pc)}}
+}
+
 func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
 	info := auth.ProviderInfo{
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
 			Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
-			RawQuery: (url.Values{"pc": []string{providerConfigID(&p.config)}}).Encode(),
+			RawQuery: providerIDQuery(&p.config).Encode(),
 		}).String(),
 	}
 	if info.DisplayName == "" {

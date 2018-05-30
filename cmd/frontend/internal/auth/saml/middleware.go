@@ -72,8 +72,16 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Handle GET endpoints.
 	if r.Method == "GET" {
+		pcID := r.URL.Query().Get("pc")
+
+		if pcID == "" {
+			log15.Error("No ID specified for SAML auth provider request. Add a ?pc= URL query parameter to the URL and try again. See the 'urls' field for all possible URLs for SAML auth providers.", "urls", authProviderURLs(r.URL))
+			http.Error(w, "Must specify ?pc= URL query parameter to identify the SAML auth provider to use. Site admins: check server error logs for a list of SAML auth provider IDs.", http.StatusInternalServerError)
+			return
+		}
+
 		// All of these endpoints expect the provider ID in the URL query.
-		p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
+		p, handled := handleGetProvider(r.Context(), w, pcID)
 		if handled {
 			return
 		}
