@@ -309,6 +309,18 @@ type Hover struct {
 	Range    *Range         `json:"range,omitempty"`
 }
 
+type hover Hover
+
+func (h Hover) MarshalJSON() ([]byte, error) {
+	if h.Contents == nil {
+		return json.Marshal(hover{
+			Contents: []MarkedString{},
+			Range:    h.Range,
+		})
+	}
+	return json.Marshal(hover(h))
+}
+
 type MarkedString markedString
 
 type markedString struct {
