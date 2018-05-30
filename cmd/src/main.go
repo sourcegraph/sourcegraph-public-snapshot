@@ -21,14 +21,14 @@ Usage:
 The options are:
 
 	-config=$HOME/src-config.json    specifies a file containing {"accessToken": "<secret>", "endpoint": "https://sourcegraph.com"}
-	-endpoint=                       specify the endpoint to use e.g. "https://sourcegraph.com" (overrides -config, if any)
+	-endpoint=                       specifies the endpoint to use e.g. "https://sourcegraph.com" (overrides -config, if any)
 
 The commands are:
 
-	api           interact with the Sourcegraph GraphQL API
-	repos,repo    manage repositories
-	users,user    manage users
-	orgs,org      manage organizations
+	api           interacts with the Sourcegraph GraphQL API
+	repos,repo    manages repositories
+	users,user    manages users
+	orgs,org      manages organizations
 
 Use "src [command] -h" for more information about a command.
 
