@@ -17,7 +17,7 @@ Usage:
 The commands are:
 
 	list       lists users
-	get        get a user
+	get        gets a user
 	create     creates a user account
 	delete     deletes a user account
 
