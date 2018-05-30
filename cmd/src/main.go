@@ -28,6 +28,7 @@ The commands are:
 	api           interact with the Sourcegraph GraphQL API
 	repos,repo    manage repositories
 	users,user    manage users
+	orgs,org      manage organizations
 
 Use "src [command] -h" for more information about a command.
 
