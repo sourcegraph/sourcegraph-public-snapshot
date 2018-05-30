@@ -11,18 +11,18 @@ func init() {
 	initEnableDisable("disable", false, `
 Examples:
 
-Disable one or more repositories:
+  Disable one or more repositories:
 
-	$ src repos disable github.com/my/repo github.com/my/repo2
+    	$ src repos disable github.com/my/repo github.com/my/repo2
 
 `)
 
 	initEnableDisable("enable", true, `
 Examples:
 
-Enable one or more repositories:
+  Enable one or more repositories:
 
-	$ src repos enable github.com/my/repo github.com/my/repo2
+    	$ src repos enable github.com/my/repo github.com/my/repo2
 
 `)
 }

@@ -17,7 +17,7 @@ Examples:
 
     	$ src repos list -first='-1'
 
-  List repositories whose names match a query:
+  List repositories whose names match the query:
 
     	$ src repos list -query='myquery'
 
@@ -39,7 +39,7 @@ Examples:
 	}
 	var (
 		firstFlag           = flagSet.Int("first", 1000, "Returns the first n repositories from the list. (use -1 for unlimited)")
-		queryFlag           = flagSet.String("query", "", `Returns repositories whose names match the query. (e.g. "myorg/"`)
+		queryFlag           = flagSet.String("query", "", `Returns repositories whose names match the query. (e.g. "myorg/")`)
 		enabledFlag         = flagSet.Bool("enabled", true, "Include enabled repositories.")
 		disabledFlag        = flagSet.Bool("disabled", false, "Include disabled repositories.")
 		clonedFlag          = flagSet.Bool("cloned", true, "Include cloned repositories.")
