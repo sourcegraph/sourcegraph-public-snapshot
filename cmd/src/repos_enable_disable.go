@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	initEnableDisable("disable", false, `
+	initReposEnableDisable("disable", false, `
 Examples:
 
   Disable one or more repositories:
@@ -17,7 +17,7 @@ Examples:
 
 `)
 
-	initEnableDisable("enable", true, `
+	initReposEnableDisable("enable", true, `
 Examples:
 
   Enable one or more repositories:
@@ -27,7 +27,7 @@ Examples:
 `)
 }
 
-func initEnableDisable(cmdName string, enabled bool, usage string) {
+func initReposEnableDisable(cmdName string, enable bool, usage string) {
 	flagSet := flag.NewFlagSet(cmdName, flag.ExitOnError)
 	usageFunc := func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src repos %s':\n", flagSet.Name())
@@ -69,7 +69,7 @@ func initEnableDisable(cmdName string, enabled bool, usage string) {
 
 		errs := false
 		for _, repoName := range flagSet.Args() {
-			if err := setRepositoryEnabled(repoName, enabled); err != nil {
+			if err := setRepositoryEnabled(repoName, enable); err != nil {
 				errs = true
 				log.Println(err)
 			}
