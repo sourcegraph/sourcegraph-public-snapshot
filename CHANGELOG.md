@@ -15,6 +15,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * The session cookie name is now `sgs` (not `sg-session`) so that Sourcegraph 2.7 and Sourcegraph 2.8 can be run side-by-side temporarily during a rolling update without clearing each other's session cookies.
 * Fixed the default hostnames of the C# and R language servers
 * Fixed an issue where deleting an organization prevented the creation of organizations with the name of the deleted organization.
+* Non-UTF8 encoded files (e.g. ISO-8859-1/Latin1, UTF16, etc) are now displayed as text properly rather than being detected as binary files.
 
 ### Added
 
