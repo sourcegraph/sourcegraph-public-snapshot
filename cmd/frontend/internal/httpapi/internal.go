@@ -507,7 +507,15 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	// used by zoekt-sourcegraph-mirror
 	vars := mux.Vars(r)
 	name := api.RepoURI(vars["RepoURI"])
-	commit := api.CommitID(vars["Commit"])
+	spec := vars["Commit"]
+
+	// Ensure commit exists. Use Repos.VCS since we do not want to trigger a
+	// repo-updater lookup since this is a batch job.
+	vcs := backend.Repos.VCS(gitserver.Repo{Name: name})
+	commit, err := vcs.ResolveRevision(r.Context(), spec, nil)
+	if err != nil {
+		return err
+	}
 
 	src, err := gitserver.FetchTar(r.Context(), gitserver.DefaultClient, gitserver.Repo{Name: name}, commit)
 	if err != nil {

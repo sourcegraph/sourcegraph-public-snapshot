@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
+// FetchTar returns a reader for running "git archive --format=tar
+// commit".
 func FetchTar(ctx context.Context, client *Client, repo Repo, commit api.CommitID) (r io.ReadCloser, err error) {
 	// gitcmd.Repository.Archive returns a zip file read into
 	// memory. However, we do not need to read into memory and we want a
@@ -33,7 +35,6 @@ func FetchTar(ctx context.Context, client *Client, repo Repo, commit api.CommitI
 
 	cmd := client.Command("git", "archive", "--format=tar", string(commit))
 	cmd.Repo = repo
-	cmd.EnsureRevision = string(commit)
 	r, err = StdoutReader(ctx, cmd)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) || vcs.IsRevisionNotFound(err) {
