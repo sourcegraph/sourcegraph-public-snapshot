@@ -169,7 +169,7 @@ Foreign-key constraints:
  deleted_at        | timestamp with time zone | 
 Indexes:
     "orgs_pkey" PRIMARY KEY, btree (id)
-    "org_name_unique" UNIQUE CONSTRAINT, btree (name)
+    "orgs_name" UNIQUE, btree (name) WHERE deleted_at IS NULL
 Check constraints:
     "org_display_name_valid" CHECK (char_length(display_name) <= 64)
     "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)

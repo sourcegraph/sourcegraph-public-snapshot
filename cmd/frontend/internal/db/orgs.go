@@ -174,7 +174,7 @@ func (*orgs) Create(ctx context.Context, name, displayName string) (*types.Org, 
 			if pqErr.Constraint == "org_name_valid_chars" {
 				return nil, errors.New(`org name invalid`)
 			}
-			if pqErr.Constraint == "org_name_unique" {
+			if pqErr.Constraint == "orgs_name" {
 				return nil, errors.New(`org name already exists`)
 			}
 			if pqErr.Constraint == "org_display_name_valid" {

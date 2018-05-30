@@ -166,6 +166,8 @@
 // ../../../../../migrations/1526364839_user_multiple_external_accounts.up.sql
 // ../../../../../migrations/1526804768_add_external_account_client.down.sql
 // ../../../../../migrations/1526804768_add_external_account_client.up.sql
+// ../../../../../migrations/1527691234_reuse_org_name.down.sql
+// ../../../../../migrations/1527691234_reuse_org_name.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -3553,6 +3555,46 @@ func _1526804768_add_external_account_clientUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1527691234_reuse_org_nameDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xc8\x2f\x4a\x2f\x8e\xcf\x4b\xcc\x4d\xb5\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x05\x0b\x2b\x38\xba\xb8\x28\x38\xfb\xfb\x05\x87\x04\x39\x7a\xfa\x85\x80\xc4\xc0\x2a\xe3\x4b\xf3\x32\x0b\x4b\x53\x15\x42\xfd\x3c\x03\x43\x5d\x35\x40\x42\x9a\xd6\x5c\x80\x00\x00\x00\xff\xff\xd7\x77\xae\x4f\x54\x00\x00\x00")
+
+func _1527691234_reuse_org_nameDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1527691234_reuse_org_nameDownSql,
+		"1527691234_reuse_org_name.down.sql",
+	)
+}
+
+func _1527691234_reuse_org_nameDownSql() (*asset, error) {
+	bytes, err := _1527691234_reuse_org_nameDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1527691234_reuse_org_name.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1527691234_reuse_org_nameUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\x8e\xc1\x4a\xc4\x30\x18\x84\xef\x79\x8a\x39\xee\x1e\xea\x0b\xec\x29\x6e\x7f\x30\x10\x12\x4d\x13\xf4\x56\x6a\xf3\x57\x0b\x35\xc1\x36\x01\x1f\x5f\xda\x7a\xf2\xf8\x0d\xf3\x0d\xd3\x34\xe8\xf2\x54\x9a\xc8\x0b\x17\x8e\xc8\xeb\xc7\x86\xcb\x1f\xf5\x43\x81\xea\x60\xac\x87\x09\x5a\x5f\xb1\x7d\xe6\xba\x44\xa4\x5c\xf0\xce\x18\xc6\x31\xd7\xb4\x5b\x53\x5e\x31\x27\xd4\x34\x7f\x57\xc6\x9c\x22\xff\xf0\xf6\x20\x84\xd4\x9e\x1c\xbc\x7c\xd4\x74\x2e\xb7\xce\x3e\xe3\x6e\x4d\xe7\x9d\x54\xc6\xef\x61\x9f\x86\x2f\xee\x4f\xf5\x26\xee\x8e\xa4\x27\x04\xa3\x5e\x02\x41\x99\x96\xde\x0e\xf3\x68\xc1\x9a\x03\x2e\x3b\x5c\xf1\xfa\x44\x8e\xf0\xef\x6b\xd0\xfa\x26\x7e\x03\x00\x00\xff\xff\x00\x65\x64\xa8\xd6\x00\x00\x00")
+
+func _1527691234_reuse_org_nameUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1527691234_reuse_org_nameUpSql,
+		"1527691234_reuse_org_name.up.sql",
+	)
+}
+
+func _1527691234_reuse_org_nameUpSql() (*asset, error) {
+	bytes, err := _1527691234_reuse_org_nameUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1527691234_reuse_org_name.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3771,6 +3813,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1526364839_user_multiple_external_accounts.up.sql":           _1526364839_user_multiple_external_accountsUpSql,
 	"1526804768_add_external_account_client.down.sql":             _1526804768_add_external_account_clientDownSql,
 	"1526804768_add_external_account_client.up.sql":               _1526804768_add_external_account_clientUpSql,
+	"1527691234_reuse_org_name.down.sql":                          _1527691234_reuse_org_nameDownSql,
+	"1527691234_reuse_org_name.up.sql":                            _1527691234_reuse_org_nameUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3980,6 +4024,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1526364839_user_multiple_external_accounts.up.sql":           &bintree{_1526364839_user_multiple_external_accountsUpSql, map[string]*bintree{}},
 	"1526804768_add_external_account_client.down.sql":             &bintree{_1526804768_add_external_account_clientDownSql, map[string]*bintree{}},
 	"1526804768_add_external_account_client.up.sql":               &bintree{_1526804768_add_external_account_clientUpSql, map[string]*bintree{}},
+	"1527691234_reuse_org_name.down.sql":                          &bintree{_1527691234_reuse_org_nameDownSql, map[string]*bintree{}},
+	"1527691234_reuse_org_name.up.sql":                            &bintree{_1527691234_reuse_org_nameUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
