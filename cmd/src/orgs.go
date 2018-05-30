@@ -20,6 +20,7 @@ The commands are:
 	get        gets an organization
 	create     creates an organization
 	delete     deletes an organization
+	members    manages organization members
 
 Use "src orgs [command] -h" for more information about a command.
 `
