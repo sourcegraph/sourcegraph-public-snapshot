@@ -32,7 +32,7 @@ Examples:
 	var (
 		firstFlag  = flagSet.Int("first", 1000, "Returns the first n users from the list. (use -1 for unlimited)")
 		queryFlag  = flagSet.String("query", "", `Returns users whose names match the query. (e.g. "alice")`)
-		formatFlag = flagSet.String("f", "{{.|json}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Username}} ({{.DisplayName}})")`)
+		formatFlag = flagSet.String("f", "{{.Username}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Username}} ({{.DisplayName}})" or "{{.|json}}")`)
 		apiFlags   = newAPIFlags(flagSet)
 	)
 
