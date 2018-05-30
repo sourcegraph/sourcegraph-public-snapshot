@@ -35,6 +35,24 @@ func stripComponents(path string, count int) string {
 	return path
 }
 
+// isGitOID checks if the revision is a git OID SHA string.
+//
+// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
+// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+func isGitOID(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, r := range s {
+		if !(('0' <= r && r <= '9') ||
+			('a' <= r && r <= 'f') ||
+			('A' <= r && r <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
+
 type Options struct {
 	Incremental bool
 
@@ -54,10 +72,10 @@ func (o *Options) SetDefaults() {
 	}
 
 	setRef := func(ref string) {
-		if len(ref) == 40 && o.Commit == "" {
+		if isGitOID(ref) && o.Commit == "" {
 			o.Commit = ref
 		}
-		if len(ref) != 40 && o.Branch == "" {
+		if !isGitOID(ref) && o.Branch == "" {
 			o.Branch = ref
 		}
 	}

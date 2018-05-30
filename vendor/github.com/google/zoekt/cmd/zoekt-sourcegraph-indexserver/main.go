@@ -327,6 +327,30 @@ func deleteIfStale(exists map[string]bool, fn string) error {
 	return nil
 }
 
+// deleteMeJuly2018Cleanup should be removed in July 2018. We transitioned
+// from maintaining clones to streaming archives. This function removes the
+// repositories we used to clone.
+//
+// https://github.com/sourcegraph/sourcegraph/issues/10775
+func deleteMeJuly2018Cleanup(indexDir string) {
+	// We only do the migration if the env var is set. This is to ensure the
+	// only place we run this migration is in datacenter.
+	if ok, _ := strconv.ParseBool(os.Getenv("ZOEKT_DELETE_REPOS_MIGRATION")); !ok {
+		return
+	}
+	p := filepath.Join(filepath.Dir(indexDir), "repos")
+	if _, err := os.Stat(p); err != nil {
+		// Doesn't exist anymore, migration doesn't need to be run
+		return
+	}
+	log.Printf("MIGRATION removing unused git repositories mirror at %s", p)
+	if err := os.RemoveAll(p); err != nil {
+		log.Printf("MIGRATION failed: %s", err)
+	} else {
+		log.Println("MIGRATION success")
+	}
+}
+
 func main() {
 	root := flag.String("sourcegraph_url", "", "http://sourcegraph-frontend-internal or http://localhost:3090")
 	interval := flag.Duration("interval", 10*time.Minute, "sync with sourcegraph this often")
@@ -385,6 +409,8 @@ func main() {
 			log.Fatal(http.ListenAndServe(*listen, s))
 		}()
 	}
+
+	go deleteMeJuly2018Cleanup(*index)
 
 	s.Run()
 }
