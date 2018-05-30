@@ -36,6 +36,7 @@
     &__content {
         padding: 0.5rem;
         overflow-x: auto;
+        word-wrap: normal;
         p:last-child {
             margin-bottom: 0;
         }
