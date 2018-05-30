@@ -22,7 +22,7 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		usernameFlag = flagSet.String("username", "", `Look up the user by the username. (e.g. "alice")`)
+		usernameFlag = flagSet.String("username", "", `Look up user by username. (e.g. "alice")`)
 		formatFlag   = flagSet.String("f", "{{.|json}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ID}}: {{.Username}} ({{.DisplayName}})")`)
 		apiFlags     = newAPIFlags(flagSet)
 	)
