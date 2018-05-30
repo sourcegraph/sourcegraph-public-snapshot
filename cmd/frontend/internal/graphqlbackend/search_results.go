@@ -963,6 +963,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErr = nil
 	}
 
+	sortResults(results)
+
 	resultsResolver := searchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
@@ -986,6 +988,37 @@ type searchResultResolver struct {
 	repo      *repositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
+}
+
+// getSearchResultURIs returns the repo uri and file uri respectiveley
+func getSearchResultURIs(c *searchResultResolver) (string, string) {
+	if c.fileMatch != nil {
+		return string(c.fileMatch.repo.URI), c.fileMatch.JPath
+	}
+	if c.repo != nil {
+		return string(c.repo.repo.URI), ""
+	}
+	// Diffs aren't going to be returned with other types of results
+	// and are already ordered in the desired order, so we'll just leave them in place.
+	return "~", "~" // lexicographically last in ASCII
+}
+
+// compareSearchResults checks to see if a is less than b.
+// It is implemented separately for easier testing.
+func compareSearchResults(a, b *searchResultResolver) bool {
+	arepo, afile := getSearchResultURIs(a)
+	brepo, bfile := getSearchResultURIs(b)
+
+	if arepo == brepo {
+		return afile < bfile
+	}
+
+	return arepo < brepo
+
+}
+
+func sortResults(r []*searchResultResolver) {
+	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
 }
 
 func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {

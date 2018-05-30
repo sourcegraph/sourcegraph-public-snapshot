@@ -428,3 +428,98 @@ func TestSearchRevspecs(t *testing.T) {
 		})
 	}
 }
+
+func TestCompareSearchResults(t *testing.T) {
+	type testCase struct {
+		a       *searchResultResolver
+		b       *searchResultResolver
+		aIsLess bool
+	}
+
+	tests := []testCase{
+		// Different repo matches
+		testCase{
+			a: &searchResultResolver{
+				repo: &repositoryResolver{
+					repo: &types.Repo{
+						URI: api.RepoURI("a"),
+					},
+				},
+			},
+			b: &searchResultResolver{
+				repo: &repositoryResolver{
+					repo: &types.Repo{
+						URI: api.RepoURI("b"),
+					},
+				},
+			},
+			aIsLess: true,
+		},
+		// Repo match vs file match in same repo
+		testCase{
+			a: &searchResultResolver{
+				fileMatch: &fileMatchResolver{
+					repo: &types.Repo{
+						URI: api.RepoURI("a"),
+					},
+					JPath: "a",
+				},
+			},
+			b: &searchResultResolver{
+				repo: &repositoryResolver{
+					repo: &types.Repo{
+						URI: api.RepoURI("a"),
+					},
+				},
+			},
+			aIsLess: false,
+		},
+		// Same repo, different files
+		testCase{
+			a: &searchResultResolver{
+				fileMatch: &fileMatchResolver{
+					repo: &types.Repo{
+						URI: api.RepoURI("a"),
+					},
+					JPath: "a",
+				},
+			},
+			b: &searchResultResolver{
+				fileMatch: &fileMatchResolver{
+					repo: &types.Repo{
+						URI: api.RepoURI("a"),
+					},
+					JPath: "b",
+				},
+			},
+			aIsLess: true,
+		},
+		// different repo, same file name
+		testCase{
+			a: &searchResultResolver{
+				fileMatch: &fileMatchResolver{
+					repo: &types.Repo{
+						URI: api.RepoURI("a"),
+					},
+					JPath: "a",
+				},
+			},
+			b: &searchResultResolver{
+				fileMatch: &fileMatchResolver{
+					repo: &types.Repo{
+						URI: api.RepoURI("b"),
+					},
+					JPath: "a",
+				},
+			},
+			aIsLess: true,
+		},
+	}
+
+	for i, test := range tests {
+		got := compareSearchResults(test.a, test.b)
+		if got != test.aIsLess {
+			t.Errorf("[%d] incorrect comparison. got %t, expected %t", i, got, test.aIsLess)
+		}
+	}
+}
