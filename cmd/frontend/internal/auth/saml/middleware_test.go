@@ -271,7 +271,7 @@ func TestMiddleware(t *testing.T) {
 		loggedInCookies []*http.Cookie
 	)
 	t.Run("get SP metadata and register SP with IDP", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/saml/metadata?p="+providerID, "", nil, false, nil)
+		resp := doRequest("GET", "http://example.com/.auth/saml/metadata?pc="+providerID, "", nil, false, nil)
 		service := samlidp.Service{}
 		if err := xml.NewDecoder(resp.Body).Decode(&service.Metadata); err != nil {
 			t.Fatal(err)
