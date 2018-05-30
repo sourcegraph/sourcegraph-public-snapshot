@@ -599,12 +599,16 @@ func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 	return patternInfo, nil
 }
 
-// The default timeout to use for queries.
-var defaultTimeout = 10 * time.Second
+var (
+	// The default timeout to use for queries.
+	defaultTimeout = 10 * time.Second
+	// The max timeout to use for queries.
+	maxTimeout = time.Minute
+)
 
 func (r *searchResolver) searchTimeoutFieldSet() bool {
 	timeout, _ := r.query.StringValue(searchquery.FieldTimeout)
-	return timeout != ""
+	return timeout != "" || r.countIsSet()
 }
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
@@ -621,10 +625,13 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 		if err != nil {
 			return nil, nil, errors.WithMessage(err, `invalid "timeout:" value (examples: "timeout:2s", "timeout:200ms")`)
 		}
+	} else if r.countIsSet() {
+		// If `count:` is set but `timeout:` is not explicitely set, use the max timeout
+		d = maxTimeout
 	}
 	// don't run queries longer than 1 minute.
 	if d.Minutes() > 1 {
-		d = time.Minute
+		d = maxTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, d)
 	return ctx, cancel, nil

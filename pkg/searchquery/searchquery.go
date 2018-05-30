@@ -31,7 +31,7 @@ const (
 
 	// Temporary experimental fields:
 	FieldIndex   = "index"
-	FieldMax     = "max" // maximum number of search results
+	FieldCount   = "count" // Searches that specify `count:` will fetch at least that number of results, or the full result set
 	FieldTimeout = "timeout"
 )
 
@@ -60,7 +60,7 @@ var (
 
 			// Experimental fields:
 			FieldIndex: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldMax:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldCount: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldTimeout: {Literal: types.StringType, Quoted: types.StringType, Singular: true, FeatureFlagEnabled: func() bool {
 				return config.SearchTimeoutParameterEnabled()
 			}},

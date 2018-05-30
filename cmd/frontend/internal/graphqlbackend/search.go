@@ -90,10 +90,15 @@ func (r *searchResolver) rawQuery() string {
 	return r.query.Syntax.Input
 }
 
+func (r *searchResolver) countIsSet() bool {
+	values, _ := r.query.StringValues(searchquery.FieldCount)
+	return len(values) > 0
+}
+
 const defaultMaxSearchResults = 30
 
 func (r *searchResolver) maxResults() int32 {
-	values, _ := r.query.StringValues(searchquery.FieldMax)
+	values, _ := r.query.StringValues(searchquery.FieldCount)
 	if len(values) > 0 {
 		n, _ := strconv.Atoi(values[0])
 		if n > 0 {
