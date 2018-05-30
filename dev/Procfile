@@ -1,16 +1,16 @@
-gitserver: .bin/gitserver
-indexer: .bin/indexer
-query-runner: .bin/query-runner
-repo-updater: .bin/repo-updater
+gitserver: gitserver
+indexer: indexer
+query-runner: query-runner
+repo-updater: repo-updater
 searcher: $EXEC_SEARCHER .bin/searcher
-symbols: .bin/symbols
-github-proxy: .bin/github-proxy
-lsp-proxy: .bin/lsp-proxy
-xlang-go: .bin/xlang-go -mode=tcp -addr=:4389
+symbols: symbols
+github-proxy: github-proxy
+lsp-proxy: lsp-proxy
+xlang-go: xlang-go -mode=tcp -addr=:4389
 frontend: $EXEC_FRONTEND .bin/frontend
-watch: node_modules/.bin/chokidar --silent "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" "schema/*.json" --ignore node_modules --ignore web -c "./dev/handle-change.sh {path}"
+watch: chokidar --silent "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" "schema/*.json" --ignore node_modules --ignore web -c "./dev/handle-change.sh {path}"
 web: sh -c "npm --prefix ./web install && npm --prefix ./web run watch"
 syntect_server: ./dev/syntect_server
-zoekt-indexserver: ./dev/zoekt-wrapper .bin/zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
-zoekt-webserver: ./dev/zoekt-wrapper .bin/zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc
+zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
+zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc
 # jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest

@@ -83,5 +83,8 @@ fg &> /dev/null || true
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true
 
-export GOREMAN=".bin/goreman -f dev/Procfile"
+# Put .bin:node_modules/.bin onto the $PATH
+export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
+
+export GOREMAN="goreman -f dev/Procfile"
 exec $GOREMAN start
