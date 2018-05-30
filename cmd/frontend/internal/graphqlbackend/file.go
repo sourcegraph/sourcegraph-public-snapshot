@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
+	"net/http"
 	"os"
 	"path"
 	"regexp"
@@ -132,14 +133,18 @@ func (r *fileResolver) Binary(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.isBinary([]byte(content)), nil
+	return isBinary([]byte(content)), nil
 }
 
-// isBinary is a helper to tell if the content of a file is binary or not. It
-// is used instead of utf8.Valid in case we ever need to add e.g. extension
-// specific checks in addition to checking if the content is valid utf8.
-func (r *fileResolver) isBinary(content []byte) bool {
-	return !utf8.Valid(content)
+// isBinary is a helper to tell if the content of a file is binary or not.
+func isBinary(content []byte) bool {
+	// We first check if the file is valid UTF8, since we always consider that
+	// to be non-binary.
+	//
+	// Secondly, if the file is not valid UTF8, we check if the detected HTTP
+	// content type is text, which covers a whole slew of other non-UTF8 text
+	// encodings for us.
+	return !utf8.Valid(content) && !strings.HasPrefix(http.DetectContentType(content), "text/")
 }
 
 type highlightedFileResolver struct {
@@ -164,7 +169,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	}
 
 	// Never pass binary files to the syntax highlighter.
-	if r.isBinary(code) {
+	if isBinary(code) {
 		return nil, errors.New("cannot render binary file")
 	}
 
