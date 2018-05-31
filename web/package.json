@@ -132,7 +132,7 @@
     "tsify": "^3.0.4",
     "tslint": "^5.8.0",
     "tslint-language-service": "^0.9.6",
-    "typescript": "~2.8.1",
+    "typescript": "~2.9.1",
     "uglifyjs-webpack-plugin": "^1.2.4",
     "webpack": "^4.8.1",
     "webpack-cli": "^2.1.3",
