@@ -458,6 +458,9 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 	var res lsp.InitializeResult
 	err := c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
 	if err != nil {
+		if errors.Cause(err) == context.DeadlineExceeded {
+			err = errors.Wrapf(err, "%s language server failed to respond to initalize within %s for rootURI %s", c.id.mode, timeout, c.id.rootURI.String())
+		}
 		return nil, err
 	}
 	return &res, nil
