@@ -433,10 +433,9 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 		opentracing.Tags{"mode": c.id.mode, "rootURI": c.id.rootURI.String()},
 	)
 	defer span.Finish()
-	timeout := 30 * time.Second
-	if c.id.mode == "php" || c.id.mode == "php_bg" {
-		timeout = 3 * time.Minute
-	}
+	// TODO: Revert timeout to old behavior (30s / 3 mins for php), but implement `window/progress` notifications in `lsp-adapter`
+	// to keep the connection alive: https://github.com/sourcegraph/sourcegraph/issues/11657
+	timeout := 3 * time.Minute
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 

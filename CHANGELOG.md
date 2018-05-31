@@ -9,6 +9,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Queries for repositories (in the explore, site admin repositories, and repository header dropdown) are matched on case-insensitive substrings, not using fuzzy matching logic.
 * HTTP Authorization headers with an unrecognized scheme are ignored; they no longer cause the HTTP request to be rejected with HTTP 401 Unauthorized and an "Invalid Authorization header." error.
 * Renamed the `max` search flag to `count`. Searches that specify `count:` will fetch at least that number of results, or the full result set.
+* Search results are now sorted by repository and file name
+* Bumped `lsp-proxy`'s `initialize` timeout to 3 minutes for every language.
 * Search results are now sorted by repository and file name.
 * Results from user satisfaction surveys are now always hosted locally and visible to admins. The `"experimentalFeatures": { "hostSurveysLocally" }` config option has been deprecated.
 
