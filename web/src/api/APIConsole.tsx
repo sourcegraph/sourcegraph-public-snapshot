@@ -1,4 +1,5 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
@@ -31,7 +32,7 @@ interface Props {
 
 interface State {
     /** The dynamically imported graphiql module, undefined while loading. */
-    graphiqlOrError?: typeof import('graphiql') | ErrorLike
+    graphiqlOrError?: typeof _graphiqlModule | ErrorLike
 
     /** The URL parameters decoded from the location hash. */
     parameters: Parameters
@@ -57,7 +58,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
 
     private updates = new Subject<Parameters>()
     private subscriptions = new Subscription()
-    private graphiQLRef: import('graphiql').default | null = null
+    private graphiQLRef: _graphiqlModule.default | null = null
 
     constructor(props: Props) {
         super(props)
@@ -220,7 +221,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
     // children into the GraphiQL toolbar unless you completely specify your
     // own.
 
-    private setGraphiQLRef = (ref: import('graphiql').default | null): void => {
+    private setGraphiQLRef = (ref: _graphiqlModule.default | null): void => {
         this.graphiQLRef = ref
     }
     private handlePrettifyQuery = () => {
@@ -237,7 +238,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
     }
 }
 
-function fetcher(graphQLParams: import('graphiql').GraphQLParams): Promise<string> {
+function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<string> {
     return fetch('/.api/graphql', {
         method: 'post',
         body: JSON.stringify(graphQLParams),

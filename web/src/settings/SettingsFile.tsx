@@ -1,6 +1,7 @@
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
+import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
@@ -9,6 +10,7 @@ import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
+import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 
 interface Props {
     history: H.History
@@ -46,18 +48,18 @@ interface State {
     editingLastKnownSettingsID?: number | null
 
     /** The dynamically imported MonacoSettingsEditor module, error or undefined while loading. */
-    monacoSettingsEditorOrError?: typeof import('./MonacoSettingsEditor') | ErrorLike
+    monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
 }
 
 const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
 
-const disposableToFn = (disposable: import('monaco-editor').IDisposable) => () => disposable.dispose()
+const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 export class SettingsFile extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
-    private editor?: import('monaco-editor').editor.ICodeEditor
-    private monaco: typeof import('monaco-editor') | null = null
+    private editor?: _monaco.editor.ICodeEditor
+    private monaco: typeof _monaco | null = null
 
     constructor(props: Props) {
         super(props)
@@ -220,10 +222,10 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         )
     }
 
-    private monacoRef = (monacoValue: typeof import('monaco-editor') | null) => {
+    private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
         // This function can only be called if the editor was loaded correctly so casting is correct here.
-        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof import('./MonacoSettingsEditor')
+        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof _monacoSettingsEditorModule
         if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(
