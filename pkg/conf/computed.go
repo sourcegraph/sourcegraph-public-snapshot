@@ -41,13 +41,6 @@ func JumpToDefOSSIndexEnabled() bool {
 	return p == "enabled"
 }
 
-// HostSurveysLocally returns true if HostSurveysLocally experiment is enabled.
-func HostSurveysLocallyEnabled() bool {
-	p := Get().ExperimentalFeatures.HostSurveysLocally
-	// default is disabled
-	return p == "enabled"
-}
-
 // MultipleAuthProvidersEnabled reports whether the "multipleAuthProviders" experiment is enabled.
 func MultipleAuthProvidersEnabled() bool { return MultipleAuthProvidersEnabledFromConfig(Get()) }
 

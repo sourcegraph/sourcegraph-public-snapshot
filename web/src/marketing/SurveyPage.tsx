@@ -1,5 +1,4 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -176,9 +175,6 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
     }
 
     public render(): JSX.Element | null {
-        if (!window.context.hostSurveysLocallyEnabled) {
-            return <HeroPage icon={NoEntryIcon} title="Surveys are not enabled" />
-        }
         if (this.props.match.params.score === 'thanks') {
             return (
                 <div className="survey-page">

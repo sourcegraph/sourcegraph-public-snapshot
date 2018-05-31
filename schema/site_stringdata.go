@@ -70,7 +70,7 @@ const SiteSchemaJSON = `{
         },
         "hostSurveysLocally": {
           "description":
-            "Enables or disables hosting user satisfaction surveys locally. Once stable, this feature will be default.",
+            "(Deprecated: always enabled) Enables or disables hosting user satisfaction surveys locally. Once stable, this feature will be default.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"

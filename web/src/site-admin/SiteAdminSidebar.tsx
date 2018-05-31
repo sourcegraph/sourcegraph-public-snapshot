@@ -193,18 +193,16 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                             Analytics
                         </NavLink>
                     </li>
-                    {window.context.hostSurveysLocallyEnabled && (
-                        <li className="sidebar__item">
-                            <NavLink
-                                to="/site-admin/surveys"
-                                className="sidebar__item-link"
-                                activeClassName="sidebar__item--active"
-                                exact={true}
-                            >
-                                User surveys
-                            </NavLink>
-                        </li>
-                    )}
+                    <li className="sidebar__item">
+                        <NavLink
+                            to="/site-admin/surveys"
+                            className="sidebar__item-link"
+                            activeClassName="sidebar__item--active"
+                            exact={true}
+                        >
+                            User surveys
+                        </NavLink>
+                    </li>
                     <li className="sidebar__item">
                         <NavLink
                             to="/site-admin/pings"

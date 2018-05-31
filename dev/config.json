@@ -4,8 +4,7 @@
   "experimentalFeatures": {
     "configVars": "enabled",
     "searchTimeoutParameter": "enabled",
-    "multipleAuthProviders": "enabled",
-    "hostSurveysLocally": "enabled"
+    "multipleAuthProviders": "enabled"
   },
   "htmlHeadTop":
     "<script>if (localStorage.getItem('disableDefaultFeatureFlags') !== 'true') { localStorage.setItem('treeVersion', '3'); localStorage.setItem('codeIntelStatusIndicator', 'true'); localStorage.setItem('blobVersion', '2'); }</script>",

@@ -1,10 +1,8 @@
-import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
 import { FilteredConnection } from '../components/FilteredConnection'
-import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import { fetchAllSurveyResponses } from '../marketing/backend'
@@ -102,9 +100,6 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
     }
 
     public render(): JSX.Element | null {
-        if (!window.context.hostSurveysLocallyEnabled) {
-            return <HeroPage icon={NoEntryIcon} title="Surveys are not enabled" />
-        }
         return (
             <div className="site-admin-survey-responses-page">
                 <PageTitle title="Survey Responses - Admin" />

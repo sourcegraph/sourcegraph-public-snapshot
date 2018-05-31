@@ -2,11 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type surveyResponseConnectionResolver struct {
@@ -26,9 +24,6 @@ func (r *surveyResponseConnectionResolver) Nodes(ctx context.Context) ([]*survey
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if !conf.HostSurveysLocallyEnabled() {
-		return nil, errors.New("Local user survey management is not enabled.")
-	}
 
 	responses, err := db.SurveyResponses.GetAll(ctx)
 	if err != nil {
@@ -47,9 +42,6 @@ func (r *surveyResponseConnectionResolver) TotalCount(ctx context.Context) (int3
 	// 🚨 SECURITY: Only site admins can count survey responses.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return 0, err
-	}
-	if !conf.HostSurveysLocallyEnabled() {
-		return 0, errors.New("Local user survey management is not enabled.")
 	}
 
 	count, err := db.SurveyResponses.Count(ctx)

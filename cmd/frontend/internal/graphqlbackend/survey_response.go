@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -11,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
@@ -77,9 +75,6 @@ type surveySubmissionForHubSpot struct {
 func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	Input *SurveySubmissionInput
 }) (*EmptyResponse, error) {
-	if !conf.HostSurveysLocallyEnabled() {
-		return nil, errors.New("Local user survey management is not enabled.")
-	}
 	input := args.Input
 	var uid *int32
 	email := input.Email
