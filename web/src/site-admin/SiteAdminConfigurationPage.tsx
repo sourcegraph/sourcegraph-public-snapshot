@@ -1,7 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
@@ -9,7 +8,6 @@ import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
 import { SaveToolbar } from '../components/SaveToolbar'
-import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
@@ -19,7 +17,7 @@ import { siteConfigActions } from './configHelpers'
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
  */
-const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
+const disposableToFn = (disposable: import('monaco-editor').IDisposable) => () => disposable.dispose()
 
 interface Props extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -40,7 +38,7 @@ interface State {
     reloadStartedAt?: number
 
     /** The dynamically imported MonacoSettingsEditor module, undefined while loading. */
-    monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
+    monacoSettingsEditorOrError?: typeof import('../settings/MonacoSettingsEditor') | ErrorLike
 }
 
 const EXPECTED_RELOAD_WAIT = 4 * 1000 // 4 seconds
@@ -59,8 +57,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
-    private monaco: typeof _monaco | null = null
-    private configEditor?: _monaco.editor.ICodeEditor
+    private monaco: typeof import('monaco-editor') | null = null
+    private configEditor?: import('monaco-editor').editor.ICodeEditor
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
@@ -408,10 +406,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         this.siteReloads.next()
     }
 
-    private monacoRef = (monacoValue: typeof _monaco | null) => {
+    private monacoRef = (monacoValue: typeof import('monaco-editor') | null) => {
         this.monaco = monacoValue
         // This function can only be called if the editor was loaded so it is okay to cast here
-        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof _monacoSettingsEditorModule
+        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof import('../settings/MonacoSettingsEditor')
         if (this.monaco && monacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(
@@ -434,7 +432,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         }
     }
 
-    private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
+    private runAction(id: string, editor?: import('monaco-editor').editor.ICodeEditor): void {
         if (editor) {
             const action = editor.getAction(id)
             action.run().done(() => void 0, (err: any) => console.error(err))
