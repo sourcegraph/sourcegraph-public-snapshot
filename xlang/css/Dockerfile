@@ -2,7 +2,7 @@
 
 FROM node:6.9-slim
 
-ADD css-langserver /css-langserver
+COPY css-langserver /css-langserver
 
 EXPOSE 9001
 CMD ["node", "--max_old_space_size=4096", "/css-langserver/langserver/build/language-server.js", "--lsport", "9001"]

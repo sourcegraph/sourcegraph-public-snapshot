@@ -5,7 +5,7 @@
 # $ docker run --rm=true org-grep github.com/sourcegraph/go-langserver vscode
 FROM python:3-alpine
 
-RUN pip install requests
+RUN pip install requests==2.18.4
 
 COPY org-grep.py /org-grep.py
 

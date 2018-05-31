@@ -1,10 +1,10 @@
 FROM python:3.6-alpine
-RUN apk add --no-cache git tini && pip install pip==9.0.3 pipenv==11.9.0 --upgrade
+RUN apk add --no-cache git==2.8.6-r0 tini==0.9.0-r1 && pip install pip==9.0.3 pipenv==11.9.0 --upgrade
 
-ADD python-langserver /src
+COPY python-langserver /src
 WORKDIR /src
 
-RUN pipenv install --deploy 
+RUN pipenv install --deploy
 
 EXPOSE 2087
 ENTRYPOINT ["/sbin/tini", "--", "pipenv", "run", "python", "-X", "faulthandler", "python-langserver.py"]

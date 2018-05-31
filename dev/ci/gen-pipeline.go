@@ -232,6 +232,10 @@ func main() {
 		Cmd("node_modules/.bin/nyc report -r json"),
 		ArtifactPaths("web/coverage/coverage-final.json"))
 
+	pipeline.AddStep(":docker:",
+		Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+		Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+
 	for _, path := range pkgs() {
 		coverageFile := path + "/coverage.txt"
 		pipeline.AddStep(":go:",
