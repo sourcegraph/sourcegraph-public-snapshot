@@ -182,15 +182,15 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         const defaultMaxSearchResults = Math.max(results.resultCount || 0, 30)
 
-        const m = query.match(/max:(\d+)/)
+        const m = query.match(/count:(\d+)/)
         if (m) {
             let n = parseInt(m[1], 10)
             if (!(n >= 1)) {
                 n = defaultMaxSearchResults
             }
-            query = query.replace(/max:\d+/g, '').trim() + ` max:${n * 2}`
+            query = query.replace(/count:\d+/g, '').trim() + ` max:${n * 2}`
         } else {
-            query = `${query} max:${defaultMaxSearchResults}`
+            query = `${query} count:${defaultMaxSearchResults}`
         }
         params.set('q', query)
         this.props.history.replace({ search: params.toString() })
