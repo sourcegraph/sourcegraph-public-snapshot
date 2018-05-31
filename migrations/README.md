@@ -6,6 +6,9 @@ Migrations are handled by the [migrate](https://github.com/golang-migrate/migrat
 
 ### Add a new migration
 
+**IMPORTANT:** All migrations must be backward-compatible, meaning that the _existing_ version of
+the `frontend` command must be able to run against the _new_ (post-migration) version of the schema.
+
 Run the following:
 
 ```
@@ -34,28 +37,64 @@ go generate ./cmd/frontend/internal/db/migrations/
 go generate ./cmd/frontend/internal/db/
 ```
 
+Verify that the migration is backward-compatible:
+
+```
+dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so make sure the work tree is clean before running
+```
+
 ### Migrating up/down
 
-Migrations happen automatically on server start-up after running the generate scripts. They can also
-be run manually using the migrate CLI. Run `./dev/migrate.sh` for more info.
+Up migrations happen automatically on server start-up after running the generate scripts. They can
+also be run manually using the migrate CLI. Run `./dev/migrate.sh` for more info.
 
 You can run `./dev/migrate.sh down 1` to rollback the previous migration. If a migration fails and
 you need to revert to a previous state `./dev/migrate.sh force` may be helpful. Alternatively use
 the `dropdb` and `createdb` commands to wipe your local DB and start from a clean state.
 
+**Note:** if you find that you need to run a down migration, that almost certainly means the
+migration was not backward-compatible, and you should fix this before merging the migration into
+`master`.
+
 ### Running down migrations for customer rollbacks
 
-If a customer needs to roll back across a DB migration, they will need to do the following steps:
+Running down migrations in a rollback **should NOT** be necessary if all migrations are
+backward-compatible.
+
+In case the customer must run a down migration, they will need to do the following steps:
 
 * Roll back Sourcegraph to the previous version. On startup, the frontend pods will log a migration
-  error and the `dirty` column in the `schema_migrations` table will be set to true.
+  warning stating that the schema has been migrated to a newer version. This warning should **NOT**
+  indicate that the database is dirty.
+* Verify that the schema is not dirty by running the following:
+  ```
+  kubectl exec $(kubectl get pod -l app=pgsql -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM schema_migrations'
+  ```
+  If it is dirty, refer to the section below on "Dirty DB schema".
 * Determine the two commits that correspond to the previous and new versions of Sourcegraph. Check
   out each commit and run `ls -1` in the `migrations` directory. The order of the migrations is the
   same as the alphabetical order of the migration scripts, so take the diff between the two `ls -1`s to determine which migrations should be run.
 * Apply the down migration scripts in **reverse chronological order**. Wrap each down migration in a
   transaction block. If there are any errors, stop and resolve the issue before proceeding with the
   next down migration.
-* After all down migrations have been applied, run `update schema_migrations set version=$VERSION, dirty=false;`, where `$VERSION` is the numerical prefix of the migration script corresponding to
-  the first migration you _didn't_ just apply. In other words, it is the numerical prefix of the
-  last migration script as of the rolled-back-to commit.
-* Kill all frontend pods. On restart, they should spin up successfully.
+* After all down migrations have been applied, run `update schema_migrations set version=$VERSION;`,
+  where `$VERSION` is the numerical prefix of the migration script corresponding to the first
+  migration you _didn't_ just apply. In other words, it is the numerical prefix of the last
+  migration script as of the rolled-back-to commit.
+* Restart frontend frontend pods. On restart, they should spin up successfully.
+
+#### Dirty DB schema
+
+If the schema is dirty, that means the current migration (the one indicated in the
+`schema_migrations` table) failed midway through. This should almost never happen. If it does
+happen, it probably means up/down migrations were applied out of order or other manual changes were
+made to the DB that conflict with the current migration stage.
+
+If the schema is dirty, do the following:
+
+* Figure out what change was made to cause the migration to fail midway through.
+* Run the necessary SQL commands to make the schema consistent with some version `$VERSION` of the
+  schema. `$VERSION` is the numerical prefix of the last up migration script run to produce this
+  version of the schema.
+* Run `update schema_migrations set version=$VERSION, dirty=false;`
+* Restart frontend pods.
