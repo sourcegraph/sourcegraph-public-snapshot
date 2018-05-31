@@ -394,6 +394,14 @@ func TestSearchRevspecs(t *testing.T) {
 			clashing: nil,
 		},
 		testCase{
+			descr:    "multiple overlapping revspecs",
+			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
+			repo:     "foo",
+			err:      nil,
+			matched:  []revspecOrRefGlob{{revspec: "b"}, {revspec: "c"}},
+			clashing: nil,
+		},
+		testCase{
 			descr:    "invalid regexp",
 			specs:    []string{"*o@a:b"},
 			repo:     "foo",

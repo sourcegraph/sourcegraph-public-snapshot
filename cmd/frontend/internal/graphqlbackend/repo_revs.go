@@ -27,6 +27,21 @@ func (r revspecOrRefGlob) String() string {
 	return r.revspec
 }
 
+// Less compares two revspecOrRefGlob entities, suitable for use
+// with sort.Slice()
+//
+// possibly-undesired: this results in treating an entity with
+// no revspec, but a refGlob, as "earlier" than any revspec.
+func (r1 revspecOrRefGlob) Less(r2 revspecOrRefGlob) bool {
+	if r1.revspec != r2.revspec {
+		return r1.revspec < r2.revspec
+	}
+	if r1.refGlob != r2.refGlob {
+		return r1.refGlob < r2.refGlob
+	}
+	return r1.excludeRefGlob < r2.excludeRefGlob
+}
+
 // repositoryRevisions specifies a repository and 0 or more revspecs and ref globs.
 // If no revspecs and no ref globs are specified, then the repository's default branch
 // is used.

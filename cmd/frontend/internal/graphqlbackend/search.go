@@ -269,6 +269,7 @@ func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []r
 		for rev := range allowedRevs {
 			matched = append(matched, rev)
 		}
+		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
 		return
 	}
 	// build a list of the revspecs which broke this, return it
@@ -277,6 +278,8 @@ func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []r
 	for rev := range allRevs {
 		clashing = append(clashing, rev)
 	}
+	// ensure that lists are always returned in sorted order.
+	sort.Slice(clashing, func(i, j int) bool { return clashing[i].Less(clashing[j]) })
 	return
 }
 
