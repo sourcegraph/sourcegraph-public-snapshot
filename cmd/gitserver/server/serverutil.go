@@ -379,8 +379,10 @@ func updateFileIfDifferent(path string, content []byte) (ok bool, err error) {
 	defer os.Remove(f.Name())
 
 	if n, err := f.Write(content); err != nil {
+		f.Close()
 		return false, err
 	} else if n != len(content) {
+		f.Close()
 		return false, io.ErrShortWrite
 	}
 
@@ -388,6 +390,7 @@ func updateFileIfDifferent(path string, content []byte) (ok bool, err error) {
 	// we are not gaurenteed that os.Rename is recorded to disk after f's
 	// contents.
 	if err := f.Sync(); err != nil {
+		f.Close()
 		return false, err
 	}
 	if err := f.Close(); err != nil {
