@@ -358,41 +358,41 @@ func mapToLog15Ctx(m map[string]interface{}) []interface{} {
 }
 
 // updateFileIfDifferent will atomically update the file if the contents are
-// different.
-func updateFileIfDifferent(path string, content []byte) error {
+// different. If it does an update ok is true.
+func updateFileIfDifferent(path string, content []byte) (ok bool, err error) {
 	current, err := ioutil.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
 		// If the file doesn't exist we write a new file.
-		return err
+		return false, err
 	}
 
 	if bytes.Equal(current, content) {
-		return nil
+		return false, nil
 	}
 
 	// We write to a tempfile first to do the atomic update (via rename)
 	f, err := ioutil.TempFile(filepath.Dir(path), filepath.Base(path))
 	if err != nil {
-		return err
+		return false, err
 	}
 	// We always remove the tempfile. In the happy case it won't exist.
 	defer os.Remove(f.Name())
 
 	if n, err := f.Write(content); err != nil {
-		return err
+		return false, err
 	} else if n != len(content) {
-		return io.ErrShortWrite
+		return false, io.ErrShortWrite
 	}
 
 	// fsync to ensure the disk contents are written. This is important, since
 	// we are not gaurenteed that os.Rename is recorded to disk after f's
 	// contents.
 	if err := f.Sync(); err != nil {
-		return err
+		return false, err
 	}
 	if err := f.Close(); err != nil {
-		return err
+		return false, err
 	}
 
-	return os.Rename(f.Name(), path)
+	return true, os.Rename(f.Name(), path)
 }

@@ -900,7 +900,8 @@ func updateRefHash(dir string, hash []byte) error {
 		return err
 	}
 
-	return updateFileIfDifferent(filepath.Join(dir, "sg_refhash"), hash)
+	_, err = updateFileIfDifferent(filepath.Join(dir, "sg_refhash"), hash)
+	return err
 }
 
 func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {

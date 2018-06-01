@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 func TestProgressWriter(t *testing.T) {
@@ -132,13 +131,6 @@ func TestUpdateFileIfDifferent(t *testing.T) {
 
 	target := filepath.Join(dir, "sg_refhash")
 
-	mtime := func() time.Time {
-		s, err := os.Stat(target)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return s.ModTime()
-	}
 	write := func(content string) {
 		err := ioutil.WriteFile(target, []byte(content), 0600)
 		if err != nil {
@@ -152,29 +144,47 @@ func TestUpdateFileIfDifferent(t *testing.T) {
 		}
 		return string(b)
 	}
-	update := func(content string) {
-		err := updateFileIfDifferent(target, []byte(content))
+	update := func(content string) bool {
+		ok, err := updateFileIfDifferent(target, []byte(content))
 		if err != nil {
 			t.Fatal(err)
 		}
+		return ok
 	}
 
-	write("foo")
-	t0 := mtime()
-
-	update("foo")
-	if t1 := mtime(); !t1.Equal(t0) {
-		t.Fatal("expected update to not update file")
+	// File doesn't exist so should do an update
+	if !update("foo") {
+		t.Fatal("expected update")
 	}
 	if read() != "foo" {
 		t.Fatal("file content changed")
 	}
 
-	update("bar")
-	if t1 := mtime(); t1.Equal(t0) {
+	// File does exist and already says foo. So should not update
+	if update("foo") {
+		t.Fatal("expected no update")
+	}
+	if read() != "foo" {
+		t.Fatal("file content changed")
+	}
+
+	// Content is different so should update
+	if !update("bar") {
 		t.Fatal("expected update to update file")
 	}
 	if read() != "bar" {
-		t.Fatal("file content did not chang")
+		t.Fatal("file content did not change")
+	}
+
+	// Write something different
+	write("baz")
+	if update("baz") {
+		t.Fatal("expected update to not update file")
+	}
+	if read() != "baz" {
+		t.Fatal("file content did not change")
+	}
+	if update("baz") {
+		t.Fatal("expected update to not update file")
 	}
 }
