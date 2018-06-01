@@ -44,3 +44,7 @@
         }
     }
 }
+
+.btn.btn-sm {
+    @extend small;
+}

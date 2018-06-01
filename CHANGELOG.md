@@ -12,6 +12,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Search results are now sorted by repository and file name
 * Bumped `lsp-proxy`'s `initialize` timeout to 3 minutes for every language.
 * Search results are now sorted by repository and file name.
+* More easily accessible "Show more" button at the top of the search results page.
 * Results from user satisfaction surveys are now always hosted locally and visible to admins. The `"experimentalFeatures": { "hostSurveysLocally" }` config option has been deprecated.
 
 ### Fixed

@@ -10,6 +10,15 @@ interface Props {
      * The parent component should react to this by increasing `itemsToShow`.
      */
     onShowMoreItems: () => void
+
+    /**
+     * Notifies the parent component when an item either has become or is not longer visible.
+     */
+    onVisibilityChange?: (isVisible: boolean, index: number) => void
+
+    onRef?: (ref: HTMLElement | null) => void
+
+    className?: string
 }
 
 interface State {}
@@ -19,11 +28,15 @@ export class VirtualList extends React.PureComponent<Props, State> {
         if (isVisible && i >= this.props.itemsToShow - 2) {
             this.props.onShowMoreItems()
         }
+
+        if (this.props.onVisibilityChange) {
+            this.props.onVisibilityChange(isVisible, i)
+        }
     }
 
     public render(): JSX.Element | null {
         return (
-            <div>
+            <div className={this.props.className} ref={this.props.onRef}>
                 {this.props.items.slice(0, this.props.itemsToShow).map((item, i) => (
                     <VisibilitySensor
                         key={item.key}

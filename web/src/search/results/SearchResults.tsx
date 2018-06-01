@@ -14,7 +14,6 @@ import { queryTelemetryData } from './../queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
 
 const ALL_EXPANDED_LOCAL_STORAGE_KEY = 'allExpanded'
-const UI_PAGE_SIZE = 75
 
 interface SearchResultsProps {
     user: GQL.IUser | null
@@ -28,7 +27,6 @@ interface SearchResultsState {
     /** The loaded search results, error or undefined while loading */
     resultsOrError?: GQL.ISearchResults
     allExpanded: boolean
-    uiLimit: number
 
     // Saved Queries
     showSavedQueryModal: boolean
@@ -41,7 +39,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
-        uiLimit: UI_PAGE_SIZE,
     }
 
     /** Emits on componentDidUpdate with the new props */
@@ -68,7 +65,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     switchMap(searchOptions =>
                         concat(
                             // Reset view state
-                            [{ resultsOrError: undefined, didSave: false, uiLimit: UI_PAGE_SIZE }],
+                            [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
                             search(searchOptions).pipe(
                                 // Log telemetry
@@ -176,7 +173,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     )}
                 <SearchResultsList
                     resultsOrError={this.state.resultsOrError}
-                    uiLimit={this.state.uiLimit}
                     onShowMoreResultsClick={this.showMoreResults}
                     onExpandAllResultsToggle={this.onExpandAllResultsToggle}
                     allExpanded={this.state.allExpanded}
@@ -186,6 +182,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onDidCreateSavedQuery={this.onDidCreateSavedQuery}
                     didSave={this.state.didSaveQuery}
                     location={this.props.location}
+                    history={this.props.history}
                     user={this.props.user}
                     isLightTheme={this.props.isLightTheme}
                 />
@@ -197,28 +194,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         // This function can only get called if the results were successfully loaded,
         // so casting is the right thing to do here
         const results = this.state.resultsOrError as GQL.ISearchResults
-        if (results.results.length > this.state.uiLimit) {
-            // We already have results fetched that aren't being displayed.
-            // Increase the UI limit and rerender.
-            this.setState(state => ({ uiLimit: state.uiLimit + UI_PAGE_SIZE }))
-            return
-        }
 
         // Requery with an increased max result count.
         const params = new URLSearchParams(this.props.location.search)
         let query = params.get('q') || ''
 
-        const defaultMaxSearchResults = Math.max(results.resultCount || 0, 30)
-
-        const m = query.match(/count:(\d+)/)
-        if (m) {
-            let n = parseInt(m[1], 10)
-            if (!(n >= 1)) {
-                n = defaultMaxSearchResults
-            }
-            query = query.replace(/count:\d+/g, '').trim() + ` count:${n * 2}`
+        if (/count:(\d+)/.test(query)) {
+            const count = Math.max(results.resultCount * 2, 1000)
+            query = query.replace(/count:\d+/g, '').trim() + ` count:${count}`
         } else {
-            query = `${query} count:${defaultMaxSearchResults}`
+            const count = Math.max(results.resultCount * 2 || 0, 1000)
+            query = `${query} count:${count}`
         }
         params.set('q', query)
         this.props.history.replace({ search: params.toString() })
