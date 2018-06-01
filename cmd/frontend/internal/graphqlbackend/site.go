@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/sourcegraphlicense"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -98,6 +99,10 @@ func (r *siteResolver) ProductVersion() string { return updatecheck.ProductVersi
 
 func (r *siteResolver) HasCodeIntelligence() bool {
 	return envvar.HasCodeIntelligence()
+}
+
+func (r *siteResolver) SourcegraphLicense() *sourcegraphlicense.SourcegraphLicense {
+	return sourcegraphlicense.Resolver()
 }
 
 func (r *siteResolver) Activity(ctx context.Context, args *struct {

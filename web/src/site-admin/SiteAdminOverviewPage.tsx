@@ -16,6 +16,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
 import { pluralize } from '../util/strings'
+import { SourcegraphLicense } from './SourcegraphLicense'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -121,6 +122,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             </OverviewItem>
                         )}
                 </OverviewList>
+                <SourcegraphLicense className="mt-5" />
             </div>
         )
     }

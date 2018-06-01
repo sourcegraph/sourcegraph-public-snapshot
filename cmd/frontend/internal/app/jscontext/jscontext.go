@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 
@@ -150,7 +149,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Site:                publicSiteConfiguration(),
 		LikelyDockerOnMac:   likelyDockerOnMac(),
 		NeedServerRestart:   conf.NeedServerRestart(),
-		IsRunningDataCenter: os.Getenv("GOREMAN_RPC_ADDR") == "",
+		IsRunningDataCenter: conf.IsDataCenter(conf.DeployType()),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
