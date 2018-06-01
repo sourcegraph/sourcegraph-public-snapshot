@@ -37,8 +37,8 @@ func TestValidateCustom(t *testing.T) {
 
 func TestProviderConfigID(t *testing.T) {
 	p := schema.SAMLAuthProvider{ServiceProviderIssuer: "x"}
-	id1 := providerConfigID(&p)
-	id2 := providerConfigID(&p)
+	id1 := providerConfigID(&p, true)
+	id2 := providerConfigID(&p, true)
 	if id1 != id2 {
 		t.Errorf("id1 (%q) != id2 (%q)", id1, id2)
 	}

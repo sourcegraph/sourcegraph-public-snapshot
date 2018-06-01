@@ -173,7 +173,7 @@ func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	providerID := providerConfigID(&mockGetProviderValue.config)
+	providerID := providerConfigID(&mockGetProviderValue.config, true)
 
 	// Mock user
 	mockedExternalID := "testuser_id"

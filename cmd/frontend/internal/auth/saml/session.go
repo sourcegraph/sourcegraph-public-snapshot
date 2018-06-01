@@ -14,11 +14,11 @@ import (
 // it has a SingleLogoutService.
 func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err error) {
 	// TODO(sqs): Only supports a single SAML auth provider.
-	pc, _ := getFirstProviderConfig()
+	pc, multiple := getFirstProviderConfig()
 	if pc == nil {
 		return "", nil
 	}
-	p := getProvider(providerConfigID(pc))
+	p := getProvider(providerConfigID(pc, multiple))
 	if p == nil {
 		return "", nil
 	}

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"path"
 	"strconv"
 	"strings"
@@ -27,7 +26,22 @@ func getProvider(pcID string) *provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
+
 	p, _ := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: providerType, ID: pcID}).(*provider)
+	if p != nil {
+		return p
+	}
+
+	// Special case: if there is only a single SAML auth provider, return it regardless of the pcID.
+	for _, ap := range auth.Providers() {
+		if ap.Config().Saml != nil {
+			if p != nil {
+				return nil // multiple SAML providers, can't use this special case
+			}
+			p = ap.(*provider)
+		}
+	}
+
 	return p
 }
 
@@ -114,24 +128,19 @@ func getNameIDFormat(pc *schema.SAMLAuthProvider) string {
 // providerConfigID produces a semi-stable identifier for a saml auth provider config object. It is
 // used to distinguish between multiple auth providers of the same type when in multi-step auth
 // flows. Its value is never persisted, and it must be deterministic.
-func providerConfigID(pc *schema.SAMLAuthProvider) string {
+//
+// If there is only a single saml auth provider, it returns the empty string because that satisfies
+// the requirements above.
+func providerConfigID(pc *schema.SAMLAuthProvider, multiple bool) string {
+	if !multiple {
+		return ""
+	}
 	data, err := json.Marshal(pc)
 	if err != nil {
 		panic(err)
 	}
 	b := sha256.Sum256(data)
 	return base64.RawURLEncoding.EncodeToString(b[:16])
-}
-
-func authProviderURLs(base *url.URL) (urls []string) {
-	for _, p := range auth.Providers() {
-		if pc := p.Config().Saml; pc != nil {
-			urls = append(urls, base.ResolveReference(&url.URL{
-				RawQuery: providerIDQuery(pc).Encode(),
-			}).String())
-		}
-	}
-	return urls
 }
 
 var traceLogEnabled, _ = strconv.ParseBool(env.Get("INSECURE_SAML_LOG_TRACES", "false", "Log all SAML requests and responses. Only use during testing because the log messages will contain sensitive data."))

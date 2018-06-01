@@ -44,6 +44,7 @@ func init() {
 		if !init {
 			log15.Info("Reloading changed SAML authentication provider configuration.")
 		}
+		multiple := len(new) >= 2
 		updates := make(map[auth.Provider]bool, len(diff))
 		for pc, op := range diff {
 			if old, ok := reg[pc]; ok {
@@ -51,7 +52,7 @@ func init() {
 				updates[old] = false
 			}
 			if op {
-				new := &provider{config: pc}
+				new := &provider{config: pc, multiple: multiple}
 				reg[pc] = new
 				updates[new] = true
 				go func(p *provider) {

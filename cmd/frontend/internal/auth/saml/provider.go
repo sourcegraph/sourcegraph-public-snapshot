@@ -28,7 +28,8 @@ import (
 const providerType = "saml"
 
 type provider struct {
-	config schema.SAMLAuthProvider
+	config   schema.SAMLAuthProvider
+	multiple bool // whether there are multiple SAML auth providers
 
 	mu         sync.Mutex
 	samlSP     *saml2.SAMLServiceProvider
@@ -39,7 +40,7 @@ type provider struct {
 func (p *provider) ConfigID() auth.ProviderConfigID {
 	return auth.ProviderConfigID{
 		Type: providerType,
-		ID:   providerConfigID(&p.config),
+		ID:   providerConfigID(&p.config, p.multiple),
 	}
 }
 
@@ -56,8 +57,11 @@ func (p *provider) Refresh(ctx context.Context) error {
 	return p.refreshErr
 }
 
-func providerIDQuery(pc *schema.SAMLAuthProvider) url.Values {
-	return url.Values{"pc": []string{providerConfigID(pc)}}
+func providerIDQuery(pc *schema.SAMLAuthProvider, multiple bool) url.Values {
+	if multiple {
+		return url.Values{"pc": []string{providerConfigID(pc, multiple)}}
+	}
+	return url.Values{}
 }
 
 func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
@@ -65,7 +69,7 @@ func (p *provider) getCachedInfoAndError() (*auth.ProviderInfo, error) {
 		DisplayName: p.config.DisplayName,
 		AuthenticationURL: (&url.URL{
 			Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
-			RawQuery: providerIDQuery(&p.config).Encode(),
+			RawQuery: providerIDQuery(&p.config, p.multiple).Encode(),
 		}).String(),
 	}
 	if info.DisplayName == "" {
