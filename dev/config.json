@@ -190,6 +190,13 @@
       "serviceProviderCertificate": "$SAML_ONELOGIN_CERT",
       "serviceProviderPrivateKey": "$SAML_ONELOGIN_KEY"
     }
+    // Uncomment to test ADFS SAML. See ../docs/saml-adfs.md for required configuration steps.
+    //
+    // {
+    //   "type": "saml",
+    //   "displayName": "Windows Server 2012 Datacenter ADFS 2.1 SAML (dev)",
+    //   "identityProviderMetadataURL": "https://adfstest.sgdev.org/federationmetadata/2007-06/federationmetadata.xml"
+    // }
   ],
   "secretKey": "OVSHB1Yru3rlsQ0eKNi2GXCZ47zU7DCK"
 }
