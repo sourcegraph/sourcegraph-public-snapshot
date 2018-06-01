@@ -304,7 +304,7 @@ The ADFS SAML service should now be accessible from your computer. Confirm that,
 
 ## Add Sourcegraph as an ADFS Relying Party (RP)
 
-1.  In the **Server Manager**, open **Tools > AD FS Management**.
+1.  In Windows Server's **Server Manager**, open **Tools > AD FS Management**.
 1.  In the right sidebar, click the **Add Relying Party Trust...** action.
 1.  Proceed through the "Add Relying Party Trust Wizard" as follows:
     * Welcome (Page 1)
@@ -334,7 +334,7 @@ The ADFS SAML service should now be accessible from your computer. Confirm that,
         * `E-Mail-Addresses` -> `E-Mail Address`
         * `Display-Name` -> `Name`
         * Click **Finish**.
-    * _Send User Info rule:_ Click **Add Rule...** and proceed through the "Add Transform Claim Rule Wizard" as follows:
+    * _Email to NameID rule:_ Click **Add Rule...** and proceed through the "Add Transform Claim Rule Wizard" as follows:
       * Choose Rule Type (Page 1)
         * Claim rule template: `Transform an Incoming Claim`
         * Click **Next >**.
