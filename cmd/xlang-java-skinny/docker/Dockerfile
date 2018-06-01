@@ -1,13 +1,14 @@
-# The only tag available is latest.
-# hadolint ignore=DL3007
-FROM mlaccetti/docker-oracle-java8-ubuntu-16.04:latest
+# Pin to a hash because the only tag is "latest".
+FROM mlaccetti/docker-oracle-java8-ubuntu-16.04@sha256:2858f483343958c68d83c817c3db123cf33d0392f1793e10225a51a6b4d398ab
 EXPOSE 2088
 
 RUN apt-get -q -y update
+# --no-install-recommends breaks the image.
 # hadolint ignore=DL3015
 RUN apt-get -q -y install unzip=6.0-20ubuntu1 git=1:2.7.4-0ubuntu1.3 maven=3.3.9-3
 
 # Install Gradle binary
+# --no-install-recommends breaks the image.
 # hadolint ignore=DL3015
 RUN apt-get -q -y install wget=1.17.1-1ubuntu1.4
 RUN mkdir /gradle
