@@ -115,6 +115,7 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 		NameIdFormat:            getNameIDFormat(pc),
 		SkipSignatureValidation: pc.InsecureSkipAssertionSignatureValidation,
 		ValidateEncryptionCert:  true,
+		AllowMissingAttributes:  true,
 	}
 
 	idpCertStore := &dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{}}
