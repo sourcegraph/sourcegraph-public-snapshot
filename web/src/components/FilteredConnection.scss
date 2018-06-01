@@ -36,6 +36,18 @@
         opacity: 0.7;
         border-top: solid 1px $color-border;
     }
+
+    &--noncompact {
+        table {
+            width: 100%;
+        }
+    }
+
+    table {
+        td {
+            vertical-align: middle;
+        }
+    }
 }
 
 .theme-light {

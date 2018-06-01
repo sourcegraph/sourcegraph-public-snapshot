@@ -413,7 +413,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const q = new URLSearchParams(this.props.location.search)
         this.state = {
             loading: true,
-            query: q.get(QUERY_KEY) || '',
+            query: (!this.props.hideFilter && q.get(QUERY_KEY)) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
         }
@@ -423,7 +423,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const activeFilterChanges = this.activeFilterChanges.pipe(startWith(this.state.activeFilter))
         const queryChanges = this.queryInputChanges.pipe(
             distinctUntilChanged(),
-            tap(query => this.setState({ query })),
+            tap(query => !this.props.hideFilter && this.setState({ query })),
             debounceTime(200),
             startWith(this.state.query)
         )

@@ -116,6 +116,32 @@ class UserActivityNode extends React.PureComponent<UserActivityNodeProps> {
 }
 
 class FilteredUserConnection extends FilteredConnection<GQL.IUser, {}> {}
+export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
+    {
+        label: 'All users',
+        id: 'all',
+        tooltip: 'Show all users',
+        args: { activePeriod: GQL.UserActivePeriod.ALL_TIME },
+    },
+    {
+        label: 'Active today',
+        id: 'today',
+        tooltip: 'Show users active since this morning at 00:00 UTC',
+        args: { activePeriod: GQL.UserActivePeriod.TODAY },
+    },
+    {
+        label: 'Active this week',
+        id: 'week',
+        tooltip: 'Show users active since Monday at 00:00 UTC',
+        args: { activePeriod: GQL.UserActivePeriod.THIS_WEEK },
+    },
+    {
+        label: 'Active this month',
+        id: 'month',
+        tooltip: 'Show users active since the first day of the month at 00:00 UTC',
+        args: { activePeriod: GQL.UserActivePeriod.THIS_MONTH },
+    },
+]
 
 interface SiteAdminAnalyticsPageProps extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -132,33 +158,6 @@ export interface SiteAdminAnalyticsPageState {
  * A page displaying usage analytics for the site.
  */
 export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPageProps, SiteAdminAnalyticsPageState> {
-    private static FILTERS: FilteredConnectionFilter[] = [
-        {
-            label: 'Active today',
-            id: 'today',
-            tooltip: 'Show users active since this morning at 00:00 UTC',
-            args: { activePeriod: GQL.UserActivePeriod.TODAY },
-        },
-        {
-            label: 'Active this week',
-            id: 'week',
-            tooltip: 'Show users active since Monday at 00:00 UTC',
-            args: { activePeriod: GQL.UserActivePeriod.THIS_WEEK },
-        },
-        {
-            label: 'Active this month',
-            id: 'month',
-            tooltip: 'Show users active since the first day of the month at 00:00 UTC',
-            args: { activePeriod: GQL.UserActivePeriod.THIS_MONTH },
-        },
-        {
-            label: 'All',
-            id: 'all',
-            tooltip: 'Show all users',
-            args: { activePeriod: GQL.UserActivePeriod.ALL_TIME },
-        },
-    ]
-
     public state: SiteAdminAnalyticsPageState = {
         chartID: this.loadLatestChartFromStorage(),
     }
@@ -233,9 +232,9 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
                 <h3 className="mt-4">All registered users</h3>
                 <FilteredUserConnection
                     listComponent="table"
-                    className="table table-hover"
+                    className="table"
                     hideFilter={false}
-                    filters={SiteAdminAnalyticsPage.FILTERS}
+                    filters={USER_ACTIVITY_FILTERS}
                     noShowMore={false}
                     noun="user"
                     pluralNoun="users"

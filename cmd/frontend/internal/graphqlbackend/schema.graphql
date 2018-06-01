@@ -1868,7 +1868,7 @@ type User implements Node, ConfigurationSubject {
     #
     # Only the user and site admins can access this field.
     emails: [UserEmail!]!
-    # The users' access tokens (which grant to the holder the privileges of the user). This consists
+    # The user's access tokens (which grant to the holder the privileges of the user). This consists
     # of all access tokens whose subject is this user.
     #
     # Only the user and site admins can access this field.
@@ -1889,6 +1889,10 @@ type User implements Node, ConfigurationSubject {
     # Whether the viewer has admin privileges on this user. The user has admin privileges on their own user, and
     # site admins have admin privileges on all users.
     viewerCanAdminister: Boolean!
+    # The user's survey responses.
+    #
+    # Only the user and site admins can access this field.
+    surveyResponses: [SurveyResponse!]!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2700,6 +2704,15 @@ type SurveyResponseConnection {
     # The total count of survey responses in the connection. This total count may be larger
     # than the number of nodes in this object when the result is paginated.
     totalCount: Int!
+    # The count of survey responses submitted since 30 calendar days ago at 00:00 UTC.
+    last30DaysCount: Int!
+    # The average score of survey responses in the connection submitted since 30 calendar days ago at 00:00 UTC.
+    averageScore: Float!
+    # The net promoter score (NPS) of survey responses in the connection submitted since 30 calendar days ago at 00:00 UTC.
+    # Return value is a signed integer, scaled from -100 (all detractors) to +100 (all promoters).
+    #
+    # See https://en.wikipedia.org/wiki/Net_Promoter for explanation.
+    netPromoterScore: Int!
 }
 
 # An individual response to a user satisfaction (NPS) survey.

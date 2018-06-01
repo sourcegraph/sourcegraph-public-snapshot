@@ -192,6 +192,23 @@ func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
 	return userTagResolvers, nil
 }
 
+func (r *userResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseResolver, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's survey responses.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return nil, err
+	}
+
+	responses, err := db.SurveyResponses.GetByUserID(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	surveyResponseResolvers := []*surveyResponseResolver{}
+	for _, response := range responses {
+		surveyResponseResolvers = append(surveyResponseResolvers, &surveyResponseResolver{response})
+	}
+	return surveyResponseResolvers, nil
+}
+
 func (r *userResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
 		return false, nil
