@@ -22,6 +22,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where deleting an organization prevented the creation of organizations with the name of the deleted organization.
 * Non-UTF8 encoded files (e.g. ISO-8859-1/Latin1, UTF16, etc) are now displayed as text properly rather than being detected as binary files.
 * Improved error message when lsp-proxy's initalize timeout occurs
+* Fixed compatibility issues and added [instructions for using Microsoft ADFS 2.1 and 3.0 for SAML authentication](https://about.sourcegraph.com/docs/config/authentication/saml-microsoft-adfs).
 
 ### Added
 
