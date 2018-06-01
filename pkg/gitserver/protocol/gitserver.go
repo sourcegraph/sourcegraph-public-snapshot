@@ -23,10 +23,19 @@ type ExecRequest struct {
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo api.RepoURI `json:"repo"`
+	Repo api.RepoURI `json:"repo"` // identifying URL for repo
+	URL  string      `json:"url"`  // repo's remote URL
+}
 
-	// URL is the repository's Git remote URL (from which to clone or update).
-	URL string `json:"url"`
+// RepoUpdateResponse returns meta information of the repo enqueued for
+// update.
+//
+// TODO just use RepoInfoResponse?
+type RepoUpdateResponse struct {
+	Cloned          bool
+	CloneInProgress bool
+	LastFetched     *time.Time
+	LastChanged     *time.Time
 }
 
 type NotFoundPayload struct {

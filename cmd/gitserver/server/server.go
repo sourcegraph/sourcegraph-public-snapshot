@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,6 +18,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,6 +29,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -332,9 +335,13 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	if !repoCloned(dir) && !skipCloneForTests {
+		// optimistically, we assume that our cloning attempt might
+		// succeed.
+		resp.CloneInProgress = true
 		go func() {
 			ctx, cancel1 := s.serverContext()
 			defer cancel1()
@@ -346,8 +353,34 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 			}
 		}()
 	} else {
+		// Check the repo status before enqueuing
+		var statusErr error
+		lastFetched, err := repoLastFetched(dir)
+		if err != nil {
+			statusErr = err
+		}
+		lastChanged, err := repoLastChanged(dir)
+		if err != nil {
+			statusErr = err
+		}
+
+		// We always want to enqueue an update
 		updateQueue.Inc()
 		s.updateRepo <- updateRepoRequest{repo: req.Repo, url: req.URL}
+
+		if statusErr != nil {
+			log15.Error("failed to get status of repo", "repo", req.Repo, "error", statusErr)
+			http.Error(w, statusErr.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		resp.Cloned = true
+		resp.LastFetched = &lastFetched
+		resp.LastChanged = &lastChanged
+	}
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -856,6 +889,20 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 	}
 }
 
+func updateRefHash(dir string, hash []byte) error {
+	// Handle two different locations for GIT_DIR :'(
+	_, err := os.Stat(filepath.Join(dir, "HEAD"))
+	if os.IsNotExist(err) {
+		dir = filepath.Join(dir, ".git")
+		_, err = os.Stat(filepath.Join(dir, "HEAD"))
+	}
+	if err != nil {
+		return err
+	}
+
+	return updateFileIfDifferent(filepath.Join(dir, "sg_refhash"), hash)
+}
+
 func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 	// We do not want user request to interrupt updates, so we use a
 	// background context.
@@ -925,12 +972,36 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 		return
 	}
 
+	// after each successful fetch, update a hash of known revs
+	cmd = exec.CommandContext(ctx, "git", "show-ref")
+	cmd.Dir = dir
+	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
+	if err != nil {
+		log15.Error("show-ref failed", "repo", repo, "error", err, "output", string(output))
+		// but we don't return, because the rest of the processing still needs to happen
+	} else {
+		lines := bytes.Split(output, []byte("\n"))
+		sort.Slice(lines, func(i, j int) bool {
+			return bytes.Compare(lines[i], lines[j]) < 0
+		})
+		hasher := sha256.New()
+		for _, b := range lines {
+			hasher.Write(b)
+			hasher.Write([]byte("\n"))
+		}
+		hash := make([]byte, hex.EncodedLen(hasher.Size()))
+		hex.Encode(hash, hasher.Sum(nil))
+		err := updateRefHash(dir, hash)
+		if err != nil {
+			log15.Warn("saveRefHash failed", "hash", string(hash), "error", err)
+		}
+	}
 	headBranch := "master"
 
 	// try to fetch HEAD from origin
 	cmd = exec.CommandContext(ctx, "git", "remote", "show", url)
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
-	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
+	output, err = s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "url", url, "error", err, "output", string(output))
 		return

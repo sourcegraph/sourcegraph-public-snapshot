@@ -1,6 +1,12 @@
 package server
 
-import "testing"
+import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
 
 func TestProgressWriter(t *testing.T) {
 	testCases := []struct {
@@ -114,5 +120,61 @@ func TestProgressWriter(t *testing.T) {
 				t.Fatalf("\ngot:\n%s\nwant:\n%s\n", actual, testCase.text)
 			}
 		})
+	}
+}
+
+func TestUpdateFileIfDifferent(t *testing.T) {
+	dir, err := ioutil.TempDir("", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	target := filepath.Join(dir, "sg_refhash")
+
+	mtime := func() time.Time {
+		s, err := os.Stat(target)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return s.ModTime()
+	}
+	write := func(content string) {
+		err := ioutil.WriteFile(target, []byte(content), 0600)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	read := func() string {
+		b, err := ioutil.ReadFile(target)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(b)
+	}
+	update := func(content string) {
+		err := updateFileIfDifferent(target, []byte(content))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	write("foo")
+	t0 := mtime()
+
+	update("foo")
+	if t1 := mtime(); !t1.Equal(t0) {
+		t.Fatal("expected update to not update file")
+	}
+	if read() != "foo" {
+		t.Fatal("file content changed")
+	}
+
+	update("bar")
+	if t1 := mtime(); t1.Equal(t0) {
+		t.Fatal("expected update to update file")
+	}
+	if read() != "bar" {
+		t.Fatal("file content did not chang")
 	}
 }

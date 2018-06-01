@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -86,6 +87,28 @@ var repoLastFetched = func(dir string) (time.Time, error) {
 	}
 	if os.IsNotExist(err) {
 		fi, err = os.Stat(filepath.Join(dir, ".git", "HEAD"))
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return fi.ModTime(), nil
+}
+
+// repoLastChanged returns the mtime of the repo's sg_refhash, which is the
+// date of the last successful `git remote update` or `git fetch` which
+// fetched objects. As a special case when sg_refhash is missing we return
+// repoLastFetched(dir).
+//
+// This breaks on file systems that do not record mtime. This is a Sourcegraph
+// extension to track last time a repo changed. The file is updated by
+// updateRefHash via doRepoUpdate2.
+var repoLastChanged = func(dir string) (time.Time, error) {
+	fi, err := os.Stat(filepath.Join(dir, "sg_refhash"))
+	if os.IsNotExist(err) {
+		fi, err = os.Stat(filepath.Join(dir, ".git", "sg_refhash"))
+	}
+	if os.IsNotExist(err) {
+		return repoLastFetched(dir)
 	}
 	if err != nil {
 		return time.Time{}, err
@@ -332,4 +355,44 @@ func mapToLog15Ctx(m map[string]interface{}) []interface{} {
 		ctx[j+1] = m[k]
 	}
 	return ctx
+}
+
+// updateFileIfDifferent will atomically update the file if the contents are
+// different.
+func updateFileIfDifferent(path string, content []byte) error {
+	current, err := ioutil.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		// If the file doesn't exist we write a new file.
+		return err
+	}
+
+	if bytes.Equal(current, content) {
+		return nil
+	}
+
+	// We write to a tempfile first to do the atomic update (via rename)
+	f, err := ioutil.TempFile(filepath.Dir(path), filepath.Base(path))
+	if err != nil {
+		return err
+	}
+	// We always remove the tempfile. In the happy case it won't exist.
+	defer os.Remove(f.Name())
+
+	if n, err := f.Write(content); err != nil {
+		return err
+	} else if n != len(content) {
+		return io.ErrShortWrite
+	}
+
+	// fsync to ensure the disk contents are written. This is important, since
+	// we are not gaurenteed that os.Rename is recorded to disk after f's
+	// contents.
+	if err := f.Sync(); err != nil {
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(f.Name(), path)
 }
