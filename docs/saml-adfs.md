@@ -320,7 +320,7 @@ The ADFS SAML service should now be accessible from your computer. Confirm that,
     * Ready to Add Trust (Page 5)
       * Click **Next >**.
     * Finish (Page 6)
-      * Check the box for **Open the edit Claim Rules dialog...**.
+      * Check the box for **Open the Edit Claim Rules dialog...**.
       * Click **Close**.
 1.  In the "Edit Claim Rules for sourcegraph.example.com" window in the "Issuance Transform Rules" tab, add the 2 following rules.
     * _Send User Info rule:_ Click **Add Rule...** and proceed through the "Add Transform Claim Rule Wizard" as follows:
