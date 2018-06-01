@@ -5,7 +5,6 @@ import (
 	"go/build"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -238,12 +237,21 @@ func main() {
 
 	for _, path := range pkgs() {
 		coverageFile := path + "/coverage.txt"
-		pipeline.AddStep(":go:",
-			Cmd("go test ./"+path+" -v -race -i"),
-			Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/..."),
-			ArtifactPaths(coverageFile))
+		stepOpts := []StepOpt{
+			Cmd("go test ./" + path + " -v -race -i"),
+			Cmd("go test ./" + path + " -v -race -coverprofile=" + coverageFile + " -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/..."),
+			ArtifactPaths(coverageFile),
+		}
+		if path == "cmd/frontend/internal/db" {
+			stepOpts = append([]StepOpt{Cmd("./dev/ci/reset-test-db.sh || true")}, stepOpts...)
+		}
+		pipeline.AddStep(":go:", stepOpts...)
 	}
 
+	pipeline.AddWait()
+
+	// DB backcompat checks out a different version of the repository, so it's run in serial.
+	pipeline.AddStep(":postgres:", Cmd("./dev/ci/ci-db-backcompat.sh"))
 	pipeline.AddWait()
 
 	pipeline.AddStep(":codecov:",
@@ -283,7 +291,6 @@ func main() {
 		addDockerImageStep(branch[20:], false)
 
 	case strings.HasPrefix(branch, "docker-images/"):
-		log.Printf("# HERE 2")
 		addDockerImageStep(branch[14:], true)
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
