@@ -24,6 +24,10 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                         indexUnavailable
                         dynamicFilters {
                             value
+                            label
+                            count
+                            limitHit
+                            kind
                         }
                         results {
                             ... on Repository {

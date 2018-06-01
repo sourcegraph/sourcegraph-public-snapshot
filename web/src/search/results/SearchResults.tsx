@@ -35,6 +35,7 @@ interface SearchResultsState {
     didSaveQuery: boolean
 }
 
+const newRepoFilters = localStorage.getItem('newRepoFilters') === 'true'
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
         didSaveQuery: false,
@@ -134,13 +135,40 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             Filters:
                             <div className="search-results__filters">
                                 {this.state.resultsOrError.dynamicFilters
-                                    .filter(filter => filter.value !== '')
+                                    .filter(filter => {
+                                        if (newRepoFilters) {
+                                            return filter.value !== '' && filter.kind !== 'repo'
+                                        }
+                                        return filter.value !== ''
+                                    })
                                     .map((filter, i) => (
                                         <FilterChip
                                             query={this.props.navbarSearchQuery}
                                             onFilterChosen={this.onDynamicFilterClicked}
                                             key={filter.value}
                                             value={filter.value}
+                                        />
+                                    ))}
+                            </div>
+                        </div>
+                    )}
+                {newRepoFilters &&
+                    isSearchResults(this.state.resultsOrError) &&
+                    this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
+                        <div className="search-results__filters-bar">
+                            Repositories:
+                            <div className="search-results__filters">
+                                {this.state.resultsOrError.dynamicFilters
+                                    .filter(filter => filter.kind === 'repo' && filter.value !== '')
+                                    .map((filter, i) => (
+                                        <FilterChip
+                                            name={filter.label}
+                                            query={this.props.navbarSearchQuery}
+                                            onFilterChosen={this.onDynamicFilterClicked}
+                                            key={filter.value}
+                                            value={filter.value}
+                                            count={filter.count}
+                                            limitHit={filter.limitHit}
                                         />
                                     ))}
                             </div>

@@ -27,6 +27,21 @@
         }
     }
 
+    &__count {
+        border-radius: 18px;
+        margin-left: 0.25rem;
+        padding: 0 0.2rem;
+
+        .theme-light & {
+            background: $color-light-bg-2;
+            color: $color-light-text-2;
+        }
+
+        .theme-dark & {
+            background: $color-bg-3;
+        }
+    }
+
     &--selected {
         .theme-dark & {
             color: $color-text;

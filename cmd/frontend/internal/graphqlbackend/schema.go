@@ -626,6 +626,14 @@ type SearchResultsStats {
 type SearchFilter {
     # The value.
     value: String!
+    # The string to be displayed in the UI.
+    label: String!
+    # Number of matches for a given filter.
+    count: Int!
+    # Whether the results returned are incomplete.
+    limitHit: Boolean!
+    # The kind of filter. Should be "file" or "repo".
+    kind: String!
 }
 
 # A search suggestion.

@@ -38,12 +38,13 @@ import (
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
-	limitHit bool          // whether the limit on results was hit
-	repos    []api.RepoURI // repos that were matched by the repo-related filters
-	searched []api.RepoURI // repos that were searched
-	indexed  []api.RepoURI // repos that were searched using an index
-	cloning  []api.RepoURI // repos that could not be searched because they were still being cloned
-	missing  []api.RepoURI // repos that could not be searched because they do not exist
+	limitHit bool                     // whether the limit on results was hit
+	repos    []api.RepoURI            // repos that were matched by the repo-related filters
+	searched []api.RepoURI            // repos that were searched
+	indexed  []api.RepoURI            // repos that were searched using an index
+	cloning  []api.RepoURI            // repos that could not be searched because they were still being cloned
+	missing  []api.RepoURI            // repos that could not be searched because they do not exist
+	partial  map[api.RepoURI]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
 
@@ -134,14 +135,23 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	appendUnique(&c.missing, other.missing)
 	appendUnique(&c.timedout, other.timedout)
 	c.resultCount += other.resultCount
+
+	if c.partial == nil {
+		c.partial = make(map[api.RepoURI]struct{})
+	}
+
+	for repo := range other.partial {
+		c.partial[repo] = struct{}{}
+	}
 }
 
 // searchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type searchResultsResolver struct {
 	results []*searchResultResolver
 	searchResultsCommon
-	alert *searchAlert
-	start time.Time // when the results started being computed
+	alert            *searchAlert
+	start            time.Time // when the results started being computed
+	repoToMatchCount map[string]int
 }
 
 func (sr *searchResultsResolver) Results() []*searchResultResolver {
@@ -195,69 +205,105 @@ var commonFileFilters = []struct {
 
 func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	filters := map[string]*searchFilterResolver{}
-	add := func(value string) {
+	sr.repoToMatchCount = make(map[string]int)
+	add := func(value string, label string, count int, limitHit bool, kind string) {
 		sf, ok := filters[value]
 		if !ok {
 			sf = &searchFilterResolver{
-				value: value,
+				value:    value,
+				label:    label,
+				count:    int32(count),
+				limitHit: limitHit,
+				kind:     kind,
 			}
 			filters[value] = sf
+		} else {
+			sf.count = int32(count)
 		}
+
 		sf.score++
 	}
-	addRepoFilter := func(uri string, rev string) {
+
+	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
 		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
 		if rev != "" {
 			filter = filter + fmt.Sprintf(`@%s`, regexp.QuoteMeta(rev))
 		}
-		add(filter)
+		_, limitHit := sr.searchResultsCommon.partial[api.RepoURI(uri)]
+		// Increment number of matches per repo.
+		sr.repoToMatchCount[uri] += lineMatchCount
+		repoCount := sr.repoToMatchCount[uri]
+		add(filter, uri, repoCount, limitHit, "repo")
 	}
-	addFileFilter := func(filematchPath string) {
+	addFileFilter := func(filematchPath string, lineMatchCount int, limitHit bool) {
 		if ext := path.Ext(filematchPath); ext != "" {
-			add(fmt.Sprintf(`file:%s$`, regexp.QuoteMeta(ext)))
+			value := fmt.Sprintf(`file:%s$`, regexp.QuoteMeta(ext))
+			add(value, value, lineMatchCount, false, "file")
 		}
 		for _, ff := range commonFileFilters {
 			if ff.Regexp.MatchString(filematchPath) {
-				add(ff.Filter)
+				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file")
 			}
 		}
 	}
+
 	for _, result := range sr.results {
 		if result.fileMatch != nil {
 			rev := ""
 			if result.fileMatch.inputRev != nil {
 				rev = *result.fileMatch.inputRev
 			}
-
-			addRepoFilter(string(result.fileMatch.repo.URI), rev)
-			addFileFilter(result.fileMatch.JPath)
+			addRepoFilter(string(result.fileMatch.repo.URI), rev, len(result.fileMatch.LineMatches()))
+			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
 		}
 
 		if result.repo != nil {
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(result.repo.URI(), "")
+			addRepoFilter(result.repo.URI(), "", 1)
 		}
 	}
 
 	filterSlice := make([]*searchFilterResolver, 0, len(filters))
+	repoFilterSlice := make([]*searchFilterResolver, 0, len(filters)/2) // heuristic - half of all filters are repo filters.
 	for _, f := range filters {
-		filterSlice = append(filterSlice, f)
+		if f.kind == "repo" {
+			repoFilterSlice = append(repoFilterSlice, f)
+		} else {
+			filterSlice = append(filterSlice, f)
+		}
 	}
 	sort.Slice(filterSlice, func(i, j int) bool {
 		return filterSlice[j].score < filterSlice[i].score
 	})
-
-	// limit amount of dynamic filters to be rendered arbitrarily to 12
+	// limit amount of non-repo filters to be rendered arbitrarily to 12
 	if len(filterSlice) > 12 {
 		filterSlice = filterSlice[:12]
 	}
-	return filterSlice
+
+	allFilters := append(filterSlice, repoFilterSlice...)
+	sort.Slice(allFilters, func(i, j int) bool {
+		return allFilters[j].score < allFilters[i].score
+	})
+
+	return allFilters
 }
 
 type searchFilterResolver struct {
 	value string
+
+	// the string to be displayed in the UI
+	label string
+
+	// the number of matches in a particular repository. Only used for `repo:` filters.
+	count int32
+
+	// whether the results returned for a repository are incomplete
+	limitHit bool
+
+	// the kind of filter. Should be "repo" or "file".
+	kind string
 
 	// score is used to select potential filters
 	score int
@@ -265,6 +311,22 @@ type searchFilterResolver struct {
 
 func (sf *searchFilterResolver) Value() string {
 	return sf.value
+}
+
+func (sf *searchFilterResolver) Label() string {
+	return sf.label
+}
+
+func (sf *searchFilterResolver) Count() int32 {
+	return sf.count
+}
+
+func (sf *searchFilterResolver) LimitHit() bool {
+	return sf.limitHit
+}
+
+func (sf *searchFilterResolver) Kind() string {
+	return sf.kind
 }
 
 // blameFileMatchCache caches Repos.Get, Repos.ResolveRev, and RepoVCS.Open operations.
