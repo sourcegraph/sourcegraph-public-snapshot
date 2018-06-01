@@ -1,9 +1,3 @@
----
-layout: markdown
-title: Configuring SAML with Microsoft Active Directory Federation Services (ADFS)
-permalink: docs/config/authentication/foo
----
-
 # Testing SAML with Microsoft Active Directory Federation Services (ADFS) 2.1
 
 Follow all the steps in this document in order.
