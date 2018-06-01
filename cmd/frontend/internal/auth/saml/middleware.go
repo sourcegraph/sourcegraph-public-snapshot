@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -101,6 +102,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "", http.StatusInternalServerError)
 				return
 			}
+			traceLog(fmt.Sprintf("Service Provider metadata: %s", p.ConfigID().ID), string(buf))
 			w.Header().Set("Content-Type", "application/samlmetadata+xml; charset=utf-8")
 			w.Write(buf)
 			return
@@ -139,7 +141,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 	case "/acs":
 		info, err := readAuthnResponse(p, r.FormValue("SAMLResponse"))
 		if err != nil {
-			log15.Error("Error validating SAML assertions.", "err", err)
+			log15.Error("Error validating SAML assertions. Set the env var INSECURE_SAML_LOG_TRACES=1 to log all SAML requests and responses.", "err", err)
 			http.Error(w, "Error validating SAML assertions.", http.StatusForbidden)
 			return
 		}
@@ -171,13 +173,21 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, auth.SafeRedirectURL(relayState.ReturnToURL), http.StatusFound)
 
 	case "/logout":
+		encodedResp := r.FormValue("SAMLResponse")
+
+		{
+			if raw, err := base64.StdEncoding.DecodeString(encodedResp); err == nil {
+				traceLog(fmt.Sprintf("LogoutResponse: %s", p.ConfigID().ID), string(raw))
+			}
+		}
+
 		// TODO(sqs): Fully validate the LogoutResponse here (i.e., also validate that the document
 		// is a valid LogoutResponse). It is possible that this request is being spoofed, but it
 		// doesn't let an attacker do very much (just log a user out and redirect).
 		//
 		// 🚨 SECURITY: If this logout handler starts to do anything more advanced, it probably must
 		// validate the LogoutResponse to avoid being vulnerable to spoofing.
-		_, err := p.samlSP.ValidateEncodedResponse(r.FormValue("SAMLResponse"))
+		_, err := p.samlSP.ValidateEncodedResponse(encodedResp)
 		if err != nil && !strings.HasPrefix(err.Error(), "unable to unmarshal response:") {
 			log15.Error("Error validating SAML logout response.", "err", err)
 			http.Error(w, "Error validating SAML logout response.", http.StatusForbidden)
@@ -216,6 +226,11 @@ func buildAuthURLRedirect(p *provider, relayState relayState) (string, error) {
 	doc, err := p.samlSP.BuildAuthRequestDocument()
 	if err != nil {
 		return "", err
+	}
+	{
+		if data, err := doc.WriteToString(); err == nil {
+			traceLog(fmt.Sprintf("AuthnRequest: %s", p.ConfigID().ID), data)
+		}
 	}
 	return p.samlSP.BuildAuthURLRedirect(relayState.encode(), doc)
 }

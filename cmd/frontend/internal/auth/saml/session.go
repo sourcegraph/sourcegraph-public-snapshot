@@ -1,6 +1,7 @@
 package saml
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/beevik/etree"
@@ -25,6 +26,11 @@ func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err erro
 	doc, err := newLogoutRequest(p)
 	if err != nil {
 		return "", errors.WithMessage(err, "creating SAML LogoutRequest")
+	}
+	{
+		if data, err := doc.WriteToString(); err == nil {
+			traceLog(fmt.Sprintf("LogoutRequest: %s", p.ConfigID().ID), string(data))
+		}
 	}
 	return p.samlSP.BuildAuthURLRedirect("/", doc)
 }

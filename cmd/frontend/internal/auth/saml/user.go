@@ -2,6 +2,7 @@ package saml
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -20,6 +21,12 @@ type authnResponseInfo struct {
 }
 
 func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, error) {
+	{
+		if raw, err := base64.StdEncoding.DecodeString(encodedResp); err == nil {
+			traceLog(fmt.Sprintf("AuthnResponse: %s", p.ConfigID().ID), string(raw))
+		}
+	}
+
 	assertions, err := p.samlSP.RetrieveAssertionInfo(encodedResp)
 	if err != nil {
 		return nil, errors.WithMessage(err, "reading AuthnResponse assertions")

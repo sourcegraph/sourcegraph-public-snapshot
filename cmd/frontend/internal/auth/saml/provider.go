@@ -103,6 +103,11 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 	if err != nil {
 		return nil, err
 	}
+	{
+		if c.identityProviderMetadataURL != nil {
+			traceLog(fmt.Sprintf("Identity Provider metadata: %s", c.identityProviderMetadataURL), string(idpMetadata))
+		}
+	}
 
 	metadata, err := unmarshalEntityDescriptor(idpMetadata)
 	if err != nil {

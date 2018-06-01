@@ -26,6 +26,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * The repository revisions popover now shows the target commit's last-committed/authored date for branches and tags.
+* Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the server (or the `sourcegraph-frontend` pod in Data Center) causes all SAML requests and responses to be logged, which helps with debugging SAML.
 
 ## 2.8.0
 
