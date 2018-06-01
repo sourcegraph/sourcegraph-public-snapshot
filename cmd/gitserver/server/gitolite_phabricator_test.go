@@ -15,7 +15,7 @@ func TestServer_handleGet(t *testing.T) {
 			Blacklist: "isblaclist.*",
 			Prefix:    "mygitolite.host/",
 			Host:      "git@mygitolite.host",
-			PhabricatorMetadataCommand: `echo "${REPO^^}"`,
+			PhabricatorMetadataCommand: `echo ${REPO} | tr a-z A-Z`,
 		}},
 	}
 
