@@ -132,6 +132,8 @@
 // ../../../../../migrations/1528179233_drop_code_comments_tables.up.sql
 // ../../../../../migrations/1528277031_create_org_invitations_table.down.sql
 // ../../../../../migrations/1528277031_create_org_invitations_table.up.sql
+// ../../../../../migrations/1528395534_.down.sql
+// ../../../../../migrations/1528395534_.up.sql
 // DO NOT EDIT!
 
 package migrations
@@ -2839,6 +2841,46 @@ func _1528277031_create_org_invitations_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395534_DownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x01\x00\x00\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00")
+
+func _1528395534_DownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395534_DownSql,
+		"1528395534_.down.sql",
+	)
+}
+
+func _1528395534_DownSql() (*asset, error) {
+	bytes, err := _1528395534_DownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395534_.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1528395534_UpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x01\x00\x00\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00")
+
+func _1528395534_UpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395534_UpSql,
+		"1528395534_.up.sql",
+	)
+}
+
+func _1528395534_UpSql() (*asset, error) {
+	bytes, err := _1528395534_UpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395534_.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3023,6 +3065,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528179233_drop_code_comments_tables.up.sql":                 _1528179233_drop_code_comments_tablesUpSql,
 	"1528277031_create_org_invitations_table.down.sql":            _1528277031_create_org_invitations_tableDownSql,
 	"1528277031_create_org_invitations_table.up.sql":              _1528277031_create_org_invitations_tableUpSql,
+	"1528395534_.down.sql":                                        _1528395534_DownSql,
+	"1528395534_.up.sql":                                          _1528395534_UpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -3198,6 +3242,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528179233_drop_code_comments_tables.up.sql":                 &bintree{_1528179233_drop_code_comments_tablesUpSql, map[string]*bintree{}},
 	"1528277031_create_org_invitations_table.down.sql":            &bintree{_1528277031_create_org_invitations_tableDownSql, map[string]*bintree{}},
 	"1528277031_create_org_invitations_table.up.sql":              &bintree{_1528277031_create_org_invitations_tableUpSql, map[string]*bintree{}},
+	"1528395534_.down.sql":                                        &bintree{_1528395534_DownSql, map[string]*bintree{}},
+	"1528395534_.up.sql":                                          &bintree{_1528395534_UpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
