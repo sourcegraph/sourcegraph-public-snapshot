@@ -83,6 +83,11 @@ required = [
   name = "github.com/crewjam/saml"
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/russellhaering/gosaml2"
+  source = "github.com/sourcegraph/gosaml2"
+
+[[constraint]]
   name = "github.com/davecgh/go-spew"
   version = "1.1.0"
 

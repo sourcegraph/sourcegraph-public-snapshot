@@ -734,14 +734,15 @@
   revision = "8b1c2da0d56deffdbb9e48d4414b4e674bd8083e"
 
 [[projects]]
+  branch = "master"
   name = "github.com/russellhaering/gosaml2"
   packages = [
     ".",
     "types",
     "uuid"
   ]
-  revision = "4f381189230874b6542a39d68f3f89dfd66f969d"
-  version = "v0.3.1"
+  revision = "b304b7e0137405a6064ca2559fa6d2fc0abb9617"
+  source = "github.com/sourcegraph/gosaml2"
 
 [[projects]]
   branch = "master"
@@ -1395,6 +1396,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a4f69c5a55b4174f8b9f1c41f6f2ef32f9fe970994cfb81cc084863e927c9ff9"
+  inputs-digest = "231d2381d590c57fba01fddef56355036ff391b1bde468072e7e745acb10689d"
   solver-name = "gps-cdcl"
   solver-version = 1

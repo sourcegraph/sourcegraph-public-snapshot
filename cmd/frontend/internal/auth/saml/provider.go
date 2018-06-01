@@ -152,7 +152,6 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 		sp.SignAuthnRequests = pc.SignRequests == nil || *pc.SignRequests
 	} else {
 		// If the SP private key isn't specified, then the IdP must not care to validate.
-		sp.SPKeyStore = dsig.RandomKeyStoreForTest()
 		if pc.SignRequests != nil && *pc.SignRequests {
 			return nil, errors.New("signRequests is true for SAML Service Provider but no private key and cert are given")
 		}

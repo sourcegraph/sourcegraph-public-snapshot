@@ -68,86 +68,74 @@ type RequestedAuthnContext struct {
 }
 
 func (sp *SAMLServiceProvider) Metadata() (*types.EntityDescriptor, error) {
-	signingCertBytes, err := sp.GetSigningCertBytes()
-	if err != nil {
-		return nil, err
-	}
-	encryptionCertBytes, err := sp.GetEncryptionCertBytes()
-	if err != nil {
-		return nil, err
-	}
-	return &types.EntityDescriptor{
+	entityDescriptor := &types.EntityDescriptor{
 		ValidUntil: time.Now().UTC().Add(time.Hour * 24 * 7), // 7 days
 		EntityID:   sp.ServiceProviderIssuer,
 		SPSSODescriptor: &types.SPSSODescriptor{
 			AuthnRequestsSigned:        sp.SignAuthnRequests,
 			WantAssertionsSigned:       !sp.SkipSignatureValidation,
 			ProtocolSupportEnumeration: SAMLProtocolNamespace,
-			KeyDescriptors: []types.KeyDescriptor{
-				{
-					Use: "signing",
-					KeyInfo: dsigtypes.KeyInfo{
-						X509Data: dsigtypes.X509Data{
-							X509Certificates: []dsigtypes.X509Certificate{dsigtypes.X509Certificate{
-								Data: base64.StdEncoding.EncodeToString(signingCertBytes),
-							}},
-						},
-					},
-				},
-				{
-					Use: "encryption",
-					KeyInfo: dsigtypes.KeyInfo{
-						X509Data: dsigtypes.X509Data{
-							X509Certificates: []dsigtypes.X509Certificate{dsigtypes.X509Certificate{
-								Data: base64.StdEncoding.EncodeToString(encryptionCertBytes),
-							}},
-						},
-					},
-					EncryptionMethods: []types.EncryptionMethod{
-						{Algorithm: types.MethodAES128GCM},
-						{Algorithm: types.MethodAES128CBC},
-						{Algorithm: types.MethodAES256CBC},
-					},
-				},
-			},
 			AssertionConsumerServices: []types.IndexedEndpoint{{
 				Binding:  BindingHttpPost,
 				Location: sp.AssertionConsumerServiceURL,
 				Index:    1,
 			}},
 		},
-	}, nil
+	}
+
+	if signingKeyStore := sp.signingKeyStore(); signingKeyStore != nil {
+		_, signingCert, err := signingKeyStore.GetKeyPair()
+		if err != nil {
+			return nil, ErrSaml{Message: "no SP signing certificate", System: err}
+		}
+		if len(signingCert) < 1 {
+			return nil, ErrSaml{Message: "empty SP signing certificate"}
+		}
+		entityDescriptor.SPSSODescriptor.KeyDescriptors = append(entityDescriptor.SPSSODescriptor.KeyDescriptors, types.KeyDescriptor{
+			Use: "signing",
+			KeyInfo: dsigtypes.KeyInfo{
+				X509Data: dsigtypes.X509Data{
+					X509Certificates: []dsigtypes.X509Certificate{dsigtypes.X509Certificate{
+						Data: base64.StdEncoding.EncodeToString(signingCert),
+					}},
+				},
+			},
+		})
+	}
+	if sp.SPKeyStore != nil {
+		_, encryptionCert, err := sp.SPKeyStore.GetKeyPair()
+		if err != nil {
+			return nil, ErrSaml{Message: "no SP encryption certificate", System: err}
+		}
+		if len(encryptionCert) < 1 {
+			return nil, ErrSaml{Message: "empty SP encryption certificate"}
+		}
+		entityDescriptor.SPSSODescriptor.KeyDescriptors = append(entityDescriptor.SPSSODescriptor.KeyDescriptors, types.KeyDescriptor{
+			Use: "encryption",
+			KeyInfo: dsigtypes.KeyInfo{
+				X509Data: dsigtypes.X509Data{
+					X509Certificates: []dsigtypes.X509Certificate{dsigtypes.X509Certificate{
+						Data: base64.StdEncoding.EncodeToString(encryptionCert),
+					}},
+				},
+			},
+			EncryptionMethods: []types.EncryptionMethod{
+				{Algorithm: types.MethodAES128GCM},
+				{Algorithm: types.MethodAES128CBC},
+				{Algorithm: types.MethodAES256CBC},
+			},
+		})
+	}
+
+	return entityDescriptor, nil
 }
 
-func (sp *SAMLServiceProvider) GetEncryptionKey() dsig.X509KeyStore {
+func (sp *SAMLServiceProvider) signingKeyStore() dsig.X509KeyStore {
+	if sp.SPSigningKeyStore != nil {
+		return sp.SPSigningKeyStore
+	}
+	// Default is signing key is same as encryption key
 	return sp.SPKeyStore
-}
-
-func (sp *SAMLServiceProvider) GetSigningKey() dsig.X509KeyStore {
-	if sp.SPSigningKeyStore == nil {
-		return sp.GetEncryptionKey() // Default is signing key is same as encryption key
-	}
-	return sp.SPSigningKeyStore
-}
-
-func (sp *SAMLServiceProvider) GetEncryptionCertBytes() ([]byte, error) {
-	if _, encryptionCert, err := sp.GetEncryptionKey().GetKeyPair(); err != nil {
-		return nil, ErrSaml{Message: "no SP encryption certificate", System: err}
-	} else if len(encryptionCert) < 1 {
-		return nil, ErrSaml{Message: "empty SP encryption certificate"}
-	} else {
-		return encryptionCert, nil
-	}
-}
-
-func (sp *SAMLServiceProvider) GetSigningCertBytes() ([]byte, error) {
-	if _, signingCert, err := sp.GetSigningKey().GetKeyPair(); err != nil {
-		return nil, ErrSaml{Message: "no SP signing certificate", System: err}
-	} else if len(signingCert) < 1 {
-		return nil, ErrSaml{Message: "empty SP signing certificate"}
-	} else {
-		return signingCert, nil
-	}
 }
 
 func (sp *SAMLServiceProvider) SigningContext() *dsig.SigningContext {
@@ -162,7 +150,7 @@ func (sp *SAMLServiceProvider) SigningContext() *dsig.SigningContext {
 	sp.signingContextMu.Lock()
 	defer sp.signingContextMu.Unlock()
 
-	sp.signingContext = dsig.NewDefaultSigningContext(sp.GetSigningKey())
+	sp.signingContext = dsig.NewDefaultSigningContext(sp.signingKeyStore())
 	sp.signingContext.SetSignatureMethod(sp.SignAuthnRequestsAlgorithm)
 	if sp.SignAuthnRequestsCanonicalizer != nil {
 		sp.signingContext.Canonicalizer = sp.SignAuthnRequestsCanonicalizer
