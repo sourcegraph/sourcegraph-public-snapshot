@@ -26,7 +26,7 @@ export class FilterChip extends React.PureComponent<Props> {
                 onClick={this.onClick}
             >
                 {this.props.name || truncatedValue}
-                {this.props.count && (
+                {!!this.props.count && (
                     <span
                         className={`filter-chip__count ${
                             this.isScopeSelected(this.props.query, this.props.value)
