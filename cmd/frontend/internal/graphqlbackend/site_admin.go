@@ -36,7 +36,7 @@ func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	resetURL, err := backend.MakePasswordResetURL(ctx, user.ID, args.Email)
+	resetURL, err := backend.MakePasswordResetURL(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,12 +69,7 @@ func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, arg
 		return nil, err
 	}
 
-	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	resetURL, err := backend.MakePasswordResetURL(ctx, userID, email)
+	resetURL, err := backend.MakePasswordResetURL(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

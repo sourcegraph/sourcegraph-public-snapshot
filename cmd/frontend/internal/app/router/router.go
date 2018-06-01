@@ -26,7 +26,7 @@ const (
 	SiteInit          = "site-init"
 	VerifyEmail       = "verify-email"
 	ResetPasswordInit = "reset-password.init"
-	ResetPassword     = "reset-password"
+	ResetPasswordCode = "reset-password.code"
 
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
@@ -66,7 +66,7 @@ func newRouter() *mux.Router {
 	base.Path("/-/sign-in").Methods("POST").Name(SignIn)
 	base.Path("/-/sign-out").Methods("GET").Name(SignOut)
 	base.Path("/-/reset-password-init").Methods("POST").Name(ResetPasswordInit)
-	base.Path("/-/reset-password").Methods("POST").Name(ResetPassword)
+	base.Path("/-/reset-password-code").Methods("POST").Name(ResetPasswordCode)
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)

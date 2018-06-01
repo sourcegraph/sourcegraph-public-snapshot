@@ -79,6 +79,9 @@ interface SourcegraphContext {
     /** Whether access tokens are enabled. */
     accessTokensEnabled: boolean
 
+    /** Whether the reset-password flow is enabled. */
+    resetPasswordEnabled: boolean
+
     /**
      * Likely running within a Docker container under a Mac host OS.
      */

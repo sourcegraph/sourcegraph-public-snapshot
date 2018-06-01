@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
@@ -72,6 +73,8 @@ type JSContext struct {
 	AccessTokensEnabled bool `json:"accessTokensEnabled"`
 
 	AllowSignup bool `json:"allowSignup"`
+
+	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 }
@@ -156,6 +159,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		SearchTimeoutParameterEnabled: conf.SearchTimeoutParameterEnabled(),
 
 		AccessTokensEnabled: conf.AccessTokensEnabled(),
+
+		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 

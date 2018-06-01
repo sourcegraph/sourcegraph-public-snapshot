@@ -54,7 +54,7 @@ func NewHandler() http.Handler {
 	r.Get(router.SignOut).Handler(trace.TraceRoute(http.HandlerFunc(serveSignOut)))
 	r.Get(router.VerifyEmail).Handler(trace.TraceRoute(http.HandlerFunc(serveVerifyEmail)))
 	r.Get(router.ResetPasswordInit).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPasswordInit)))
-	r.Get(router.ResetPassword).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPassword)))
+	r.Get(router.ResetPasswordCode).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPasswordCode)))
 
 	r.Get(router.GDDORefs).Handler(trace.TraceRoute(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(trace.TraceRoute(errorutil.Handler(serveEditor)))

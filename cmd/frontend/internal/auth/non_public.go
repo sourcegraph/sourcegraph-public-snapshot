@@ -64,7 +64,7 @@ var (
 		router.SignIn:            {},
 		router.SignOut:           {},
 		router.ResetPasswordInit: {},
-		router.ResetPassword:     {},
+		router.ResetPasswordCode: {},
 	}
 	anonymousAccessibleUIRoutes = map[string]struct{}{
 		uirouter.RouteSignIn:        {},

@@ -8,6 +8,12 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// ResetPasswordEnabled reports whether the reset-password flow is enabled (per site config).
+func ResetPasswordEnabled() bool {
+	pc, multiple := getProviderConfig()
+	return pc != nil && !multiple
+}
+
 // getProviderConfig returns the builtin auth provider config. At most 1 can be specified in
 // site config; if there is more than 1, it returns multiple == true (which the caller should handle
 // by returning an error and refusing to proceed with auth).

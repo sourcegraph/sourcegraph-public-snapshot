@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { RouteProps } from 'react-router'
 import { APIConsole } from './api/APIConsole'
-import { PasswordResetPage } from './auth/PasswordResetPage'
+import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
 import { CommentsPage } from './comments/CommentsPage'
@@ -115,7 +115,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/password-reset',
-        component: PasswordResetPage,
+        component: ResetPasswordPage,
         exact: true,
         forceNarrowWidth: true,
     },
