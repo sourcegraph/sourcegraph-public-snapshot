@@ -22,15 +22,15 @@ import (
 func main() {
 	const dbname = "schemadoc-gen-temp"
 	_ = exec.Command("dropdb", dbname).Run()
-	if err := exec.Command("createdb", dbname).Run(); err != nil {
-		log.Fatal(err)
+	if out, err := exec.Command("createdb", dbname).CombinedOutput(); err != nil {
+		log.Fatal("createdb", out, err)
 	}
 	defer exec.Command("dropdb", dbname).Run()
 	db.ConnectToDB("dbname=" + dbname)
 
 	db, err := db.Open("dbname=" + dbname)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("db.Open", err)
 	}
 
 	// Query names of all public tables.
@@ -40,7 +40,7 @@ FROM information_schema.tables
 WHERE table_schema='public' AND table_type='BASE TABLE';
 	`)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("db.Query", err)
 	}
 	tables := []string{}
 	defer rows.Close()
@@ -48,21 +48,21 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		var name string
 		err := rows.Scan(&name)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("rows.Scan", err)
 		}
 		tables = append(tables, name)
 	}
 	if err = rows.Err(); err != nil {
-		log.Fatal(err)
+		log.Fatal("rows.Err", err)
 	}
 
 	docs := []string{}
 	for _, table := range tables {
 		// Get postgres "describe table" output.
 		cmd := exec.Command("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-		out, err := cmd.Output()
+		out, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("cmd.CombinedOutput", out, err)
 		}
 
 		lines := strings.Split(string(out), "\n")
