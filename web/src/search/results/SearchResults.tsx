@@ -188,7 +188,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             if (!(n >= 1)) {
                 n = defaultMaxSearchResults
             }
-            query = query.replace(/count:\d+/g, '').trim() + ` max:${n * 2}`
+            query = query.replace(/count:\d+/g, '').trim() + ` count:${n * 2}`
         } else {
             query = `${query} count:${defaultMaxSearchResults}`
         }
