@@ -16,6 +16,9 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+* The "invite user" site admin page was moved to a sub-page of the users page (`/site-admin/users/new`).
+* It is now possible for a site admin to create a new user without providing an email address.
+
 ### Fixed
 
 * Checks for whether a repo is cloned will no longer exhaust open file pools over time.

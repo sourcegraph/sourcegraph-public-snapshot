@@ -7,7 +7,7 @@ import { CopyableText } from '../components/CopyableText'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { createUserBySiteAdmin } from './backend'
+import { createUser } from './backend'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -18,7 +18,7 @@ export interface State {
     /**
      * The password reset URL generated for the new user account.
      */
-    newUserPasswordResetURL?: string
+    newUserPasswordResetURL?: string | null
 
     // Form
     username: string
@@ -51,7 +51,7 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                         })
                     ),
                     mergeMap(({ username, email }) =>
-                        createUserBySiteAdmin(username, email).pipe(
+                        createUser(username, email).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ loading: false, errorDescription: error.message })
@@ -88,10 +88,14 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                 {this.state.newUserPasswordResetURL ? (
                     <div className="alert alert-success">
                         <p>
-                            Account created for <strong>{this.state.username}</strong>. You must manually send this
-                            password reset link to the new user:
+                            Account created for <strong>{this.state.username}</strong>.
                         </p>
-                        <CopyableText text={this.state.newUserPasswordResetURL} size={40} />
+                        {this.state.newUserPasswordResetURL !== null && (
+                            <>
+                                <p>You must manually send this password reset link to the new user:</p>
+                                <CopyableText text={this.state.newUserPasswordResetURL} size={40} />
+                            </>
+                        )}
                         <button className="btn btn-primary mt-2" onClick={this.dismissAlert}>
                             Invite another user
                         </button>
@@ -112,7 +116,6 @@ export class SiteAdminInviteUserPage extends React.Component<Props, State> {
                             <label>Email</label>
                             <EmailInput
                                 onChange={this.onEmailFieldChange}
-                                required={true}
                                 value={this.state.email}
                                 disabled={this.state.loading}
                             />

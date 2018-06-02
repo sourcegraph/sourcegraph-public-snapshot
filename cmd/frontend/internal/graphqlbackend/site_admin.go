@@ -10,42 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 )
 
-type createUserResult struct {
-	resetPasswordURL string
-}
-
-func (r *createUserResult) ResetPasswordURL() string { return r.resetPasswordURL }
-
-func (*schemaResolver) CreateUserBySiteAdmin(ctx context.Context, args *struct {
-	Username string
-	Email    string
-}) (*createUserResult, error) {
-	// 🚨 SECURITY: Only site admins can create user accounts.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	// The new user will be created with a verified email address.
-	user, err := db.Users.Create(ctx, db.NewUser{
-		Email:           args.Email,
-		EmailIsVerified: true,
-		Username:        args.Username,
-		Password:        backend.MakeRandomHardToGuessPassword(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	resetURL, err := backend.MakePasswordResetURL(ctx, user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &createUserResult{
-		resetPasswordURL: globals.AppURL.ResolveReference(resetURL).String(),
-	}, nil
-}
-
 type randomizeUserPasswordResult struct {
 	resetPasswordURL string
 }

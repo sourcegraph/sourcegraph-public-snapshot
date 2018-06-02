@@ -624,11 +624,11 @@ export function deleteUser(user: GQL.ID): Observable<void> {
     )
 }
 
-export function createUserBySiteAdmin(username: string, email: string): Observable<GQL.ICreateUserBySiteAdminResult> {
+export function createUser(username: string, email: string | undefined): Observable<GQL.ICreateUserResult> {
     return mutateGraphQL(
         gql`
-            mutation CreateUserBySiteAdmin($username: String!, $email: String!) {
-                createUserBySiteAdmin(username: $username, email: $email) {
+            mutation CreateUser($username: String!, $email: String) {
+                createUser(username: $username, email: $email) {
                     resetPasswordURL
                 }
             }
@@ -636,10 +636,10 @@ export function createUserBySiteAdmin(username: string, email: string): Observab
         { username, email }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0) || !data.createUserBySiteAdmin) {
+            if (!data || (errors && errors.length > 0) || !data.createUser) {
                 throw createAggregateError(errors)
             }
-            return data.createUserBySiteAdmin
+            return data.createUser
         })
     )
 }

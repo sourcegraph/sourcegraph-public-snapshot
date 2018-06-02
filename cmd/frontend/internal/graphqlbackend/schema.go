@@ -214,6 +214,16 @@ type Mutation {
     # Creates a user account for a new user and generates a reset password link that the user
     # must visit to sign into the account. Only site admins may perform this mutation.
     createUserBySiteAdmin(username: String!, email: String!): CreateUserBySiteAdminResult!
+        @deprecated(reason: "use createUser instead")
+    # Creates a new user account.
+    #
+    # Only site admins may perform this mutation.
+    createUser(
+        # The new user's username.
+        username: String!
+        # The new user's optional email address. If given, it is marked as verified.
+        email: String
+    ): CreateUserResult!
     # Randomize a user's password so that they need to reset it before they can sign in again.
     # Only site admins may perform this mutation.
     randomizeUserPasswordBySiteAdmin(user: ID!): RandomizeUserPasswordBySiteAdminResult!
@@ -438,9 +448,20 @@ type CheckMirrorRepositoryConnectionResult {
 }
 
 # The result for Mutation.createUserBySiteAdmin.
+#
+# DEPRECATED: Use Mutation.createUser (and CreateUserResult) instead.
 type CreateUserBySiteAdminResult {
     # The reset password URL that the new user must visit to sign into their account.
     resetPasswordURL: String!
+}
+
+# The result for Mutation.createUser.
+type CreateUserResult {
+    # The new user.
+    user: User!
+    # The reset password URL that the new user must visit to sign into their account. If the builtin
+    # username-password authentication provider is not enabled, this field's value is null.
+    resetPasswordURL: String
 }
 
 # The result for Mutation.randomizeUserPasswordBySiteAdmin.
