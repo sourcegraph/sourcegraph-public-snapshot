@@ -238,15 +238,10 @@ func main() {
 
 	for _, path := range pkgs() {
 		coverageFile := path + "/coverage.txt"
-		stepOpts := []StepOpt{
-			Cmd("go test ./" + path + " -v -race -i"),
-			Cmd("go test ./" + path + " -v -race -coverprofile=" + coverageFile + " -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/..."),
-			ArtifactPaths(coverageFile),
-		}
-		if path == "cmd/frontend/internal/db" {
-			stepOpts = append([]StepOpt{Cmd("./dev/ci/reset-test-db.sh")}, stepOpts...)
-		}
-		pipeline.AddStep(":go:", stepOpts...)
+		pipeline.AddStep(":go:",
+			Cmd("go test ./"+path+" -v -race -i"),
+			Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/..."),
+			ArtifactPaths(coverageFile))
 	}
 
 	pipeline.AddWait()
