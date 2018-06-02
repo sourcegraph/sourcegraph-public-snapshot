@@ -225,8 +225,9 @@ type Mutation {
         email: String
     ): CreateUserResult!
     # Randomize a user's password so that they need to reset it before they can sign in again.
+    #
     # Only site admins may perform this mutation.
-    randomizeUserPasswordBySiteAdmin(user: ID!): RandomizeUserPasswordBySiteAdminResult!
+    randomizeUserPassword(user: ID!): RandomizeUserPasswordResult!
     # Adds an email address to the user's account. The email address will be marked as unverified until the user
     # has followed the email verification process.
     #
@@ -464,10 +465,11 @@ type CreateUserResult {
     resetPasswordURL: String
 }
 
-# The result for Mutation.randomizeUserPasswordBySiteAdmin.
-type RandomizeUserPasswordBySiteAdminResult {
-    # The reset password URL that the user must visit to sign into their account again.
-    resetPasswordURL: String!
+# The result for Mutation.randomizeUserPassword.
+type RandomizeUserPasswordResult {
+    # The reset password URL that the user must visit to sign into their account again. If the builtin
+    # username-password authentication provider is not enabled, this field's value is null.
+    resetPasswordURL: String
 }
 
 # Input for a user satisfaction (NPS) survey submission.

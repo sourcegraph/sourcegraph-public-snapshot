@@ -15,7 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
 import { asError } from '../util/errors'
-import { deleteUser, fetchAllUsers, randomizeUserPasswordBySiteAdmin, setUserIsSiteAdmin } from './backend'
+import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
 
 interface UserNodeProps {
     /**
@@ -37,7 +37,7 @@ interface UserNodeProps {
 interface UserNodeState {
     loading: boolean
     errorDescription?: string
-    resetPasswordURL?: string
+    resetPasswordURL?: string | null
 }
 
 class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
@@ -98,13 +98,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         <Link className="btn btn-sm btn-secondary" to={`${userURL(this.props.node.username)}/settings`}>
                             <GearIcon className="icon-inline" /> Settings
                         </Link>{' '}
-                        <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={this.randomizePassword}
-                            disabled={this.state.loading || !!this.state.resetPasswordURL}
-                        >
-                            Reset password
-                        </button>{' '}
+                        {window.context.resetPasswordEnabled && (
+                            <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={this.randomizePassword}
+                                disabled={this.state.loading || !!this.state.resetPasswordURL}
+                            >
+                                Reset password
+                            </button>
+                        )}{' '}
                         {this.props.node.id !== this.props.currentUser.id &&
                             (this.props.node.siteAdmin ? (
                                 <button
@@ -201,7 +203,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             loading: true,
         })
 
-        randomizeUserPasswordBySiteAdmin(this.props.node.id)
+        randomizeUserPassword(this.props.node.id)
             .toPromise()
             .then(
                 ({ resetPasswordURL }) => {

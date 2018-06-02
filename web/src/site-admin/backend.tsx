@@ -583,13 +583,11 @@ export function setUserIsSiteAdmin(userID: GQL.ID, siteAdmin: boolean): Observab
     )
 }
 
-export function randomizeUserPasswordBySiteAdmin(
-    user: GQL.ID
-): Observable<GQL.IRandomizeUserPasswordBySiteAdminResult> {
+export function randomizeUserPassword(user: GQL.ID): Observable<GQL.IRandomizeUserPasswordResult> {
     return mutateGraphQL(
         gql`
-            mutation RandomizeUserPasswordBySiteAdmin($user: ID!) {
-                randomizeUserPasswordBySiteAdmin(user: $user) {
+            mutation RandomizeUserPassword($user: ID!) {
+                randomizeUserPassword(user: $user) {
                     resetPasswordURL
                 }
             }
@@ -597,10 +595,10 @@ export function randomizeUserPasswordBySiteAdmin(
         { user }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0) || !data.randomizeUserPasswordBySiteAdmin) {
+            if (!data || (errors && errors.length > 0) || !data.randomizeUserPassword) {
                 throw createAggregateError(errors)
             }
-            return data.randomizeUserPasswordBySiteAdmin
+            return data.randomizeUserPassword
         })
     )
 }

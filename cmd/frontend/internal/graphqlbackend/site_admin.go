@@ -7,41 +7,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 )
-
-type randomizeUserPasswordResult struct {
-	resetPasswordURL string
-}
-
-func (r *randomizeUserPasswordResult) ResetPasswordURL() string { return r.resetPasswordURL }
-
-func (*schemaResolver) RandomizeUserPasswordBySiteAdmin(ctx context.Context, args *struct {
-	User graphql.ID
-}) (*randomizeUserPasswordResult, error) {
-	// 🚨 SECURITY: Only site admins can randomize user passwords.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	userID, err := unmarshalUserID(args.User)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := db.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
-		return nil, err
-	}
-
-	resetURL, err := backend.MakePasswordResetURL(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &randomizeUserPasswordResult{
-		resetPasswordURL: globals.AppURL.ResolveReference(resetURL).String(),
-	}, nil
-}
 
 func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
