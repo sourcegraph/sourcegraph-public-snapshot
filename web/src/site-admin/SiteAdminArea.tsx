@@ -9,8 +9,8 @@ import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminAuthenticationProvidersPage } from './SiteAdminAuthenticationProvidersPage'
 import { SiteAdminCodeIntelligencePage } from './SiteAdminCodeIntelligencePage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
+import { SiteAdminCreateUserPage } from './SiteAdminCreateUserPage'
 import { SiteAdminExternalAccountsPage } from './SiteAdminExternalAccountsPage'
-import { SiteAdminInviteUserPage } from './SiteAdminInviteUserPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminPingsPage } from './SiteAdminPingsPage'
@@ -123,8 +123,8 @@ export class SiteAdminArea extends React.Component<Props> {
                             )}
                         />
                         <Route
-                            path={`${this.props.match.url}/invite-user`}
-                            component={SiteAdminInviteUserPage}
+                            path={`${this.props.match.url}/users/new`}
+                            component={SiteAdminCreateUserPage}
                             exact={true}
                         />
                         <Route

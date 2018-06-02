@@ -283,8 +283,8 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                 <PageTitle title="Users - Admin" />
                 <h2>Users</h2>
                 <div>
-                    <Link to="/site-admin/invite-user" className="btn btn-primary">
-                        <AddIcon className="icon-inline" /> Invite user
+                    <Link to="/site-admin/users/new" className="btn btn-primary">
+                        <AddIcon className="icon-inline" /> Create user account
                     </Link>
                     &nbsp;
                     <Link to="/site-admin/configuration" className="btn btn-secondary">
