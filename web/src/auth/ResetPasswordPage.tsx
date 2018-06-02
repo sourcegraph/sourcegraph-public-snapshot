@@ -50,6 +50,7 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                         value={this.state.email}
                         type="email"
                         name="email"
+                        autoFocus={true}
                         spellCheck={false}
                         placeholder="Email"
                         required={true}
@@ -149,6 +150,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                         onChange={this.onPasswordFieldChange}
                         value={this.state.password}
                         required={true}
+                        autoFocus={true}
                         autoComplete="new-password"
                         disabled={this.state.submitOrError === 'loading'}
                     />
