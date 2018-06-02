@@ -16,11 +16,6 @@ export const canListAllRepositories = !window.context.sourcegraphDotComMode
 export const showDotComMarketing = window.context.sourcegraphDotComMode
 
 /**
- * Whether the application supports the user "forgot-password" flow.
- */
-export const userForgotPassword = window.context.emailEnabled
-
-/**
  * Whether the signup form should show terms and privacy policy links.
  */
 export const signupTerms = window.context.sourcegraphDotComMode

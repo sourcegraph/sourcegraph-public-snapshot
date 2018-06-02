@@ -5,7 +5,6 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
-import { userForgotPassword } from '../util/features'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface Props {
@@ -74,7 +73,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
                         Sign in
                     </button>
-                    {userForgotPassword && (
+                    {window.context.resetPasswordEnabled && (
                         <small className="form-text">
                             <Link to="/password-reset">Forgot password?</Link>
                         </small>
