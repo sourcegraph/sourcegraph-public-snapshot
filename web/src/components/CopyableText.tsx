@@ -29,16 +29,21 @@ export class CopyableText extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className={`copyable-text form-inline ${this.props.className || ''}`}>
-                <input
-                    className="form-control mb-2 mr-sm-2"
-                    value={this.props.text}
-                    size={this.props.size}
-                    readOnly={true}
-                    onClick={this.onClickInput}
-                />
-                <button className="btn btn-primary mb-2" onClick={this.onClickButton} disabled={this.state.copied}>
-                    <Copy className="icon-inline" /> {this.state.copied ? 'Copied' : 'Copy'}
-                </button>
+                <div className="input-group">
+                    <input
+                        type="text"
+                        className="copyable-text__input form-control"
+                        value={this.props.text}
+                        size={this.props.size}
+                        readOnly={true}
+                        onClick={this.onClickInput}
+                    />
+                    <div className="input-group-append">
+                        <button className="btn btn-secondary" onClick={this.onClickButton} disabled={this.state.copied}>
+                            <Copy className="icon-inline" /> {this.state.copied ? 'Copied' : 'Copy'}
+                        </button>
+                    </div>
+                </div>
             </div>
         )
     }
