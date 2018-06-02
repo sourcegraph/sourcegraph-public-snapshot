@@ -365,10 +365,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                     )
                                 })()
                             )}
-                            <p className="form-text">
+                            <p className="form-text text-muted">
                                 <small>Source: {formatEnvVar(this.state.site.configuration.source)}</small>
                             </p>
-                            <p className="form-text">
+                            <p className="form-text text-muted">
                                 <small>
                                     Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
                                     more information, see the{' '}

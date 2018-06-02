@@ -94,8 +94,9 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         <p className="form-text text-danger">{upperFirst(this.state.error.message)}</p>
                     )}
                     <div className="form-group">
-                        <label>Organization name</label>
+                        <label htmlFor="new-org-page__form-name">Organization name</label>
                         <input
+                            id="new-org-page__form-name"
                             type="text"
                             className="form-control"
                             placeholder="acme-corp"
@@ -107,16 +108,18 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                             value={this.state.name}
                             onChange={this.onNameChange}
                             disabled={this.state.loading}
+                            aria-describedby="new-org-page__form-name-help"
                         />
-                        <small className="form-text">
+                        <small id="new-org-page__form-name-help" className="form-text text-muted">
                             An organization name consists of letters, numbers, hyphens (-) and may not begin or end with
                             a hyphen
                         </small>
                     </div>
 
                     <div className="form-group">
-                        <label>Display name</label>
+                        <label htmlFor="new-org-page__form-display-name">Display name</label>
                         <input
+                            id="new-org-page__form-display-name"
                             type="text"
                             className="form-control"
                             placeholder="ACME Corporation"

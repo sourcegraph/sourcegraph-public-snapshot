@@ -75,8 +75,8 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             icon={UserIcon}
                             actions={
                                 <>
-                                    <Link to="/site-admin/invite-user" className="btn btn-primary btn-sm">
-                                        <AddIcon className="icon-inline" /> Invite user
+                                    <Link to="/site-admin/users/new" className="btn btn-primary btn-sm">
+                                        <AddIcon className="icon-inline" /> Create user account
                                     </Link>
                                     <Link to="/site-admin/configuration" className="btn btn-secondary btn-sm">
                                         <GearIcon className="icon-inline" /> Configure SSO

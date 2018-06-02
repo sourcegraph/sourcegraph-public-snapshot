@@ -74,7 +74,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                         Sign in
                     </button>
                     {window.context.resetPasswordEnabled && (
-                        <small className="form-text">
+                        <small className="form-text text-muted">
                             <Link to="/password-reset">Forgot password?</Link>
                         </small>
                     )}

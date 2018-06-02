@@ -56,12 +56,6 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
                         isLightTheme={this.props.isLightTheme}
                     />
                 )}
-                <small className="form-text">
-                    Documentation:{' '}
-                    <a target="_blank" href="https://about.sourcegraph.com/docs/server/config/search-scopes">
-                        Customizing search scopes
-                    </a>
-                </small>
             </div>
         )
     }

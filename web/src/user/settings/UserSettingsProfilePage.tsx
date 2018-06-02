@@ -174,8 +174,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     !isErrorLike(this.state.userOrError) && (
                         <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                             <div className="form-group">
-                                <label>Username</label>
+                                <label htmlFor="user-settings-profile-page__form-username">Username</label>
                                 <input
+                                    id="user-settings-profile-page__form-username"
                                     type="text"
                                     className="form-control"
                                     value={
@@ -189,15 +190,20 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                     disabled={this.state.loading}
                                     spellCheck={false}
                                     placeholder="Username"
+                                    aria-describedby="user-settings-profile-page__form-username-help"
                                 />
-                                <small className="form-text">
+                                <small
+                                    id="user-settings-profile-page__form-username-help"
+                                    className="form-text text-muted"
+                                >
                                     A username consists of letters, numbers, hyphens (-) and may not begin or end with a
                                     hyphen
                                 </small>
                             </div>
                             <div className="form-group">
-                                <label>Display name (optional)</label>
+                                <label htmlFor="user-settings-profile-page__form-display-name">Display name</label>
                                 <input
+                                    id="user-settings-profile-page__form-display-name"
                                     type="text"
                                     className="form-control"
                                     value={
@@ -213,8 +219,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             </div>
                             <div className="user-settings-profile-page__avatar-row">
                                 <div className="form-group user-settings-profile-page__field-column">
-                                    <label>Avatar URL (optional)</label>
+                                    <label htmlFor="user-settings-profile-page__form-avatar-url">Avatar URL</label>
                                     <input
+                                        id="user-settings-profile-page__form-avatar-url"
                                         type="url"
                                         className="form-control"
                                         value={

@@ -96,7 +96,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                     </button>
                 </div>
                 {signupTerms && (
-                    <small className="form-text signup-form__terms">
+                    <small className="form-text text-muted">
                         By signing up, you agree to our{' '}
                         <a href="https://about.sourcegraph.com/terms" target="_blank">
                             Terms of Service

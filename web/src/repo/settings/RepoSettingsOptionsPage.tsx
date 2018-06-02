@@ -69,8 +69,9 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 <Form>
                     <div className="form-group">
-                        <label>Repository name</label>
+                        <label htmlFor="repo-settings-options-page__name">Repository name</label>
                         <input
+                            id="repo-settings-options-page__name"
                             type="text"
                             className="form-control"
                             readOnly={true}
@@ -80,8 +81,9 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             spellCheck={false}
                             autoCapitalize="off"
                             autoCorrect="off"
+                            aria-describedby="repo-settings-options-page__name-help"
                         />
-                        <small className="form-text">
+                        <small id="repo-settings-options-page__name-help" className="form-text text-muted">
                             This repository's name is set by its{' '}
                             {this.state.repo.viewerCanAdminister ? (
                                 <Link to="/site-admin/configuration">code host configuration</Link>

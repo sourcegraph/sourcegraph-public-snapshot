@@ -127,12 +127,6 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
                     history={this.props.history}
                     isLightTheme={this.props.isLightTheme}
                 />
-                <small className="form-text">
-                    Documentation:{' '}
-                    <a target="_blank" href="https://about.sourcegraph.com/docs/server/config/search-scopes">
-                        Customizing search scopes for org members
-                    </a>
-                </small>
             </div>
         )
     }
