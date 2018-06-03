@@ -12,7 +12,7 @@ func InitTest(nameSuffix string) {
 	dbname := "sourcegraph-test-" + nameSuffix
 	_ = exec.Command("dropdb", dbname).Run()
 	if err := exec.Command("createdb", dbname).Run(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("createdb failed: %v", err)
 	}
 	ConnectToDB("dbname=" + dbname)
 }
