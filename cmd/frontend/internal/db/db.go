@@ -226,6 +226,14 @@ func doMigrate(m *migrate.Migrate) error {
 	if err == nil || err == migrate.ErrNoChange {
 		return nil
 	}
+
+	srcErr, dbErr := m.Close()
+	if srcErr != nil {
+		return srcErr
+	} else if dbErr != nil {
+		return dbErr
+	}
+
 	if os.IsNotExist(err) {
 		// This should only happen if the DB is ahead of the migrations available
 		version, dirty, verr := m.Version()

@@ -80,5 +80,12 @@ func testContext() context.Context {
 		log.Fatal(err)
 	}
 
+	srcErr, dbErr := m.Close()
+	if srcErr != nil {
+		log.Fatalf("srcErr: %v", srcErr)
+	} else if dbErr != nil {
+		log.Fatalf("dbErr: %v", dbErr)
+	}
+
 	return ctx
 }
