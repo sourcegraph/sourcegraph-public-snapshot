@@ -213,7 +213,7 @@ interface ResetPasswordPageProps extends RouteComponentProps<{}> {
  */
 export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProps> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('ResetPassword')
+        eventLogger.logViewEvent('ResetPassword', {}, false)
     }
 
     public render(): JSX.Element | null {
