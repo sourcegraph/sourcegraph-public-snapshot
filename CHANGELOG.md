@@ -25,6 +25,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Non-UTF8 encoded files (e.g. ISO-8859-1/Latin1, UTF16, etc) are now displayed as text properly rather than being detected as binary files.
 * Improved error message when lsp-proxy's initalize timeout occurs
 * Fixed compatibility issues and added [instructions for using Microsoft ADFS 2.1 and 3.0 for SAML authentication](https://about.sourcegraph.com/docs/config/authentication/saml-microsoft-adfs).
+* Fixed an issue where external accounts associated with deleted user accounts would still be returned by the GraphQL API. This caused the site admin external accounts page to fail to render in some cases.
 
 ### Added
 

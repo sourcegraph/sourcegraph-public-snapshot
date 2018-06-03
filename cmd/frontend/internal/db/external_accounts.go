@@ -9,6 +9,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // ExternalAccount represents a row in the `user_external_accounts` table. See the GraphQL API's
@@ -250,6 +251,14 @@ func (s *userExternalAccounts) Count(ctx context.Context, opt ExternalAccountsLi
 // TmpMigrate implements the migration described in bg.MigrateExternalAccounts (which is the only
 // func that should call this).
 func (*userExternalAccounts) TmpMigrate(ctx context.Context, serviceType string) error {
+	// TEMP: Delete all external accounts associated with deleted users. Due to a bug in this
+	// migration code, it was possible for deleted users to be associated with non-deleted external
+	// accounts. This caused unexpected behavior in the UI (although did not pose a security
+	// threat). So, run this cleanup task upon each server startup.
+	if err := (userExternalAccounts{}).deleteForDeletedUsers(ctx); err != nil {
+		log15.Warn("Unable to clean up external user accounts.", "err", err)
+	}
+
 	const needsMigrationSentinel = "migration_in_progress"
 
 	// Avoid running UPDATE (which takes a lock) if it's not needed. The UPDATE only needs to run
@@ -272,6 +281,11 @@ func (*userExternalAccounts) TmpMigrate(ctx context.Context, serviceType string)
 			_, err = globalDB.ExecContext(ctx, `UPDATE user_external_accounts SET service_type='override', service_id='' WHERE service_type=$1 AND service_id='override'`, needsMigrationSentinel)
 		}
 	}
+	return err
+}
+
+func (userExternalAccounts) deleteForDeletedUsers(ctx context.Context) error {
+	_, err := globalDB.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now() FROM users WHERE user_external_accounts.user_id=users.id AND users.deleted_at IS NOT NULL AND user_external_accounts.deleted_at IS NULL`)
 	return err
 }
 
