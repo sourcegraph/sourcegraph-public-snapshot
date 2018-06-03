@@ -14,6 +14,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Search results are now sorted by repository and file name.
 * More easily accessible "Show more" button at the top of the search results page.
 * Results from user satisfaction surveys are now always hosted locally and visible to admins. The `"experimentalFeatures": { "hostSurveysLocally" }` config option has been deprecated.
+* If the OpenID Connect authentication provider reports that a user's email address is not verified, the authentication attempt will fail.
 
 ### Fixed
 

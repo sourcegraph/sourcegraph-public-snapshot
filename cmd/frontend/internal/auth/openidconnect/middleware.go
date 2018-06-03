@@ -29,6 +29,7 @@ type userClaims struct {
 	FamilyName        string `json:"family_name"`
 	PreferredUsername string `json:"preferred_username"`
 	Picture           string `json:"picture"`
+	EmailVerified     *bool  `json:"email_verified"`
 }
 
 // Middleware is middleware for OpenID Connect (OIDC) authentication, adding endpoints under the

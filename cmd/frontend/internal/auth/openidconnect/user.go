@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	oidc "github.com/coreos/go-oidc"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -14,6 +15,15 @@ import (
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims) (_ *actor.Actor, safeErrMsg string, err error) {
+	if userInfo.Email == "" {
+		return nil, "Only users with an email address may authenticate to Sourcegraph.", errors.New("no email address in claims")
+	}
+	if unverifiedEmail := claims.EmailVerified != nil && !*claims.EmailVerified; unverifiedEmail {
+		// If the OP explicitly reports `"email_verified": false`, then reject the authentication
+		// attempt. If undefined or true, then it will be allowed.
+		return nil, fmt.Sprintf("Only users with verified email addresses may authenticate to Sourcegraph. The email address %q is not verified on the external authentication provider.", userInfo.Email), fmt.Errorf("refusing unverified user email address %q", userInfo.Email)
+	}
+
 	pi, err := p.getCachedInfoAndError()
 	if err != nil {
 		return nil, "", err
