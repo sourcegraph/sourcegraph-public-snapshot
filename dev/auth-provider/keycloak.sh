@@ -4,6 +4,11 @@
 
 set -e
 
+if [ -n "$NO_KEYCLOAK" ]; then
+    echo Not using Keycloak. Keycloak authentication providers will not work.
+    exit 0
+fi
+
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")" # cd to dev/auth-provider dir
 
