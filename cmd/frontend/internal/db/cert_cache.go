@@ -16,6 +16,7 @@ func (c *certCache) Get(ctx context.Context, key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	if !rows.Next() {
 		return nil, autocert.ErrCacheMiss
 	}
