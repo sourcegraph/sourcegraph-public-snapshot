@@ -28,14 +28,13 @@ parts will be automated. You will need to complete four main steps.
 1.  Update `../cmd/frontend/internal/app/pkg/updatecheck/handler.go`'s `ProductVersion` to the
     semver version string of the new version (**DO NOT update `latestReleaseServerBuild` yet**).
 1.  Commit and `git push` this change directly to the `master` branch.
-1.  `git push origin origin/master:docker-images/server`
 
 #### (3) Test the Sourcegraph Server Docker image
 
-1.  Wait for the build to complete [buildkite docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver)
+1.  Wait for the build to complete [buildkite master](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=master)
 1.  `gcloud auth configure-docker && docker pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
     You can find it on the build output CI page in the last Docker build step, it should look something like
-    `08248_2017-12-14_8dad5ab`. Important: The version number must come from the [docker-images/server](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=docker-images%2Fserver) branch, not `master`. Make sure you are on the right buildkite page.
+    `08248_2017-12-14_8dad5ab`.
 1.  Run through the [https://about.sourcegraph.com/docs/server/], but using the
     image you just pulled instead of the dockerhub image. Do this for both the
     old and new instructions, to ensure we don't make any bad backwards
