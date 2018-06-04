@@ -33,7 +33,6 @@ func (r *Repository) Archive(ctx context.Context, commitID api.CommitID) (zipDat
 	// best overall on fast network links, but this has not been tuned
 	// thoroughly.
 	cmd := r.command("git", "archive", "--format=zip", "-0", string(commitID))
-	cmd.EnsureRevision = string(commitID)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, stderr)

@@ -37,8 +37,13 @@ func (repos) RemoteVCS(ctx context.Context, repo *types.Repo) (vcs.Repository, e
 	if Mocks.Repos.VCS != nil {
 		return Mocks.Repos.VCS(repo.URI)
 	}
-	gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
-	return (repos{}).VCS(gitserverRepo), err
+	return gitcmd.OpenLazy(repo.URI, func() (string, error) {
+		gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
+		if err != nil {
+			return "", err
+		}
+		return gitserverRepo.URL, nil
+	}), nil
 }
 
 // CachedVCS returns a handle to the underlying Git repository on gitserver, without attempting to check that the

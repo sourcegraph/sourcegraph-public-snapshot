@@ -64,24 +64,39 @@ type Repository struct {
 	// conventionally a string like "github.com/gorilla/mux".
 	repoURI api.RepoURI
 
-	// remoteURL is the repository's Git remote URL.
-	//
-	// NOTE: Previously, the Git remote URL was derived from repoURI (by using the origin map). That
-	// is still supported for backcompat, but it is now preferred to explicitly provide the Git
-	// remote URL.
-	remoteURL string
+	// once protects runs of remoteURLFunc and writes to remoteURL.
+	once sync.Once
+
+	// remoteURLFunc will be run to set the remoteURL.
+	remoteURLFunc func() (string, error)
+
+	// remoteURL and remoteURLErr is the output of remoteURLFunc.
+	remoteURL    string
+	remoteURLErr error
 }
 
 func (r *Repository) String() string {
-	return fmt.Sprintf("git repo %s (remote: %s)", r.repoURI, r.remoteURL)
+	return fmt.Sprintf("git repo %s", r.repoURI)
 }
 
-// Open returns a handle to a repository on gitserver with the given identifier (repoURI) and
-// optional Git remote URL. The Git remote URL is only required if the gitserver doesn't already
-// contain a clone of the repository or if EnsureRevision on a command is set to a revision that
-// must be fetched from the remote.
+// Open returns a handle to a repository on gitserver with the given
+// identifier (repoURI) and optional Git remote URL. The Git remote URL is
+// only required if the gitserver doesn't already contain a clone of the
+// repository or if the revision must be fetched from the remote. This only
+// happens when calling ResolveRevision.
 func Open(repoURI api.RepoURI, remoteURL string) *Repository {
-	return &Repository{repoURI: repoURI, remoteURL: remoteURL}
+	return &Repository{repoURI: repoURI, remoteURLFunc: func() (string, error) {
+		return remoteURL, nil
+	}}
+}
+
+// OpenLazy returns a handle to a repository on gitserver with the given
+// identifier (repoURI) and optional Git remote URL function. The Git remote
+// URL is only required if the gitserver doesn't already contain a clone of
+// the repository or if the revision must be fetched from the remote. This
+// only happens when calling ResolveRevision.
+func OpenLazy(repoURI api.RepoURI, remoteURLFunc func() (string, error)) *Repository {
+	return &Repository{repoURI: repoURI, remoteURLFunc: remoteURLFunc}
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -97,7 +112,7 @@ func checkSpecArgSafety(spec string) error {
 // name must be 'git', otherwise it panics.
 func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 	cmd := gitserver.DefaultClient.Command(name, arg...)
-	cmd.Repo = gitserver.Repo{Name: r.repoURI, URL: r.remoteURL}
+	cmd.Repo = gitserver.Repo{Name: r.repoURI}
 	return cmd
 }
 
@@ -114,10 +129,6 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 	span.SetTag("Opt", fmt.Sprintf("%+v", opt))
 	defer span.Finish()
 
-	if opt == nil {
-		opt = &vcs.ResolveRevisionOptions{}
-	}
-
 	if err := checkSpecArgSafety(spec); err != nil {
 		return "", err
 	}
@@ -133,9 +144,58 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 	}
 
 	cmd := r.command("git", "rev-parse", spec)
-	if !opt.NoEnsureRevision {
-		cmd.EnsureRevision = string(spec)
+	commit, err := r.runRevParse(ctx, cmd, spec)
+	if err == nil {
+		return commit, nil
 	}
+
+	tryAgain := func(err error) bool {
+		// We need to try again with remote URL set so we can clone.
+		if vcs.IsRepoNotExist(err) {
+			return true
+		}
+
+		// We need to try again with the remote URL set so we can fetch.
+		if vcs.IsRevisionNotFound(err) {
+			// If we didn't find HEAD, then the repo is empty.
+			if spec == "HEAD" {
+				return false
+			}
+
+			// We can also disable enqueuing an update.
+			if opt != nil && opt.NoEnsureRevision {
+				return false
+			}
+
+			return true
+		}
+
+		return false
+	}
+
+	if !tryAgain(err) {
+		return "", err
+	}
+	doEnsureRevision := vcs.IsRevisionNotFound(err)
+
+	r.once.Do(func() {
+		r.remoteURL, r.remoteURLErr = r.remoteURLFunc()
+	})
+	if r.remoteURLErr != nil {
+		return "", r.remoteURLErr
+	}
+
+	cmd = r.command("git", "rev-parse", spec)
+	cmd.Repo = gitserver.Repo{Name: r.repoURI, URL: r.remoteURL}
+	if doEnsureRevision {
+		cmd.EnsureRevision = spec
+	}
+	return r.runRevParse(ctx, cmd, spec)
+}
+
+// runRevParse sends the git rev-parse command to gitserver. It interprets
+// missing revision responses and converts them into RevisionNotFoundError.
+func (r *Repository) runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
@@ -877,7 +937,6 @@ func (r *Repository) readFileBytes(ctx context.Context, commit api.CommitID, nam
 	r.ensureAbsCommit(commit)
 
 	cmd := r.command("git", "show", string(commit)+":"+name)
-	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) || bytes.Contains(out, []byte("does not exist")) {
@@ -1050,7 +1109,6 @@ func (r *Repository) lsTreeUncached(ctx context.Context, commit api.CommitID, pa
 		args = append(args, "--", filepath.ToSlash(path))
 	}
 	cmd := r.command("git", args...)
-	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {

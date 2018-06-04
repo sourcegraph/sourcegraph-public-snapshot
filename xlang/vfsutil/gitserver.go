@@ -65,7 +65,6 @@ func gitserverFetch(ctx context.Context, repo api.RepoURI, commit api.CommitID) 
 	// thoroughly.
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", string(commit))
 	cmd.Repo = gitserver.Repo{Name: repo}
-	cmd.EnsureRevision = string(commit)
 	r, err = gitserver.StdoutReader(ctx, cmd)
 	if err != nil {
 		return nil, err
