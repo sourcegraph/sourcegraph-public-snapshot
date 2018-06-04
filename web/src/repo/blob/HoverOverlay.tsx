@@ -84,7 +84,7 @@ interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<Vie
     showCloseButton: boolean
 
     /** Called when the close button is clicked */
-    onCloseButtonClick: () => void
+    onCloseButtonClick: (event: React.MouseEvent<HTMLElement>) => void
 }
 
 const onFindImplementationsClick = () => eventLogger.log('FindImplementationsClicked')

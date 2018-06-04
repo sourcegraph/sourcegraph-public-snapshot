@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { BehaviorSubject, concat, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { concat, fromEvent, merge, Observable, ObservableInput, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -27,6 +27,18 @@ import { parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
 import { convertNode, findElementWithOffset, getTableDataCell, getTargetLineAndOffset } from './tooltips'
+
+/**
+ * Returns the token `<span>` element in a `<code>` element for a given zero-based position.
+ */
+const getTokenAtPosition = (codeElement: HTMLElement, position: Position): HTMLElement | undefined => {
+    const table = codeElement.firstElementChild as HTMLTableElement
+    const row = table.rows.item(position.line)
+    if (!row) {
+        return undefined
+    }
+    return findElementWithOffset(row, position.character + 1)
+}
 
 /**
  * `padding-top` of the blob element in px.
@@ -154,16 +166,14 @@ interface BlobState {
     mouseIsMoving: boolean
 }
 
-const isValidHover = (hoverOrError?: typeof LOADING | Hover | null | ErrorLike): boolean =>
-    !!hoverOrError && isHover(hoverOrError) && !isEmptyHover(hoverOrError)
-
 /**
  * Returns true if the HoverOverlay component should be rendered according to the given state.
  * The HoverOverlay is rendered when there is either a non-empty hover result or a non-empty definition result.
  */
 const shouldRenderHover = (state: BlobState): boolean =>
     !(!state.hoverOverlayIsFixed && state.mouseIsMoving) &&
-    (isValidHover(state.hoverOrError) || isJumpURL(state.definitionURLOrError))
+    ((state.hoverOrError && !(isHover(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
+        isJumpURL(state.definitionURLOrError))
 
 /** The time in ms after which to show a loader if the result has not returned yet */
 const LOADER_DELAY = 100
@@ -187,10 +197,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     private hoverOverlayElements = new Subject<HTMLElement | null>()
     private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
 
-    /** Emits whenever the ref callback for the blob element is called */
-    private highlightedElements = new BehaviorSubject<HTMLElement | null>(null)
-    private nextHighlightedElement = (element: HTMLElement | null) => this.highlightedElements.next(element)
-
     /** Emits whenever something is hovered in the code */
     private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
     private nextCodeMouseOver = (event: React.MouseEvent<HTMLElement>) => this.codeMouseOvers.next(event)
@@ -207,26 +213,11 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => this.goToDefinitionClicks.next(event)
 
     /** Emits when the close button was clicked */
-    private closeButtonClicks = new Subject<void>()
-    private nextCloseButtonClick = () => this.closeButtonClicks.next()
-
-    /** Emits when a new hoverOrError is set */
-    private hoverOrErrorUpdates = new Subject<{
-        hoverOrError: typeof LOADING | Hover | null | ErrorLike
-        target: HTMLElement
-    }>()
-    private nextHoverOrErrorUpdate = (hoverOrError: typeof LOADING | Hover | null | ErrorLike, target: HTMLElement) =>
-        this.hoverOrErrorUpdates.next({ hoverOrError, target })
+    private closeButtonClicks = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextCloseButtonClick = (event: React.MouseEvent<HTMLElement>) => this.closeButtonClicks.next(event)
 
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
-
-    /** logs a hover event, if the hover is valid */
-    private logHover(hoverOrError?: typeof LOADING | Hover | null | ErrorLike): void {
-        if (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)) {
-            eventLogger.log('SymbolHovered')
-        }
-    }
 
     constructor(props: BlobProps) {
         super(props)
@@ -438,7 +429,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
          * Emits with the position at which a new tooltip is to be shown from a mouseover, click or location change.
          * Emits `undefined` when a target was hovered/clicked that does not correspond to a position (e.g. after the end of the line).
          */
-        const filteredTargetPositions: Observable<{ position: Position | undefined; target: HTMLElement }> = merge(
+        const filteredTargetPositions: Observable<{ position?: Position; target: HTMLElement }> = merge(
             merge(
                 // When the location changes and and includes a line/column pair, use that target
                 targetsFromLocationHash,
@@ -448,75 +439,85 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 codeClickTargets.pipe(filter(() => this.state.hoverOverlayIsFixed))
             ).pipe(
                 // Find out the position that was hovered over
-                map(({ target, codeElement }) => ({
-                    target,
-                    position: getTargetLineAndOffset(target, codeElement, false),
-                })),
-                map(({ target, position }) => ({
-                    target,
-                    position: position && { line: position.line, character: position.character },
-                }))
+                map(({ target, codeElement }) => {
+                    const hoveredToken = getTargetLineAndOffset(target, codeElement, false)
+                    return {
+                        target,
+                        position: hoveredToken && { line: hoveredToken.line, character: hoveredToken.character },
+                    }
+                }),
+                distinctUntilChanged((a, b) => isEqual(a.position, b.position))
             )
         ).pipe(share())
 
         // HOVER FETCH
-        // On every new hover position, fetch new hover contents and update the state
-        this.subscriptions.add(
-            filteredTargetPositions
-                .pipe(
-                    switchMap(({ target, position }) => {
-                        if (!position) {
-                            return of({
-                                target,
-                                position,
-                                hoverOrError: undefined,
-                            })
+        // On every new hover position, fetch new hover contents
+        const hovers = filteredTargetPositions.pipe(
+            switchMap(({ target, position }): ObservableInput<{
+                target: HTMLElement
+                position?: Position
+                hoverOrError?: Hover | null | ErrorLike | typeof LOADING
+            }> => {
+                if (!position) {
+                    return [{ target, position, hoverOrError: undefined }]
+                }
+                // Fetch the hover for that position
+                const hoverFetch = fetchHover({
+                    repoPath: this.props.repoPath,
+                    commitID: this.props.commitID,
+                    filePath: this.props.filePath,
+                    rev: this.props.rev,
+                    position,
+                }).pipe(
+                    catchError(error => {
+                        if (error && error.code === EMODENOTFOUND) {
+                            return [undefined]
                         }
-                        // Fetch the hover for that position
-                        const hoverFetch = fetchHover({
-                            repoPath: this.props.repoPath,
-                            commitID: this.props.commitID,
-                            filePath: this.props.filePath,
-                            rev: this.props.rev,
-                            position,
-                        }).pipe(
-                            catchError(error => {
-                                if (error && error.code === EMODENOTFOUND) {
-                                    return [undefined]
-                                }
-                                return [asError(error)]
-                            }),
-                            share()
-                        )
-                        // Show a loader if it hasn't returned after 100ms
-                        return merge(hoverFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch))).pipe(
-                            map(hoverOrError => ({
-                                target,
-                                position,
-                                hoverOrError,
-                            }))
-                        )
-                    })
+                        return [asError(error)]
+                    }),
+                    share()
                 )
-                .subscribe(({ target, position, hoverOrError }) => {
-                    this.setState(state => ({
-                        hoverOrError,
-                        // Reset the hover position, it's gonna be repositioned after the hover was rendered
-                        hoverOverlayPosition: undefined,
-                    }))
-                    this.nextHoverOrErrorUpdate(hoverOrError || null, target)
-                })
+                // Show a loader if it hasn't returned after 100ms
+                return merge(hoverFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch))).pipe(
+                    map(hoverOrError => ({ target, position, hoverOrError }))
+                )
+            }),
+            share()
         )
-
-        // Log hover telemetry when a new hover appears
+        // Update the state
         this.subscriptions.add(
-            this.hoverOrErrorUpdates
-                .pipe(
-                    map(({ hoverOrError }) => hoverOrError),
-                    withLatestFrom(filteredTargetPositions),
-                    distinctUntilChanged(([, posA], [, posB]) => isEqual(posA, posB))
-                )
-                .subscribe(([hoverOrError]) => this.logHover(hoverOrError))
+            hovers.subscribe(({ target, position, hoverOrError }) => {
+                this.setState(state => ({
+                    hoverOrError,
+                    // Reset the hover position, it's gonna be repositioned after the hover was rendered
+                    hoverOverlayPosition: undefined,
+                    // After the hover is fetched, if the overlay was pinned, unpin it if the hover is empty
+                    hoverOverlayIsFixed: state.hoverOverlayIsFixed
+                        ? !!hoverOrError || !isHover(hoverOrError) || !isEmptyHover(hoverOrError)
+                        : false,
+                }))
+                // Telemetry
+                if (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)) {
+                    eventLogger.log('SymbolHovered')
+                }
+            })
+        )
+        // Highlight the hover range returned by the language server
+        this.subscriptions.add(
+            hovers.pipe(withLatestFrom(this.codeElements)).subscribe(([{ hoverOrError }, codeElement]) => {
+                const currentHighlighted = codeElement!.querySelector('.selection-highlight')
+                if (currentHighlighted) {
+                    currentHighlighted.classList.remove('selection-highlight')
+                }
+                if (!isHover(hoverOrError) || !hoverOrError.range) {
+                    return
+                }
+                const token = getTokenAtPosition(codeElement!, hoverOrError.range.start)
+                if (!token) {
+                    return
+                }
+                token.classList.add('selection-highlight')
+            })
         )
 
         // GO TO DEFINITION FETCH
@@ -563,11 +564,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         // On every click on a go to definition button, reveal loader/error/not found UI
         this.subscriptions.add(
             this.goToDefinitionClicks.subscribe(event => {
-                this.setState({
-                    // This causes an error/loader/not found UI to get shown if needed
-                    // Remember if ctrl/cmd was pressed to determine whether the definition should be opened in a new tab once loaded
-                    clickedGoToDefinition: event.ctrlKey || event.metaKey ? 'new-tab' : 'same-tab',
-                })
+                // Telemetry
+                eventLogger.log('GoToDefClicked')
+
+                // This causes an error/loader/not found UI to get shown if needed
+                // Remember if ctrl/cmd was pressed to determine whether the definition should be opened in a new tab once loaded
+                this.setState({ clickedGoToDefinition: event.ctrlKey || event.metaKey ? 'new-tab' : 'same-tab' })
+
                 // If we don't have a result yet, prevent default link behaviour (jump will occur dynamically once finished)
                 if (!isJumpURL(this.state.definitionURLOrError)) {
                     event.preventDefault()
@@ -595,23 +598,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
 
-        // After the hover is fetched, if the overlay was pinned, unpin it if the hover
-        // doesn't exist.
-        this.subscriptions.add(
-            this.hoverOrErrorUpdates.subscribe(({ hoverOrError }) => {
-                if (!this.state.hoverOverlayIsFixed) {
-                    return
-                }
-                this.setState({
-                    // If the hover is null or undefined, then unpin it no matter what
-                    hoverOverlayIsFixed: isValidHover(hoverOrError),
-                })
-            })
-        )
-
         // When the close button is clicked, unpin, hide and reset the hover
         this.subscriptions.add(
-            this.closeButtonClicks.subscribe(() => {
+            merge(
+                this.closeButtonClicks,
+                fromEvent<KeyboardEvent>(window, 'keydown').pipe(filter(event => event.key === 'Escape'))
+            ).subscribe(event => {
+                event.preventDefault()
                 this.setState({
                     hoverOverlayIsFixed: false,
                     hoverOverlayPosition: undefined,
@@ -630,9 +623,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             this.componentUpdates
                 .pipe(
                     map(props => {
-                        const pos = parseHash(props.location.hash)
-
-                        return { line: pos.line, character: pos.character }
+                        const position = parseHash(props.location.hash)
+                        return { line: position.line, character: position.character }
                     }),
                     distinctUntilChanged(),
                     withLatestFrom(this.codeElements.pipe(filter(isDefined))),
@@ -694,45 +686,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     }
                 })
         )
-
-        // Highlight tokens when hovered, clicked, or the URL is updated.
-        this.subscriptions.add(
-            this.hoverOrErrorUpdates
-                .pipe(distinctUntilChanged((a, b) => a.target === b.target), withLatestFrom(this.highlightedElements))
-                .subscribe(([{ hoverOrError, target }, highlightedElement]) => {
-                    if (this.state.hoverOverlayIsFixed) {
-                        return
-                    }
-                    if (highlightedElement && target !== highlightedElement) {
-                        highlightedElement.classList.remove('selection-highlight')
-                    }
-                    // Only highlight if this is a text node that has content and if the
-                    // token has a valid hover
-                    if (
-                        target.children.length ||
-                        !target.textContent ||
-                        !target.textContent.trim().length ||
-                        !isValidHover(hoverOrError)
-                    ) {
-                        return
-                    }
-                    target.classList.add('selection-highlight')
-                    this.nextHighlightedElement(target)
-                })
-        )
-
-        // Close tooltip when the user presses 'escape'.
-        this.subscriptions.add(
-            fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.keyCode === 27))
-                .subscribe(event => {
-                    event.preventDefault()
-                    this.closeButtonClicks.next()
-                })
-        )
-
-        // Telemetry
-        this.subscriptions.add(this.goToDefinitionClicks.subscribe(() => eventLogger.log('GoToDefClicked')))
     }
 
     public componentDidMount(): void {
