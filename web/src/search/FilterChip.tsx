@@ -8,6 +8,7 @@ interface Props {
     query: string
     count?: number
     limitHit?: boolean
+    showMore?: boolean
     onFilterChosen: (value: string) => void
 }
 
@@ -17,7 +18,7 @@ export class FilterChip extends React.PureComponent<Props> {
         return (
             <button
                 className={
-                    'btn btn-sm filter-chip' +
+                    `btn btn-sm filter-chip ${!!this.props.count ? 'filter-chip-repo' : ''}` +
                     (this.isScopeSelected(this.props.query, this.props.value) ? ' filter-chip--selected' : '')
                 }
                 value={this.props.value}
@@ -25,19 +26,21 @@ export class FilterChip extends React.PureComponent<Props> {
                 onMouseDown={this.onMouseDown}
                 onClick={this.onClick}
             >
-                {this.props.name || truncatedValue}
-                {!!this.props.count && (
-                    <span
-                        className={`filter-chip__count ${
-                            this.isScopeSelected(this.props.query, this.props.value)
-                                ? ' filter-chip__count--selected'
-                                : ''
-                        }`}
-                    >
-                        {this.props.count}
-                        {this.props.limitHit ? '+' : ''}
-                    </span>
-                )}
+                <div>
+                    {this.props.name || truncatedValue}
+                    {!!this.props.count && (
+                        <span
+                            className={`filter-chip__count ${
+                                this.isScopeSelected(this.props.query, this.props.value)
+                                    ? ' filter-chip__count--selected'
+                                    : ''
+                            }`}
+                        >
+                            {this.props.count}
+                            {this.props.limitHit ? '+' : ''}
+                        </span>
+                    )}
+                </div>
             </button>
         )
     }

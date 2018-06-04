@@ -28,7 +28,7 @@
     }
 
     &__count {
-        border-radius: 18px;
+        display: inline-block;
         margin-left: 0.25rem;
         padding: 0 0.2rem;
 
@@ -40,6 +40,19 @@
         .theme-dark & {
             background: $color-bg-3;
         }
+
+        &--selected {
+            .theme-dark & {
+                background: $color-bg-2;
+            }
+            .theme-light & {
+                background: $color-light-bg-1;
+            }
+        }
+    }
+
+    &-repo {
+        padding-right: 0;
     }
 
     &--selected {

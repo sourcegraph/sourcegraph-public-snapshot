@@ -168,6 +168,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             limitHit={filter.limitHit}
                                         />
                                     ))}
+                                {this.state.resultsOrError.limitHit &&
+                                    !/\brepo:/.test(this.props.navbarSearchQuery) && (
+                                        <FilterChip
+                                            name="Show more"
+                                            query={this.props.navbarSearchQuery}
+                                            onFilterChosen={this.showMoreResults}
+                                            key={`count:${this.calculateCount}`}
+                                            value={`count:${this.calculateCount}`}
+                                            showMore={true}
+                                        />
+                                    )}
                             </div>
                         </div>
                     )}
@@ -191,23 +202,32 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private showMoreResults = () => {
-        // This function can only get called if the results were successfully loaded,
-        // so casting is the right thing to do here
-        const results = this.state.resultsOrError as GQL.ISearchResults
-
         // Requery with an increased max result count.
         const params = new URLSearchParams(this.props.location.search)
         let query = params.get('q') || ''
 
+        const count = this.calculateCount()
         if (/count:(\d+)/.test(query)) {
-            const count = Math.max(results.resultCount * 2, 1000)
             query = query.replace(/count:\d+/g, '').trim() + ` count:${count}`
         } else {
-            const count = Math.max(results.resultCount * 2 || 0, 1000)
             query = `${query} count:${count}`
         }
         params.set('q', query)
         this.props.history.replace({ search: params.toString() })
+    }
+
+    private calculateCount = (): number => {
+        // This function can only get called if the results were successfully loaded,
+        // so casting is the right thing to do here
+        const results = this.state.resultsOrError as GQL.ISearchResults
+
+        const params = new URLSearchParams(this.props.location.search)
+        const query = params.get('q') || ''
+
+        if (/count:(\d+)/.test(query)) {
+            return Math.max(results.resultCount * 2, 1000)
+        }
+        return Math.max(results.resultCount * 2 || 0, 1000)
     }
 
     private onExpandAllResultsToggle = () => {
