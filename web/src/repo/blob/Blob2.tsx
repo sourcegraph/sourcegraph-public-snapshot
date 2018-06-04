@@ -277,23 +277,11 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 return { target, row }
             }),
             filter(propertyIsDefined('row')),
-            map(({ target, row }) => ({
-                target,
-                row: row as HTMLElement,
-                lineNumCell: row.children.item(0) as HTMLElement,
-                codeCell: row.children.item(1) as HTMLElement,
-            })),
-            map(({ lineNumCell, ...rest }) => {
-                let lineNum: number | null = null
-
-                const data = lineNumCell.dataset
-                lineNum = parseInt(data.line!, 10)
-
-                return {
-                    lineNum,
-                    lineNumCell,
-                    ...rest,
-                }
+            map(({ target, row }) => {
+                const lineNumberCell = row.children.item(0) as HTMLElement
+                const codeCell = row.children.item(1) as HTMLElement
+                const lineNumber = parseInt(lineNumberCell.dataset.line!, 10)
+                return { target, row, lineNumberCell, lineNumber, codeCell }
             })
         )
 
@@ -313,19 +301,19 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             lineClickElements
                 .pipe(
                     withLatestFrom(this.codeElements),
-                    map(([{ target, lineNum }, codeElement]) => ({ target, lineNum, codeElement })),
+                    map(([{ target, lineNumber }, codeElement]) => ({ target, lineNumber, codeElement })),
                     filter(propertyIsDefined('codeElement')),
-                    map(({ target, lineNum, codeElement }) => ({
-                        lineNum,
+                    map(({ target, lineNumber, codeElement }) => ({
+                        lineNumber,
                         position: getTargetLineAndOffset(target, codeElement!, false),
                     }))
                 )
-                .subscribe(({ position, lineNum }) => {
+                .subscribe(({ position, lineNumber }) => {
                     let hash: string
                     if (position !== undefined) {
                         hash = toPositionOrRangeHash({ position })
                     } else {
-                        hash = `#L${lineNum}`
+                        hash = `#L${lineNumber}`
                     }
 
                     if (!hash.startsWith('#')) {
@@ -420,7 +408,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
         // Set the currently active line from hover
         this.subscriptions.add(
-            lineClickElements.pipe(map(({ lineNum }) => lineNum)).subscribe(activeLine => {
+            lineClickElements.pipe(map(({ lineNumber }) => lineNumber)).subscribe(activeLine => {
                 this.setState({ activeLine })
             })
         )
@@ -646,18 +634,18 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     highlightLine({ codeElement, line: tableRow })
 
                     // ! because we filtered out undefined lines above
-                    const lineNum = position.line!
+                    const lineNumber = position.line!
 
                     const codeCell = tableRow.children.item(1) as HTMLElement
                     this.createBlameDomNode({
-                        lineNum,
+                        lineNumber,
                         codeCell,
                     })
                     convertNode(codeCell)
 
                     // if theres a position hash on page load, scroll it to the center of the screen
                     scrollToCenter(blobElement, codeElement, tableRow)
-                    this.setState({ activeLine: lineNum, hoverOverlayIsFixed: position.character !== undefined })
+                    this.setState({ activeLine: lineNumber, hoverOverlayIsFixed: position.character !== undefined })
                 })
         )
 
@@ -705,11 +693,11 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     }
 
     public render(): React.ReactNode {
-        const blameLineNum = this.state.activeLine
+        const blamelineNumber = this.state.activeLine
         let blamePortalID: string | null = null
 
-        if (blameLineNum) {
-            blamePortalID = this.state.blameLineIDs[blameLineNum]
+        if (blamelineNumber) {
+            blamePortalID = this.state.blameLineIDs[blamelineNumber]
         }
 
         return (
@@ -740,18 +728,23 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         {...this.props}
                     />
                 )}
-                {blameLineNum &&
+                {blamelineNumber &&
                     blamePortalID && (
-                        <BlameLine key={blamePortalID} portalID={blamePortalID} line={blameLineNum} {...this.props} />
+                        <BlameLine
+                            key={blamePortalID}
+                            portalID={blamePortalID}
+                            line={blamelineNumber}
+                            {...this.props}
+                        />
                     )}
             </div>
         )
     }
 
-    private createBlameDomNode = ({ lineNum, codeCell }: { lineNum: number; codeCell: HTMLElement }): void => {
+    private createBlameDomNode = ({ lineNumber, codeCell }: { lineNumber: number; codeCell: HTMLElement }): void => {
         const portalNode = document.createElement('span')
 
-        const id = toPortalID(lineNum)
+        const id = toPortalID(lineNumber)
         portalNode.id = id
         portalNode.classList.add('blame-portal')
 
@@ -760,7 +753,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         this.setState({
             blameLineIDs: {
                 ...this.state.blameLineIDs,
-                [lineNum]: id,
+                [lineNumber]: id,
             },
         })
     }
