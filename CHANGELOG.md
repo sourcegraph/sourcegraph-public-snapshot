@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+* Checks for whether a repo is cloned will no longer exhaust open file pools over time.
+
 ### Added
 
 ## 2.8.8

@@ -289,11 +289,9 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo Repo) error {
 		Repo: repo.Name,
 		URL:  repo.URL,
 	}
-	_, err := c.httpPost(ctx, repo.Name, "enqueue-repo-update", req)
-	if err != nil {
-		return err
-	}
-	return nil
+	resp, err := c.httpPost(ctx, repo.Name, "enqueue-repo-update", req)
+	resp.Body.Close()
+	return err
 }
 
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
@@ -368,6 +366,8 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoURI) (bool, erro
 	if err != nil {
 		return false, err
 	}
+	// no need to defer, we aren't using the body.
+	resp.Body.Close()
 	var cloned bool
 	if resp.StatusCode == http.StatusOK {
 		cloned = true
