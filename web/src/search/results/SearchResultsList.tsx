@@ -426,11 +426,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         let checkpoint: number
 
         if (!at) {
-            this.setCheckpoint(0)
-
             checkpoint = 0
         } else {
             checkpoint = parseInt(at, 10)
+        }
+
+        // If `at=0`, remove it
+        if (checkpoint === 0) {
+            this.setCheckpoint(0) // `setCheckpoint` removes the query param when it is 0
         }
 
         return checkpoint
@@ -439,7 +442,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     /** setCheckpoint sets the `at` query param in the URL. It will be used to scroll to the result on page load of the given URL. */
     private setCheckpoint = (checkpoint: number): void => {
         const params = new URLSearchParams(this.props.location.search)
-        params.set('at', checkpoint.toString())
+        if (checkpoint === 0) {
+            params.delete('at')
+        } else {
+            params.set('at', checkpoint.toString())
+        }
+
         this.props.history.replace({
             ...this.props.location,
             search: `?${params.toString()}`,
