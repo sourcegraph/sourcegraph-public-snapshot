@@ -12,6 +12,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
+* The Phabricator extension shows code intelligence status and supports enabling / disabling code intelligence for files.
+
 ## 2.8.8
 
 ### Changed
