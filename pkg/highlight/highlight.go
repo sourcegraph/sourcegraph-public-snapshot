@@ -23,13 +23,13 @@ func init() {
 	client = gosyntect.New(syntectServer)
 }
 
-// Code highlights the given code with the given file extension (no
-// leading ".") and returns the properly escaped HTML table representing
-// the highlighted code.
+// Code highlights the given code with the given filepath (must contain at
+// least the file name + extension) and returns the properly escaped HTML table
+// representing the highlighted code.
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, code, extension string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
+func Code(ctx context.Context, code, filepath string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
 	if !disableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
@@ -40,9 +40,9 @@ func Code(ctx context.Context, code, extension string, disableTimeout bool, isLi
 		themechoice = "Solarized (light)"
 	}
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
-		Code:      code,
-		Extension: extension,
-		Theme:     themechoice,
+		Code:     code,
+		Filepath: filepath,
+		Theme:    themechoice,
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
