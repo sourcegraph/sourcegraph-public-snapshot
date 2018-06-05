@@ -80,6 +80,7 @@ func Handlers() aws.Handlers {
 	handlers.Validate.PushBackNamed(ValidateParametersHandler)
 	handlers.Validate.AfterEachFn = aws.HandlerListStopOnError
 	handlers.Build.PushBackNamed(SDKVersionUserAgentHandler)
+	handlers.Build.PushBackNamed(AddHostExecEnvUserAgentHander)
 	handlers.Build.AfterEachFn = aws.HandlerListStopOnError
 	handlers.Sign.PushBackNamed(BuildContentLengthHandler)
 	handlers.Send.PushBackNamed(ValidateReqSigHandler)

@@ -52,9 +52,16 @@ func parse(r reflect.Value, node *XMLNode, tag reflect.StructTag) error {
 	if t == "" {
 		switch rtype.Kind() {
 		case reflect.Struct:
-			t = "structure"
+			// also it can't be a time object
+			_, tok := r.Interface().(*time.Time)
+			if _, ok := r.Interface().(time.Time); !(ok || tok) {
+				t = "structure"
+			}
 		case reflect.Slice:
-			t = "list"
+			// also it can't be a byte slice
+			if _, ok := r.Interface().([]byte); !ok {
+				t = "list"
+			}
 		case reflect.Map:
 			t = "map"
 		}
@@ -223,41 +230,47 @@ func parseScalar(r reflect.Value, node *XMLNode, tag reflect.StructTag) error {
 		return nil
 	}
 
+	if r.Kind() == reflect.Ptr {
+		if r.IsNil() {
+			r.Set(reflect.New(r.Type().Elem()))
+		}
+		r = r.Elem()
+	}
+
 	switch r.Interface().(type) {
-	case *string:
-		r.Set(reflect.ValueOf(&node.Text))
-		return nil
+	case string:
+		r.Set(reflect.ValueOf(node.Text))
 	case []byte:
 		b, err := base64.StdEncoding.DecodeString(node.Text)
 		if err != nil {
 			return err
 		}
 		r.Set(reflect.ValueOf(b))
-	case *bool:
+	case bool:
 		v, err := strconv.ParseBool(node.Text)
 		if err != nil {
 			return err
 		}
-		r.Set(reflect.ValueOf(&v))
-	case *int64:
+		r.Set(reflect.ValueOf(v))
+	case int64:
 		v, err := strconv.ParseInt(node.Text, 10, 64)
 		if err != nil {
 			return err
 		}
-		r.Set(reflect.ValueOf(&v))
-	case *float64:
+		r.Set(reflect.ValueOf(v))
+	case float64:
 		v, err := strconv.ParseFloat(node.Text, 64)
 		if err != nil {
 			return err
 		}
-		r.Set(reflect.ValueOf(&v))
-	case *time.Time:
+		r.Set(reflect.ValueOf(v))
+	case time.Time:
 		const ISO8601UTC = "2006-01-02T15:04:05Z"
 		t, err := time.Parse(ISO8601UTC, node.Text)
 		if err != nil {
 			return err
 		}
-		r.Set(reflect.ValueOf(&t))
+		r.Set(reflect.ValueOf(t))
 	default:
 		return fmt.Errorf("unsupported value: %v (%s)", r.Interface(), r.Type())
 	}

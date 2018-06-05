@@ -2,6 +2,7 @@ package awscodecommit
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
@@ -43,7 +44,7 @@ func (c *Client) cacheKeyPrefix() (string, error) {
 		return "", err
 	}
 	key := sha256.Sum256([]byte(cred.AccessKeyID + ":" + cred.SecretAccessKey + ":" + cred.SessionToken))
-	return string(key[:]), nil
+	return hex.EncodeToString(key[:]), nil
 }
 
 // ErrNotFound is when the requested AWS CodeCommit repository is not found.

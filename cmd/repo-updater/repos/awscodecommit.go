@@ -95,7 +95,7 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 				if ccrepo != nil {
 					remoteURL, err := conn.authenticatedRemoteURL(ccrepo)
 					if err != nil {
-						return nil, true, err
+						return nil, true, errors.Wrap(err, "authenticatedRemoteURL")
 					}
 					webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", conn.awsRegion.ID(), ccrepo.Name)
 					repo = &protocol.RepoInfo{
@@ -111,10 +111,10 @@ func GetAWSCodeCommitRepository(ctx context.Context, args protocol.RepoLookupArg
 						},
 					}
 				}
-				return repo, true, err
+				return repo, true, errors.Wrap(err, "GetRepository")
 			}
 		}
-		return nil, true, err
+		return nil, true, errors.Wrap(err, "getServiceID")
 	}
 
 	// Unlike other code hosts (e.g., GitHub and GitLab), looking up by repository URI is not

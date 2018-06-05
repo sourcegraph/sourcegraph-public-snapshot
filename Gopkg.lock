@@ -51,8 +51,8 @@
     "service/codecommit",
     "service/sts"
   ]
-  revision = "3383499f1024e86a3c68200f9bdc6759ee20eb70"
-  version = "v2.0.0-preview.3"
+  revision = "ff1a530c31507c97cf5edbee226e604ca08661cc"
+  version = "v2.0.0-preview.4"
 
 [[projects]]
   branch = "master"

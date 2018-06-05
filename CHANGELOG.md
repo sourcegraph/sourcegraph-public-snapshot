@@ -9,6 +9,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Fixed
 
 * The target commit ID of a Git tag object (i.e., not lightweight Git tag refs) is now dereferenced correctly. Previously the tag object's OID was given.
+* Fixed an issue where AWS Code Commit would hit the rate limit.
 
 ### Added
 

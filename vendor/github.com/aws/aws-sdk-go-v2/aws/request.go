@@ -103,7 +103,7 @@ func New(cfg Config, metadata Metadata, handlers Handlers,
 	if err == nil {
 		// TODO so ugly
 		metadata.Endpoint = endpoint.URL
-		if len(endpoint.SigningName) > 0 {
+		if len(endpoint.SigningName) > 0 && !endpoint.SigningNameDerived {
 			metadata.SigningName = endpoint.SigningName
 		}
 		if len(endpoint.SigningRegion) > 0 {

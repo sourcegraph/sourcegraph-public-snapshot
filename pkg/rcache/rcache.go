@@ -3,6 +3,7 @@ package rcache
 import (
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	"github.com/garyburd/redigo/redis"
 
@@ -59,6 +60,10 @@ func (r *Cache) Get(key string) ([]byte, bool) {
 func (r *Cache) Set(key string, b []byte) {
 	c := pool.Get()
 	defer c.Close()
+
+	if !utf8.Valid([]byte(key)) {
+		panic(fmt.Sprintf("rcache: keys must be valid utf8 %v", []byte(key)))
+	}
 
 	if r.ttlSeconds == 0 {
 		_, err := c.Do("SET", r.rkeyPrefix()+key, b)
