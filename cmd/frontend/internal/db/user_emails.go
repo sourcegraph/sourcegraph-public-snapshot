@@ -58,7 +58,7 @@ func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string,
 	if err := globalDB.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY created_at ASC, email ASC LIMIT 1",
 		id,
 	).Scan(&email, &verified); err != nil {
-		return "", false, userNotFoundErr{[]interface{}{fmt.Sprintf("id %d", id)}}
+		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("id %d", id)}}
 	}
 	return email, verified, nil
 }

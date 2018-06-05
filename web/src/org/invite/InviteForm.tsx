@@ -14,19 +14,20 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 
 export function inviteUserToOrganization(
-    usernameOrEmail: string,
+    username: string,
     organization: GQL.ID
-): Observable<GQL.IInviteUserResult> {
+): Observable<GQL.IInviteUserToOrganizationResult> {
     return mutateGraphQL(
         gql`
-            mutation InviteUserToOrganization($organization: ID!, $usernameOrEmail: String!) {
-                inviteUserToOrganization(organization: $organization, usernameOrEmail: $usernameOrEmail) {
-                    acceptInviteURL
+            mutation InviteUserToOrganization($organization: ID!, $username: String!) {
+                inviteUserToOrganization(organization: $organization, username: $username) {
+                    sentInvitationEmail
+                    acceptInvitationURL
                 }
             }
         `,
         {
-            usernameOrEmail,
+            username,
             organization,
         }
     ).pipe(
@@ -34,7 +35,7 @@ export function inviteUserToOrganization(
             const eventData = {
                 organization: {
                     invite: {
-                        user_email: usernameOrEmail,
+                        username,
                     },
                     org_id: organization,
                 },
@@ -49,17 +50,17 @@ export function inviteUserToOrganization(
     )
 }
 
-export function addUserToOrganization(usernameOrEmail: string, organization: GQL.ID): Observable<void> {
+export function addUserToOrganization(username: string, organization: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation AddUserToOrganization($organization: ID!, $usernameOrEmail: String!) {
-                addUserToOrganization(organization: $organization, usernameOrEmail: $usernameOrEmail) {
+            mutation AddUserToOrganization($organization: ID!, $username: String!) {
+                addUserToOrganization(organization: $organization, username: $username) {
                     alwaysNil
                 }
             }
         `,
         {
-            usernameOrEmail,
+            username,
             organization,
         }
     ).pipe(
@@ -77,20 +78,21 @@ const emailInvitesEnabled = window.context.emailEnabled
 
 const InvitedNotification: React.SFC<{
     className: string
-    email: string
-    acceptInviteURL: string
+    username: string
+    sentInvitationEmail: boolean
+    acceptInvitationURL: string
     onDismiss: () => void
-}> = ({ className, email, acceptInviteURL, onDismiss }) => (
+}> = ({ className, username, sentInvitationEmail, acceptInvitationURL, onDismiss }) => (
     <div className={`${className} invited-notification`}>
         <div className="invited-notification__message">
-            {emailInvitesEnabled ? (
+            {sentInvitationEmail ? (
                 <>
-                    Invitation sent to {email}. You can also send {email} the invitation link directly:
+                    Invitation sent to {username}. You can also send {username} the invitation link directly:
                 </>
             ) : (
-                <>Generated invitation link. Copy and send it to {email}:</>
+                <>Generated invitation link. Copy and send it to {username}:</>
             )}
-            <CopyableText text={acceptInviteURL} size={40} className="mt-2" />
+            <CopyableText text={acceptInvitationURL} size={40} className="mt-2" />
         </div>
         <button className="btn btn-icon">
             <CloseIcon title="Dismiss" onClick={onDismiss} />
@@ -106,13 +108,13 @@ export interface Props {
     onDidUpdateOrganizationMembers: () => void
 }
 
-interface SubmittedInvite {
-    email: string
-    acceptInviteURL: string
+interface SubmittedInvite
+    extends Pick<GQL.IInviteUserToOrganizationResult, 'sentInvitationEmail' | 'acceptInvitationURL'> {
+    username: string
 }
 
 interface State {
-    email: string
+    username: string
 
     /** Loading state (undefined means not loading). */
     loading?: 'inviteUserToOrganization' | 'addUserToOrganization'
@@ -122,11 +124,11 @@ interface State {
 }
 
 export class InviteForm extends React.PureComponent<Props, State> {
-    public state: State = { email: '' }
+    public state: State = { username: '' }
 
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private inviteClicks = new Subject<React.MouseEvent<HTMLButtonElement>>()
-    private emailChanges = new Subject<string>()
+    private usernameChanges = new Subject<string>()
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
@@ -135,35 +137,38 @@ export class InviteForm extends React.PureComponent<Props, State> {
 
         type Update = (prevState: State) => State
 
-        this.subscriptions.add(this.emailChanges.subscribe(email => this.setState({ email })))
+        this.subscriptions.add(this.usernameChanges.subscribe(username => this.setState({ username })))
 
         // Invite clicks.
         this.subscriptions.add(
             merge(this.submits.pipe(filter(() => !this.viewerCanAddUserToOrganization)), this.inviteClicks)
                 .pipe(
                     tap(e => e.preventDefault()),
-                    withLatestFrom(orgChanges, this.emailChanges),
-                    tap(([, orgId, email]) =>
+                    withLatestFrom(orgChanges, this.usernameChanges),
+                    tap(([, orgId, username]) =>
                         eventLogger.log('InviteOrgMemberClicked', {
                             organization: {
                                 invite: {
-                                    user_email: email,
+                                    username,
                                 },
                                 org_id: orgId,
                             },
                         })
                     ),
-                    mergeMap(([, { orgID }, email]) =>
-                        inviteUserToOrganization(email, orgID).pipe(
-                            tap(() => this.emailChanges.next('')),
-                            mergeMap(({ acceptInviteURL }) =>
+                    mergeMap(([, { orgID }, username]) =>
+                        inviteUserToOrganization(username, orgID).pipe(
+                            tap(() => this.usernameChanges.next('')),
+                            mergeMap(({ sentInvitationEmail, acceptInvitationURL }) =>
                                 // Reset email, reenable submit button, flash "invited" text
                                 of((state: State): State => ({
                                     ...state,
                                     loading: undefined,
                                     error: undefined,
-                                    email: '',
-                                    invited: [...(state.invited || []), { email, acceptInviteURL }],
+                                    username: '',
+                                    invited: [
+                                        ...(state.invited || []),
+                                        { username, sentInvitationEmail, acceptInvitationURL },
+                                    ],
                                 }))
                             ),
                             // Disable button while loading
@@ -184,18 +189,18 @@ export class InviteForm extends React.PureComponent<Props, State> {
                 .pipe(filter(() => this.viewerCanAddUserToOrganization))
                 .pipe(
                     tap(e => e.preventDefault()),
-                    withLatestFrom(orgChanges, this.emailChanges),
-                    mergeMap(([, { orgID }, email]) =>
-                        addUserToOrganization(email, orgID).pipe(
+                    withLatestFrom(orgChanges, this.usernameChanges),
+                    mergeMap(([, { orgID }, username]) =>
+                        addUserToOrganization(username, orgID).pipe(
                             tap(() => this.props.onDidUpdateOrganizationMembers()),
-                            tap(() => this.emailChanges.next('')),
+                            tap(() => this.usernameChanges.next('')),
                             mergeMap(() =>
                                 // Reset email, reenable submit button, flash "invited" text
                                 of((state: State): State => ({
                                     ...state,
                                     loading: undefined,
                                     error: undefined,
-                                    email: '',
+                                    username: '',
                                 }))
                             ),
                             // Disable button while loading
@@ -234,16 +239,16 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     <div className="card-body">
                         <h4 className="card-title">Invite member</h4>
                         <Form className="form-inline" onSubmit={this.onSubmit}>
-                            <label className="sr-only" htmlFor="invite-form__email">
-                                Username or email address
+                            <label className="sr-only" htmlFor="invite-form__username">
+                                Username
                             </label>
                             <input
                                 type="text"
                                 className="form-control mb-2 mr-sm-2"
-                                id="invite-form__email"
-                                placeholder="Username or email address"
-                                onChange={this.onEmailChange}
-                                value={this.state.email}
+                                id="invite-form__username"
+                                placeholder="Username"
+                                onChange={this.onUsernameChange}
+                                value={this.state.username}
                                 autoComplete="off"
                                 autoCapitalize="off"
                                 autoCorrect="off"
@@ -290,12 +295,13 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     </div>
                 </div>
                 {this.state.invited &&
-                    this.state.invited.map(({ email, acceptInviteURL }, i) => (
+                    this.state.invited.map(({ username, sentInvitationEmail, acceptInvitationURL }, i) => (
                         <InvitedNotification
                             key={i}
                             className="alert alert-success invite-form__alert"
-                            email={email}
-                            acceptInviteURL={acceptInviteURL}
+                            username={username}
+                            sentInvitationEmail={sentInvitationEmail}
+                            acceptInvitationURL={acceptInvitationURL}
                             // tslint:disable-next-line:jsx-no-lambda
                             onDismiss={() => this.dismissNotification(i)}
                         />
@@ -309,8 +315,8 @@ export class InviteForm extends React.PureComponent<Props, State> {
         )
     }
 
-    private onEmailChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.emailChanges.next(e.currentTarget.value)
+    private onUsernameChange: React.ChangeEventHandler<HTMLInputElement> = e =>
+        this.usernameChanges.next(e.currentTarget.value)
     private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
     private onInviteClick: React.MouseEventHandler<HTMLButtonElement> = e => this.inviteClicks.next(e)
 
