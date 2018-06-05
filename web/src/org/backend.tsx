@@ -1,5 +1,5 @@
-import { Observable } from 'rxjs'
-import { concat, map, mergeMap, take } from 'rxjs/operators'
+import { concat, Observable } from 'rxjs'
+import { map, mergeMap, take } from 'rxjs/operators'
 import { currentUser, refreshCurrentUser } from '../auth'
 import { gql, mutateGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
@@ -7,17 +7,16 @@ import { eventLogger } from '../tracking/eventLogger'
 import { settingsFragment } from '../user/settings/backend'
 import { createAggregateError } from '../util/errors'
 
-export interface CreateOrgOptions {
-    /** The name of the org */
-    name: string
-    /** The user's display name (e.g. full name) in the org profile */
-    displayName: string
-}
-
 /**
- * Sends a GraphQL mutation to create an org and returns an Observable that emits the new org, then completes
+ * Sends a GraphQL mutation to create an organization and returns an Observable that emits the new organization,
+ * then completes.
  */
-export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
+export function createOrganization(args: {
+    /** The name of the organization. */
+    name: string
+    /** The new organization's display name (e.g. full name) in the organization profile. */
+    displayName?: string
+}): Observable<GQL.IOrg> {
     return currentUser.pipe(
         take(1),
         mergeMap(user => {
@@ -27,28 +26,28 @@ export function createOrg(options: CreateOrgOptions): Observable<GQL.IOrg> {
 
             return mutateGraphQL(
                 gql`
-                    mutation createOrg($name: String!, $displayName: String!) {
-                        createOrg(name: $name, displayName: $displayName) {
+                    mutation createOrganization($name: String!, $displayName: String) {
+                        createOrganization(name: $name, displayName: $displayName) {
                             id
                             name
                         }
                     }
                 `,
-                options
+                args
             )
         }),
         mergeMap(({ data, errors }) => {
-            if (!data || !data.createOrg) {
+            if (!data || !data.createOrganization) {
                 eventLogger.log('NewOrgFailed')
                 throw createAggregateError(errors)
             }
             eventLogger.log('NewOrgCreated', {
                 organization: {
-                    org_id: data.createOrg.id,
-                    org_name: data.createOrg.name,
+                    org_id: data.createOrganization.id,
+                    org_name: data.createOrganization.name,
                 },
             })
-            return refreshCurrentUser().pipe(concat([data.createOrg]))
+            return concat(refreshCurrentUser(), [data.createOrganization])
         })
     )
 }
@@ -125,7 +124,7 @@ export function removeUserFromOrganization(args: {
             }
             eventLogger.log('OrgMemberRemoved', eventData)
             // Reload user data
-            return refreshCurrentUser().pipe(concat([void 0]))
+            return concat(refreshCurrentUser(), [void 0])
         })
     )
 }

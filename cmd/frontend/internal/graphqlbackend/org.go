@@ -255,9 +255,27 @@ func getOrgSlackWebhookURL(ctx context.Context, id int32) (string, error) {
 	return "", nil
 }
 
+// DEPRECATED: use createOrganization instead
 func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	Name        string
 	DisplayName string
+}) (*orgResolver, error) {
+	var displayName *string
+	if args.DisplayName != "" {
+		displayName = &args.DisplayName
+	}
+	return (&schemaResolver{}).CreateOrganization(ctx, &struct {
+		Name        string
+		DisplayName *string
+	}{
+		Name:        args.Name,
+		DisplayName: displayName,
+	})
+}
+
+func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
+	Name        string
+	DisplayName *string
 }) (*orgResolver, error) {
 	currentUser, err := currentUser(ctx)
 	if err != nil {

@@ -16,15 +16,15 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	ctx := testContext()
 
 	// Create fixtures.
-	org1, err := Orgs.Create(ctx, "org1", "")
+	org1, err := Orgs.Create(ctx, "org1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	org2, err := Orgs.Create(ctx, "org2", "")
+	org2, err := Orgs.Create(ctx, "org2", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	org3, err := Orgs.Create(ctx, "org3", "")
+	org3, err := Orgs.Create(ctx, "org3", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

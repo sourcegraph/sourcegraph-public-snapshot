@@ -154,10 +154,10 @@ func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([
 	return orgs, nil
 }
 
-func (*orgs) Create(ctx context.Context, name, displayName string) (*types.Org, error) {
+func (*orgs) Create(ctx context.Context, name string, displayName *string) (*types.Org, error) {
 	newOrg := types.Org{
 		Name:        name,
-		DisplayName: &displayName,
+		DisplayName: displayName,
 	}
 	newOrg.CreatedAt = time.Now()
 	newOrg.UpdatedAt = newOrg.CreatedAt

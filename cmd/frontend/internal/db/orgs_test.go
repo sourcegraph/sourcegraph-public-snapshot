@@ -8,7 +8,7 @@ func TestOrgs_Count(t *testing.T) {
 	}
 	ctx := testContext()
 
-	org, err := Orgs.Create(ctx, "a", "b")
+	org, err := Orgs.Create(ctx, "a", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func TestOrgs_Delete(t *testing.T) {
 	}
 	ctx := testContext()
 
-	org, err := Orgs.Create(ctx, "a", "b")
+	org, err := Orgs.Create(ctx, "a", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

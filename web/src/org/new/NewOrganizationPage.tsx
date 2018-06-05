@@ -7,7 +7,7 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { createOrg } from '../backend'
+import { createOrganization } from '../backend'
 import { VALID_ORG_NAME_REGEXP } from '../index'
 
 export interface Props {
@@ -57,7 +57,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     mergeMap(event =>
-                        createOrg(this.state).pipe(
+                        createOrganization(this.state).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ error })
@@ -123,7 +123,6 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                             type="text"
                             className="form-control"
                             placeholder="ACME Corporation"
-                            required={true}
                             autoCorrect="off"
                             value={this.state.displayName}
                             onChange={this.onDisplayNameChange}

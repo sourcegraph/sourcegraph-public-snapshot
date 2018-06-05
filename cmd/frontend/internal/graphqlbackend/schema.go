@@ -133,8 +133,12 @@ type Mutation {
     shareThread(threadID: ID!): String!
     # Shares a comment. This is an experimental feature.
     shareComment(commentID: ID!): String!
-    # Creates an org.
-    createOrg(name: String!, displayName: String!): Org!
+    # Creates an organization. The caller is added as a member of the newly created organization.
+    #
+    # Only authenticated users may perform this mutation.
+    createOrganization(name: String!, displayName: String): Org!
+    # Creates an organization.
+    createOrg(name: String!, displayName: String!): Org! @deprecated(reason: "use createOrganization instead")
     # Updates an org.
     updateOrg(id: ID!, displayName: String): Org!
     # Updates an org's settings.
