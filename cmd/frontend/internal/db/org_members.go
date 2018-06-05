@@ -27,7 +27,7 @@ func (*orgMembers) Create(ctx context.Context, orgID, userID int32) (*types.OrgM
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "org_members_org_id_user_id_key" {
-				return nil, errors.New("user is already member of the org")
+				return nil, errors.New("user is already a member of the organization")
 			}
 		}
 		return nil, err

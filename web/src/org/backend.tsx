@@ -44,15 +44,10 @@ export function createOrganization(args: {
     )
 }
 
-export interface AcceptUserInviteOptions {
-    /** The JWT */
-    inviteToken: string
-}
-
 /**
- * Sends a GraphQL mutation to accept an invitation to an org
+ * Sends a GraphQL mutation to accept an invitation to an organization.
  */
-export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<void> {
+export function acceptUserInvite(args: { inviteToken: string }): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation AcceptUserInvite($inviteToken: String!) {
@@ -61,7 +56,7 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<v
                 }
             }
         `,
-        options
+        args
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.acceptUserInvite) {

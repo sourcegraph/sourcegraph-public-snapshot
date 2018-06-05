@@ -1,163 +1,162 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { Base64 } from 'js-base64'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import reactive from 'rx-component'
-import { merge, Observable, of, Subject } from 'rxjs'
-import {
-    bufferTime,
-    catchError,
-    concat,
-    distinctUntilChanged,
-    filter,
-    map,
-    mergeMap,
-    scan,
-    tap,
-    withLatestFrom,
-} from 'rxjs/operators'
+import { Link } from 'react-router-dom'
+import { concat, Observable, Subject, Subscription } from 'rxjs'
+import { catchError, concatMap, distinctUntilChanged, filter, map, tap, withLatestFrom } from 'rxjs/operators'
+import { orgURL } from '..'
 import { refreshCurrentUser } from '../../auth'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
+import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { acceptUserInvite } from '../backend'
+import { OrgAvatar } from '../OrgAvatar'
 
-export interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<{}> {}
 
 interface State {
-    email: string
-    loading: boolean
-    hasSubmitted: boolean
-    orgName?: string
-    error?: Error
+    /** The invitation token data. */
+    tokenOrError?: TokenData | ErrorLike
+
+    /** The result of accepting the invitation. */
+    acceptanceOrError?: 'loading' | null | ErrorLike
 }
 
-type Update = (state: State) => State
-
-interface TokenPayload {
+interface TokenData {
     email: string
     orgID: number
     orgName: string
 }
 
-export const AcceptInvitePage = reactive<Props>(props => {
-    const submitEvents = new Subject<React.FormEvent<HTMLFormElement>>()
-    const nextSubmitEvent = (event: React.FormEvent<HTMLFormElement>) => submitEvents.next(event)
+/** A page that lets users accept an invitation to join an organization as a member. */
+export class AcceptInvitePage extends React.PureComponent<Props, State> {
+    public state: State = {}
 
-    eventLogger.logViewEvent('AcceptInvite')
+    private componentUpdates = new Subject<Props>()
+    private submits = new Subject<React.FormEvent<HTMLFormElement>>()
+    private subscriptions = new Subscription()
 
-    /** The token in the query params */
-    const inviteToken: Observable<string> = props.pipe(
-        map(({ location }) => location),
-        distinctUntilChanged(),
-        map(location => {
-            const token = new URLSearchParams(location.search).get('token')
-            if (!token) {
-                throw new Error('No invite token in URL')
-            }
-            return token
-        })
-    )
+    public componentDidMount(): void {
+        eventLogger.logViewEvent('AcceptInvite')
 
-    const tokenPayload: Observable<TokenPayload> = inviteToken.pipe(
-        map(token => JSON.parse(Base64.decode(token.split('.')[1])))
-    )
+        /** The token in the query params */
+        const inviteToken: Observable<string> = this.componentUpdates.pipe(
+            map(({ location }) => location),
+            distinctUntilChanged(),
+            map(location => {
+                const token = new URLSearchParams(location.search).get('token')
+                if (!token) {
+                    throw new Error('No invite token in URL')
+                }
+                return token
+            })
+        )
 
-    return (
-        merge<Update>(
-            // Any update to these should cause a rerender
-            tokenPayload.pipe(
-                map(payload => (state: State): State => ({
-                    ...state,
-                    orgName: payload.orgName,
-                    email: payload.email,
-                }))
-            ),
+        const tokenData: Observable<TokenData> = inviteToken.pipe(
+            map(token => JSON.parse(Base64.decode(token.split('.')[1])))
+        )
 
-            // Form submits
-            submitEvents.pipe(
-                tap(event => event.preventDefault()),
-                // Don't submit if form is invalid
-                // Feedback is done through CSS
-                filter(event => event.currentTarget.checkValidity()),
-                // Get latest state values
-                withLatestFrom(inviteToken, tokenPayload),
-                mergeMap(([, inviteToken, tokenPayload]) =>
-                    // Show loader
-                    of<Update>(state => ({ ...state, loading: true, email: tokenPayload.email })).pipe(
+        this.subscriptions.add(
+            tokenData
+                .pipe(
+                    map(tokenData => ({ tokenOrError: tokenData })),
+                    catchError(err => [{ tokenOrError: asError(err) }])
+                )
+                .subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
+        )
+
+        this.subscriptions.add(
+            this.submits
+                .pipe(
+                    tap(e => e.preventDefault()),
+                    filter(event => event.currentTarget.checkValidity()),
+                    withLatestFrom(inviteToken, tokenData),
+                    concatMap(([, inviteToken, tokenData]) =>
                         concat(
+                            [{ acceptanceOrError: 'loading' }],
                             acceptUserInvite({ inviteToken }).pipe(
-                                tap(status => {
+                                tap(result => {
                                     const eventProps = {
-                                        org_id: tokenPayload.orgID,
-                                        user_email: tokenPayload.email,
-                                        org_name: tokenPayload.orgName,
+                                        org_id: tokenData.orgID,
+                                        user_email: tokenData.email,
+                                        org_name: tokenData.orgName,
                                     }
                                     eventLogger.log('InviteAccepted', eventProps)
                                 }),
-                                mergeMap(status =>
-                                    // Reload user
-                                    refreshCurrentUser()
-                                        // Redirect
-                                        .pipe(
-                                            concat([
-                                                (state: State): State => ({
-                                                    ...state,
-                                                    loading: false,
-                                                    hasSubmitted: true,
-                                                }),
-                                            ])
-                                        )
-                                ),
-                                // Show error
-                                catchError(error => {
-                                    console.error(error)
-                                    return [
-                                        (state: State): State => ({
-                                            ...state,
-                                            hasSubmitted: true,
-                                            loading: false,
-                                            error,
-                                        }),
-                                    ]
-                                })
+                                concatMap(result => [
+                                    // Refresh current user's list of organizations.
+                                    refreshCurrentUser(),
+                                    { acceptanceOrError: null },
+                                ]),
+                                catchError(err => [{ acceptanceOrError: asError(err) }])
                             )
                         )
                     )
                 )
-            )
+                .subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
         )
-            // Buffer state updates in the same tick to avoid too many rerenders
-            .pipe(
-                bufferTime(0),
-                filter(updates => updates.length > 0),
-                map(updates => (state: State): State => updates.reduce((state, update) => update(state), state)),
-                scan<Update, State>((state: State, update: Update) => update(state), {
-                    email: '',
-                    loading: false,
-                    hasSubmitted: false,
-                }),
-                map(({ email, loading, error, orgName, hasSubmitted }) => (
-                    <Form className="accept-invite-page" onSubmit={nextSubmitEvent}>
-                        {!loading &&
-                            !error &&
-                            hasSubmitted &&
-                            orgName && <Redirect to={`/organizations/${orgName}/settings`} />}
-                        <PageTitle title="Accept invitation" />
-                        <h2>
-                            You were invited to join the <strong>{orgName}</strong> organization
-                        </h2>
 
-                        {error && <p className="form-text text-danger">{error.message}</p>}
+        this.componentUpdates.next(this.props)
+    }
 
-                        <div className="form-group accept-invite-page__actions">
-                            <button type="submit" className="btn btn-primary" disabled={loading}>
-                                Accept invitation
-                            </button>
-                            {loading && <LoaderIcon className="icon-inline" />}
-                        </div>
-                    </Form>
-                ))
-            )
-    )
-})
+    public componentWillReceiveProps(props: Props): void {
+        this.componentUpdates.next(props)
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
+    public render(): JSX.Element | null {
+        if (this.state.tokenOrError && !isErrorLike(this.state.tokenOrError) && this.state.acceptanceOrError === null) {
+            return <Redirect to={`/organizations/${this.state.tokenOrError.orgName}/settings`} />
+        }
+
+        return (
+            <div className="accept-invite-page">
+                <PageTitle title="Accept invitation" />
+                {this.state.tokenOrError ? (
+                    isErrorLike(this.state.tokenOrError) ? (
+                        <div className="alert alert-danger">{upperFirst(this.state.tokenOrError.message)}</div>
+                    ) : (
+                        <>
+                            <OrgAvatar org={this.state.tokenOrError.orgName} className="mb-3" />
+                            <Form onSubmit={this.onSubmit}>
+                                <h2>
+                                    You've been invited to the{' '}
+                                    <Link to={orgURL(this.state.tokenOrError.orgName)}>
+                                        <strong>{this.state.tokenOrError.orgName}</strong>
+                                    </Link>{' '}
+                                    organization
+                                </h2>
+
+                                <div className="form-group">
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary btn-lg"
+                                        disabled={this.state.acceptanceOrError === 'loading'}
+                                    >
+                                        Join {this.state.tokenOrError.orgName}
+                                    </button>
+                                </div>
+                                {isErrorLike(this.state.acceptanceOrError) && (
+                                    <div className="alert alert-danger my-2">
+                                        {upperFirst(this.state.acceptanceOrError.message)}
+                                    </div>
+                                )}
+                                {this.state.acceptanceOrError === 'loading' && <LoaderIcon className="icon-inline" />}
+                            </Form>
+                        </>
+                    )
+                ) : (
+                    <div className="alert alert-danger">No invitation token found in URL.</div>
+                )}
+            </div>
+        )
+    }
+
+    private onSubmit = (event: React.FormEvent<HTMLFormElement>) => this.submits.next(event)
+}
