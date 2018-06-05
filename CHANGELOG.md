@@ -9,8 +9,13 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Fixed
 
 * The target commit ID of a Git tag object (i.e., not lightweight Git tag refs) is now dereferenced correctly. Previously the tag object's OID was given.
+* Fixed a bug where Java files would be highlighted incorrectly if they contained JavaDoc blocks with an uneven number of opening/closing `*`s.
 
 ### Added
+
+* Added syntax highlighting support for TOML files, including `Gopkg.lock` (Go) and `Cargo.lock` (Rust).
+* Added syntax highlighting support for Rust files.
+* Added syntax highlighting support for GraphQL files.
 
 ## 2.8.9
 
