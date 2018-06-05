@@ -438,10 +438,12 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 func TestRepository_Tags(t *testing.T) {
 	t.Parallel()
 
+	dateEnv := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"git tag t0",
 		"git tag t1",
+		dateEnv + " git tag --annotate -m foo t2",
 	}
 	tests := map[string]struct {
 		repo interface {
@@ -454,6 +456,7 @@ func TestRepository_Tags(t *testing.T) {
 			wantTags: []*vcs.Tag{
 				{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			},
 		},
 	}

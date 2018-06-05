@@ -344,7 +344,10 @@ func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
-	cmd := r.command("git", "tag", "--list", "--sort", "-creatordate", "--format", "%(objectname)%00%(refname:short)%00%(creatordate:unix)")
+	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
+	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
+	// using committerdate).
+	cmd := r.command("git", "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
