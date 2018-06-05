@@ -27,6 +27,9 @@ interface LSPRequest {
     params?: any
 }
 
+/** Returns true if the input looks like an LSP Hover object, false otherwise */
+const isHover = (val: any): val is Hover => typeof val === 'object' && val !== null && Array.isArray(val.contents)
+
 export const isEmptyHover = (hover: Hover | null): boolean =>
     !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
 
@@ -176,14 +179,11 @@ export const fetchHover = memoizeObservable(
             pos,
             pos.filePath
         ).pipe(
-            map(hover => {
-                // Be nice and treat an empty object (not spec-compliant) like null
-                // https://github.com/sourcegraph/python-langserver/issues/55
-                if (typeof hover === 'object' && hover !== null && Object.keys(hover).length === 0) {
-                    console.warn('Received invalid hover response', hover, 'treating as', null)
-                    return null
+            tap(hover => {
+                // Do some shallow validation on response, e.g. to catch https://github.com/sourcegraph/sourcegraph/issues/11711
+                if (hover !== null && !isHover(hover)) {
+                    throw Object.assign(new Error('Invalid hover response from language server'), { hover })
                 }
-                return hover
             })
         ),
     makeRepoURI
