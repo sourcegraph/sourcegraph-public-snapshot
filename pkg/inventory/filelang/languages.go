@@ -93,6 +93,7 @@ var builtInLanguages = map[string]struct{}{
 	"Ruby":       struct{}{},
 	"Rust":       struct{}{},
 	"TypeScript": struct{}{},
+	"Haskell":    struct{}{},
 }
 
 // IsBuiltIn means the language is statically known to have a

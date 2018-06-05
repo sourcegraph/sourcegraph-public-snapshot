@@ -53,6 +53,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the server (or the `sourcegraph-frontend` pod in Data Center) causes all SAML requests and responses to be logged, which helps with debugging SAML.
 * Site admins can now view user satisfaction surveys grouped by user, in addition to chronological order, and aggregate summary values (including the average score and the net promoter score over the last 30 days) are now displayed.
 * The site admin overview page displays the site ID, the primary admin email, and premium feature usage information.
+* Added Haskell as an experimental language server on the code intelligence admin page.
 
 ## 2.8.0
 

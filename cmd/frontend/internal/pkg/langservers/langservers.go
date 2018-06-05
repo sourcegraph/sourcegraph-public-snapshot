@@ -169,6 +169,14 @@ var StaticInfo = map[string]*StaticInfoT{
 		Experimental: true,
 		siteConfig:   schema.Langservers{Language: "elixir", Address: "tcp://elixir:8080"},
 	},
+	"haskell": {
+		DisplayName:  "Haskell",
+		HomepageURL:  "https://github.com/haskell/haskell-ide-engine",
+		IssuesURL:    "https://github.com/haskell/haskell-ide-engine/issues",
+		DocsURL:      "https://github.com/haskell/haskell-ide-engine/blob/master/README.md",
+		Experimental: true,
+		siteConfig:   schema.Langservers{Language: "haskell", Address: "tcp://haskell:8080"},
+	},
 	"html": {
 		DisplayName:  "HTML",
 		HomepageURL:  "https://github.com/vscode-langservers/vscode-html-languageserver-bin",
@@ -252,6 +260,7 @@ var debugContainerPorts = map[string]struct {
 	"r":          {"2096", ""},
 	"ruby":       {"2097", ""},
 	"rust":       {"2098", ""},
+	"haskell":    {"2099", ""},
 }
 
 func init() {
