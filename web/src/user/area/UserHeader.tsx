@@ -49,10 +49,10 @@ export const UserHeader: React.SFC<Props> = (props: Props) => (
                                 </NavLink>
                             )}
                         </div>
-                        {props.user.orgs.length > 0 && (
+                        {props.user.organizations.nodes.length > 0 && (
                             <div className="area-header__nav-actions">
                                 <small className="area-header__nav-actions-label">Organizations</small>
-                                {props.user.orgs.map(org => (
+                                {props.user.organizations.nodes.map(org => (
                                     <Link
                                         className="area-header__nav-action"
                                         key={org.id}

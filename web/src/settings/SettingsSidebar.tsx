@@ -155,7 +155,7 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                 </div>
             )}
 
-            {(props.user.orgs.length > 0 || !siteAdminViewingOtherUser) && (
+            {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <>
                     <ul className="sidebar__items">
                         <li className="sidebar__header">
@@ -164,7 +164,7 @@ export const SettingsSidebar: React.SFC<Props> = props => {
                             </div>
                             <h5 className="sidebar__header-title">Organizations</h5>
                         </li>
-                        {props.user.orgs.map(org => (
+                        {props.user.organizations.nodes.map(org => (
                             <li className="sidebar__item" key={org.id}>
                                 <NavLink
                                     to={`/organizations/${org.name}/settings`}

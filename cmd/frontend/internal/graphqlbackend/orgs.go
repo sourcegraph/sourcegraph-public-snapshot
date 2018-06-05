@@ -52,3 +52,11 @@ func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := db.Orgs.Count(ctx, r.opt)
 	return int32(count), err
 }
+
+type orgConnectionStaticResolver struct {
+	nodes []*orgResolver
+}
+
+func (r *orgConnectionStaticResolver) Nodes() []*orgResolver { return r.nodes }
+func (r *orgConnectionStaticResolver) TotalCount() int32     { return int32(len(r.nodes)) }
+func (r *orgConnectionStaticResolver) PageInfo() *pageInfo   { return &pageInfo{hasNextPage: false} }

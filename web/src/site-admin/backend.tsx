@@ -31,8 +31,10 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                                 contents
                             }
                         }
-                        orgs {
-                            name
+                        organizations {
+                            nodes {
+                                name
+                            }
                         }
                         tags {
                             name

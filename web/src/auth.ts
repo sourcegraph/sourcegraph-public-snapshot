@@ -35,11 +35,13 @@ export function refreshCurrentUser(): Observable<never> {
                 username
                 displayName
                 siteAdmin
-                orgs {
-                    id
-                    name
-                    tags {
+                organizations {
+                    nodes {
+                        id
                         name
+                        tags {
+                            name
+                        }
                     }
                 }
                 tags {

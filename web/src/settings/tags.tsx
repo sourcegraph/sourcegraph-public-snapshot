@@ -12,9 +12,15 @@ export function hasTagRecursive(arg: GQL.IUser | GQL.IOrg | null, tag: string): 
     if (!arg) {
         return false
     }
-    return hasTag(arg, tag) || (isUser(arg) && arg.orgs && arg.orgs.some(org => hasTag(org, tag)))
+    return (
+        hasTag(arg, tag) ||
+        (isUser(arg) &&
+            arg.organizations &&
+            arg.organizations.nodes &&
+            arg.organizations.nodes.some(org => hasTag(org, tag)))
+    )
 }
 
 function isUser(arg: GQL.IUser | GQL.IOrg): arg is GQL.IUser {
-    return !!(arg as any).orgs
+    return !!(arg as any).organizations
 }

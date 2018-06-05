@@ -33,10 +33,12 @@ const fetchUser = memoizeObservable(
                             email
                             verified
                         }
-                        orgs {
-                            id
-                            displayName
-                            name
+                        organizations {
+                            nodes {
+                                id
+                                displayName
+                                name
+                            }
                         }
                     }
                 }

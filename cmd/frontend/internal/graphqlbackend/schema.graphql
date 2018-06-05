@@ -1885,7 +1885,9 @@ type User implements Node, ConfigurationSubject {
     # Only the user and site admins can access this field.
     latestSettings: Settings
     # The organizations that this user is a member of.
-    orgs: [Org!]!
+    organizations: OrgConnection!
+    # The organizations that this user is a member of.
+    orgs: [Org!]! @deprecated(reason: "use organizations instead")
     # This user's organization memberships.
     organizationMemberships: OrganizationMembershipConnection!
     # The internal tags associated with the user. This is an internal site management feature.

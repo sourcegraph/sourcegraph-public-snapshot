@@ -163,6 +163,7 @@ func currentUser(ctx context.Context) (*userResolver, error) {
 	return &userResolver{user: user}, nil
 }
 
+// DEPRECATED: use organizations instead
 func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
 	orgs, err := db.Orgs.GetByUserID(ctx, r.user.ID)
 	if err != nil {
@@ -173,6 +174,18 @@ func (r *userResolver) Orgs(ctx context.Context) ([]*orgResolver, error) {
 		orgResolvers = append(orgResolvers, &orgResolver{org})
 	}
 	return orgResolvers, nil
+}
+
+func (r *userResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
+	orgs, err := db.Orgs.GetByUserID(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	c := orgConnectionStaticResolver{nodes: make([]*orgResolver, len(orgs))}
+	for i, org := range orgs {
+		c.nodes[i] = &orgResolver{org}
+	}
+	return &c, nil
 }
 
 func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
