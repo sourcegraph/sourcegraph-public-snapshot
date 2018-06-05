@@ -1,6 +1,6 @@
 import { concat, Observable } from 'rxjs'
-import { map, mergeMap, take } from 'rxjs/operators'
-import { currentUser, refreshCurrentUser } from '../auth'
+import { map, mergeMap } from 'rxjs/operators'
+import { refreshCurrentUser } from '../auth'
 import { gql, mutateGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
@@ -17,25 +17,17 @@ export function createOrganization(args: {
     /** The new organization's display name (e.g. full name) in the organization profile. */
     displayName?: string
 }): Observable<GQL.IOrg> {
-    return currentUser.pipe(
-        take(1),
-        mergeMap(user => {
-            if (!user) {
-                throw new Error('User must be signed in.')
+    return mutateGraphQL(
+        gql`
+            mutation createOrganization($name: String!, $displayName: String) {
+                createOrganization(name: $name, displayName: $displayName) {
+                    id
+                    name
+                }
             }
-
-            return mutateGraphQL(
-                gql`
-                    mutation createOrganization($name: String!, $displayName: String) {
-                        createOrganization(name: $name, displayName: $displayName) {
-                            id
-                            name
-                        }
-                    }
-                `,
-                args
-            )
-        }),
+        `,
+        args
+    ).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.createOrganization) {
                 eventLogger.log('NewOrgFailed')
@@ -61,23 +53,16 @@ export interface AcceptUserInviteOptions {
  * Sends a GraphQL mutation to accept an invitation to an org
  */
 export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<void> {
-    return currentUser.pipe(
-        take(1),
-        mergeMap(user => {
-            if (!user) {
-                throw new Error('User must be signed in')
+    return mutateGraphQL(
+        gql`
+            mutation AcceptUserInvite($inviteToken: String!) {
+                acceptUserInvite(inviteToken: $inviteToken) {
+                    alwaysNil
+                }
             }
-            return mutateGraphQL(
-                gql`
-                    mutation AcceptUserInvite($inviteToken: String!) {
-                        acceptUserInvite(inviteToken: $inviteToken) {
-                            alwaysNil
-                        }
-                    }
-                `,
-                options
-            )
-        }),
+        `,
+        options
+    ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.acceptUserInvite) {
                 eventLogger.log('AcceptInviteFailed')
@@ -137,26 +122,19 @@ export function removeUserFromOrganization(args: {
  * @return Observable that emits `undefined`, then completes
  */
 export function updateOrganization(id: GQL.ID, displayName: string): Observable<void> {
-    return currentUser.pipe(
-        take(1),
-        mergeMap(user => {
-            if (!user) {
-                throw new Error('User must be signed in.')
-            }
-            return mutateGraphQL(
-                gql`
-                    mutation UpdateOrganization($id: ID!, $displayName: String) {
-                        updateOrganization(id: $id, displayName: $displayName) {
-                            id
-                        }
-                    }
-                `,
-                {
-                    id,
-                    displayName,
+    return mutateGraphQL(
+        gql`
+            mutation UpdateOrganization($id: ID!, $displayName: String) {
+                updateOrganization(id: $id, displayName: $displayName) {
+                    id
                 }
-            )
-        }),
+            }
+        `,
+        {
+            id,
+            displayName,
+        }
+    ).pipe(
         map(({ data, errors }) => {
             const eventData = {
                 organization: {
