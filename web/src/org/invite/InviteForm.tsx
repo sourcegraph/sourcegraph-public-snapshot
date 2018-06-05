@@ -8,6 +8,7 @@ import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
 import { gql, mutateGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
+import { CopyableText } from '../../components/CopyableText'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
@@ -81,16 +82,16 @@ const InvitedNotification: React.SFC<{
     onDismiss: () => void
 }> = ({ className, email, acceptInviteURL, onDismiss }) => (
     <div className={`${className} invited-notification`}>
-        {emailInvitesEnabled ? (
-            <span className="invited-notification__message">Invite sent to {email}</span>
-        ) : (
-            <span className="invited-notification__message">
-                Generated invite link. You must copy and send it to {email}:{' '}
-                <a href={acceptInviteURL} target="_blank">
-                    Invite link
-                </a>
-            </span>
-        )}
+        <div className="invited-notification__message">
+            {emailInvitesEnabled ? (
+                <>
+                    Invitation sent to {email}. You can also send {email} the invitation link directly:
+                </>
+            ) : (
+                <>Generated invitation link. Copy and send it to {email}:</>
+            )}
+            <CopyableText text={acceptInviteURL} size={40} className="mt-2" />
+        </div>
         <button className="btn btn-icon">
             <CloseIcon title="Dismiss" onClick={onDismiss} />
         </button>
