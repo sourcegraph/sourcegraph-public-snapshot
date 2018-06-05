@@ -9,56 +9,48 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func (r *userResolver) OrgMemberships(ctx context.Context) ([]*orgMemberResolver, error) {
-	members, err := db.OrgMembers.GetByUserID(ctx, r.user.ID)
+func (r *userResolver) OrganizationMemberships(ctx context.Context) (*organizationMembershipConnectionResolver, error) {
+	memberships, err := db.OrgMembers.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
-	orgMemberResolvers := []*orgMemberResolver{}
-	for _, member := range members {
-		orgMemberResolvers = append(orgMemberResolvers, &orgMemberResolver{nil, member, nil})
+	c := organizationMembershipConnectionResolver{nodes: make([]*organizationMembershipResolver, len(memberships))}
+	for i, member := range memberships {
+		c.nodes[i] = &organizationMembershipResolver{member}
 	}
-	return orgMemberResolvers, nil
+	return &c, nil
 }
 
-type orgMemberResolver struct {
-	org    *types.Org
-	member *types.OrgMembership
-	user   *types.User
+type organizationMembershipConnectionResolver struct {
+	nodes []*organizationMembershipResolver
 }
 
-func (m *orgMemberResolver) ID() int32 {
-	return m.member.ID
+func (r *organizationMembershipConnectionResolver) Nodes() []*organizationMembershipResolver {
+	return r.nodes
+}
+func (r *organizationMembershipConnectionResolver) TotalCount() int32 { return int32(len(r.nodes)) }
+func (r *organizationMembershipConnectionResolver) PageInfo() *pageInfo {
+	return &pageInfo{hasNextPage: false}
 }
 
-func (m *orgMemberResolver) Org(ctx context.Context) (*orgResolver, error) {
-	if m.org == nil {
-		var err error
-		m.org, err = db.Orgs.GetByID(ctx, m.member.OrgID)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &orgResolver{m.org}, nil
+type organizationMembershipResolver struct {
+	membership *types.OrgMembership
 }
 
-func (m *orgMemberResolver) User(ctx context.Context) (*userResolver, error) {
-	if m.user == nil {
-		var err error
-		m.user, err = db.Users.GetByID(ctx, m.member.UserID)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &userResolver{m.user}, nil
+func (r *organizationMembershipResolver) Organization(ctx context.Context) (*orgResolver, error) {
+	return orgByIDInt32(ctx, r.membership.OrgID)
 }
 
-func (m *orgMemberResolver) CreatedAt() string {
-	return m.member.CreatedAt.Format(time.RFC3339) // ISO
+func (r *organizationMembershipResolver) User(ctx context.Context) (*userResolver, error) {
+	return userByIDInt32(ctx, r.membership.UserID)
 }
 
-func (m *orgMemberResolver) UpdatedAt() string {
-	return m.member.UpdatedAt.Format(time.RFC3339) // ISO
+func (r *organizationMembershipResolver) CreatedAt() string {
+	return r.membership.CreatedAt.Format(time.RFC3339)
+}
+
+func (r *organizationMembershipResolver) UpdatedAt() string {
+	return r.membership.UpdatedAt.Format(time.RFC3339)
 }
 
 var mockAllEmailsForOrg func(ctx context.Context, orgID int32, excludeByUserID []int32) ([]string, error)

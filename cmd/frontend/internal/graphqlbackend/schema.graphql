@@ -1887,7 +1887,7 @@ type User implements Node, ConfigurationSubject {
     # The organizations that this user is a member of.
     orgs: [Org!]!
     # This user's organization memberships.
-    orgMemberships: [OrgMembership!]!
+    organizationMemberships: OrganizationMembershipConnection!
     # The internal tags associated with the user. This is an internal site management feature.
     #
     # Only the user and site admins can access this field.
@@ -2030,17 +2030,24 @@ type Session {
 }
 
 # An organization membership.
-type OrgMembership {
-    # The ID.
-    id: Int!
+type OrganizationMembership {
     # The organization.
-    org: Org!
+    organization: Org!
     # The user.
     user: User!
     # The time when this was created.
     createdAt: String!
     # The time when this was updated.
     updatedAt: String!
+}
+
+# A list of organization memberships.
+type OrganizationMembershipConnection {
+    # A list of organization memberships.
+    nodes: [OrganizationMembership!]!
+    # The total count of organization memberships in the connection. This total count may be larger than the number
+    # of nodes in this object when the result is paginated.
+    totalCount: Int!
 }
 
 # A user's email address.
