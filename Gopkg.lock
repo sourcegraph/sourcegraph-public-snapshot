@@ -901,7 +901,7 @@
   branch = "master"
   name = "github.com/sourcegraph/gosyntect"
   packages = ["."]
-  revision = "0376bca1049c25c54f0a76ceeb0c313444feaea7"
+  revision = "c01be3625b10583d0acebfc2fbebe9ff738689d2"
 
 [[projects]]
   branch = "master"
