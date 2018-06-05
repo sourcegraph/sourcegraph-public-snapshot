@@ -15,14 +15,10 @@ import (
 
 // Query represents a code highlighting query to the syntect_server.
 type Query struct {
-	// Extension is deprecated: use Filepath instead.
-	Extension string `json:"extension"`
-
-	// Filepath is the file path of the code. It can be the full file path, or
-	// just the name and extension.
+	// Extension is the file extension of the code.
 	//
-	// See: https://github.com/sourcegraph/syntect_server#supported-file-extensions
-	Filepath string `json:"filepath"`
+	// See https://github.com/sourcegraph/syntect_server#supported-file-extensions
+	Extension string `json:"extension"`
 
 	// Theme is the color theme to use for highlighting.
 	//
@@ -37,25 +33,18 @@ type Query struct {
 type Response struct {
 	// Data is the actual highlighted HTML version of Query.Code.
 	Data string
-
-	// Plaintext indicates whether or not a syntax could not be found for the
-	// file and instead it was rendered as plain text.
-	Plaintext bool
 }
 
-var (
-	// ErrInvalidTheme is returned when the Query.Theme is not a valid theme.
-	ErrInvalidTheme = errors.New("invalid theme")
-)
+// Error is an error returned from the syntect_server.
+type Error string
+
+func (e Error) Error() string {
+	return string(e)
+}
 
 type response struct {
-	// Successful response fields.
-	Data      string `json:"data"`
-	Plaintext bool   `json:"plaintext"`
-
-	// Error response fields.
+	Data  string `json:"data"`
 	Error string `json:"error"`
-	Code  string `json:"code"`
 }
 
 // Client represents a client connection to a syntect_server.
@@ -92,7 +81,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query) (*Response, error) {
 	defer resp.Body.Close()
 
 	// Can only call ht.Span() after the request has been exected, so add our span tags in now.
-	ht.Span().SetTag("Filepath", q.Filepath)
+	ht.Span().SetTag("Extension", q.Extension)
 	ht.Span().SetTag("Theme", q.Theme)
 
 	// Decode the response.
@@ -101,22 +90,10 @@ func (c *Client) Highlight(ctx context.Context, q *Query) (*Response, error) {
 		return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
 	}
 	if r.Error != "" {
-		var err error
-		switch r.Code {
-		case "invalid_theme":
-			err = ErrInvalidTheme
-		case "resource_not_found":
-			// resource_not_found is returned in the event of a 404, indicating a bug
-			// in gosyntect.
-			err = errors.New("gosyntect internal error: resource_not_found")
-		default:
-			err = fmt.Errorf("unknown error=%q code=%q", r.Error, r.Code)
-		}
-		return nil, errors.Wrap(err, c.syntectServer)
+		return nil, errors.Wrap(Error(r.Error), c.syntectServer)
 	}
 	return &Response{
-		Data:      r.Data,
-		Plaintext: r.Plaintext,
+		Data: r.Data,
 	}, nil
 }
 
