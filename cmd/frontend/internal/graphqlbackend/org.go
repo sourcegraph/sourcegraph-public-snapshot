@@ -306,15 +306,29 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 	return &orgResolver{org: updatedOrg}, nil
 }
 
+// DEPRECATED: use RemoveUserFromOrganization instead.
 func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
 	UserID graphql.ID
 	OrgID  graphql.ID
 }) (*EmptyResponse, error) {
-	orgID, err := unmarshalOrgID(args.OrgID)
+	return (&schemaResolver{}).RemoveUserFromOrganization(ctx, &struct {
+		User         graphql.ID
+		Organization graphql.ID
+	}{
+		User:         args.UserID,
+		Organization: args.OrgID,
+	})
+}
+
+func (*schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *struct {
+	User         graphql.ID
+	Organization graphql.ID
+}) (*EmptyResponse, error) {
+	orgID, err := unmarshalOrgID(args.Organization)
 	if err != nil {
 		return nil, err
 	}
-	userID, err := unmarshalUserID(args.UserID)
+	userID, err := unmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}

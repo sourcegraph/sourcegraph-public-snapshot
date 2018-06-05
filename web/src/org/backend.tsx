@@ -90,33 +90,33 @@ export function acceptUserInvite(options: AcceptUserInviteOptions): Observable<v
 }
 
 /**
- * Sends a GraphQL mutation to remove a user from an org
+ * Sends a GraphQL mutation to remove a user from an organization.
  *
- * @param orgID The org's ID
- * @param userID The user's ID to remove
- * @return An Observable that does emits `undefined` when done, then completes
+ * @return An Observable that emits `undefined` when done, then completes
  */
-export function removeUserFromOrg(orgID: GQL.ID, userID: GQL.ID): Observable<void> {
+export function removeUserFromOrganization(args: {
+    /** The ID of the user to remove. */
+    user: GQL.ID
+    /** The organization's ID. */
+    organization: GQL.ID
+}): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation removeUserFromOrg($userID: ID!, $orgID: ID!) {
-                removeUserFromOrg(userID: $userID, orgID: $orgID) {
+            mutation removeUserFromOrganization($user: ID!, $organization: ID!) {
+                removeUserFromOrganization(user: $user, organization: $organization) {
                     alwaysNil
                 }
             }
         `,
-        {
-            userID,
-            orgID,
-        }
+        args
     ).pipe(
         mergeMap(({ data, errors }) => {
             const eventData = {
                 organization: {
                     remove: {
-                        user_id: userID,
+                        user_id: args.user,
                     },
-                    org_id: orgID,
+                    org_id: args.organization,
                 },
             }
             if (errors && errors.length > 0) {

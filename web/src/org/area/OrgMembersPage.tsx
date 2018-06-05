@@ -12,7 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { removeUserFromOrg } from '../backend'
+import { removeUserFromOrganization } from '../backend'
 import { InviteForm } from '../invite/InviteForm'
 
 interface UserNodeProps {
@@ -58,7 +58,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         )
                     ),
                     switchMap(() =>
-                        removeUserFromOrg(this.props.org.id, this.props.node.id).pipe(
+                        removeUserFromOrganization({ user: this.props.node.id, organization: this.props.org.id }).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ removalOrError: c || null })),
                             tap(() => {

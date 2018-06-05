@@ -280,8 +280,13 @@ type Mutation {
     # Only site admins may perform this mutation. Organization members may use the inviteUser mutation to invite
     # users.
     addUserToOrganization(organization: ID!, usernameOrEmail: String!): EmptyResponse!
+    # Removes a user as a member from an organization.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    removeUserFromOrganization(user: ID!, organization: ID!): EmptyResponse
     # Removes a user from an organization.
     removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
+        @deprecated(reason: "use removeUserFromOrganization instead")
     # Adds a Phabricator repository to Sourcegraph.
     addPhabricatorRepo(
         # The callsign, for example "MUX".
