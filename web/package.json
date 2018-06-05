@@ -166,7 +166,7 @@
     "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.11.0",
     "rx-component": "^0.1.0",
-    "rxjs": "^6.0.0",
+    "rxjs": "^6.2.0",
     "string-score": "^1.0.1",
     "uuid": "^3.2.1",
     "vscode-languageserver-protocol": "^3.7.1",
