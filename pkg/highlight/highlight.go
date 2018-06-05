@@ -145,30 +145,7 @@ func preSpansToTable(h string) (string, error) {
 			next.PrevSibling = nil
 			next.NextSibling = nil
 			codeCell.AppendChild(next)
-
-			// Scan the children for text nodes containing new lines so that we
-			// can create new table rows.
-			if next.FirstChild != nil {
-				nextChild := next.FirstChild
-				for nextChild != nil {
-					switch {
-					case nextChild.Type == html.TextNode:
-						// Text node, create a new table row for each newline.
-						newlines := strings.Count(nextChild.Data, "\n")
-						for i := 0; i < newlines; i++ {
-							newRow()
-						}
-					default:
-						return "", fmt.Errorf("unexpected HTML child structure (encountered %+v)", nextChild)
-					}
-					nextChild = nextChild.NextSibling
-				}
-			}
 		case next.Type == html.TextNode:
-			// TODO(slimsag): Remove this case in the near future. For now, it
-			// is kept in case someone tries to run a new Sourcegraph version
-			// with an old syntect_server version.
-
 			// Text node, create a new table row for each newline.
 			newlines := strings.Count(next.Data, "\n")
 			for i := 0; i < newlines; i++ {
