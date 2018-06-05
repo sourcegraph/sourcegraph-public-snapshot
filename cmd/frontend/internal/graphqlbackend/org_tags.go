@@ -2,14 +2,14 @@ package graphqlbackend
 
 import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
-type orgTagResolver struct {
+type organizationTagResolver struct {
 	orgTag *types.OrgTag
 }
 
-func (o *orgTagResolver) ID() int32 {
+func (o *organizationTagResolver) ID() int32 {
 	return o.orgTag.ID
 }
 
-func (o *orgTagResolver) Name() string {
+func (o *organizationTagResolver) Name() string {
 	return o.orgTag.Name
 }

@@ -157,7 +157,7 @@ func (o *orgResolver) Threads(ctx context.Context, args *struct {
 	return &threadConnectionResolver{o.org, repos, canonicalRemoteIDs, args.File, args.Branch, args.Limit}, nil
 }
 
-func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
+func (o *orgResolver) Tags(ctx context.Context) ([]*organizationTagResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins may access the tags.
 	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
 		return nil, err
@@ -167,11 +167,11 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*orgTagResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	orgTagResolvers := []*orgTagResolver{}
+	organizationTagResolvers := []*organizationTagResolver{}
 	for _, tag := range tags {
-		orgTagResolvers = append(orgTagResolvers, &orgTagResolver{tag})
+		organizationTagResolvers = append(organizationTagResolvers, &organizationTagResolver{tag})
 	}
-	return orgTagResolvers, nil
+	return organizationTagResolvers, nil
 }
 
 func (o *orgResolver) Repo(ctx context.Context, args *struct {
@@ -299,7 +299,7 @@ func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	return &orgResolver{org: newOrg}, nil
 }
 
-func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
+func (*schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	ID          graphql.ID
 	DisplayName *string
 }) (*orgResolver, error) {
@@ -313,8 +313,6 @@ func (*schemaResolver) UpdateOrg(ctx context.Context, args *struct {
 	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
 		return nil, err
 	}
-
-	log15.Info("updating org", "org", args.ID, "display name", args.DisplayName)
 
 	updatedOrg, err := db.Orgs.Update(ctx, orgID, args.DisplayName)
 	if err != nil {
@@ -560,17 +558,4 @@ func (*schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
-}
-
-// unmarshalOrgGraphQLID unmarshals and returns the int32 org ID of the first
-// non-nil element of ids.
-func unmarshalOrgGraphQLID(ids ...*graphql.ID) (int32, error) {
-	for _, id := range ids {
-		if id != nil {
-			var orgID int32
-			err := relay.UnmarshalSpec(*id, &orgID)
-			return orgID, err
-		}
-	}
-	return 0, errors.New("at least 1 of id and orgID must be specified")
 }

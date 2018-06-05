@@ -13,7 +13,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { refreshConfiguration } from '../../user/settings/backend'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { updateOrgSettings } from '../backend'
+import { updateOrganizationSettings } from '../backend'
 
 function fetchOrgSettings(args: { id: string }): Observable<GQL.ISettings | null> {
     return queryGraphQL(
@@ -132,7 +132,7 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
     }
 
     private onDidCommit = (lastKnownSettingsID: number | null, contents: string) =>
-        updateOrgSettings(this.props.org.id, lastKnownSettingsID, contents)
+        updateOrganizationSettings(this.props.org.id, lastKnownSettingsID, contents)
             .pipe(mergeMap(() => refreshConfiguration().pipe(concat([null]))))
             .subscribe(
                 () => {

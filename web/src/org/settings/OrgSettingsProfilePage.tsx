@@ -9,7 +9,7 @@ import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { updateOrg } from '../backend'
+import { updateOrganization } from '../backend'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {}
 
@@ -53,7 +53,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
             this.submits
                 .pipe(
                     switchMap(() =>
-                        updateOrg(this.props.org.id, this.state.displayName).pipe(
+                        updateOrganization(this.props.org.id, this.state.displayName).pipe(
                             mergeMap(() =>
                                 // Reset email, reenable submit button, flash "updated" text
                                 of<Partial<State>>({ loading: false, updated: true })

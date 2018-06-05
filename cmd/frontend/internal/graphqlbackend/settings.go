@@ -78,13 +78,12 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 	}, nil
 }
 
-func (*schemaResolver) UpdateOrgSettings(ctx context.Context, args *struct {
-	ID                  *graphql.ID
-	OrgID               *graphql.ID // deprecated
+func (*schemaResolver) UpdateOrganizationSettings(ctx context.Context, args *struct {
+	ID                  graphql.ID
 	LastKnownSettingsID *int32
 	Contents            string
 }) (*settingsResolver, error) {
-	orgID, err := unmarshalOrgGraphQLID(args.ID, args.OrgID)
+	orgID, err := unmarshalOrgID(args.ID)
 	if err != nil {
 		return nil, err
 	}

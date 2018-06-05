@@ -144,14 +144,16 @@ type Mutation {
     createOrganization(name: String!, displayName: String): Org!
     # Creates an organization.
     createOrg(name: String!, displayName: String!): Org! @deprecated(reason: "use createOrganization instead")
-    # Updates an org.
-    updateOrg(id: ID!, displayName: String): Org!
-    # Updates an org's settings.
-    updateOrgSettings(
-        # The ID of the org whose settings should be updated.
-        id: ID
-        # DEPRECATED: use id instead.
-        orgID: ID
+    # Updates an organization.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    updateOrganization(id: ID!, displayName: String): Org!
+    # Updates an organization's settings.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    updateOrganizationSettings(
+        # The ID of the organization whose settings should be updated.
+        id: ID!
         # The last known settings ID.
         lastKnownSettingsID: Int
         # The contents of the settings.
@@ -389,7 +391,7 @@ type LangServersMutation {
 # Input for Mutation.configuration, which contains fields that all configuration
 # mutations need.
 input ConfigurationMutationGroupInput {
-    # The subject whose configuration to mutate (org, user, etc.).
+    # The subject whose configuration to mutate (organization, user, etc.).
     subject: ID!
     # The ID of the last-known configuration known to the client, or null if
     # there is none. This field is used to prevent race conditions when there
@@ -590,8 +592,6 @@ type Query {
     savedQueries: [SavedQuery!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
-    # Looks up an organization by ID.
-    org(id: ID!): Org! @deprecated(reason: "use Query.node instead")
     # Looks up a shared item by ULID. This is an experimental feature.
     sharedItem(ulid: String!): SharedItem
     # The current site.
@@ -2080,8 +2080,6 @@ type OrgConnection {
 type Org implements Node, ConfigurationSubject {
     # The unique ID for the organization.
     id: ID!
-    # The numeric unique ID for the organization.
-    orgID: Int! @deprecated(reason: "use id instead")
     # The organization's name. This is unique among all organizations on this Sourcegraph site.
     name: String!
     # The organization's chosen display name.
@@ -2116,7 +2114,7 @@ type Org implements Node, ConfigurationSubject {
     # The internal tags associated with the organization. This is an internal site management feature.
     #
     # Only organization members and site admins can access this field.
-    tags: [OrgTag!]!
+    tags: [OrganizationTag!]!
     # Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
     # have admin privileges on the organization.
     viewerCanAdminister: Boolean!
@@ -2393,9 +2391,9 @@ type ConfigurationCascade {
     # The default settings, which are applied first and the lowest priority behind
     # all configuration subjects' settings.
     defaults: Configuration
-    # The configurations for all of the subjects that are applied for the currently
-    # authenticated user. For example, a user in 2 orgs would have the following
-    # configuration subjects: org 1, org 2, and the user.
+    # The configurations for all of the subjects that are applied for the currently authenticated user. For
+    # example, a user in 2 organizations would have the following configuration subjects: org 1, org 2, and the
+    # user.
     subjects: [ConfigurationSubject!]!
     # The effective configuration, merged from all of the subjects.
     merged: Configuration!
@@ -2671,7 +2669,7 @@ type UserTag {
 }
 
 # An organization tag.
-type OrgTag {
+type OrganizationTag {
     # The ID.
     id: Int!
     # The name.

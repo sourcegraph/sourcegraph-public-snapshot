@@ -130,33 +130,31 @@ export function removeUserFromOrganization(args: {
 }
 
 /**
- * Sends a GraphQL mutation to update an org
+ * Sends a GraphQL mutation to update an organization.
  *
- * @param id The ID of the org
- * @param displayName The display name of the org
+ * @param id The ID of the organization.
+ * @param displayName The display name of the organization.
  * @return Observable that emits `undefined`, then completes
  */
-export function updateOrg(id: string, displayName: string): Observable<void> {
+export function updateOrganization(id: GQL.ID, displayName: string): Observable<void> {
     return currentUser.pipe(
         take(1),
         mergeMap(user => {
             if (!user) {
                 throw new Error('User must be signed in.')
             }
-
-            const variables = {
-                id,
-                displayName,
-            }
             return mutateGraphQL(
                 gql`
-                    mutation updateOrg($id: ID!, $displayName: String) {
-                        updateOrg(id: $id, displayName: $displayName) {
+                    mutation UpdateOrganization($id: ID!, $displayName: String) {
+                        updateOrganization(id: $id, displayName: $displayName) {
                             id
                         }
                     }
                 `,
-                variables
+                {
+                    id,
+                    displayName,
+                }
             )
         }),
         map(({ data, errors }) => {
@@ -178,11 +176,15 @@ export function updateOrg(id: string, displayName: string): Observable<void> {
     )
 }
 
-export function updateOrgSettings(id: string, lastKnownSettingsID: number | null, contents: string): Observable<void> {
+export function updateOrganizationSettings(
+    id: GQL.ID,
+    lastKnownSettingsID: number | null,
+    contents: string
+): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation UpdateOrgSettings($id: ID!, $lastKnownSettingsID: Int, $contents: String!) {
-                updateOrgSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
+            mutation UpdateOrganizationSettings($id: ID!, $lastKnownSettingsID: Int, $contents: String!) {
+                updateOrganizationSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
                     ...SettingsFields
                 }
             }
