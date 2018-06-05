@@ -24,6 +24,7 @@ registerLanguage('ocaml', require('highlight.js/lib/languages/ocaml'))
 registerLanguage('r', require('highlight.js/lib/languages/r'))
 registerLanguage('ruby', require('highlight.js/lib/languages/ruby'))
 registerLanguage('rust', require('highlight.js/lib/languages/rust'))
+registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
