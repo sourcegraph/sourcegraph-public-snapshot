@@ -1,14 +1,11 @@
 import * as React from 'react'
 
-interface Props {
-    org: string
-}
-
 /**
- * OrgAvatar displays the avatar of an Avatarable object
+ * OrgAvatar displays the avatar of an organization.
  */
-export class OrgAvatar extends React.Component<Props> {
-    public render(): JSX.Element | null {
-        return <div className="org-avatar">{this.props.org.substr(0, 2).toUpperCase()}</div>
-    }
-}
+export const OrgAvatar: React.SFC<{
+    /** The organization's name. */
+    org: string
+
+    className?: string
+}> = ({ org, className = '' }) => <div className={`org-avatar ${className}`}>{org.substr(0, 2).toUpperCase()}</div>
