@@ -22,6 +22,36 @@ func TestPreSpansToTable_Simple(t *testing.T) {
 }
 func TestPreSpansToTable_Complex(t *testing.T) {
 	input := `<pre style="background-color:#ffffff;">
+<span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode
+</span>
+<span style="font-weight:bold;color:#a71d5d;">import</span><span style="color:#323232;"> </span><span style="color:#323232;">(
+</span><span style="color:#323232;">	</span><span style="color:#183691;">&quot;</span><span style="color:#183691;">net/http</span><span style="color:#183691;">&quot;
+</span>
+<span style="color:#323232;">	</span><span style="color:#183691;">&quot;</span><span style="color:#183691;">github.com/sourcegraph/sourcegraph/pkg/api/legacyerr</span><span style="color:#183691;">&quot;
+</span><span style="color:#323232;">)
+</span>
+</pre>
+
+`
+	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode
+</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>
+</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">import</span><span style="color:#323232;"> </span><span style="color:#323232;">(
+</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;</span><span style="color:#183691;">net/http</span><span style="color:#183691;">&#34;
+</span></td></tr><tr><td class="line" data-line="5"></td><td class="code"><span>
+</span></td></tr><tr><td class="line" data-line="6"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;</span><span style="color:#183691;">github.com/sourcegraph/sourcegraph/pkg/api/legacyerr</span><span style="color:#183691;">&#34;
+</span></td></tr><tr><td class="line" data-line="7"></td><td class="code"><span style="color:#323232;">)
+</span></td></tr><tr><td class="line" data-line="8"></td><td class="code"><span>
+</span></td></tr><tr><td class="line" data-line="9"></td><td class="code"></td></tr></table>`
+	got, err := preSpansToTable(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
+	}
+}
+func TestLegacy_PreSpansToTable_Complex(t *testing.T) {
+	input := `<pre style="background-color:#ffffff;">
 <span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode</span>
 
 <span style="font-weight:bold;color:#a71d5d;">import</span><span style="color:#323232;"> </span><span style="color:#323232;">(</span>
