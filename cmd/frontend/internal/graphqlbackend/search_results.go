@@ -255,6 +255,10 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			}
 			addRepoFilter(string(result.fileMatch.repo.URI), rev, len(result.fileMatch.LineMatches()))
 			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
+
+			if len(result.fileMatch.symbols) > 0 {
+				add("type:symbol", "type:symbol", 1, result.fileMatch.JLimitHit, "symbol")
+			}
 		}
 
 		if result.repo != nil {
