@@ -245,6 +245,11 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		case *fileResolver:
 			k.repoID = s.commit.repositoryDatabaseID()
 			k.repoRev = string(s.commit.oid)
+			// Zoekt only searches the default branch and sets commit ID to an empty string.
+			// Set repoRev to the latest indexed revision so we can properly ensure deduplication.
+			if k.repoRev == "" && s.commit != nil && s.commit.repo != nil && s.commit.repo.repo != nil && s.commit.repo.repo.IndexedRevision != nil {
+				k.repoRev = string(*s.commit.repo.repo.IndexedRevision)
+			}
 			k.file = s.path
 		case *symbolResolver:
 			k.repoID = s.location.resource.commit.repoID
