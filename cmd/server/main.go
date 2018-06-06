@@ -72,7 +72,7 @@ var defaultEnv = map[string]string{
 	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 }
 
-var verbose, _ = strconv.ParseBool(os.Getenv("DEBUG"))
+var verbose, _ = strconv.ParseBool(os.Getenv("FRONTEND_DEBUG"))
 
 func main() {
 	log.SetFlags(0)

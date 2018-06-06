@@ -4,7 +4,6 @@ import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 // @ts-ignore
 import rxPaths from 'rxjs/_esm5/path-mapping'
-import { Tapable } from 'tapable'
 import * as webpack from 'webpack'
 
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
@@ -36,13 +35,6 @@ const config: webpack.Configuration = {
         headers: { 'Access-Control-Allow-Origin': '*' },
     },
     plugins: [
-        // Print some output for VS Code tasks to know when a build started
-        function(this: Tapable): void {
-            this.plugin('watch-run', (watching: any, cb: () => void) => {
-                console.log('Begin compile at ' + new Date())
-                cb()
-            })
-        },
         // Needed for React
         new webpack.DefinePlugin({
             'process.env': {
