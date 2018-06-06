@@ -128,6 +128,8 @@
 // ../../../../../migrations/1526804768_add_external_account_client.up.sql
 // ../../../../../migrations/1527691234_reuse_org_name.down.sql
 // ../../../../../migrations/1527691234_reuse_org_name.up.sql
+// ../../../../../migrations/1528179233_create_org_invitations_table.down.sql
+// ../../../../../migrations/1528179233_create_org_invitations_table.up.sql
 // ../../../../../migrations/1528277031_drop_code_comments_tables.down.sql
 // ../../../../../migrations/1528277031_drop_code_comments_tables.up.sql
 // DO NOT EDIT!
@@ -2757,6 +2759,46 @@ func _1527691234_reuse_org_nameUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528179233_create_org_invitations_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x8f\xcf\xcc\x2b\xcb\x2c\x49\x2c\xc9\xcc\xcf\x2b\xb6\xe6\x02\x04\x00\x00\xff\xff\x3c\xc7\x9e\x65\x1c\x00\x00\x00")
+
+func _1528179233_create_org_invitations_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528179233_create_org_invitations_tableDownSql,
+		"1528179233_create_org_invitations_table.down.sql",
+	)
+}
+
+func _1528179233_create_org_invitations_tableDownSql() (*asset, error) {
+	bytes, err := _1528179233_create_org_invitations_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528179233_create_org_invitations_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var __1528179233_create_org_invitations_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x93\xcd\xae\x9b\x30\x10\x85\xd7\xe1\x29\x66\x09\x52\xde\x20\xea\xc2\x05\x5f\x5d\x14\x6a\x5a\x07\xd4\x66\x85\x08\x4c\xc8\x28\xc4\x46\xd8\x4d\xd4\x3e\x7d\x05\x21\x4d\xd2\x90\x9f\xde\x25\xf6\x9c\xf9\xc6\xe7\x0c\xbe\xe4\x2c\xe1\x90\xb0\xcf\x11\x07\xdd\x56\x19\xa9\x3d\xd9\xdc\x92\x56\xc6\x75\x26\x54\xc2\x8a\x2a\x83\x2d\xe5\x35\x88\x38\x01\x91\x46\x11\x7c\x95\xe1\x17\x26\x97\x30\xe7\xcb\xa9\x33\xe9\x55\x25\x90\xb2\x58\x61\x7b\xae\x92\xfc\x8d\x4b\x2e\x7c\xbe\xe8\x1a\x1b\x70\xa9\xf4\xa6\xce\xc4\xa0\x2a\xb1\xcd\x7e\x1a\x6c\x9f\xc9\xba\x9a\xbf\xba\x16\x0b\x6a\x08\x95\xfd\x7f\x69\xd1\x62\x6e\xb1\xcc\x72\x0b\x96\x76\x68\x6c\xbe\x6b\xe0\x40\x76\xd3\x7f\xc2\x6f\xad\xf0\xdc\x24\xe0\x6f\x2c\x8d\x12\x50\xfa\xe0\x76\x62\xa5\x2d\xad\xe9\xb1\xba\x1f\xcf\x34\x5a\x95\x2f\xd6\x19\xcc\xec\xaf\x06\x61\xa5\x75\x8d\xb9\xea\xcf\xf7\x7a\xfb\x54\x5d\x62\x8d\x4f\x5e\xe2\x78\x33\xc7\x19\x62\x0d\x45\xc0\x7f\xfc\x1b\x6b\x36\x04\x16\x8b\x9b\xc0\x8f\x37\x1e\x7c\x7f\xe7\x92\xc3\x05\x2c\x5c\xf4\xe6\xcc\x1e\x37\xbe\x8d\x68\x84\x71\x53\xf4\x02\x2e\x15\xe1\xb7\xf4\x1e\xd5\x90\xaa\x6a\x5c\xd7\x54\x6d\xec\xfd\x47\x4d\xe1\x2e\xf8\x2a\xba\x01\x0d\x4c\x04\x70\x91\xc9\xe5\xf1\xd8\xa0\x2c\x4a\xb8\x1c\xff\x8d\x80\x05\x01\xf8\xb1\x58\x24\x92\x85\x22\x81\x62\x83\xc5\x36\xcb\xad\xde\x51\x91\x9d\xd6\x01\xfc\x77\xee\xcf\x5d\x77\x6c\x16\x0f\x3e\x81\x7b\xbd\x37\xa7\x1b\xef\x03\xe4\xa3\x5f\x9d\x09\x8f\xa0\x83\x01\x63\x50\x88\xe5\x88\x35\xde\xcc\xf9\x13\x00\x00\xff\xff\xce\x85\x9c\xfc\x4d\x04\x00\x00")
+
+func _1528179233_create_org_invitations_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528179233_create_org_invitations_tableUpSql,
+		"1528179233_create_org_invitations_table.up.sql",
+	)
+}
+
+func _1528179233_create_org_invitations_tableUpSql() (*asset, error) {
+	bytes, err := _1528179233_create_org_invitations_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528179233_create_org_invitations_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var __1528277031_drop_code_comments_tablesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x14\xc4\xb1\x0d\x03\x21\x0c\x05\xd0\xfe\xa6\xf8\x5d\x2a\x6e\x94\x54\x59\xc0\xe0\x9f\x80\x74\xd8\x12\x98\xa0\x6c\x1f\x5d\xf3\x52\xc2\xd3\xa1\xbe\xad\xb7\xcf\x90\x68\x6e\xc8\x2c\xb2\x26\xb1\x09\x75\x7b\x04\x8c\x54\x84\x63\xb0\x0c\x4a\x10\x51\x89\xe2\x7a\xd3\x3b\x2d\x26\x42\xf2\xc5\x79\xe2\x55\xf9\x43\x95\x2f\x91\x49\x3b\x52\xc2\xb2\x35\xa9\x78\xfb\x80\x60\xd7\x76\xf1\x3c\xfe\x01\x00\x00\xff\xff\x0c\x73\x47\x27\x76\x00\x00\x00")
 
 func _1528277031_drop_code_comments_tablesDownSqlBytes() ([]byte, error) {
@@ -2977,6 +3019,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1526804768_add_external_account_client.up.sql":               _1526804768_add_external_account_clientUpSql,
 	"1527691234_reuse_org_name.down.sql":                          _1527691234_reuse_org_nameDownSql,
 	"1527691234_reuse_org_name.up.sql":                            _1527691234_reuse_org_nameUpSql,
+	"1528179233_create_org_invitations_table.down.sql":            _1528179233_create_org_invitations_tableDownSql,
+	"1528179233_create_org_invitations_table.up.sql":              _1528179233_create_org_invitations_tableUpSql,
 	"1528277031_drop_code_comments_tables.down.sql":               _1528277031_drop_code_comments_tablesDownSql,
 	"1528277031_drop_code_comments_tables.up.sql":                 _1528277031_drop_code_comments_tablesUpSql,
 }
@@ -3150,6 +3194,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1526804768_add_external_account_client.up.sql":               &bintree{_1526804768_add_external_account_clientUpSql, map[string]*bintree{}},
 	"1527691234_reuse_org_name.down.sql":                          &bintree{_1527691234_reuse_org_nameDownSql, map[string]*bintree{}},
 	"1527691234_reuse_org_name.up.sql":                            &bintree{_1527691234_reuse_org_nameUpSql, map[string]*bintree{}},
+	"1528179233_create_org_invitations_table.down.sql":            &bintree{_1528179233_create_org_invitations_tableDownSql, map[string]*bintree{}},
+	"1528179233_create_org_invitations_table.up.sql":              &bintree{_1528179233_create_org_invitations_tableUpSql, map[string]*bintree{}},
 	"1528277031_drop_code_comments_tables.down.sql":               &bintree{_1528277031_drop_code_comments_tablesDownSql, map[string]*bintree{}},
 	"1528277031_drop_code_comments_tables.up.sql":                 &bintree{_1528277031_drop_code_comments_tablesUpSql, map[string]*bintree{}},
 }}

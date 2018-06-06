@@ -1,7 +1,7 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import * as React from 'react'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 
@@ -49,6 +49,18 @@ export const OrgHeader: React.SFC<Props> = (props: Props) => (
                                 </NavLink>
                             )}
                         </div>
+                        {props.org.viewerPendingInvitation &&
+                            props.org.viewerPendingInvitation.respondURL && (
+                                <div className="area-header__nav-actions">
+                                    <small className="area-header__nav-actions-label mr-sm-2">Join organization:</small>
+                                    <Link
+                                        to={props.org.viewerPendingInvitation.respondURL}
+                                        className="btn btn-success btn-sm"
+                                    >
+                                        View invitation
+                                    </Link>
+                                </div>
+                            )}
                     </div>
                 </>
             )}

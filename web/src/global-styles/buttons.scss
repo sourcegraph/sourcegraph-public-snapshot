@@ -48,3 +48,19 @@
 .btn.btn-sm {
     @extend small;
 }
+
+// A .btn-outline-link button class that displays an unsaturated outline around a link.
+.btn.btn-outline-link {
+    color: $link-color !important;
+}
+.theme-dark {
+    .btn.btn-outline-link {
+        @include button-outline-variant($secondary);
+    }
+}
+// stylelint-disable-next-line no-duplicate-selectors
+.theme-light {
+    .btn.btn-outline-link {
+        @include button-outline-variant($secondary-light);
+    }
+}

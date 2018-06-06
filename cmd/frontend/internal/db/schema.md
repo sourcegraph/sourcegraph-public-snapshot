@@ -54,6 +54,35 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.org_invitations"
+```
+      Column       |           Type           |                          Modifiers                           
+-------------------+--------------------------+--------------------------------------------------------------
+ id                | bigint                   | not null default nextval('org_invitations_id_seq'::regclass)
+ org_id            | integer                  | not null
+ sender_user_id    | integer                  | not null
+ recipient_user_id | integer                  | not null
+ created_at        | timestamp with time zone | not null default now()
+ notified_at       | timestamp with time zone | 
+ responded_at      | timestamp with time zone | 
+ response_type     | boolean                  | 
+ revoked_at        | timestamp with time zone | 
+ deleted_at        | timestamp with time zone | 
+Indexes:
+    "org_invitations_pkey" PRIMARY KEY, btree (id)
+    "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
+    "org_invitations_org_id" btree (org_id) WHERE deleted_at IS NULL
+    "org_invitations_recipient_user_id" btree (recipient_user_id) WHERE deleted_at IS NULL
+Check constraints:
+    "check_atomic_response" CHECK ((responded_at IS NULL) = (response_type IS NULL))
+    "check_single_use" CHECK (responded_at IS NULL AND response_type IS NULL OR revoked_at IS NULL)
+Foreign-key constraints:
+    "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
+    "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
+    "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
+
+```
+
 # Table "public.org_members"
 ```
    Column   |           Type           |                        Modifiers                         
@@ -120,6 +149,7 @@ Check constraints:
     "org_display_name_valid" CHECK (char_length(display_name) <= 64)
     "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
 Referenced by:
+    TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "org_tags" CONSTRAINT "org_tags_references_users" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -359,6 +389,8 @@ Check constraints:
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
+    TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
+    TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

@@ -40,7 +40,7 @@ $success: $green;
 $info: $cyan;
 $warning: $yellow;
 $danger: $red;
-$secondary-light: #f2f4f8;
+$secondary-light: $gray-01;
 
 $theme-colors-light: ('secondary': $secondary-light);
 
@@ -260,6 +260,7 @@ hr {
 @import './components/DecoratedTextLines';
 @import './components/HeroPage';
 @import './components/Markdown';
+@import './components/ModalPage';
 @import './components/PopoverButton';
 @import './components/Overview';
 @import './components/RadioButtons';

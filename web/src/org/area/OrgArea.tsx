@@ -3,47 +3,55 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { memoizeObservable } from '../../util/memoize'
 import { OrgSettingsArea } from '../settings/OrgSettingsArea'
 import { OrgHeader } from './OrgHeader'
+import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
 import { OrgOverviewPage } from './OrgOverviewPage'
 
-const fetchOrg = memoizeObservable(
-    (args: { name: string }): Observable<GQL.IOrg | null> =>
-        queryGraphQL(
-            gql`
-                query Organization($name: String!) {
-                    organization(name: $name) {
+function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
+    return queryGraphQL(
+        gql`
+            query Organization($name: String!) {
+                organization(name: $name) {
+                    id
+                    name
+                    displayName
+                    viewerPendingInvitation {
                         id
-                        name
-                        displayName
-                        viewerIsMember
-                        viewerCanAdminister
-                        createdAt
-                        tags {
-                            name
+                        sender {
+                            username
+                            displayName
+                            avatarURL
+                            createdAt
                         }
+                        respondURL
+                    }
+                    viewerIsMember
+                    viewerCanAdminister
+                    createdAt
+                    tags {
+                        name
                     }
                 }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.organization) {
-                    throw createAggregateError(errors)
-                }
-                return data.organization
-            })
-        ),
-    ({ name }) => name
-)
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.organization) {
+                throw createAggregateError(errors)
+            }
+            return data.organization
+        })
+    )
+}
 
 const NotFoundPage = () => (
     <HeroPage
@@ -87,21 +95,26 @@ export class OrgArea extends React.Component<Props> {
     public state: State = {}
 
     private routeMatchChanges = new Subject<{ name: string }>()
+    private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        // Changes to the route-matched org name.
+        const nameChanges = this.routeMatchChanges.pipe(map(({ name }) => name), distinctUntilChanged())
+
         // Fetch organization.
         this.subscriptions.add(
-            this.routeMatchChanges
+            combineLatest(nameChanges, merge(this.refreshRequests.pipe(mapTo(true)), of(false)))
                 .pipe(
-                    map(({ name }) => name),
-                    distinctUntilChanged(),
-                    switchMap(name => {
+                    switchMap(([name, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
-                        return fetchOrg({ name }).pipe(
+                        return queryOrganization({ name }).pipe(
                             catchError(error => [error]),
                             map(c => ({ orgOrError: c } as PartialStateUpdate)),
-                            startWith<PartialStateUpdate>({ orgOrError: undefined })
+
+                            // Don't clear old org data while we reload, to avoid unmounting all components during
+                            // loading.
+                            startWith<PartialStateUpdate>(forceRefresh ? {} : { orgOrError: undefined })
                         )
                     })
                 )
@@ -133,6 +146,12 @@ export class OrgArea extends React.Component<Props> {
             authenticatedUser: this.props.user,
             org: this.state.orgOrError,
         }
+
+        if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
+            // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.
+            return <OrgInvitationPage {...transferProps} onDidRespondToInvitation={this.onDidRespondToInvitation} />
+        }
+
         return (
             <div className="org-area area--vertical">
                 <OrgHeader className="area--vertical__header" {...this.props} {...transferProps} />
@@ -176,4 +195,6 @@ export class OrgArea extends React.Component<Props> {
             </div>
         )
     }
+
+    private onDidRespondToInvitation = () => this.refreshRequests.next()
 }

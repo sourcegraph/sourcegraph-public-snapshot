@@ -19,4 +19,6 @@ type MockStores struct {
 	Phabricator MockPhabricator
 
 	ExternalAccounts MockExternalAccounts
+
+	OrgInvitations MockOrgInvitations
 }

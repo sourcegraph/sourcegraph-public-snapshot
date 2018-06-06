@@ -154,11 +154,6 @@ type Mutation {
     setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
     # Deletes a user account. Only site admins may perform this mutation.
     deleteUser(user: ID!): EmptyResponse
-    # Invite the user with the given username to join the organization. The invited user account must already
-    # exist.
-    #
-    # Only site admins and any organization member may perform this mutation.
-    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
     # Updates the current user's password. The oldPassword arg must match the user's current password.
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     # Creates an access token that grants the privileges of the specified user (referred to as the access token's
@@ -183,12 +178,41 @@ type Mutation {
     #
     # Only site admins or the user who is associated with the external account may perform this mutation.
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
-    # Accepts a user invite.
-    acceptUserInvite(inviteToken: String!): EmptyResponse
+    # Invite the user with the given username to join the organization. The invited user account must already
+    # exist.
+    #
+    # Only site admins and any organization member may perform this mutation.
+    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
+    # Accept or reject an existing organization invitation.
+    #
+    # Only the recipient of the invitation may perform this mutation.
+    respondToOrganizationInvitation(
+        # The organization invitation.
+        organizationInvitation: ID!
+        # The response to the invitation.
+        responseType: OrganizationInvitationResponseType!
+    ): EmptyResponse!
+    # Resend the notification about an organization invitation to the recipient.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    resendOrganizationInvitationNotification(
+        # The organization invitation.
+        organizationInvitation: ID!
+    ): EmptyResponse!
+    # Revoke an existing organization invitation.
+    #
+    # If the invitation has been accepted or rejected, it may no longer be revoked. After an
+    # invitation is revoked, the recipient may not accept or reject it. Both cases yield an error.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    revokeOrganizationInvitation(
+        # The organization invitation.
+        organizationInvitation: ID!
+    ): EmptyResponse!
     # Immediately add a user as a member to the organization, without sending an invitation email.
     #
-    # Only site admins may perform this mutation. Organization members may use the inviteUser mutation to invite
-    # users.
+    # Only site admins may perform this mutation. Organization members may use the inviteUserToOrganization
+    # mutation to invite users.
     addUserToOrganization(organization: ID!, username: String!): EmptyResponse!
     # Removes a user as a member from an organization.
     #
@@ -1847,6 +1871,8 @@ type Org implements Node, ConfigurationSubject {
     #
     # Only organization members and site admins can access this field.
     tags: [OrganizationTag!]!
+    # A pending invitation for the viewer to join this organization, if any.
+    viewerPendingInvitation: OrganizationInvitation
     # Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
     # have admin privileges on the organization.
     viewerCanAdminister: Boolean!
@@ -1859,8 +1885,40 @@ type InviteUserToOrganizationResult {
     # Whether an invitation email was sent. If emails are not enabled on this site or if the user has no verified
     # email address, an email will not be sent.
     sentInvitationEmail: Boolean!
-    # The URL that the invited user can visit to accept the invitation.
-    acceptInvitationURL: String!
+    # The URL that the invited user can visit to accept or reject the invitation.
+    invitationURL: String!
+}
+
+# An invitation to join an organization as a member.
+type OrganizationInvitation implements Node {
+    # The ID of the invitation.
+    id: ID!
+    # The organization that the invitation is for.
+    organization: Org!
+    # The user who sent the invitation.
+    sender: User!
+    # The user who received the invitation.
+    recipient: User!
+    # The date when this invitation was created.
+    createdAt: String!
+    # The most recent date when a notification was sent to the recipient about this invitation.
+    notifiedAt: String
+    # The date when this invitation was responded to by the recipient.
+    respondedAt: String
+    # The recipient's response to this invitation, or no response (null).
+    responseType: OrganizationInvitationResponseType
+    # The URL where the recipient can respond to the invitation when pending, or null if not pending.
+    respondURL: String
+    # The date when this invitation was revoked.
+    revokedAt: String
+}
+
+# The recipient's possible responses to an invitation to join an organization as a member.
+enum OrganizationInvitationResponseType {
+    # The invitation was accepted by the recipient.
+    ACCEPT
+    # The invitation was rejected by the recipient.
+    REJECT
 }
 
 # The possible configuration states of a language server.

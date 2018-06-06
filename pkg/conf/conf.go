@@ -273,7 +273,6 @@ var doNotRequireRestart = []string{
 	"githubClientID",
 	"githubClientSecret",
 	"settings",
-	"secretKey",
 	"htmlHeadTop",
 	"htmlHeadBottom",
 	"htmlBodyTop",

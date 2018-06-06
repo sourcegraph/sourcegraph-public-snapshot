@@ -142,13 +142,6 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{},
 		},
 
-		// legacy accept invite
-		{
-			path:      "/accept-invite",
-			wantRoute: routeLegacyAcceptInvite,
-			wantVars:  map[string]string{},
-		},
-
 		{
 			path:      "/site-admin",
 			wantRoute: routeSiteAdmin,

@@ -1,0 +1,21 @@
+.modal-page {
+    min-height: 70%; // position vertically slightly nearer to top than bottom of page
+    width: 100%;
+    max-width: 30rem;
+    margin: 0 auto;
+
+    display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+    align-content: center;
+    justify-content: center;
+
+    &__card-body {
+        padding: 2 * $card-spacer-y 2 * $card-spacer-x;
+    }
+
+    &__icon {
+        display: flex;
+        justify-content: center;
+    }
+}

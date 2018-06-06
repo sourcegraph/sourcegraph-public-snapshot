@@ -62,7 +62,6 @@ func readOrGenerateConfig(path string) (configJSON string, writable bool, err er
 func generateConfigFile(path string) (configJSON string, err error) {
 	// The default site configuration.
 	defaultSiteConfig := schema.SiteConfiguration{
-		SecretKey: string(mustCryptoRand()),
 		AuthProviders: []schema.AuthProviders{
 			{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 		},

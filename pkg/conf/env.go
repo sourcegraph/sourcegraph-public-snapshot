@@ -51,7 +51,6 @@ var legacyEnvToFieldName = map[string]string{
 	"SamlSPCert":                     "SAML_CERT",
 	"SamlSPKey":                      "SAML_KEY",
 	"SearchScopes":                   "SEARCH_SCOPES",
-	"SecretKey":                      "SRC_APP_SECRET_KEY",
 	// Settings has no env var
 	"TlsCert": "TLS_CERT",
 	"TlsKey":  "TLS_KEY",
@@ -111,11 +110,7 @@ func configFromEnv() (configJSON []byte, envVarNames []string, err error) {
 				}
 				valField.SetInt(int64(valInt))
 			case reflect.Ptr, reflect.Slice, reflect.Struct:
-				// Don't base64-decode SRC_APP_SECRET_KEY yet, to avoid double-decoding
-				// when JSON config is used.
-				if typeField.Name == "SecretKey" {
-					valField.SetString(envVal)
-				} else if err := json.Unmarshal([]byte(envVal), valField.Addr().Interface()); err != nil {
+				if err := json.Unmarshal([]byte(envVal), valField.Addr().Interface()); err != nil {
 					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
 				}
 			default:

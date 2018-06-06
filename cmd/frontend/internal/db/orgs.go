@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 	"github.com/keegancsmith/sqlf"
@@ -213,7 +214,23 @@ func (o *orgs) Update(ctx context.Context, id int32, displayName *string) (*type
 }
 
 func (o *orgs) Delete(ctx context.Context, id int32) error {
-	res, err := globalDB.ExecContext(ctx, "UPDATE orgs SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	// Wrap in transaction because we delete from multiple tables.
+	tx, err := globalDB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	res, err := tx.ExecContext(ctx, "UPDATE orgs SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -224,6 +241,11 @@ func (o *orgs) Delete(ctx context.Context, id int32) error {
 	if rows == 0 {
 		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
 	}
+
+	if _, err := tx.ExecContext(ctx, "UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND org_id=$1", id); err != nil {
+		return err
+	}
+
 	return nil
 }
 

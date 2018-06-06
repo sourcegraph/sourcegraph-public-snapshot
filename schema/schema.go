@@ -280,7 +280,6 @@ type SiteConfiguration struct {
 	SamlSPCert                        string                       `json:"samlSPCert,omitempty"`
 	SamlSPKey                         string                       `json:"samlSPKey,omitempty"`
 	SearchScopes                      []*SearchScope               `json:"searchScopes,omitempty"`
-	SecretKey                         string                       `json:"secretKey,omitempty"`
 	Settings                          *Settings                    `json:"settings,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
 	TlsLetsencrypt                    string                       `json:"tls.letsencrypt,omitempty"`

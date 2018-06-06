@@ -45,30 +45,6 @@ export function createOrganization(args: {
 }
 
 /**
- * Sends a GraphQL mutation to accept an invitation to an organization.
- */
-export function acceptUserInvite(args: { inviteToken: string }): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation AcceptUserInvite($inviteToken: String!) {
-                acceptUserInvite(inviteToken: $inviteToken) {
-                    alwaysNil
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.acceptUserInvite) {
-                eventLogger.log('AcceptInviteFailed')
-                throw createAggregateError(errors)
-            }
-            return
-        })
-    )
-}
-
-/**
  * Sends a GraphQL mutation to remove a user from an organization.
  *
  * @return An Observable that emits `undefined` when done, then completes

@@ -22,7 +22,7 @@ export function inviteUserToOrganization(
             mutation InviteUserToOrganization($organization: ID!, $username: String!) {
                 inviteUserToOrganization(organization: $organization, username: $username) {
                     sentInvitationEmail
-                    acceptInvitationURL
+                    invitationURL
                 }
             }
         `,
@@ -80,9 +80,9 @@ const InvitedNotification: React.SFC<{
     className: string
     username: string
     sentInvitationEmail: boolean
-    acceptInvitationURL: string
+    invitationURL: string
     onDismiss: () => void
-}> = ({ className, username, sentInvitationEmail, acceptInvitationURL, onDismiss }) => (
+}> = ({ className, username, sentInvitationEmail, invitationURL, onDismiss }) => (
     <div className={`${className} invited-notification`}>
         <div className="invited-notification__message">
             {sentInvitationEmail ? (
@@ -92,7 +92,7 @@ const InvitedNotification: React.SFC<{
             ) : (
                 <>Generated invitation link. Copy and send it to {username}:</>
             )}
-            <CopyableText text={acceptInvitationURL} size={40} className="mt-2" />
+            <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
         <button className="btn btn-icon">
             <CloseIcon title="Dismiss" onClick={onDismiss} />
@@ -108,8 +108,7 @@ export interface Props {
     onDidUpdateOrganizationMembers: () => void
 }
 
-interface SubmittedInvite
-    extends Pick<GQL.IInviteUserToOrganizationResult, 'sentInvitationEmail' | 'acceptInvitationURL'> {
+interface SubmittedInvite extends Pick<GQL.IInviteUserToOrganizationResult, 'sentInvitationEmail' | 'invitationURL'> {
     username: string
 }
 
@@ -158,7 +157,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     mergeMap(([, { orgID }, username]) =>
                         inviteUserToOrganization(username, orgID).pipe(
                             tap(() => this.usernameChanges.next('')),
-                            mergeMap(({ sentInvitationEmail, acceptInvitationURL }) =>
+                            mergeMap(({ sentInvitationEmail, invitationURL }) =>
                                 // Reset email, reenable submit button, flash "invited" text
                                 of((state: State): State => ({
                                     ...state,
@@ -167,7 +166,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                     username: '',
                                     invited: [
                                         ...(state.invited || []),
-                                        { username, sentInvitationEmail, acceptInvitationURL },
+                                        { username, sentInvitationEmail, invitationURL },
                                     ],
                                 }))
                             ),
@@ -295,13 +294,13 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     </div>
                 </div>
                 {this.state.invited &&
-                    this.state.invited.map(({ username, sentInvitationEmail, acceptInvitationURL }, i) => (
+                    this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, i) => (
                         <InvitedNotification
                             key={i}
                             className="alert alert-success invite-form__alert"
                             username={username}
                             sentInvitationEmail={sentInvitationEmail}
-                            acceptInvitationURL={acceptInvitationURL}
+                            invitationURL={invitationURL}
                             // tslint:disable-next-line:jsx-no-lambda
                             onDismiss={() => this.dismissNotification(i)}
                         />

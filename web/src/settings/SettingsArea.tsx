@@ -6,7 +6,6 @@ import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
-import { AcceptInvitePage } from '../org/invite/AcceptInvitePage'
 import { siteFlags } from '../site/backend'
 import { UserAreaPageProps } from '../user/area/UserArea'
 import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPage'
@@ -68,9 +67,8 @@ export class SettingsArea extends React.Component<Props, State> {
 
         // If not logged in, redirect to sign in
         if (!this.props.authenticatedUser) {
-            const currUrl = new URL(window.location.href)
             const newUrl = new URL(window.location.href)
-            newUrl.pathname = currUrl.pathname.endsWith('/settings/accept-invite') ? '/sign-up' : '/sign-in'
+            newUrl.pathname = '/sign-in'
             // Return to the current page after sign up/in.
             newUrl.searchParams.set('returnTo', window.location.href)
             return <Redirect to={newUrl.pathname + newUrl.search} />
@@ -145,15 +143,6 @@ export class SettingsArea extends React.Component<Props, State> {
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
                                 <UserSettingsExternalAccountsPage {...routeComponentProps} {...this.props} />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/accept-invite`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <AcceptInvitePage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         {window.context.accessTokensEnabled && (

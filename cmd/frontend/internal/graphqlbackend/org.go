@@ -2,22 +2,17 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -137,6 +132,20 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*organizationTagResolver, err
 		organizationTagResolvers = append(organizationTagResolvers, &organizationTagResolver{tag})
 	}
 	return organizationTagResolvers, nil
+}
+
+func (o *orgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
+	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+		orgInvitation, err := db.OrgInvitations.GetPending(ctx, o.org.ID, actor.UID)
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		return &organizationInvitationResolver{orgInvitation}, nil
+	}
+	return nil, nil
 }
 
 func (o *orgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -278,142 +287,6 @@ func (*schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *str
 
 	log15.Info("removing user from org", "user", userID, "org", orgID)
 	return nil, db.OrgMembers.Remove(ctx, orgID, userID)
-}
-
-func getUserToInviteToOrganization(ctx context.Context, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
-	userToInvite, err = db.Users.GetByUsername(ctx, username)
-	if err != nil {
-		return nil, "", err
-	}
-
-	if conf.CanSendEmail() {
-		// Look up user's email address so we can send them an email (if needed).
-		email, verified, err := db.UserEmails.GetPrimaryEmail(ctx, userToInvite.ID)
-		if err != nil && !errcode.IsNotFound(err) {
-			return nil, "", errors.WithMessage(err, "looking up invited user's primary email address")
-		}
-		if verified {
-			// Completely discard unverified emails.
-			userEmailAddress = email
-		}
-	}
-
-	if _, err := db.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
-		return nil, "", errors.New("user is already a member of the organization")
-	} else if _, ok := err.(*db.ErrOrgMemberNotFound); !ok {
-		return nil, "", err
-	}
-	return userToInvite, userEmailAddress, nil
-}
-
-type inviteUserToOrganizationResult struct {
-	sentInvitationEmail bool
-	acceptInvitationURL string
-}
-
-func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool   { return r.sentInvitationEmail }
-func (r *inviteUserToOrganizationResult) AcceptInvitationURL() string { return r.acceptInvitationURL }
-
-func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
-	Organization graphql.ID
-	Username     string
-}) (*inviteUserToOrganizationResult, error) {
-	var orgID int32
-	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
-		return nil, err
-	}
-	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
-	// invited to.
-	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
-		return nil, err
-	}
-
-	currentUser, err := currentUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if currentUser == nil {
-		return nil, errors.New("must be logged in")
-	}
-	_, senderEmailVerified, err := db.UserEmails.GetPrimaryEmail(ctx, currentUser.SourcegraphID())
-	if err != nil {
-		return nil, err
-	}
-
-	_, recipientEmail, err := getUserToInviteToOrganization(ctx, args.Username, orgID)
-	if err != nil {
-		return nil, err
-	}
-
-	if envvar.SourcegraphDotComMode() {
-		// Only allow email-verified users to send invites.
-		if !senderEmailVerified {
-			return nil, errors.New("must verify your email to send invites")
-		}
-
-		// Check and decrement our invite quota, to prevent abuse (sending too many invites).
-		//
-		// There is no user invite quota for on-prem instances because we assume they can
-		// trust their users to not abuse invites.
-		if ok, err := db.Users.CheckAndDecrementInviteQuota(ctx, currentUser.SourcegraphID()); err != nil {
-			return nil, err
-		} else if !ok {
-			return nil, errors.New("invite quota exceeded (contact support to increase the quota)")
-		}
-	}
-
-	org, err := db.Orgs.GetByID(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-
-	token, err := invite.CreateOrgToken(recipientEmail, org)
-	if err != nil {
-		return nil, err
-	}
-
-	inviteURL := globals.AppURL.String() + "/settings/accept-invite?token=" + token
-
-	if conf.CanSendEmail() && recipientEmail != "" {
-		// If email is disabled, the frontend will still show the invitation link.
-		var fromName string
-		if currentUser.user.DisplayName != "" {
-			fromName = fmt.Sprintf("%s (%s on Sourcegraph)", currentUser.user.DisplayName, currentUser.user.Username)
-		} else {
-			fromName = fmt.Sprintf("%s (on Sourcegraph)", currentUser.user.Username)
-		}
-		if err := invite.SendEmail(recipientEmail, fromName, org.Name, inviteURL); err != nil {
-			return nil, err
-		}
-	}
-
-	return &inviteUserToOrganizationResult{
-		sentInvitationEmail: recipientEmail != "",
-		acceptInvitationURL: inviteURL,
-	}, nil
-}
-
-func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
-	InviteToken string
-}) (*EmptyResponse, error) {
-	currentUser, err := currentUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if currentUser == nil {
-		return nil, errors.New("no current user")
-	}
-
-	token, err := invite.ParseToken(args.InviteToken)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = db.OrgMembers.Create(ctx, token.OrgID, currentUser.SourcegraphID())
-	if err != nil {
-		return nil, err
-	}
-	return &EmptyResponse{}, nil
 }
 
 func (*schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {

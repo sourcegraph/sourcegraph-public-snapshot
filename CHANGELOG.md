@@ -15,6 +15,12 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
+* Organization invites (which allow users to invite other users to join organizations) are significantly improved. A new accept-invitation page was added.
+
+### Removed
+
+* The `secretKey` site configuration value is no longer needed. It was only used for generating tokens for inviting a user to an organization. The invitation is now stored in the database associated with the recipient, so a secret token is no longer needed.
+
 ## 2.8.9
 
 ### Changed

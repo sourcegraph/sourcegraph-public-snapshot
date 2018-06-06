@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"log"
 	"os"
 	"path/filepath"
@@ -169,14 +167,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func mustCryptoRand() []byte {
-	var b [80]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		log.Fatalf("could not generate generate random value for SRC_APP_SECRET_KEY: %s", err)
-	}
-	buf := make([]byte, base64.StdEncoding.EncodedLen(len(b)))
-	base64.StdEncoding.Encode(buf, b[:])
-	return buf
 }

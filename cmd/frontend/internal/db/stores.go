@@ -21,4 +21,6 @@ var (
 	SurveyResponses = &surveyResponses{}
 
 	ExternalAccounts = &userExternalAccounts{}
+
+	OrgInvitations = &orgInvitations{}
 )

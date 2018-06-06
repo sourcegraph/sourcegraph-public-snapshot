@@ -109,6 +109,11 @@ func (r *nodeResolver) ToOrg() (*orgResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToOrganizationInvitation() (*organizationInvitationResolver, bool) {
+	n, ok := r.node.(*organizationInvitationResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
 	n, ok := r.node.(*gitCommitResolver)
 	return n, ok
@@ -155,6 +160,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return userByID(ctx, id)
 	case "Org":
 		return orgByID(ctx, id)
+	case "OrganizationInvitation":
+		return orgInvitationByID(ctx, id)
 	case "GitCommit":
 		return gitCommitByID(ctx, id)
 	case "Package":

@@ -64,7 +64,6 @@ const (
 	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
 	routeLegacyRepoLanding             = "page.repo.landing"
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
-	routeLegacyAcceptInvite            = "legacy.accept-invite"
 	routeLegacyEditorAuth              = "legacy.editor-auth"
 	routeLegacyEditorAuth2             = "legacy.editor-auth2"
 	routeLegacySearchQueries           = "search-queries"
@@ -127,7 +126,6 @@ func newRouter() *mux.Router {
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
-	r.Path("/accept-invite").Methods("GET").Name(routeLegacyAcceptInvite)
 	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
 	r.Path("/search/queries").Methods("GET").Name(routeLegacySearchQueries)
 
@@ -204,7 +202,6 @@ func initRouter() {
 		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
-		router.Get(routeLegacyAcceptInvite).Handler(staticRedirectHandler("/settings/accept-invite", http.StatusMovedPermanently))
 		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
 		router.Get(routeLegacyEditorAuth2).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
 	}
