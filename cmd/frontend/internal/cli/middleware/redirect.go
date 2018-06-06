@@ -63,7 +63,7 @@ func CanonicalURL(next http.Handler) http.Handler {
 			switch conf.ExperimentalFeatures.CanonicalURLRedirect {
 			case "enabled":
 				canonicalURLRedirect = true
-			case "disabled":
+			case "disabled", "":
 				// noop
 			default:
 				text := "Misconfigured experimentalFeatures.canonicalURLRedirect values in site configuration."
