@@ -174,7 +174,7 @@ const shouldRenderHover = (state: BlobState): boolean =>
         isJumpURL(state.definitionURLOrError))
 
 /** The time in ms after which to show a loader if the result has not returned yet */
-const LOADER_DELAY = 100
+const LOADER_DELAY = 300
 
 /** The time in ms after the mouse has stopped moving in which to show the tooltip */
 const TOOLTIP_DISPLAY_DELAY = 100
