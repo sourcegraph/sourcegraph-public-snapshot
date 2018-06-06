@@ -102,7 +102,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                 >
                     <Icon className="icon-inline" />
                     <div className={`result-container__header-title ${this.props.titleClassName || ''}`}>
-                        {this.props.title}
+                        <span onClick={blockExpandAndCollapse}>{this.props.title}</span>
                     </div>
                     {this.props.collapsible &&
                         (this.state.expanded ? (
@@ -131,4 +131,8 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         }
         this.setState(state => ({ expanded: !state.expanded }))
     }
+}
+
+function blockExpandAndCollapse(e: React.MouseEvent<HTMLElement>): void {
+    e.stopPropagation()
 }
