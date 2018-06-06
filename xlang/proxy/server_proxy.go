@@ -167,7 +167,6 @@ func (p *Proxy) shutdownServers(ctx context.Context, filter func(*serverProxyCon
 	for s := range p.servers {
 		if filter(s) {
 			shutdown = append(shutdown, s)
-			delete(p.servers, s)
 		}
 	}
 	p.mu.Unlock()
@@ -178,6 +177,10 @@ func (p *Proxy) shutdownServers(ctx context.Context, filter func(*serverProxyCon
 
 	errs := &errorList{}
 	for _, s := range shutdown {
+		// remove server conn before closing, because we might reach here before the server has been
+		// initialized
+		p.removeServerConn(s)
+
 		err := s.Close()
 		if err != nil {
 			errs.add(err)
