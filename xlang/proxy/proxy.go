@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"log"
 	"net"
 	"runtime"
 	"sync"
@@ -81,7 +80,7 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 				return // stop when the listener is closed
 			case <-time.After(p.MaxClientIdle / 2):
 				if err := p.DisconnectIdleClients(p.MaxClientIdle); err != nil {
-					log.Printf("LSP proxy: disconnecting idle clients: %s", err)
+					log15.Error("LSP proxy: disconnecting idle clients", "err", err)
 				}
 			}
 		}
@@ -111,7 +110,7 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 					return last.Before(idleCutoff) || isShortLived || (unused && last.Before(unusedCutoff))
 				}
 				if err := p.shutdownServers(ctx, filter); err != nil {
-					log.Printf("LSP proxy: shutting down idle servers: %s", err)
+					log15.Error("LSP proxy: shutting down idle servers", "err", err)
 				}
 				cancel()
 			}
