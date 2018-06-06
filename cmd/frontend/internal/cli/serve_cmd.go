@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -246,17 +245,6 @@ func Main() error {
 			return err
 		}
 
-		if v := parseStringOrBool(conf.GetTODO().HttpToHttpsRedirect, "off"); v != "off" {
-			switch v {
-			case "load-balanced":
-				externalHandler = handlerutil.HTTPSRedirectLoadBalanced(externalHandler)
-			case "on":
-				externalHandler = handlerutil.HTTPSRedirect(externalHandler)
-			default:
-				log.Fatalf("unrecognized httpToHttpsRedirect value %v", v)
-			}
-		}
-
 		log15.Debug("HTTP running", "on", httpAddr)
 		srv.GoServe(l, &http.Server{
 			Handler:      externalHandler,
@@ -361,19 +349,4 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 		}
 	}
 	return false
-}
-
-// parseStringOrBool will convert true to "on", false to "off", and return
-// strings as is.
-func parseStringOrBool(v interface{}, defaultValue string) string {
-	if v == nil {
-		return defaultValue
-	}
-	if s, ok := v.(string); ok {
-		return s
-	}
-	if v.(bool) {
-		return "on"
-	}
-	return "off"
 }

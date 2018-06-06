@@ -3,6 +3,7 @@
   "appURL": "http://localhost:3080",
   "experimentalFeatures": {
     "configVars": "enabled",
+    "canonicalURLRedirect": "enabled",
     "searchTimeoutParameter": "enabled",
     "multipleAuthProviders": "enabled"
   },

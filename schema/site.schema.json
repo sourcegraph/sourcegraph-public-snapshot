@@ -63,6 +63,13 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "canonicalURLRedirect": {
+          "description":
+            "Enables or disables redirecting to the canonical URL (underneath the \"appURL\") for incoming HTTP requests. This experiment is intended to be enabled for all instances as of Sourcegraph 2.9.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "hostSurveysLocally": {
           "description":
             "(Deprecated: always enabled) Enables or disables hosting user satisfaction surveys locally. Once stable, this feature will be default.",

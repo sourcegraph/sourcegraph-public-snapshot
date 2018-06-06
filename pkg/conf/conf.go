@@ -279,6 +279,7 @@ var doNotRequireRestart = []string{
 	"htmlBodyTop",
 	"htmlBodyBottom",
 	"httpStrictTransportSecurity",
+	"httpToHttpsRedirect",
 	"disableBuiltInSearches",
 	"disableExampleSearches",
 	"email.smtp",
