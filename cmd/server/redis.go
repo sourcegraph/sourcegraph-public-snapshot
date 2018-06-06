@@ -20,10 +20,8 @@ dir {{ .Dir }}
 appendonly yes
 save 600 1
 
-# redis is unlikely to have meaningful logs. Even loglevel warning is quite noisy (about common host
-# kernel issues), so suppress logs altogether.
+# least verbose logging
 loglevel warning
-logfile /dev/null
 `))
 
 func maybeRedisProcFile() (string, error) {
@@ -63,5 +61,9 @@ func maybeRedisProcFile() (string, error) {
 	// Run and use a local redis
 	setDefaultEnv("SRC_SESSION_STORE_REDIS", "127.0.0.1:6379")
 	setDefaultEnv("REDIS_MASTER_ENDPOINT", "127.0.0.1:6379")
-	return "redis: redis-server " + path, nil
+
+	// Redis is noiser than we prefer even at the most quiet setting "warning"
+	// so we only output the last log line when redis stops in case it stopped unexpectly
+	// and the log contains the reason why it stopped.
+	return "redis: redis-server " + path + " | tail -n 1", nil
 }

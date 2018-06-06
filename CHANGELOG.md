@@ -15,6 +15,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
+* Sourcegraph Server now emits the most recent log message when redis terminates to make it easier to debug why redis stopped.
 * Organization invites (which allow users to invite other users to join organizations) are significantly improved. A new accept-invitation page was added.
 
 ### Removed
