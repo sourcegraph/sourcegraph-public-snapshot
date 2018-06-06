@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/invite"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/slack"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
@@ -336,7 +335,7 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 	if currentUser == nil {
 		return nil, errors.New("must be logged in")
 	}
-	senderEmail, senderEmailVerified, err := db.UserEmails.GetPrimaryEmail(ctx, currentUser.SourcegraphID())
+	_, senderEmailVerified, err := db.UserEmails.GetPrimaryEmail(ctx, currentUser.SourcegraphID())
 	if err != nil {
 		return nil, err
 	}
@@ -388,13 +387,6 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 		}
 	}
 
-	slackWebhookURL, err := getOrgSlackWebhookURL(ctx, org.ID)
-	if err != nil {
-		return nil, err
-	}
-	client := slack.New(slackWebhookURL, true)
-	go slack.NotifyOnInvite(client, currentUser, senderEmail, org, recipientEmail)
-
 	return &inviteUserToOrganizationResult{
 		sentInvitationEmail: recipientEmail != "",
 		acceptInvitationURL: inviteURL,
@@ -411,16 +403,8 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	if currentUser == nil {
 		return nil, errors.New("no current user")
 	}
-	email, _, err := db.UserEmails.GetPrimaryEmail(ctx, currentUser.SourcegraphID())
-	if err != nil {
-		return nil, err
-	}
 
 	token, err := invite.ParseToken(args.InviteToken)
-	if err != nil {
-		return nil, err
-	}
-	org, err := db.Orgs.GetByID(ctx, token.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -429,14 +413,6 @@ func (*schemaResolver) AcceptUserInvite(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-
-	slackWebhookURL, err := getOrgSlackWebhookURL(ctx, org.ID)
-	if err != nil {
-		return nil, err
-	}
-	client := slack.New(slackWebhookURL, true)
-	go slack.NotifyOnAcceptedInvite(client, currentUser, email, org)
-
 	return &EmptyResponse{}, nil
 }
 
