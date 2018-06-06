@@ -73,22 +73,25 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	// We don't need to check auth.allowSignup because we assume the caller of doServeSignUp checks
 	// it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which case the only signup
 	// allowed is that of the initial site admin).
-	emailCode, err := backend.MakeEmailVerificationCode()
-	if err != nil {
-		log15.Error("Error generating email verification code for new user.", "email", creds.Email, "username", creds.Username, "error", err)
-		http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
-		return
+	newUserData := db.NewUser{
+		Email:                creds.Email,
+		Username:             creds.Username,
+		Password:             creds.Password,
+		FailIfNotInitialUser: failIfNewUserIsNotInitialSiteAdmin,
 	}
-	usr, err := db.Users.Create(r.Context(), db.NewUser{
-		Email:                 creds.Email,
-		Username:              creds.Username,
-		Password:              creds.Password,
-		EmailVerificationCode: emailCode,
-		FailIfNotInitialUser:  failIfNewUserIsNotInitialSiteAdmin,
-
+	if failIfNewUserIsNotInitialSiteAdmin {
 		// The email of the initial site admin is considered to be verified.
-		EmailIsVerified: failIfNewUserIsNotInitialSiteAdmin,
-	})
+		newUserData.EmailIsVerified = true
+	} else {
+		code, err := backend.MakeEmailVerificationCode()
+		if err != nil {
+			log15.Error("Error generating email verification code for new user.", "email", creds.Email, "username", creds.Username, "error", err)
+			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
+			return
+		}
+		newUserData.EmailVerificationCode = code
+	}
+	usr, err := db.Users.Create(r.Context(), newUserData)
 	if err != nil {
 		var (
 			message    string
@@ -113,8 +116,8 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	}
 	actor := &actor.Actor{UID: usr.ID}
 
-	if conf.EmailVerificationRequired() {
-		if err := backend.SendUserEmailVerificationEmail(r.Context(), creds.Email, emailCode); err != nil {
+	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
+		if err := backend.SendUserEmailVerificationEmail(r.Context(), creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
 		}
 	}
