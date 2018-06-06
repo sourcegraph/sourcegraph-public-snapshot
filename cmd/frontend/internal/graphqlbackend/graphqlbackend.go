@@ -79,11 +79,6 @@ func (r *nodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToComment() (*commentResolver, bool) {
-	n, ok := r.node.(*commentResolver)
-	return n, ok
-}
-
 func (r *nodeResolver) ToDependency() (*dependencyResolver, bool) {
 	n, ok := r.node.(*dependencyResolver)
 	return n, ok
@@ -129,11 +124,6 @@ func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToThread() (*threadResolver, bool) {
-	n, ok := r.node.(*threadResolver)
-	return n, ok
-}
-
 type schemaResolver struct{}
 
 // DEPRECATED
@@ -157,8 +147,6 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return externalAccountByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
-	case "Comment":
-		return commentByID(ctx, id)
 	case "Dependency":
 		return dependencyByID(ctx, id)
 	case "Repository":
@@ -175,8 +163,6 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return savedQueryByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
-	case "Thread":
-		return threadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

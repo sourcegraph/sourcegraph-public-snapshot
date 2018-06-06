@@ -30,7 +30,6 @@ const (
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
 	routeSearchSearches = "search-searches"
-	routeComment        = "comment"
 	routeOpen           = "open"
 	routeRepo           = "repo"
 	routeRepoSettings   = "repo-settings"
@@ -109,7 +108,6 @@ func newRouter() *mux.Router {
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/searches").Methods("GET").Name(routeSearchSearches)
-	r.Path("/c/{ULID}").Methods("GET").Name(routeComment)
 	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
@@ -240,9 +238,6 @@ func initRouter() {
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
 	}
-
-	// comment
-	router.Get(routeComment).Handler(handler(serveComment))
 
 	// repo
 	serveRepoHandler := handler(serveRepoOrBlob(routeRepo, func(c *Common, r *http.Request) string {

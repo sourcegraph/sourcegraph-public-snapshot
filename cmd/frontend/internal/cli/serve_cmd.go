@@ -168,8 +168,6 @@ func Main() error {
 	go updatecheck.Start()
 	go useractivity.MigrateUserActivityData(context.Background())
 
-	db.AppURL = globals.AppURL
-
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
 	useTLS := httpsAddr != "" && (tlsCertAndKey || (globals.AppURL.Scheme == "https" && conf.GetTODO().TlsLetsencrypt != "off"))
 	if useTLS && globals.AppURL.Scheme == "http" {

@@ -124,39 +124,6 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	return &settingsResolver{&configurationSubject{org: o}, settings, nil}, nil
 }
 
-func (o *orgResolver) Threads(ctx context.Context, args *struct {
-	RepoCanonicalRemoteID *string // TODO(nick): deprecated
-	CanonicalRemoteIDs    *[]string
-	Branch                *string
-	File                  *string
-	Limit                 *int32
-}) (*threadConnectionResolver, error) {
-	// 🚨 SECURITY: Only organization members and site admins may access the threads, because they
-	// may contain secrets or other sensitive data.
-	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
-		return nil, err
-	}
-
-	var canonicalRemoteIDs []api.RepoURI
-	if args.CanonicalRemoteIDs != nil {
-		for _, canonicalRemoteID := range *args.CanonicalRemoteIDs {
-			canonicalRemoteIDs = append(canonicalRemoteIDs, api.RepoURI(canonicalRemoteID))
-		}
-	}
-	if args.RepoCanonicalRemoteID != nil {
-		canonicalRemoteIDs = append(canonicalRemoteIDs, api.RepoURI(*args.RepoCanonicalRemoteID))
-	}
-	var repos []*types.OrgRepo
-	if len(canonicalRemoteIDs) > 0 {
-		var err error
-		repos, err = db.OrgRepos.GetByCanonicalRemoteIDs(ctx, o.org.ID, canonicalRemoteIDs)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &threadConnectionResolver{o.org, repos, canonicalRemoteIDs, args.File, args.Branch, args.Limit}, nil
-}
-
 func (o *orgResolver) Tags(ctx context.Context) ([]*organizationTagResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins may access the tags.
 	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
@@ -172,53 +139,6 @@ func (o *orgResolver) Tags(ctx context.Context) ([]*organizationTagResolver, err
 		organizationTagResolvers = append(organizationTagResolvers, &organizationTagResolver{tag})
 	}
 	return organizationTagResolvers, nil
-}
-
-func (o *orgResolver) Repo(ctx context.Context, args *struct {
-	CanonicalRemoteID string
-}) (*orgRepoResolver, error) {
-	// 🚨 SECURITY: Only organization members and site admins may access the organization's repositories..
-	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
-		return nil, err
-	}
-
-	orgRepo, err := getOrgRepo(ctx, o.org.ID, api.RepoURI(args.CanonicalRemoteID))
-	if err != nil {
-		return nil, err
-	}
-	return &orgRepoResolver{o.org, orgRepo}, nil
-}
-
-func getOrgRepo(ctx context.Context, orgID int32, canonicalRemoteID api.RepoURI) (*types.OrgRepo, error) {
-	// 🚨 SECURITY: Only organization members and site admins may access the organization's repositories..
-	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
-		return nil, err
-	}
-
-	orgRepo, err := db.OrgRepos.GetByCanonicalRemoteID(ctx, orgID, canonicalRemoteID)
-	if errcode.IsNotFound(err) {
-		// We don't want to create org repos just because an org member queried for threads
-		// and we don't want the client to think this is an error.
-		err = nil
-	}
-	return orgRepo, err
-}
-
-func (o *orgResolver) Repos(ctx context.Context) ([]*orgRepoResolver, error) {
-	// 🚨 SECURITY: Only organization members and site admins may access the organization's repositories..
-	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
-		return nil, err
-	}
-
-	repos, err := db.OrgRepos.GetByOrg(ctx, o.org.ID)
-	if err != nil {
-		return nil, err
-	}
-	orgRepoResolvers := []*orgRepoResolver{}
-	for _, repo := range repos {
-		orgRepoResolvers = append(orgRepoResolvers, &orgRepoResolver{o.org, repo})
-	}
-	return orgRepoResolvers, nil
 }
 
 func (o *orgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {

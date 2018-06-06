@@ -22,95 +22,11 @@ interface Node {
     id: ID!
 }
 
-# Thread lines.
-type ThreadLines {
-    # HTML context lines before 'html'.
-    #
-    # It is sanitized already by the server, and thus is safe for rendering.
-    htmlBefore(isLightTheme: Boolean!): String!
-    # HTML lines that the user's selection was made on.
-    #
-    # It is sanitized already by the server, and thus is safe for rendering.
-    html(isLightTheme: Boolean!): String!
-    # HTML context lines after 'html'.
-    #
-    # It is sanitized already by the server, and thus is safe for rendering.
-    htmlAfter(isLightTheme: Boolean!): String!
-    # Text context lines before 'text'.
-    textBefore: String!
-    # Text lines that the user's selection was made on.
-    text: String!
-    # Text context lines after 'text'.
-    textAfter: String!
-    # Byte offset into textLines where user selection began.
-    textSelectionRangeStart: Int!
-    # Length in bytes of the user selection.
-    textSelectionRangeLength: Int!
-}
-
-# The Input Object for ThreadLines.
-input ThreadLinesInput {
-    # HTML context lines before 'html'.
-    htmlBefore: String!
-    # HTML lines that the user's selection was made on.
-    html: String!
-    # HTML context lines after 'html'.
-    htmlAfter: String!
-    # Text context lines before 'text'.
-    textBefore: String!
-    # Text lines that the user's selection was made on.
-    text: String!
-    # Text context lines after 'text'.
-    textAfter: String!
-    # Byte offset into textLines where user selection began.
-    textSelectionRangeStart: Int!
-    # Length in bytes of the user selection.
-    textSelectionRangeLength: Int!
-}
-
-# Input Object for creating threads.
-input CreateThreadInput {
-    # The ID of the organization on which to create the thread.
-    orgID: ID!
-    # The ID of the canonical remote.
-    canonicalRemoteID: String!
-    # The clone URL.
-    cloneURL: String!
-    # The repo revision path.
-    repoRevisionPath: String!
-    # The lines revision path.
-    linesRevisionPath: String!
-    # The repo revision.
-    repoRevision: String!
-    # The lines revision.
-    linesRevision: String!
-    # The branch.
-    branch: String
-    # The start line.
-    startLine: Int!
-    # The end line.
-    endLine: Int!
-    # The start character.
-    startCharacter: Int!
-    # The end character.
-    endCharacter: Int!
-    # The range length.
-    rangeLength: Int!
-    # The contents.
-    contents: String!
-    # The lines.
-    lines: ThreadLinesInput
-}
-
 # A valid JSON value.
 scalar JSONValue
 
 # A mutation.
 type Mutation {
-    # Creates a thread. This is an experimental feature.
-    createThread(input: CreateThreadInput!): Thread!
-    # Creates a thread. This is an experimental feature.
-    createThread2(input: CreateThreadInput!): Thread! @deprecated(reason: "use createThread instead")
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -121,18 +37,6 @@ type Mutation {
     updateUserSettings(user: ID!, lastKnownSettingsID: Int, contents: String!): Settings!
     # Update the global settings for all users.
     updateSiteSettings(lastKnownSettingsID: Int, contents: String!): Settings!
-    # Updates a thread. This is an experimental feature.
-    updateThread(threadID: ID!, archived: Boolean): Thread!
-    # Adds a comment to a thread. This is an experimental feature.
-    addCommentToThread(threadID: ID!, contents: String!): Thread!
-    # This method is the same as addCommentToThread, the only difference is
-    # that authentication is based on the secret ULID instead of the current
-    # user. This is an experimental feature.
-    addCommentToThreadShared(ulid: String!, threadID: ID!, contents: String!): SharedItemThread!
-    # Shares a thread. This is an experimental feature.
-    shareThread(threadID: ID!): String!
-    # Shares a comment. This is an experimental feature.
-    shareComment(commentID: ID!): String!
     # Creates an organization. The caller is added as a member of the newly created organization.
     #
     # Only authenticated users may perform this mutation.
@@ -582,8 +486,6 @@ type Query {
     savedQueries: [SavedQuery!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
-    # Looks up a shared item by ULID. This is an experimental feature.
-    sharedItem(ulid: String!): SharedItem
     # The current site.
     site: Site!
     # Retrieve responses to surveys.
@@ -779,123 +681,6 @@ type Highlight {
     character: Int!
     # The length of the highlight, in characters (on the same line).
     length: Int!
-}
-
-# Represents a shared item (either a shared code comment OR code snippet).
-type SharedItem {
-    # Who shared the item.
-    author: SharedItemUser!
-    # Whether or not this shared item is public.
-    public: Boolean!
-    # The thread.
-    thread: SharedItemThread!
-    # Present only if the shared item was a specific comment.
-    comment: SharedItemComment
-}
-
-# Like the User type, except with fields that should not be accessible with a
-# secret URL removed.
-type SharedItemUser {
-    # The display name.
-    displayName: String
-    # The username.
-    username: String!
-    # The avatar URL.
-    avatarURL: String
-}
-
-# Like the Thread type, except with fields that should not be accessible with a
-# secret URL removed.
-type SharedItemThread {
-    # The id.
-    id: ID!
-    # The database ID.
-    databaseID: Int!
-    # The repository.
-    repo: SharedItemOrgRepo!
-    # The file.
-    file: String!
-    # The branch.
-    branch: String
-    # The repository evision.
-    repoRevision: String!
-    # The lines revision.
-    linesRevision: String!
-    # The title.
-    title: String!
-    # The start line.
-    startLine: Int!
-    # The end line.
-    endLine: Int!
-    # The start character.
-    startCharacter: Int!
-    # The end character.
-    endCharacter: Int!
-    # The range length.
-    rangeLength: Int!
-    # The time when this was created.
-    createdAt: String!
-    # The time when this was archived.
-    archivedAt: String
-    # The author.
-    author: SharedItemUser!
-    # The lines.
-    lines: SharedItemThreadLines
-    # The comments.
-    comments: [SharedItemComment!]!
-}
-
-# Like the OrgRepo type, except with fields that should not be accessible with
-# a secret URL removed.
-type SharedItemOrgRepo {
-    # The ID.
-    id: Int!
-    # The remote URI.
-    remoteUri: String!
-    # See OrgRepo.repository.
-    repository: Repository
-}
-
-# Like the Comment type, except with fields that should not be accessible with a
-# secret URL removed.
-type SharedItemComment {
-    # The ID.
-    id: ID!
-    # The database ID.
-    databaseID: Int!
-    # The title.
-    title: String!
-    # The contents.
-    contents: String!
-    # The rich HTML.
-    richHTML: String!
-    # The time when this was created.
-    createdAt: String!
-    # The time when this was updated.
-    updatedAt: String!
-    # The author.
-    author: SharedItemUser!
-}
-
-# Exactly the same as the ThreadLines type, except it cannot have sensitive
-# fields accidentally added.
-type SharedItemThreadLines {
-    # Returns the HTML before.
-    htmlBefore(isLightTheme: Boolean!): String!
-    # Returns the HTML.
-    html(isLightTheme: Boolean!): String!
-    # Returns the HTML after.
-    htmlAfter(isLightTheme: Boolean!): String!
-    # The text before.
-    textBefore: String!
-    # The text.
-    text: String!
-    # The text after.
-    textAfter: String!
-    # The start of the text selection range.
-    textSelectionRangeStart: Int!
-    # The length of the text selection range.
-    textSelectionRangeLength: Int!
 }
 
 # Ref fields.
@@ -2058,25 +1843,6 @@ type Org implements Node, ConfigurationSubject {
     #
     # Only organization members and site admins can access this field.
     latestSettings: Settings
-    # The repositories associated with the organization. This is an experimental feature.
-    #
-    # Only organization members and site admins can access this field.
-    repos: [OrgRepo!]!
-    # Look up a repository associated with the organization. This is an experimental feature.
-    #
-    # Only organization members and site admins can access this field.
-    repo(canonicalRemoteID: String!): OrgRepo
-    # Threads associated with the organization. This is an experimental feature.
-    #
-    # Only organization members and site admins can access this field.
-    threads(
-        # DEPRECATED: use canonicalRemoteIDs instead.
-        repoCanonicalRemoteID: String
-        canonicalRemoteIDs: [String!]
-        branch: String
-        file: String
-        limit: Int
-    ): ThreadConnection!
     # The internal tags associated with the organization. This is an internal site management feature.
     #
     # Only organization members and site admins can access this field.
@@ -2092,35 +1858,6 @@ type Org implements Node, ConfigurationSubject {
 type InviteUserResult {
     # The URL that the invited user can visit to accept the invitation.
     acceptInviteURL: String!
-}
-
-# An organization repository.
-type OrgRepo {
-    # The ID.
-    id: Int!
-    # The organization.
-    org: Org!
-    # The canonical remote ID.
-    canonicalRemoteID: String!
-    # The time when this was created.
-    createdAt: String!
-    # The time when this was updated.
-    updatedAt: String!
-    # Gets the threads. This is an experimental feature.
-    threads(file: String, branch: String, limit: Int): ThreadConnection!
-    # The repository that this refers to, if the repository is available on the server. This is null
-    # for repositories that only exist for users locally (that they use with the editor) but that
-    # are not on the server.
-    repository: Repository
-}
-
-# A list of threads.
-type ThreadConnection {
-    # A list of threads.
-    nodes: [Thread!]!
-    # The total count of threads in the connection. This total count may be larger
-    # than the number of nodes in this object when the result is paginated.
-    totalCount: Int!
 }
 
 # The possible configuration states of a language server.
@@ -2238,11 +1975,6 @@ type Site implements ConfigurationSubject {
     latestSettings: Settings
     # Whether the viewer can reload the site (with the reloadSite mutation).
     canReloadSite: Boolean!
-    # List all threads. This is an experimental feature.
-    threads(
-        # Returns the first n threads from the list.
-        first: Int
-    ): ThreadConnection!
     # Lists all language servers.
     langServers: [LangServer!]!
     # The language server for a given language (if exists, otherwise null)
@@ -2387,93 +2119,6 @@ type Configuration {
     contents: String!
     # Error and warning messages about the configuration.
     messages: [String!]!
-}
-
-# Thread is a comment thread.
-type Thread implements Node {
-    # The unique ID.
-    id: ID!
-    # The primary key from the database.
-    databaseID: Int!
-    # The repository.
-    repo: OrgRepo!
-    # The file.
-    file: String! @deprecated(reason: "use repoRevisionPath (or linesRevisionPath) instead")
-
-    # The relative path of the resource in the repository at repoRevision.
-    repoRevisionPath: String!
-
-    # The relative path of the resource in the repository at linesRevision.
-    linesRevisionPath: String!
-
-    # The branch.
-    branch: String
-    # The commit ID of the repository at the time the thread was created.
-    repoRevision: String!
-    # The commit ID from Git blame, at the time the thread was created.
-    #
-    # The selection may be multiple lines, and the commit id is the
-    # topologically most recent commit of the blame commit ids for the selected
-    # lines.
-    #
-    # For example, if you have a selection of lines that have blame revisions
-    # (a, c, e, f), and assuming a history like::
-    #
-    # 	a <- b <- c <- d <- e <- f <- g <- h <- HEAD
-    #
-    # Then lines_revision would be f, because all other blame revisions a, c, e
-    # are reachable from f.
-    #
-    # Or in lay terms: "What is the oldest revision that I could checkout and
-    # still see the exact lines of code that I selected?".
-    linesRevision: String!
-    # The title.
-    title: String!
-    # The start line.
-    startLine: Int!
-    # The end line.
-    endLine: Int!
-    # The start character.
-    startCharacter: Int!
-    # The end character.
-    endCharacter: Int!
-    # The range length.
-    rangeLength: Int!
-    # The time when this was created.
-    createdAt: String!
-    # The time when this was archived.
-    archivedAt: String
-    # The author.
-    author: User!
-    # The lines.
-    lines: ThreadLines
-    # The comments.
-    comments: [Comment!]!
-}
-
-# Comment is a comment in a thread.
-type Comment {
-    # The unique ID.
-    id: ID!
-    # The primary key from the database.
-    databaseID: Int!
-    # The title.
-    title: String!
-    # The contents.
-    contents: String!
-
-    # The file rendered as rich HTML, or an empty string if it is not a supported
-    # rich file type.
-    #
-    # This HTML string is already escaped and thus is always safe to render.
-    richHTML: String!
-
-    # The time when his was created.
-    createdAt: String!
-    # The time when this was updated.
-    updatedAt: String!
-    # The author.
-    author: User!
 }
 
 # A list of packages.

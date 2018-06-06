@@ -4,8 +4,6 @@ import { APIConsole } from './api/APIConsole'
 import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
-import { CommentsPage } from './comments/CommentsPage'
-import { ThreadPage } from './comments/ThreadPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { ExplorePage } from './explore/ExplorePage'
 import { SurveyPage } from './marketing/SurveyPage'
@@ -61,12 +59,6 @@ export const routes: LayoutRouteProps[] = [
         forceNarrowWidth: true,
     },
     {
-        path: '/c/:ulid',
-        component: CommentsPage,
-        exact: true,
-        forceNarrowWidth: true,
-    },
-    {
         path: '/open',
         component: OpenPage,
         exact: true,
@@ -106,12 +98,6 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/site-admin',
         component: SiteAdminArea,
-    },
-    {
-        path: '/threads/:threadID',
-        exact: true,
-        component: ThreadPage,
-        forceNarrowWidth: true,
     },
     {
         path: '/password-reset',

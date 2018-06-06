@@ -2,21 +2,17 @@ package ui
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"path"
 	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -29,8 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -267,157 +261,6 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 	}
 }
 
-func serveComment(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "", serveError)
-	if err != nil {
-		return err
-	}
-	if common == nil {
-		return nil // request was handled
-	}
-
-	// Locate the shared item.
-	sharedItem, err := db.SharedItems.Get(r.Context(), mux.Vars(r)["ULID"])
-	if err != nil {
-		if _, ok := err.(db.ErrSharedItemNotFound); ok {
-			// shared item does not exist.
-			serveError(w, r, err, http.StatusNotFound)
-			return nil
-		}
-		return errors.Wrap(err, "SharedItems.Get")
-	}
-
-	// Based on the shared item, determine the title and the thread ID.
-	var (
-		title    string
-		threadID int32
-	)
-	switch {
-	case sharedItem.ThreadID != nil:
-		threadID = *sharedItem.ThreadID
-		// TODO(slimsag): future: fetching all for thread just for first one's
-		// title is not that optimal
-		//
-		// TODO(slimsag): future: If comment or thread was deleted, return 404
-		// instead of 500.
-		comments, err := db.Comments.GetAllForThread(r.Context(), *sharedItem.ThreadID)
-		if err != nil {
-			return errors.Wrap(err, "Comments.GetAllForThread")
-		}
-		if len(comments) > 0 {
-			title = graphqlbackend.TitleFromContents(comments[0].Contents)
-		}
-	case sharedItem.CommentID != nil:
-		// TODO(slimsag): future: If comment or thread was deleted, return 404
-		// instead of 500.
-		comment, err := db.Comments.GetByID(r.Context(), *sharedItem.CommentID)
-		if err != nil {
-			return errors.Wrap(err, "Comments.GetByID")
-		}
-		threadID = comment.ThreadID
-		title = graphqlbackend.TitleFromContents(comment.Contents)
-	}
-
-	thread, err := db.Threads.Get(r.Context(), threadID)
-	if err != nil {
-		return errors.Wrap(err, "Threads.Get")
-	}
-	orgRepo, err := db.OrgRepos.GetByID(r.Context(), thread.OrgRepoID)
-	if err != nil {
-		return errors.Wrap(err, "OrgRepos.GetByID")
-	}
-
-	if !sharedItem.Public {
-		actor := actor.FromContext(r.Context())
-		if !actor.IsAuthenticated() {
-			u := &url.URL{
-				Path: "/sign-in",
-			}
-			q := u.Query()
-			q.Set("returnTo", r.URL.String())
-			u.RawQuery = q.Encode()
-			http.Redirect(w, r, u.String(), http.StatusSeeOther)
-			return nil
-		}
-
-		// 🚨 SECURITY: verify that the current user is in the org.
-		if err := backend.CheckOrgAccess(r.Context(), orgRepo.OrgID); err != nil {
-			// User is not in the org. We don't want to produce a 500, because we
-			// want to render a nice error page on the frontend. But it's important
-			// that we do not leak information about the shared item (e.g. through
-			// the page title, see below).
-			common.Title = "Sourcegraph"
-			return renderTemplate(w, "app.html", common)
-		}
-	}
-
-	// At this point, it's a public ('secret URL') shared item.
-	//
-	// Generate metadata for the page.
-	snippet := false
-	if title == "" {
-		snippet = true
-		title = fmt.Sprintf("%s (Snippet)", thread.RepoRevisionPath)
-	}
-
-	var rev string
-	if thread.Branch != nil {
-		rev = "@" + *thread.Branch
-	}
-	var description string
-	if snippet {
-		description = fmt.Sprintf("Snippet from %s:%d (%s%s) ", thread.RepoRevisionPath, thread.StartLine, orgRepo.CanonicalRemoteID, rev)
-	} else {
-		description = fmt.Sprintf("Discussion at %s:%d (%s%s) ", thread.RepoRevisionPath, thread.StartLine, orgRepo.CanonicalRemoteID, rev)
-	}
-
-	metadata := &Metadata{}
-	ua := r.Header.Get("User-Agent")
-	service := ""
-	switch {
-	case strings.Contains(ua, "Slackbot"):
-		service = "Slack"
-		// Note the HTML escape here is not for security -- but rather for
-		// Slack's quite strange behavior which requires double escaping to get
-		// proper rendering of e.g. &lt; and &gt; brackets.
-		//
-		// To test this unfurl a link to a comment with the text:
-		//
-		// 	"<button> below the `<form` that's right!"
-		//
-		metadata.Title = strings.Replace(title, "<", "&lt;", -1)
-		metadata.Title = strings.Replace(metadata.Title, ">", "&gt;", -1)
-		metadata.Description = description
-
-	case strings.Contains(ua, "Twitterbot"):
-		service = "Twitter"
-		// Try it here: https://cards-dev.twitter.com/validator
-		fallthrough
-
-	case strings.Contains(ua, "facebook"):
-		service = "Facebook"
-		// Try it here: https://developers.facebook.com/tools/debug/sharing/
-		//
-		// Note: ngrok often blocks Facebook's crawlers for some reason (https://developers.facebook.com/bugs/824028317765435/).
-		// Try localtunnel instead: https://localtunnel.github.io/www/#quickstart
-		fallthrough
-
-	default:
-		metadata.Title = title
-		metadata.Description = description
-	}
-	common.Metadata = metadata
-
-	if service != "" {
-		// Link unfurled by some service in specific (i.e. not just some user
-		// visiting this link in their browser)
-		eventlogger.LogEvent("", "CommentUnfurled", json.RawMessage(fmt.Sprintf(`{"unfurl_service": "%s"}`, service)))
-	}
-
-	common.Title = fmt.Sprintf("%s - Sourcegraph", title)
-	return renderTemplate(w, "app.html", common)
-}
-
 // searchBadgeHandler serves the search readme badges from the search-badger service
 // https://github.com/sourcegraph/search-badger
 var searchBadgeHandler = &httputil.ReverseProxy{
@@ -427,14 +270,4 @@ var searchBadgeHandler = &httputil.ReverseProxy{
 		r.URL.Path = "/"
 	},
 	ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
-}
-
-// ellipsisPath returns the given path with at max 2 path components from the
-// end, and an ellipsis (…) at the front when necessary.
-func ellipsisPath(pathStr string, n int) string {
-	split := strings.Split(pathStr, "/")
-	if len(split) < n {
-		return pathStr
-	}
-	return path.Join(append([]string{"…"}, split[len(split)-n:]...)...)
 }

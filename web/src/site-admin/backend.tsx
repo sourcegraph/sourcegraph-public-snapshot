@@ -663,63 +663,6 @@ export function deleteOrganization(organization: GQL.ID): Observable<void> {
     )
 }
 
-/**
- * Fetches all threads.
- */
-export function fetchAllThreads(args: { first?: number }): Observable<GQL.IThreadConnection> {
-    return queryGraphQL(
-        gql`
-            query SiteThreads($first: Int) {
-                site {
-                    threads(first: $first) {
-                        nodes {
-                            id
-                            repo {
-                                canonicalRemoteID
-                                org {
-                                    name
-                                }
-                            }
-                            repoRevisionPath
-                            branch
-                            repoRevisionPath
-                            repoRevision
-                            title
-                            createdAt
-                            archivedAt
-                            author {
-                                id
-                                username
-                                displayName
-                            }
-                            comments {
-                                id
-                                title
-                                contents
-                                createdAt
-                                author {
-                                    id
-                                    username
-                                    displayName
-                                }
-                            }
-                        }
-                        totalCount
-                    }
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.threads) {
-                throw createAggregateError(errors)
-            }
-            return data.site.threads
-        })
-    )
-}
-
 export function fetchSiteUpdateCheck(): Observable<{
     buildVersion: string
     productVersion: string

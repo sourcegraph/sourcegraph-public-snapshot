@@ -18,7 +18,6 @@ import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
 import { SiteAdminSettingsPage } from './SiteAdminSettingsPage'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
 import { SiteAdminSurveyResponsesPage } from './SiteAdminSurveyResponsesPage'
-import { SiteAdminThreadsPage } from './SiteAdminThreadsPage'
 import { SiteAdminTokensPage } from './SiteAdminTokensPage'
 import { SiteAdminUpdatesPage } from './SiteAdminUpdatesPage'
 
@@ -136,7 +135,6 @@ export class SiteAdminArea extends React.Component<Props> {
                                 <SiteAdminTokensPage {...routeComponentProps} {...transferProps} />
                             )}
                         />
-                        <Route path={`${this.props.match.url}/threads`} component={SiteAdminThreadsPage} exact={true} />
                         <Route
                             path={`${this.props.match.url}/analytics`}
                             exact={true}

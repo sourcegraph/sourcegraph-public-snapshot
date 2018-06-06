@@ -6,19 +6,15 @@ var Mocks MockStores
 type MockStores struct {
 	AccessTokens MockAccessTokens
 
-	GlobalDeps  MockGlobalDeps
-	Pkgs        MockPkgs
-	Repos       MockRepos
-	Orgs        MockOrgs
-	OrgRepos    MockOrgRepos
-	OrgMembers  MockOrgMembers
-	Threads     MockThreads
-	Comments    MockComments
-	Settings    MockSettings
-	SharedItems MockSharedItems
-	SiteConfig  MockSiteConfig
-	Users       MockUsers
-	UserEmails  MockUserEmails
+	GlobalDeps MockGlobalDeps
+	Pkgs       MockPkgs
+	Repos      MockRepos
+	Orgs       MockOrgs
+	OrgMembers MockOrgMembers
+	Settings   MockSettings
+	SiteConfig MockSiteConfig
+	Users      MockUsers
+	UserEmails MockUserEmails
 
 	Phabricator MockPhabricator
 

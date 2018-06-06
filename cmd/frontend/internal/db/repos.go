@@ -6,7 +6,6 @@ import (
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
-	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -623,14 +622,4 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp)
 		}
 		return nil
 	}(tx)
-}
-
-func timestampEqual(a, b *time.Time) bool {
-	if a == b {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	return a.Equal(*b)
 }

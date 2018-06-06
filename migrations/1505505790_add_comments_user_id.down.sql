@@ -1,1 +1,0 @@
-ALTER TABLE comments DROP COLUMN author_user_id;
