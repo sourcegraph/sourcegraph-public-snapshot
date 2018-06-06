@@ -1,4 +1,4 @@
-import { Position, Range } from 'vscode-languageserver-types'
+import { Range } from 'vscode-languageserver-types'
 import {
     AbsoluteRepoFile,
     PositionSpec,
@@ -21,6 +21,8 @@ function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {
  * Represents a line, a position, a line range, or a position range. It forbids
  * just a character, or a range from a line to a position or vice versa (such as
  * "L1-2:3" or "L1:2-3"), none of which would make much sense.
+ *
+ * 1-indexed.
  */
 export type LineOrPositionOrRange =
     | { line?: undefined; character?: undefined; endLine?: undefined; endCharacter?: undefined }
@@ -117,7 +119,13 @@ function parseLineOrPosition(
     return { line, character }
 }
 
-export function toPositionOrRangeHash(ctx: Partial<PositionSpec> & Partial<RangeSpec>): string {
+/**
+ * @param ctx 1-indexed partial position or range spec
+ */
+export function toPositionOrRangeHash(ctx: {
+    position?: { line: number; character?: number }
+    range?: { start: { line: number; character?: number }; end: { line: number; character?: number } }
+}): string {
     if (ctx.range) {
         const emptyRange =
             ctx.range.start.line === ctx.range.end.line && ctx.range.start.character === ctx.range.end.character
@@ -134,7 +142,10 @@ export function toPositionOrRangeHash(ctx: Partial<PositionSpec> & Partial<Range
     return ''
 }
 
-function toPositionHashComponent(position: Position): string {
+/**
+ * @param ctx 1-indexed partial position
+ */
+function toPositionHashComponent(position: { line: number; character?: number }): string {
     return position.line.toString() + (position.character ? ':' + position.character : '')
 }
 

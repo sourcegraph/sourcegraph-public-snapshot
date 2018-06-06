@@ -1,7 +1,7 @@
 import { highlightBlock } from 'highlight.js/lib/highlight'
 import { isEmpty, unescape } from 'lodash'
 import marked from 'marked'
-import { Hover, MarkedString } from 'vscode-languageserver-types'
+import { Hover, MarkedString, Position } from 'vscode-languageserver-types'
 import { urlWithoutSearchOptions } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
@@ -452,15 +452,26 @@ export function findElementWithOffset(cell: HTMLElement, offset: number): HTMLEl
     return walkNode(cell)
 }
 
-export interface HoveredToken {
+/**
+ * Returned when only the line is known.
+ *
+ * 1-indexed
+ */
+export interface Line {
     line: number
+}
+
+export interface HoveredToken {
+    /** 1-indexed */
+    line: number
+    /** 1-indexed */
     character: number
     word: string
     part?: 'old' | 'new'
 }
 
 /**
- * getTargetLineAndOffset determines the line and character offset for some source code, identified by its HTMLElement wrapper.
+ * Determines the line and character offset for some source code, identified by its HTMLElement wrapper.
  * It works by traversing the DOM until the HTMLElement's TD ancestor. Once the ancestor is found, we traverse the DOM again
  * (this time the opposite direction) counting characters until the original target is found.
  * Returns undefined if line/char cannot be determined for the provided target.
@@ -472,6 +483,26 @@ export function getTargetLineAndOffset(
     boundary: HTMLElement,
     ignoreFirstChar = false
 ): HoveredToken | undefined {
+    const result = locateTarget(target, boundary, ignoreFirstChar)
+    if (!Position.is(result)) {
+        return undefined
+    }
+    return result
+}
+
+/**
+ * Determines the line and character offset for some source code, identified by its HTMLElement wrapper.
+ * It works by traversing the DOM until the HTMLElement's TD ancestor. Once the ancestor is found, we traverse the DOM again
+ * (this time the opposite direction) counting characters until the original target is found.
+ * Returns undefined if line/char cannot be determined for the provided target.
+ * @param target The element to compute line & character offset for.
+ * @param ignoreFirstChar Whether to ignore the first character on a line when computing character offset.
+ */
+export function locateTarget(
+    target: HTMLElement,
+    boundary: HTMLElement,
+    ignoreFirstChar = false
+): Line | HoveredToken | undefined {
     const origTarget = target
     while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && target !== boundary) {
         // Find ancestor which wraps the whole line of code, not just the target token.
@@ -535,7 +566,7 @@ export function getTargetLineAndOffset(
     if (findOrigTarget(target)) {
         return { line, character, word: origTarget.innerText, part }
     }
-    return undefined
+    return { line }
 }
 
 export function logTelemetryOnTooltip(data: TooltipData, fixed: boolean): void {

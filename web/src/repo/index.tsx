@@ -42,14 +42,14 @@ export interface FileSpec {
 
 export interface PositionSpec {
     /**
-     * a point in the blob
+     * a 1-indexed point in the blob
      */
     position: Position
 }
 
 export interface RangeSpec {
     /**
-     * a range in the blob
+     * a 1-indexed range in the blob
      */
     range: Range
 }

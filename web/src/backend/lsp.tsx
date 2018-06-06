@@ -175,6 +175,9 @@ export const fetchServerCapabilities = memoizeObservable(
     ({ language }) => language
 )
 
+/**
+ * @param pos Repo, commit, rev, file and 1-indexed position to request definition for
+ */
 export const fetchHover = memoizeObservable(
     (pos: AbsoluteRepoFilePosition): Observable<Hover | null> =>
         sendLSPRequest(
@@ -224,6 +227,10 @@ export const fetchDefinition = memoizeObservable(
     makeRepoURI
 )
 
+/**
+ * @param options Repo, commit, rev, file and 1-indexed position to request definition for
+ * @return URL to jump to
+ */
 export function fetchJumpURL(options: AbsoluteRepoFilePosition): Observable<string | null> {
     return fetchDefinition(options).pipe(
         map(def => {

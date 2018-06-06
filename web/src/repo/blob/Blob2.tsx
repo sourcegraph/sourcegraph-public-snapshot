@@ -8,7 +8,6 @@ import {
     delay,
     distinctUntilChanged,
     filter,
-    first,
     map,
     share,
     switchMap,
@@ -20,24 +19,64 @@ import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover, isHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
-import { scrollIntoView } from '../../util'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
-import { parseHash, toPositionOrRangeHash } from '../../util/url'
+import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
-import { convertNode, findElementWithOffset, getTableDataCell, getTargetLineAndOffset } from './tooltips'
+import { convertNode, findElementWithOffset, getTableDataCell, locateTarget } from './tooltips'
 
 /**
- * Returns the token `<span>` element in a `<code>` element for a given zero-based position.
+ * @param codeElement The `<code>` element
+ * @param line 1-indexed line number
+ * @return The `<tr>` element
+ */
+const getRowInCodeElement = (codeElement: HTMLElement, line: number): HTMLTableRowElement | undefined => {
+    const table = codeElement.firstElementChild as HTMLTableElement
+    return table.rows[line - 1]
+}
+
+/**
+ * Returns a list of `<tr>` elements that are contained in the given range
+ *
+ * @param position 1-indexed line, position or inclusive range
+ */
+const getRowsInRange = (
+    codeElement: HTMLElement,
+    position?: LineOrPositionOrRange
+): {
+    /** 1-indexed line number */
+    line: number
+    /** The `<tr>` element */
+    element: HTMLTableRowElement
+}[] => {
+    if (!position || position.line === undefined) {
+        return []
+    }
+    const tableElement = codeElement.firstElementChild as HTMLTableElement
+    const rows: { line: number; element: HTMLTableRowElement }[] = []
+    for (let line = position.line; line <= (position.endLine || position.line); line++) {
+        const element = tableElement.rows[line - 1]
+        if (!element) {
+            break
+        }
+        rows.push({ line, element })
+    }
+    return rows
+}
+
+/**
+ * Returns the token `<span>` element in a `<code>` element for a given 1-indexed position.
+ *
+ * @param codeElement The `<code>` element
+ * @param position 1-indexed position
  */
 const getTokenAtPosition = (codeElement: HTMLElement, position: Position): HTMLElement | undefined => {
-    const table = codeElement.firstElementChild as HTMLTableElement
-    const row = table.rows.item(position.line)
+    const row = getRowInCodeElement(codeElement, position.line)
     if (!row) {
         return undefined
     }
-    return findElementWithOffset(row, position.character + 1)
+    return findElementWithOffset(row, position.character)
 }
 
 /**
@@ -85,36 +124,24 @@ const calculateOverlayPosition = (
     return { left: relLeft, top: tooltipTop }
 }
 
-interface HightlightArgs {
-    /** The `<code>` element */
-    codeElement: HTMLElement
-    /** The table row that represents the new line */
-    line?: HTMLTableRowElement
-}
-
 /**
- * Sets a new line to be highlighted and unhighlights the previous highlighted line, if exists.
+ * Scrolls an element to the center if it is out of view.
+ * Does nothing if the element is in view.
+ *
+ * @param container The scrollable container (that has `overflow: auto`)
+ * @param content The content child that is being scrolled
+ * @param target The element that should be scrolled into view
  */
-const highlightLine = ({ line, codeElement }: HightlightArgs): void => {
-    const current = codeElement.querySelector('.selected')
-    if (current) {
-        current.classList.remove('selected')
+const scrollIntoCenterIfNeeded = (container: HTMLElement, content: HTMLElement, target: HTMLElement): void => {
+    const blobRect = container.getBoundingClientRect()
+    const rowRect = target.getBoundingClientRect()
+    if (rowRect.top <= blobRect.top || rowRect.bottom >= blobRect.bottom) {
+        const blobRect = container.getBoundingClientRect()
+        const contentRect = content.getBoundingClientRect()
+        const rowRect = target.getBoundingClientRect()
+        const scrollTop = rowRect.top - contentRect.top - blobRect.height / 2 + rowRect.height / 2
+        container.scrollTop = scrollTop
     }
-    if (line === undefined) {
-        return
-    }
-
-    line.classList.add('selected')
-}
-
-const scrollToCenter = (blobElement: HTMLElement, codeElement: HTMLElement, tableRow: HTMLElement) => {
-    // if theres a position hash on page load, scroll it to the center of the screen
-    const blobBound = blobElement.getBoundingClientRect()
-    const codeBound = codeElement.getBoundingClientRect()
-    const rowBound = tableRow.getBoundingClientRect()
-    const scrollTop = rowBound.top - codeBound.top - blobBound.height / 2 + rowBound.height / 2
-
-    blobElement.scrollTop = scrollTop
 }
 
 /**
@@ -159,7 +186,12 @@ interface BlobState {
      */
     blameLineIDs: { [key: number]: string }
 
-    activeLine: number | null
+    /**
+     * The currently selected position, if any.
+     * Can be a single line number or a line range.
+     * Highlighted with a background color.
+     */
+    selectedPosition?: LineOrPositionOrRange
 
     mouseIsMoving: boolean
 }
@@ -223,7 +255,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             hoverOverlayIsFixed: false,
             clickedGoToDefinition: false,
             blameLineIDs: {},
-            activeLine: null,
             mouseIsMoving: false,
         }
 
@@ -261,67 +292,43 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        /**
-         * lineClickElements gets the full row that was clicked, the line number cell, the code cell,
-         * and the line number itself.
-         */
-        const lineClickElements = this.codeClicks.pipe(
-            map(({ target }) => target as HTMLElement),
-            map(target => {
-                let row: HTMLElement | null = target
-                while (row.parentElement && row.tagName !== 'TR') {
-                    row = row.parentElement
-                }
-                return { target, row }
-            }),
-            filter(propertyIsDefined('row')),
-            map(({ target, row }) => {
-                const lineNumberCell = row.children.item(0) as HTMLElement
-                const codeCell = row.children.item(1) as HTMLElement
-                const lineNumber = parseInt(lineNumberCell.dataset.line!, 10)
-                return { target, row, lineNumberCell, lineNumber, codeCell }
-            })
-        )
-
-        // Highlight the clicked row
-        this.subscriptions.add(
-            lineClickElements
-                .pipe(
-                    withLatestFrom(this.codeElements),
-                    map(([{ row }, codeElement]) => ({ line: row, codeElement })),
-                    filter(propertyIsDefined('codeElement'))
-                )
-                .subscribe(highlightLine)
-        )
-
         // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
         this.subscriptions.add(
-            lineClickElements
+            this.codeClicks
                 .pipe(
                     withLatestFrom(this.codeElements),
-                    map(([{ target, lineNumber }, codeElement]) => ({ target, lineNumber, codeElement })),
-                    filter(propertyIsDefined('codeElement')),
-                    map(({ target, lineNumber, codeElement }) => ({
-                        lineNumber,
-                        position: getTargetLineAndOffset(target, codeElement!, false),
+                    map(([event, codeElement]) => ({
+                        event,
+                        position: locateTarget(event.target as HTMLElement, codeElement!, false),
                     }))
                 )
-                .subscribe(({ position, lineNumber }) => {
+                .subscribe(({ event, position }) => {
                     let hash: string
-                    if (position !== undefined) {
-                        hash = toPositionOrRangeHash({ position })
+                    if (
+                        position &&
+                        event.shiftKey &&
+                        this.state.selectedPosition &&
+                        this.state.selectedPosition.line !== undefined
+                    ) {
+                        hash = toPositionOrRangeHash({
+                            range: {
+                                start: {
+                                    line: Math.min(this.state.selectedPosition.line, position.line),
+                                },
+                                end: {
+                                    line: Math.max(this.state.selectedPosition.line, position.line),
+                                },
+                            },
+                        })
                     } else {
-                        hash = `#L${lineNumber}`
+                        hash = toPositionOrRangeHash({ position })
                     }
 
                     if (!hash.startsWith('#')) {
                         hash = '#' + hash
                     }
 
-                    this.props.history.push({
-                        ...this.props.location,
-                        hash,
-                    })
+                    this.props.history.push({ ...this.props.location, hash })
                 })
         )
 
@@ -333,31 +340,26 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        /** Emits new positions found in the URL */
-        const positionsFromLocationHash: Observable<Position> = this.componentUpdates.pipe(
-            map(props => parseHash(props.location.hash)),
-            filter(Position.is),
-            map(position => ({ line: position.line, character: position.character })),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
-            share()
-        )
+        /** Emits parsed positions found in the URL */
+        const locationPositions = this.componentUpdates.pipe(map(props => parseHash(props.location.hash)), share())
 
         /** Emits DOM elements at new positions found in the URL */
         const targetsFromLocationHash: Observable<{
             target: HTMLElement
             codeElement: HTMLElement
-        }> = positionsFromLocationHash.pipe(
+        }> = locationPositions.pipe(
+            filter(Position.is),
+            map(position => ({ line: position.line, character: position.character })),
+            distinctUntilChanged((a, b) => isEqual(a, b)),
             withLatestFrom(this.codeElements),
             map(([position, codeElement]) => ({ position, codeElement })),
             filter(propertyIsDefined('codeElement')),
             map(({ position, codeElement }) => {
-                const table = codeElement.firstElementChild as HTMLTableElement
-                const row = table.rows[position.line - 1]
+                const row = getRowInCodeElement(codeElement, position.line)
                 if (!row) {
-                    alert(`Could not find line ${position.line} in file`)
                     return { codeElement }
                 }
-                const cell = row.cells[1]
+                const cell = row.cells[1]!
                 const target = findElementWithOffset(cell, position.character)
                 if (!target) {
                     console.warn('Could not find target for position in file', position)
@@ -401,18 +403,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
-        // Add a dom node for the blame portals
-        this.subscriptions.add(lineClickElements.subscribe(this.createBlameDomNode))
-
-        // Set the currently active line from hover
-        this.subscriptions.add(
-            lineClickElements.pipe(map(({ lineNumber }) => lineNumber)).subscribe(activeLine => {
-                this.setState({ activeLine })
-            })
-        )
-
         /**
-         * Emits with the position at which a new tooltip is to be shown from a mouseover, click or location change.
+         * Emits with the 1-indexed position at which a new tooltip is to be shown from a mouseover, click or location change.
          * Emits `undefined` when a target was hovered/clicked that does not correspond to a position (e.g. after the end of the line).
          */
         const filteredTargetPositions: Observable<{ position?: Position; target: HTMLElement }> = merge(
@@ -426,10 +418,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             ).pipe(
                 // Find out the position that was hovered over
                 map(({ target, codeElement }) => {
-                    const hoveredToken = getTargetLineAndOffset(target, codeElement, false)
+                    const hoveredToken = locateTarget(target, codeElement, false)
                     return {
                         target,
-                        position: hoveredToken && { line: hoveredToken.line, character: hoveredToken.character },
+                        position: Position.is(hoveredToken) ? hoveredToken : undefined,
                     }
                 }),
                 distinctUntilChanged((a, b) => isEqual(a.position, b.position))
@@ -439,13 +431,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         // HOVER FETCH
         // On every new hover position, fetch new hover contents
         const hovers = filteredTargetPositions.pipe(
-            switchMap(({ target, position }): ObservableInput<{
-                target: HTMLElement
-                position?: Position
-                hoverOrError?: Hover | null | ErrorLike | typeof LOADING
-            }> => {
+            switchMap(({ position }): ObservableInput<undefined | Hover | null | ErrorLike | typeof LOADING> => {
                 if (!position) {
-                    return [{ target, position, hoverOrError: undefined }]
+                    return [undefined]
                 }
                 // Fetch the hover for that position
                 const hoverFetch = fetchHover({
@@ -464,15 +452,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     share()
                 )
                 // Show a loader if it hasn't returned after 100ms
-                return merge(hoverFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch))).pipe(
-                    map(hoverOrError => ({ target, position, hoverOrError }))
-                )
+                return merge(hoverFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)))
             }),
             share()
         )
         // Update the state
         this.subscriptions.add(
-            hovers.subscribe(({ target, position, hoverOrError }) => {
+            hovers.subscribe(hoverOrError => {
                 this.setState(state => ({
                     hoverOrError,
                     // Reset the hover position, it's gonna be repositioned after the hover was rendered
@@ -490,7 +476,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         )
         // Highlight the hover range returned by the language server
         this.subscriptions.add(
-            hovers.pipe(withLatestFrom(this.codeElements)).subscribe(([{ hoverOrError }, codeElement]) => {
+            hovers.pipe(withLatestFrom(this.codeElements)).subscribe(([hoverOrError, codeElement]) => {
                 const currentHighlighted = codeElement!.querySelector('.selection-highlight')
                 if (currentHighlighted) {
                     currentHighlighted.classList.remove('selection-highlight')
@@ -498,7 +484,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 if (!isHover(hoverOrError) || !hoverOrError.range) {
                     return
                 }
-                const token = getTokenAtPosition(codeElement!, hoverOrError.range.start)
+                // LSP is 0-indexed, the code in the webapp currently is 1-indexed
+                const { line, character } = hoverOrError.range.start
+                const token = getTokenAtPosition(codeElement!, { line: line + 1, character: character + 1 })
                 if (!token) {
                     return
                 }
@@ -575,7 +563,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
         // HOVER OVERLAY PINNING ON CLICK
         this.subscriptions.add(
-            codeClickTargets.subscribe(({ target, codeElement }) => {
+            codeClickTargets.subscribe(({ target }) => {
                 this.setState({
                     // If a token inside a code cell was clicked, pin the hover
                     // Otherwise if empty space was clicked, unpin it
@@ -602,76 +590,64 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
 
-        // When the blob loads, highlight the active line and scroll it to center of viewport
-        //
-        // THIS OBSERVABLE CHAIN ONLY EMITS ONCE
+        // LOCATION CHANGES
         this.subscriptions.add(
-            this.componentUpdates
+            locationPositions
                 .pipe(
-                    map(props => {
-                        const position = parseHash(props.location.hash)
-                        return { line: position.line, character: position.character }
-                    }),
-                    distinctUntilChanged(),
-                    withLatestFrom(this.codeElements.pipe(filter(isDefined))),
-                    first(([, codeElement]) => !!codeElement),
-                    map(([position, codeElement]) => ({ position, codeElement })),
-                    filter(({ position: { line } }) => !!line),
-                    map(({ position, codeElement }) => {
-                        const lineElem = codeElement.querySelector(`td[data-line="${position.line}"]`)
-                        if (lineElem && lineElem.parentElement) {
-                            return { position, codeElement, tableRow: lineElem.parentElement as HTMLTableRowElement }
-                        }
-
-                        return { position, codeElement, tableRow: undefined }
-                    }),
-                    filter(propertyIsDefined('tableRow')),
-                    withLatestFrom(this.blobElements.pipe(filter(isDefined)))
-                )
-                .subscribe(([{ position, tableRow, codeElement }, blobElement]) => {
-                    highlightLine({ codeElement, line: tableRow })
-
-                    // ! because we filtered out undefined lines above
-                    const lineNumber = position.line!
-
-                    const codeCell = tableRow.children.item(1) as HTMLElement
-                    this.createBlameDomNode({
-                        lineNumber,
-                        codeCell,
-                    })
-                    convertNode(codeCell)
-
-                    // if theres a position hash on page load, scroll it to the center of the screen
-                    scrollToCenter(blobElement, codeElement, tableRow)
-                    this.setState({ activeLine: lineNumber, hoverOverlayIsFixed: position.character !== undefined })
-                })
-        )
-
-        // When the line in the location changes, scroll to it
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    map(props => parseHash(props.location.hash).line),
-                    distinctUntilChanged(),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
                     withLatestFrom(this.blobElements.pipe(filter(isDefined)), this.codeElements.pipe(filter(isDefined)))
                 )
-                .subscribe(([line, blobElement, codeElement]) => {
-                    const tableElement = codeElement.firstElementChild as HTMLTableElement
-                    if (line !== undefined) {
-                        const row = tableElement.rows[line - 1]
-                        if (!row) {
-                            return
-                        }
-
-                        if (this.state.clickedGoToDefinition) {
-                            scrollToCenter(blobElement, codeElement, row)
-                            highlightLine({ codeElement, line: row })
-                        } else {
-                            scrollIntoView(blobElement, row)
-                        }
+                .subscribe(([position, blobElement, codeElement]) => {
+                    this.setState({
+                        // Remember active position in state for blame and range expansion
+                        selectedPosition: position,
+                        // Pin overlay if a concrete position or range is given
+                        hoverOverlayIsFixed: position.character !== undefined,
+                    })
+                    const rows = getRowsInRange(codeElement, position)
+                    // Remove existing highlighting
+                    for (const selected of codeElement.querySelectorAll('.selected')) {
+                        selected.classList.remove('selected')
+                    }
+                    for (const { line, element } of rows) {
+                        const codeCell = element.cells[1]!
+                        convertNode(codeCell)
+                        this.createBlameDomNode(line, codeCell)
+                        // Highlight row
+                        element.classList.add('selected')
+                    }
+                    // Scroll into view
+                    if (rows.length > 0) {
+                        scrollIntoCenterIfNeeded(blobElement, codeElement, rows[0].element)
                     }
                 })
         )
+    }
+
+    /**
+     * Appends a blame portal DOM node to the given code cell if it doesn't contain one already.
+     *
+     * @param line 1-indexed line number
+     * @param codeCell The `<td class="code">` element
+     */
+    private createBlameDomNode(line: number, codeCell: HTMLElement): void {
+        if (codeCell.querySelector('.blame-portal')) {
+            return
+        }
+        const portalNode = document.createElement('span')
+
+        const id = toPortalID(line)
+        portalNode.id = id
+        portalNode.classList.add('blame-portal')
+
+        codeCell.appendChild(portalNode)
+
+        this.setState({
+            blameLineIDs: {
+                ...this.state.blameLineIDs,
+                [line]: id,
+            },
+        })
     }
 
     public componentDidMount(): void {
@@ -691,13 +667,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     }
 
     public render(): React.ReactNode {
-        const blamelineNumber = this.state.activeLine
-        let blamePortalID: string | null = null
-
-        if (blamelineNumber) {
-            blamePortalID = this.state.blameLineIDs[blamelineNumber]
-        }
-
         return (
             <div className={`blob2 ${this.props.className}`} ref={this.nextBlobElement}>
                 <code
@@ -726,33 +695,17 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         {...this.props}
                     />
                 )}
-                {blamelineNumber &&
-                    blamePortalID && (
+                {this.state.selectedPosition &&
+                    this.state.selectedPosition.line !== undefined &&
+                    this.state.blameLineIDs[this.state.selectedPosition.line] && (
                         <BlameLine
-                            key={blamePortalID}
-                            portalID={blamePortalID}
-                            line={blamelineNumber}
+                            key={this.state.blameLineIDs[this.state.selectedPosition.line]}
+                            portalID={this.state.blameLineIDs[this.state.selectedPosition.line]}
+                            line={this.state.selectedPosition.line}
                             {...this.props}
                         />
                     )}
             </div>
         )
-    }
-
-    private createBlameDomNode = ({ lineNumber, codeCell }: { lineNumber: number; codeCell: HTMLElement }): void => {
-        const portalNode = document.createElement('span')
-
-        const id = toPortalID(lineNumber)
-        portalNode.id = id
-        portalNode.classList.add('blame-portal')
-
-        codeCell.appendChild(portalNode)
-
-        this.setState({
-            blameLineIDs: {
-                ...this.state.blameLineIDs,
-                [lineNumber]: id,
-            },
-        })
     }
 }
