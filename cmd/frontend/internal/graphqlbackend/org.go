@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -205,6 +206,9 @@ func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		return nil, errors.New("no current user")
 	}
 
+	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
+		return nil, err
+	}
 	newOrg, err := db.Orgs.Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err

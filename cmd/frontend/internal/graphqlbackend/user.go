@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -137,6 +138,12 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return nil, err
+	}
+
+	if args.Username != nil {
+		if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(*args.Username); err != nil {
+			return nil, err
+		}
 	}
 
 	update := db.UserUpdate{

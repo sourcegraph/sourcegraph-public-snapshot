@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 )
 
 // AuthURLPrefix is the URL path prefix under which to attach authentication handlers
@@ -55,6 +57,9 @@ func NormalizeUsername(name string) (string, error) {
 	name = disallowedCharacter.ReplaceAllString(name, "-")
 	if strings.HasPrefix(name, "-") || strings.HasSuffix(name, "-") || strings.Index(name, "--") != -1 {
 		return "", fmt.Errorf("username %q could not be normalized to acceptable format", origName)
+	}
+	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(name); err != nil {
+		return "", err
 	}
 	return name, nil
 }
