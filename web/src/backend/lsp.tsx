@@ -6,7 +6,7 @@ import {
 import { Observable, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Definition, Hover, Location, MarkedString } from 'vscode-languageserver-types'
+import { Definition, Hover, Location, MarkedString, MarkupContent } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
     AbsoluteRepo,
@@ -27,8 +27,22 @@ interface LSPRequest {
     params?: any
 }
 
-/** Returns true if the input looks like an LSP Hover object, false otherwise */
-const isHover = (val: any): val is Hover => typeof val === 'object' && val !== null
+/** Returns true if the given value conforms to the LSP MarkedString type, false otherwise */
+export const isMarkedString = (val: any): val is MarkedString =>
+    typeof val === 'string' ||
+    (typeof val === 'object' && val !== null && typeof val.language === 'string' && typeof val.value === 'string')
+
+/** Returns true if the given value conforms to the LSP MarkupContent interface, false otherwise */
+export const isMarkupContent = (val: any): val is MarkupContent =>
+    typeof val === 'object' && val !== null && typeof val.kind === 'string' && typeof val.value === 'string'
+
+/** Returns true if the given value conforms to the LSP Hover interface, false otherwise */
+export const isHover = (val: any): val is Hover =>
+    typeof val === 'object' &&
+    val !== null &&
+    (isMarkupContent(val.contents) ||
+        isMarkedString(val.contents) ||
+        (Array.isArray(val.contents) && val.contents.every(isMarkedString)))
 
 export const isEmptyHover = (hover: Hover | null): boolean =>
     !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)

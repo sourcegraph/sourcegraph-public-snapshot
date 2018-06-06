@@ -18,7 +18,7 @@ import {
 } from 'rxjs/operators'
 import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
+import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover, isHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -134,8 +134,6 @@ interface BlobProps extends AbsoluteRepoFile {
 }
 
 const LOADING: 'loading' = 'loading'
-
-const isHover = (val: any): val is Hover => typeof val === 'object' && val !== null && Array.isArray(val.contents)
 
 interface BlobState {
     hoverOrError?: typeof LOADING | Hover | null | ErrorLike

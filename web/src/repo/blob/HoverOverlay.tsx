@@ -9,13 +9,10 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Hover, MarkedString, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types'
 import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
+import { isMarkupContent } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toPrettyBlobURL } from '../../util/url'
-
-/** Returns true if the given value looks like an LSP MarkupContent */
-const isMarkupContent = (markup: any): markup is MarkupContent =>
-    typeof markup === 'object' && markup !== null && 'kind' in markup
 
 /**
  * Attempts to syntax-highlight the given code.
