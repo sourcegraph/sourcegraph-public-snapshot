@@ -373,7 +373,7 @@ export class QueryInput extends React.Component<Props, State> {
         switch (event.key) {
             case 'Escape': {
                 this.suggestionsHidden.next()
-                this.setState({ loading: false, hideSuggestions: true })
+                this.setState({ loading: false, hideSuggestions: true, selectedSuggestion: -1 })
                 break
             }
             case 'ArrowDown': {
