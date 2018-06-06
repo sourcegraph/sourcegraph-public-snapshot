@@ -28,7 +28,7 @@ interface LSPRequest {
 }
 
 /** Returns true if the input looks like an LSP Hover object, false otherwise */
-const isHover = (val: any): val is Hover => typeof val === 'object' && val !== null && Array.isArray(val.contents)
+const isHover = (val: any): val is Hover => typeof val === 'object' && val !== null
 
 export const isEmptyHover = (hover: Hover | null): boolean =>
     !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
