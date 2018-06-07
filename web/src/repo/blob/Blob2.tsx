@@ -451,8 +451,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     }),
                     share()
                 )
-                // Show a loader if it hasn't returned after 100ms
-                return merge(hoverFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)))
+                // 1. Reset the hover content, so no old hover content is displayed at the new position while fetching
+                // 2. Show a loader if the hover fetch hasn't returned after 100ms
+                // 3. Show the hover once it returned
+                return merge([undefined], of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)), hoverFetch)
             }),
             share()
         )
