@@ -45,7 +45,10 @@ export const isHover = (val: any): val is Hover =>
         (Array.isArray(val.contents) && val.contents.every(isMarkedString)))
 
 export const isEmptyHover = (hover: Hover | null): boolean =>
-    !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
+    !hover ||
+    !hover.contents ||
+    (Array.isArray(hover.contents) && hover.contents.length === 0) ||
+    (isMarkupContent(hover.contents) && !hover.contents.value)
 
 /** Returns the first MarkedString element from the hover, or undefined if it has none. */
 export function firstMarkedString(hover: Hover): MarkedString | undefined {
