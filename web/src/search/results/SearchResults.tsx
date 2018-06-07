@@ -142,7 +142,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             <div className="search-results">
                 <PageTitle key="page-title" title={searchOptions && searchOptions.query} />
                 {isSearchResults(this.state.resultsOrError) &&
-                    this.state.resultsOrError.dynamicFilters.length > 0 && (
+                    filters.length > 0 && (
                         <div className="search-results__filters-bar">
                             Filters:
                             <div className="search-results__filters">
