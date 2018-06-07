@@ -236,14 +236,20 @@ export class QueryInput extends React.Component<Props, State> {
                 this.componentUpdates
                     .pipe(
                         startWith(props),
-                        filter(({ location }) => new URLSearchParams(location.search).get('focus') !== null)
+                        filter(
+                            ({ location }) =>
+                                new URLSearchParams(location.search).get('focus') !== null ||
+                                location.pathname === '/search'
+                        )
                     )
                     .subscribe(props => {
                         this.focusInputAndPositionCursorAtEnd()
 
-                        const q = new URLSearchParams(props.location.search)
-                        q.delete('focus')
-                        this.props.history.replace({ search: q.toString() })
+                        if (new URLSearchParams(props.location.search).get('focus')) {
+                            const q = new URLSearchParams(props.location.search)
+                            q.delete('focus')
+                            this.props.history.replace({ search: q.toString() })
+                        }
                     })
             )
         }

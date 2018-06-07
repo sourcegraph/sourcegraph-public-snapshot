@@ -6,6 +6,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+* The query input is now autofocused after conducting a search from a directory page.
 * Search scopes have been consolidated into the "Filters" bar on the search results page.
 
 ### Fixed
