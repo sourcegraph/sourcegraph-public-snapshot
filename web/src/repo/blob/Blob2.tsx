@@ -363,9 +363,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             target: HTMLElement
             codeElement: HTMLElement
         }> = locationPositions.pipe(
-            filter(Position.is),
+            // Make sure to pick only the line and character to compare
             map(position => ({ line: position.line, character: position.character })),
+            // Ignore same values
+            // It's important to do this before filtering otherwise navigating from
+            // a position, to a line-only position, back to the first position would get ignored
             distinctUntilChanged((a, b) => isEqual(a, b)),
+            // Ignore undefined or partial positions (e.g. line only)
+            filter(Position.is),
             withLatestFrom(this.codeElements),
             map(([position, codeElement]) => ({ position, codeElement })),
             filter(propertyIsDefined('codeElement')),
