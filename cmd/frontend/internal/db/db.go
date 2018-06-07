@@ -58,8 +58,8 @@ func ConnectToDB(dataSource string) {
 	registerPrometheusCollector(globalDB, "_app")
 	configureConnectionPool(globalDB)
 
-	if err := doMigrate(newMigrate(globalDB)); err != nil {
-		log.Fatal("failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:", err.Error())
+	if err := doMigrateAndClose(newMigrate(globalDB)); err != nil {
+		log.Fatal("Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: ", err.Error())
 	}
 }
 
@@ -221,17 +221,21 @@ func newMigrate(db *sql.DB) *migrate.Migrate {
 	return m
 }
 
-func doMigrate(m *migrate.Migrate) error {
-	err := m.Up()
+func doMigrateAndClose(m *migrate.Migrate) (err error) {
+	defer func() {
+		srcErr, dbErr := m.Close()
+		if err == nil {
+			if srcErr != nil {
+				err = srcErr
+			} else if dbErr != nil {
+				err = dbErr
+			}
+		}
+	}()
+
+	err = m.Up()
 	if err == nil || err == migrate.ErrNoChange {
 		return nil
-	}
-
-	srcErr, dbErr := m.Close()
-	if srcErr != nil {
-		return srcErr
-	} else if dbErr != nil {
-		return dbErr
 	}
 
 	if os.IsNotExist(err) {
@@ -243,7 +247,30 @@ func doMigrate(m *migrate.Migrate) error {
 		if dirty { // this shouldn't happen, but checking anyways
 			return err
 		}
-		return errors.Errorf("Detected an old version of Sourcegraph. The database has migrated to version %v, which is ahead of this version.", version)
+		log15.Warn("WARNING: Detected an old version of Sourcegraph. The database has migrated to a newer version. If you have applied a rollback, this is expected and you can ignore this warning. If not, please contact support@sourcegraph.com for further assistance.", "db_version", version)
+		return nil
 	}
+	return err
+}
+
+func truncateDB(d *sql.DB) error {
+	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'")
+	if err != nil {
+		return err
+	}
+	var tables []string
+	for rows.Next() {
+		var table string
+		rows.Scan(&table)
+		tables = append(tables, table)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	log.Printf("Truncating all %d tables", len(tables))
+	_, err = d.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY")
 	return err
 }

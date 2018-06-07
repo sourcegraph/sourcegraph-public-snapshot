@@ -3,9 +3,11 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"hash/fnv"
 	"io"
 	"log"
+	"os"
 	"strconv"
 	"testing"
 
@@ -29,12 +31,16 @@ func init() {
 }
 
 func TestMigrations(t *testing.T) {
+	if os.Getenv("SKIP_MIGRATION_TEST") != "" {
+		t.Skip()
+	}
+
 	m := newMigrate(globalDB)
 	// Run all down migrations then up migrations again to ensure there are no SQL errors.
 	if err := m.Down(); err != nil {
 		t.Errorf("error running down migrations: %s", err)
 	}
-	if err := doMigrate(m); err != nil {
+	if err := doMigrateAndClose(m); err != nil {
 		t.Errorf("error running up migrations: %s", err)
 	}
 }
@@ -71,21 +77,17 @@ func testContext() context.Context {
 
 	Mocks = MockStores{}
 
-	m := newMigrate(globalDB)
-	if err := m.Down(); err != nil {
+	if err := emptyDBPreserveSchema(globalDB); err != nil {
 		log.Fatal(err)
-	}
-
-	if err := m.Up(); err != nil {
-		log.Fatal(err)
-	}
-
-	srcErr, dbErr := m.Close()
-	if srcErr != nil {
-		log.Fatalf("srcErr: %v", srcErr)
-	} else if dbErr != nil {
-		log.Fatalf("dbErr: %v", dbErr)
 	}
 
 	return ctx
+}
+
+func emptyDBPreserveSchema(d *sql.DB) error {
+	_, err := d.Exec(`SELECT * FROM schema_migrations`)
+	if err != nil {
+		return fmt.Errorf("Table schema_migrations not found: %v", err)
+	}
+	return truncateDB(d)
 }

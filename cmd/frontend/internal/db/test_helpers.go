@@ -3,16 +3,23 @@ package db
 import (
 	"log"
 	"os/exec"
+	"strings"
 )
 
-// InitTest creates a new test database (named with the given suffix) and configures
-// this package to use it. It is called by integration tests (in a package init func)
+// InitTest creates a test database, named with the given suffix, if one does not already exist and
+// configures this package to use it. It is called by integration tests (in a package init func)
 // that need to use a real database.
 func InitTest(nameSuffix string) {
 	dbname := "sourcegraph-test-" + nameSuffix
-	_ = exec.Command("dropdb", dbname).Run()
-	if err := exec.Command("createdb", dbname).Run(); err != nil {
-		log.Fatalf("createdb failed: %v", err)
+
+	out, err := exec.Command("createdb", dbname).CombinedOutput()
+	if err != nil {
+		if strings.Contains(string(out), "already exists") {
+			log.Printf("DB %s exists already (run `dropdb %s` to delete and force re-creation)", dbname, dbname)
+		} else {
+			log.Fatalf("createdb failed: %v\n%s", err, string(out))
+		}
 	}
+
 	ConnectToDB("dbname=" + dbname)
 }
