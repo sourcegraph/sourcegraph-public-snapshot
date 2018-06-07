@@ -43,7 +43,6 @@ export async function watchWebpack(): Promise<void> {
         return
     }
     const compiler = createWatchWebpackCompiler()
-    compiler.hooks.watchRun.tap('log', () => log('Starting webpack compilation'))
     await new Promise<never>((resolve, reject) => {
         compiler.watch({}, (err, stats) => {
             if (err) {
