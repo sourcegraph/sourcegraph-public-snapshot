@@ -566,8 +566,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             codeClickTargets.subscribe(({ target }) => {
                 this.setState({
                     // If a token inside a code cell was clicked, pin the hover
-                    // Otherwise if empty space was clicked, unpin it
-                    hoverOverlayIsFixed: !target.matches('td'),
+                    // Otherwise if empty space (the cell itself or the <code> element) was clicked, unpin it
+                    hoverOverlayIsFixed: !!target.closest('td'),
                 })
             })
         )
