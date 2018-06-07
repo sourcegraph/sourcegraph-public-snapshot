@@ -9,6 +9,12 @@ Migrations are handled by the [migrate](https://github.com/golang-migrate/migrat
 **IMPORTANT:** All migrations must be backward-compatible, meaning that the _existing_ version of
 the `frontend` command must be able to run against the _new_ (post-migration) version of the schema.
 
+**IMPORTANT:** Your migration should be written in such a way that tolerates writes from
+pre-migration versions of Sourcegraph. This is because frontend pods are updated in a rolling
+fashion. During the rolling update, there will be both old and new frontend pods. The first updated
+pod will migrate the schema atomically, but the remaining old ones may continue to write before they
+are terminated.
+
 Run the following:
 
 ```
