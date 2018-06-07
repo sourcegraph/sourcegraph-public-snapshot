@@ -68,7 +68,7 @@ export class SearchNavbarItem extends React.Component<Props> {
         const autoFocus = this.props.location.pathname === '/search'
 
         return (
-            <Form className="search search--navbar-item" onSubmit={this.onSubmit}>
+            <Form className="search search--navbar-item d-flex" onSubmit={this.onSubmit}>
                 <QueryInput
                     {...this.props}
                     value={this.props.navbarSearchQuery}

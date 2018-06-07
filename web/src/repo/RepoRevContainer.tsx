@@ -35,6 +35,7 @@ interface RepoRevContainerProps extends RouteComponentProps<{}> {
     rev: string | undefined
     user: GQL.IUser | null
     isLightTheme: boolean
+    onHelpPopoverToggle: () => void
     routePrefix: string
 }
 
@@ -301,6 +302,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         location={this.props.location}
                                                         history={this.props.history}
                                                         isLightTheme={this.props.isLightTheme}
+                                                        onHelpPopoverToggle={this.props.onHelpPopoverToggle}
                                                     />
                                                 )}
                                                 {useNewBlobPanel ? (

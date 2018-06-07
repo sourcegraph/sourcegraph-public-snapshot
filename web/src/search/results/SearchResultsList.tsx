@@ -15,11 +15,11 @@ import * as GQL from '../../backend/graphqlschema'
 import { FileMatch } from '../../components/FileMatch'
 import { ModalContainer } from '../../components/ModalContainer'
 import { VirtualList } from '../../components/VirtualList'
+import { OpenHelpPopoverButton } from '../../global/OpenHelpPopoverButton'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined } from '../../util/types'
 import { buildSearchURLQuery, parseSearchURLQuery } from '../index'
-import { SearchHelp } from '../input/SearchHelp'
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
@@ -45,6 +45,8 @@ interface SearchResultsListProps {
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
+
+    onHelpPopoverToggle: () => void
 }
 
 interface State {
@@ -356,7 +358,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     )}
 
                     <div className="pb-4" />
-                    {this.props.resultsOrError !== undefined && <SearchHelp />}
+                    {this.props.resultsOrError !== undefined && (
+                        <OpenHelpPopoverButton
+                            className="mb-2"
+                            onHelpPopoverToggle={this.props.onHelpPopoverToggle}
+                            text="Not seeing expected results?"
+                        />
+                    )}
                 </div>
             </React.Fragment>
         )

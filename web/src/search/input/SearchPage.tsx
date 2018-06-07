@@ -3,6 +3,7 @@ import * as React from 'react'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
+import { OpenHelpPopoverButton } from '../../global/OpenHelpPopoverButton'
 import { NavLinks } from '../../nav/NavLinks'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
@@ -12,7 +13,6 @@ import { SavedQueries } from '../saved-queries/SavedQueries'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchFilterChips } from './SearchFilterChips'
-import { SearchHelp } from './SearchHelp'
 
 interface Props {
     user: GQL.IUser | null
@@ -20,6 +20,8 @@ interface Props {
     history: H.History
     isLightTheme: boolean
     onThemeChange: () => void
+    showHelpPopover: boolean
+    onHelpPopoverToggle: (visible?: boolean) => void
 }
 
 interface State {
@@ -76,7 +78,7 @@ export class SearchPage extends React.Component<Props, State> {
                             hasGlobalQueryBehavior={true}
                         />
                         <SearchButton />
-                        <SearchHelp className="search-page__help" />
+                        <OpenHelpPopoverButton onHelpPopoverToggle={this.props.onHelpPopoverToggle} />
                     </div>
                     <div className="search-page__input-sub-container">
                         <SearchFilterChips

@@ -17,11 +17,11 @@ import * as GQL from '../backend/graphqlschema'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
+import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
-import { SearchHelp } from '../search/input/SearchHelp'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
@@ -106,6 +106,7 @@ interface Props {
     commitID: string
     rev?: string
     isLightTheme: boolean
+    onHelpPopoverToggle: () => void
 
     location: H.Location
     history: H.History
@@ -243,7 +244,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             placeholder=""
                         />
                         <SearchButton />
-                        <SearchHelp />
+                        <OpenHelpPopoverButton onHelpPopoverToggle={this.props.onHelpPopoverToggle} />
                     </Form>
                 </section>
                 {this.state.treeOrError === undefined && (

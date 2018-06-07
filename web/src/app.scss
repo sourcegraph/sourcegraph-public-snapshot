@@ -265,7 +265,8 @@ hr {
 @import './components/Overview';
 @import './components/RadioButtons';
 @import './components/tooltip/Tooltip';
-@import './components/FeedbackForm';
+@import './components/HelpPopover';
+@import './global/OpenHelpPopoverButton';
 @import './settings/SettingsArea';
 @import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';

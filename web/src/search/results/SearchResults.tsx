@@ -21,6 +21,7 @@ interface SearchResultsProps {
     history: H.History
     isLightTheme: boolean
     navbarSearchQuery: string
+    onHelpPopoverToggle: () => void
 }
 
 interface SearchResultsState {
@@ -196,6 +197,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     history={this.props.history}
                     user={this.props.user}
                     isLightTheme={this.props.isLightTheme}
+                    onHelpPopoverToggle={this.props.onHelpPopoverToggle}
                 />
             </div>
         )

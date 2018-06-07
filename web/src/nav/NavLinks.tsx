@@ -1,14 +1,13 @@
 import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
 import ChevronUpIcon from '@sourcegraph/icons/lib/ChevronUp'
-import EmoticonIcon from '@sourcegraph/icons/lib/Emoticon'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
-import { FeedbackForm } from '../components/FeedbackForm'
+import { HelpPopover } from '../components/HelpPopover'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { SearchHelp } from '../search/input/SearchHelp'
+import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
@@ -22,22 +21,13 @@ interface Props {
     showScopes?: boolean
     onShowScopes?: () => void
     className?: string
-    showFeedbackForm?: boolean
-    onFeedbackFormClose?: () => void
-    onShowFeedbackForm?: () => void
-}
-
-interface State {
-    showFeedbackForm: boolean
+    showHelpPopover: boolean
+    onHelpPopoverToggle: (visible?: boolean) => void
 }
 
 const isGQLUser = (val: any): val is GQL.IUser => val && typeof val === 'object' && val.__typename === 'User'
 
-export class NavLinks extends React.Component<Props, State> {
-    public state: State = {
-        showFeedbackForm: false,
-    }
-
+export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
     public componentWillUnmount(): void {
@@ -74,7 +64,6 @@ export class NavLinks extends React.Component<Props, State> {
                                 <ChevronDownIcon className="icon-inline" />
                             )}
                         </a>
-                        <SearchHelp compact={true} />
                         <div className="nav-links__spacer" />
                     </>
                 )}
@@ -115,15 +104,9 @@ export class NavLinks extends React.Component<Props, State> {
                         )}
                     </Link>
                 )}
-                <button
-                    className="btn btn-link nav-links__feedback"
-                    data-tooltip={this.state.showFeedbackForm ? undefined : 'Send feedback & report issues'}
-                    onClick={this.onFeedbackButtonClick}
-                >
-                    <EmoticonIcon className="icon-inline" />
-                </button>
-                {this.state.showFeedbackForm && (
-                    <FeedbackForm onDismiss={this.onFeedbackFormDismiss} user={this.props.user} />
+                <OpenHelpPopoverButton className="nav-links__help" onHelpPopoverToggle={this.onHelpPopoverToggle} />
+                {this.props.showHelpPopover && (
+                    <HelpPopover onDismiss={this.onHelpPopoverToggle} user={this.props.user} />
                 )}
                 {!this.props.user &&
                     this.props.location.pathname !== '/sign-in' && (
@@ -141,12 +124,7 @@ export class NavLinks extends React.Component<Props, State> {
         )
     }
 
-    private onFeedbackButtonClick = (): void => {
-        eventLogger.log('FeedbackFormOpened')
-        this.setState(prevState => ({ showFeedbackForm: !prevState.showFeedbackForm }))
-    }
-
-    private onFeedbackFormDismiss = (): void => {
-        this.setState({ showFeedbackForm: false })
+    private onHelpPopoverToggle = (): void => {
+        this.props.onHelpPopoverToggle()
     }
 }

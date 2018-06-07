@@ -18,6 +18,8 @@ interface Props {
     onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
+    showHelpPopover: boolean
+    onHelpPopoverToggle: (visible?: boolean) => void
 }
 
 interface State {

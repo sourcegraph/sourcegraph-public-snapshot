@@ -55,6 +55,8 @@ interface LayoutProps extends RouteComponentProps<any> {
     onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
+    showHelpPopover: boolean
+    onHelpPopoverToggle: (visible?: boolean) => void
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -121,7 +123,9 @@ interface AppState {
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
-    showFeedbackForm: boolean
+
+    /** Whether the help popover is shown. */
+    showHelpPopover: boolean
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -133,7 +137,7 @@ class App extends React.Component<{}, AppState> {
     public state: AppState = {
         isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
         navbarSearchQuery: '',
-        showFeedbackForm: false,
+        showHelpPopover: false,
     }
 
     private subscriptions = new Subscription()
@@ -208,6 +212,8 @@ class App extends React.Component<{}, AppState> {
             onThemeChange={this.onThemeChange}
             navbarSearchQuery={this.state.navbarSearchQuery}
             onNavbarQueryChange={this.onNavbarQueryChange}
+            showHelpPopover={this.state.showHelpPopover}
+            onHelpPopoverToggle={this.onHelpPopoverToggle}
         />
     )
 
@@ -222,6 +228,15 @@ class App extends React.Component<{}, AppState> {
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {
         this.setState({ navbarSearchQuery })
+    }
+
+    private onHelpPopoverToggle = (visible?: boolean): void => {
+        eventLogger.log('HelpPopoverToggled')
+        this.setState(prevState => ({
+            // If visible is any non-boolean type (e.g., MouseEvent), treat it as undefined. This lets callers use
+            // onHelpPopoverToggle directly in an event handler without wrapping it in an another function.
+            showHelpPopover: visible !== true && visible !== false ? !prevState.showHelpPopover : visible,
+        }))
     }
 }
 

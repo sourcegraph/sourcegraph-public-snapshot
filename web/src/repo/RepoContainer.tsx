@@ -32,6 +32,7 @@ const RepoPageNotFound: React.SFC = () => (
 
 interface Props extends RouteComponentProps<{ repoRevAndRest: string }> {
     user: GQL.IUser | null
+    onHelpPopoverToggle: () => void
     isLightTheme: boolean
 }
 
@@ -176,6 +177,7 @@ export class RepoContainer extends React.Component<Props, State> {
             user: this.props.user,
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
+            onHelpPopoverToggle: this.props.onHelpPopoverToggle,
         }
 
         const isSettingsPage =
