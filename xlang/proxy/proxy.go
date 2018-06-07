@@ -80,7 +80,7 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 				return // stop when the listener is closed
 			case <-time.After(p.MaxClientIdle / 2):
 				if err := p.DisconnectIdleClients(p.MaxClientIdle); err != nil {
-					log15.Error("LSP proxy: disconnecting idle clients", "err", err)
+					log15.Error("LSP proxy: disconnecting idle clients", "error", err)
 				}
 			}
 		}
@@ -110,7 +110,7 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 					return last.Before(idleCutoff) || isShortLived || (unused && last.Before(unusedCutoff))
 				}
 				if err := p.shutdownServers(ctx, filter); err != nil {
-					log15.Error("LSP proxy: shutting down idle servers", "err", err)
+					log15.Error("LSP proxy: shutting down idle servers", "error", err)
 				}
 				cancel()
 			}
@@ -126,7 +126,7 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 	conf.Watch(func() {
 		newLSConf, err := json.Marshal(conf.Get().Langservers)
 		if err != nil {
-			log15.Error("Error marshaling new langserver config", "err", err)
+			log15.Error("Error marshaling new langserver config", "error", err)
 			return
 		}
 
