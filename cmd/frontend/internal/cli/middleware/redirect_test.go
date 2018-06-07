@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,6 +15,11 @@ import (
 func TestCanonicalURL(t *testing.T) {
 	handle := func(t *testing.T, req *http.Request) (redirect string) {
 		t.Helper()
+
+		// In most real requests, only the URL's Path and RawQuery are not set. (See
+		// (*http.Request).URL docs.)
+		req.URL = &url.URL{Path: req.URL.Path, RawQuery: req.URL.RawQuery}
+
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		rr := httptest.NewRecorder()
 		h.ServeHTTP(rr, req)
@@ -61,6 +67,13 @@ func TestCanonicalURL(t *testing.T) {
 			canonicalURLRedirect: "enabled",
 			url:                  "https://other.example.com/foo",
 			wantRedirect:         "http://example.com/foo",
+		},
+		{
+			appURL:               "http://example.com",
+			httpToHttpsRedirect:  "off",
+			canonicalURLRedirect: "enabled",
+			url:                  "http://example.com",
+			wantRedirect:         "",
 		},
 
 		{
