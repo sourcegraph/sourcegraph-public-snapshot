@@ -6,11 +6,10 @@ Migrations are handled by the [migrate](https://github.com/golang-migrate/migrat
 
 ### Add a new migration
 
-Run the following, with the first argument being a descriptive name for the migration (e.g. "add
-users table"):
+Run the following:
 
 ```
-./dev/add_migration.sh "migration name"
+./dev/add_migration.sh
 ```
 
 There will be up/down `.sql` migration files created in this directory. Add SQL statements to these
