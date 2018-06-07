@@ -31,7 +31,7 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 			w.Header().Set("cache-control", "no-cache")
 
 			var body string
-			if envvar.DebugMode() {
+			if envvar.InsecureDevMode() {
 				body = fmt.Sprintf("Error: HTTP %d %s\n\nError: %s", status, http.StatusText(status), err.Error())
 			} else {
 				body = fmt.Sprintf("Error: HTTP %d: %s", status, http.StatusText(status))

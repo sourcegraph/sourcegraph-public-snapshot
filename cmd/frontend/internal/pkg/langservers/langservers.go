@@ -269,7 +269,7 @@ func init() {
 	}
 	sort.Strings(Languages)
 
-	if envvar.DebugMode() {
+	if envvar.InsecureDevMode() {
 		// Running in debug / development mode. In this case, the frontend is
 		// not running inside of a Docker container itself, and we are not on
 		// the 'lsp' network. So we must actually expose the language server's
@@ -384,7 +384,7 @@ func Stop(language string) error {
 
 func start(language string) error {
 	cmd := []string{"run", "--detach", "--restart=always", "--network=lsp", "--name=" + containerName(language)}
-	if envvar.DebugMode() {
+	if envvar.InsecureDevMode() {
 		cmd = append(cmd, startDebugArgs(language)...)
 	} else {
 		cmd = append(cmd, startProdArgs(language)...)
@@ -816,7 +816,7 @@ func setupNetworking() {
 // e.g. the Go language server can reach the gitserver in our container.
 func setContainerID() {
 	// We do not do this in dev mode, since we are not running in a container.
-	if envvar.DebugMode() {
+	if envvar.InsecureDevMode() {
 		return
 	}
 	containerID, err := thisContainerID()
@@ -855,7 +855,7 @@ func createLSPBridge() {
 	// Connect this container to the LSP bridge network we just created.
 	//
 	// We do not do this in dev mode, since we are not running in a container.
-	if envvar.DebugMode() {
+	if envvar.InsecureDevMode() {
 		return
 	}
 	_, err = dockerCmd("network", "connect", "lsp", "sourcegraph")

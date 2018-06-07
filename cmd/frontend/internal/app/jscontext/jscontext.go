@@ -142,7 +142,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Version:             env.Version,
 		User:                user,
 		SentryDSN:           sentryDSNFrontend,
-		Debug:               envvar.DebugMode(),
+		Debug:               envvar.InsecureDevMode(),
 		SiteID:              siteID,
 		ShowOnboarding:      showOnboarding,
 		EmailEnabled:        conf.CanSendEmail(),

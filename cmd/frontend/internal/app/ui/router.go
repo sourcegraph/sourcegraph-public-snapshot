@@ -243,7 +243,7 @@ func initRouter() {
 	}))
 	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
-		if envvar.DebugMode() && r.URL.Path == "/__errorTest" {
+		if envvar.InsecureDevMode() && r.URL.Path == "/__errorTest" {
 			handler(serveErrorTest).ServeHTTP(w, r)
 			return
 		}
@@ -397,7 +397,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	}
 
 	var errorIfDebug string
-	if forceServeError || (envvar.DebugMode() && !nodebug) {
+	if forceServeError || (envvar.InsecureDevMode() && !nodebug) {
 		errorIfDebug = err.Error()
 	}
 
@@ -452,7 +452,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 // in production), `error` controls the error message text, and status controls
 // the status code.
 func serveErrorTest(w http.ResponseWriter, r *http.Request) error {
-	if !envvar.DebugMode() {
+	if !envvar.InsecureDevMode() {
 		w.WriteHeader(http.StatusNotFound)
 		return nil
 	}

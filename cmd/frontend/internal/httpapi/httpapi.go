@@ -146,7 +146,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if envvar.DebugMode() {
+	if envvar.InsecureDevMode() {
 		// Only display error message to admins when in debug mode, since it may
 		// contain sensitive info (like API keys in net/http error messages).
 		displayErrBody = string(errBody)

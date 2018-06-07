@@ -74,7 +74,7 @@ func loadTemplate(path string) (*template.Template, error) {
 	loadTemplateMu.RLock()
 	tmpl, ok := loadTemplateCache[path]
 	loadTemplateMu.RUnlock()
-	if ok && !envvar.DebugMode() {
+	if ok && !envvar.InsecureDevMode() {
 		return tmpl, nil
 	}
 
@@ -164,7 +164,7 @@ func mustListTemplates() []string {
 		return list, nil
 	}
 
-	if envvar.DebugMode() {
+	if envvar.InsecureDevMode() {
 		// In debug mode the underlying templates can change, so we can't use
 		// the perf optimization of doing it in a sync.Once
 		templates, err := walk("ui") // TODO(slimsag): replace with root in the future

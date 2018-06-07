@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -70,7 +69,9 @@ var defaultEnv = map[string]string{
 	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 }
 
-var verbose, _ = strconv.ParseBool(os.Getenv("FRONTEND_DEBUG"))
+// Set verbosity based on simple interpretation of env var to avoid external dependencies (such as
+// on github.com/sourcegraph/sourcegraph/pkg/env).
+var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
 
 func main() {
 	log.SetFlags(0)
