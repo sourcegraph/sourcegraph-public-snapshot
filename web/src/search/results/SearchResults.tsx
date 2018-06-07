@@ -154,6 +154,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             onFilterChosen={this.onDynamicFilterClicked}
                                             key={filter.value}
                                             value={filter.value}
+                                            name={filter.name}
                                         />
                                     ))}
                             </div>
