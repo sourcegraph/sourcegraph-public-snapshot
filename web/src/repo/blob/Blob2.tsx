@@ -668,7 +668,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     }
 
     public componentDidUpdate(): void {
-        console.log(shouldRenderHover(this.state), this.state)
         this.componentUpdates.next(this.props)
     }
 
