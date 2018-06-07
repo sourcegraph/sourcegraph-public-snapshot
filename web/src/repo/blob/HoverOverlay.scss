@@ -70,14 +70,14 @@
     }
 
     &__loader-row,
+    &__hover-error,
     &__content-error,
-    &__definition-error,
-    &__definition-not-found {
+    &__alert-below {
         padding: 0.5rem;
     }
 
-    &__definition-not-found {
-        @extend .alert-info;
-        // background: rgba($info, 0.2);
+    &__alert-below {
+        margin: 0;
+        overflow-y: auto;
     }
 }

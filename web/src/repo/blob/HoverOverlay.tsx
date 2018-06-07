@@ -122,7 +122,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                         <Loader className="icon-inline" />
                     </div>
                 ) : isErrorLike(props.hoverOrError) ? (
-                    <div className="hover-overlay__row alert alert-danger">
+                    <div className="hover-overlay__row hover-overlay__hover-error lert alert-danger">
                         <h4>
                             <AlertCircleOutlineIcon className="icon-inline" /> Error fetching hover from language
                             server:
@@ -230,12 +230,12 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
             </ButtonOrLink>
         </div>
         {props.definitionURLOrError === null ? (
-            <div className="alert alert-info m-0 p-2 rounded-0">
+            <div className="alert alert-info hover-overlay__alert-below">
                 <InformationOutlineIcon className="icon-inline" /> No definition found
             </div>
         ) : (
             isErrorLike(props.definitionURLOrError) && (
-                <div className="alert alert-danger m-0 p-2 rounded-0">
+                <div className="alert alert-danger hover-overlay__alert-below">
                     <strong>
                         <AlertCircleOutlineIcon className="icon-inline" /> Error finding definition:
                     </strong>{' '}
