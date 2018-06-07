@@ -642,12 +642,12 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
         codeCell.appendChild(portalNode)
 
-        this.setState({
+        this.setState(state => ({
             blameLineIDs: {
-                ...this.state.blameLineIDs,
+                ...state.blameLineIDs,
                 [line]: id,
             },
-        })
+        }))
     }
 
     public componentDidMount(): void {
