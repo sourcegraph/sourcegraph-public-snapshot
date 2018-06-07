@@ -239,7 +239,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                             isErrorLike(this.state.canAddOrError)) && (
                                             <>
                                                 <p>
-                                                    The repository can't be added because it is not accessbile from any
+                                                    The repository can't be added because it is not accessible from any
                                                     code hosts configured on this site.
                                                 </p>
                                                 <p>
