@@ -302,6 +302,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     td.classList.add('annotated')
                 }
             }),
+            // Do not consider mouseovers while overlay is pinned
+            filter(() => !this.state.hoverOverlayIsFixed),
             share()
         )
 
@@ -392,16 +394,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             this.componentUpdates
                 .pipe(
                     // with the latest target that came from either a mouseover, click or location change (whatever was the most recent)
-                    withLatestFrom(
-                        merge(
-                            codeMouseOverTargets.pipe(map(data => ({ ...data, source: 'mouseover' as 'mouseover' }))),
-                            codeClickTargets.pipe(map(data => ({ ...data, source: 'click' as 'click' }))),
-                            targetsFromLocationHash.pipe(map(data => ({ ...data, source: 'location' as 'location' })))
-                        )
-                    ),
-                    map(([, { target, codeElement, source }]) => ({ target, codeElement, source })),
-                    // When the new target came from a mouseover, only reposition the hover if it is not fixed
-                    filter(({ source }) => source !== 'mouseover' || !this.state.hoverOverlayIsFixed),
+                    withLatestFrom(merge(codeMouseOverTargets, codeClickTargets, targetsFromLocationHash)),
+                    map(([, { target, codeElement }]) => ({ target, codeElement })),
                     withLatestFrom(this.hoverOverlayElements),
                     map(([{ target, codeElement }, hoverElement]) => ({ target, hoverElement, codeElement })),
                     filter(propertyIsDefined('hoverElement'))
@@ -424,8 +418,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             merge(
                 // When the location changes and and includes a line/column pair, use that target
                 targetsFromLocationHash,
-                // mouseovers should only trigger a new hover when the overlay is not fixed
-                codeMouseOverTargets.pipe(filter(() => !this.state.hoverOverlayIsFixed)),
+                // Already filtered
+                codeMouseOverTargets,
                 // clicks should trigger a new hover when the overlay is fixed
                 codeClickTargets.pipe(filter(() => this.state.hoverOverlayIsFixed))
             ).pipe(
