@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+* Search scopes have been consolidated into the "Filters" bar on the search results page.
+
 ### Fixed
 
 * The target commit ID of a Git tag object (i.e., not lightweight Git tag refs) is now dereferenced correctly. Previously the tag object's OID was given.

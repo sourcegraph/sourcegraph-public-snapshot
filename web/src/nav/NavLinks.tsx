@@ -1,5 +1,3 @@
-import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
-import ChevronUpIcon from '@sourcegraph/icons/lib/ChevronUp'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -18,8 +16,6 @@ interface Props {
     isLightTheme: boolean
     onThemeChange: () => void
     adjacentToQueryInput?: boolean
-    showScopes?: boolean
-    onShowScopes?: () => void
     className?: string
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
@@ -40,33 +36,9 @@ export class NavLinks extends React.PureComponent<Props> {
         })
     }
 
-    private onShowScopes: React.MouseEventHandler<HTMLAnchorElement> = e => {
-        e.preventDefault()
-        if (this.props.onShowScopes) {
-            this.props.onShowScopes()
-        }
-    }
-
     public render(): JSX.Element | null {
         return (
             <div className={`nav-links ${this.props.className || ''}`}>
-                {this.props.adjacentToQueryInput && (
-                    <>
-                        <a
-                            className="nav-links__scopes-toggle"
-                            onClick={this.onShowScopes}
-                            data-tooltip={this.props.showScopes ? 'Hide scopes' : 'Show scopes'}
-                            href=""
-                        >
-                            {this.props.showScopes ? (
-                                <ChevronUpIcon className="icon-inline" />
-                            ) : (
-                                <ChevronDownIcon className="icon-inline" />
-                            )}
-                        </a>
-                        <div className="nav-links__spacer" />
-                    </>
-                )}
                 {showDotComMarketing && (
                     <a
                         href="https://about.sourcegraph.com"

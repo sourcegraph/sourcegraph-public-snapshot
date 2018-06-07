@@ -5,6 +5,7 @@ import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
+import { currentConfiguration } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 import { search } from './../backend'
 import { FilterChip } from './../FilterChip'
@@ -24,6 +25,10 @@ interface SearchResultsProps {
     onHelpPopoverToggle: () => void
 }
 
+interface SearchScope {
+    name?: string
+    value: string
+}
 interface SearchResultsState {
     /** The loaded search results, error or undefined while loading */
     resultsOrError?: GQL.ISearchResults
@@ -32,6 +37,8 @@ interface SearchResultsState {
     // Saved Queries
     showSavedQueryModal: boolean
     didSaveQuery: boolean
+    /** All search scopes from configuration */
+    scopes?: SearchScope[]
 }
 
 const newRepoFilters = localStorage.getItem('newRepoFilters') === 'true'
@@ -49,6 +56,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SearchResults')
+
+        this.subscriptions.add(
+            currentConfiguration
+                .pipe(map(config => config['search.scopes'] || []))
+                .subscribe(scopes => this.setState({ scopes }))
+        )
 
         this.subscriptions.add(
             this.componentUpdates
@@ -124,6 +137,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
     public render(): JSX.Element | null {
         const searchOptions = parseSearchURLQuery(this.props.location.search)
+        const filters = this.getFilters()
         return (
             <div className="search-results">
                 <PageTitle key="page-title" title={searchOptions && searchOptions.query} />
@@ -132,13 +146,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         <div className="search-results__filters-bar">
                             Filters:
                             <div className="search-results__filters">
-                                {this.state.resultsOrError.dynamicFilters
-                                    .filter(filter => {
-                                        if (newRepoFilters) {
-                                            return filter.value !== '' && filter.kind !== 'repo'
-                                        }
-                                        return filter.value !== ''
-                                    })
+                                {filters
+                                    .filter(filter => filter.value !== '')
                                     .map((filter, i) => (
                                         <FilterChip
                                             query={this.props.navbarSearchQuery}
@@ -203,6 +212,35 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         )
     }
 
+    /** Combines dynamic filters and search scopes into a list de-duplicated by value. */
+    private getFilters(): SearchScope[] {
+        const filters = new Map<string, SearchScope>()
+
+        if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
+            let dynamicFilters = this.state.resultsOrError.dynamicFilters
+            if (newRepoFilters) {
+                dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
+            }
+            for (const d of dynamicFilters) {
+                filters.set(d.value, d)
+            }
+        }
+        if (this.state.scopes) {
+            if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
+                for (const scope of this.state.scopes) {
+                    if (!filters.has(scope.value)) {
+                        filters.set(scope.value, scope)
+                    }
+                }
+            } else {
+                for (const scope of this.state.scopes) {
+                    filters.set(scope.value, scope)
+                }
+            }
+        }
+
+        return Array.from(filters.values())
+    }
     private showMoreResults = () => {
         // Requery with an increased max result count.
         const params = new URLSearchParams(this.props.location.search)
