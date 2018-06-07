@@ -231,6 +231,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
     private nextCodeMouseOver = (event: React.MouseEvent<HTMLElement>) => this.codeMouseOvers.next(event)
 
+    /** Emits whenever something is hovered in the code */
+    private codeMouseMoves = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextCodeMouseMove = (event: React.MouseEvent<HTMLElement>) => this.codeMouseMoves.next(event)
+
     /** Emits whenever something is clicked in the code */
     private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
     private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -258,6 +262,29 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             mouseIsMoving: false,
         }
 
+        // Mouse is moving, don't show the tooltip
+        this.subscriptions.add(
+            this.codeMouseMoves
+                .pipe(
+                    map(event => event.target),
+                    // Make sure a move of the mouse from the go-to-definition button
+                    // back to the same target doesn't cause the tooltip to briefly disappear
+                    distinctUntilChanged()
+                )
+                .subscribe(() => {
+                    this.setState({ mouseIsMoving: true })
+                })
+        )
+
+        // When the mouse stopped for TOOLTIP_DISPLAY_DELAY, show tooltip
+        // Don't use mouseover for this because it is only fired once per token,
+        // not continuously while moving the mouse
+        this.subscriptions.add(
+            this.codeMouseMoves.pipe(debounceTime(TOOLTIP_DISPLAY_DELAY)).subscribe(() => {
+                this.setState({ mouseIsMoving: false })
+            })
+        )
+
         const codeMouseOverTargets = this.codeMouseOvers.pipe(
             map(event => event.target as HTMLElement),
             // Casting is okay here, we know these are HTMLElements
@@ -276,27 +303,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 }
             }),
             share()
-        )
-
-        // Mouse is moving, don't show the tooltip
-        this.subscriptions.add(
-            codeMouseOverTargets
-                .pipe(
-                    map(({ target }) => target),
-                    // Make sure a move of the mouse from the go-to-definition button
-                    // back to the same target doesn't cause the tooltip to briefly disappear
-                    distinctUntilChanged()
-                )
-                .subscribe(() => {
-                    this.setState({ mouseIsMoving: true })
-                })
-        )
-
-        // Mouse stopped over a token for TOOLTIP_DISPLAY_DELAY, show tooltip
-        this.subscriptions.add(
-            codeMouseOverTargets.pipe(debounceTime(TOOLTIP_DISPLAY_DELAY)).subscribe(() => {
-                this.setState({ mouseIsMoving: false })
-            })
         )
 
         // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
@@ -684,6 +690,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                     onClick={this.nextCodeClick}
                     onMouseOver={this.nextCodeMouseOver}
+                    onMouseMove={this.nextCodeMouseMove}
                     data-e2e="blob"
                 />
                 {shouldRenderHover(this.state) && (
