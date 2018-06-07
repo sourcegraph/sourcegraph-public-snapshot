@@ -258,20 +258,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             mouseIsMoving: false,
         }
 
-        // Mouse is moving, don't show the tooltip
-        this.subscriptions.add(
-            this.codeMouseOvers.subscribe(() => {
-                this.setState({ mouseIsMoving: true })
-            })
-        )
-
-        // Mouse stopped over a token for TOOLTIP_DISPLAY_DELAY, show tooltip
-        this.subscriptions.add(
-            this.codeMouseOvers.pipe(debounceTime(TOOLTIP_DISPLAY_DELAY)).subscribe(() => {
-                this.setState({ mouseIsMoving: false })
-            })
-        )
-
         const codeMouseOverTargets = this.codeMouseOvers.pipe(
             map(event => event.target as HTMLElement),
             // Casting is okay here, we know these are HTMLElements
@@ -290,6 +276,27 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 }
             }),
             share()
+        )
+
+        // Mouse is moving, don't show the tooltip
+        this.subscriptions.add(
+            codeMouseOverTargets
+                .pipe(
+                    map(({ target }) => target),
+                    // Make sure a move of the mouse from the go-to-definition button
+                    // back to the same target doesn't cause the tooltip to briefly disappear
+                    distinctUntilChanged()
+                )
+                .subscribe(() => {
+                    this.setState({ mouseIsMoving: true })
+                })
+        )
+
+        // Mouse stopped over a token for TOOLTIP_DISPLAY_DELAY, show tooltip
+        this.subscriptions.add(
+            codeMouseOverTargets.pipe(debounceTime(TOOLTIP_DISPLAY_DELAY)).subscribe(() => {
+                this.setState({ mouseIsMoving: false })
+            })
         )
 
         // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
@@ -661,6 +668,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     }
 
     public componentDidUpdate(): void {
+        console.log(shouldRenderHover(this.state), this.state)
         this.componentUpdates.next(this.props)
     }
 
