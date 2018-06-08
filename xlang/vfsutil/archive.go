@@ -32,10 +32,8 @@ type Archiver interface {
 // on. For consistency, callers should generally use full SHAs, not
 // rev specs like branch names, etc.
 //
-// Unlike vcs.FileSystem (which makes individual execs/calls for each
-// FS operation), ArchiveFileSystem fetches the full .zip archive
-// initially and then can satisfy FS operations nearly instantly in
-// memory.
+// ArchiveFileSystem fetches the full .zip archive initially and then
+// can satisfy FS operations nearly instantly in memory.
 func ArchiveFileSystem(repo Archiver, treeish string) *ArchiveFS {
 	fetch := func(ctx context.Context) (*archiveReader, error) {
 		data, err := repo.Archive(ctx, api.CommitID(treeish))
