@@ -20,6 +20,9 @@ const WEBPACK_STATS_OPTIONS = {
     timings: true,
     errors: true,
     warnings: true,
+    warningsFilter: warning =>
+        // This is intended, so ignore warning
+        /node_modules\/monaco-editor\/.*\/editorSimpleWorker.js.*\n.*dependency is an expression/.test(warning),
     colors: true,
 } as Stats.ToStringOptions
 const logWebpackStats = (stats: Stats) => log(stats.toString(WEBPACK_STATS_OPTIONS))

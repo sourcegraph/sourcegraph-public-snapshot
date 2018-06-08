@@ -1,5 +1,4 @@
 import ExtractTextPlugin from 'extract-text-webpack-plugin'
-import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 // @ts-ignore
@@ -36,49 +35,18 @@ const config: webpack.Configuration = {
         }),
         new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
         new ExtractTextPlugin({ filename: 'styles/[name].bundle.css', allChunks: true }),
+        // Don't build the files referenced by dynamic imports for all the basic languages monaco supports.
+        // They won't ever be loaded at runtime because we only edit JSON
+        new webpack.IgnorePlugin(/^\.\/[^.]+.js$/, /\/node_modules\/monaco-editor\/esm\/vs\/basic-languages\/\w+$/),
+        // Same for "advanced" languages
+        new webpack.IgnorePlugin(/^\.\/.+$/, /\/node_modules\/monaco-editor\/esm\/vs\/language\/(?!json)/),
         new webpack.IgnorePlugin(/\.flow$/, /.*/),
-
-        new MonacoWebpackPlugin({
-            languages: ['json'],
-            features: [
-                'clipboard',
-                'comment',
-                'contextmenu',
-                'coreCommands',
-                'cursorUndo',
-                'dnd',
-                'find',
-                'format',
-                'hover',
-                'inPlaceReplace',
-                'iPadShowKeyboard',
-                'linesOperations',
-                'links',
-                'parameterHints',
-                'quickCommand',
-                'quickFixCommands',
-                'smartSelect',
-                'suggest',
-                'wordHighlighter',
-                'wordOperations',
-            ],
-        }),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
         alias: rxPaths(),
     },
-    stats: {
-        all: false,
-        timings: true,
-        modules: false,
-        maxModules: 0,
-        errors: true,
-        warnings: true,
-        warningsFilter: warning =>
-            /.\/node_modules\/monaco-editor\/.*\/editorSimpleWorker.js\n.*dependency is an expression/.test(warning),
-    } as webpack.Options.Stats,
     module: {
         rules: [
             ((): webpack.NewUseRule => ({
