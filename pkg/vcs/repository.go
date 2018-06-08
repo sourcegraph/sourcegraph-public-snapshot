@@ -52,6 +52,8 @@ type RevisionNotFoundError struct {
 	Spec string
 }
 
+func (RevisionNotFoundError) NotFound() bool { return true }
+
 func (e *RevisionNotFoundError) Error() string {
 	return fmt.Sprintf("revision not found: %s@%s", e.Repo, e.Spec)
 }
