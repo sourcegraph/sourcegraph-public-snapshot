@@ -209,7 +209,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 		}
 	}
 
-	pathMatcher, err := vcs.CompilePathMatcher(opt.Paths)
+	pathMatcher, err := compilePathMatcher(opt.Paths)
 	if err != nil {
 		return nil, false, err
 	}
@@ -307,7 +307,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			}
 
 			var err error
-			rawDiff, result.DiffHighlights, err = vcs.FilterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks, pathMatcher)
+			rawDiff, result.DiffHighlights, err = filterAndHighlightDiff(rawDiff, query, opt.OnlyMatchingHunks, pathMatcher)
 			if err != nil {
 				return nil, false, err
 			}

@@ -1,4 +1,4 @@
-package vcs
+package gitcmd
 
 import (
 	"bytes"
@@ -8,12 +8,21 @@ import (
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 )
 
-// FilterAndHighlightDiff returns the raw diff with query matches highlighted
+// compilePathMatcher compiles the path options into a PathMatcher.
+func compilePathMatcher(options vcs.PathOptions) (pathmatch.PathMatcher, error) {
+	return pathmatch.CompilePathPatterns(
+		options.IncludePatterns, options.ExcludePattern,
+		pathmatch.CompileOptions{CaseSensitive: options.IsCaseSensitive, RegExp: options.IsRegExp},
+	)
+}
+
+// filterAndHighlightDiff returns the raw diff with query matches highlighted
 // and only hunks that satisfy the query (if onlyMatchingHunks) and path matcher.
-func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHunks bool, pathMatcher pathmatch.PathMatcher) ([]byte, []Highlight, error) {
+func filterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHunks bool, pathMatcher pathmatch.PathMatcher) ([]byte, []vcs.Highlight, error) {
 	const (
 		maxFiles          = 5
 		maxHunksPerFile   = 3
@@ -41,7 +50,7 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 		}
 
 		// TODO(sqs): preserve the "no newline" message. We clear it out because our truncateLongLines
-		// and SplitHunkMatches funcs don't properly adjust its offset as they modify hunk.Body. If
+		// and splitHunkMatches funcs don't properly adjust its offset as they modify hunk.Body. If
 		// the OrigNoNewlineAt points to an out-of-bounds offset, a panic will occur.
 		for _, hunk := range fileDiff.Hunks {
 			hunk.OrigNoNewlineAt = 0
@@ -54,7 +63,7 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 
 		// Exclude hunks not matching the query.
 		if onlyMatchingHunks {
-			fileDiff.Hunks = SplitHunkMatches(fileDiff.Hunks, query, matchContextLines, maxLinesPerHunk)
+			fileDiff.Hunks = splitHunkMatches(fileDiff.Hunks, query, matchContextLines, maxLinesPerHunk)
 		}
 
 		if len(fileDiff.Hunks) > 0 {
@@ -78,7 +87,7 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 	}
 
 	// Highlight query matches in raw diff.
-	var highlights []Highlight
+	var highlights []vcs.Highlight
 	ignoreUntilAfterAtAt := false
 	for i, line := range bytes.Split(rawDiff, []byte("\n")) {
 		// Don't highlight matches that are not in the body (such as "+++ file1" or "--- file1").
@@ -104,7 +113,7 @@ func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 		if query != nil {
 			lineWithoutStatus := line[1:] // don't match '-' or '+' line status
 			for _, match := range query.FindAllIndex(lineWithoutStatus, maxMatchesPerLine) {
-				highlights = append(highlights, Highlight{
+				highlights = append(highlights, vcs.Highlight{
 					Line:      i + 1,
 					Character: match[0] + 1,
 					Length:    match[1] - match[0],
@@ -199,11 +208,11 @@ func computeDiffHunkInfo(lines [][]byte, query *regexp.Regexp, matchContextLines
 	return lineInfo
 }
 
-// SplitHunkMatches returns a list of hunks that are a subset of the input hunks,
+// splitHunkMatches returns a list of hunks that are a subset of the input hunks,
 // filtered down to only hunks that match the query. Non-matching context lines
 // and non-matching changed lines are eliminated, and the hunk header (start/end
 // lines) are adjusted accordingly.
-func SplitHunkMatches(hunks []*diff.Hunk, query *regexp.Regexp, matchContextLines, maxLinesPerHunk int) (results []*diff.Hunk) {
+func splitHunkMatches(hunks []*diff.Hunk, query *regexp.Regexp, matchContextLines, maxLinesPerHunk int) (results []*diff.Hunk) {
 	addExtraHunkMatchesSection := func(hunk *diff.Hunk, extraHunkMatches int) {
 		if extraHunkMatches > 0 {
 			if hunk.Section != "" {

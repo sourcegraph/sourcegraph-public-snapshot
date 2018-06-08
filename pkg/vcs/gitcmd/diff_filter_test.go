@@ -1,4 +1,4 @@
-package vcs_test
+package gitcmd
 
 import (
 	"bytes"
@@ -61,11 +61,11 @@ index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf
 			if err != nil {
 				t.Fatal(err)
 			}
-			pathMatcher, err := vcs.CompilePathMatcher(test.paths)
+			pathMatcher, err := compilePathMatcher(test.paths)
 			if err != nil {
 				t.Fatal(err)
 			}
-			rawDiff, highlights, err := vcs.FilterAndHighlightDiff([]byte(test.rawDiff), query, true, pathMatcher)
+			rawDiff, highlights, err := filterAndHighlightDiff([]byte(test.rawDiff), query, true, pathMatcher)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -302,7 +302,7 @@ func TestSplitHunkMatches(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			gotHunks := vcs.SplitHunkMatches(hunks, query, test.matchContextLines, test.maxLinesPerHunk)
+			gotHunks := splitHunkMatches(hunks, query, test.matchContextLines, test.maxLinesPerHunk)
 			got, err := diff.PrintHunks(gotHunks)
 			if err != nil {
 				t.Fatal(err)
@@ -310,6 +310,30 @@ func TestSplitHunkMatches(t *testing.T) {
 			got = bytes.TrimSpace(got)
 			if string(got) != test.want {
 				t.Errorf("hunks\ngot:\n%s\n\nwant:\n%s", got, test.want)
+			}
+		})
+	}
+}
+
+func TestTruncateLongLines(t *testing.T) {
+	const maxCharsPerLine = 5
+
+	tests := map[string]string{
+		"":       "",
+		"1":      "1",
+		"12345":  "12345",
+		"123456": "12345",
+		"一二三四五六七八九十":       "一二三四五",
+		"一二三四五六七\n一二三四五六七": "一二三四五\n一二三四五",
+		"😄😱👽😁😘😤😸":          "😄😱👽😁😘",
+		"😄😱👽😁😘😤😸\n😄😱👽😁😘😤😸": "😄😱👽😁😘\n😄😱👽😁😘",
+	}
+
+	for input, want := range tests {
+		t.Run(input, func(t *testing.T) {
+			got := truncateLongLines([]byte(input), maxCharsPerLine)
+			if string(got) != want {
+				t.Errorf("got %q, want %q", got, want)
 			}
 		})
 	}

@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 )
 
 // RepoNotExistError is an error that reports a repository doesn't exist.
@@ -220,14 +219,6 @@ type PathOptions struct {
 	ExcludePattern  string   // exclude paths matching any of these patterns
 	IsRegExp        bool     // whether the pattern is a regexp (if false, treated as exact string)
 	IsCaseSensitive bool     // whether the pattern should be matched case-sensitively
-}
-
-// CompilePathMatcher compiles the path options into a PathMatcher.
-func CompilePathMatcher(options PathOptions) (pathmatch.PathMatcher, error) {
-	return pathmatch.CompilePathPatterns(
-		options.IncludePatterns, options.ExcludePattern,
-		pathmatch.CompileOptions{CaseSensitive: options.IsCaseSensitive, RegExp: options.IsRegExp},
-	)
 }
 
 // RawLogDiffSearchOptions specifies options to (Repository).RawLogDiffSearch.
