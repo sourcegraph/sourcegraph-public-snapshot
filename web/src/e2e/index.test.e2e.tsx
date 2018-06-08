@@ -62,6 +62,8 @@ describe('e2e test suite', () => {
     const enableOrAddRepositoryIfNeeded = async (): Promise<any> => {
         // Disable any toasts, which can interfere with clicking on the enable/add button.
         try {
+            // The toast should appear fast, but not instant, so wait and use a short timeout
+            await page.waitForSelector('.toast__close-button', { timeout: 500 })
             await page.click('.toast__close-button')
         } catch (e) {
             // Probably no toast was showing.
