@@ -1,12 +1,12 @@
 package git_test
 
 import (
-	"context"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -30,13 +30,11 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m branch2 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			RawLogDiffSearch(ctx context.Context, opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error)
-		}
+		repo gitserver.Repo
 		want map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult
 	}{
 		"git cmd": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 			want: map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult{
 				{
 					Query: git.TextSearchOptions{Pattern: "root"},
@@ -109,7 +107,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 
 	for label, test := range tests {
 		for opt, want := range test.want {
-			results, complete, err := test.repo.RawLogDiffSearch(ctx, *opt)
+			results, complete, err := git.RawLogDiffSearch(ctx, test.repo, *opt)
 			if err != nil {
 				t.Errorf("%s: %+v: %s", label, *opt, err)
 				continue
@@ -134,13 +132,11 @@ func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m empty --allow-empty --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			RawLogDiffSearch(ctx context.Context, opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error)
-		}
+		repo gitserver.Repo
 		want map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult
 	}{
 		"git cmd": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 			want: map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult{
 				{
 					Paths: git.PathOptions{IncludePatterns: []string{"/xyz.txt"}, IsRegExp: true},
@@ -151,7 +147,7 @@ func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
 
 	for label, test := range tests {
 		for opt, want := range test.want {
-			results, complete, err := test.repo.RawLogDiffSearch(ctx, *opt)
+			results, complete, err := git.RawLogDiffSearch(ctx, test.repo, *opt)
 			if err != nil {
 				t.Errorf("%s: %+v: %s", label, *opt, err)
 				continue

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
@@ -127,7 +128,7 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 // If complete is false, then the results may have been parsed from only partial output from the
 // underlying git command (because, e.g., it timed out during execution and only returned partial
 // output).
-func (r *Repository) RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error) {
+func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error) {
 	if Mocks.RawLogDiffSearch != nil {
 		return Mocks.RawLogDiffSearch(opt)
 	}
@@ -257,7 +258,8 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchO
 		return context.WithTimeout(ctx, timeout)
 	}
 	// Run `git log` oneline command and read list of matching commits.
-	onelineCmd := r.command("git", onelineArgs...)
+	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
+	onelineCmd.Repo = repo
 	logTimeout := time.Until(deadline) / 2
 	tr.LazyPrintf("git log %v with timeout %s", onelineCmd.Args, logTimeout)
 	ctxLog, cancel := withTimeout(ctx, logTimeout)
@@ -331,7 +333,8 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchO
 	if !isWhitelistedGitCmd(showArgs) {
 		return nil, false, fmt.Errorf("command failed: %q is not a whitelisted git command", showArgs)
 	}
-	showCmd := r.command("git", showArgs...)
+	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
+	showCmd.Repo = repo
 	var complete2 bool
 	showTimeout := time.Duration(float64(time.Until(deadline)) * 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
 	tr.LazyPrintf("git show %v with timeout %s", showCmd.Args, showTimeout)
@@ -363,9 +366,9 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchO
 			Refs:       refs,
 			SourceRefs: []string{commitSourceRefs[string(commit.ID)]},
 		}
-		result.Refs, err = r.filterAndResolveRefs(ctx, result.Refs)
+		result.Refs, err = filterAndResolveRefs(ctx, repo, result.Refs)
 		if err == nil {
-			result.SourceRefs, err = r.filterAndResolveRefs(ctx, result.SourceRefs)
+			result.SourceRefs, err = filterAndResolveRefs(ctx, repo, result.SourceRefs)
 		}
 		sort.Strings(result.Refs)
 		sort.Strings(result.SourceRefs)
@@ -426,7 +429,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchO
 
 // filterAndResolveRefs replaces "HEAD" entries with the names of the ref they refer to,
 // and it omits "HEAD -> ..." entries.
-func (r *Repository) filterAndResolveRefs(ctx context.Context, refs []string) ([]string, error) {
+func filterAndResolveRefs(ctx context.Context, repo gitserver.Repo, refs []string) ([]string, error) {
 	var headRefTarget string
 
 	filtered := refs[:0]
@@ -436,7 +439,8 @@ func (r *Repository) filterAndResolveRefs(ctx context.Context, refs []string) ([
 		}
 		if ref == "HEAD" {
 			if headRefTarget == "" {
-				cmd := r.command("git", "rev-parse", "--symbolic-full-name", "HEAD")
+				cmd := gitserver.DefaultClient.Command("git", "rev-parse", "--symbolic-full-name", "HEAD")
+				cmd.Repo = repo
 				stdout, err := cmd.Output(ctx)
 				if err != nil {
 					return nil, err

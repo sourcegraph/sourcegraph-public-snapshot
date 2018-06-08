@@ -15,7 +15,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -214,7 +213,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return nil, false, false, err
 	}
 
-	rawResults, complete, err := backend.CachedGitRepoTmp(repo).RawLogDiffSearch(ctx, git.RawLogDiffSearchOptions{
+	rawResults, complete, err := git.RawLogDiffSearch(ctx, op.repoRevs.gitserverRepo, git.RawLogDiffSearchOptions{
 		Query: op.textSearchOptions,
 		Paths: git.PathOptions{
 			IncludePatterns: op.info.IncludePatterns,
