@@ -33,7 +33,6 @@ fi
 export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 
-export APP_URL=http://localhost:3080
 export GITHUB_BASE_URL=http://127.0.0.1:3180
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
 export INSECURE_DEV=1
@@ -61,7 +60,8 @@ export SAML_ONELOGIN_KEY=$(cat dev/auth-provider/config/external/client-onelogin
 # To use webpack-serve:
 #   export WEBPACK_SERVE=1
 if [ -n "${WEBPACK_SERVE-}" ]; then
-    export APP_URL=http://localhost:3088
+    # Corresponds to the http-proxy-middleware target URL in webpack-serve.config.ts.
+    export SRC_HTTP_ADDR=":3081"
 fi
 
 export SOURCEGRAPH_CONFIG_FILE=./dev/config.json

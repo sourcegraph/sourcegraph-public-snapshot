@@ -1,6 +1,6 @@
 // The Sourcegraph site configuration for development servers.
 {
-  "appURL": "${APP_URL}",
+  "appURL": "http://localhost:3080",
   "experimentalFeatures": {
     "configVars": "enabled",
     "canonicalURLRedirect": "enabled",

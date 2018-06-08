@@ -11,7 +11,7 @@ import { Options } from 'webpack-serve'
 export default {
     clipboard: false,
     content: '../ui/assets',
-    port: 3088,
+    port: 3080,
     hot: false,
     dev: {
         publicPath: '/.assets/',
@@ -30,7 +30,7 @@ export default {
                 // webpack-serve. This is how webpack-serve needs to work (because it does a bit
                 // more magic in injecting scripts that use WebSockets into proxied requests).
                 httpProxyMiddleware({
-                    target: 'http://localhost:3080',
+                    target: 'http://localhost:3081',
                     logLevel: 'debug',
                     // ... see: https://github.com/chimurai/http-proxy-middleware#options
                 })
