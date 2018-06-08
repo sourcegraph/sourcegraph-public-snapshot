@@ -1217,10 +1217,3 @@ func (r *Repository) ensureAbsCommit(commitID api.CommitID) {
 		panic(fmt.Errorf("non-absolute commit ID: %q on %s", commitID, r.String()))
 	}
 }
-
-func (r *Repository) CreateCommitFromPatch(ctx context.Context, opt vcs.PatchOptions) (string, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CreatePhabricatorStagingObject")
-	defer span.Finish()
-
-	return gitserver.DefaultClient.CreateCommitFromPatch(ctx, r.repoURI, opt)
-}

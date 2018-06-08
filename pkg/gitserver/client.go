@@ -460,16 +460,8 @@ func (c *Client) UploadPack(repoURI api.RepoURI, w http.ResponseWriter, r *http.
 
 var uploadPackErrorLog = log.New(env.DebugOut, "git upload-pack proxy: ", log.LstdFlags)
 
-func (c *Client) CreateCommitFromPatch(ctx context.Context, repo api.RepoURI, opt vcs.PatchOptions) (string, error) {
-	req := protocol.CreatePatchFromPatchRequest{
-		Repo:       repo,
-		BaseCommit: opt.BaseCommit,
-		Patch:      opt.Patch,
-		TargetRef:  opt.TargetRef,
-		CommitInfo: opt.Info,
-	}
-
-	resp, err := c.httpPost(ctx, repo, "create-commit-from-patch", req)
+func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
 	if err != nil {
 		return "", err
 	}

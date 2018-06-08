@@ -20,7 +20,7 @@ import (
 var patchID uint64
 
 func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Request) {
-	var req protocol.CreatePatchFromPatchRequest
+	var req protocol.CreateCommitFromPatchRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

@@ -81,9 +81,9 @@ type RepoInfoResponse struct {
 	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
 }
 
-// CreatePatchFromPatchRequest is the request information needed for creating
+// CreateCommitFromPatchRequest is the request information needed for creating
 // the simulated staging area git object for a repo.
-type CreatePatchFromPatchRequest struct {
+type CreateCommitFromPatchRequest struct {
 	// Repo is the repository to get information about.
 	Repo api.RepoURI
 	// BaseCommit is the revision that the staging area object is based on
@@ -93,7 +93,15 @@ type CreatePatchFromPatchRequest struct {
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
 	// CommitInfo is the information that will be used when creating the commit from a patch
-	CommitInfo vcs.PatchCommitInfo
+	CommitInfo PatchCommitInfo
+}
+
+// PatchCommitInfo will be used for commit information when creating a commit from a patch
+type PatchCommitInfo struct {
+	Message     string
+	AuthorName  string
+	AuthorEmail string
+	Date        time.Time
 }
 
 // CreatePatchFromPatchResponse is the response type returned after creating

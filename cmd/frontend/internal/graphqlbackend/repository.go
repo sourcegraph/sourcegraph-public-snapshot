@@ -22,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -352,11 +354,12 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		}
 	}
 
-	_, err = vcsrepo.CreateCommitFromPatch(ctx, vcs.PatchOptions{
+	_, err = gitserver.DefaultClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+		Repo:       api.RepoURI(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
 		Patch:      patch,
-		Info: vcs.PatchCommitInfo{
+		CommitInfo: protocol.PatchCommitInfo{
 			AuthorName:  info.AuthorName,
 			AuthorEmail: info.AuthorEmail,
 			Message:     info.Message,
