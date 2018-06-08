@@ -198,10 +198,13 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	return inv, nil
 }
 
-func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error) {
+func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventoryUncached != nil {
 		return Mocks.Repos.GetInventoryUncached(ctx, repo, commitID)
 	}
+
+	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
+	defer done()
 
 	vcsrepo := Repos.CachedVCS(repo)
 	files, err := vcsrepo.ReadDir(ctx, commitID, "", true)
@@ -221,6 +224,9 @@ func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) 
 	if !repo.Enabled {
 		return nil
 	}
+
+	ctx, done := trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.URI}, &err)
+	defer done()
 
 	go func() {
 		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo.URI))
