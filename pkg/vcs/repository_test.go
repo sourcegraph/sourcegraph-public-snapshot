@@ -17,7 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 var times = []string{
@@ -1258,7 +1258,7 @@ func TestOpen(t *testing.T) {
 	t.Parallel()
 
 	dir := initGitRepository(t)
-	gitcmd.Open(api.RepoURI(dir), "")
+	git.Open(api.RepoURI(dir), "")
 }
 
 // initGitRepository initializes a new Git repository and runs cmds in a new
@@ -1302,7 +1302,7 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 }
 
 type gitRepository struct {
-	gitcmd.Repository
+	git.Repository
 	Dir string
 }
 
@@ -1312,7 +1312,7 @@ type gitRepository struct {
 func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitRepository {
 	dir := initGitRepository(t, cmds...)
 	return &gitRepository{
-		Repository: *gitcmd.Open(api.RepoURI(dir), ""),
+		Repository: *git.Open(api.RepoURI(dir), ""),
 		Dir:        dir,
 	}
 }

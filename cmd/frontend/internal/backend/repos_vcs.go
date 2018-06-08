@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -37,7 +37,7 @@ func (repos) RemoteVCS(ctx context.Context, repo *types.Repo) (vcs.Repository, e
 	if Mocks.Repos.VCS != nil {
 		return Mocks.Repos.VCS(repo.URI)
 	}
-	return gitcmd.OpenLazy(repo.URI, func() (string, error) {
+	return git.OpenLazy(repo.URI, func() (string, error) {
 		gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
 		if err != nil {
 			return "", err
@@ -68,7 +68,7 @@ func (repos) CachedVCS(repo *types.Repo) vcs.Repository {
 // VCS returns a handle to the Git repository specified by repo. Callers, unless they already have a gitserver.Repo
 // value, should use either RemoteVCS or CachedVCS instead of this method.
 func (repos) VCS(repo gitserver.Repo) vcs.Repository {
-	return gitcmd.Open(repo.Name, repo.URL)
+	return git.Open(repo.Name, repo.URL)
 }
 
 func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {

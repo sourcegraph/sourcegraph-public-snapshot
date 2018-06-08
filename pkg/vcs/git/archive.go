@@ -1,4 +1,4 @@
-package gitcmd
+package git
 
 import (
 	"context"

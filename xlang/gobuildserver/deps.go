@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -452,7 +452,7 @@ func FetchCommonDeps() {
 // the files in the specified (public) repo at the given commit.
 var NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 	// First check if we can clone from gitserver.
-	cmd := gitcmd.Open(api.RepoURI(cloneURL.Host+cloneURL.Path), cloneURL.String())
+	cmd := git.Open(api.RepoURI(cloneURL.Host+cloneURL.Path), cloneURL.String())
 	if _, err := cmd.ResolveRevision(ctx, rev, nil); err == nil {
 		return vfsutil.ArchiveFileSystem(cmd, rev), nil
 	}
