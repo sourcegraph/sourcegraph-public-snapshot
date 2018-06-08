@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -116,7 +117,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := uri.Parse("git://" + string(repoRevs.repo.URI) + "?" + inputRev)
+	baseURI, err := uri.Parse("git://" + string(repoRevs.repo.URI) + "?" + url.QueryEscape(inputRev))
 	if err != nil {
 		return nil, err
 	}

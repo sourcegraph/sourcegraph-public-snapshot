@@ -6,6 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
+import { escapeRevspecForURL } from '../../util/url'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
@@ -111,7 +112,9 @@ export class RepositoryCompareArea extends React.Component<Props> {
     private onUpdateComparisonSpec = (newBaseSpec: string, newHeadSpec: string): void => {
         this.props.history.push(
             `/${this.props.repo.uri}/-/compare${
-                newBaseSpec || newHeadSpec ? `/${newBaseSpec || ''}...${newHeadSpec || ''}` : ''
+                newBaseSpec || newHeadSpec
+                    ? `/${escapeRevspecForURL(newBaseSpec || '')}...${escapeRevspecForURL(newHeadSpec || '')}`
+                    : ''
             }`
         )
     }
@@ -121,6 +124,9 @@ function parseComparisonSpec(spec: string): { base: string | null; head: string 
     if (!spec.includes('...')) {
         return null
     }
-    const parts = spec.split('...', 2)
-    return { base: parts[0] || null, head: parts[1] || null }
+    const parts = spec.split('...', 2).map(decodeURIComponent)
+    return {
+        base: parts[0] || null,
+        head: parts[1] || null,
+    }
 }

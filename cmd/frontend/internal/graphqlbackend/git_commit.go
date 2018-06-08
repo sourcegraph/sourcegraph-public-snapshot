@@ -202,7 +202,7 @@ func (r *gitCommitResolver) repoRevURL() string {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		return url + "@" + rev
+		return url + "@" + escapeRevspecForURL(rev)
 	}
 	return url
 }

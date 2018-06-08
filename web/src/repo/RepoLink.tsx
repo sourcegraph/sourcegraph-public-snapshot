@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
+import { encodeRepoRev } from '../util/url'
 
 interface Props {
     repoPath: string
@@ -26,7 +27,7 @@ export const RepoLink: React.SFC<Props> = ({ repoPath, rev, to, className, onCli
     return (
         <L
             className={className || ''}
-            to={typeof to === 'string' ? to : `/${repoPath}${rev ? `@${rev}` : ''}`}
+            to={typeof to === 'string' ? to : `/${encodeRepoRev(repoPath, rev)}`}
             onClick={onClick}
         >
             {repoBase ? `${repoBase}/` : null}

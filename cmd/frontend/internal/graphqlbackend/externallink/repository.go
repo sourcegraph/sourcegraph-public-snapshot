@@ -3,6 +3,7 @@ package externallink
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -37,13 +38,15 @@ func Repository(ctx context.Context, repo *types.Repo) (links []*Resolver, err e
 
 // FileOrDir returns the external links for a file or directory in a repository.
 func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bool) (links []*Resolver, err error) {
+	rev = url.PathEscape(rev)
+
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
 		branchName, err := git.GitCmdRaw(ctx, backend.CachedGitRepo(repo), []string{"symbolic-ref", "--short", "HEAD"})
 		if err == nil && branchName != "" {
 			links = append(links, &Resolver{
-				url:         fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, branchName, path, rev),
+				url:         fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(branchName), path, rev),
 				serviceType: "phabricator",
 			})
 		}
@@ -67,17 +70,19 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 
 // Commit returns the external links for a commit in a repository.
 func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links []*Resolver, err error) {
+	commitStr := url.PathEscape(string(commitID))
+
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
 		links = append(links, &Resolver{
-			url:         fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, commitID),
+			url:         fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, commitStr),
 			serviceType: "phabricator",
 		})
 	}
 
 	if link != nil && link.Commit != "" {
 		links = append(links, &Resolver{
-			url:         strings.Replace(link.Commit, "{commit}", string(commitID), -1),
+			url:         strings.Replace(link.Commit, "{commit}", commitStr, -1),
 			serviceType: serviceType,
 		})
 	}

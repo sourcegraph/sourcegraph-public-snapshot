@@ -57,8 +57,8 @@ const getFileInfo = (uri: string): IFileInfo => {
 
     return {
         repoPath: parsed.hostname + decodeURIComponent(parsed.pathname),
-        rev: parsed.search.substr('?'.length),
-        filePath: parsed.hash.substr('#'.length),
+        rev: decodeURIComponent(parsed.search.substr('?'.length)),
+        filePath: decodeURIComponent(parsed.hash.substr('#'.length)),
     }
 }
 

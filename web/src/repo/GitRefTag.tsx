@@ -26,13 +26,13 @@ export const GitRefTag: React.SFC<Props> = ({ gitRef, onMouseDown }: Props) => {
     switch (gitRef.prefix) {
         case 'refs/heads/':
             kind = 'branch'
-            url = url && `${url}/compare/${abbrevName}`
+            url = url && `${url}/compare/${encodeURIComponent(abbrevName)}`
             Icon = BranchIcon
             break
 
         case 'refs/tags/':
             kind = 'tag'
-            url = url && `${url}/releases/tag/${abbrevName}`
+            url = url && `${url}/releases/tag/${encodeURIComponent(abbrevName)}`
             Icon = TagIcon
             break
 

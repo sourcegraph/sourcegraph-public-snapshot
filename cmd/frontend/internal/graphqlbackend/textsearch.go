@@ -381,7 +381,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 
 	var workspace string
 	if rev != "" {
-		workspace = "git://" + string(repo.URI) + "?" + rev + "#"
+		workspace = "git://" + string(repo.URI) + "?" + url.QueryEscape(rev) + "#"
 	} else {
 		workspace = "git://" + string(repo.URI) + "#"
 	}

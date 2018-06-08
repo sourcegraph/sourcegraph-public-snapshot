@@ -149,28 +149,42 @@ function toPositionHashComponent(position: { line: number; character?: number })
     return position.line.toString() + (position.character ? ':' + position.character : '')
 }
 
+/** Encodes a repository at a revspec for use in a URL. */
+export function encodeRepoRev(repo: string, rev?: string): string {
+    return rev ? `${repo}@${escapeRevspecForURL(rev)}` : repo
+}
+
+/**
+ * Encodes rev with encodeURIComponent, except that slashes ('/') are preserved,
+ * because they are not ambiguous in any of the current places where used, and URLs
+ * for (e.g.) branches with slashes look a lot nicer with '/' than '%2F'.
+ */
+export function escapeRevspecForURL(rev: string): string {
+    return encodeURIComponent(rev).replace(/%2F/g, '/')
+}
+
 export function toViewStateHashComponent(viewState: string | undefined): string {
     return viewState ? `$${viewState}` : ''
 }
 
 export function toRepoURL(ctx: Repo & Partial<ResolvedRevSpec>): string {
     const rev = ctx.commitID || ctx.rev || ''
-    return `/${ctx.repoPath}${rev ? '@' + rev : ''}`
+    return `/${encodeRepoRev(ctx.repoPath, rev)}`
 }
 
 export function toPrettyRepoURL(ctx: Repo): string {
-    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}`
+    return `/${encodeRepoRev(ctx.repoPath, ctx.rev)}`
 }
 
 export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
     const rev = ctx.commitID || ctx.rev || ''
-    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}`
+    return `/${encodeRepoRev(ctx.repoPath, rev)}/-/blob/${ctx.filePath}`
 }
 
 export function toPrettyBlobURL(
     ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${ctx.repoPath}${ctx.rev ? '@' + ctx.rev : ''}/-/blob/${ctx.filePath}${toRenderModeQuery(
+    return `/${encodeRepoRev(ctx.repoPath, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
         ctx
     )}${toPositionOrRangeHash(ctx)}${toViewStateHashComponent(ctx.viewState)}`
 }
@@ -179,14 +193,14 @@ export function toAbsoluteBlobURL(
     ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RenderModeSpec>
 ): string {
     const rev = ctx.commitID ? ctx.commitID : ctx.rev
-    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
+    return `/${encodeRepoRev(ctx.repoPath, rev)}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
         ctx
     )}${toViewStateHashComponent(ctx.viewState)}`
 }
 
 export function toTreeURL(ctx: RepoFile): string {
     const rev = ctx.commitID || ctx.rev || ''
-    return `/${ctx.repoPath}${rev ? '@' + rev : ''}/-/tree/${ctx.filePath}`
+    return `/${encodeRepoRev(ctx.repoPath, rev)}/-/tree/${ctx.filePath}`
 }
 
 export function toCommitURL(ctx: Repo & { commitID: string }): string {

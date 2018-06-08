@@ -202,11 +202,27 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     return { repoPath, rev, commitID, filePath: filePath || undefined, position, range }
 }
 
-export function parseRepoRev(repoRev: string): { repoPath: string; rev?: string } {
-    const atIndex = repoRev.indexOf('@')
-    const repoPath = atIndex === -1 ? repoRev : repoRev.substr(0, atIndex)
-    const rev = atIndex === -1 ? undefined : repoRev.substr(atIndex + 1)
-    return { repoPath, rev }
+/** The results of parsing a repo-rev string like "my/repo@my/rev". */
+export interface ParsedRepoRev {
+    repoPath: string
+
+    /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
+    rev?: string
+
+    /** The raw revision (e.g., "my%23branch" in "my/repo@my%23branch"). */
+    rawRev?: string
+}
+
+/**
+ * Parses a repo-rev string like "my/repo@my/rev" to the repo and rev components.
+ */
+export function parseRepoRev(repoRev: string): ParsedRepoRev {
+    const [repo, rev] = repoRev.split('@', 2)
+    return {
+        repoPath: decodeURIComponent(repo),
+        rev: rev && decodeURIComponent(rev),
+        rawRev: rev,
+    }
 }
 
 /**
@@ -281,10 +297,10 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
  */
 export function replaceRevisionInURL(href: string, newRev: string): string {
     const parsed = parseBrowserRepoURL(window.location.href)
-    const repoRev = `/${parsed.repoPath}${parsed.rev ? '@' + parsed.rev : ''}`
+    const repoRev = `/${url.encodeRepoRev(parsed.repoPath, parsed.rev)}`
 
     const u = new URL(window.location.href)
-    u.pathname = `/${parsed.repoPath}@${newRev}${u.pathname.slice(repoRev.length)}`
+    u.pathname = `/${url.encodeRepoRev(parsed.repoPath, newRev)}${u.pathname.slice(repoRev.length)}`
     return `${u.pathname}${u.search}${u.hash}`
 }
 

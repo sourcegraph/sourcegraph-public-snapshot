@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { merge, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { parseRepoRev, redirectToExternalHost } from '.'
+import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import { parseBrowserRepoURL } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
@@ -36,9 +36,7 @@ interface Props extends RouteComponentProps<{ repoRevAndRest: string }> {
     isLightTheme: boolean
 }
 
-interface State {
-    repoPath: string
-    rev?: string
+interface State extends ParsedRepoRev {
     filePath?: string
     rest?: string
 
@@ -114,8 +112,8 @@ export class RepoContainer extends React.Component<Props, State> {
 
         // Update header and other global state.
         this.subscriptions.add(
-            parsedRouteChanges.subscribe(({ repoPath, rev, rest }) => {
-                this.setState({ repoPath, rev, rest })
+            parsedRouteChanges.subscribe(({ repoPath, rev, rawRev, rest }) => {
+                this.setState({ repoPath, rev, rawRev, rest })
 
                 queryUpdates.next(searchQueryForRepoRev(repoPath, rev))
             })
@@ -225,7 +223,14 @@ export class RepoContainer extends React.Component<Props, State> {
                 />
                 {this.state.repoOrError.enabled || isSettingsPage ? (
                     <Switch>
-                        {['', `@${this.state.rev}`, '/-/blob', '/-/tree', '/-/graph', '/-/commits'].map(routePath => (
+                        {[
+                            '',
+                            `@${this.state.rawRev}`, // must exactly match how the rev was encoded in the URL
+                            '/-/blob',
+                            '/-/tree',
+                            '/-/graph',
+                            '/-/commits',
+                        ].map(routePath => (
                             <Route
                                 path={`${repoMatchURL}${routePath}`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -236,7 +241,10 @@ export class RepoContainer extends React.Component<Props, State> {
                                         {...routeComponentProps}
                                         {...transferProps}
                                         rev={this.state.rev}
-                                        routePrefix={`${repoMatchURL}${this.state.rev ? `@${this.state.rev}` : ''}`}
+                                        // must exactly match how the rev was encoded in the URL
+                                        routePrefix={`${repoMatchURL}${
+                                            this.state.rawRev ? `@${this.state.rawRev}` : ''
+                                        }`}
                                     />
                                 )}
                             />
@@ -336,8 +344,7 @@ export class RepoContainer extends React.Component<Props, State> {
  *
  * @param repoRevAndRest a string like /my/repo@myrev/-/blob/my/file.txt
  */
-function parseURLPath(repoRevAndRest: string): { repoPath: string; rev?: string; rest?: string } {
+function parseURLPath(repoRevAndRest: string): ParsedRepoRev & { rest?: string } {
     const [repoRev, rest] = repoRevAndRest.split('/-/', 2)
-    const { repoPath, rev } = parseRepoRev(repoRev)
-    return { repoPath, rev, rest }
+    return { ...parseRepoRev(repoRev), rest }
 }

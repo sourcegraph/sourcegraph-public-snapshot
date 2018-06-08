@@ -216,7 +216,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                                 className="btn btn-secondary"
                                 to={
                                     this.props.rev
-                                        ? `/${this.props.repoPath}/-/compare/...${this.props.rev}`
+                                        ? `/${this.props.repoPath}/-/compare/...${encodeURIComponent(this.props.rev)}`
                                         : `/${this.props.repoPath}/-/compare`
                                 }
                             >
